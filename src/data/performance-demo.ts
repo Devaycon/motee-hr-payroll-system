@@ -1,0 +1,255 @@
+﻿import type {
+  PerformanceReview,
+  PerformanceGoal,
+  ReviewStatus,
+  ReviewType,
+  GoalStatus,
+  GoalCategory,
+} from "@/src/lib/types/performance";
+
+export const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
+  not_started: "Not Started",
+  in_progress: "In Progress",
+  completed: "Completed",
+  overdue: "Overdue",
+};
+
+export const REVIEW_STATUS_STYLES: Record<ReviewStatus, string> = {
+  not_started: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+  in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+  completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
+  overdue: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
+};
+
+export const REVIEW_TYPE_LABELS: Record<ReviewType, string> = {
+  annual: "Annual",
+  mid_year: "Mid-Year",
+  probation: "Probation",
+  pip: "PIP",
+  "360": "360°",
+};
+
+export const REVIEW_TYPE_STYLES: Record<ReviewType, string> = {
+  annual: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400",
+  mid_year: "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-400",
+  probation: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+  pip: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
+  "360": "bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400",
+};
+
+export const GOAL_STATUS_LABELS: Record<GoalStatus, string> = {
+  on_track: "On Track",
+  at_risk: "At Risk",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  overdue: "Overdue",
+};
+
+export const GOAL_STATUS_STYLES: Record<GoalStatus, string> = {
+  on_track: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
+  at_risk: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+  completed: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+  cancelled: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+  overdue: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
+};
+
+export const GOAL_CATEGORY_LABELS: Record<GoalCategory, string> = {
+  technical: "Technical",
+  leadership: "Leadership",
+  communication: "Communication",
+  growth: "Growth",
+  operational: "Operational",
+};
+
+export const GOAL_CATEGORY_STYLES: Record<GoalCategory, string> = {
+  technical: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+  leadership: "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-400",
+  communication: "bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400",
+  growth: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
+  operational: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+};
+
+export const DEPARTMENT_OPTIONS = [
+  "Engineering",
+  "Human Resources",
+  "Finance",
+  "Marketing",
+  "Product",
+  "Sales",
+  "Operations",
+  "Legal",
+];
+
+export const PERFORMANCE_REVIEWS: PerformanceReview[] = [
+  {
+    id: "pr-001",
+    employeeName: "Chukwuemeka Eze",
+    employeeInitials: "CE",
+    jobTitle: "Senior Backend Engineer",
+    department: "Engineering",
+    reviewType: "annual",
+    period: "Q1 2026",
+    status: "completed",
+    reviewer: "Emeka Obi",
+    rating: 4,
+    strengths: "Strong system design skills and consistent delivery.",
+    improvements: "Could improve documentation practices.",
+    comments: "Solid performer who consistently meets expectations.",
+    dueDate: "2026-03-31",
+    completedDate: "2026-03-28",
+  },
+  {
+    id: "pr-002",
+    employeeName: "Amaka Chukwu",
+    employeeInitials: "AC",
+    jobTitle: "Talent Acquisition Specialist",
+    department: "Human Resources",
+    reviewType: "mid_year",
+    period: "H1 2026",
+    status: "in_progress",
+    reviewer: "Amaka Nwosu",
+    dueDate: "2026-04-30",
+  },
+  {
+    id: "pr-003",
+    employeeName: "Emeka Nwosu",
+    employeeInitials: "EN",
+    jobTitle: "Mobile Engineer",
+    department: "Engineering",
+    reviewType: "probation",
+    period: "Probation 2026",
+    status: "not_started",
+    reviewer: "Emeka Obi",
+    dueDate: "2026-04-15",
+  },
+  {
+    id: "pr-004",
+    employeeName: "Aisha Bello",
+    employeeInitials: "AB",
+    jobTitle: "Brand Manager",
+    department: "Marketing",
+    reviewType: "annual",
+    period: "Q1 2026",
+    status: "overdue",
+    reviewer: "Chidi Eze",
+    dueDate: "2026-03-15",
+  },
+  {
+    id: "pr-005",
+    employeeName: "Blessing Okafor",
+    employeeInitials: "BO",
+    jobTitle: "Finance Analyst",
+    department: "Finance",
+    reviewType: "annual",
+    period: "Q1 2026",
+    status: "completed",
+    reviewer: "Tunde Adeyemi",
+    rating: 5,
+    strengths: "Exceptional analytical skills and financial acumen.",
+    improvements: "Could take on more cross-departmental projects.",
+    comments: "Outstanding contributor this year.",
+    dueDate: "2026-03-31",
+    completedDate: "2026-03-25",
+  },
+  {
+    id: "pr-006",
+    employeeName: "Sodiq Olawale",
+    employeeInitials: "SO",
+    jobTitle: "Product Manager",
+    department: "Product",
+    reviewType: "mid_year",
+    period: "H1 2026",
+    status: "in_progress",
+    reviewer: "Ngozi Okeke",
+    dueDate: "2026-04-30",
+  },
+];
+
+export const PERFORMANCE_GOALS: PerformanceGoal[] = [
+  {
+    id: "pg-001",
+    employeeName: "Chukwuemeka Eze",
+    employeeInitials: "CE",
+    department: "Engineering",
+    goalTitle: "Migrate legacy API to microservices",
+    description: "Complete the migration of 3 legacy services to the new microservices architecture.",
+    category: "technical",
+    status: "on_track",
+    progress: 60,
+    dueDate: "2026-06-30",
+    createdAt: "2026-01-15",
+  },
+  {
+    id: "pg-002",
+    employeeName: "Amaka Chukwu",
+    employeeInitials: "AC",
+    department: "Human Resources",
+    goalTitle: "Reduce time-to-hire to under 30 days",
+    description: "Streamline recruitment process to bring average time-to-hire below 30 days.",
+    category: "operational",
+    status: "on_track",
+    progress: 70,
+    dueDate: "2026-06-30",
+    createdAt: "2026-01-20",
+  },
+  {
+    id: "pg-003",
+    employeeName: "Aisha Bello",
+    employeeInitials: "AB",
+    department: "Marketing",
+    goalTitle: "Increase brand engagement by 40%",
+    description: "Drive a 40% increase in social media engagement through targeted campaigns.",
+    category: "growth",
+    status: "at_risk",
+    progress: 30,
+    dueDate: "2026-05-31",
+    createdAt: "2026-02-01",
+  },
+  {
+    id: "pg-004",
+    employeeName: "Blessing Okafor",
+    employeeInitials: "BO",
+    department: "Finance",
+    goalTitle: "Implement automated financial reporting",
+    description: "Automate monthly financial reports to reduce manual effort by 50%.",
+    category: "technical",
+    status: "completed",
+    progress: 100,
+    dueDate: "2026-03-31",
+    createdAt: "2026-01-10",
+    completedAt: "2026-03-20",
+  },
+  {
+    id: "pg-005",
+    employeeName: "Sodiq Olawale",
+    employeeInitials: "SO",
+    department: "Product",
+    goalTitle: "Launch v2 of the employee self-service portal",
+    description: "Deliver the employee self-service portal v2 with all planned features.",
+    category: "operational",
+    status: "on_track",
+    progress: 55,
+    dueDate: "2026-07-31",
+    createdAt: "2026-02-05",
+  },
+  {
+    id: "pg-006",
+    employeeName: "Emeka Nwosu",
+    employeeInitials: "EN",
+    department: "Engineering",
+    goalTitle: "Complete React Native certification",
+    category: "growth",
+    status: "overdue",
+    progress: 20,
+    dueDate: "2026-03-31",
+    createdAt: "2026-01-15",
+  },
+];
+
+export const RATING_LABELS: Record<number, string> = {
+  1: "Needs Improvement",
+  2: "Below Expectations",
+  3: "Meets Expectations",
+  4: "Exceeds Expectations",
+  5: "Outstanding",
+};
