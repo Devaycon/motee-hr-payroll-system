@@ -35,10 +35,10 @@ const AuthIndex = () => {
           />
         </div>
 
-        <div className="flex flex-col gap-3 max-w-xl">
+        <div className="flex flex-col gap-3 max-w-2xl">
           <h1>
             <span className="text-6xl text-white font-black">
-              Welcome to Your Workspace
+              Welcome to MOTEE HRIS
             </span>
           </h1>
           <div

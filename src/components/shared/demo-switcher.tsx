@@ -63,21 +63,21 @@ const ROLES = [
     href: "/employee/dashboard",
     prefixes: ["/employee", "/profile", "/time-off", "/growth", "/company"],
   },
-  {
-    key: "motee",
-    label: "CMS",
-    icon: Building2,
-    accent: "#D85A30",
-    href: "/motee",
-    prefixes: [
-      "/motee",
-      "/tenants",
-      "/billing",
-      "/platform",
-      "/support",
-      "/settings",
-    ],
-  },
+  // {
+  //   key: "motee",
+  //   label: "CMS",
+  //   icon: Building2,
+  //   accent: "#D85A30",
+  //   href: "/motee",
+  //   prefixes: [
+  //     "/motee",
+  //     "/tenants",
+  //     "/billing",
+  //     "/platform",
+  //     "/support",
+  //     "/settings",
+  //   ],
+  // },
 ] as const;
 
 export function DemoSwitcher() {
