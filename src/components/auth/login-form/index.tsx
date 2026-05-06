@@ -52,7 +52,7 @@ export function LoginForm() {
       <div className="flex items-center gap-3">
         <Separator className="flex-1" />
         <span className="text-xs text-muted-foreground whitespace-nowrap">
-          or sign in as
+          or use demo links
         </span>
         <Separator className="flex-1" />
       </div>
