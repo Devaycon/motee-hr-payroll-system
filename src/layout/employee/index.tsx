@@ -10,12 +10,12 @@ const EmployeeLayout = ({ children }: { children: ReactNode }) => {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <div className="ml-[20%] flex flex-1 flex-col">
+      <div className="ml-[20%] flex flex-1 flex-col min-w-0">
         <Navbar />
         <main className="relative flex-1 overflow-hidden p-6">
           <AnimatedDotBackground dotColor="#4ED251" />
           <div className="pointer-events-none absolute inset-0 bg-white mask-[radial-gradient(ellipse_at_center,transparent_20%,black)] dark:bg-black" />
-          <MoteeFollowingPointer logoSrc="/employee-logo.png" />
+          <MoteeFollowingPointer logoSrc="/single-logo.png" />
           <div className="relative z-10">{children}</div>
         </main>
       </div>

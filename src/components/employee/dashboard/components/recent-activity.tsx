@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Activity, ChevronRight } from "lucide-react";
 import {
   Card,
@@ -23,11 +24,14 @@ export function RecentActivity() {
           <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
         </div>
         <Button
+          asChild
           variant="ghost"
           size="sm"
           className="h-7 text-xs text-muted-foreground gap-1"
         >
-          View all <ChevronRight className="w-3 h-3" />
+          <Link href="/profile/my-profile">
+            View all <ChevronRight className="w-3 h-3" />
+          </Link>
         </Button>
       </CardHeader>
       <CardContent className="px-4 pb-4">

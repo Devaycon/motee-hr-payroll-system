@@ -75,7 +75,7 @@ const STEPS: Step[] = [
     id: "sidebar-nav",
     title: "Navigation",
     description:
-      "All platform sections are grouped here. Click any section header to expand or collapse it.",
+      "All platform sections are grouped. Click any section header to expand or collapse it.",
     selector: "[data-tutorial='sidebar-nav']",
     side: "right",
   },

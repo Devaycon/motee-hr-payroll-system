@@ -41,7 +41,7 @@ export const routes: Route[] = [
     group: "Overview",
     icon: LayoutDashboard,
     label: "Dashboard",
-    link: "/employee",
+    link: "/employee/dashboard",
   },
   {
     group: "Overview",
@@ -128,7 +128,7 @@ export const routes: Route[] = [
   {
     group: "Company",
     icon: Network,
-    label: "Org Chart",
+    label: "Organisation",
     link: "/company/org-chart",
   },
   {
@@ -154,11 +154,5 @@ export const routes: Route[] = [
     icon: LifeBuoy,
     label: "HR Help Desk",
     link: "/company/helpdesk",
-  },
-  {
-    group: "Settings",
-    icon: Settings,
-    label: "Settings",
-    link: "/settings",
   },
 ];

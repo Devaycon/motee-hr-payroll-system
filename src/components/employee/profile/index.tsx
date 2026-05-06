@@ -1,27 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Mail,
-  Phone,
-  Building2,
-  MapPin,
-  Pencil,
-  Lock,
-  Check,
-  X,
-  Monitor,
-  LogOut,
-} from "lucide-react";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { Pencil, Lock, Check, X, Monitor, LogOut } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/src/components/ui/tabs";
+import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { Separator } from "@/src/components/ui/separator";
 import { Badge } from "@/src/components/ui/badge";
 import { Input } from "@/src/components/ui/input";
@@ -260,77 +244,29 @@ export function EmployeeProfilePage() {
       </div>
 
       {/* TOP SECTION — Avatar card + Personal Information card */}
-      <div className="grid grid-cols-1 sm:grid-cols-[400px_1fr] gap-4 items-start">
+      <div className="grid grid-cols-1 sm:grid-cols-[260px_1fr] gap-4 items-start">
         {/* Avatar card */}
         <Card>
-          <CardContent className="p-5 flex flex-col items-center gap-3">
-            <div className="relative mt-1">
-              <Avatar className="size-20 ring-2 ring-border">
-                <AvatarFallback className="bg-[#7F77DD]/10 text-[#7F77DD] text-2xl font-bold">
+          <CardContent className="p-4 flex flex-col items-center gap-4">
+            <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-muted cursor-pointer group">
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-5xl font-bold text-[#7F77DD]/40">
                   {p.name
                     .split(" ")
                     .map((n) => n[0])
                     .join("")
                     .slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#7F77DD] flex items-center justify-center shadow-sm">
-                <Pencil className="w-3 h-3 text-white" />
-              </button>
+                </span>
+              </div>
             </div>
             <div className="text-center">
-              <p className="text-sm font-bold text-foreground">{p.name}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-xl font-extrabold text-foreground leading-tight">
+                {p.name}
+              </p>
+              <p className="text-sm font-semibold text-muted-foreground mt-0.5">
                 {p.jobTitle}
               </p>
             </div>
-            <Separator />
-            <div className="flex flex-col gap-2 w-full">
-              <div className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-[#7F77DD] shrink-0" />
-                <span className="text-[11px] text-muted-foreground truncate">
-                  {p.email}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-[#7F77DD] shrink-0" />
-                <span className="text-[11px] text-muted-foreground">
-                  {personalValues.phone}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-3.5 h-3.5 text-[#7F77DD] shrink-0" />
-                <span className="text-[11px] text-muted-foreground">
-                  {p.department}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-3.5 h-3.5 text-[#7F77DD] shrink-0" />
-                <span className="text-[11px] text-muted-foreground">
-                  {personalValues.city}, {p.address.country}
-                </span>
-              </div>
-            </div>
-            <Separator />
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              <span
-                className={cn(
-                  "text-[10px] px-2 py-0.5 rounded-full border font-semibold",
-                  STATUS_STYLES[p.status] ?? "",
-                )}
-              >
-                {STATUS_LABELS[p.status] ?? p.status}
-              </span>
-              <span
-                className={cn(
-                  "text-[10px] px-2 py-0.5 rounded-full border font-semibold",
-                  EMP_TYPE_STYLES[p.employmentType] ?? "",
-                )}
-              >
-                {EMP_TYPE_LABELS[p.employmentType] ?? p.employmentType}
-              </span>
-            </div>
-            <Separator />
             <Button
               variant="outline"
               size="sm"
@@ -349,12 +285,10 @@ export function EmployeeProfilePage() {
               <p className="text-sm font-semibold text-foreground">
                 Personal Information
               </p>
-              <span className="text-[10px] font-normal text-muted-foreground flex items-center gap-1">
-                <Pencil className="w-3 h-3" /> Click a field to edit
-              </span>
             </div>
             <Separator className="mb-3" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+              <InfoRow label="Email" value={p.email} />
               <InfoRow
                 label="Phone"
                 value={personalValues.phone}
@@ -362,7 +296,7 @@ export function EmployeeProfilePage() {
                 fieldKey="phone"
                 {...rowProps}
               />
-              <InfoRow label="Personal email" value={p.email} />
+              <InfoRow label="Department" value={p.department} />
               <InfoRow label="Date of birth" value="14 Jul 1992" />
               <InfoRow label="Gender" value="Male" />
               <InfoRow label="Nationality" value="Nigerian" />
@@ -397,6 +331,24 @@ export function EmployeeProfilePage() {
                 {...rowProps}
               />
             </div>
+            <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border/50">
+              <span
+                className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full border font-semibold",
+                  STATUS_STYLES[p.status] ?? "",
+                )}
+              >
+                {STATUS_LABELS[p.status] ?? p.status}
+              </span>
+              <span
+                className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full border font-semibold",
+                  EMP_TYPE_STYLES[p.employmentType] ?? "",
+                )}
+              >
+                {EMP_TYPE_LABELS[p.employmentType] ?? p.employmentType}
+              </span>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -405,26 +357,16 @@ export function EmployeeProfilePage() {
       <Card>
         <Tabs defaultValue="employment">
           <CardHeader className="pb-0 pt-4 px-5">
-            <TabsList className="h-8 bg-muted/60">
-              <TabsTrigger value="employment" className="text-xs px-3">
-                Employment Details
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="text-xs px-3">
-                Identity Documents
-              </TabsTrigger>
-              <TabsTrigger value="bank" className="text-xs px-3">
-                Bank Details
-              </TabsTrigger>
-              <TabsTrigger value="emergency" className="text-xs px-3">
-                Emergency Contact
-              </TabsTrigger>
-              <TabsTrigger value="security" className="text-xs px-3">
-                Security
-              </TabsTrigger>
-              <TabsTrigger value="completeness" className="text-xs px-3">
-                Profile Completeness
-              </TabsTrigger>
-            </TabsList>
+            <PageTabsList
+              tabs={[
+                { value: "employment", label: "Employment Details" },
+                { value: "documents", label: "Identity Documents" },
+                { value: "bank", label: "Bank Details" },
+                { value: "emergency", label: "Emergency Contact" },
+                { value: "security", label: "Security" },
+                { value: "completeness", label: "Profile Completeness" },
+              ]}
+            />
           </CardHeader>
           <Separator className="mt-3" />
           <CardContent className="px-5 pb-5 pt-3">

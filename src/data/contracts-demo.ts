@@ -219,5 +219,31 @@ export const CONTRACTS: Contract[] = [
 		lastModifiedAt: "2025-09-30",
 		isArchived: false,
 	},
+	{
+		id: "CON-006",
+		title: "Promotion Contract — Adaeze Okonkwo",
+		contractType: "amendment",
+		status: "pending_signature",
+		employeeName: "Adaeze Okonkwo",
+		employeeInitials: "AO",
+		department: "Engineering",
+		startDate: "2026-05-01",
+		autoRenew: false,
+		noticePeriodDays: 30,
+		salary: 24000000,
+		contractCurrency: "NGN",
+		signatureStatus: "unsigned",
+		signatories: [
+			{ name: "Adaeze Okonkwo", initials: "AO", role: "Employee" },
+			{ name: "HR Admin", initials: "HA", role: "HR Manager" },
+		],
+		notes: [
+			{ id: "N-CON-006-1", content: "Promotion to Senior Engineer effective May 2026.", createdAt: "2026-04-28", createdBy: "HR Admin" },
+		],
+		createdAt: "2026-04-28",
+		createdBy: "HR Admin",
+		lastModifiedAt: "2026-04-28",
+		isArchived: false,
+	},
 ];
 

@@ -58,6 +58,7 @@ export interface Asset {
   purchaseDate?: string;
   purchaseValue?: number;
   pendingReturn?: boolean;
+  imageUrl?: string;
   history: AssetHistoryEntry[];
 }
 
@@ -74,4 +75,5 @@ export interface NewAsset {
   assignedDate?: string;
   purchaseDate?: string;
   purchaseValue?: number;
+  imageUrl?: string;
 }

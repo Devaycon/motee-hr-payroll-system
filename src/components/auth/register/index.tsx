@@ -1,50 +1,50 @@
-import React from "react";
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { RegisterForm } from "@/src/components/auth/register-form";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
+import { cn } from "@/src/lib/utils";
+import Image from "next/image";
 
 const RegisterIndex = () => {
+  const [country, setCountry] = useState<"ng" | "uk">("ng");
+
   return (
-    <div className="relative min-h-screen flex items-center justify-end overflow-hidden">
-      {/* Video background with poster fallback while loading */}
-      <video
-        className="absolute inset-0 w-full h-full object-cover"
-        src="https://videos.pexels.com/video-files/3195394/3195394-uhd_2560_1440_25fps.mp4"
-        poster="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80"
-        autoPlay
-        loop
-        muted
-        playsInline
-      />
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/50" />
+    <div
+      className="relative min-h-screen flex items-center justify-end overflow-hidden"
+      style={{
+        backgroundImage: "url('/login-bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="absolute inset-0 bg-black/45 dark:bg-black/60 light:bg-black/50" />
 
       {/* Left hero text */}
-      <div className="hidden md:flex flex-1 flex-col justify-center gap-6 px-14 py-16 relative z-10">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-lg font-bold text-sm text-white"
-            style={{ backgroundColor: "rgba(255,255,255,0.25)" }}
-          >
-            M
-          </div>
-          <span className="text-white font-bold text-lg tracking-tight">
-            Motee Solutions
-          </span>
+      <div className="hidden md:flex h-screen flex-1 flex-col justify-start gap-6 px-14 relative z-10 pb-24">
+        <div className="flex h-24 mt-auto items-center shrink-0">
+          <Image
+            src="/logo.png"
+            alt="Employee Portal"
+            width={200}
+            height={36}
+            className="object-contain"
+          />
         </div>
 
         <div className="flex flex-col gap-3 max-w-xl">
-          <h1 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight">
+          <h1 className="text-5xl font-extrabold text-white leading-tight">
             Get started in minutes
           </h1>
           <div className="w-10 h-1 rounded-full bg-white" />
-          <p className="text-sm text-white/60 leading-relaxed">
+          <p className="text-xl text-white leading-relaxed">
             Set up your organisation, configure workflows, and onboard your team
             — all from one powerful platform.
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
+        {/* <div className="flex flex-col gap-3">
           {[
             { step: "1", label: "Register your organisation" },
             { step: "2", label: "Configure your HR setup" },
@@ -61,54 +61,55 @@ const RegisterIndex = () => {
               >
                 {step}
               </div>
-              <span className="text-sm text-white/70">{label}</span>
+              <span className="text-lg text-white">{label}</span>
             </div>
           ))}
-        </div>
+        </div> */}
 
-        <p className="text-[11px] text-white/30 mt-auto pt-10">
+        <p className="text-[11px] text-white pt-5">
           © {new Date().getFullYear()} Motee Solutions
         </p>
       </div>
 
       {/* Floating card on the right */}
-      <div
-        className="relative z-10 flex flex-col w-lg h-fit rounded-2xl md:shadow-2xl md:mr-16 bg-white overflow-hidden"
-        // style={{
-        //   background: "rgba(255,255,255,0.15)",
-        //   backdropFilter: "blur(18px)",
-        //   WebkitBackdropFilter: "blur(18px)",
-        //   border: "1px solid rgba(255,255,255,0.25)",
-        // }}
-      >
+      <div className="relative py-5 z-10 flex flex-col w-lg h-fit rounded-2xl md:shadow-2xl md:mr-16 bg-card border border-border overflow-hidden">
         {/* Card top bar */}
         <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2 md:hidden">
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-md font-bold text-xs text-white"
-              style={{ backgroundColor: "rgba(255,255,255,0.25)" }}
-            >
-              M
-            </div>
-            <span className="text-white font-bold text-base">
-              Motee Solutions
-            </span>
-          </div>
           <div className="hidden md:block" />
-          <ThemeToggle />
+          <div className="flex justify-between w-full items-center gap-2">
+            <div className="flex items-center rounded-full border border-border bg-muted p-0.5 gap-0.5">
+              {(["ng", "uk"] as const).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setCountry(key)}
+                  title={key === "ng" ? "Nigeria" : "United Kingdom"}
+                  className={cn(
+                    "flex items-center justify-center w-8 h-7 rounded-full text-base transition-all duration-150 cursor-pointer",
+                    country === key
+                      ? "bg-card shadow-sm"
+                      : "opacity-50 hover:opacity-100",
+                  )}
+                >
+                  {key === "ng" ? "🇳🇬" : "🇬🇧"}
+                </button>
+              ))}
+            </div>
+            <ThemeToggle />
+          </div>
         </div>
 
         {/* Form area */}
-        <div className="flex flex-1 items-center justify-center px-8 py-10">
+        <div className="flex flex-1 items-center justify-center pb-3">
           <RegisterForm />
         </div>
 
         {/* Card footer */}
-        <div className="flex items-center justify-center gap-1 px-6 py-4 text-xs text-white/50">
+        <div className="flex items-center justify-center gap-1 px-6 py-4 text-xs text-muted-foreground">
           <span>Already have an account?</span>
           <Link
             href="/auth/login"
-            className="text-white font-semibold hover:underline"
+            className="text-foreground font-semibold hover:underline"
           >
             Sign in
           </Link>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { ImagePlus, X } from "lucide-react";
 import { z } from "zod";
 import {
   Dialog,
@@ -101,6 +102,7 @@ function getInitial(asset: Asset | null): FormData {
     };
   }
   return {
+    // imageUrl handled separately
     name: asset.name,
     assetType: asset.assetType,
     serialNumber: asset.serialNumber,
@@ -133,6 +135,8 @@ export function AssetFormModal({
   const [prevAsset, setPrevAsset] = useState<Asset | null>(null);
   const [form, setForm] = useState<FormData>(getInitial(null));
   const [errors, setErrors] = useState<FormErrors>({});
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (open !== prevOpen || editingAsset !== prevAsset) {
     setPrevOpen(open);
@@ -140,6 +144,7 @@ export function AssetFormModal({
     if (open) {
       setForm(getInitial(editingAsset));
       setErrors({});
+      setImageUrl(editingAsset?.imageUrl ?? "");
     }
   }
 
@@ -169,6 +174,7 @@ export function AssetFormModal({
       conditionNotes: d.conditionNotes || undefined,
       purchaseDate: d.purchaseDate || undefined,
       purchaseValue: d.purchaseValue ? Number(d.purchaseValue) : undefined,
+      imageUrl: imageUrl || undefined,
       ...(d.status === "assigned"
         ? {
             assignedTo: d.assignedTo || undefined,
@@ -333,6 +339,62 @@ export function AssetFormModal({
                 <p className="text-xs text-destructive">
                   {errors.purchaseValue}
                 </p>
+              )}
+            </div>
+
+            <div className="col-span-2 space-y-1.5">
+              <Label>Asset Image</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    setImageUrl((ev.target?.result as string) ?? "");
+                  };
+                  reader.readAsDataURL(file);
+                  e.target.value = "";
+                }}
+              />
+              {imageUrl ? (
+                <div className="relative w-full overflow-hidden rounded-lg border border-border">
+                  <img
+                    src={imageUrl}
+                    alt="Asset"
+                    className="h-36 w-full object-contain bg-muted"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl("")}
+                    className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow hover:text-destructive"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-muted/40 text-muted-foreground transition-colors hover:bg-muted/70"
+                >
+                  <ImagePlus className="size-5" />
+                  <span className="text-xs">Click to upload image</span>
+                </button>
+              )}
+              {imageUrl && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Replace Image
+                </Button>
               )}
             </div>
 

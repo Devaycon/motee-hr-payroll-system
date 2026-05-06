@@ -119,7 +119,7 @@ export function MoteeFollowingPointer({ logoSrc }: { logoSrc: string }) {
             exit={{ scale: 0.8, opacity: 0 }}
             transition={{ duration: 0.12 }}
           >
-            <div className="-translate-y-1/2 translate-x-3 flex items-center gap-2 rounded-full border border-white/10 bg-black/70 px-3 py-2.5 shadow-xl backdrop-blur-md dark:bg-white/10">
+            <div className="-translate-y-1/2 translate-x-3 flex items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-2.5 shadow-xl backdrop-blur-md">
               <Image
                 src={logoSrc}
                 alt=""
@@ -127,7 +127,7 @@ export function MoteeFollowingPointer({ logoSrc }: { logoSrc: string }) {
                 height={24}
                 className="object-contain"
               />
-              <span className="uppercase hitespace-nowrap text-[14px] font-medium text-white">
+              <span className="uppercase hitespace-nowrap text-[14px] font-medium text-foreground">
                 powered by motee solution
               </span>
             </div>

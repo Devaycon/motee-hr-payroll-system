@@ -103,6 +103,15 @@ export function DetailModal({ open, onClose, asset }: DetailModalProps) {
         </DialogHeader>
 
         <div className="space-y-5 px-6 py-5">
+          {asset.imageUrl && (
+            <div className="overflow-hidden rounded-lg border border-border">
+              <img
+                src={asset.imageUrl}
+                alt={asset.name}
+                className="h-44 w-full object-contain bg-muted"
+              />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-x-6 gap-y-4">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Type</p>

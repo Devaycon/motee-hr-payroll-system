@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronLeft, Camera, Pencil } from "lucide-react";
+import { ChevronLeft, Camera } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import {
@@ -29,7 +29,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/src/components/ui/form";
-import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
 import { Separator } from "@/src/components/ui/separator";
 import { cn } from "@/src/lib/utils";
 import {
@@ -220,23 +225,6 @@ export function EmployeeDetailPage({ id }: EmployeeDetailPageProps) {
 
   return (
     <div className="flex flex-col gap-5 pb-10">
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 text-xs gap-1 text-muted-foreground"
-          onClick={() => router.back()}
-        >
-          <ChevronLeft className="w-3.5 h-3.5" /> Back
-        </Button>
-        <span className="text-muted-foreground text-xs">/</span>
-        <span className="text-xs text-muted-foreground">Employees</span>
-        <span className="text-muted-foreground text-xs">/</span>
-        <span className="text-xs text-foreground font-medium">
-          {displayName}
-        </span>
-      </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-[260px_1fr] gap-4 items-start">
         <Card>
           <CardContent className="p-4 flex flex-col items-center gap-4">
@@ -277,16 +265,21 @@ export function EmployeeDetailPage({ id }: EmployeeDetailPageProps) {
                 {saved.jobTitle}
               </p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-8 text-xs"
+              onClick={openModal}
+            >
+              Edit Details
+            </Button>
           </CardContent>
         </Card>
 
         <Card className="h-full">
           <CardHeader className="pb-2 pt-4 px-5">
-            <CardTitle className="text-sm font-semibold text-foreground flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold text-foreground">
               Personal Information
-              <Button variant="ghost" size="icon-xs" onClick={openModal}>
-                <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-              </Button>
             </CardTitle>
           </CardHeader>
           <Separator />
@@ -340,437 +333,461 @@ export function EmployeeDetailPage({ id }: EmployeeDetailPageProps) {
             </DialogTitle>
           </DialogHeader>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="grid grid-cols-3 gap-4 py-2">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        First Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="First name"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+          <Tabs defaultValue="edit">
+            <TabsList className="h-8 bg-muted/60 mb-4">
+              <TabsTrigger value="edit" className="text-xs px-3">
+                Edit Details
+              </TabsTrigger>
+              <TabsTrigger value="requests" className="text-xs px-3">
+                Requested Changes
+              </TabsTrigger>
+            </TabsList>
 
-                <FormField
-                  control={form.control}
-                  name="middleName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Middle Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="Middle name (optional)"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+            <TabsContent value="edit" className="mt-0">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                  <div className="grid grid-cols-3 gap-4 py-2">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            First Name
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="First name"
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Last Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="Last name"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="middleName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Middle Name
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="Middle name (optional)"
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="jobTitle"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Job Title
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="e.g. Software Engineer"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Last Name
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="Last name"
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Email Address
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="email"
-                          className="h-8 text-sm"
-                          placeholder="name@company.com"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="jobTitle"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Job Title
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="e.g. Software Engineer"
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Phone Number
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="tel"
-                          className="h-8 text-sm"
-                          placeholder="+234 800 000 0000"
-                          onKeyDown={(e) => {
-                            const allowed = [
-                              "Backspace",
-                              "Delete",
-                              "Tab",
-                              "ArrowLeft",
-                              "ArrowRight",
-                              "Home",
-                              "End",
-                              "+",
-                              "-",
-                              "(",
-                              ")",
-                              " ",
-                            ];
-                            if (!allowed.includes(e.key) && !/^\d$/.test(e.key))
-                              e.preventDefault();
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Email Address
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="email"
+                              className="h-8 text-sm"
+                              placeholder="name@company.com"
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="dateOfBirth"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Date of Birth
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="date"
-                          className="h-8 text-sm"
-                          max={new Date().toISOString().split("T")[0]}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Phone Number
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="tel"
+                              className="h-8 text-sm"
+                              placeholder="+234 800 000 0000"
+                              onKeyDown={(e) => {
+                                const allowed = [
+                                  "Backspace",
+                                  "Delete",
+                                  "Tab",
+                                  "ArrowLeft",
+                                  "ArrowRight",
+                                  "Home",
+                                  "End",
+                                  "+",
+                                  "-",
+                                  "(",
+                                  ")",
+                                  " ",
+                                ];
+                                if (
+                                  !allowed.includes(e.key) &&
+                                  !/^\d$/.test(e.key)
+                                )
+                                  e.preventDefault();
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Gender
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="e.g. Male"
-                          onKeyDown={(e) => {
-                            if (
-                              !/^[a-zA-Z\s]$/.test(e.key) &&
-                              ![
-                                "Backspace",
-                                "Delete",
-                                "Tab",
-                                "ArrowLeft",
-                                "ArrowRight",
-                                "Home",
-                                "End",
-                              ].includes(e.key)
-                            )
-                              e.preventDefault();
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="dateOfBirth"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Date of Birth
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="date"
+                              className="h-8 text-sm"
+                              max={new Date().toISOString().split("T")[0]}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="nationality"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Nationality
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="e.g. Nigerian"
-                          onKeyDown={(e) => {
-                            if (
-                              !/^[a-zA-Z\s'-]$/.test(e.key) &&
-                              ![
-                                "Backspace",
-                                "Delete",
-                                "Tab",
-                                "ArrowLeft",
-                                "ArrowRight",
-                                "Home",
-                                "End",
-                              ].includes(e.key)
-                            )
-                              e.preventDefault();
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="gender"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Gender
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="e.g. Male"
+                              onKeyDown={(e) => {
+                                if (
+                                  !/^[a-zA-Z\s]$/.test(e.key) &&
+                                  ![
+                                    "Backspace",
+                                    "Delete",
+                                    "Tab",
+                                    "ArrowLeft",
+                                    "ArrowRight",
+                                    "Home",
+                                    "End",
+                                  ].includes(e.key)
+                                )
+                                  e.preventDefault();
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="maritalStatus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Marital Status
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="e.g. Single"
-                          onKeyDown={(e) => {
-                            if (
-                              !/^[a-zA-Z\s]$/.test(e.key) &&
-                              ![
-                                "Backspace",
-                                "Delete",
-                                "Tab",
-                                "ArrowLeft",
-                                "ArrowRight",
-                                "Home",
-                                "End",
-                              ].includes(e.key)
-                            )
-                              e.preventDefault();
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="nationality"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Nationality
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="e.g. Nigerian"
+                              onKeyDown={(e) => {
+                                if (
+                                  !/^[a-zA-Z\s'-]$/.test(e.key) &&
+                                  ![
+                                    "Backspace",
+                                    "Delete",
+                                    "Tab",
+                                    "ArrowLeft",
+                                    "ArrowRight",
+                                    "Home",
+                                    "End",
+                                  ].includes(e.key)
+                                )
+                                  e.preventDefault();
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="bloodType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Blood Type
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="e.g. O+"
-                          maxLength={3}
-                          onKeyDown={(e) => {
-                            if (
-                              !/^[AaBbOo+\-0-9]$/.test(e.key) &&
-                              ![
-                                "Backspace",
-                                "Delete",
-                                "Tab",
-                                "ArrowLeft",
-                                "ArrowRight",
-                                "Home",
-                                "End",
-                              ].includes(e.key)
-                            )
-                              e.preventDefault();
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="maritalStatus"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Marital Status
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="e.g. Single"
+                              onKeyDown={(e) => {
+                                if (
+                                  !/^[a-zA-Z\s]$/.test(e.key) &&
+                                  ![
+                                    "Backspace",
+                                    "Delete",
+                                    "Tab",
+                                    "ArrowLeft",
+                                    "ArrowRight",
+                                    "Home",
+                                    "End",
+                                  ].includes(e.key)
+                                )
+                                  e.preventDefault();
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Home Address
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="Street address"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="bloodType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Blood Type
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="e.g. O+"
+                              maxLength={3}
+                              onKeyDown={(e) => {
+                                if (
+                                  !/^[AaBbOo+\-0-9]$/.test(e.key) &&
+                                  ![
+                                    "Backspace",
+                                    "Delete",
+                                    "Tab",
+                                    "ArrowLeft",
+                                    "ArrowRight",
+                                    "Home",
+                                    "End",
+                                  ].includes(e.key)
+                                )
+                                  e.preventDefault();
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        State
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="e.g. Lagos"
-                          onKeyDown={(e) => {
-                            if (
-                              !/^[a-zA-Z\s'-]$/.test(e.key) &&
-                              ![
-                                "Backspace",
-                                "Delete",
-                                "Tab",
-                                "ArrowLeft",
-                                "ArrowRight",
-                                "Home",
-                                "End",
-                              ].includes(e.key)
-                            )
-                              e.preventDefault();
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Home Address
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="Street address"
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Country
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="e.g. Nigeria"
-                          onKeyDown={(e) => {
-                            if (
-                              !/^[a-zA-Z\s'-]$/.test(e.key) &&
-                              ![
-                                "Backspace",
-                                "Delete",
-                                "Tab",
-                                "ArrowLeft",
-                                "ArrowRight",
-                                "Home",
-                                "End",
-                              ].includes(e.key)
-                            )
-                              e.preventDefault();
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="state"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            State
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="e.g. Lagos"
+                              onKeyDown={(e) => {
+                                if (
+                                  !/^[a-zA-Z\s'-]$/.test(e.key) &&
+                                  ![
+                                    "Backspace",
+                                    "Delete",
+                                    "Tab",
+                                    "ArrowLeft",
+                                    "ArrowRight",
+                                    "Home",
+                                    "End",
+                                  ].includes(e.key)
+                                )
+                                  e.preventDefault();
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="managerName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Line Manager
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="h-8 text-sm"
-                          placeholder="e.g. Jane Doe"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="country"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Country
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="e.g. Nigeria"
+                              onKeyDown={(e) => {
+                                if (
+                                  !/^[a-zA-Z\s'-]$/.test(e.key) &&
+                                  ![
+                                    "Backspace",
+                                    "Delete",
+                                    "Tab",
+                                    "ArrowLeft",
+                                    "ArrowRight",
+                                    "Home",
+                                    "End",
+                                  ].includes(e.key)
+                                )
+                                  e.preventDefault();
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="managerName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Line Manager
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="h-8 text-sm"
+                              placeholder="e.g. Jane Doe"
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <DialogFooter className="pt-4 gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        form.reset(buildDefaults());
+                        setModalOpen(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">Save Changes</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </TabsContent>
+
+            <TabsContent value="requests" className="mt-0">
+              <div className="flex flex-col items-center justify-center py-12 gap-2">
+                <p className="text-sm text-muted-foreground">
+                  No requested changes submitted yet.
+                </p>
               </div>
-
-              <DialogFooter className="pt-4 gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    form.reset(buildDefaults());
-                    setModalOpen(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Save Changes</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 

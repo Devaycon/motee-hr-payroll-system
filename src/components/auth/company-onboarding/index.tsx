@@ -1,6 +1,10 @@
-"use client";
+﻿"use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { setCurrentStep } from "@/src/lib/stores/onboarding-slice";
 import { OnboardingStepper } from "./stepper";
 import { Step1CompanyProfile } from "./steps/step-1-company-profile";
 import { Step2OrgStructure } from "./steps/step-2-org-structure";
@@ -11,8 +15,7 @@ import { Step6UILabels } from "./steps/step-6-ui-labels";
 import { Step7Review } from "./steps/step-7-review";
 import { Step8BulkUpload } from "./steps/step-8-bulk-upload";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
-import { useAppDispatch } from "@/src/lib/stores/hooks";
-import { setCurrentStep } from "@/src/lib/stores/onboarding-slice";
+import { Upload, ClipboardList, ArrowRight } from "lucide-react";
 
 const STEPS = [
   {
@@ -86,144 +89,249 @@ export default function CompanyOnboardingIndex() {
   const dispatch = useAppDispatch();
   const currentStep = useAppSelector((s) => s.onboarding.currentStep);
   const completedSteps = useAppSelector((s) => s.onboarding.completedSteps);
-  const isBulkUploaded = useAppSelector((s) => s.onboarding.isBulkUploaded);
+
+  const [entryMode, setEntryMode] = useState<"manual" | "bulk" | null>(null);
 
   const isBulkUploadStep = currentStep === 8;
   const activeStepMeta = STEPS.find((s) => s.number === currentStep);
 
-  return (
-    <div className="flex min-h-screen bg-background">
-      <div
-        className="hidden lg:flex lg:w-72 xl:w-80 flex-col justify-between p-8 shrink-0"
-        style={{
-          background: "linear-gradient(180deg, #1a1a2e 0%, #0f3460 100%)",
-        }}
-      >
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-lg font-bold text-sm text-white"
-              style={{ backgroundColor: "#D85A30" }}
-            >
-              M
-            </div>
-            <span className="text-white font-bold text-lg tracking-tight">
-              Motee Solutions
-            </span>
-          </div>
+  const handleChooseManual = () => {
+    setEntryMode("manual");
+    dispatch(setCurrentStep(1));
+  };
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-white/40 uppercase tracking-widest">
-              Setup Progress
-            </span>
-            <div className="mt-3 flex flex-col gap-1">
-              {STEPS.map((step) => {
-                const isCompleted = completedSteps.includes(step.number);
-                const isCurrent = currentStep === step.number;
-                return (
-                  <div
-                    key={step.number}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors"
-                    style={
-                      isCurrent
-                        ? { backgroundColor: "rgba(216,90,48,0.15)" }
-                        : {}
-                    }
-                  >
-                    <div
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
-                      style={
-                        isCompleted
-                          ? { backgroundColor: "#1D9E75", color: "#fff" }
-                          : isCurrent
-                            ? { backgroundColor: "#D85A30", color: "#fff" }
-                            : {
-                                backgroundColor: "rgba(255,255,255,0.1)",
-                                color: "rgba(255,255,255,0.4)",
-                              }
-                      }
-                    >
-                      {isCompleted ? "✓" : step.number}
-                    </div>
-                    <span
-                      className="text-xs font-medium"
-                      style={{
-                        color: isCurrent
-                          ? "#fff"
-                          : isCompleted
-                            ? "rgba(255,255,255,0.6)"
-                            : "rgba(255,255,255,0.35)",
-                      }}
-                    >
-                      {step.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+  const handleChooseBulk = () => {
+    setEntryMode("bulk");
+    dispatch(setCurrentStep(8));
+  };
+
+  return (
+    <div
+      className="relative h-screen flex items-center justify-end overflow-hidden"
+      style={{
+        backgroundImage: "url('/registration-bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="absolute inset-0 bg-black/45 dark:bg-black/60 light:bg-black/50" />
+
+      {/* Left hero text */}
+      <div className="hidden md:flex flex-1 flex-col justify-center gap-6 px-14 py-16 relative z-10">
+        <div className="flex h-24 items-center px-5 shrink-0">
+          <Image
+            src="/employee-logo.png"
+            alt="Motee HR"
+            width={200}
+            height={36}
+            className="object-contain"
+          />
         </div>
 
-        <div className="flex flex-col gap-3">
-          {!isBulkUploaded && (
-            <button
-              type="button"
-              onClick={() => dispatch(setCurrentStep(8))}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors text-left"
-              style={{
-                border: "1px solid rgba(127,119,221,0.4)",
-                color: "#a5a0f5",
-                backgroundColor: "rgba(127,119,221,0.08)",
-              }}
-            >
-              ⚡ Bulk Upload Template
-            </button>
-          )}
-          <p className="text-[10px] text-white/25">
-            © {new Date().getFullYear()} Motee Solutions
+        <div className="flex flex-col gap-3 max-w-2xl">
+          <h1 className="text-5xl font-extrabold text-white leading-tight">
+            {entryMode === null
+              ? "Set up your organisation"
+              : isBulkUploadStep
+                ? "Bulk Upload"
+                : (activeStepMeta?.title ?? "Organisation Setup")}
+          </h1>
+          <div className="w-10 h-1 rounded-full bg-white" />
+          <p className="text-xl text-white leading-relaxed">
+            {entryMode === null
+              ? "Configure your HR platform, define your structure, and get your team up and running in minutes."
+              : isBulkUploadStep
+                ? "Download our template, fill it in, and upload it to auto-fill your entire setup in one go."
+                : (activeStepMeta?.description ?? "")}
           </p>
         </div>
+
+        {entryMode === null && (
+          <div className="flex flex-col gap-3">
+            {[
+              { step: "1", label: "Set up company profile" },
+              { step: "2", label: "Define roles & permissions" },
+              { step: "3", label: "Configure HR modules" },
+              { step: "4", label: "Review & go live" },
+            ].map(({ step, label }) => (
+              <div key={step} className="flex items-center gap-3">
+                <div
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                  style={{
+                    backgroundColor: "rgba(216,90,48,0.4)",
+                    border: "1px solid rgba(216,90,48,0.6)",
+                  }}
+                >
+                  {step}
+                </div>
+                <span className="text-lg text-white">{label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {entryMode !== null && !isBulkUploadStep && (
+          <div className="flex flex-col gap-2">
+            {STEPS.map(({ number, title }) => (
+              <div key={number} className="flex items-center gap-3">
+                <div
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                  style={{
+                    backgroundColor: completedSteps.includes(number)
+                      ? "rgba(216,90,48,0.8)"
+                      : number === currentStep
+                        ? "rgba(216,90,48,0.4)"
+                        : "rgba(255,255,255,0.15)",
+                    border:
+                      number === currentStep
+                        ? "1px solid rgba(216,90,48,0.8)"
+                        : "1px solid rgba(255,255,255,0.2)",
+                  }}
+                >
+                  {number}
+                </div>
+                <span
+                  className="text-base"
+                  style={{
+                    color:
+                      number === currentStep
+                        ? "white"
+                        : "rgba(255,255,255,0.55)",
+                    fontWeight: number === currentStep ? 600 : 400,
+                  }}
+                >
+                  {title}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="text-[11px] text-white mt-auto pt-10">
+          {"\u00A9"} {new Date().getFullYear()} Motee Solutions
+        </p>
       </div>
 
-      <div className="flex flex-1 flex-col min-h-screen">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
-          <div className="flex items-center gap-2 lg:hidden">
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-md font-bold text-xs text-white"
-              style={{ backgroundColor: "#D85A30" }}
-            >
-              M
-            </div>
-            <span className="text-foreground font-bold text-sm">
-              Motee Solutions
-            </span>
-          </div>
-
-          <div className="hidden lg:flex flex-col gap-0.5">
-            <span className="text-sm font-semibold text-foreground">
-              {isBulkUploadStep ? "Bulk Upload" : (activeStepMeta?.title ?? "")}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {isBulkUploadStep
-                ? "Auto-fill from template"
-                : (activeStepMeta?.description ?? "")}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {!isBulkUploadStep && (
-              <span className="text-xs text-muted-foreground hidden sm:block">
-                Step {Math.min(currentStep, 7)} of 7
-              </span>
+      {/* Right card */}
+      <div className="relative py-5 z-10 flex flex-col w-full max-w-2xl h-[calc(100vh-4rem)] my-8 rounded-2xl md:shadow-2xl md:mr-16 bg-card border border-border overflow-hidden">
+        {/* Card top bar */}
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="hidden md:block" />
+          <div className="flex justify-between w-full items-center gap-2">
+            {entryMode !== null && (
+              <button
+                type="button"
+                onClick={() => setEntryMode(null)}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md border border-border hover:border-foreground/30 cursor-pointer"
+              >
+                &larr; Back
+              </button>
             )}
+            {entryMode === null && <div />}
             <ThemeToggle />
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col px-6 py-6 sm:px-8 overflow-y-auto">
-          <div className="w-full max-w-2xl mx-auto flex flex-col gap-6 pb-10">
+        {/* Entry mode selection */}
+        {entryMode === null && (
+          <div className="flex flex-col items-center gap-6 px-8 pt-2 pb-8 overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <h1 className="text-4xl font-bold text-foreground tracking-tight">
+                How would you like to set up?
+              </h1>
+              <p className="text-md text-muted-foreground max-w-xl leading-relaxed">
+                Fill in your details step by step, or upload a bulk template to
+                auto-populate everything at once.
+              </p>
+            </div>
+
+            <div className="w-full grid grid-cols-1 gap-3">
+              <button
+                type="button"
+                onClick={handleChooseManual}
+                className="group flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left transition-all duration-200 hover:border-[#D85A30]/60 hover:shadow-md cursor-pointer"
+              >
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: "rgba(216,90,48,0.12)" }}
+                >
+                  <ClipboardList size={20} style={{ color: "#D85A30" }} />
+                </div>
+                <div className="flex flex-col gap-0.5 flex-1">
+                  <span className="text-sm font-semibold text-foreground">
+                    Manual Entry
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Step-by-step guided setup, one screen at a time.
+                  </span>
+                </div>
+                <ArrowRight
+                  size={14}
+                  className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
+                />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleChooseBulk}
+                className="group flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left transition-all duration-200 hover:border-[#7F77DD]/60 hover:shadow-md cursor-pointer"
+              >
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: "rgba(127,119,221,0.12)" }}
+                >
+                  <Upload size={20} style={{ color: "#7F77DD" }} />
+                </div>
+                <div className="flex flex-col gap-0.5 flex-1">
+                  <span className="text-sm font-semibold text-foreground">
+                    Bulk Upload
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Upload a template to auto-fill your entire setup.
+                  </span>
+                </div>
+                <ArrowRight
+                  size={14}
+                  className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
+                />
+              </button>
+              <button
+                disabled
+                type="button"
+                className="group cursor-not-allowed opacity-70 flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left transition-all duration-200"
+              >
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: "rgba(127,119,221,0.12)" }}
+                >
+                  <Upload size={20} style={{ color: "#7F77DD" }} />
+                </div>
+                <div className="flex flex-col gap-0.5 flex-1">
+                  <span className="text-sm font-semibold text-foreground">
+                    Text With Demo Data
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                     Auto-fill your entire system with fake data.
+                  </span>
+                </div>
+                <ArrowRight
+                  size={14}
+                  className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
+                />
+              </button>
+            </div>
+
+            <p className="text-[11px] self text-muted-foreground/50">
+              {"\u00A9"} {new Date().getFullYear()} Motee Solutions
+            </p>
+          </div>
+        )}
+
+        {/* Step flow */}
+        {entryMode !== null && (
+          <div className="flex flex-col flex-1 min-h-0">
             {!isBulkUploadStep && (
-              <div className="overflow-x-auto pb-1">
+              <div className="px-6 pt-1 pb-3 shrink-0">
                 <OnboardingStepper
                   steps={STEPS}
                   currentStep={currentStep}
@@ -232,24 +340,22 @@ export default function CompanyOnboardingIndex() {
               </div>
             )}
 
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex flex-col gap-5">
-                {!isBulkUploadStep && activeStepMeta && (
-                  <div className="flex flex-col gap-1 pb-4 border-b border-border">
-                    <h2 className="text-base font-semibold text-foreground">
-                      {activeStepMeta.title}
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      {activeStepMeta.description}
-                    </p>
-                  </div>
-                )}
-
-                <StepContent step={currentStep} />
+            {!isBulkUploadStep && activeStepMeta && (
+              <div className="px-6 pb-4 border-b border-border shrink-0">
+                <h2 className="text-base font-semibold text-foreground">
+                  {activeStepMeta.title}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {activeStepMeta.description}
+                </p>
               </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40">
+              <StepContent step={currentStep} />
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

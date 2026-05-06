@@ -79,9 +79,11 @@ export function SidebarBase({
 
   const activeBg = accentColor ?? config.activeBg;
 
+  const exactMatchRoutes = ["/employee", "/hr", "/motee"];
+
   const isActive = (href: string) =>
-    href === "/"
-      ? pathname === "/"
+    href === "/" || exactMatchRoutes.includes(href)
+      ? pathname === href
       : pathname === href || pathname.startsWith(`${href}/`);
 
   const resolveAvatarBg = user.avatarColor ?? config.logoBg;

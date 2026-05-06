@@ -6,6 +6,7 @@ import { cn } from "@/src/lib/utils";
 import { ThemeProvider } from "@/src/components/themes/theme-provider";
 import { DemoSwitcher } from "@/src/components/shared/demo-switcher";
 import { OnboardingTutorial } from "@/src/components/shared/onboarding-tutorial";
+import { MobileBlock } from "@/src/components/shared/mobile-block";
 import { ReduxProvider } from "@/src/lib/stores/redux-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -45,6 +46,7 @@ export default function RootLayout({
               <DemoSwitcher />
             </Suspense>
             <OnboardingTutorial />
+            <MobileBlock />
             {children}
           </ReduxProvider>
         </ThemeProvider>

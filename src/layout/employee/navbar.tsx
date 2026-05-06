@@ -9,6 +9,13 @@ import {
   Monitor,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { User, LogOut } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
 import { ChatPanel } from "@/src/components/shared/chat-panel";
 import { NotificationsPanel } from "@/src/components/shared/notifications-panel";
@@ -31,6 +38,7 @@ const formatTime = (date: Date) =>
 
 const Navbar = () => {
   const [now, setNow] = useState(new Date());
+  const router = useRouter();
   const [chatOpen, setChatOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [screenShareOpen, setScreenShareOpen] = useState(false);
@@ -103,22 +111,42 @@ const Navbar = () => {
             </button>
           </div>
 
-          <div
-            data-tutorial="profile"
-            className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5"
-          >
-            <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-semibold">
-              NR
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium text-foreground leading-none">
-                James Adeyemi
-              </span>
-              <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
-                j.adeyemi@company.com
-              </span>
-            </div>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <div
+                data-tutorial="profile"
+                className="cursor-pointer flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5"
+              >
+                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-semibold">
+                  NR
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-foreground leading-none">
+                    James Adeyemi
+                  </span>
+                  <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
+                    j.adeyemi@company.com
+                  </span>
+                </div>
+              </div>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-44 p-1.5">
+              <button
+                onClick={() => router.push("/profile/my-profile")}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+              >
+                <User size={14} />
+                My Profile
+              </button>
+              <button
+                onClick={() => router.push("/auth/login")}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <LogOut size={14} />
+                Logout
+              </button>
+            </PopoverContent>
+          </Popover>
         </div>
       </header>
       <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />

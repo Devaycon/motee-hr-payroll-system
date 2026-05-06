@@ -1,7 +1,7 @@
 "use client";
 
 import { WelcomeBanner } from "./components/welcome-banner";
-import { DayAtAGlance } from "./components/day-at-a-glance";
+import { StatCards } from "./components/stat-cards";
 import { LeaveBalanceCards } from "./components/leave-balance-cards";
 import { PendingItems } from "./components/pending-items";
 import { AnnouncementsFeed } from "./components/announcements-feed";
@@ -25,7 +25,7 @@ export function EmployeeDashboard() {
     <div className="flex flex-col gap-6">
       <WelcomeBanner name="Adeyemi" dayName={dayName} dateStr={dateStr} />
 
-      <DayAtAGlance />
+      <StatCards />
 
       <div className="grid grid-cols-2 gap-4">
         <LeaveBalanceCards />

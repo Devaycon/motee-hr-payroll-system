@@ -151,7 +151,7 @@ export function UpcomingEvents() {
             <button
               onClick={() => setView("list")}
               className={cn(
-                "p-1 transition-colors",
+                "p-2 px-4 transition-colors",
                 view === "list"
                   ? "bg-[#7F77DD] text-white"
                   : "text-muted-foreground hover:bg-muted",
@@ -162,7 +162,7 @@ export function UpcomingEvents() {
             <button
               onClick={() => setView("calendar")}
               className={cn(
-                "p-1 transition-colors",
+                "p-2 px-4 transition-colors",
                 view === "calendar"
                   ? "bg-[#7F77DD] text-white"
                   : "text-muted-foreground hover:bg-muted",
@@ -177,7 +177,7 @@ export function UpcomingEvents() {
             size="sm"
             className="h-6 text-xs px-2 gap-0.5"
           >
-            <Link href="/company/announcements">
+            <Link href="/employee/events">
               View all <ChevronRight className="w-3 h-3" />
             </Link>
           </Button>

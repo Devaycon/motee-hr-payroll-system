@@ -1,7 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, Users, User, LogIn, UserPlus, Rocket } from "lucide-react";
+import {
+  Building2,
+  Users,
+  User,
+  LogIn,
+  UserPlus,
+  Rocket,
+  X,
+  Link,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 const ROLES = [
@@ -30,21 +40,6 @@ const ROLES = [
     prefixes: ["/onboarding"],
   },
   {
-    key: "motee",
-    label: "CMS",
-    icon: Building2,
-    accent: "#D85A30",
-    href: "/motee",
-    prefixes: [
-      "/motee",
-      "/tenants",
-      "/billing",
-      "/platform",
-      "/support",
-      "/settings",
-    ],
-  },
-  {
     key: "hr",
     label: "HR Admin",
     icon: Users,
@@ -65,14 +60,30 @@ const ROLES = [
     label: "Employee",
     icon: User,
     accent: "#1D9E75",
-    href: "/employee",
+    href: "/employee/dashboard",
     prefixes: ["/employee", "/profile", "/time-off", "/growth", "/company"],
+  },
+  {
+    key: "motee",
+    label: "CMS",
+    icon: Building2,
+    accent: "#D85A30",
+    href: "/motee",
+    prefixes: [
+      "/motee",
+      "/tenants",
+      "/billing",
+      "/platform",
+      "/support",
+      "/settings",
+    ],
   },
 ] as const;
 
 export function DemoSwitcher() {
   const pathname = usePathname();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   const activeKey =
     ROLES.find((r) =>
@@ -83,57 +94,108 @@ export function DemoSwitcher() {
     <div
       style={{
         position: "fixed",
-        bottom: 12,
-        left: "50%",
-        transform: "translateX(-50%)",
+        bottom: 20,
+        right: 20,
         zIndex: 9999,
         display: "flex",
-        alignItems: "center",
-        gap: 4,
-        backgroundColor: "#1A1A18",
-        borderRadius: 9999,
-        padding: 6,
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: 8,
       }}
     >
-      <span
-        style={{
-          fontSize: 9,
-          fontWeight: 700,
-          color: "#EF9F27",
-          letterSpacing: "0.08em",
-          paddingLeft: 6,
-          paddingRight: 4,
-          userSelect: "none",
-        }}
-      >
-        DEMO
-      </span>
-
-      {ROLES.map((role) => {
-        const Icon = role.icon;
-        const isActive = activeKey === role.key;
-
-        return (
-          <button
-            key={role.key}
-            onClick={() => router.push(role.href)}
-            className={cn(
-              "flex items-center gap-1.5 rounded-full px-3 transition-all duration-150 cursor-pointer",
-            )}
+      {open && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            gap: 6,
+            backgroundColor: "#1A1A18",
+            borderRadius: 16,
+            padding: "10px 10px",
+          }}
+        >
+          <span
             style={{
-              height: 32,
-              fontSize: 12,
-              fontWeight: 500,
-              backgroundColor: isActive ? role.accent : "transparent",
-              color: isActive ? "#ffffff" : "rgba(255,255,255,0.55)",
-              border: isActive ? "none" : "1px solid rgba(255,255,255,0.12)",
+              fontSize: 9,
+              fontWeight: 700,
+              color: "#EF9F27",
+              letterSpacing: "0.08em",
+              paddingLeft: 4,
+              userSelect: "none",
+              alignSelf: "flex-start",
             }}
           >
-            <Icon size={13} strokeWidth={2} />
-            {role.label}
-          </button>
-        );
-      })}
+            DEMO
+          </span>
+
+          {ROLES.map((role) => {
+            const Icon = role.icon;
+            const isActive = activeKey === role.key;
+
+            return (
+              <button
+                key={role.key}
+                onClick={() => {
+                  router.push(role.href);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-3 transition-all duration-150 cursor-pointer w-full",
+                )}
+                style={{
+                  height: 32,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  backgroundColor: isActive
+                    ? role.accent
+                    : "rgba(255,255,255,0.07)",
+                  color: isActive ? "#ffffff" : "rgba(255,255,255,0.55)",
+                  border: isActive
+                    ? "none"
+                    : "1px solid rgba(255,255,255,0.12)",
+                  justifyContent: "flex-start",
+                }}
+              >
+                <Icon size={13} strokeWidth={2} />
+                {role.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          height: 36,
+          paddingLeft: 16,
+          paddingRight: 16,
+          borderRadius: 9999,
+          backgroundColor: "#1A1A18",
+          color: open ? "rgba(255,255,255,0.7)" : "#EF9F27",
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: "0.06em",
+          border: "none",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+        }}
+      >
+        {open ? (
+          <>
+            <X size={13} strokeWidth={2.5} />
+            Close
+          </>
+        ) : (
+          <>
+            <Link size={13} strokeWidth={2.5} />
+            Demo Links
+          </>
+        )}
+      </button>
     </div>
   );
 }

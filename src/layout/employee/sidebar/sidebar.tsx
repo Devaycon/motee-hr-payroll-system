@@ -140,23 +140,6 @@ const Sidebar = () => {
           </div>
         ))}
       </nav>
-
-      {settingsRoute && (
-        <div className="shrink-0 border-t border-border px-3 py-2">
-          <Link
-            href={settingsRoute.link}
-            className={cn(
-              "flex items-center gap-2.5 px-3 py-3 text-sm transition-colors",
-              isActive(settingsRoute.link)
-                ? "bg-[#4ED251] text-white border-l-4 border-[#ff8b2d]"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground",
-            )}
-          >
-            <Settings size={15} strokeWidth={1.75} className="shrink-0" />
-            <span className="flex-1 truncate">Settings</span>
-          </Link>
-        </div>
-      )}
     </aside>
   );
 };

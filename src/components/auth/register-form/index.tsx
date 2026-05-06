@@ -45,7 +45,7 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="flex flex-col w-full max-w-sm gap-8">
+    <div className="flex flex-col w-full px-8 gap-8">
       <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-bold text-foreground tracking-tight">
           Create your account

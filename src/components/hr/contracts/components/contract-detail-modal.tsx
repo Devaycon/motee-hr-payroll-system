@@ -12,12 +12,8 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/src/components/ui/tabs";
+import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { PageTabsList } from "@/src/components/shared/page-tabs";
 import {
   CheckCircle2,
   Clock,
@@ -119,17 +115,14 @@ export function ContractDetailModal({
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="w-full">
-            <TabsTrigger value="details" className="flex-1">
-              Details
-            </TabsTrigger>
-            <TabsTrigger value="signatories" className="flex-1">
-              Signatories
-            </TabsTrigger>
-            <TabsTrigger value="notes" className="flex-1">
-              Notes
-            </TabsTrigger>
-          </TabsList>
+          <PageTabsList
+            tabs={[
+              { value: "details", label: "Details" },
+              { value: "signatories", label: "Signatories" },
+              { value: "notes", label: "Notes" },
+            ]}
+            className="w-full"
+          />
 
           <TabsContent value="details">
             <ScrollArea className="max-h-80 pr-1">

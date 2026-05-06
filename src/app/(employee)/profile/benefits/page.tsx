@@ -1,7 +1,7 @@
 ﻿import dynamic from "next/dynamic";
 
 const MyBenefitsPage = dynamic(() =>
-  import("@/src/components/employee/benefits").then((m) => m.MyBenefitsPage),
+  import("@/src/components/shared/coming-soon").then((m) => m.default),
 );
 
 export default function Page() {

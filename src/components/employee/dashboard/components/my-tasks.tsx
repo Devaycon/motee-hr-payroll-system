@@ -1,24 +1,12 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  ClipboardList,
-  ChevronRight,
-  Plus,
-  X,
-  AlertCircle,
-  Clock,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
+import { ClipboardList, Eye, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
+import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Input } from "@/src/components/ui/input";
 import {
   Select,
@@ -27,13 +15,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import { Separator } from "@/src/components/ui/separator";
+import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { cn } from "@/src/lib/utils";
+import { WorkspaceCard } from "@/src/components/shared/workspace-card";
 import {
   EMPLOYEE_TASKS,
   PRIORITY_STYLES,
 } from "@/src/data/employee-dashboard-demo";
 
-type TaskFilter = "all" | "todo" | "done" | "high" | "medium" | "low";
+type EmployeeTask = (typeof EMPLOYEE_TASKS)[number];
+
+type PersonalTask = {
+  id: string;
+  label: string;
+  done: boolean;
+  priority: string;
+  due: string;
+  notes?: string;
+};
 
 const CATEGORY_STYLES: Record<string, string> = {
   Training:
@@ -45,299 +52,309 @@ const CATEGORY_STYLES: Record<string, string> = {
     "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
 };
 
-const TODAY = "2026-04-23";
-
-function getDueStatus(due: string, done: boolean): "overdue" | "soon" | "ok" {
-  if (done) return "ok";
-  if (due < TODAY) return "overdue";
-  const daysLeft = Math.ceil(
-    (new Date(due).getTime() - new Date(TODAY).getTime()) / 86400000,
-  );
-  if (daysLeft <= 3) return "soon";
-  return "ok";
-}
-
-function formatDue(due: string): string {
-  return new Date(due).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 let taskCounter = 100;
 
 export function MyTasks() {
-  const [tasks, setTasks] = useState(EMPLOYEE_TASKS);
-  const [filter, setFilter] = useState<TaskFilter>("all");
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [assignedTasks] = useState(EMPLOYEE_TASKS);
+  const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
+  const [detailTask, setDetailTask] = useState<EmployeeTask | null>(null);
+
   const [newLabel, setNewLabel] = useState("");
   const [newPriority, setNewPriority] = useState("medium");
   const [newDue, setNewDue] = useState("");
-  const [newCategory, setNewCategory] = useState("Personal");
+  const [newNotes, setNewNotes] = useState("");
 
-  const filtered = tasks.filter((t) => {
-    if (filter === "todo") return !t.done;
-    if (filter === "done") return t.done;
-    if (filter === "high") return t.priority === "high" && !t.done;
-    if (filter === "medium") return t.priority === "medium" && !t.done;
-    if (filter === "low") return t.priority === "low" && !t.done;
-    return true;
-  });
-
-  const doneCount = tasks.filter((t) => t.done).length;
-  const overdueCount = tasks.filter(
-    (t) => !t.done && getDueStatus(t.due, t.done) === "overdue",
-  ).length;
-
-  function addTask() {
+  function addPersonalTask() {
     if (!newLabel.trim() || !newDue) return;
     taskCounter += 1;
-    setTasks((prev) => [
+    setPersonalTasks((prev) => [
       ...prev,
       {
-        id: `et-new-${taskCounter}`,
+        id: `pt-${taskCounter}`,
         label: newLabel.trim(),
         done: false,
         priority: newPriority,
         due: newDue,
-        link: "/growth/performance",
-        category: newCategory,
+        notes: newNotes.trim() || undefined,
       },
     ]);
     setNewLabel("");
-    setNewDue("");
     setNewPriority("medium");
-    setNewCategory("Personal");
-    setShowAddForm(false);
+    setNewDue("");
+    setNewNotes("");
   }
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between px-4 pt-4 pb-3 shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted">
-            <ClipboardList className="w-3.5 h-3.5 text-muted-foreground" />
-          </div>
-          <CardTitle className="text-sm font-medium">My Tasks</CardTitle>
-          {overdueCount > 0 && (
-            <Badge className="text-[10px] px-1.5 py-0 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-              {overdueCount} overdue
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">
-            {doneCount}/{tasks.length} done
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => setShowAddForm((p) => !p)}
-          >
-            {showAddForm ? (
-              <X className="w-3.5 h-3.5" />
-            ) : (
-              <Plus className="w-3.5 h-3.5" />
-            )}
-          </Button>
+    <>
+      <WorkspaceCard
+        id="tasks"
+        icon={ClipboardList}
+        title="My Tasks"
+        subtitle={`${assignedTasks.filter((t) => t.done).length + personalTasks.filter((t) => t.done).length}/${assignedTasks.length + personalTasks.length} done`}
+        action={
           <Button
             asChild
             variant="outline"
             size="sm"
-            className="h-6 text-xs px-2 gap-0.5"
+            className="h-6 text-xs px-2"
           >
-            <Link href="/growth/performance">
-              View all <ChevronRight className="w-3 h-3" />
-            </Link>
+            <Link href="/employee/tasks">Manage</Link>
           </Button>
-        </div>
-      </CardHeader>
+        }
+      >
+        <Tabs defaultValue="assigned" className="w-full">
+          <PageTabsList
+            className="w-full mb-3 h-7"
+            tabs={[
+              { value: "assigned", label: "Assigned Tasks" },
+              { value: "personal", label: "Personal Tasks" },
+            ]}
+          />
 
-      <CardContent className="px-4 pb-4 flex flex-col gap-3">
-        {showAddForm && (
-          <div className="rounded-lg border border-[#7F77DD]/30 bg-[#7F77DD]/5 p-3 space-y-2">
-            <Input
-              placeholder="Task description…"
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              className="h-7 text-xs"
-            />
-            <div className="grid grid-cols-3 gap-1.5">
-              <Select value={newPriority} onValueChange={setNewPriority}>
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={newCategory} onValueChange={setNewCategory}>
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["Training", "Performance", "HR", "Personal"].map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                type="date"
-                value={newDue}
-                onChange={(e) => setNewDue(e.target.value)}
-                className="h-7 text-xs"
-              />
-            </div>
-            <div className="flex gap-1.5 justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs"
-                onClick={() => setShowAddForm(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                className="h-6 text-xs bg-[#7F77DD] hover:bg-[#6b63c4] text-white"
-                onClick={addTask}
-                disabled={!newLabel.trim() || !newDue}
-              >
-                Add
-              </Button>
-            </div>
-          </div>
-        )}
-
-        <div className="flex gap-1 flex-wrap">
-          {(
-            [
-              { key: "all", label: "All" },
-              { key: "todo", label: "To Do" },
-              { key: "high", label: "High" },
-              { key: "medium", label: "Medium" },
-              { key: "low", label: "Low" },
-              { key: "done", label: "Done" },
-            ] as { key: TaskFilter; label: string }[]
-          ).map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setFilter(key)}
-              className={cn(
-                "px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors",
-                filter === key
-                  ? "bg-[#7F77DD] text-white border-[#7F77DD]"
-                  : "border-border text-muted-foreground hover:border-[#7F77DD]/40",
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-2 max-h-64 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
-          {filtered.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-4">
-              No tasks in this filter.
-            </p>
-          )}
-          {filtered.map((task) => {
-            const status = getDueStatus(task.due, task.done);
-            return (
-              <div
-                key={task.id}
-                className={cn(
-                  "flex items-start gap-2.5 py-1.5 px-2 rounded-lg border transition-colors",
-                  status === "overdue" && !task.done
-                    ? "border-red-200 dark:border-red-900 bg-red-500/5"
-                    : status === "soon" && !task.done
-                      ? "border-amber-200 dark:border-amber-900 bg-amber-500/5"
-                      : "border-transparent hover:bg-muted/40",
-                )}
-              >
-                <Checkbox
-                  checked={task.done}
-                  onCheckedChange={(checked) =>
-                    setTasks((prev) =>
-                      prev.map((t) =>
-                        t.id === task.id ? { ...t, done: !!checked } : t,
-                      ),
-                    )
-                  }
-                  className="mt-0.5 shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={cn(
-                      "text-xs leading-relaxed",
-                      task.done
-                        ? "line-through text-muted-foreground"
-                        : "text-foreground",
-                    )}
-                  >
-                    {task.label}
+          <TabsContent value="assigned" className="mt-0">
+            <ScrollArea className="max-h-70 pr-2 *:data-radix-scroll-area-viewport:max-h-70">
+              <div className="flex flex-col gap-1">
+                {assignedTasks.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    No assigned tasks.
                   </p>
-                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-[10px] px-1.5 py-0",
-                        PRIORITY_STYLES[task.priority],
-                      )}
-                    >
-                      {task.priority}
-                    </Badge>
-                    {task.category && (
-                      <Badge
-                        variant="outline"
+                )}
+                {assignedTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-start gap-2.5 py-2 border-b border-border/40 last:border-0"
+                  >
+                    <Checkbox
+                      checked={task.done}
+                      disabled
+                      className="mt-0.5 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p
                         className={cn(
-                          "text-[10px] px-1.5 py-0",
-                          CATEGORY_STYLES[task.category] ??
-                            "bg-slate-500/10 text-slate-600",
+                          "text-xs leading-relaxed",
+                          task.done
+                            ? "line-through text-muted-foreground"
+                            : "text-foreground",
                         )}
                       >
-                        {task.category}
-                      </Badge>
-                    )}
-                    {!task.done && status === "overdue" && (
-                      <span className="flex items-center gap-0.5 text-[10px] text-red-600 dark:text-red-400 font-medium">
-                        <AlertCircle className="h-2.5 w-2.5" />
-                        Overdue · {formatDue(task.due)}
-                      </span>
-                    )}
-                    {!task.done && status === "soon" && (
-                      <span className="flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400 font-medium">
-                        <Clock className="h-2.5 w-2.5" />
-                        Due {formatDue(task.due)}
-                      </span>
-                    )}
-                    {!task.done && status === "ok" && (
-                      <span className="text-[10px] text-muted-foreground">
-                        Due {formatDue(task.due)}
-                      </span>
-                    )}
+                        {task.label}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] px-1.5 py-0",
+                            PRIORITY_STYLES[task.priority],
+                          )}
+                        >
+                          {task.priority}
+                        </Badge>
+                        {task.category && (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] px-1.5 py-0",
+                              CATEGORY_STYLES[task.category] ??
+                                "bg-slate-500/10 text-slate-600",
+                            )}
+                          >
+                            {task.category}
+                          </Badge>
+                        )}
+                        <span className="text-[10px] text-muted-foreground">
+                          Due {task.due}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 text-muted-foreground shrink-0 hover:text-foreground"
+                      onClick={() => setDetailTask(task)}
+                    >
+                      <Eye className="size-3" />
+                    </Button>
                   </div>
-                </div>
-                <Link href={task.link} onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-5 text-muted-foreground shrink-0"
-                  >
-                    <ChevronRight className="size-3" />
-                  </Button>
-                </Link>
+                ))}
               </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="personal" className="mt-0 flex flex-col gap-3">
+            <div className="rounded-lg border border-[#7F77DD]/30 bg-[#7F77DD]/5 p-3 space-y-2">
+              <Input
+                placeholder="Task descriptionâ€¦"
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                className="h-7 text-xs"
+              />
+              <Input
+                placeholder="Notes (optional)"
+                value={newNotes}
+                onChange={(e) => setNewNotes(e.target.value)}
+                className="h-7 text-xs"
+              />
+              <div className="grid grid-cols-2 gap-1.5">
+                <Select value={newPriority} onValueChange={setNewPriority}>
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="date"
+                  value={newDue}
+                  onChange={(e) => setNewDue(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  className="h-6 text-xs bg-[#7F77DD] hover:bg-[#6b63c4] text-white gap-1"
+                  onClick={addPersonalTask}
+                  disabled={!newLabel.trim() || !newDue}
+                >
+                  <Plus className="size-3" />
+                  Add Task
+                </Button>
+              </div>
+            </div>
+
+            <ScrollArea className="max-h-52 pr-2 *:data-radix-scroll-area-viewport:max-h-52">
+              <div className="flex flex-col gap-1">
+                {personalTasks.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    No personal tasks yet. Add one above.
+                  </p>
+                )}
+                {personalTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-start gap-2.5 py-2 border-b border-border/40 last:border-0"
+                  >
+                    <Checkbox
+                      checked={task.done}
+                      onCheckedChange={(checked) =>
+                        setPersonalTasks((prev) =>
+                          prev.map((t) =>
+                            t.id === task.id ? { ...t, done: !!checked } : t,
+                          ),
+                        )
+                      }
+                      className="mt-0.5 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={cn(
+                          "text-xs leading-relaxed",
+                          task.done
+                            ? "line-through text-muted-foreground"
+                            : "text-foreground",
+                        )}
+                      >
+                        {task.label}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] px-1.5 py-0",
+                            PRIORITY_STYLES[task.priority],
+                          )}
+                        >
+                          {task.priority}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">
+                          Due {task.due}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+      </WorkspaceCard>
+
+      <Dialog
+        open={!!detailTask}
+        onOpenChange={(v) => !v && setDetailTask(null)}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-semibold leading-snug pr-4">
+              {detailTask?.label}
+            </DialogTitle>
+          </DialogHeader>
+          <Separator />
+          <div className="flex flex-col gap-3 pt-1">
+            {detailTask?.notes && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  Notes
+                </p>
+                <p className="text-sm text-foreground leading-relaxed">
+                  {detailTask.notes}
+                </p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  Priority
+                </p>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-xs px-2",
+                    detailTask ? PRIORITY_STYLES[detailTask.priority] : "",
+                  )}
+                >
+                  {detailTask?.priority}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  Category
+                </p>
+                {detailTask?.category && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs px-2",
+                      CATEGORY_STYLES[detailTask.category] ??
+                        "bg-slate-500/10 text-slate-600",
+                    )}
+                  >
+                    {detailTask.category}
+                  </Badge>
+                )}
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  Due Date
+                </p>
+                <p className="text-sm text-foreground">{detailTask?.due}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  Status
+                </p>
+                <p className="text-sm text-foreground">
+                  {detailTask?.done ? "Completed" : "Pending"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
