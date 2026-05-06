@@ -15,7 +15,7 @@
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ChartConfig } from "@/src/components/ui/chart";
-import type { Tenant, Invoice, SupportTicket, PlatformStats } from "@/src/lib/types/motee.types";
+import type { Tenant, Invoice, SupportTicket, PlatformStats, TenantPlan } from "@/src/lib/types/motee.types";
 
 export const DEMO_TENANTS: Tenant[] = [
   {

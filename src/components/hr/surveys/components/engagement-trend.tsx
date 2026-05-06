@@ -100,7 +100,7 @@ export function EngagementTrend() {
       <LineChartCard
         title="Engagement Score Trend"
         description="Monthly engagement score over the last 12 months"
-        data={ENGAGEMENT_TREND_DATA as Record<string, unknown>[]}
+        data={ENGAGEMENT_TREND_DATA as unknown as Record<string, unknown>[]}
         config={ENGAGEMENT_CHART_CONFIG}
         series={visibleLines.map((l) => ({ key: l.key, color: l.color }))}
         xAxisKey="month"

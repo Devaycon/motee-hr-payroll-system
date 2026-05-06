@@ -62,7 +62,7 @@ export function CoursesTable({
     const matchSearch =
       !q ||
       c.title.toLowerCase().includes(q) ||
-      (c.provider ?? "").toLowerCase().includes(q) ||
+      (c.instructor ?? "").toLowerCase().includes(q) ||
       c.description.toLowerCase().includes(q);
     const matchCat = categoryFilter === "all" || c.category === categoryFilter;
     const matchMode = modeFilter === "all" || c.deliveryMode === modeFilter;
@@ -151,7 +151,7 @@ export function CoursesTable({
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs text-muted-foreground">
-                          {course.provider}
+                          {course.instructor}
                         </span>
                       </td>
                       <td className="px-4 py-3">

@@ -142,7 +142,11 @@ export function CommunityPage() {
             </p>
           </div>
         </div>
-        <Button onClick={() => setFormOpen(true)} className="shrink-0" size={"lg"}>
+        <Button
+          onClick={() => setFormOpen(true)}
+          className="shrink-0"
+          size={"lg"}
+        >
           <Plus className="mr-2 h-4 w-4" />
           New Post
         </Button>
@@ -249,7 +253,7 @@ export function CommunityPage() {
                         {c.personName}
                       </p>
                       <p className="text-[10px] text-muted-foreground truncate">
-                        {c.headline}
+                        {c.jobTitle}
                       </p>
                     </div>
                   </div>
