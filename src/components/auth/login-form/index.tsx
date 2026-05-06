@@ -45,7 +45,7 @@ export function LoginForm() {
           className="w-full mt-1 h-10 text-sm font-semibold"
           style={{ backgroundColor: "#D85A30", borderColor: "#D85A30" }}
         >
-          Sign in
+          Login
         </Button>
       </form>
 

@@ -111,7 +111,7 @@ const RegisterIndex = () => {
             href="/auth/login"
             className="text-foreground font-semibold hover:underline"
           >
-            Sign in
+            Login
           </Link>
         </div>
       </div>
