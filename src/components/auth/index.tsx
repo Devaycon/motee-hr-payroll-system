@@ -43,7 +43,7 @@ const AuthIndex = () => {
           </h1>
           <div
             className="w-10 h-1 rounded-full"
-            style={{ backgroundColor: "#fff" }}
+            style={{ backgroundColor: "#D85A30" }}
           />
           <p className="text-xl text-white dark:text-white/80 leading-relaxed">
             Sign in to manage your team, track performance, and access your
