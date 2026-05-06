@@ -15,7 +15,7 @@ import { Step6UILabels } from "./steps/step-6-ui-labels";
 import { Step7Review } from "./steps/step-7-review";
 import { Step8BulkUpload } from "./steps/step-8-bulk-upload";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
-import { Upload, ClipboardList, ArrowRight } from "lucide-react";
+import { Upload, ClipboardList, ArrowRight, File } from "lucide-react";
 
 const STEPS = [
   {
@@ -302,13 +302,13 @@ export default function CompanyOnboardingIndex() {
               >
                 <div
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: "rgba(127,119,221,0.12)" }}
+                  style={{ backgroundColor: "rgba(127,119,221,0.2)" }}
                 >
-                  <Upload size={20} style={{ color: "#7F77DD" }} />
+                  <File size={20} style={{ color: "green" }} />
                 </div>
                 <div className="flex flex-col gap-0.5 flex-1">
                   <span className="text-sm font-semibold text-foreground">
-                    Text With Demo Data
+                    Test With Demo Data
                   </span>
                   <span className="text-xs text-muted-foreground">
                      Auto-fill your entire system with fake data.
