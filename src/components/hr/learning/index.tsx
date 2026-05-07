@@ -77,9 +77,9 @@ export function LearningPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-lg font-semibold">Learning & Development</h1>
+        <h1 className="text-4xl font-semibold">Learning & Development</h1>
         <p className="text-xs text-muted-foreground mt-0.5">
           Manage training courses and track employee learning progress across
           your organisation.

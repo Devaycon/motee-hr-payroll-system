@@ -4,9 +4,8 @@ import { useState } from "react";
 import {
   Tabs,
   TabsContent,
-  TabsList,
-  TabsTrigger,
 } from "@/src/components/ui/tabs";
+import { PageTabsList } from "@/src/components/shared/page-tabs";
 import type {
   ProfileData,
   VerificationStage,
@@ -78,20 +77,15 @@ export function CompanyProfilePage() {
 
 
         <Tabs defaultValue="profile">
-          <TabsList className="h-9 mb-6">
-            <TabsTrigger value="profile" className="text-xs">
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="verification" className="text-xs">
-              Verification Documents
-            </TabsTrigger>
-            <TabsTrigger value="announcement" className="text-xs">
-              Pinned Announcement
-            </TabsTrigger>
-            <TabsTrigger value="organogram" className="text-xs">
-              Organogram
-            </TabsTrigger>
-          </TabsList>
+          <PageTabsList
+            className="mb-6"
+            tabs={[
+              { value: "profile", label: "Profile" },
+              { value: "verification", label: "Verification Documents" },
+              { value: "announcement", label: "Pinned Announcement" },
+              { value: "organogram", label: "Organogram" },
+            ]}
+          />
 
           <TabsContent value="profile" className="mt-0">
             <ProfileTab
