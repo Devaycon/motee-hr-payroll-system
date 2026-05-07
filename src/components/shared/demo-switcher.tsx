@@ -9,6 +9,8 @@ import {
   LogIn,
   UserPlus,
   Rocket,
+  ShieldCheck,
+  KeyRound,
   X,
   Link,
 } from "lucide-react";
@@ -30,6 +32,22 @@ const ROLES = [
     accent: "#6B7280",
     href: "/auth/register",
     prefixes: ["/auth/register"],
+  },
+  {
+    key: "verify-otp",
+    label: "Verify OTP",
+    icon: ShieldCheck,
+    accent: "#ff8b2d",
+    href: "/auth/verify-otp",
+    prefixes: ["/auth/verify-otp"],
+  },
+  {
+    key: "forgot-password",
+    label: "Forgot Password",
+    icon: KeyRound,
+    accent: "#6B7280",
+    href: "/auth/forgot-password",
+    prefixes: ["/auth/forgot-password"],
   },
   {
     key: "onboarding",

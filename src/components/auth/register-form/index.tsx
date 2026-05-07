@@ -41,7 +41,7 @@ export function RegisterForm() {
   });
 
   const onSubmit = async (_data: RegisterFormValues) => {
-    router.push("/onboarding");
+    router.push("/auth/verify-otp");
   };
 
   return (

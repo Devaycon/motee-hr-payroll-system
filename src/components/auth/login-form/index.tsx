@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -37,7 +38,14 @@ export function LoginForm() {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="password">Password</Label>
+
           <Input id="password" type="password" defaultValue="password" />
+          <Link
+            href="/auth/forgot-password"
+            className="text-[13px]  mt-1 text-muted-foreground hover:text-foreground hover:underline transition-colors"
+          >
+            Forgot password?
+          </Link>
         </div>
 
         <Button
