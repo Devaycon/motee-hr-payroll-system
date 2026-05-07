@@ -12,7 +12,9 @@ import { Label } from "@/src/components/ui/label";
 
 const registerSchema = z
   .object({
-    fullName: z.string().min(2, "Full name must be at least 2 characters"),
+    firstName: z.string().min(2, "First name must be at least 2 characters"),
+    middleName: z.string().optional(),
+    lastName: z.string().min(2, "Last name must be at least 2 characters"),
     email: z.string().email("Enter a valid email address"),
     companyName: z
       .string()
@@ -58,16 +60,46 @@ export function RegisterForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="fullName">Full Name</Label>
+            <Label htmlFor="firstName">First Name</Label>
             <Input
-              id="fullName"
+              id="firstName"
               type="text"
-              placeholder="John Doe"
-              {...register("fullName")}
+              placeholder="John"
+              {...register("firstName")}
             />
-            {errors.fullName && (
+            {errors.firstName && (
               <span className="text-xs text-destructive">
-                {errors.fullName.message}
+                {errors.firstName.message}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="middleName">
+              Middle Name{" "}
+              <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="middleName"
+              type="text"
+              placeholder="A."
+              {...register("middleName")}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              id="lastName"
+              type="text"
+              placeholder="Doe"
+              {...register("lastName")}
+            />
+            {errors.lastName && (
+              <span className="text-xs text-destructive">
+                {errors.lastName.message}
               </span>
             )}
           </div>

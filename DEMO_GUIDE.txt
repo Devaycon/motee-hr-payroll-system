@@ -1,0 +1,161 @@
+================================================================================
+  MOTEE HRIS SYSTEM — DEMO GUIDE
+  Version: 0.1.0-alpha  |  Codename: "Scaffold"
+  Hosted Demo URL: https://demo.motee-hris.vercel.app  [PLACEHOLDER]
+================================================================================
+
+--------------------------------------------------------------------------------
+  IMPORTANT NOTICE
+--------------------------------------------------------------------------------
+
+This is a DEMO / PROTOTYPE build of the Motee HRIS System.
+
+  - There is NO backend connected to this project.
+  - There is NO database attached.
+  - All data displayed throughout the application is STATIC MOCK DATA used
+    purely for visual and navigational demonstration purposes.
+  - No form submissions, authentication actions, or data mutations are
+    processed or persisted anywhere.
+  - User credentials entered on any screen have no effect.
+
+This demo exists solely to showcase the UI, navigation flow, and overall
+system design to stakeholders, reviewers, and collaborators.
+
+--------------------------------------------------------------------------------
+  WHAT IS THE DEMO LINK?
+--------------------------------------------------------------------------------
+
+The "Demo Links" button is a floating widget fixed to the bottom-right corner
+of every page in the application.
+
+Purpose:
+  - Because there is no real authentication or session management, navigating
+    between different user roles and portal sections would normally require
+    logging in and out as different users.
+  - The Demo Links widget bypasses this entirely by providing instant one-click
+    navigation to any section of the system, regardless of role or auth state.
+  - It allows reviewers and testers to jump freely between the HR Admin portal,
+    the Employee portal, the CMS (Motee) portal, and all auth screens without
+    any friction.
+
+How to use it:
+  1. Click the orange "Demo Links" button at the bottom-right of the screen.
+  2. A small panel will expand showing all available demo destinations.
+  3. Click any entry to navigate directly to that section.
+  4. The currently active section will be highlighted in its accent color.
+  5. Click "Close" or click any link to dismiss the panel.
+
+--------------------------------------------------------------------------------
+  SYSTEM NAVIGATION — PORTALS & SECTIONS
+--------------------------------------------------------------------------------
+
+The system is divided into three main portals, each serving a different
+user role. Each portal has its own layout and sidebar navigation.
+
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │  1. HR ADMIN PORTAL                                                     │
+  │     Entry path: /hr                                                     │
+  │     Accent color: Purple (#7F77DD)                                      │
+  ├─────────────────────────────────────────────────────────────────────────┤
+  │  Sections:                                                              │
+  │    - HR Dashboard          /hr                                          │
+  │    - Organization          /organization                                │
+  │    - Talent                /talent                                      │
+  │    - Time & Payroll        /time-payroll                                │
+  │    - Operations            /operations                                  │
+  │    - Workspace             /workspace                                   │
+  │    - My Workspace          /my-workspace                                │
+  │    - Admin                 /admin                                       │
+  └─────────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │  2. EMPLOYEE PORTAL                                                     │
+  │     Entry path: /employee/dashboard                                     │
+  │     Accent color: Green (#1D9E75)                                       │
+  ├─────────────────────────────────────────────────────────────────────────┤
+  │  Sections:                                                              │
+  │    - Employee Dashboard    /employee/dashboard                          │
+  │    - Profile               /profile                                     │
+  │    - Time Off              /time-off                                    │
+  │    - Growth                /growth                                      │
+  │    - Company               /company                                     │
+  └─────────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │  3. MOTEE CMS PORTAL  (Internal Platform Management)                    │
+  │     Entry path: /motee                                                  │
+  │     Accent color: Orange (#D85A30)                                      │
+  ├─────────────────────────────────────────────────────────────────────────┤
+  │  Sections:                                                              │
+  │    - Motee Dashboard       /motee                                       │
+  │    - Tenants               /tenants                                     │
+  │    - Billing               /billing                                     │
+  │    - Platform              /platform                                    │
+  │    - Support               /support                                     │
+  │    - Settings              /settings                                    │
+  └─────────────────────────────────────────────────────────────────────────┘
+
+--------------------------------------------------------------------------------
+  AUTH FLOW NAVIGATION
+--------------------------------------------------------------------------------
+
+The following authentication screens are implemented as UI demos:
+
+  /auth/login                    — Login screen
+  /auth/register                 — Registration form (First, Middle, Last name
+                                   + email, company, password fields)
+  /auth/verify-otp               — OTP verification after registration
+                                   (6-digit code input, resend option)
+  /auth/forgot-password          — Forgot password: enter registered email
+  /auth/forgot-password/verify-otp — OTP verification for password reset
+  /auth/forgot-password/reset    — Set new password screen
+
+  Flow after register:    Register → Verify OTP → Onboarding
+  Flow after forgot pass: Forgot Password → Verify OTP → Reset Password → Login
+
+--------------------------------------------------------------------------------
+  DEMO LINK SHORTCUTS (Keyboard / Quick Access)
+--------------------------------------------------------------------------------
+
+The Demo Links widget does not use keyboard shortcuts by default, but the
+following URL paths serve as direct-access shortcuts when typed or linked:
+
+  Key          Label              Direct URL
+  ──────────── ────────────────── ─────────────────────────────────────
+  Login        Login Page         /auth/login
+  Register     Register Page      /auth/register
+  Verify OTP   OTP Screen         /auth/verify-otp
+  Forgot Pwd   Forgot Password    /auth/forgot-password
+  Onboarding   Onboarding Flow    /onboarding
+  HR Admin     HR Admin Portal    /hr
+  Employee     Employee Portal    /employee/dashboard
+  Motee CMS    CMS Portal         /motee  (accessible via sidebar only)
+
+  TIP: On any page, click the floating "Demo Links" button (bottom-right)
+  for instant point-and-click access to all of the above destinations.
+
+--------------------------------------------------------------------------------
+  VERSION INFORMATION
+--------------------------------------------------------------------------------
+
+  Version Number  : 0.1.0-alpha
+  Version Name    : Scaffold
+  Build Type      : Frontend Demo (No Backend / No Database)
+  Framework       : Next.js (App Router) with TypeScript
+  UI Library      : Shadcn UI + Tailwind CSS
+  Status          : Active Development — UI/UX Prototype Stage
+
+--------------------------------------------------------------------------------
+  HOSTED DEMO URL
+--------------------------------------------------------------------------------
+
+  https://demo.motee-hris.vercel.app    [PLACEHOLDER — replace before sharing]
+
+--------------------------------------------------------------------------------
+  CONTACT / PROJECT
+--------------------------------------------------------------------------------
+
+  Project     : Motee HRIS System
+  Maintained by: Devaycon / Motee Team
+
+================================================================================
