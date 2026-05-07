@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Tabs,
-  TabsContent,
-} from "@/src/components/ui/tabs";
+import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import type {
   ProfileData,
@@ -75,67 +72,66 @@ export function CompanyProfilePage() {
         </div>
       </div>
 
+      <Tabs defaultValue="profile">
+        <PageTabsList
+          className="mb-6"
+          tabs={[
+            { value: "profile", label: "Profile" },
+            { value: "verification", label: "Verification Documents" },
+            { value: "announcement", label: "Pinned Announcement" },
+            { value: "organogram", label: "Organogram" },
+          ]}
+        />
 
-        <Tabs defaultValue="profile">
-          <PageTabsList
-            className="mb-6"
-            tabs={[
-              { value: "profile", label: "Profile" },
-              { value: "verification", label: "Verification Documents" },
-              { value: "announcement", label: "Pinned Announcement" },
-              { value: "organogram", label: "Organogram" },
-            ]}
+        <TabsContent value="profile" className="mt-0">
+          <ProfileTab
+            editing={editing}
+            setEditing={setEditing}
+            profile={profile}
+            profileDraft={profileDraft}
+            setProfileDraft={setProfileDraft}
+            setProfile={setProfile}
+            cacStatus={cacStatus}
+            cacNumber={cacNumber}
+            tinStatus={tinStatus}
+            tinNumber={tinNumber}
           />
+        </TabsContent>
 
-          <TabsContent value="profile" className="mt-0">
-            <ProfileTab
-              editing={editing}
-              setEditing={setEditing}
-              profile={profile}
-              profileDraft={profileDraft}
-              setProfileDraft={setProfileDraft}
-              setProfile={setProfile}
-              cacStatus={cacStatus}
-              cacNumber={cacNumber}
-              tinStatus={tinStatus}
-              tinNumber={tinNumber}
-            />
-          </TabsContent>
+        <TabsContent value="verification" className="mt-0">
+          <VerificationTab
+            cacNumber={cacNumber}
+            setCacNumber={setCacNumber}
+            cacStatus={cacStatus}
+            setCacStatus={setCacStatus}
+            cacFile={cacFile}
+            setCacFile={setCacFile}
+            cacHistory={cacHistory}
+            tinNumber={tinNumber}
+            setTinNumber={setTinNumber}
+            tinStatus={tinStatus}
+            setTinStatus={setTinStatus}
+            tinFile={tinFile}
+            setTinFile={setTinFile}
+            tinHistory={tinHistory}
+          />
+        </TabsContent>
 
-          <TabsContent value="verification" className="mt-0">
-            <VerificationTab
-              cacNumber={cacNumber}
-              setCacNumber={setCacNumber}
-              cacStatus={cacStatus}
-              setCacStatus={setCacStatus}
-              cacFile={cacFile}
-              setCacFile={setCacFile}
-              cacHistory={cacHistory}
-              tinNumber={tinNumber}
-              setTinNumber={setTinNumber}
-              tinStatus={tinStatus}
-              setTinStatus={setTinStatus}
-              tinFile={tinFile}
-              setTinFile={setTinFile}
-              tinHistory={tinHistory}
-            />
-          </TabsContent>
+        <TabsContent value="announcement" className="mt-0">
+          <AnnouncementTab
+            announcement={announcement}
+            setAnnouncement={setAnnouncement}
+            editing={editingAnnouncement}
+            setEditing={setEditingAnnouncement}
+            draft={announcementDraft}
+            setDraft={setAnnouncementDraft}
+          />
+        </TabsContent>
 
-          <TabsContent value="announcement" className="mt-0">
-            <AnnouncementTab
-              announcement={announcement}
-              setAnnouncement={setAnnouncement}
-              editing={editingAnnouncement}
-              setEditing={setEditingAnnouncement}
-              draft={announcementDraft}
-              setDraft={setAnnouncementDraft}
-            />
-          </TabsContent>
-
-          <TabsContent value="organogram" className="mt-0">
-            <OrganogramTab />
-          </TabsContent>
-        </Tabs>
+        <TabsContent value="organogram" className="mt-0">
+          <OrganogramTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
