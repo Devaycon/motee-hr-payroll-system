@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useAttendanceRecords } from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { StatCards } from "./components/stat-cards";
@@ -10,7 +12,7 @@ import { SchedulesTable } from "./components/schedules-table";
 import { LogModal } from "./components/log-modal";
 import { TimesheetModal } from "./components/timesheet-modal";
 import { ScheduleModal } from "./components/schedule-modal";
-import { TODAY_ATTENDANCE, TIMESHEETS, WORK_SCHEDULES } from "./data";
+import { TIMESHEETS, WORK_SCHEDULES } from "./data";
 import type {
   AttendanceRecord,
   NewAttendanceRecord,
@@ -20,7 +22,11 @@ import type {
 } from "./types";
 
 export function AttendancePage() {
-  const [records, setRecords] = useState<AttendanceRecord[]>(TODAY_ATTENDANCE);
+  const { data, loading } = useAttendanceRecords();
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  useEffect(() => {
+    if (data) setRecords(data);
+  }, [data]);
   const [timesheets, setTimesheets] = useState<TimesheetRecord[]>(TIMESHEETS);
   const [schedules, setSchedules] = useState<WorkSchedule[]>(WORK_SCHEDULES);
 
@@ -145,6 +151,15 @@ export function AttendancePage() {
 
   function handleDeleteSchedule(id: string) {
     setSchedules((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  if (loading && !records.length) {
+    return (
+      <div className="space-y-5">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
   }
 
   return (

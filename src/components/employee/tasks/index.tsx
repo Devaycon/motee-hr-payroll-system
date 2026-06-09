@@ -10,6 +10,7 @@ import { TaskFilter } from "./components/task-filters";
 import { NewPersonalTask } from "./components/add-task-form";
 import { getDueStatus } from "./components/task-utils";
 import { EMPLOYEE_TASKS } from "@/src/data/employee-dashboard-demo";
+import { useMyAssignedTasks } from "./hooks";
 
 type PersonalTask = {
   id: string;
@@ -24,7 +25,10 @@ type PersonalTask = {
 let taskCounter = 200;
 
 export function EmployeeTasksPage() {
-  const [assignedTasks] = useState(EMPLOYEE_TASKS);
+  const { data: localeTasks } = useMyAssignedTasks();
+  const [assignedTasks] = useState(
+    localeTasks && localeTasks.length ? localeTasks : EMPLOYEE_TASKS,
+  );
   const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([
     {
       id: "pt-demo-001",

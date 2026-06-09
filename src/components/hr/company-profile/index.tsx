@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useCompanyProfile, useCompanyVerification } from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import type {
@@ -14,43 +15,59 @@ import { AnnouncementTab } from "./components/announcement-tab";
 import { OrganogramTab } from "./components/organogram-tab";
 
 export function CompanyProfilePage() {
+  const { data: profileFromLocale } = useCompanyProfile();
+  const { data: verification } = useCompanyVerification();
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
-    name: "Motee Solutions Ltd",
-    industry: "Technology",
-    size: "51–200",
-    country: "Nigeria",
-    address: "14 Innovation Drive, Victoria Island, Lagos",
-    contactEmail: "hr@moteesolutions.com",
-    contactPhone: "+234 801 234 5678",
-    website: "https://moteesolutions.com",
+    name: "",
+    industry: "",
+    size: "",
+    country: "",
+    address: "",
+    contactEmail: "",
+    contactPhone: "",
+    website: "",
   });
   const [profileDraft, setProfileDraft] = useState<ProfileData>(profile);
+  // Re-seed the editable profile copy whenever the locale (country) data changes.
+  const [seenProfile, setSeenProfile] = useState<ProfileData | null>(null);
+  if (profileFromLocale && profileFromLocale !== seenProfile) {
+    setSeenProfile(profileFromLocale);
+    setProfile(profileFromLocale);
+    setProfileDraft(profileFromLocale);
+  }
 
-  const [cacStatus, setCacStatus] = useState<VerificationStage>("Under Review");
-  const [cacFile, setCacFile] = useState<string | null>(
-    "CAC_Certificate_Motee.pdf",
-  );
-  const [cacNumber, setCacNumber] = useState("RC-1234567");
-  const [cacHistory] = useState<VerificationHistoryEntry[]>([
-    { stage: "Draft", date: "Mar 1, 2026", reviewer: "" },
-    { stage: "Submitted", date: "Mar 5, 2026", reviewer: "System" },
-    {
-      stage: "Under Review",
-      date: "Mar 10, 2026",
-      reviewer: "Motee CMS Admin",
-    },
-  ]);
+  // Registration (CAC / Companies House) + Tax (TIN / VAT) state, seeded from the
+  // active country's companyVerification block in the JSON bundle.
+  const [cacStatus, setCacStatus] = useState<VerificationStage>("Draft");
+  const [cacFile, setCacFile] = useState<string | null>(null);
+  const [cacNumber, setCacNumber] = useState("");
+  const [cacHistory, setCacHistory] = useState<VerificationHistoryEntry[]>([]);
 
-  const [tinStatus, setTinStatus] = useState<VerificationStage>("Submitted");
-  const [tinFile, setTinFile] = useState<string | null>(
-    "TIN_Certificate_Motee.pdf",
-  );
-  const [tinNumber, setTinNumber] = useState("TIN-9876543");
-  const [tinHistory] = useState<VerificationHistoryEntry[]>([
-    { stage: "Draft", date: "Mar 1, 2026", reviewer: "" },
-    { stage: "Submitted", date: "Mar 8, 2026", reviewer: "System" },
-  ]);
+  const [tinStatus, setTinStatus] = useState<VerificationStage>("Draft");
+  const [tinFile, setTinFile] = useState<string | null>(null);
+  const [tinNumber, setTinNumber] = useState("");
+  const [tinHistory, setTinHistory] = useState<VerificationHistoryEntry[]>([]);
+
+  // Re-seed verification state from the active country's JSON whenever it changes.
+  const [seenVerification, setSeenVerification] =
+    useState<typeof verification>(null);
+  if (verification && verification !== seenVerification) {
+    setSeenVerification(verification);
+    const r = verification.registration;
+    const t = verification.tax;
+    setCacNumber(r.number);
+    setCacStatus(r.status);
+    setCacFile(r.documentName || null);
+    setCacHistory(r.history);
+    setTinNumber(t.number);
+    setTinStatus(t.status);
+    setTinFile(t.documentName || null);
+    setTinHistory(t.history);
+  }
+
+  const reg = verification?.registration;
+  const tax = verification?.tax;
 
   const [announcement, setAnnouncement] = useState(
     "Q2 performance review season is now open. All managers must complete team reviews by April 30, 2026.",
@@ -91,8 +108,10 @@ export function CompanyProfilePage() {
             profileDraft={profileDraft}
             setProfileDraft={setProfileDraft}
             setProfile={setProfile}
+            cacLabel={reg?.label ?? "Registration"}
             cacStatus={cacStatus}
             cacNumber={cacNumber}
+            tinLabel={tax?.label ?? "Tax ID"}
             tinStatus={tinStatus}
             tinNumber={tinNumber}
           />
@@ -100,6 +119,9 @@ export function CompanyProfilePage() {
 
         <TabsContent value="verification" className="mt-0">
           <VerificationTab
+            cacLabel={reg?.label ?? "Registration"}
+            cacDescription={reg?.description ?? ""}
+            cacNumberLabel={reg?.numberLabel ?? "Registration No."}
             cacNumber={cacNumber}
             setCacNumber={setCacNumber}
             cacStatus={cacStatus}
@@ -107,6 +129,9 @@ export function CompanyProfilePage() {
             cacFile={cacFile}
             setCacFile={setCacFile}
             cacHistory={cacHistory}
+            tinLabel={tax?.label ?? "Tax ID"}
+            tinDescription={tax?.description ?? ""}
+            tinNumberLabel={tax?.numberLabel ?? "Tax No."}
             tinNumber={tinNumber}
             setTinNumber={setTinNumber}
             tinStatus={tinStatus}

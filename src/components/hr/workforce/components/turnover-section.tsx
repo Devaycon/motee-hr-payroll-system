@@ -1,15 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend } from "recharts";
 import { MoreHorizontal } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/src/components/ui/card";
+import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -18,11 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/src/components/ui/chart";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -30,10 +18,10 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Badge } from "@/src/components/ui/badge";
+import { MultiBarChart } from "@/src/components/shared/charts";
 import {
   TURNOVER_RECORDS,
   TURNOVER_PERIODS,
-  TURNOVER_CHART_CONFIG,
   buildTurnoverTrends,
 } from "../data";
 import type { TurnoverPeriod, TurnoverRecord } from "../types";
@@ -90,63 +78,23 @@ export function TurnoverSection() {
         ))}
       </div>
 
-      <Card className="border-border/60">
-        <CardHeader className="px-5 pt-5 pb-3">
-          <CardTitle className="text-sm font-semibold">
-            Quarterly Turnover Trend
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Voluntary vs involuntary exits across the last 5 quarters
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-5 pb-5">
-          <ChartContainer
-            config={TURNOVER_CHART_CONFIG}
-            className="h-52 w-full"
-          >
-            <BarChart data={chartData} barCategoryGap="30%">
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="hsl(var(--border))"
-              />
-              <XAxis
-                dataKey="period"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                allowDecimals={false}
-              />
-              <ChartTooltip
-                cursor={{ fill: "hsl(var(--muted))", opacity: 0.5 }}
-                content={<ChartTooltipContent />}
-              />
-              <Legend
-                iconType="square"
-                iconSize={10}
-                wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }}
-              />
-              <Bar
-                dataKey="voluntary"
-                name="Voluntary"
-                fill="var(--color-voluntary)"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="involuntary"
-                name="Involuntary"
-                fill="var(--color-involuntary)"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+      <MultiBarChart
+        title="Quarterly Turnover Trend"
+        description="Voluntary vs involuntary exits across the last 5 quarters"
+        categories={chartData.map((d) => d.period)}
+        series={[
+          {
+            name: "Voluntary",
+            data: chartData.map((d) => d.voluntary),
+            color: "#ff8b2d",
+          },
+          {
+            name: "Involuntary",
+            data: chartData.map((d) => d.involuntary),
+            color: "#f43f5e",
+          },
+        ]}
+      />
 
       <div>
         <div className="mb-3 flex items-center justify-between">

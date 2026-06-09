@@ -1,4 +1,5 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import React, { useState } from "react";
 import { toast } from "sonner";
@@ -21,41 +22,42 @@ import {
 } from "@/src/components/ui/select";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
-import { MessageSquare, Lock, AlertTriangle, Shield } from "lucide-react";
-import type {
-  AnyCase,
-  GrievanceCase,
-  DisciplinaryCase,
-  GrievanceStatus,
-  DisciplinaryStatus,
-  CaseNote,
-} from "../types";
 import {
-  GRIEVANCE_STATUS_CONFIG,
-  DISCIPLINARY_STATUS_CONFIG,
-  DISCIPLINARY_OUTCOME_CONFIG,
+  MessageSquare,
+  Lock,
+  Scale,
+  Check,
+  Users,
+  Paperclip,
+} from "lucide-react";
+import type { ERCase, CaseNote, CaseStage } from "../types";
+import {
+  CASE_STAGE_CONFIG,
+  CASE_STAGE_ORDER,
+  CASE_TYPE_CONFIG,
+  CONFIDENTIALITY_CONFIG,
+  CASE_OUTCOME_CONFIG,
+  CASE_OUTCOME_OPTIONS,
   PRIORITY_CONFIG,
-  GRIEVANCE_CATEGORY_CONFIG,
-  DISCIPLINARY_CATEGORY_CONFIG,
 } from "../data";
+
+const HR_OFFICERS = ["Rachel Mensah", "Amara Osei", "Kofi Asante"];
 
 interface Props {
   open: boolean;
-  caseData: AnyCase | null;
+  caseData: ERCase | null;
   onClose: () => void;
   onAddNote: (id: string, note: Omit<CaseNote, "id">) => void;
-  onUpdateStatus: (
-    id: string,
-    status: GrievanceStatus | DisciplinaryStatus,
-  ) => void;
-  onRecordOutcome: (
-    id: string,
-    outcome: string,
-    outcomeDate: string,
-    suspensionDays?: number,
-  ) => void;
-  onRaiseAppeal: (id: string) => void;
-  onScheduleHearing: (id: string, date: string) => void;
+  onUpdateCase: (id: string, patch: Partial<ERCase>) => void;
+}
+
+function fmt(d?: string) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 export function CaseDetailModal({
@@ -63,68 +65,52 @@ export function CaseDetailModal({
   caseData,
   onClose,
   onAddNote,
-  onUpdateStatus,
-  onRecordOutcome,
-  onRaiseAppeal,
-  onScheduleHearing,
+  onUpdateCase,
 }: Props) {
   const [prevOpen, setPrevOpen] = useState(false);
   const [noteContent, setNoteContent] = useState("");
   const [isInternal, setIsInternal] = useState(true);
-  const [outcome, setOutcome] = useState("");
-  const [outcomeText, setOutcomeText] = useState("");
-  const [outcomeDate, setOutcomeDate] = useState("");
-  const [suspensionDays, setSuspensionDays] = useState("");
-  const [hearingDate, setHearingDate] = useState("");
   const [savingNote, setSavingNote] = useState(false);
-  const [savingOutcome, setSavingOutcome] = useState(false);
+
+  // Per-stage capture fields
+  const [hearingDate, setHearingDate] = useState("");
+  const [hearingPanel, setHearingPanel] = useState("");
+  const [outcome, setOutcome] = useState("");
+  const [outcomeDate, setOutcomeDate] = useState("");
+  const [appealReviewer, setAppealReviewer] = useState("");
+  const [appealGrounds, setAppealGrounds] = useState("");
+  const [retentionPeriod, setRetentionPeriod] = useState("");
+  const [closureDate, setClosureDate] = useState("");
 
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (open) {
+    if (open && caseData) {
       setNoteContent("");
       setIsInternal(true);
-      setOutcome("");
-      setOutcomeText("");
-      setOutcomeDate("");
-      setSuspensionDays("");
-      setHearingDate(caseData?.hearingDate ?? "");
+      setHearingDate(caseData.hearingDate ?? "");
+      setHearingPanel((caseData.hearingPanel ?? []).join(", "));
+      setOutcome(typeof caseData.outcome === "string" ? caseData.outcome : "");
+      setOutcomeDate(caseData.outcomeDate ?? "");
+      setAppealReviewer(caseData.appealReviewer ?? "");
+      setAppealGrounds(caseData.appealGrounds ?? "");
+      setRetentionPeriod(caseData.retentionPeriod ?? "");
+      setClosureDate(caseData.closureDate ?? "");
     }
   }
 
   if (!caseData) return null;
 
-  const isGrievance = caseData.type === "grievance";
-  const grievance = isGrievance ? (caseData as GrievanceCase) : null;
-  const disciplinary = !isGrievance ? (caseData as DisciplinaryCase) : null;
-
-  const statusConfig = isGrievance
-    ? GRIEVANCE_STATUS_CONFIG
-    : DISCIPLINARY_STATUS_CONFIG;
-
-  const currentStatusCfg =
-    statusConfig[caseData.status as keyof typeof statusConfig];
+  const typeCfg = CASE_TYPE_CONFIG[caseData.complaintType];
+  const stageCfg = CASE_STAGE_CONFIG[caseData.stage];
   const priCfg = PRIORITY_CONFIG[caseData.priority];
-  const categoryLabel = isGrievance
-    ? GRIEVANCE_CATEGORY_CONFIG[grievance!.category].label
-    : DISCIPLINARY_CATEGORY_CONFIG[disciplinary!.category].label;
+  const confCfg = CONFIDENTIALITY_CONFIG[caseData.confidentialityLevel];
+  const currentStep = stageCfg.step;
 
-  const grievanceStatusOptions: GrievanceStatus[] = [
-    "raised",
-    "under_investigation",
-    "hearing_scheduled",
-    "resolved",
-    "closed",
-  ];
-
-  const disciplinaryStatusOptions: DisciplinaryStatus[] = [
-    "reported",
-    "investigation",
-    "hearing_scheduled",
-    "outcome_issued",
-    "appealed",
-    "closed",
-  ];
+  function setStage(stage: CaseStage) {
+    if (!caseData) return;
+    onUpdateCase(caseData.id, { stage });
+    toast.success(`Moved to ${CASE_STAGE_CONFIG[stage].label}.`);
+  }
 
   function handleAddNote() {
     if (!caseData) return;
@@ -147,42 +133,77 @@ export function CaseDetailModal({
     }, 200);
   }
 
-  function handleRecordOutcome() {
+  function saveHearing() {
     if (!caseData) return;
-    if (!outcomeDate) {
-      toast.error("Please set an outcome date.");
-      return;
-    }
-    if (isGrievance && !outcomeText.trim()) {
-      toast.error("Please enter outcome details.");
-      return;
-    }
-    if (!isGrievance && !outcome) {
+    const panel = hearingPanel
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    onUpdateCase(caseData.id, {
+      hearingDate: hearingDate || undefined,
+      hearingPanel: panel,
+      stage: "hearing",
+    });
+    toast.success("Hearing details saved.");
+  }
+
+  function saveOutcome() {
+    if (!caseData) return;
+    if (!outcome) {
       toast.error("Please select an outcome.");
       return;
     }
-    setSavingOutcome(true);
-    setTimeout(() => {
-      const days = suspensionDays ? Number(suspensionDays) : undefined;
-      onRecordOutcome(
-        caseData.id,
-        isGrievance ? outcomeText : outcome,
-        outcomeDate,
-        days,
-      );
-      setSavingOutcome(false);
-      toast.success("Outcome recorded.");
-    }, 200);
+    onUpdateCase(caseData.id, {
+      outcome,
+      outcomeDate: outcomeDate || new Date().toISOString().split("T")[0],
+      stage: "outcome_issued",
+    });
+    toast.success("Outcome recorded.");
   }
 
-  function handleScheduleHearing() {
+  function saveAppeal() {
     if (!caseData) return;
-    if (!hearingDate) {
-      toast.error("Please select a hearing date.");
+    if (!appealReviewer) {
+      toast.error("Please name an appeal reviewer.");
       return;
     }
-    onScheduleHearing(caseData.id, hearingDate);
-    toast.success("Hearing date scheduled.");
+    onUpdateCase(caseData.id, {
+      hasAppeal: true,
+      appealCaseId:
+        caseData.appealCaseId ??
+        `APPEAL-${caseData.caseNumber.replace(/[^A-Z0-9]/gi, "")}`,
+      appealReviewer,
+      appealGrounds: appealGrounds || undefined,
+      stage: "appeal",
+    });
+    toast.success("Appeal recorded.");
+  }
+
+  function saveClosure() {
+    if (!caseData) return;
+    onUpdateCase(caseData.id, {
+      retentionPeriod: retentionPeriod || undefined,
+      closureDate: closureDate || new Date().toISOString().split("T")[0],
+      stage: "closed",
+    });
+    toast.success("Case closed.");
+  }
+
+  function saveAssignee(name: string) {
+    if (!caseData) return;
+    onUpdateCase(caseData.id, {
+      assignedTo: name,
+      assignedInitials: name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2),
+      stage: caseData.stage === "raised" || caseData.stage === "triage"
+        ? "assigned"
+        : caseData.stage,
+    });
+    toast.success("Case assigned.");
   }
 
   return (
@@ -196,17 +217,9 @@ export function CaseDetailModal({
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
           <div className="flex items-start gap-3">
             <div
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                isGrievance
-                  ? "bg-indigo-50 dark:bg-indigo-950/40"
-                  : "bg-rose-50 dark:bg-rose-950/40"
-              }`}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${typeCfg.bg}`}
             >
-              {isGrievance ? (
-                <Shield className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
-              ) : (
-                <AlertTriangle className="h-4.5 w-4.5 text-rose-600 dark:text-rose-400" />
-              )}
+              <Scale className={`h-4.5 w-4.5 ${typeCfg.color}`} />
             </div>
             <div>
               <DialogTitle className="text-base">
@@ -223,17 +236,24 @@ export function CaseDetailModal({
           <div className="space-y-5">
             <div className="flex flex-wrap gap-2">
               <span
-                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${currentStatusCfg.color} ${currentStatusCfg.bg} ${currentStatusCfg.border}`}
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${stageCfg.color} ${stageCfg.bg} ${stageCfg.border}`}
               >
-                {currentStatusCfg.label}
+                {stageCfg.label}
+              </span>
+              <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${typeCfg.color} ${typeCfg.bg} ${typeCfg.border}`}
+              >
+                {typeCfg.label}
               </span>
               <span
                 className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${priCfg.color} ${priCfg.bg} ${priCfg.border}`}
               >
                 {priCfg.label} Priority
               </span>
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
-                {categoryLabel}
+              <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${confCfg.color} ${confCfg.bg} ${confCfg.border}`}
+              >
+                {confCfg.label}
               </span>
             </div>
 
@@ -249,228 +269,299 @@ export function CaseDetailModal({
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground">Date Raised</p>
-                <p className="font-medium">
-                  {new Date(caseData.dateRaised).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </p>
+                <p className="font-medium">{fmt(caseData.dateRaised)}</p>
               </div>
-              {caseData.incidentDate && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Incident Date</p>
-                  <p className="font-medium">
-                    {new Date(caseData.incidentDate).toLocaleDateString(
-                      "en-GB",
-                      {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      },
-                    )}
-                  </p>
-                </div>
-              )}
-              {caseData.assignedTo && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Assigned To</p>
-                  <p className="font-medium">{caseData.assignedTo}</p>
-                </div>
-              )}
-              {caseData.hearingDate && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Hearing Date</p>
-                  <p className="font-medium">
-                    {new Date(caseData.hearingDate).toLocaleDateString(
-                      "en-GB",
-                      {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      },
-                    )}
-                  </p>
-                </div>
-              )}
-              {disciplinary?.outcome && (
+              <div>
+                <p className="text-xs text-muted-foreground">Incident Date</p>
+                <p className="font-medium">{fmt(caseData.incidentDate)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Assigned To</p>
+                <p className="font-medium">{caseData.assignedTo ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Hearing Date</p>
+                <p className="font-medium">{fmt(caseData.hearingDate)}</p>
+              </div>
+              {caseData.outcome && (
                 <div>
                   <p className="text-xs text-muted-foreground">Outcome</p>
                   <span
-                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${DISCIPLINARY_OUTCOME_CONFIG[disciplinary.outcome].color} ${DISCIPLINARY_OUTCOME_CONFIG[disciplinary.outcome].bg} ${DISCIPLINARY_OUTCOME_CONFIG[disciplinary.outcome].border}`}
+                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
+                      CASE_OUTCOME_CONFIG[
+                        caseData.outcome as keyof typeof CASE_OUTCOME_CONFIG
+                      ]?.color ?? ""
+                    } ${
+                      CASE_OUTCOME_CONFIG[
+                        caseData.outcome as keyof typeof CASE_OUTCOME_CONFIG
+                      ]?.bg ?? ""
+                    } ${
+                      CASE_OUTCOME_CONFIG[
+                        caseData.outcome as keyof typeof CASE_OUTCOME_CONFIG
+                      ]?.border ?? ""
+                    }`}
                   >
-                    {DISCIPLINARY_OUTCOME_CONFIG[disciplinary.outcome].label}
+                    {CASE_OUTCOME_CONFIG[
+                      caseData.outcome as keyof typeof CASE_OUTCOME_CONFIG
+                    ]?.label ?? caseData.outcome}
                   </span>
                 </div>
               )}
-              {grievance?.outcome && (
-                <div className="col-span-2">
-                  <p className="text-xs text-muted-foreground">Outcome</p>
-                  <p className="text-sm">{grievance.outcome}</p>
+              {caseData.closureDate && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Closure Date</p>
+                  <p className="font-medium">{fmt(caseData.closureDate)}</p>
+                </div>
+              )}
+              {caseData.retentionPeriod && (
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Retention Period
+                  </p>
+                  <p className="font-medium">{caseData.retentionPeriod}</p>
+                </div>
+              )}
+              {caseData.appealReviewer && (
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Appeal Reviewer
+                  </p>
+                  <p className="font-medium">{caseData.appealReviewer}</p>
                 </div>
               )}
             </div>
 
+            {/* Witnesses & Evidence summary */}
+            {(caseData.witnesses.length > 0 ||
+              caseData.evidence.length > 0 ||
+              caseData.hearingPanel.length > 0) && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {caseData.witnesses.length > 0 && (
+                  <div className="rounded-lg border border-border p-3">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-2">
+                      <Users className="h-3.5 w-3.5" /> Witnesses
+                    </p>
+                    <ul className="space-y-1">
+                      {caseData.witnesses.map((w, i) => (
+                        <li key={i} className="text-sm">
+                          <span className="font-medium">{w.name}</span>
+                          {w.statement ? (
+                            <span className="text-muted-foreground">
+                              {" "}
+                              — {w.statement}
+                            </span>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {caseData.evidence.length > 0 && (
+                  <div className="rounded-lg border border-border p-3">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-2">
+                      <Paperclip className="h-3.5 w-3.5" /> Evidence
+                    </p>
+                    <ul className="space-y-1">
+                      {caseData.evidence.map((e, i) => (
+                        <li key={i} className="text-sm text-foreground">
+                          {e.name}
+                          <span className="text-xs text-muted-foreground">
+                            {" "}
+                            ({fmt(e.uploadedAt)})
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {caseData.hearingPanel.length > 0 && (
+                  <div className="rounded-lg border border-border p-3 sm:col-span-2">
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">
+                      Hearing Panel
+                    </p>
+                    <p className="text-sm">
+                      {caseData.hearingPanel.join(", ")}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <Separator />
 
+            {/* 8-stage workflow stepper */}
             <div className="space-y-3">
-              <p className="text-sm font-semibold">Update Status</p>
-              <div className="flex flex-wrap gap-2">
-                {(isGrievance
-                  ? grievanceStatusOptions
-                  : disciplinaryStatusOptions
-                ).map((s) => {
-                  const cfg = statusConfig[s as keyof typeof statusConfig];
-                  const isCurrent = s === caseData.status;
+              <p className="text-sm font-semibold">Workflow</p>
+              <div className="flex flex-wrap gap-1.5">
+                {CASE_STAGE_ORDER.map((stage) => {
+                  const cfg = CASE_STAGE_CONFIG[stage];
+                  const done = cfg.step < currentStep;
+                  const current = cfg.step === currentStep;
                   return (
                     <button
-                      key={s}
+                      key={stage}
                       type="button"
-                      disabled={isCurrent}
-                      onClick={() =>
-                        onUpdateStatus(
-                          caseData.id,
-                          s as GrievanceStatus & DisciplinaryStatus,
-                        )
-                      }
-                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-opacity ${
-                        isCurrent
-                          ? "opacity-100 ring-1 ring-offset-1 ring-primary"
-                          : "opacity-60 hover:opacity-100"
-                      } ${cfg.color} ${cfg.bg} ${cfg.border}`}
+                      onClick={() => setStage(stage)}
+                      className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-all ${
+                        current
+                          ? `${cfg.color} ${cfg.bg} ${cfg.border} ring-1 ring-offset-1 ring-primary`
+                          : done
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
+                            : "border-border bg-transparent text-muted-foreground hover:bg-muted/50"
+                      }`}
                     >
+                      {done ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <span className="font-mono">{cfg.step}</span>
+                      )}
                       {cfg.label}
                     </button>
                   );
                 })}
               </div>
+              <p className="text-xs text-muted-foreground">
+                Click a stage to move the case. Capture stage data below.
+              </p>
             </div>
 
             <Separator />
 
-            <div className="space-y-3">
-              <p className="text-sm font-semibold">Schedule Hearing</p>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={hearingDate}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setHearingDate(e.target.value)
-                  }
-                  className="flex-1"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleScheduleHearing}
+            {/* Per-stage capture */}
+            <div className="space-y-5">
+              {/* Assign */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Assign / Triage</Label>
+                <Select
+                  value={caseData.assignedTo ?? ""}
+                  onValueChange={saveAssignee}
                 >
-                  Set Date
-                </Button>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Assign to HR officer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HR_OFFICERS.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
 
-            <Separator />
-
-            <div className="space-y-3">
-              <p className="text-sm font-semibold">Record Outcome</p>
-              {isGrievance ? (
-                <div className="space-y-2">
-                  <Textarea
-                    value={outcomeText}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                      setOutcomeText(e.target.value)
+              {/* Hearing */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Hearing</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="date"
+                    value={hearingDate}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setHearingDate(e.target.value)
                     }
-                    placeholder="Describe the resolution..."
-                    rows={2}
+                  />
+                  <Input
+                    value={hearingPanel}
+                    placeholder="Panel (comma separated)"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setHearingPanel(e.target.value)
+                    }
                   />
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Outcome Type</Label>
-                    <Select value={outcome} onValueChange={setOutcome}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select outcome" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(DISCIPLINARY_OUTCOME_CONFIG).map(
-                          ([val, cfg]) => (
-                            <SelectItem key={val} value={val}>
-                              {cfg.label}
-                            </SelectItem>
-                          ),
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {outcome === "suspension" && (
-                    <div className="space-y-1.5">
-                      <Label>Suspension Days</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={suspensionDays}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setSuspensionDays(e.target.value)
-                        }
-                        placeholder="Days"
-                      />
-                    </div>
-                  )}
+                <Button size="sm" variant="outline" onClick={saveHearing}>
+                  Save hearing
+                </Button>
+              </div>
+
+              {/* Outcome */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Outcome</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={outcome} onValueChange={setOutcome}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select outcome" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CASE_OUTCOME_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="date"
+                    value={outcomeDate}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setOutcomeDate(e.target.value)
+                    }
+                  />
                 </div>
-              )}
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="date"
-                  value={outcomeDate}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setOutcomeDate(e.target.value)
-                  }
-                  className="flex-1"
-                />
-                <Button
-                  size="sm"
-                  onClick={handleRecordOutcome}
-                  disabled={savingOutcome}
-                >
-                  {savingOutcome ? "Saving..." : "Record"}
+                <Button size="sm" variant="outline" onClick={saveOutcome}>
+                  Record outcome
+                </Button>
+              </div>
+
+              {/* Appeal */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Appeal</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select
+                    value={appealReviewer}
+                    onValueChange={setAppealReviewer}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Appeal reviewer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HR_OFFICERS.map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    value={appealGrounds}
+                    placeholder="Grounds for appeal"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setAppealGrounds(e.target.value)
+                    }
+                  />
+                </div>
+                <Button size="sm" variant="outline" onClick={saveAppeal}>
+                  Record appeal
+                </Button>
+              </div>
+
+              {/* Closure */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Closure</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    value={retentionPeriod}
+                    placeholder="Retention period (e.g. 6 years)"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setRetentionPeriod(e.target.value)
+                    }
+                  />
+                  <Input
+                    type="date"
+                    value={closureDate}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setClosureDate(e.target.value)
+                    }
+                  />
+                </div>
+                <Button size="sm" variant="outline" onClick={saveClosure}>
+                  Close case
                 </Button>
               </div>
             </div>
 
-            {!caseData.hasAppeal && (
-              <>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold">Raise Appeal</p>
-                    <p className="text-xs text-muted-foreground">
-                      Creates a linked appeal case for this decision.
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      onRaiseAppeal(caseData.id);
-                      toast.success("Appeal case raised and linked.");
-                    }}
-                  >
-                    Raise Appeal
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {caseData.hasAppeal && caseData.appealCaseId && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
-                Appeal linked:{" "}
-                <span className="font-semibold">{caseData.appealCaseId}</span>
-              </div>
-            )}
-
             <Separator />
 
+            {/* Notes */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
@@ -503,7 +594,7 @@ export function CaseDetailModal({
                           Internal
                         </span>
                       )}
-                      <span>{note.createdAt}</span>
+                      <span>{formatDate(note.createdAt)}</span>
                     </div>
                   </div>
                   <p className="text-sm text-foreground/80 leading-relaxed">

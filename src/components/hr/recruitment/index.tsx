@@ -1,222 +1,263 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { toast } from "sonner";
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Briefcase,
+  Users,
+  DoorOpen,
+  CheckCircle2,
+  Plus,
+  MoreHorizontal,
+  Eye,
+  Pencil,
+} from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Button } from "@/src/components/ui/button";
+import { Card, CardContent } from "@/src/components/ui/card";
+import { Badge } from "@/src/components/ui/badge";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import {
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { StatCards } from "./components/stat-cards";
-import { RequisitionsToolbar } from "./components/requisitions-toolbar";
-import { RequisitionsTable } from "./components/requisitions-table";
-import { ApplicantsTable } from "./components/applicants-table";
-import { RequisitionModal } from "./components/requisition-modal";
-import { JOB_REQUISITIONS, APPLICANTS } from "./data";
-import type {
-  JobRequisition,
-  NewJobRequisition,
-  Applicant,
-  ApplicationStage,
-} from "./types";
+import { cn } from "@/src/lib/utils";
+import {
+  REQUISITION_DISPLAY_STATUS,
+  REQUISITION_DISPLAY_TONE_STYLES,
+} from "@/src/data/recruitment-demo";
+import type { JobRequisition } from "@/src/lib/types/recruitment";
+import { useRecruitment } from "./hooks";
 
 export function RecruitmentPage() {
-  const [requisitions, setRequisitions] =
-    useState<JobRequisition[]>(JOB_REQUISITIONS);
-  const [applicants, setApplicants] = useState<Applicant[]>(APPLICANTS);
+  const router = useRouter();
+  const { loading, bucket } = useRecruitment();
 
-  const [activeTab, setActiveTab] = useState("requisitions");
+  const activeCountByReq = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of bucket.candidates) {
+      if (c.status === "rejected") continue;
+      m.set(c.requisitionId, (m.get(c.requisitionId) ?? 0) + 1);
+    }
+    return m;
+  }, [bucket.candidates]);
 
-  const [search, setSearch] = useState("");
-  const [deptFilter, setDeptFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-
-  const [applicantSearch, setApplicantSearch] = useState("");
-  const [applicantStageFilter, setApplicantStageFilter] = useState("all");
-  const [applicantReqFilter, setApplicantReqFilter] = useState("all");
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingReq, setEditingReq] = useState<JobRequisition | null>(null);
-
-  const filteredRequisitions = useMemo(() => {
-    return requisitions.filter((r) => {
-      const matchSearch =
-        !search ||
-        r.positionTitle.toLowerCase().includes(search.toLowerCase()) ||
-        r.department.toLowerCase().includes(search.toLowerCase()) ||
-        r.hiringManager.toLowerCase().includes(search.toLowerCase());
-      const matchDept = deptFilter === "all" || r.department === deptFilter;
-      const matchStatus = statusFilter === "all" || r.status === statusFilter;
-      return matchSearch && matchDept && matchStatus;
-    });
-  }, [requisitions, search, deptFilter, statusFilter]);
-
-  const requisitionTitles = useMemo(
-    () => [...new Set(applicants.map((a) => a.requisitionTitle))].sort(),
-    [applicants],
+  // Requested = drafts being built; Approved = published/active recruitments.
+  const requestedList = useMemo(
+    () => bucket.requisitions.filter((r) => r.status === "draft"),
+    [bucket.requisitions],
+  );
+  const approvedList = useMemo(
+    () => bucket.requisitions.filter((r) => r.status !== "draft"),
+    [bucket.requisitions],
   );
 
-  const filteredApplicants = useMemo(() => {
-    return applicants.filter((a) => {
-      const matchSearch =
-        !applicantSearch ||
-        a.name.toLowerCase().includes(applicantSearch.toLowerCase()) ||
-        a.email.toLowerCase().includes(applicantSearch.toLowerCase());
-      const matchStage =
-        applicantStageFilter === "all" || a.stage === applicantStageFilter;
-      const matchReq =
-        applicantReqFilter === "all" ||
-        a.requisitionTitle === applicantReqFilter ||
-        a.requisitionId === applicantReqFilter;
-      return matchSearch && matchStage && matchReq;
-    });
-  }, [applicants, applicantSearch, applicantStageFilter, applicantReqFilter]);
+  const stats = useMemo(() => {
+    const openRoles = bucket.requisitions.filter((r) =>
+      ["approved", "open", "interviewing", "offer_stage"].includes(r.status),
+    ).length;
+    const hired = bucket.candidates.filter(
+      (c) => c.stage === "hired" && c.status !== "rejected",
+    ).length;
+    const activeApplicants = bucket.candidates.filter(
+      (c) => c.status !== "rejected",
+    ).length;
+    return {
+      reqs: bucket.requisitions.length,
+      openRoles,
+      applicants: activeApplicants,
+      hired,
+    };
+  }, [bucket]);
 
-  const handleAdd = () => {
-    setEditingReq(null);
-    setModalOpen(true);
-  };
-
-  const handleEdit = (req: JobRequisition) => {
-    setEditingReq(req);
-    setModalOpen(true);
-  };
-
-  const handleSave = (data: NewJobRequisition) => {
-    if (editingReq) {
-      setRequisitions((prev) =>
-        prev.map((r) =>
-          r.id === editingReq.id ? { ...editingReq, ...data } : r,
+  const columns = useMemo<ColumnDef<JobRequisition>[]>(
+    () => [
+      {
+        id: "requisitionNumber",
+        header: sortableHeader("Req. No."),
+        accessorFn: (r) => r.requisitionNumber ?? r.id,
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-muted-foreground">
+            {row.original.requisitionNumber ?? row.original.id}
+          </span>
         ),
-      );
-      toast.success("Requisition updated");
-    } else {
-      const newReq: JobRequisition = {
-        ...data,
-        id: `req-${Date.now()}`,
-        status: "pending_approval",
-        createdAt: new Date().toISOString().slice(0, 10),
-        applicantCount: 0,
-      };
-      setRequisitions((prev) => [newReq, ...prev]);
-      toast.success("Requisition created and submitted for approval");
-    }
-    setModalOpen(false);
-    setEditingReq(null);
-  };
+      },
+      {
+        accessorKey: "positionTitle",
+        header: sortableHeader("Role"),
+        cell: ({ row }) => (
+          <div className="font-medium text-foreground">
+            {row.original.positionTitle}
+            <p className="text-xs text-muted-foreground font-normal">
+              {row.original.department}
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: "applicants",
+        header: sortableHeader("Applicants"),
+        accessorFn: (r) => activeCountByReq.get(r.id) ?? 0,
+        cell: ({ row }) => (
+          <span className="inline-flex items-center gap-1 text-sm text-foreground">
+            <Users className="w-3.5 h-3.5 text-muted-foreground" />
+            {activeCountByReq.get(row.original.id) ?? 0}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "openings",
+        header: "Openings",
+        cell: ({ row }) => (
+          <span className="text-muted-foreground text-sm">
+            {row.original.openings}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "targetStartDate",
+        header: sortableHeader("Target start"),
+        cell: ({ row }) => (
+          <span className="text-muted-foreground text-sm">
+            {row.original.targetStartDate || "—"}
+          </span>
+        ),
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const d = REQUISITION_DISPLAY_STATUS[row.original.status];
+          return (
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[10px]",
+                REQUISITION_DISPLAY_TONE_STYLES[d.tone],
+              )}
+            >
+              {d.label}
+            </Badge>
+          );
+        },
+      },
+      actionsColumn<JobRequisition>((req) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => router.push(`/talent/recruitment/${req.id}`)}
+            >
+              <Eye className="w-3.5 h-3.5 mr-2" />
+              View details
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                router.push(`/talent/recruitment/new?req=${req.id}`)
+              }
+            >
+              <Pencil className="w-3.5 h-3.5 mr-2" />
+              Edit recruitment
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )),
+    ],
+    [activeCountByReq, router],
+  );
 
-  const handleDelete = (id: string) => {
-    setRequisitions((prev) => prev.filter((r) => r.id !== id));
-    toast.success("Requisition deleted");
-  };
-
-  const handleApprove = (id: string) => {
-    setRequisitions((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "approved" } : r)),
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-5">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
     );
-    toast.success("Requisition approved");
-  };
-
-  const handleReject = (id: string) => {
-    setRequisitions((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "rejected" } : r)),
-    );
-    toast.info("Requisition rejected");
-  };
-
-  const handleClose = (id: string) => {
-    setRequisitions((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "closed" } : r)),
-    );
-    toast.info("Role closed");
-  };
-
-  const handleViewApplicants = (req: JobRequisition) => {
-    setApplicantReqFilter(req.positionTitle);
-    setActiveTab("applicants");
-  };
-
-  const handleStageChange = (id: string, stage: ApplicationStage) => {
-    setApplicants((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, stage } : a)),
-    );
-    toast.success(`Applicant moved to ${stage.replace(/_/g, " ")}`);
-  };
-
-  const handleRejectApplicant = (id: string) => {
-    setApplicants((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, stage: "rejected" } : a)),
-    );
-    toast.info("Applicant rejected");
-  };
+  }
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="py-6 w-fit">
-        <h1 className="text-4xl font-bold text-foreground">Recruitment</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Manage job requisitions and track applicants through the hiring
-          pipeline.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap py-2">
+        <div>
+          <h1 className="text-4xl font-semibold text-foreground">Recruitment</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Each requisition runs its own pipeline. Open one to manage its
+            applicants, interviews and hires.
+          </p>
+        </div>
+        <Button
+          className="gap-1.5"
+          onClick={() => router.push("/talent/recruitment/new")}
+        >
+          <Plus className="w-4 h-4" />
+          Create Recruitment
+        </Button>
       </div>
 
-      <StatCards requisitions={requisitions} applicants={applicants} />
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {[
+          { label: "Requisitions", value: stats.reqs, icon: Briefcase },
+          { label: "Open Roles", value: stats.openRoles, icon: DoorOpen },
+          { label: "Applicants", value: stats.applicants, icon: Users },
+          { label: "Hired", value: stats.hired, icon: CheckCircle2 },
+        ].map((s) => (
+          <Card key={s.label} className="border-border/60">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <s.icon className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
+                <p className="text-2xl font-bold text-foreground">{s.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="flex flex-col gap-4"
-      >
+      <Tabs defaultValue="approved">
         <PageTabsList
           tabs={[
-            { value: "requisitions", label: "Requisitions" },
-            { value: "applicants", label: "Applicants" },
+            { value: "requested", label: `Requested Recruitment (${requestedList.length})` },
+            { value: "approved", label: `Approved Recruitment (${approvedList.length})` },
           ]}
         />
 
-        <TabsContent value="requisitions" className="mt-0 flex flex-col gap-4">
-          <RequisitionsToolbar
-            search={search}
-            onSearchChange={setSearch}
-            deptFilter={deptFilter}
-            onDeptFilterChange={setDeptFilter}
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            onAdd={handleAdd}
-          />
-          <RequisitionsTable
-            requisitions={filteredRequisitions}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            onClose={handleClose}
-            onViewApplicants={handleViewApplicants}
+        <TabsContent value="requested" className="mt-5">
+          <DataTable
+            columns={columns}
+            data={requestedList}
+            getRowId={(r) => r.id}
+            onRowClick={(r) => router.push(`/talent/recruitment/${r.id}`)}
+            searchPlaceholder="Search recruitments…"
+            emptyMessage="No draft recruitments. Create one from an approved requisition."
           />
         </TabsContent>
 
-        <TabsContent value="applicants" className="mt-0 flex flex-col gap-4">
-          <ApplicantsTable
-            applicants={filteredApplicants}
-            onStageChange={handleStageChange}
-            onReject={handleRejectApplicant}
-            search={applicantSearch}
-            onSearchChange={setApplicantSearch}
-            stageFilter={applicantStageFilter}
-            onStageFilterChange={setApplicantStageFilter}
-            requisitionFilter={applicantReqFilter}
-            onRequisitionFilterChange={setApplicantReqFilter}
-            requisitionTitles={requisitionTitles}
+        <TabsContent value="approved" className="mt-5">
+          <DataTable
+            columns={columns}
+            data={approvedList}
+            getRowId={(r) => r.id}
+            onRowClick={(r) => router.push(`/talent/recruitment/${r.id}`)}
+            searchPlaceholder="Search recruitments…"
+            emptyMessage="No published recruitments yet."
           />
         </TabsContent>
       </Tabs>
-
-      <RequisitionModal
-        open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditingReq(null);
-        }}
-        editingRequisition={editingReq}
-        onSave={handleSave}
-      />
     </div>
   );
 }

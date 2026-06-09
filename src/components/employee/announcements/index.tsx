@@ -4,14 +4,24 @@ import { useState } from "react";
 import { Bell } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { ANNOUNCEMENTS, MY_DEPT } from "./components/data";
+import { ANNOUNCEMENTS as DEMO_ANNOUNCEMENTS, MY_DEPT as DEMO_DEPT } from "./components/data";
 import type { Announcement, AnnouncementType } from "./components/data";
+import { useAnnouncements } from "@/src/components/hr/announcements/hooks";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { PendingAckBanner } from "./components/pending-ack-banner";
 import { SearchFilter } from "./components/search-filter";
 import { AnnouncementList } from "./components/announcement-list";
 import { AnnouncementDetailModal } from "./components/announcement-detail-modal";
 
 export function EmployeeAnnouncements() {
+  const { data: localeAnnouncements } = useAnnouncements();
+  const userDept = useAppSelector((s) => s.auth.user?.departmentName);
+  const MY_DEPT = userDept ?? DEMO_DEPT;
+  const ANNOUNCEMENTS = (
+    localeAnnouncements && localeAnnouncements.length
+      ? localeAnnouncements
+      : DEMO_ANNOUNCEMENTS
+  ) as unknown as Announcement[];
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<AnnouncementType | "all">("all");
   const [selected, setSelected] = useState<Announcement | null>(null);

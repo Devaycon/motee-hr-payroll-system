@@ -11,12 +11,25 @@ import { ContractsTable } from "./components/contracts-table";
 import { UnsignedContractsTable } from "./components/unsigned-contracts-table";
 import { CONTRACTS } from "@/src/data/contracts-demo";
 import type { Contract } from "@/src/lib/types/contracts";
-
-const MY_EMPLOYEE = "Adaeze Okonkwo";
+import { useContracts } from "@/src/components/hr/contracts/hooks";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 
 export default function MyContractsPage() {
+  const { data: localeContracts } = useContracts();
+  const employeeName = useAppSelector((s) => s.auth.user?.name);
+  const FALLBACK_EMPLOYEE = "Adaeze Okonkwo";
+  const baseContracts =
+    localeContracts && employeeName
+      ? localeContracts.filter(
+          (c) => c.employeeName === employeeName && !c.isArchived,
+        )
+      : null;
   const [contracts, setContracts] = useState(
-    CONTRACTS.filter((c) => c.employeeName === MY_EMPLOYEE && !c.isArchived),
+    baseContracts && baseContracts.length
+      ? baseContracts
+      : CONTRACTS.filter(
+          (c) => c.employeeName === FALLBACK_EMPLOYEE && !c.isArchived,
+        ),
   );
 
   const myContracts = contracts;

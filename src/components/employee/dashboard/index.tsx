@@ -1,5 +1,6 @@
 "use client";
 
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { WelcomeBanner } from "./components/welcome-banner";
 import { StatCards } from "./components/stat-cards";
 import { LeaveBalanceCards } from "./components/leave-balance-cards";
@@ -13,17 +14,19 @@ import { QuickLinks } from "./components/quick-links";
 import { MyTasks } from "./components/my-tasks";
 
 export function EmployeeDashboard() {
+  const user = useAppSelector((s) => s.auth.user);
   const today = new Date();
   const dayName = today.toLocaleDateString("en-US", { weekday: "long" });
-  const dateStr = today.toLocaleDateString("en-US", {
+  const dateStr = today.toLocaleDateString("en-GB", {
     month: "long",
     day: "numeric",
     year: "numeric",
   });
+  const firstName = user?.name?.split(" ")[0] ?? "there";
 
   return (
     <div className="flex flex-col gap-6">
-      <WelcomeBanner name="Adeyemi" dayName={dayName} dateStr={dateStr} />
+      <WelcomeBanner name={firstName} dayName={dayName} dateStr={dateStr} />
 
       <StatCards />
 

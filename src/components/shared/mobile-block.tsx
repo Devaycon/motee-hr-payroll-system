@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { AnimatedDotBackground } from "@/src/components/shared/animated-dot-background";
+import { LogoPatternBackground } from "@/src/components/shared/logo-pattern-background";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
 
 export function MobileBlock() {
@@ -20,8 +20,7 @@ export function MobileBlock() {
   return (
     <div className="fixed inset-0 z-99999 flex flex-col bg-background overflow-y-auto">
       <div className="absolute inset-0 pointer-events-none">
-        <AnimatedDotBackground dotColor="#4361ee" />
-        <div className="pointer-events-none absolute inset-0 bg-white mask-[radial-gradient(ellipse_at_center,transparent_20%,black)] dark:bg-black" />
+        <LogoPatternBackground />
       </div>
 
       <div className="relative z-10 flex items-center justify-between px-5 py-4">

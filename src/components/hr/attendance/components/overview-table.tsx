@@ -1,15 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Search,
-  SlidersHorizontal,
-  Plus,
-  MoreHorizontal,
-  Pencil,
-  UserCheck,
-} from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { useMemo, useState } from "react";
+import { Search, SlidersHorizontal, Plus, MoreHorizontal, Pencil } from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -22,6 +15,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from "@/src/components/ui/dropdown-menu";
+import {
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
 import {
   ATTENDANCE_STATUS_LABELS,
   ATTENDANCE_STATUS_STYLES,
@@ -69,6 +67,124 @@ export function OverviewTable({
   const activeFilters = [deptFilter !== "all", statusFilter !== "all"].filter(
     Boolean,
   ).length;
+
+  const columns = useMemo<ColumnDef<AttendanceRecord>[]>(
+    () => [
+      {
+        accessorKey: "employeeName",
+        header: sortableHeader("Employee"),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-[10px] font-semibold shrink-0">
+              {row.original.employeeInitials}
+            </div>
+            <div>
+              <p className="text-xs font-medium leading-none">
+                {row.original.employeeName}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {row.original.jobTitle}
+              </p>
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "department",
+        header: sortableHeader("Department"),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {row.original.department}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "clockIn",
+        header: "Clock In",
+        cell: ({ row }) => (
+          <span className="text-xs font-mono">{row.original.clockIn ?? "—"}</span>
+        ),
+      },
+      {
+        accessorKey: "clockOut",
+        header: "Clock Out",
+        cell: ({ row }) =>
+          row.original.clockOut ? (
+            <span className="text-xs font-mono">{row.original.clockOut}</span>
+          ) : row.original.clockIn ? (
+            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Active
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          ),
+      },
+      {
+        accessorKey: "totalHours",
+        header: sortableHeader("Hours"),
+        cell: ({ row }) => (
+          <span className="text-xs">
+            {row.original.totalHours ? `${row.original.totalHours}h` : "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "overtimeHours",
+        header: sortableHeader("Overtime"),
+        cell: ({ row }) => (
+          <span
+            className={`text-xs font-medium ${
+              row.original.overtimeHours > 0
+                ? "text-amber-600 dark:text-amber-400"
+                : "text-muted-foreground"
+            }`}
+          >
+            {row.original.overtimeHours > 0
+              ? `+${row.original.overtimeHours}h`
+              : "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: sortableHeader("Status"),
+        cell: ({ row }) => (
+          <div className="flex flex-col gap-0.5">
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${ATTENDANCE_STATUS_STYLES[row.original.status]}`}
+            >
+              {ATTENDANCE_STATUS_LABELS[row.original.status]}
+            </span>
+            {row.original.location && (
+              <span className="text-[10px] text-muted-foreground">
+                {row.original.location}
+              </span>
+            )}
+          </div>
+        ),
+      },
+      actionsColumn<AttendanceRecord>((record) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => onEdit(record)}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit Record
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )),
+    ],
+    [onEdit],
+  );
 
   const summaryBadges = [
     {
@@ -195,160 +311,14 @@ export function OverviewTable({
         </div>
       </div>
 
-      <Card className="mt-4">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Employee
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Department
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Clock In
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Clock Out
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Hours
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Overtime
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Status
-                  </th>
-                  <th className="text-right font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-16 text-center">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <UserCheck className="w-8 h-8 opacity-30" />
-                        <p className="text-sm font-medium">No records found</p>
-                        <p className="text-xs">
-                          Try adjusting your search or filters
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((record) => (
-                    <tr
-                      key={record.id}
-                      className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-[10px] font-semibold shrink-0">
-                            {record.employeeInitials}
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium leading-none">
-                              {record.employeeName}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                              {record.jobTitle}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-muted-foreground">
-                          {record.department}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs font-mono">
-                          {record.clockIn ?? "—"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {record.clockOut ? (
-                          <span className="text-xs font-mono">
-                            {record.clockOut}
-                          </span>
-                        ) : record.clockIn ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            —
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs">
-                          {record.totalHours ? `${record.totalHours}h` : "—"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`text-xs font-medium ${
-                            record.overtimeHours > 0
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          {record.overtimeHours > 0
-                            ? `+${record.overtimeHours}h`
-                            : "—"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-0.5">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${ATTENDANCE_STATUS_STYLES[record.status]}`}
-                          >
-                            {ATTENDANCE_STATUS_LABELS[record.status]}
-                          </span>
-                          {record.location && (
-                            <span className="text-[10px] text-muted-foreground">
-                              {record.location}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                            >
-                              <MoreHorizontal className="w-3.5 h-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-36">
-                            <DropdownMenuItem
-                              className="text-xs gap-2"
-                              onClick={() => onEdit(record)}
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                              Edit Record
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="mt-4">
+        <DataTable
+          columns={columns}
+          data={filtered}
+          getRowId={(r) => r.id}
+          emptyMessage="No records found."
+        />
+      </div>
     </>
   );
 }

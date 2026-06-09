@@ -222,7 +222,7 @@ export function ReviewModal({
                         "en-GB",
                         {
                           day: "2-digit",
-                          month: "short",
+                          month: "long",
                           year: "numeric",
                         },
                       ),
@@ -234,7 +234,7 @@ export function ReviewModal({
                             viewingReview.completedDate,
                           ).toLocaleDateString("en-GB", {
                             day: "2-digit",
-                            month: "short",
+                            month: "long",
                             year: "numeric",
                           })
                         : "—",

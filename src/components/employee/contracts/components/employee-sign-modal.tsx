@@ -55,7 +55,7 @@ export function EmployeeSignModal({
 
   const today = new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
-    month: "short",
+    month: "long",
     year: "numeric",
   });
 

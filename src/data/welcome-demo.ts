@@ -1,25 +1,20 @@
 ﻿import {
   Building2,
   BarChart3,
-  Bell,
-  Briefcase,
   CalendarDays,
   Award,
   Zap,
-  Megaphone,
-  Clock,
   UserCheck,
   FileText,
 } from "lucide-react";
 
 export const SETUP_STEPS = [
-  { label: "Complete company profile", done: true, link: "/admin/company-profile" },
-  { label: "Add departments", done: true, link: "/admin/departments" },
-  { label: "Invite team members", done: true, link: "/admin/employees" },
-  { label: "Configure employment types", done: false, link: "/admin/employment-types" },
+  { label: "Complete company profile", done: true, link: "/organization/company" },
+  { label: "Add departments", done: true, link: "/organization/departments" },
+  { label: "Invite team members", done: true, link: "/organization/employees" },
+  { label: "Configure employment types", done: false, link: "/organization/employment-types" },
   { label: "Set up leave policies", done: false, link: "/time-payroll/leave" },
-  { label: "Configure payroll settings", done: false, link: "/time-payroll/payroll" },
-  { label: "Upload onboarding checklist", done: false, link: "/admin/employee-checklist" },
+  { label: "Upload onboarding checklist", done: false, link: "/organization/employee-checklist" },
 ];
 
 export const ALERTS = [
@@ -87,10 +82,9 @@ export const HELP_RESOURCES = [
 
 export const NEXT_ACTIONS = [
   { id: "na-1", label: "Review 3 pending leave requests", icon: CalendarDays, link: "/time-payroll/leave", count: 3, priority: "high" },
-  { id: "na-2", label: "Approve 2 expense claims", icon: Briefcase, link: "/time-payroll/payroll", count: 2, priority: "medium" },
   { id: "na-3", label: "Complete 4 performance reviews", icon: BarChart3, link: "/talent/performance", count: 4, priority: "medium" },
-  { id: "na-4", label: "Update company organogram", icon: Building2, link: "/admin/structure", count: null, priority: "low" },
-  { id: "na-5", label: "Send kudos to top performers", icon: Award, link: "/hr/community", count: null, priority: "low" },
+  { id: "na-4", label: "Update company organogram", icon: Building2, link: "/organization/structure", count: null, priority: "low" },
+  { id: "na-5", label: "Send kudos to top performers", icon: Award, link: "/workspace/kudos", count: null, priority: "low" },
 ];
 
 export const TIPS = [

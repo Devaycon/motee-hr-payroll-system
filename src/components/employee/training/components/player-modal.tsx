@@ -1,4 +1,7 @@
-import { Play, Video, FileText } from "lucide-react";
+"use client";
+
+import { useRef, useState } from "react";
+import { CheckCircle2, VideoOff } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,22 +15,66 @@ import { ProgressBar } from "./helpers";
 interface PlayerModalProps {
   open: boolean;
   enrollment: MyEnrollment | null;
-  playerProgress: number;
-  playerPlaying: boolean;
-  onTogglePlay: () => void;
-  onSaveProgress: () => void;
+  /** Persist watched progress (percent 0–100) and resume position (seconds). */
+  onSaveProgress: (percent: number, positionSeconds: number) => void;
+  /** Mark the training fully watched/completed. */
+  onComplete: () => void;
   onClose: () => void;
 }
+
+/** Treat the video as finished a touch before the exact end to avoid rounding gaps. */
+const COMPLETE_THRESHOLD = 99;
 
 export function PlayerModal({
   open,
   enrollment,
-  playerProgress,
-  playerPlaying,
-  onTogglePlay,
   onSaveProgress,
+  onComplete,
   onClose,
 }: PlayerModalProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [percent, setPercent] = useState(enrollment?.progress ?? 0);
+  const [position, setPosition] = useState(enrollment?.lastPositionSeconds ?? 0);
+  const completedRef = useRef(false);
+  const [openedFor, setOpenedFor] = useState<string | null>(null);
+
+  // Seed the displayed progress/position whenever the modal opens for an enrollment.
+  const activeKey = open && enrollment ? `${enrollment.id}` : null;
+  if (activeKey !== openedFor) {
+    setOpenedFor(activeKey);
+    if (activeKey) {
+      setPercent(enrollment!.progress);
+      setPosition(enrollment!.lastPositionSeconds ?? 0);
+    }
+  }
+
+  // Resume from the last watched position once metadata (duration) is known.
+  function handleLoadedMetadata() {
+    const v = videoRef.current;
+    if (!v) return;
+    const resume = enrollment?.lastPositionSeconds ?? 0;
+    if (resume > 0 && resume < v.duration) v.currentTime = resume;
+    completedRef.current = false;
+  }
+
+  function handleTimeUpdate() {
+    const v = videoRef.current;
+    if (!v || !v.duration) return;
+    const pct = Math.min(100, Math.round((v.currentTime / v.duration) * 100));
+    setPercent(pct);
+    setPosition(v.currentTime);
+    if (pct >= COMPLETE_THRESHOLD && !completedRef.current) {
+      completedRef.current = true;
+      onComplete();
+    }
+  }
+
+  function handleSaveExit() {
+    onSaveProgress(percent, position);
+  }
+
+  const hasVideo = Boolean(enrollment?.videoUrl);
+
   return (
     <Dialog
       open={open}
@@ -37,56 +84,61 @@ export function PlayerModal({
     >
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-base">
-            {enrollment?.courseName}
-          </DialogTitle>
+          <DialogTitle className="text-base">{enrollment?.courseName}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="rounded-lg bg-slate-900 aspect-video flex flex-col items-center justify-center gap-4 relative overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center">
-              {enrollment?.deliveryMode === "online" ? (
-                <Video className="w-16 h-16 text-slate-600" />
-              ) : (
-                <FileText className="w-16 h-16 text-slate-600" />
-              )}
+          {hasVideo ? (
+            <video
+              ref={videoRef}
+              src={enrollment!.videoUrl}
+              controls
+              playsInline
+              className="w-full aspect-video rounded-lg bg-black"
+              onLoadedMetadata={handleLoadedMetadata}
+              onTimeUpdate={handleTimeUpdate}
+              onEnded={() => {
+                if (!completedRef.current) {
+                  completedRef.current = true;
+                  onComplete();
+                }
+              }}
+            />
+          ) : (
+            <div className="rounded-lg bg-slate-900 aspect-video flex flex-col items-center justify-center gap-2 text-slate-400">
+              <VideoOff className="w-12 h-12" />
+              <p className="text-xs">No video is available for this training yet.</p>
             </div>
-            <button
-              onClick={onTogglePlay}
-              className="relative z-10 w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
-            >
-              {playerPlaying ? (
-                <div className="flex gap-1.5">
-                  <div className="w-1.5 h-5 bg-white rounded-sm" />
-                  <div className="w-1.5 h-5 bg-white rounded-sm" />
-                </div>
-              ) : (
-                <Play className="w-6 h-6 text-white ml-1" />
-              )}
-            </button>
-            <p className="relative z-10 text-white/60 text-xs">
-              {playerPlaying ? "Playing..." : "Click to play"}
-            </p>
-          </div>
+          )}
 
           <div className="space-y-1.5">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Progress</span>
-              <span className="font-semibold text-foreground">
-                {Math.round(playerProgress)}%
-              </span>
+              <span className="font-semibold text-foreground">{percent}%</span>
             </div>
-            <ProgressBar value={playerProgress} />
+            <ProgressBar value={percent} />
           </div>
 
           <div className="flex gap-3">
             <Button variant="outline" className="flex-1" onClick={onClose}>
               Close
             </Button>
+            {hasVideo && percent < COMPLETE_THRESHOLD && (
+              <Button
+                variant="outline"
+                className="flex-1 gap-1.5"
+                onClick={() => {
+                  completedRef.current = true;
+                  onComplete();
+                }}
+              >
+                <CheckCircle2 className="w-4 h-4" /> Mark as watched
+              </Button>
+            )}
             <Button
               className="flex-1 text-white bg-[#4361ee] hover:bg-[#3451d1]"
-              onClick={onSaveProgress}
+              onClick={handleSaveExit}
             >
-              Save Progress & Exit
+              Save Progress &amp; Exit
             </Button>
           </div>
         </div>

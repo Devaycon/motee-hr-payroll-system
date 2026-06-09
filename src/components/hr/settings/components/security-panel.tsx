@@ -56,7 +56,6 @@ interface Props {
 
 export function SecurityPanel({ security, onChange }: Props) {
   const [policy, setPolicy] = useState<PasswordPolicy>(security.passwordPolicy);
-  const [twoFactor, setTwoFactor] = useState(security.twoFactorEnabled);
   const [devices, setDevices] = useState(security.trustedDevices);
   const [savingPolicy, setSavingPolicy] = useState(false);
 
@@ -73,7 +72,6 @@ export function SecurityPanel({ security, onChange }: Props) {
       onChange({
         ...security,
         passwordPolicy: policy,
-        twoFactorEnabled: twoFactor,
       });
       setSavingPolicy(false);
       toast.success("Security settings saved.");
@@ -85,15 +83,6 @@ export function SecurityPanel({ security, onChange }: Props) {
     setDevices(updated);
     onChange({ ...security, trustedDevices: updated });
     toast.success("Device revoked.");
-  }
-
-  function handleToggle2FA(checked: boolean) {
-    setTwoFactor(checked);
-    toast.success(
-      checked
-        ? "Two-factor authentication enabled."
-        : "Two-factor authentication disabled.",
-    );
   }
 
   return (
@@ -195,30 +184,6 @@ export function SecurityPanel({ security, onChange }: Props) {
 
       <Card className="border-0 shadow-sm ring-1 ring-border">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Two-Factor Authentication</CardTitle>
-          <CardDescription>
-            Enforce 2FA for all admin accounts in your organisation.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
-            <div>
-              <p className="text-sm font-medium">
-                {twoFactor ? "2FA is enabled" : "2FA is disabled"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {twoFactor
-                  ? "All HR admins are required to verify with a second factor."
-                  : "Enable to require all admins to use authenticator apps."}
-              </p>
-            </div>
-            <Switch checked={twoFactor} onCheckedChange={handleToggle2FA} />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-0 shadow-sm ring-1 ring-border">
-        <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <Smartphone className="h-4.5 w-4.5 text-primary" />
             <CardTitle className="text-base">Trusted Devices</CardTitle>
@@ -246,7 +211,7 @@ export function SecurityPanel({ security, onChange }: Props) {
                   {device.browser} &middot; {device.os} &middot; Last seen{" "}
                   {new Date(device.lastSeen).toLocaleDateString("en-GB", {
                     day: "2-digit",
-                    month: "short",
+                    month: "long",
                     year: "numeric",
                   })}
                 </p>
@@ -349,7 +314,7 @@ export function SecurityPanel({ security, onChange }: Props) {
                     <td className="px-4 py-3 text-muted-foreground text-xs">
                       {new Date(entry.timestamp).toLocaleDateString("en-GB", {
                         day: "2-digit",
-                        month: "short",
+                        month: "long",
                         year: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",

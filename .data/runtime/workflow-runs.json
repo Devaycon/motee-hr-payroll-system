@@ -1,0 +1,213 @@
+{
+  "runs": [
+    {
+      "id": "RUN-SEED-ONB-1",
+      "templateId": "LCW-DEFAULT-ONBOARDING",
+      "templateName": "Standard Onboarding",
+      "kind": "onboarding",
+      "subjectId": "emp-006",
+      "subjectName": "Emeka Nwosu",
+      "anchorDate": "2026-06-01",
+      "status": "active",
+      "trigger": "automatic",
+      "startedBy": "System",
+      "startedAt": "2026-05-20T09:00:00.000Z",
+      "tasks": [
+        {
+          "id": "RUN-SEED-ONB-1-t1",
+          "title": "Send & sign offer letter",
+          "assignment": {
+            "type": "role",
+            "role": "hr"
+          },
+          "dueDayOffset": -7,
+          "isRequired": true,
+          "status": "done",
+          "description": "Issue the offer letter and collect signed acceptance."
+        },
+        {
+          "id": "RUN-SEED-ONB-1-t2",
+          "title": "Collect ID + right-to-work documents",
+          "assignment": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": -5,
+          "isRequired": true,
+          "status": "in_progress",
+          "description": "Government-issued ID, NIN, proof of address."
+        },
+        {
+          "id": "RUN-SEED-ONB-1-t3",
+          "title": "Order & set up laptop",
+          "assignment": {
+            "type": "role",
+            "role": "it"
+          },
+          "dueDayOffset": -1,
+          "isRequired": true,
+          "status": "pending",
+          "description": "Standard hardware kit, OS image, baseline apps."
+        },
+        {
+          "id": "RUN-SEED-ONB-1-t4",
+          "title": "Day-one welcome meeting",
+          "assignment": {
+            "type": "role",
+            "role": "manager"
+          },
+          "dueDayOffset": 0,
+          "isRequired": true,
+          "status": "pending",
+          "description": "60-minute kickoff with the line manager."
+        },
+        {
+          "id": "RUN-SEED-ONB-1-t5",
+          "title": "Compliance training",
+          "assignment": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": 3,
+          "isRequired": true,
+          "status": "pending",
+          "description": "Annual security + code of conduct."
+        },
+        {
+          "id": "RUN-SEED-ONB-1-t6",
+          "title": "Submit bank + tax details",
+          "assignment": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": 5,
+          "isRequired": true,
+          "status": "pending",
+          "description": "Required for first payroll cycle."
+        },
+        {
+          "id": "RUN-SEED-ONB-1-t7",
+          "title": "30-day check-in",
+          "assignment": {
+            "type": "role",
+            "role": "manager"
+          },
+          "dueDayOffset": 30,
+          "isRequired": false,
+          "status": "pending",
+          "description": "Pulse on settling in, blockers, support needed."
+        },
+        {
+          "id": "RUN-SEED-ONB-1-t8",
+          "title": "90-day probation review",
+          "assignment": {
+            "type": "role",
+            "role": "manager"
+          },
+          "dueDayOffset": 90,
+          "isRequired": true,
+          "status": "pending",
+          "description": "Formal review and confirm-or-extend decision."
+        }
+      ]
+    },
+    {
+      "id": "RUN-SEED-OFF-1",
+      "templateId": "LCW-DEFAULT-OFFBOARDING",
+      "templateName": "Standard Offboarding",
+      "kind": "offboarding",
+      "subjectId": "emp-013",
+      "subjectName": "Ifeoma Nwachukwu",
+      "anchorDate": "2026-06-15",
+      "status": "active",
+      "trigger": "manual",
+      "startedBy": "Chidinma Okeke",
+      "startedAt": "2026-05-22T11:30:00.000Z",
+      "tasks": [
+        {
+          "id": "RUN-SEED-OFF-1-t1",
+          "title": "Acknowledge resignation",
+          "assignment": {
+            "type": "role",
+            "role": "hr"
+          },
+          "dueDayOffset": -30,
+          "isRequired": true,
+          "status": "done",
+          "description": "Confirm last day, notice period, and next steps."
+        },
+        {
+          "id": "RUN-SEED-OFF-1-t2",
+          "title": "Handover document",
+          "assignment": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": -14,
+          "isRequired": true,
+          "status": "pending",
+          "description": "Open projects, contacts, where things live."
+        },
+        {
+          "id": "RUN-SEED-OFF-1-t3",
+          "title": "Knowledge transfer meeting",
+          "assignment": {
+            "type": "role",
+            "role": "manager"
+          },
+          "dueDayOffset": -10,
+          "isRequired": true,
+          "status": "pending",
+          "description": "With the successor and direct manager."
+        },
+        {
+          "id": "RUN-SEED-OFF-1-t4",
+          "title": "Return company laptop & badge",
+          "assignment": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": -1,
+          "isRequired": true,
+          "status": "pending"
+        },
+        {
+          "id": "RUN-SEED-OFF-1-t5",
+          "title": "Revoke system access",
+          "assignment": {
+            "type": "role",
+            "role": "it"
+          },
+          "dueDayOffset": 0,
+          "isRequired": true,
+          "status": "pending",
+          "description": "Email, Slack, Github, internal tools — deactivate or archive."
+        },
+        {
+          "id": "RUN-SEED-OFF-1-t6",
+          "title": "Exit interview",
+          "assignment": {
+            "type": "role",
+            "role": "hr"
+          },
+          "dueDayOffset": -1,
+          "isRequired": false,
+          "status": "pending",
+          "description": "Reason for leaving, what we could improve."
+        },
+        {
+          "id": "RUN-SEED-OFF-1-t7",
+          "title": "Final-pay processed",
+          "assignment": {
+            "type": "role",
+            "role": "finance"
+          },
+          "dueDayOffset": 5,
+          "isRequired": true,
+          "status": "pending",
+          "description": "Last salary, accrued leave payout, any pending claims."
+        }
+      ]
+    }
+  ]
+}

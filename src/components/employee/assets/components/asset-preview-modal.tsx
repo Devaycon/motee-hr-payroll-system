@@ -73,7 +73,7 @@ export function AssetPreviewModal({ asset, onClose }: AssetPreviewModalProps) {
                     <span className="text-foreground font-medium">
                       {new Date(asset.assignedDate).toLocaleDateString(
                         "en-GB",
-                        { day: "2-digit", month: "short", year: "numeric" },
+                        { day: "2-digit", month: "long", year: "numeric" },
                       )}
                     </span>
                   </div>

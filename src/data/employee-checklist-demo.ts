@@ -54,7 +54,7 @@ export function formatDueDateRule(rule: DueDateRule, offset?: number): string {
 
 export function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+  return d.toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" });
 }
 
 export const CHECKLIST_ITEMS: ChecklistItem[] = [

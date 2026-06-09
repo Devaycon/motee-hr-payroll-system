@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { z } from "zod";
 import { CheckCircle2, Circle, Search, X } from "lucide-react";
 import {
@@ -21,7 +21,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import {
   Select,
   SelectContent,
@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
-import { EMPLOYEES } from "@/src/data/employees-demo";
+import { useEmployees } from "@/src/components/hr/employees/hooks";
 import {
   EXIT_REASON_LABELS,
   OFFBOARDING_STATUS_LABELS,
@@ -99,6 +99,9 @@ export function OffboardingModal({
   onToggleClearance,
   onUpdateExitInterview,
 }: OffboardingModalProps) {
+  const { data: employees } = useEmployees();
+  const allEmployees = useMemo(() => employees ?? [], [employees]);
+
   const [fields, setFields] = useState<FormFields>(EMPTY);
   const [touched, setTouched] = useState<TouchedFields>({});
   const [interviewNotes, setInterviewNotes] = useState("");
@@ -139,7 +142,7 @@ export function OffboardingModal({
 
   const searchResults =
     searchQuery.trim().length > 0
-      ? EMPLOYEES.filter(
+      ? allEmployees.filter(
           (e) =>
             e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             e.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -192,7 +195,7 @@ export function OffboardingModal({
     ) as TouchedFields;
     setTouched(allTouched);
     if (!result.success) return;
-    onSave(result.data);
+    onSave({ ...result.data });
   };
 
   const handleSaveExitInterview = () => {
@@ -400,11 +403,13 @@ export function OffboardingModal({
                             selectEmployee(emp);
                           }}
                         >
-                          <Avatar className="w-7 h-7 shrink-0">
-                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {emp.initials}
-                            </AvatarFallback>
-                          </Avatar>
+                          <PersonAvatar
+                            name={emp.name}
+                            initials={emp.initials}
+                            gender={emp.gender}
+                            className="w-7 h-7 shrink-0"
+                            fallbackClassName="text-xs bg-primary/10 text-primary"
+                          />
                           <div className="flex flex-col min-w-0">
                             <span className="text-sm font-medium text-foreground truncate">
                               {emp.name}
@@ -435,11 +440,13 @@ export function OffboardingModal({
 
                 {selectedEmployee && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3 flex items-start gap-3">
-                    <Avatar className="w-10 h-10 shrink-0">
-                      <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
-                        {selectedEmployee.initials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <PersonAvatar
+                      name={selectedEmployee.name}
+                      initials={selectedEmployee.initials}
+                      gender={selectedEmployee.gender}
+                      className="w-10 h-10 shrink-0"
+                      fallbackClassName="text-sm font-semibold bg-primary/10 text-primary"
+                    />
                     <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground">
                         {selectedEmployee.name}

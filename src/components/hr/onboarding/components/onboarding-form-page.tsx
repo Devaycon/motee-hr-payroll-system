@@ -1,5 +1,6 @@
 "use client";
 
+import { currentCurrencySymbol } from "@/src/lib/hooks/use-currency";
 import { useState } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
@@ -20,13 +21,14 @@ import { cn } from "@/src/lib/utils";
 import { DEPARTMENT_OPTIONS } from "../data";
 import type { ManualOnboardingData } from "../types";
 import { addPendingRecord } from "@/src/lib/demo/pending-onboarding";
-
-const EMPLOYMENT_TYPES = [
-  { value: "full_time", label: "Full Time" },
-  { value: "part_time", label: "Part Time" },
-  { value: "contract", label: "Contract" },
-  { value: "internship", label: "Internship" },
-];
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { removeRecord } from "@/src/lib/stores/onboarding-records-slice";
+import {
+  getOnboardingTemplates,
+  getDefaultOnboardingTemplate,
+  buildTasksForSelection,
+} from "../instantiate";
+import { EMPLOYMENT_TYPE_OPTIONS } from "@/src/lib/constants/employment-types";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Male" },
@@ -56,6 +58,8 @@ const STEPS = [
   { label: "Bank Details" },
   { label: "Documents" },
   { label: "Emergency" },
+  { label: "Medical" },
+  { label: "Assets" },
   { label: "Review" },
 ];
 
@@ -76,7 +80,7 @@ const step1Schema = z.object({
 });
 
 const step2Schema = z.object({
-  employeeId: z.string().min(1, "Required"),
+  employeeId: z.string().optional(),
   jobTitle: z.string().min(2, "At least 2 characters"),
   department: z.string().min(1, "Required"),
   employmentType: z.string().min(1, "Required"),
@@ -109,6 +113,22 @@ const step5Schema = z.object({
   emergencyContactName: z.string().min(2, "At least 2 characters"),
   emergencyContactRelationship: z.string().min(2, "At least 2 characters"),
   emergencyContactPhone: z.string().min(7, "At least 7 digits"),
+});
+
+const step6Schema = z.object({
+  allergies: z.string().optional(),
+  conditions: z.string().optional(),
+  medications: z.string().optional(),
+  dietaryRequirements: z.string().optional(),
+  accessibilityNeeds: z.string().optional(),
+});
+
+const step7Schema = z.object({
+  assetTag: z.string().optional(),
+  assetName: z.string().optional(),
+  assetCategory: z.string().optional(),
+  assetSerialNumber: z.string().optional(),
+  assetAssignedDate: z.string().optional(),
 });
 
 const EMPTY_DATA: ManualOnboardingData = {
@@ -149,6 +169,17 @@ const EMPTY_DATA: ManualOnboardingData = {
   emergencyContactName: "",
   emergencyContactRelationship: "",
   emergencyContactPhone: "",
+  allergies: "",
+  conditions: "",
+  medications: "",
+  dietaryRequirements: "",
+  accessibilityNeeds: "",
+  assetTag: "",
+  assetName: "",
+  assetCategory: "",
+  assetSerialNumber: "",
+  assetAssignedDate: "",
+  workflowTemplateId: "",
 };
 
 function ReviewRow({ label, value }: { label: string; value?: string }) {
@@ -163,12 +194,28 @@ function ReviewRow({ label, value }: { label: string; value?: string }) {
   );
 }
 
-export function OnboardingFormPage() {
+export function OnboardingFormPage({ preboardingId }: { preboardingId?: string } = {}) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const templates = useAppSelector((s) => s.approvals.templates);
+  const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
+  const preRecord = useAppSelector((s) =>
+    preboardingId
+      ? s.onboardingRecords.records.find((r) => r.id === preboardingId)
+      : undefined,
+  );
+  const onboardingTemplates = getOnboardingTemplates(templates);
+  const defaultTemplate = getDefaultOnboardingTemplate(templates);
   const [step, setStep] = useState(0);
-  const [data, setData] = useState<ManualOnboardingData>(EMPTY_DATA);
+  // Prefill from a preboarding record when promoting one into full onboarding.
+  const [data, setData] = useState<ManualOnboardingData>(() => ({
+    ...EMPTY_DATA,
+    ...(preRecord?.preboardingData ?? {}),
+  }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const selectedWorkflowId = data.workflowTemplateId || defaultTemplate?.id || "";
 
   function update(field: keyof ManualOnboardingData, value: string) {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -186,6 +233,8 @@ export function OnboardingFormPage() {
       step3Schema,
       step4Schema,
       step5Schema,
+      step6Schema,
+      step7Schema,
     ];
     if (s >= schemas.length) return true;
     const result = schemas[s].safeParse(data);
@@ -214,57 +263,21 @@ export function OnboardingFormPage() {
   }
 
   function handleSubmit() {
-    if (!validateStep(4)) return;
+    if (!validateStep(STEPS.length - 2)) return;
     setIsSubmitting(true);
     const id = `onb-${Date.now()}`;
     const fullName = `${data.firstName} ${data.lastName}`;
     const initials = `${data.firstName[0]}${data.lastName[0]}`.toUpperCase();
-    const tasks = Array.from({ length: 10 }, (_, i) => ({
-      id: `${id}-t${i + 1}`,
-      taskName: [
-        "Send offer letter",
-        "Collect ID documents",
-        "Complete employment contract",
-        "Set up laptop",
-        "Create company email",
-        "Prepare workspace",
-        "Benefits enrollment",
-        "Orientation session",
-        "Meet key stakeholders",
-        "Complete compliance training",
-      ][i],
-      assignee: (
-        [
-          "hr",
-          "hr",
-          "employee",
-          "it",
-          "it",
-          "manager",
-          "hr",
-          "hr",
-          "manager",
-          "employee",
-        ] as const
-      )[i],
-      dueDay: [-5, -3, -2, -1, -1, 0, 1, 1, 5, 7][i],
-      status: "pending" as const,
-      isRequired: [
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        true,
-        true,
-        false,
-        true,
-      ][i],
-    }));
+    const { tasks, template } = buildTasksForSelection(
+      id,
+      templates,
+      roles,
+      selectedWorkflowId,
+    );
 
     addPendingRecord({
       id,
+      referenceId: data.employeeId || undefined,
       employeeName: fullName,
       employeeInitials: initials,
       email: data.email,
@@ -272,7 +285,10 @@ export function OnboardingFormPage() {
       department: data.department,
       startDate: data.startDate,
       stage: "pre_boarding",
-      status: "in_progress",
+      status: "not_started",
+      phase: "pre_onboarding",
+      workflowTemplateId: template?.id,
+      workflowName: template?.name,
       tasks,
       completedTasks: 0,
       totalTasks: tasks.length,
@@ -280,6 +296,10 @@ export function OnboardingFormPage() {
       initiatedAt: new Date().toISOString().slice(0, 10),
       mode: "manual",
     });
+
+    // Promoting a preboarding hire — remove the preboarding record now that it's
+    // a full onboarding record.
+    if (preboardingId) dispatch(removeRecord(preboardingId));
 
     toast.success(`Onboarding initiated for ${fullName}`);
     router.push("/talent/onboarding");
@@ -558,7 +578,10 @@ export function OnboardingFormPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
-                  Employee ID <span className="text-destructive">*</span>
+                  Employee ID{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (optional)
+                  </span>
                 </Label>
                 <Input
                   value={data.employeeId}
@@ -623,7 +646,7 @@ export function OnboardingFormPage() {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {EMPLOYMENT_TYPES.map((t) => (
+                    {EMPLOYMENT_TYPE_OPTIONS.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
                         {t.label}
                       </SelectItem>
@@ -665,7 +688,9 @@ export function OnboardingFormPage() {
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Gross Salary (₦)</Label>
+                <Label className="text-xs">
+                  Gross Salary ({currentCurrencySymbol()})
+                </Label>
                 <Input
                   type="number"
                   value={data.salary}
@@ -716,6 +741,32 @@ export function OnboardingFormPage() {
                   className="h-9 text-sm"
                   placeholder="e.g. L3, Senior"
                 />
+              </div>
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <Label className="text-xs">
+                  Onboarding Workflow{" "}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={selectedWorkflowId}
+                  onValueChange={(v) => update("workflowTemplateId", v)}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select workflow" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {onboardingTemplates.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                        {t.isDefault ? " (Default)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  The selected workflow&apos;s tasks &amp; reviewers will be
+                  assigned to this hire.
+                </p>
               </div>
             </div>
           </>
@@ -940,6 +991,126 @@ export function OnboardingFormPage() {
         {step === 5 && (
           <>
             <h2 className="text-sm font-semibold text-foreground">
+              Medical Facts
+            </h2>
+            <Separator />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Allergies</Label>
+                <Input
+                  value={data.allergies}
+                  onChange={(e) => update("allergies", e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="Comma-separated, e.g. Peanuts, Penicillin"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Medical Conditions</Label>
+                <Input
+                  value={data.conditions}
+                  onChange={(e) => update("conditions", e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="Comma-separated, e.g. Asthma"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Medications</Label>
+                <Input
+                  value={data.medications}
+                  onChange={(e) => update("medications", e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="Comma-separated"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Dietary Requirements</Label>
+                <Input
+                  value={data.dietaryRequirements}
+                  onChange={(e) =>
+                    update("dietaryRequirements", e.target.value)
+                  }
+                  className="h-9 text-sm"
+                  placeholder="Comma-separated, e.g. Vegetarian"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <Label className="text-xs">Accessibility Needs</Label>
+                <Input
+                  value={data.accessibilityNeeds}
+                  onChange={(e) =>
+                    update("accessibilityNeeds", e.target.value)
+                  }
+                  className="h-9 text-sm"
+                  placeholder="Any workplace accessibility requirements"
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {step === 6 && (
+          <>
+            <h2 className="text-sm font-semibold text-foreground">
+              Assets to Assign
+            </h2>
+            <Separator />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Asset Tag</Label>
+                <Input
+                  value={data.assetTag}
+                  onChange={(e) => update("assetTag", e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="e.g. AST-0142"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Asset Name</Label>
+                <Input
+                  value={data.assetName}
+                  onChange={(e) => update("assetName", e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="e.g. MacBook Pro 14&quot;"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Category</Label>
+                <Input
+                  value={data.assetCategory}
+                  onChange={(e) => update("assetCategory", e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="e.g. Laptop, Phone"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Serial Number</Label>
+                <Input
+                  value={data.assetSerialNumber}
+                  onChange={(e) =>
+                    update("assetSerialNumber", e.target.value)
+                  }
+                  className="h-9 text-sm"
+                  placeholder="Serial number"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Assigned Date</Label>
+                <Input
+                  type="date"
+                  value={data.assetAssignedDate}
+                  onChange={(e) =>
+                    update("assetAssignedDate", e.target.value)
+                  }
+                  className="h-9 text-sm"
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {step === 7 && (
+          <>
+            <h2 className="text-sm font-semibold text-foreground">
               Review & Confirm
             </h2>
             <Separator />
@@ -980,7 +1151,7 @@ export function OnboardingFormPage() {
                   label="Salary"
                   value={
                     data.salary
-                      ? `₦${Number(data.salary).toLocaleString()}`
+                      ? `${currentCurrencySymbol()}${Number(data.salary).toLocaleString()}`
                       : undefined
                   }
                 />
@@ -1023,6 +1194,38 @@ export function OnboardingFormPage() {
                   value={data.emergencyContactRelationship}
                 />
                 <ReviewRow label="Phone" value={data.emergencyContactPhone} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  Medical
+                </p>
+                <ReviewRow label="Allergies" value={data.allergies} />
+                <ReviewRow label="Conditions" value={data.conditions} />
+                <ReviewRow label="Medications" value={data.medications} />
+                <ReviewRow
+                  label="Dietary"
+                  value={data.dietaryRequirements}
+                />
+                <ReviewRow
+                  label="Accessibility"
+                  value={data.accessibilityNeeds}
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  Assets to Assign
+                </p>
+                <ReviewRow label="Asset Tag" value={data.assetTag} />
+                <ReviewRow label="Asset Name" value={data.assetName} />
+                <ReviewRow label="Category" value={data.assetCategory} />
+                <ReviewRow
+                  label="Serial Number"
+                  value={data.assetSerialNumber}
+                />
+                <ReviewRow
+                  label="Assigned Date"
+                  value={data.assetAssignedDate}
+                />
               </div>
             </div>
           </>

@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ClipboardList } from "lucide-react";
 import { toast } from "sonner";
-import { ALL_ENTRIES } from "./data";
 import { StatCards } from "./components/stat-cards";
 import { AuditToolbar } from "./components/audit-toolbar";
 import { AuditLog } from "./components/audit-log";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useAuditEntries } from "./hooks";
 
 export function AuditTrailPage() {
+  const { data, loading } = useAuditEntries();
+  const allEntries = useMemo(() => data ?? [], [data]);
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
   const [moduleFilter, setModuleFilter] = useState("all");
@@ -16,7 +18,7 @@ export function AuditTrailPage() {
 
   const filteredEntries = useMemo(() => {
     const q = search.toLowerCase();
-    return ALL_ENTRIES.filter((e) => {
+    return allEntries.filter((e) => {
       const matchSearch =
         !q ||
         e.userName.toLowerCase().includes(q) ||
@@ -33,12 +35,21 @@ export function AuditTrailPage() {
         (statusFilter === "5xx" && e.httpStatus >= 500);
       return matchSearch && matchAction && matchModule && matchStatus;
     });
-  }, [search, actionFilter, moduleFilter, statusFilter]);
+  }, [allEntries, search, actionFilter, moduleFilter, statusFilter]);
 
   function handleExport() {
     toast.success("Audit log exported", {
       description: `${filteredEntries.length} entries exported as CSV`,
     });
+  }
+
+  if (loading && !allEntries.length) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
   }
 
   return (
@@ -52,7 +63,7 @@ export function AuditTrailPage() {
         </div>
       </div>
 
-      <StatCards entries={ALL_ENTRIES} />
+      <StatCards entries={allEntries} />
 
       <AuditToolbar
         search={search}
@@ -65,7 +76,7 @@ export function AuditTrailPage() {
         onStatusFilterChange={setStatusFilter}
         onExport={handleExport}
         totalFiltered={filteredEntries.length}
-        totalAll={ALL_ENTRIES.length}
+        totalAll={allEntries.length}
       />
 
       <AuditLog entries={filteredEntries} />

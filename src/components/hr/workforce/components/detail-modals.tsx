@@ -1,5 +1,6 @@
 "use client";
 
+import { currentCurrencySymbol } from "@/src/lib/hooks/use-currency";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import { Progress } from "@/src/components/ui/progress";
@@ -268,7 +269,8 @@ export function HiringDetailModal({
             </span>
           </DetailRow>
           <DetailRow label="Cost per Hire">
-            ₦{((metric.costPerHire ?? 0) / 1000).toFixed(0)}k
+            {currentCurrencySymbol()}
+            {((metric.costPerHire ?? 0) / 1000).toFixed(0)}k
           </DetailRow>
         </div>
       </DialogContent>

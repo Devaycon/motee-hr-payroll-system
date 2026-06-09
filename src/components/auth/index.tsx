@@ -1,22 +1,28 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { LoginForm } from "./login-form";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
 import { cn } from "@/src/lib/utils";
 import Image from "next/image";
-import { motion } from "motion/react";
-import { HeroHighlight, Highlight } from "../ui/hero-highlight";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { loadLocale, setCountry } from "@/src/lib/stores/locale-slice";
+import type { CountryKey } from "@/src/lib/types/locale";
 
 const AuthIndex = () => {
-  const [country, setCountry] = useState<"ng" | "uk">("ng");
+  const dispatch = useAppDispatch();
+  const country = useAppSelector((s) => s.locale.country);
+
+  useEffect(() => {
+    dispatch(loadLocale(country));
+  }, [country, dispatch]);
 
   return (
     <div
       className="relative min-h-screen flex items-center justify-end overflow-hidden"
       style={{
-        backgroundImage: "url('/wife-bg.png')",
+        backgroundImage: "url('/wife-bg-v2.png')",
         backgroundSize: "cover",
         backgroundPosition: "bottom",
       }}
@@ -81,20 +87,30 @@ const AuthIndex = () => {
           <div className="hidden md:block" />
           <div className="flex w-full justify-between items-center gap-2">
             <div className="flex items-center rounded-full border border-border bg-muted p-0.5 gap-0.5">
-              {(["ng", "uk"] as const).map((key) => (
+              {(["uk", "ng"] as const).map((key: CountryKey) => (
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setCountry(key)}
-                  title={key === "ng" ? "Nigeria" : "United Kingdom"}
+                  onClick={() => dispatch(setCountry(key))}
+                  title={key === "uk" ? "United Kingdom" : "Nigeria"}
                   className={cn(
-                    "flex items-center justify-center w-8 h-7 rounded-full text-base transition-all duration-150 cursor-pointer",
+                    "flex items-center justify-center w-8 h-7 rounded-full transition-all duration-150 cursor-pointer",
                     country === key
                       ? "bg-card shadow-sm"
                       : "opacity-50 hover:opacity-100",
                   )}
                 >
-                  {key === "ng" ? "🇳🇬" : "🇬🇧"}
+                  <Image
+                    src={
+                      key === "uk"
+                        ? "/united-kingdom-flag-icon.png"
+                        : "/nigeria-flag-icon.png"
+                    }
+                    alt={key === "uk" ? "United Kingdom" : "Nigeria"}
+                    width={22}
+                    height={16}
+                    className="rounded-[3px] object-cover"
+                  />
                 </button>
               ))}
             </div>

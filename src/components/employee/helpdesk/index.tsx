@@ -5,7 +5,9 @@ import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { Plus } from "lucide-react";
-import { TICKETS, computeHelpdeskStats, MY_INITIALS } from "./components/data";
+import { TICKETS as SEED_TICKETS, computeHelpdeskStats, MY_INITIALS as DEMO_INITIALS } from "./components/data";
+import { useHelpdeskTickets } from "@/src/components/hr/helpdesk/hooks";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import type {
   HelpDeskTicket,
   TicketStatus,
@@ -18,15 +20,22 @@ import { TicketDetailModal } from "./components/ticket-detail-modal";
 import { NewCaseModal } from "./components/new-case-modal";
 
 export function EmployeeHelpdeskPage() {
+  const { data: localeTickets } = useHelpdeskTickets();
+  const myInitials =
+    useAppSelector((s) => s.auth.user?.initials) ?? DEMO_INITIALS;
   const [activeTab, setActiveTab] = useState<"faq" | "my-cases">("faq");
-  const [tickets, setTickets] = useState<HelpDeskTicket[]>(TICKETS);
+  const [tickets, setTickets] = useState<HelpDeskTicket[]>(
+    (localeTickets && localeTickets.length
+      ? localeTickets
+      : SEED_TICKETS) as unknown as HelpDeskTicket[],
+  );
   const [selectedTicket, setSelectedTicket] = useState<HelpDeskTicket | null>(
     null,
   );
   const [showNewCaseModal, setShowNewCaseModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | "all">("all");
 
-  const myTickets = tickets.filter((t) => t.submitterInitials === MY_INITIALS);
+  const myTickets = tickets.filter((t) => t.submitterInitials === myInitials);
   const stats = computeHelpdeskStats(myTickets);
 
   function handleCreated(ticket: HelpDeskTicket) {

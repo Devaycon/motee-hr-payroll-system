@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
 import { TEAM_ON_LEAVE } from "@/src/data/employee-dashboard-demo";
@@ -46,11 +46,12 @@ export function TeamOnLeave() {
                 className="flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-2.5">
-                  <Avatar className="w-7 h-7">
-                    <AvatarFallback className="text-[11px] bg-muted text-muted-foreground">
-                      {member.initials}
-                    </AvatarFallback>
-                  </Avatar>
+                  <PersonAvatar
+                    name={member.name}
+                    initials={member.initials}
+                    className="w-7 h-7"
+                    fallbackClassName="text-[11px] bg-muted text-muted-foreground"
+                  />
                   <div>
                     <p className="text-xs font-medium text-foreground">
                       {member.name}

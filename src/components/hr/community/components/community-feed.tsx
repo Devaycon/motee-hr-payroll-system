@@ -1,4 +1,5 @@
 ﻿"use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import { useState } from "react";
 import {
@@ -275,7 +276,7 @@ function PostCard({
                 Â· {post.authorDept}
               </span>
               <span className="text-xs text-muted-foreground leading-tight">
-                Â· {post.createdAt}
+                Â· {formatDate(post.createdAt)}
               </span>
               {post.isPinned && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-1.5 py-px text-[10px] font-medium text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400">
@@ -483,7 +484,7 @@ function CommentItem({ comment }: { comment: PostComment }) {
           </p>
         </div>
         <p className="mt-0.5 pl-1 text-[10px] text-muted-foreground">
-          {comment.createdAt}
+          {formatDate(comment.createdAt)}
         </p>
       </div>
     </div>

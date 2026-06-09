@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Textarea } from "@/src/components/ui/textarea";
 import {
   Dialog,
@@ -135,17 +135,16 @@ export function TicketDetailModal({
               key={msg.id}
               className={`flex gap-2 ${msg.isHR ? "" : "flex-row-reverse"}`}
             >
-              <Avatar className="h-7 w-7 shrink-0">
-                <AvatarFallback
-                  className={`text-xs font-semibold ${
-                    msg.isHR
-                      ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400"
-                      : "bg-[#4361ee]/10 text-[#4361ee]"
-                  }`}
-                >
-                  {msg.authorInitials}
-                </AvatarFallback>
-              </Avatar>
+              <PersonAvatar
+                name={msg.authorName}
+                initials={msg.authorInitials}
+                className="h-7 w-7 shrink-0"
+                fallbackClassName={`text-xs font-semibold ${
+                  msg.isHR
+                    ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400"
+                    : "bg-[#4361ee]/10 text-[#4361ee]"
+                }`}
+              />
               <div
                 className={`max-w-[75%] ${msg.isHR ? "" : "items-end"} flex flex-col gap-0.5`}
               >

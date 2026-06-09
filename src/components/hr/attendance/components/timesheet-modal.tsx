@@ -56,11 +56,11 @@ export function TimesheetModal({
     const end = new Date(weekEnd);
     const startStr = start.toLocaleDateString("en-GB", {
       day: "2-digit",
-      month: "short",
+      month: "long",
     });
     const endStr = end.toLocaleDateString("en-GB", {
       day: "2-digit",
-      month: "short",
+      month: "long",
       year: "numeric",
     });
     return `${startStr} – ${endStr}`;
@@ -163,7 +163,7 @@ export function TimesheetModal({
                     <td className="px-3 py-2 text-muted-foreground">
                       {new Date(entry.date).toLocaleDateString("en-GB", {
                         day: "2-digit",
-                        month: "short",
+                        month: "long",
                       })}
                     </td>
                     <td className="px-3 py-2 font-mono">

@@ -1,21 +1,15 @@
-﻿export type EmploymentType =
-  | "full_time"
-  | "part_time"
-  | "contract"
-  | "probation";
+﻿import {
+  type EmploymentType,
+  employmentTypeLabel,
+} from "@/src/lib/constants/employment-types";
+export type { EmploymentType };
 
 export type AttendanceStatus = "present" | "absent" | "late" | "on_leave";
 
 export type LeaveType = "annual" | "sick" | "maternity" | "paternity" | "unpaid";
 
-export function employmentLabel(type: EmploymentType): string {
-  const map: Record<EmploymentType, string> = {
-    full_time: "Full-time",
-    part_time: "Part-time",
-    contract: "Contract",
-    probation: "Probation",
-  };
-  return map[type] ?? type;
+export function employmentLabel(type: string): string {
+  return employmentTypeLabel(type);
 }
 
 export function leaveTypeLabel(type: string): string {

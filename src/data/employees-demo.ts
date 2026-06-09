@@ -14,17 +14,10 @@ export const DEPT_OPTIONS = [
   "Customer Success",
 ];
 
-export const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
-  full_time: "Full-time",
-  part_time: "Part-time",
-  contract: "Contract",
-};
-
-export const EMPLOYMENT_TYPE_STYLES: Record<string, string> = {
-  full_time: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  part_time: "bg-violet-500/10 text-violet-600 border-violet-500/20",
-  contract: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-};
+export {
+  EMPLOYMENT_TYPE_LABELS,
+  EMPLOYMENT_TYPE_STYLES,
+} from "@/src/lib/constants/employment-types";
 
 export const STATUS_LABELS: Record<string, string> = {
   active: "Active",
@@ -40,7 +33,7 @@ export const STATUS_STYLES: Record<string, string> = {
 
 export function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
 }
 
 export const EMPLOYEES: EmployeeRow[] = [

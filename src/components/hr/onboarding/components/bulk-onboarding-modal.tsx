@@ -11,10 +11,24 @@ import {
 } from "@/src/components/ui/dialog";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Button } from "@/src/components/ui/button";
+import { Label } from "@/src/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
 import type { BulkOnboardingRow } from "../types";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import {
+  getOnboardingTemplates,
+  getDefaultOnboardingTemplate,
+} from "../instantiate";
 
 const TEMPLATE_HEADERS = [
+  "employeeId",
   "firstName",
   "surname",
   "email",
@@ -23,10 +37,21 @@ const TEMPLATE_HEADERS = [
   "startDate",
   "employmentType",
   "manager",
+  "allergies",
+  "conditions",
+  "medications",
+  "dietaryRequirements",
+  "accessibilityNeeds",
+  "assetTag",
+  "assetName",
+  "assetCategory",
+  "assetSerialNumber",
+  "assetAssignedDate",
 ];
 
 const TEMPLATE_ROWS = [
   [
+    "EMP-1001",
     "Chidi",
     "Okonkwo",
     "chidi.okonkwo@example.com",
@@ -35,8 +60,19 @@ const TEMPLATE_ROWS = [
     "2026-05-01",
     "Full Time",
     "Jane Smith",
+    "Peanuts",
+    "",
+    "",
+    "Halal",
+    "",
+    "AST-1001",
+    "MacBook Pro 14",
+    "Laptop",
+    "C02ABC123",
+    "2026-05-01",
   ],
   [
+    "",
     "Amara",
     "Nwosu",
     "amara.nwosu@example.com",
@@ -45,8 +81,19 @@ const TEMPLATE_ROWS = [
     "2026-05-15",
     "Full Time",
     "Alice Johnson",
+    "",
+    "Asthma",
+    "Ventolin",
+    "Vegetarian",
+    "",
+    "AST-1002",
+    "iPhone 15",
+    "Phone",
+    "F2LXYZ789",
+    "2026-05-15",
   ],
   [
+    "EMP-1003",
     "Funmi",
     "Adeyemi",
     "funmi.adeyemi@example.com",
@@ -55,6 +102,16 @@ const TEMPLATE_ROWS = [
     "2026-06-01",
     "Contract",
     "David Osei",
+    "",
+    "",
+    "",
+    "",
+    "Step-free access",
+    "AST-1003",
+    "Dell XPS 13",
+    "Laptop",
+    "DXPS13-456",
+    "2026-06-01",
   ],
 ];
 
@@ -86,6 +143,7 @@ function parseCSV(text: string): BulkOnboardingRow[] {
         obj[h] = cols[i] ?? "";
       });
       return {
+        employeeId: obj.employeeId ?? "",
         firstName: obj.firstName ?? "",
         lastName: obj.surname ?? obj.lastName ?? "",
         email: obj.email ?? "",
@@ -94,6 +152,16 @@ function parseCSV(text: string): BulkOnboardingRow[] {
         startDate: obj.startDate ?? "",
         employmentType: obj.employmentType ?? "",
         manager: obj.manager ?? "",
+        allergies: obj.allergies ?? "",
+        conditions: obj.conditions ?? "",
+        medications: obj.medications ?? "",
+        dietaryRequirements: obj.dietaryRequirements ?? "",
+        accessibilityNeeds: obj.accessibilityNeeds ?? "",
+        assetTag: obj.assetTag ?? "",
+        assetName: obj.assetName ?? "",
+        assetCategory: obj.assetCategory ?? "",
+        assetSerialNumber: obj.assetSerialNumber ?? "",
+        assetAssignedDate: obj.assetAssignedDate ?? "",
       };
     })
     .filter((r) => r.firstName || r.email);
@@ -121,13 +189,19 @@ export function BulkOnboardingModal({
   onClose,
   onImport,
 }: BulkOnboardingModalProps) {
+  const templates = useAppSelector((s) => s.approvals.templates);
+  const onboardingTemplates = getOnboardingTemplates(templates);
+  const defaultTemplate = getDefaultOnboardingTemplate(templates);
+
   const [phase, setPhase] = useState<"upload" | "preview">("upload");
   const [rows, setRows] = useState<BulkOnboardingRow[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
   const [parseError, setParseError] = useState("");
+  const [workflowId, setWorkflowId] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const selectedWorkflowId = workflowId || defaultTemplate?.id || "";
   const validRows = rows.filter(isRowValid);
   const invalidCount = rows.length - validRows.length;
 
@@ -157,7 +231,10 @@ export function BulkOnboardingModal({
     if (file) handleFileLoad(file);
   };
 
-  const handleConfirm = () => onImport(validRows);
+  const handleConfirm = () =>
+    onImport(
+      validRows.map((r) => ({ ...r, workflowTemplateId: selectedWorkflowId })),
+    );
 
   const handleReset = () => {
     setPhase("upload");
@@ -205,8 +282,12 @@ export function BulkOnboardingModal({
                       onboarding_template.csv
                     </p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                      Columns: firstName, lastName, email, jobTitle, department,
-                      startDate, employmentType, manager
+                      Columns: firstName, surname, email, jobTitle, department,
+                      startDate, employmentType, manager, plus optional
+                      employeeId, medical (allergies, conditions,
+                      medications, dietaryRequirements, accessibilityNeeds) &amp;
+                      asset (assetTag, assetName, assetCategory,
+                      assetSerialNumber, assetAssignedDate)
                     </p>
                   </div>
                 </div>
@@ -360,6 +441,28 @@ export function BulkOnboardingModal({
                 </table>
               </div>
             </ScrollArea>
+
+            <div className="px-6 pt-4 flex items-center gap-2">
+              <Label className="text-xs font-medium shrink-0">
+                Onboarding Workflow
+              </Label>
+              <Select value={selectedWorkflowId} onValueChange={setWorkflowId}>
+                <SelectTrigger className="h-8 text-sm w-72">
+                  <SelectValue placeholder="Select workflow" />
+                </SelectTrigger>
+                <SelectContent>
+                  {onboardingTemplates.map((t) => (
+                    <SelectItem key={t.id} value={t.id} className="text-sm">
+                      {t.name}
+                      {t.isDefault ? " (Default)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-muted-foreground">
+                Applied to all imported hires
+              </span>
+            </div>
 
             <DialogFooter className="px-6 py-4 border-t border-border gap-2">
               <Button

@@ -56,7 +56,7 @@ export function ReviewModal({
     return new Date(d).toLocaleDateString("en-GB", {
       weekday: "short",
       day: "2-digit",
-      month: "short",
+      month: "long",
       year: "numeric",
     });
   }
@@ -143,7 +143,7 @@ export function ReviewModal({
               <p className="text-xs">
                 {new Date(req.submittedAt).toLocaleDateString("en-GB", {
                   day: "2-digit",
-                  month: "short",
+                  month: "long",
                   year: "numeric",
                 })}
               </p>

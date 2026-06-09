@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Search, UserPlus, X, Check } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Badge } from "@/src/components/ui/badge";
 import {
   Dialog,
@@ -16,7 +16,7 @@ import {
 } from "@/src/components/ui/dialog";
 import { Separator } from "@/src/components/ui/separator";
 import { cn } from "@/src/lib/utils";
-import { EMPLOYEES } from "@/src/data/employees-demo";
+import { useEmployees } from "@/src/components/hr/employees/hooks";
 import type { EmployeeRow } from "@/src/lib/types/employees";
 
 interface AddEmployeeModalProps {
@@ -36,13 +36,15 @@ export function AddEmployeeModal({
 }: AddEmployeeModalProps) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { data: employees } = useEmployees();
+  const allEmployees = useMemo(() => employees ?? [], [employees]);
 
   const currentIds = new Set(currentMembers.map((m) => m.id));
 
   const available = useMemo(
-    () => EMPLOYEES.filter((e) => !currentIds.has(e.id)),
+    () => allEmployees.filter((e) => !currentIds.has(e.id)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentMembers],
+    [allEmployees, currentMembers],
   );
 
   const filtered = useMemo(() => {
@@ -67,7 +69,7 @@ export function AddEmployeeModal({
   }
 
   function handleConfirm() {
-    const toAdd = EMPLOYEES.filter((e) => selected.has(e.id)).map((e) => ({
+    const toAdd = allEmployees.filter((e) => selected.has(e.id)).map((e) => ({
       ...e,
       department: departmentName,
     }));
@@ -83,7 +85,7 @@ export function AddEmployeeModal({
     onOpenChange(false);
   }
 
-  const selectedEmployees = EMPLOYEES.filter((e) => selected.has(e.id));
+  const selectedEmployees = allEmployees.filter((e) => selected.has(e.id));
 
   return (
     <Dialog
@@ -156,11 +158,13 @@ export function AddEmployeeModal({
                       isSelected ? "bg-primary/5" : "hover:bg-muted/60",
                     )}
                   >
-                    <Avatar className="size-8 shrink-0">
-                      <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
-                        {emp.initials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <PersonAvatar
+                      name={emp.name}
+                      initials={emp.initials}
+                      gender={emp.gender}
+                      className="size-8 shrink-0"
+                      fallbackClassName="bg-primary/10 text-primary text-[10px] font-semibold"
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">
                         {emp.name}

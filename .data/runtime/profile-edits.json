@@ -1,0 +1,11 @@
+{
+  "overrides": {
+    "NG-EMP-0001": {
+      "ethnicity": "Prefer not to say"
+    },
+    "NG-EMP-0002": {
+      "workPattern.holidayEntitlementDays": "60"
+    }
+  },
+  "requests": []
+}

@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 
 interface HeroCardProps {
   dateStr: string;
@@ -13,11 +13,12 @@ export function HeroCard({ dateStr }: HeroCardProps) {
     <Card>
       <CardContent className="px-6 py-6">
         <div className="flex items-start gap-4">
-          <Avatar className="size-14 shrink-0">
-            <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
-              MS
-            </AvatarFallback>
-          </Avatar>
+          <PersonAvatar
+            name="Mikovla Stefani"
+            initials="MS"
+            className="size-14 shrink-0"
+            fallbackClassName="bg-primary/10 text-primary text-lg font-bold"
+          />
           <div className="flex-1 min-w-0">
             <h1 className="text-3xl font-bold text-foreground">
               Welcome back, Mikovla Stefani 👋

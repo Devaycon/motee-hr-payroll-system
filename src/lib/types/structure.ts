@@ -6,6 +6,7 @@ export interface HierarchyNode {
   id: string;
   name: string;
   initials: string;
+  gender?: string;
   jobTitle: string;
   department: string;
   managerId: string | null;

@@ -1,0 +1,240 @@
+{
+  "templates": [
+    {
+      "id": "LCW-DEFAULT-ONBOARDING",
+      "kind": "onboarding",
+      "name": "Standard Onboarding",
+      "description": "Default 90-day onboarding journey: pre-boarding paperwork, day-1 setup, week-1 training, and 30/60/90 check-ins.",
+      "isDefault": true,
+      "source": "system",
+      "tasks": [
+        {
+          "id": "B-ONB-1",
+          "title": "Pre-boarding: Sign offer letter",
+          "assignee": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": -7,
+          "isRequired": true
+        },
+        {
+          "id": "B-ONB-2",
+          "title": "Pre-boarding: Upload government-issued ID",
+          "assignee": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": -5,
+          "isRequired": true
+        },
+        {
+          "id": "B-ONB-3",
+          "title": "Pre-boarding: Emergency contact form",
+          "assignee": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": -3,
+          "isRequired": true
+        },
+        {
+          "id": "B-ONB-4",
+          "title": "Day 1: Welcome email",
+          "assignee": {
+            "type": "role",
+            "role": "hr"
+          },
+          "dueDayOffset": 0,
+          "isRequired": true
+        },
+        {
+          "id": "B-ONB-5",
+          "title": "Day 1: Assign laptop",
+          "assignee": {
+            "type": "role",
+            "role": "it"
+          },
+          "dueDayOffset": 0,
+          "isRequired": true
+        },
+        {
+          "id": "B-ONB-6",
+          "title": "Day 1: Create email account",
+          "assignee": {
+            "type": "role",
+            "role": "it"
+          },
+          "dueDayOffset": 0,
+          "isRequired": true
+        },
+        {
+          "id": "B-ONB-7",
+          "title": "Day 1: Meeting with line manager",
+          "assignee": {
+            "type": "role",
+            "role": "manager"
+          },
+          "dueDayOffset": 0,
+          "isRequired": true
+        },
+        {
+          "id": "B-ONB-8",
+          "title": "Week 1: Compliance training",
+          "assignee": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": 3,
+          "isRequired": true
+        },
+        {
+          "id": "B-ONB-9",
+          "title": "Week 1: Bank details form",
+          "assignee": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": 4,
+          "isRequired": true
+        },
+        {
+          "id": "B-ONB-10",
+          "title": "30-day check-in: 30-day 1-on-1 with manager",
+          "assignee": {
+            "type": "role",
+            "role": "manager"
+          },
+          "dueDayOffset": 30,
+          "isRequired": false
+        },
+        {
+          "id": "B-ONB-11",
+          "title": "60-day check-in: 60-day feedback survey",
+          "assignee": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": 60,
+          "isRequired": false
+        },
+        {
+          "id": "B-ONB-12",
+          "title": "90-day probation review: Probation review form",
+          "assignee": {
+            "type": "role",
+            "role": "manager"
+          },
+          "dueDayOffset": 85,
+          "isRequired": true
+        },
+        {
+          "id": "B-ONB-13",
+          "title": "90-day probation review: HR Admin sign-off",
+          "assignee": {
+            "type": "role",
+            "role": "hr"
+          },
+          "dueDayOffset": 90,
+          "isRequired": true
+        }
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "trigger": "automatic"
+    },
+    {
+      "id": "LCW-DEFAULT-OFFBOARDING",
+      "kind": "offboarding",
+      "name": "Standard Offboarding",
+      "description": "Default exit journey: notice acknowledgement, knowledge transfer, final-week clearance, finance close-out.",
+      "isDefault": true,
+      "source": "system",
+      "tasks": [
+        {
+          "id": "B-OFF-1",
+          "title": "Notice period: Sign exit acknowledgement",
+          "assignee": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": -30,
+          "isRequired": true
+        },
+        {
+          "id": "B-OFF-2",
+          "title": "Notice period: Email to team",
+          "assignee": {
+            "type": "role",
+            "role": "manager"
+          },
+          "dueDayOffset": -28,
+          "isRequired": true
+        },
+        {
+          "id": "B-OFF-3",
+          "title": "Knowledge transfer: Handover document",
+          "assignee": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": -21,
+          "isRequired": true
+        },
+        {
+          "id": "B-OFF-4",
+          "title": "Knowledge transfer: Knowledge transfer meeting",
+          "assignee": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": -14,
+          "isRequired": true
+        },
+        {
+          "id": "B-OFF-5",
+          "title": "Final week: Return company laptop",
+          "assignee": {
+            "type": "role",
+            "role": "employee"
+          },
+          "dueDayOffset": -2,
+          "isRequired": true
+        },
+        {
+          "id": "B-OFF-6",
+          "title": "Final week: Revoke system accounts",
+          "assignee": {
+            "type": "role",
+            "role": "it"
+          },
+          "dueDayOffset": 0,
+          "isRequired": true
+        },
+        {
+          "id": "B-OFF-7",
+          "title": "Final week: Exit interview",
+          "assignee": {
+            "type": "role",
+            "role": "hr"
+          },
+          "dueDayOffset": -1,
+          "isRequired": true
+        },
+        {
+          "id": "B-OFF-8",
+          "title": "Close-out: Final-pay approval",
+          "assignee": {
+            "type": "role",
+            "role": "finance"
+          },
+          "dueDayOffset": 5,
+          "isRequired": true
+        }
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "trigger": "automatic"
+    }
+  ]
+}

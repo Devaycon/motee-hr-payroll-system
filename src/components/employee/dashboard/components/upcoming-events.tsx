@@ -1,4 +1,5 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -231,7 +232,7 @@ export function UpcomingEvents() {
                         {ev.label}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        {ev.date}
+                        {formatDate(ev.date)}
                       </p>
                     </div>
                     <span

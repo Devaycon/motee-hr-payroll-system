@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Switch } from "@/src/components/ui/switch";
 import {
@@ -290,23 +290,23 @@ export function KudosTab() {
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="flex items-center gap-1 shrink-0 relative">
-                      <Avatar className="size-10 ring-2 ring-background">
-                        <AvatarFallback
-                          className={`text-xs font-bold ${cfg.bg} ${cfg.color}`}
-                        >
-                          {post.senderInitials}
-                        </AvatarFallback>
-                      </Avatar>
+                      <PersonAvatar
+                        name={post.senderName}
+                        initials={post.senderInitials}
+                        className="size-10 ring-2 ring-background"
+                        fallbackClassName={`text-xs font-bold ${cfg.bg} ${cfg.color}`}
+                      />
                       <div
                         className={`-ml-1 z-10 flex items-center justify-center size-6 rounded-full ${cfg.bg} border border-background`}
                       >
                         <cfg.icon className={`size-3.5 ${cfg.color}`} />
                       </div>
-                      <Avatar className="size-10 ring-2 ring-background -ml-1">
-                        <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
-                          {post.recipientInitials}
-                        </AvatarFallback>
-                      </Avatar>
+                      <PersonAvatar
+                        name={post.recipientName}
+                        initials={post.recipientInitials}
+                        className="size-10 ring-2 ring-background -ml-1"
+                        fallbackClassName="text-xs font-bold bg-primary/10 text-primary"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1 flex-wrap">
@@ -420,11 +420,12 @@ export function KudosTab() {
                     >
                       #{i + 1}
                     </span>
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {entry.initials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <PersonAvatar
+                      name={entry.name}
+                      initials={entry.initials}
+                      className="h-6 w-6"
+                      fallbackClassName="bg-primary/10 text-primary text-xs"
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-foreground truncate">
                         {entry.name}

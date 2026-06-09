@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, ArrowDownRight, ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowUp, ArrowDown } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -12,7 +12,8 @@ export interface HrStatCardItem {
   label: string;
   value: string | number;
   sub: string;
-  link: string;
+  /** Optional "View" link. When omitted, no action button is shown. */
+  link?: string;
   icon: LucideIcon;
   trend?: string;
   up?: boolean;
@@ -34,17 +35,19 @@ export function HrStatCard({ stat }: HrStatCardProps) {
             {stat.label}
           </span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          asChild
-          className="h-6 text-xs px-2 text-muted-foreground hover:text-foreground gap-1"
-        >
-          <Link href={stat.link}>
-            View
-            <ArrowRight className="h-3 w-3" />
-          </Link>
-        </Button>
+        {stat.link && (
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="h-6 text-xs px-2 text-muted-foreground hover:text-foreground gap-1"
+          >
+            <Link href={stat.link}>
+              View
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="px-4 pb-4">
         <div className="flex items-end justify-between">
@@ -59,14 +62,14 @@ export function HrStatCard({ stat }: HrStatCardProps) {
                 "text-xs px-2 py-0.5 font-medium gap-0.5",
                 stat.up
                   ? "border-[#4ED251]/40 bg-[#4ED251]/10 text-[#4ED251]"
-                  : "border-primary/30 bg-primary/10 text-primary",
+                  : "border-orange-600/50 bg-orange-600/5 text-red-600",
               )}
             >
               {stat.trend}
               {stat.up ? (
-                <ArrowUpRight className="h-3 w-3" />
+                <ArrowUp className="h-3 w-3" />
               ) : (
-                <ArrowDownRight className="h-3 w-3" />
+                <ArrowDown className="h-3 w-3 " />
               )}
             </Badge>
           )}

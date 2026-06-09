@@ -3,22 +3,13 @@ import {
   ClipboardList,
   CalendarDays,
   UserCircle,
-  FileText,
-  Receipt,
-  Gift,
-  CalendarOff,
-  Clock,
-  CalendarCheck,
-  TrendingUp,
-  GraduationCap,
   Network,
   Megaphone,
   BookOpen,
   UsersRound,
+  Users,
   LifeBuoy,
-  Settings,
-  Package2,
-  ScrollText,
+  CheckSquare,
   LucideIcon,
 } from "lucide-react";
 
@@ -34,6 +25,8 @@ export interface Route {
   group: string;
   badge?: number;
   children?: RouteChild[];
+  /** Only shown to users who manage at least one direct report. */
+  managerOnly?: boolean;
 }
 
 export const routes: Route[] = [
@@ -42,6 +35,12 @@ export const routes: Route[] = [
     icon: LayoutDashboard,
     label: "Dashboard",
     link: "/employee/dashboard",
+  },
+  {
+    group: "Overview",
+    icon: UserCircle,
+    label: "My Profile",
+    link: "/profile/my-profile",
   },
   {
     group: "Overview",
@@ -55,74 +54,18 @@ export const routes: Route[] = [
     label: "My Events",
     link: "/employee/events",
   },
-
   {
-    group: "My Profile",
-    icon: UserCircle,
-    label: "Profile",
-    link: "/profile/my-profile",
+    group: "Overview",
+    icon: CheckSquare,
+    label: "My Submissions",
+    link: "/employee/submissions",
   },
   {
-    group: "My Profile",
-    icon: FileText,
-    label: "Documents",
-    link: "/profile/documents",
-  },
-  {
-    group: "My Profile",
-    icon: Receipt,
-    label: "Payslips",
-    link: "/profile/payslips",
-  },
-  {
-    group: "My Profile",
-    icon: Gift,
-    label: "Benefits",
-    link: "/profile/benefits",
-  },
-  {
-    group: "My Profile",
-    icon: Package2,
-    label: "Assets",
-    link: "/profile/assets",
-  },
-  {
-    group: "My Profile",
-    icon: ScrollText,
-    label: "Contracts",
-    link: "/profile/contracts",
-  },
-
-  {
-    group: "Time Off",
-    icon: CalendarOff,
-    label: "Request Leave",
-    link: "/time-off/request",
-  },
-  {
-    group: "Time Off",
-    icon: Clock,
-    label: "Attendance",
-    link: "/time-off/attendance",
-  },
-  {
-    group: "Time Off",
-    icon: CalendarCheck,
-    label: "Leave Balance",
-    link: "/time-off/balance",
-  },
-
-  {
-    group: "Growth",
-    icon: TrendingUp,
-    label: "Performance",
-    link: "/growth/performance",
-  },
-  {
-    group: "Growth",
-    icon: GraduationCap,
-    label: "Training",
-    link: "/growth/training",
+    group: "Overview",
+    icon: Users,
+    label: "My Team",
+    link: "/employee/team",
+    managerOnly: true,
   },
 
   {

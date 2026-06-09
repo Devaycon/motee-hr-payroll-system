@@ -29,12 +29,12 @@ export function HistoryRow({ request }: HistoryRowProps) {
           <span className="text-[11px] text-muted-foreground">
             {new Date(request.startDate).toLocaleDateString("en-GB", {
               day: "numeric",
-              month: "short",
+              month: "long",
             })}
             {" – "}
             {new Date(request.endDate).toLocaleDateString("en-GB", {
               day: "numeric",
-              month: "short",
+              month: "long",
               year: "numeric",
             })}
           </span>

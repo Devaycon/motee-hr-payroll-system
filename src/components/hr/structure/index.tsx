@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { HIERARCHY_NODES, recomputeNodes } from "./data";
+import { useEffect, useState, useMemo } from "react";
+import { recomputeNodes } from "./data";
 import type { HierarchyNode, ViewMode } from "./types";
+import { useHierarchy } from "./hooks";
 import { StatCards } from "./components/stat-cards";
 import { StructureToolbar } from "./components/structure-toolbar";
 import { HierarchyTree } from "./components/hierarchy-tree";
@@ -10,7 +11,11 @@ import { ReportingTable } from "./components/reporting-table";
 import { EditReportingModal } from "./components/edit-reporting-modal";
 
 export function StructurePage() {
-  const [rawNodes, setRawNodes] = useState<HierarchyNode[]>(HIERARCHY_NODES);
+  const { data } = useHierarchy();
+  const [rawNodes, setRawNodes] = useState<HierarchyNode[]>([]);
+  useEffect(() => {
+    if (data) setRawNodes(data);
+  }, [data]);
   const [viewMode, setViewMode] = useState<ViewMode>("tree");
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");

@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, Mail, Upload } from "lucide-react";
+import { ClipboardList, Mail, Upload, UserPlus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
 } from "@/src/components/ui/dialog";
 import { cn } from "@/src/lib/utils";
 
-export type OnboardingMethod = "manual" | "invite" | "bulk";
+export type OnboardingMethod = "manual" | "invite" | "bulk" | "preboarding";
 
 interface MethodSelectorProps {
   open: boolean;
@@ -47,6 +47,16 @@ const METHODS = [
     color: "text-emerald-500",
     bg: "bg-emerald-500/10 hover:bg-emerald-500/20",
     border: "border-emerald-500/20",
+  },
+  {
+    key: "preboarding" as const,
+    icon: UserPlus,
+    label: "From Preboarding",
+    description:
+      "Continue a hire who was already captured in preboarding — their details prefill the form.",
+    color: "text-amber-500",
+    bg: "bg-amber-500/10 hover:bg-amber-500/20",
+    border: "border-amber-500/20",
   },
 ];
 

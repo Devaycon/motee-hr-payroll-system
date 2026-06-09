@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useSuggestions } from "./hooks";
 import { Lightbulb, Plus, ChevronUp, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
@@ -15,14 +17,13 @@ import {
   CardTitle,
   CardDescription,
 } from "@/src/components/ui/card";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { StatCards } from "./components/stat-cards";
 import { SuggestionsBoard } from "./components/suggestions-board";
 import { SuggestionsTable } from "./components/suggestions-table";
 import { SuggestionDetailModal } from "./components/suggestion-detail-modal";
 import { SuggestionFormModal } from "./components/suggestion-form-modal";
 import {
-  SUGGESTIONS,
   SUGGESTION_CATEGORY_CONFIG,
   SUGGESTION_CATEGORY_OPTIONS,
   SUGGESTION_STATUS_CONFIG,
@@ -39,7 +40,11 @@ import type {
 } from "./types";
 
 export function SuggestionsPage() {
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(SUGGESTIONS);
+  const { data, loading } = useSuggestions();
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  useEffect(() => {
+    if (data) setSuggestions(data);
+  }, [data]);
   const [formOpen, setFormOpen] = useState(false);
   const [detailSuggestion, setDetailSuggestion] = useState<Suggestion | null>(
     null,
@@ -196,6 +201,15 @@ export function SuggestionsPage() {
     .slice(0, 5);
   const implementationRate =
     stats.total > 0 ? Math.round((stats.implemented / stats.total) * 100) : 0;
+
+  if (loading && !suggestions.length) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -387,11 +401,12 @@ export function SuggestionsPage() {
                             {statusConfig.label}
                           </Badge>
                           {s.isAnonymous ? null : (
-                            <Avatar className="w-5 h-5">
-                              <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
-                                {s.submitterInitials}
-                              </AvatarFallback>
-                            </Avatar>
+                            <PersonAvatar
+                              name={s.submitterName ?? "Anonymous"}
+                              initials={s.submitterInitials}
+                              className="w-5 h-5"
+                              fallbackClassName="text-[9px] bg-primary/10 text-primary"
+                            />
                           )}
                         </div>
                       </div>

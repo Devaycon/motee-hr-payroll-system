@@ -17,6 +17,7 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { ChatPanel } from "@/src/components/shared/chat-panel";
 import { NotificationsPanel } from "@/src/components/shared/notifications-panel";
 import { ScreenShareModal } from "@/src/components/shared/screen-share-modal";
@@ -117,9 +118,13 @@ const Navbar = () => {
                 data-tutorial="profile"
                 className="cursor-pointer flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5"
               >
-                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-semibold">
-                  NR
-                </div>
+                <PersonAvatar
+                  name="James Adeyemi"
+                  initials="JA"
+                  size="sm"
+                  className="size-7"
+                  fallbackClassName="bg-primary text-primary-foreground text-xs font-semibold"
+                />
                 <div className="flex flex-col">
                   <span className="text-xs font-medium text-foreground leading-none">
                     James Adeyemi

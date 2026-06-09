@@ -1,16 +1,21 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { DEPARTMENTS } from "./data";
+import { useEffect, useState, useMemo } from "react";
 import type { Department } from "./types";
 import { StatCards } from "./components/stat-cards";
 import { DepartmentsToolbar } from "./components/departments-toolbar";
 import { DepartmentsTable } from "./components/departments-table";
 import { DepartmentCreateModal } from "./components/department-create-modal";
 import { DepartmentEditModal } from "./components/department-edit-modal";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useDepartments } from "./hooks";
 
 export function DepartmentsPage() {
-  const [departments, setDepartments] = useState<Department[]>(DEPARTMENTS);
+  const { data, loading } = useDepartments();
+  const [departments, setDepartments] = useState<Department[]>([]);
+  useEffect(() => {
+    if (data) setDepartments(data);
+  }, [data]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -51,6 +56,15 @@ export function DepartmentsPage() {
 
   function handleBulkSave(depts: Department[]) {
     setDepartments((prev) => [...prev, ...depts]);
+  }
+
+  if (loading && !departments.length) {
+    return (
+      <div className="flex flex-col gap-6 py-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
   }
 
   return (

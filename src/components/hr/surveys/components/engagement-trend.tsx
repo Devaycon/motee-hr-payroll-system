@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/src/components/ui/card";
-import { LineChartCard } from "@/src/components/shared/charts/line-chart";
+import { LineChart } from "@/src/components/shared/charts";
 import {
   Select,
   SelectContent,
@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Badge } from "@/src/components/ui/badge";
-import { ENGAGEMENT_TREND_DATA, ENGAGEMENT_CHART_CONFIG } from "../data";
+import { ENGAGEMENT_TREND_DATA } from "../data";
 
 type DeptKey = "engineering" | "marketing" | "sales" | "hr" | "operations";
 
@@ -29,12 +29,12 @@ const ALL_LINES: {
   label: string;
   color: string;
 }[] = [
-  { key: "companyWide", label: "Company Wide", color: "hsl(var(--chart-1))" },
-  { key: "engineering", label: "Engineering", color: "hsl(var(--chart-2))" },
-  { key: "marketing", label: "Marketing", color: "hsl(var(--chart-3))" },
-  { key: "sales", label: "Sales", color: "hsl(var(--chart-4))" },
-  { key: "hr", label: "HR", color: "hsl(var(--chart-5))" },
-  { key: "operations", label: "Operations", color: "hsl(221, 70%, 55%)" },
+  { key: "companyWide", label: "Company Wide", color: "#4ED251" },
+  { key: "engineering", label: "Engineering", color: "#6366f1" },
+  { key: "marketing", label: "Marketing", color: "#ff8b2d" },
+  { key: "sales", label: "Sales", color: "#3b82f6" },
+  { key: "hr", label: "HR", color: "#a855f7" },
+  { key: "operations", label: "Operations", color: "#14b8a6" },
 ];
 
 export function EngagementTrend() {
@@ -97,13 +97,17 @@ export function EngagementTrend() {
         </Select>
       </div>
 
-      <LineChartCard
+      <LineChart
         title="Engagement Score Trend"
         description="Monthly engagement score over the last 12 months"
-        data={ENGAGEMENT_TREND_DATA as unknown as Record<string, unknown>[]}
-        config={ENGAGEMENT_CHART_CONFIG}
-        series={visibleLines.map((l) => ({ key: l.key, color: l.color }))}
-        xAxisKey="month"
+        categories={ENGAGEMENT_TREND_DATA.map((d) => d.month)}
+        series={visibleLines.map((l) => ({
+          name: l.label,
+          data: ENGAGEMENT_TREND_DATA.map(
+            (d) => (d as unknown as Record<string, number>)[l.key],
+          ),
+          color: l.color,
+        }))}
       />
 
       <div className="grid grid-cols-3 gap-3">

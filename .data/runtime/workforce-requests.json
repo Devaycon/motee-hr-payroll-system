@@ -1,0 +1,118 @@
+{
+  "byCountry": {
+    "ng": [
+      {
+        "id": "WFR-SEED-1",
+        "department": "Engineering",
+        "numberOfHires": 3,
+        "reason": "Scale the platform team for the Q3 product roadmap.",
+        "budgetEstimate": 24000000,
+        "urgency": "high",
+        "expectedStartDate": "2026-09-01",
+        "status": "draft",
+        "createdById": "",
+        "createdByName": "Line Manager",
+        "createdAt": "2026-06-01"
+      },
+      {
+        "id": "WFR-SEED-2",
+        "department": "Sales",
+        "numberOfHires": 2,
+        "reason": "Backfill two reps who exited and cover new territory.",
+        "budgetEstimate": 9000000,
+        "urgency": "medium",
+        "expectedStartDate": "2026-08-15",
+        "status": "draft",
+        "createdById": "",
+        "createdByName": "Line Manager",
+        "createdAt": "2026-06-01"
+      }
+    ],
+    "uk": [
+      {
+        "id": "WFR-DEMO-1",
+        "department": "Engineering",
+        "numberOfHires": 3,
+        "reason": "Scale the platform team for the Q3 product roadmap.",
+        "budgetEstimate": 24000000,
+        "urgency": "high",
+        "expectedStartDate": "2026-09-01",
+        "status": "draft",
+        "approvalRequestId": "APR-WFR-DEMO-1",
+        "createdById": "",
+        "createdByName": "Ifeoma Nwosu",
+        "createdAt": "2026-06-06"
+      },
+      {
+        "id": "WFR-DEMO-2",
+        "department": "Customer Success",
+        "numberOfHires": 2,
+        "reason": "Reduce ticket backlog and improve response SLAs.",
+        "budgetEstimate": 8000000,
+        "urgency": "medium",
+        "expectedStartDate": "2026-08-15",
+        "status": "draft",
+        "approvalRequestId": "APR-WFR-DEMO-2",
+        "createdById": "",
+        "createdByName": "Bola Adeyemi",
+        "createdAt": "2026-06-03"
+      },
+      {
+        "id": "WFR-DEMO-3",
+        "department": "Marketing",
+        "numberOfHires": 1,
+        "reason": "Hire a brand designer ahead of the rebrand launch.",
+        "budgetEstimate": 6000000,
+        "urgency": "medium",
+        "expectedStartDate": "2026-07-20",
+        "status": "draft",
+        "approvalRequestId": "APR-WFR-DEMO-3",
+        "createdById": "",
+        "createdByName": "Kemi Johnson",
+        "createdAt": "2026-05-31"
+      },
+      {
+        "id": "WFR-DEMO-4",
+        "department": "Finance",
+        "numberOfHires": 1,
+        "reason": "Backfill a financial analyst who is relocating.",
+        "budgetEstimate": 7000000,
+        "urgency": "low",
+        "expectedStartDate": "2026-09-30",
+        "status": "draft",
+        "approvalRequestId": "APR-WFR-DEMO-4",
+        "createdById": "",
+        "createdByName": "Uche Okeke",
+        "createdAt": "2026-06-02"
+      },
+      {
+        "id": "WFR-DEMO-5",
+        "department": "Sales",
+        "numberOfHires": 4,
+        "reason": "Expand into the East region with a new sales pod.",
+        "budgetEstimate": 18000000,
+        "urgency": "high",
+        "expectedStartDate": "2026-08-01",
+        "status": "draft",
+        "approvalRequestId": "APR-WFR-DEMO-5",
+        "createdById": "",
+        "createdByName": "Ngozi Eze",
+        "createdAt": "2026-05-25"
+      },
+      {
+        "id": "WFR-DEMO-6",
+        "department": "Operations",
+        "numberOfHires": 2,
+        "reason": "Staff the new distribution hub before peak season.",
+        "budgetEstimate": 9500000,
+        "urgency": "critical",
+        "expectedStartDate": "2026-07-10",
+        "status": "draft",
+        "approvalRequestId": "APR-WFR-DEMO-6",
+        "createdById": "",
+        "createdByName": "Yusuf Bello",
+        "createdAt": "2026-05-19"
+      }
+    ]
+  }
+}

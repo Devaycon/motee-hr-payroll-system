@@ -1,5 +1,10 @@
 import { COURSES, ENROLLMENTS } from "@/src/data/learning-demo";
-import type { Course, CourseCategory, Enrollment } from "@/src/lib/types/learning";
+import type {
+  Course,
+  CourseCategory,
+  Enrollment,
+  QuizAttempt,
+} from "@/src/lib/types/learning";
 
 export type EnrollmentStatus =
   | "enrolled"
@@ -22,6 +27,14 @@ export interface MyEnrollment {
   durationHours: number;
   instructor: string;
   deliveryMode: string;
+  /** Watchable training video (MP4/WebM). */
+  videoUrl?: string;
+  /** Last watched position in seconds, for resume. */
+  lastPositionSeconds?: number;
+  /** Recorded quiz attempts for this enrollment. */
+  quizAttempts?: QuizAttempt[];
+  /** Whether the latest quiz attempt passed. */
+  quizPassed?: boolean;
 }
 
 export interface AssessmentQuestion {
@@ -41,11 +54,15 @@ export function toMyEnrollment(en: Enrollment): MyEnrollment {
     status: en.status,
     progress: en.progress,
     enrolledAt: en.enrolledAt ?? en.enrolledDate ?? "",
+    dueDate: en.dueDate,
     completedAt: en.completedAt,
     score: en.score,
     durationHours: course?.durationHours ?? 0,
     instructor: course?.instructor ?? "",
     deliveryMode: course?.deliveryMode ?? "online",
+    videoUrl: course?.videoUrl,
+    quizAttempts: en.quizAttempts,
+    quizPassed: en.quizPassed,
   };
 }
 

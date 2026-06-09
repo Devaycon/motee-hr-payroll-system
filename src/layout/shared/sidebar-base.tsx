@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 
 export interface NavItem {
   label: string;
@@ -85,8 +85,6 @@ export function SidebarBase({
     href === "/" || exactMatchRoutes.includes(href)
       ? pathname === href
       : pathname === href || pathname.startsWith(`${href}/`);
-
-  const resolveAvatarBg = user.avatarColor ?? config.logoBg;
 
   return (
     <aside
@@ -202,14 +200,12 @@ export function SidebarBase({
 
       <div className="border-t border-border px-3 py-4">
         <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-accent cursor-pointer transition-colors hover:bg-accent/80">
-          <Avatar className="size-8 shrink-0">
-            <AvatarFallback
-              className="text-[10px] font-semibold text-white"
-              style={{ backgroundColor: resolveAvatarBg }}
-            >
-              {user.initials}
-            </AvatarFallback>
-          </Avatar>
+          <PersonAvatar
+            name={user.name}
+            initials={user.initials}
+            className="size-8 shrink-0"
+            fallbackClassName="text-[10px] font-semibold text-white"
+          />
           <div className="flex flex-col flex-1 min-w-0">
             <span className="text-xs font-medium text-foreground truncate">
               {user.name}

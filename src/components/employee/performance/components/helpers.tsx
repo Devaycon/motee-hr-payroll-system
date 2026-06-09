@@ -1,13 +1,6 @@
 import { Star } from "lucide-react";
 import { cn } from "@/src/lib/utils";
-
-export function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+export { formatDate } from "@/src/lib/utils/format-date";
 
 export function daysUntil(iso: string) {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);

@@ -286,7 +286,7 @@ export function AnnouncementDetailModal({
                                 "en-GB",
                                 {
                                   day: "numeric",
-                                  month: "short",
+                                  month: "long",
                                   year: "numeric",
                                 },
                               )}

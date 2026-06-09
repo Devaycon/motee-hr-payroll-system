@@ -1,24 +1,45 @@
 "use client";
 
 import { useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useLearning } from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { StatCards } from "./components/stat-cards";
 import { CoursesTable } from "./components/courses-table";
 import { EnrollmentsTable } from "./components/enrollments-table";
+import { ResultsTable } from "./components/results-table";
 import { CourseModal } from "./components/course-modal";
 import { EnrollModal } from "./components/enroll-modal";
-import { COURSES, ENROLLMENTS } from "./data";
-import type { Course, Enrollment, NewCourse, NewEnrollment } from "./types";
+import { QuizBuilderModal } from "./components/quiz-builder-modal";
+import type {
+  Course,
+  CourseQuiz,
+  Enrollment,
+  NewCourse,
+} from "./types";
 
 export function LearningPage() {
-  const [courses, setCourses] = useState<Course[]>(COURSES);
-  const [enrollments, setEnrollments] = useState<Enrollment[]>(ENROLLMENTS);
+  const { data, loading } = useLearning();
+  const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+  // Seed local working state from the loaded demo data once.
+  if (data && !hydrated) {
+    setHydrated(true);
+    setCourses(data.courses);
+    setEnrollments(data.enrollments);
+  }
 
   const [courseModalOpen, setCourseModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
 
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
+
+  const [quizCourse, setQuizCourse] = useState<Course | null>(null);
+  const [quizModalOpen, setQuizModalOpen] = useState(false);
 
   function handleAddCourse() {
     setEditingCourse(null);
@@ -51,22 +72,41 @@ export function LearningPage() {
     setCourses((prev) => prev.filter((c) => c.id !== id));
   }
 
-  function handleSaveEnrollment(data: NewEnrollment) {
-    const course = courses.find((c) => c.id === data.courseId);
+  function handleManageQuiz(course: Course) {
+    setQuizCourse(course);
+    setQuizModalOpen(true);
+  }
+
+  function handleSaveQuiz(courseId: string, quiz: CourseQuiz) {
+    setCourses((prev) => prev.map((c) => (c.id === courseId ? { ...c, quiz } : c)));
+  }
+
+  function handleAssign(input: {
+    courseId: string;
+    dueDate: string;
+    trainees: { employeeName: string; employeeInitials: string; employeeDept: string }[];
+  }) {
+    const course = courses.find((c) => c.id === input.courseId);
     if (!course) return;
-    const newEnrollment: Enrollment = {
-      ...data,
-      id: `enr-${Date.now()}`,
+    const today = new Date().toISOString().split("T")[0];
+    const newEnrollments: Enrollment[] = input.trainees.map((t, i) => ({
+      id: `enr-${Date.now()}-${i}`,
+      courseId: input.courseId,
       courseTitle: course.title,
-      enrolledDate: new Date().toISOString().split("T")[0],
+      employeeName: t.employeeName,
+      employeeInitials: t.employeeInitials,
+      employeeDept: t.employeeDept,
+      department: t.employeeDept,
+      enrolledDate: today,
+      dueDate: input.dueDate || undefined,
       progress: 0,
       status: "enrolled",
-    };
-    setEnrollments((prev) => [newEnrollment, ...prev]);
+    }));
+    setEnrollments((prev) => [...newEnrollments, ...prev]);
     setCourses((prev) =>
       prev.map((c) =>
-        c.id === data.courseId
-          ? { ...c, enrolledCount: (c.enrolledCount ?? 0) + 1 }
+        c.id === input.courseId
+          ? { ...c, enrolledCount: (c.enrolledCount ?? 0) + newEnrollments.length }
           : c,
       ),
     );
@@ -74,6 +114,15 @@ export function LearningPage() {
 
   function handleDeleteEnrollment(id: string) {
     setEnrollments((prev) => prev.filter((e) => e.id !== id));
+  }
+
+  if (loading && !courses.length) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
   }
 
   return (
@@ -96,6 +145,7 @@ export function LearningPage() {
               value: "enrollments",
               label: `Enrollments (${enrollments.length})`,
             },
+            { value: "results", label: "Results" },
           ]}
         />
 
@@ -105,6 +155,7 @@ export function LearningPage() {
             onEdit={handleEditCourse}
             onDelete={handleDeleteCourse}
             onAddCourse={handleAddCourse}
+            onManageQuiz={handleManageQuiz}
           />
         </TabsContent>
 
@@ -115,6 +166,10 @@ export function LearningPage() {
             onDelete={handleDeleteEnrollment}
             onEnroll={() => setEnrollModalOpen(true)}
           />
+        </TabsContent>
+
+        <TabsContent value="results" className="mt-4">
+          <ResultsTable courses={courses} enrollments={enrollments} />
         </TabsContent>
       </Tabs>
 
@@ -129,7 +184,15 @@ export function LearningPage() {
         open={enrollModalOpen}
         onClose={() => setEnrollModalOpen(false)}
         courses={courses}
-        onSave={handleSaveEnrollment}
+        employees={employees}
+        onAssign={handleAssign}
+      />
+
+      <QuizBuilderModal
+        open={quizModalOpen}
+        course={quizCourse}
+        onClose={() => setQuizModalOpen(false)}
+        onSave={handleSaveQuiz}
       />
     </div>
   );

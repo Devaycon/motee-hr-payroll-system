@@ -1,6 +1,8 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useCommunity } from "./hooks";
 import {
   Users,
   Plus,
@@ -13,7 +15,6 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { POSTS, CELEBRATIONS, DIRECTORY_EMPLOYEES } from "./data";
 import { computeFeedStats } from "./data";
 import type { CommunityPost, NewPost } from "./types";
 import { CommunityFeed } from "./components/community-feed";
@@ -22,7 +23,13 @@ import { Directory } from "./components/directory";
 import { PostFormModal } from "./components/post-form-modal";
 
 export function CommunityPage() {
-  const [posts, setPosts] = useState<CommunityPost[]>(POSTS);
+  const { data, loading } = useCommunity();
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const celebrations = data?.celebrations ?? [];
+  const directory = data?.directory ?? [];
+  useEffect(() => {
+    if (data) setPosts(data.posts);
+  }, [data]);
   const [formOpen, setFormOpen] = useState(false);
 
   const handleCreate = (newPost: NewPost) => {
@@ -131,6 +138,15 @@ export function CommunityPage() {
 
   const stats = computeFeedStats(posts);
 
+  if (loading && !posts.length) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -175,11 +191,11 @@ export function CommunityPage() {
             </TabsContent>
 
             <TabsContent value="celebrations" className="mt-5">
-              <Celebrations celebrations={CELEBRATIONS} />
+              <Celebrations celebrations={celebrations} />
             </TabsContent>
 
             <TabsContent value="directory" className="mt-5">
-              <Directory employees={DIRECTORY_EMPLOYEES} />
+              <Directory employees={directory} />
             </TabsContent>
           </Tabs>
         </div>
@@ -193,7 +209,7 @@ export function CommunityPage() {
               {[
                 {
                   label: "Team Members",
-                  value: DIRECTORY_EMPLOYEES.length,
+                  value: directory.length,
                   icon: Users,
                   color: "text-indigo-500",
                   bg: "bg-indigo-500/10",
@@ -241,7 +257,7 @@ export function CommunityPage() {
               This Month
             </p>
             <div className="space-y-2">
-              {CELEBRATIONS.filter((c) => c.date.startsWith("2026-04"))
+              {celebrations.filter((c) => c.date.startsWith("2026-04"))
                 .slice(0, 4)
                 .map((c) => (
                   <div key={c.id} className="flex items-center gap-2.5">
@@ -258,7 +274,7 @@ export function CommunityPage() {
                     </div>
                   </div>
                 ))}
-              {CELEBRATIONS.filter((c) => c.date.startsWith("2026-04"))
+              {celebrations.filter((c) => c.date.startsWith("2026-04"))
                 .length === 0 && (
                 <p className="text-xs text-muted-foreground">
                   No celebrations this month.
@@ -273,7 +289,7 @@ export function CommunityPage() {
               Active Members
             </p>
             <div className="flex flex-wrap gap-2">
-              {DIRECTORY_EMPLOYEES.slice(0, 8).map((e) => (
+              {directory.slice(0, 8).map((e) => (
                 <div
                   key={e.id}
                   title={e.name}
@@ -282,9 +298,9 @@ export function CommunityPage() {
                   {e.initials}
                 </div>
               ))}
-              {DIRECTORY_EMPLOYEES.length > 8 && (
+              {directory.length > 8 && (
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                  +{DIRECTORY_EMPLOYEES.length - 8}
+                  +{directory.length - 8}
                 </div>
               )}
             </div>

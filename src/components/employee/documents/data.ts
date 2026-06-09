@@ -208,13 +208,7 @@ export function daysUntilExpiry(date: string) {
   );
 }
 
-export function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+export { formatDate } from "@/src/lib/utils/format-date";
 
 export const DOC_TYPES = [
   "All Types",

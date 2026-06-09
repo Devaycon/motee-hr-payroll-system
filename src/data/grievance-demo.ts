@@ -1,41 +1,32 @@
-﻿import type {
-  GrievanceCase,
-  DisciplinaryCase,
-  GrievanceCategory,
-  DisciplinaryCategory,
-  GrievanceStatus,
-  DisciplinaryStatus,
-  DisciplinaryOutcome,
+import type {
+  ERCase,
+  CaseComplaintType,
+  CaseStage,
+  ConfidentialityLevel,
+  CaseOutcome,
   CasePriority,
 } from "@/src/lib/types/grievance";
 
-export const GRIEVANCE_CATEGORY_CONFIG: Record<
-  GrievanceCategory,
-  { label: string; color: string; bg: string; border: string }
-> = {
+type Style = { label: string; color: string; bg: string; border: string };
+
+export const CASE_TYPE_CONFIG: Record<CaseComplaintType, Style> = {
+  grievance: {
+    label: "Grievance",
+    color: "text-indigo-700 dark:text-indigo-400",
+    bg: "bg-indigo-50 dark:bg-indigo-950/40",
+    border: "border-indigo-200 dark:border-indigo-800",
+  },
+  disciplinary: {
+    label: "Disciplinary",
+    color: "text-rose-700 dark:text-rose-400",
+    bg: "bg-rose-50 dark:bg-rose-950/40",
+    border: "border-rose-200 dark:border-rose-800",
+  },
   harassment: {
     label: "Harassment",
     color: "text-red-700 dark:text-red-400",
     bg: "bg-red-50 dark:bg-red-950/40",
     border: "border-red-200 dark:border-red-800",
-  },
-  unfair_treatment: {
-    label: "Unfair Treatment",
-    color: "text-orange-700 dark:text-orange-400",
-    bg: "bg-orange-50 dark:bg-orange-950/40",
-    border: "border-orange-200 dark:border-orange-800",
-  },
-  pay_dispute: {
-    label: "Pay Dispute",
-    color: "text-amber-700 dark:text-amber-400",
-    bg: "bg-amber-50 dark:bg-amber-950/40",
-    border: "border-amber-200 dark:border-amber-800",
-  },
-  working_conditions: {
-    label: "Working Conditions",
-    color: "text-violet-700 dark:text-violet-400",
-    bg: "bg-violet-50 dark:bg-violet-950/40",
-    border: "border-violet-200 dark:border-violet-800",
   },
   discrimination: {
     label: "Discrimination",
@@ -43,41 +34,23 @@ export const GRIEVANCE_CATEGORY_CONFIG: Record<
     bg: "bg-rose-50 dark:bg-rose-950/40",
     border: "border-rose-200 dark:border-rose-800",
   },
-  other: {
-    label: "Other",
-    color: "text-slate-700 dark:text-slate-400",
-    bg: "bg-slate-50 dark:bg-slate-900/40",
-    border: "border-slate-200 dark:border-slate-700",
+  pay_dispute: {
+    label: "Pay Dispute",
+    color: "text-amber-700 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-950/40",
+    border: "border-amber-200 dark:border-amber-800",
   },
-};
-
-export const DISCIPLINARY_CATEGORY_CONFIG: Record<
-  DisciplinaryCategory,
-  { label: string; color: string; bg: string; border: string }
-> = {
   misconduct: {
     label: "Misconduct",
-    color: "text-red-700 dark:text-red-400",
-    bg: "bg-red-50 dark:bg-red-950/40",
-    border: "border-red-200 dark:border-red-800",
-  },
-  poor_performance: {
-    label: "Poor Performance",
     color: "text-orange-700 dark:text-orange-400",
     bg: "bg-orange-50 dark:bg-orange-950/40",
     border: "border-orange-200 dark:border-orange-800",
   },
   attendance: {
     label: "Attendance",
-    color: "text-amber-700 dark:text-amber-400",
-    bg: "bg-amber-50 dark:bg-amber-950/40",
-    border: "border-amber-200 dark:border-amber-800",
-  },
-  insubordination: {
-    label: "Insubordination",
-    color: "text-rose-700 dark:text-rose-400",
-    bg: "bg-rose-50 dark:bg-rose-950/40",
-    border: "border-rose-200 dark:border-rose-800",
+    color: "text-teal-700 dark:text-teal-400",
+    bg: "bg-teal-50 dark:bg-teal-950/40",
+    border: "border-teal-200 dark:border-teal-800",
   },
   policy_violation: {
     label: "Policy Violation",
@@ -85,128 +58,107 @@ export const DISCIPLINARY_CATEGORY_CONFIG: Record<
     bg: "bg-violet-50 dark:bg-violet-950/40",
     border: "border-violet-200 dark:border-violet-800",
   },
-  other: {
-    label: "Other",
-    color: "text-slate-700 dark:text-slate-400",
-    bg: "bg-slate-50 dark:bg-slate-900/40",
-    border: "border-slate-200 dark:border-slate-700",
+  working_conditions: {
+    label: "Working Conditions",
+    color: "text-sky-700 dark:text-sky-400",
+    bg: "bg-sky-50 dark:bg-sky-950/40",
+    border: "border-sky-200 dark:border-sky-800",
   },
 };
 
-export const GRIEVANCE_STATUS_CONFIG: Record<
-  GrievanceStatus,
-  { label: string; color: string; bg: string; border: string; step: number }
-> = {
+export const CASE_STAGE_CONFIG: Record<CaseStage, Style & { step: number }> = {
   raised: {
     label: "Raised",
+    step: 1,
     color: "text-indigo-700 dark:text-indigo-400",
     bg: "bg-indigo-50 dark:bg-indigo-950/40",
     border: "border-indigo-200 dark:border-indigo-800",
-    step: 1,
   },
-  under_review: {
-    label: "Under Review",
+  triage: {
+    label: "Triage",
+    step: 2,
     color: "text-blue-700 dark:text-blue-400",
     bg: "bg-blue-50 dark:bg-blue-950/40",
     border: "border-blue-200 dark:border-blue-800",
-    step: 2,
   },
-  under_investigation: {
-    label: "Under Investigation",
-    color: "text-amber-700 dark:text-amber-400",
-    bg: "bg-amber-50 dark:bg-amber-950/40",
-    border: "border-amber-200 dark:border-amber-800",
+  assigned: {
+    label: "Assigned",
     step: 3,
-  },
-  hearing_scheduled: {
-    label: "Hearing Scheduled",
-    color: "text-violet-700 dark:text-violet-400",
-    bg: "bg-violet-50 dark:bg-violet-950/40",
-    border: "border-violet-200 dark:border-violet-800",
-    step: 4,
-  },
-  mediation: {
-    label: "Mediation",
-    color: "text-teal-700 dark:text-teal-400",
-    bg: "bg-teal-50 dark:bg-teal-950/40",
-    border: "border-teal-200 dark:border-teal-800",
-    step: 5,
-  },
-  resolved: {
-    label: "Resolved",
-    color: "text-emerald-700 dark:text-emerald-400",
-    bg: "bg-emerald-50 dark:bg-emerald-950/40",
-    border: "border-emerald-200 dark:border-emerald-800",
-    step: 6,
-  },
-  closed: {
-    label: "Closed",
-    color: "text-slate-600 dark:text-slate-400",
-    bg: "bg-slate-50 dark:bg-slate-900/40",
-    border: "border-slate-200 dark:border-slate-700",
-    step: 7,
-  },
-  appealed: {
-    label: "Appealed",
-    color: "text-rose-700 dark:text-rose-400",
-    bg: "bg-rose-50 dark:bg-rose-950/40",
-    border: "border-rose-200 dark:border-rose-800",
-    step: 8,
-  },
-};
-
-export const DISCIPLINARY_STATUS_CONFIG: Record<
-  DisciplinaryStatus,
-  { label: string; color: string; bg: string; border: string; step: number }
-> = {
-  reported: {
-    label: "Reported",
-    color: "text-indigo-700 dark:text-indigo-400",
-    bg: "bg-indigo-50 dark:bg-indigo-950/40",
-    border: "border-indigo-200 dark:border-indigo-800",
-    step: 1,
+    color: "text-cyan-700 dark:text-cyan-400",
+    bg: "bg-cyan-50 dark:bg-cyan-950/40",
+    border: "border-cyan-200 dark:border-cyan-800",
   },
   investigation: {
     label: "Investigation",
+    step: 4,
     color: "text-amber-700 dark:text-amber-400",
     bg: "bg-amber-50 dark:bg-amber-950/40",
     border: "border-amber-200 dark:border-amber-800",
-    step: 2,
   },
-  hearing_scheduled: {
-    label: "Hearing Scheduled",
+  hearing: {
+    label: "Hearing",
+    step: 5,
     color: "text-violet-700 dark:text-violet-400",
     bg: "bg-violet-50 dark:bg-violet-950/40",
     border: "border-violet-200 dark:border-violet-800",
-    step: 3,
   },
   outcome_issued: {
     label: "Outcome Issued",
+    step: 6,
     color: "text-orange-700 dark:text-orange-400",
     bg: "bg-orange-50 dark:bg-orange-950/40",
     border: "border-orange-200 dark:border-orange-800",
-    step: 4,
   },
-  appealed: {
-    label: "Appealed",
+  appeal: {
+    label: "Appeal",
+    step: 7,
     color: "text-rose-700 dark:text-rose-400",
     bg: "bg-rose-50 dark:bg-rose-950/40",
     border: "border-rose-200 dark:border-rose-800",
-    step: 5,
   },
   closed: {
     label: "Closed",
+    step: 8,
     color: "text-slate-600 dark:text-slate-400",
     bg: "bg-slate-50 dark:bg-slate-900/40",
     border: "border-slate-200 dark:border-slate-700",
-    step: 6,
   },
 };
 
-export const DISCIPLINARY_OUTCOME_CONFIG: Record<
-  DisciplinaryOutcome,
-  { label: string; color: string; bg: string; border: string }
-> = {
+/** Ordered list of stages for the workflow stepper. */
+export const CASE_STAGE_ORDER: CaseStage[] = [
+  "raised",
+  "triage",
+  "assigned",
+  "investigation",
+  "hearing",
+  "outcome_issued",
+  "appeal",
+  "closed",
+];
+
+export const CONFIDENTIALITY_CONFIG: Record<ConfidentialityLevel, Style> = {
+  standard: {
+    label: "Standard",
+    color: "text-slate-600 dark:text-slate-400",
+    bg: "bg-slate-50 dark:bg-slate-900/40",
+    border: "border-slate-200 dark:border-slate-700",
+  },
+  confidential: {
+    label: "Confidential",
+    color: "text-amber-700 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-950/40",
+    border: "border-amber-200 dark:border-amber-800",
+  },
+  highly_confidential: {
+    label: "Highly Confidential",
+    color: "text-red-700 dark:text-red-400",
+    bg: "bg-red-50 dark:bg-red-950/40",
+    border: "border-red-200 dark:border-red-800",
+  },
+};
+
+export const CASE_OUTCOME_CONFIG: Record<CaseOutcome, Style> = {
   verbal_warning: {
     label: "Verbal Warning",
     color: "text-amber-700 dark:text-amber-400",
@@ -231,6 +183,12 @@ export const DISCIPLINARY_OUTCOME_CONFIG: Record<
     bg: "bg-red-50 dark:bg-red-950/40",
     border: "border-red-200 dark:border-red-800",
   },
+  demotion: {
+    label: "Demotion",
+    color: "text-orange-700 dark:text-orange-400",
+    bg: "bg-orange-50 dark:bg-orange-950/40",
+    border: "border-orange-200 dark:border-orange-800",
+  },
   termination: {
     label: "Termination",
     color: "text-red-800 dark:text-red-300",
@@ -243,18 +201,33 @@ export const DISCIPLINARY_OUTCOME_CONFIG: Record<
     bg: "bg-emerald-50 dark:bg-emerald-950/40",
     border: "border-emerald-200 dark:border-emerald-800",
   },
-  demotion: {
-    label: "Demotion",
-    color: "text-orange-700 dark:text-orange-400",
-    bg: "bg-orange-50 dark:bg-orange-950/40",
-    border: "border-orange-200 dark:border-orange-800",
+  upheld: {
+    label: "Upheld",
+    color: "text-emerald-700 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-950/40",
+    border: "border-emerald-200 dark:border-emerald-800",
+  },
+  partially_upheld: {
+    label: "Partially Upheld",
+    color: "text-amber-700 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-950/40",
+    border: "border-amber-200 dark:border-amber-800",
+  },
+  not_upheld: {
+    label: "Not Upheld",
+    color: "text-slate-600 dark:text-slate-400",
+    bg: "bg-slate-50 dark:bg-slate-900/40",
+    border: "border-slate-200 dark:border-slate-700",
+  },
+  resolved: {
+    label: "Resolved",
+    color: "text-emerald-700 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-950/40",
+    border: "border-emerald-200 dark:border-emerald-800",
   },
 };
 
-export const PRIORITY_CONFIG: Record<
-  CasePriority,
-  { label: string; color: string; bg: string; border: string }
-> = {
+export const PRIORITY_CONFIG: Record<CasePriority, Style> = {
   low: {
     label: "Low",
     color: "text-slate-600 dark:text-slate-400",
@@ -281,39 +254,37 @@ export const PRIORITY_CONFIG: Record<
   },
 };
 
-export const GRIEVANCE_CATEGORY_OPTIONS = Object.entries(
-  GRIEVANCE_CATEGORY_CONFIG,
-).map(([value, cfg]) => ({ value, label: cfg.label }));
-
-export const DISCIPLINARY_CATEGORY_OPTIONS = Object.entries(
-  DISCIPLINARY_CATEGORY_CONFIG,
-).map(([value, cfg]) => ({ value, label: cfg.label }));
+// ── Select options ──────────────────────────────────────────────────────────
+export const CASE_TYPE_OPTIONS = Object.entries(CASE_TYPE_CONFIG).map(
+  ([value, cfg]) => ({ value, label: cfg.label }),
+);
 
 export const PRIORITY_OPTIONS = Object.entries(PRIORITY_CONFIG).map(
   ([value, cfg]) => ({ value, label: cfg.label }),
 );
 
-export const GRIEVANCE_STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: "all", label: "All Statuses" },
-  ...Object.entries(GRIEVANCE_STATUS_CONFIG).map(([value, cfg]) => ({
+export const CONFIDENTIALITY_OPTIONS = Object.entries(
+  CONFIDENTIALITY_CONFIG,
+).map(([value, cfg]) => ({ value, label: cfg.label }));
+
+export const STAGE_OPTIONS: { value: string; label: string }[] = [
+  { value: "all", label: "All Stages" },
+  ...CASE_STAGE_ORDER.map((value) => ({
     value,
-    label: cfg.label,
+    label: CASE_STAGE_CONFIG[value].label,
   })),
 ];
 
-export const DISCIPLINARY_STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: "all", label: "All Statuses" },
-  ...Object.entries(DISCIPLINARY_STATUS_CONFIG).map(([value, cfg]) => ({
-    value,
-    label: cfg.label,
-  })),
-];
+export const CASE_OUTCOME_OPTIONS = Object.entries(CASE_OUTCOME_CONFIG).map(
+  ([value, cfg]) => ({ value, label: cfg.label }),
+);
 
-export const GRIEVANCES: GrievanceCase[] = [
+// ── Demo cases (unified) ──────────────────────────────────────────────────────
+export const ER_CASES: ERCase[] = [
   {
-    id: "gc-001",
-    type: "grievance",
-    caseNumber: "GRV-001",
+    id: "erc-001",
+    caseNumber: "ERC-001",
+    complaintType: "harassment",
     employeeName: "Priya Sharma",
     employeeInitials: "PS",
     employeeDept: "Design",
@@ -321,13 +292,22 @@ export const GRIEVANCES: GrievanceCase[] = [
     incidentDate: "2026-03-08",
     description:
       "Employee reports a pattern of dismissive behaviour from line manager during team meetings, including being talked over and having ideas attributed to others.",
-    category: "harassment",
-    status: "under_investigation",
+    stage: "investigation",
     priority: "high",
+    confidentialityLevel: "confidential",
     assignedTo: "Rachel Mensah",
     assignedInitials: "RM",
+    witnesses: [
+      { name: "Daniel Owusu", statement: "Corroborated the meeting incidents." },
+      { name: "Lucy Adeniran", statement: "Confirmed ideas were re-attributed." },
+    ],
+    evidence: [
+      { name: "meeting-notes-mar.pdf", url: "/files/er/erc-001-notes.pdf", uploadedAt: "2026-03-13" },
+    ],
     hearingDate: "2026-04-10",
+    hearingPanel: ["Rachel Mensah", "Kofi Asante"],
     hasAppeal: false,
+    retentionPeriod: "6 years",
     notes: [
       {
         id: "n-001",
@@ -354,9 +334,9 @@ export const GRIEVANCES: GrievanceCase[] = [
     updatedAt: "2026-03-28",
   },
   {
-    id: "gc-002",
-    type: "grievance",
-    caseNumber: "GRV-002",
+    id: "erc-002",
+    caseNumber: "ERC-002",
+    complaintType: "pay_dispute",
     employeeName: "Tom Clark",
     employeeInitials: "TC",
     employeeDept: "Operations",
@@ -364,22 +344,27 @@ export const GRIEVANCES: GrievanceCase[] = [
     incidentDate: "2026-03-01",
     description:
       "Employee disputes March payslip which shows a deduction not previously communicated or agreed upon.",
-    category: "pay_dispute",
-    status: "resolved",
+    stage: "outcome_issued",
     priority: "medium",
+    confidentialityLevel: "standard",
     assignedTo: "Amara Osei",
     assignedInitials: "AO",
-    outcome:
-      "Payroll error confirmed. Deduction was applied in error due to a system misconfiguration. Full refund processed in April payroll. Payroll team notified to review configuration.",
+    witnesses: [],
+    evidence: [
+      { name: "march-payslip.pdf", url: "/files/er/erc-002-payslip.pdf", uploadedAt: "2026-03-16" },
+    ],
+    hearingPanel: [],
+    outcome: "upheld",
     outcomeDate: "2026-03-25",
     hasAppeal: false,
+    retentionPeriod: "6 years",
     notes: [
       {
         id: "n-003",
         authorName: "Amara Osei",
         authorInitials: "AO",
         content:
-          "Reviewed payslip against payroll run config. Deduction not documented in employee contract or any amendment.",
+          "Reviewed payslip against payroll run config. Deduction not documented in employee contract or any amendment. Full refund processed in April payroll.",
         createdAt: "2026-03-17",
         isInternal: true,
         isPrivate: false,
@@ -389,9 +374,9 @@ export const GRIEVANCES: GrievanceCase[] = [
     updatedAt: "2026-03-25",
   },
   {
-    id: "gc-003",
-    type: "grievance",
-    caseNumber: "GRV-003",
+    id: "erc-003",
+    caseNumber: "ERC-003",
+    complaintType: "discrimination",
     employeeName: "Ngozi Adeyemi",
     employeeInitials: "NA",
     employeeDept: "Engineering",
@@ -399,20 +384,23 @@ export const GRIEVANCES: GrievanceCase[] = [
     incidentDate: "2026-03-30",
     description:
       "Employee raises concern about being passed over for a senior promotion role despite meeting all criteria. Believes decision was influenced by gender bias.",
-    category: "discrimination",
-    status: "raised",
+    stage: "raised",
     priority: "urgent",
+    confidentialityLevel: "highly_confidential",
     assignedTo: "Rachel Mensah",
     assignedInitials: "RM",
+    witnesses: [],
+    evidence: [],
+    hearingPanel: [],
     hasAppeal: false,
     notes: [],
     createdAt: "2026-04-01",
     updatedAt: "2026-04-01",
   },
   {
-    id: "gc-004",
-    type: "grievance",
-    caseNumber: "GRV-004",
+    id: "erc-004",
+    caseNumber: "ERC-004",
+    complaintType: "working_conditions",
     employeeName: "Marcus Brown",
     employeeInitials: "MB",
     employeeDept: "Sales",
@@ -420,22 +408,30 @@ export const GRIEVANCES: GrievanceCase[] = [
     incidentDate: "2026-02-18",
     description:
       "Employee reports unsafe working conditions in the Lagos warehouse including inadequate fire exits and non-functional extinguishers.",
-    category: "working_conditions",
-    status: "closed",
+    stage: "closed",
     priority: "high",
+    confidentialityLevel: "standard",
     assignedTo: "Amara Osei",
     assignedInitials: "AO",
-    outcome:
-      "Facilities team inspected the warehouse on Feb 25. Three fire exit signs replaced and two extinguishers recharged. Compliance certificate renewed. Employee informed and case closed.",
+    witnesses: [
+      { name: "Warehouse Supervisor", statement: "Confirmed blocked fire exit." },
+    ],
+    evidence: [
+      { name: "warehouse-photos.zip", url: "/files/er/erc-004-photos.zip", uploadedAt: "2026-02-22" },
+    ],
+    hearingPanel: [],
+    outcome: "resolved",
     outcomeDate: "2026-03-05",
     hasAppeal: false,
+    retentionPeriod: "6 years",
+    closureDate: "2026-03-05",
     notes: [
       {
         id: "n-004",
         authorName: "Amara Osei",
         authorInitials: "AO",
         content:
-          "Facilities inspection arranged for Feb 25. Employee provided photos of the blocked exit.",
+          "Facilities inspection arranged for Feb 25. Three fire exit signs replaced and two extinguishers recharged. Compliance certificate renewed.",
         createdAt: "2026-02-22",
         isInternal: true,
         isPrivate: false,
@@ -444,42 +440,37 @@ export const GRIEVANCES: GrievanceCase[] = [
     createdAt: "2026-02-20",
     updatedAt: "2026-03-05",
   },
-];
-
-export const DISCIPLINARY_CASES: DisciplinaryCase[] = [
   {
-    id: "dc-001",
-    type: "disciplinary",
-    caseNumber: "DISC-001",
+    id: "erc-005",
+    caseNumber: "ERC-005",
+    complaintType: "policy_violation",
     employeeName: "James Okonkwo",
     employeeInitials: "JO",
     employeeDept: "Finance",
-    incidentDate: "2026-03-20",
     dateRaised: "2026-03-22",
+    incidentDate: "2026-03-20",
     description:
       "Employee accessed payroll records of colleagues without authorisation. IT logs confirm access to 12 employee records outside their permitted scope.",
-    category: "policy_violation",
-    status: "outcome_issued",
+    stage: "outcome_issued",
     priority: "urgent",
+    confidentialityLevel: "highly_confidential",
     assignedTo: "Amara Osei",
     assignedInitials: "AO",
+    witnesses: [
+      { name: "IT Security Lead", statement: "Provided full access log." },
+    ],
+    evidence: [
+      { name: "access-log.csv", url: "/files/er/erc-005-log.csv", uploadedAt: "2026-03-25" },
+    ],
     hearingDate: "2026-04-01",
+    hearingPanel: ["Amara Osei", "Kofi Asante", "Head of Finance"],
     outcome: "final_written_warning",
     outcomeDate: "2026-04-03",
     hasAppeal: false,
+    retentionPeriod: "6 years",
     notes: [
       {
         id: "n-005",
-        authorName: "Amara Osei",
-        authorInitials: "AO",
-        content:
-          "IT provided full access log. Employee admitted accessing records but claimed it was accidental. Access pattern does not support accidental access.",
-        createdAt: "2026-03-25",
-        isInternal: true,
-        isPrivate: false,
-      },
-      {
-        id: "n-006",
         authorName: "Amara Osei",
         authorInitials: "AO",
         content:
@@ -493,21 +484,24 @@ export const DISCIPLINARY_CASES: DisciplinaryCase[] = [
     updatedAt: "2026-04-03",
   },
   {
-    id: "dc-002",
-    type: "disciplinary",
-    caseNumber: "DISC-002",
+    id: "erc-006",
+    caseNumber: "ERC-006",
+    complaintType: "attendance",
     employeeName: "Sola Adeyemi",
     employeeInitials: "SA",
     employeeDept: "Customer Success",
-    incidentDate: "2026-03-12",
     dateRaised: "2026-03-13",
+    incidentDate: "2026-03-12",
     description:
       "Employee has been absent without leave for 5 consecutive working days with no contact to line manager or HR. Previous verbal warning for attendance issued January 2026.",
-    category: "attendance",
-    status: "investigation",
+    stage: "investigation",
     priority: "high",
+    confidentialityLevel: "confidential",
     assignedTo: "Rachel Mensah",
     assignedInitials: "RM",
+    witnesses: [],
+    evidence: [],
+    hearingPanel: [],
     hasAppeal: false,
     notes: [
       {
@@ -525,25 +519,36 @@ export const DISCIPLINARY_CASES: DisciplinaryCase[] = [
     updatedAt: "2026-03-14",
   },
   {
-    id: "dc-003",
-    type: "disciplinary",
-    caseNumber: "DISC-003",
+    id: "erc-007",
+    caseNumber: "ERC-007",
+    complaintType: "misconduct",
     employeeName: "Chidi Nwosu",
     employeeInitials: "CN",
     employeeDept: "Engineering",
-    incidentDate: "2026-02-14",
     dateRaised: "2026-02-16",
+    incidentDate: "2026-02-14",
     description:
       "Employee made threatening remarks to a colleague during a code review session witnessed by two other team members.",
-    category: "misconduct",
-    status: "closed",
+    stage: "closed",
     priority: "high",
+    confidentialityLevel: "confidential",
     assignedTo: "Amara Osei",
     assignedInitials: "AO",
+    witnesses: [
+      { name: "Team Member A", statement: "Heard the remarks directly." },
+      { name: "Team Member B", statement: "Consistent account of the incident." },
+    ],
+    evidence: [],
     hearingDate: "2026-02-28",
+    hearingPanel: ["Amara Osei", "Engineering Director"],
     outcome: "written_warning",
     outcomeDate: "2026-03-02",
-    hasAppeal: false,
+    hasAppeal: true,
+    appealCaseId: "APPEAL-ERC007",
+    appealReviewer: "Kofi Asante",
+    appealGrounds: "Employee disputes severity of the sanction.",
+    retentionPeriod: "6 years",
+    closureDate: "2026-03-10",
     notes: [
       {
         id: "n-008",
@@ -557,22 +562,26 @@ export const DISCIPLINARY_CASES: DisciplinaryCase[] = [
       },
     ],
     createdAt: "2026-02-16",
-    updatedAt: "2026-03-02",
+    updatedAt: "2026-03-10",
   },
   {
-    id: "dc-004",
-    type: "disciplinary",
-    caseNumber: "DISC-004",
+    id: "erc-008",
+    caseNumber: "ERC-008",
+    complaintType: "disciplinary",
     employeeName: "Fatima Al-Hassan",
     employeeInitials: "FA",
     employeeDept: "Legal",
-    incidentDate: "2026-04-02",
     dateRaised: "2026-04-03",
+    incidentDate: "2026-04-02",
     description:
       "Employee refused a direct instruction from their department head regarding client file submission deadlines, resulting in a client complaint.",
-    category: "insubordination",
-    status: "reported",
+    stage: "triage",
     priority: "medium",
+    confidentialityLevel: "standard",
+    assignedTo: undefined,
+    witnesses: [],
+    evidence: [],
+    hearingPanel: [],
     hasAppeal: false,
     notes: [],
     createdAt: "2026-04-03",
@@ -580,23 +589,13 @@ export const DISCIPLINARY_CASES: DisciplinaryCase[] = [
   },
 ];
 
-export function computeGrievanceStats(
-  grievances: GrievanceCase[],
-  disciplinary: DisciplinaryCase[],
-) {
-  const openGrievances = grievances.filter(
-    (g) => g.status !== "closed" && g.status !== "resolved",
+export function computeCaseStats(cases: ERCase[]) {
+  const open = cases.filter((c) => c.stage !== "closed").length;
+  const investigations = cases.filter(
+    (c) => c.stage === "investigation",
   ).length;
-  const openDisciplinary = disciplinary.filter(
-    (d) => d.status !== "closed",
-  ).length;
-  const resolved =
-    grievances.filter(
-      (g) => g.status === "resolved" || g.status === "closed",
-    ).length + disciplinary.filter((d) => d.status === "closed").length;
-  const totalCases = grievances.length + disciplinary.length;
-  return { openGrievances, openDisciplinary, resolved, totalCases };
+  const hearings = cases.filter((c) => c.stage === "hearing").length;
+  const closed = cases.filter((c) => c.stage === "closed").length;
+  const totalCases = cases.length;
+  return { open, investigations, hearings, closed, totalCases };
 }
-
-
-

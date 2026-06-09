@@ -11,7 +11,7 @@ import { TenantHealthCard } from "./dashboard/components/tenant-health";
 
 export default function CmsDashboard() {
   const today = new Date();
-  const dateStr = today.toLocaleDateString("en-US", {
+  const dateStr = today.toLocaleDateString("en-GB", {
     month: "long",
     day: "numeric",
     year: "numeric",

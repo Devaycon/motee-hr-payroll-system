@@ -116,7 +116,7 @@ export function WeeklyTimesheet({
                 <div className="px-3 py-3 text-[11px] text-muted-foreground">
                   {new Date(entry.date).toLocaleDateString("en-GB", {
                     day: "numeric",
-                    month: "short",
+                    month: "long",
                   })}
                 </div>
                 <div className="px-3 py-3 text-[11px] font-medium text-foreground tabular-nums">

@@ -10,7 +10,7 @@ import {
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import {
   Select,
   SelectContent,
@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { TOP_PERFORMERS } from "@/src/data/dashboard-demo";
-import { getInitials } from "@/src/lib/types/dashboard";
 
 export function TopPerformers() {
   const [performerSort, setPerformerSort] = useState("rating");
@@ -57,11 +56,11 @@ export function TopPerformers() {
         <div className="flex flex-col gap-4">
           {sortedPerformers.map((performer) => (
             <div key={performer.id} className="flex items-center gap-3">
-              <Avatar className="size-9 shrink-0">
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                  {getInitials(performer.name)}
-                </AvatarFallback>
-              </Avatar>
+              <PersonAvatar
+                name={performer.name}
+                className="size-9 shrink-0"
+                fallbackClassName="bg-primary/10 text-primary text-xs font-semibold"
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">
                   {performer.name}

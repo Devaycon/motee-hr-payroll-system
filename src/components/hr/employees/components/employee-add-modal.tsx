@@ -1,5 +1,6 @@
 "use client";
 
+import { currentCurrencySymbol } from "@/src/lib/hooks/use-currency";
 import { useState } from "react";
 import { z } from "zod";
 import { ChevronRight, ChevronLeft, User, Briefcase } from "lucide-react";
@@ -419,7 +420,9 @@ export function EmployeeAddModal({
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Monthly Salary (₦)</Label>
+                  <Label className="text-xs">
+                    Monthly Salary ({currentCurrencySymbol()})
+                  </Label>
                   <Input
                     type="number"
                     placeholder="e.g. 500000"

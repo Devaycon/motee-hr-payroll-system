@@ -1,6 +1,6 @@
 import { Mail, Phone } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Separator } from "@/src/components/ui/separator";
 import {
   Dialog,
@@ -37,14 +37,13 @@ export function EmployeeDetailModal({
         {employee && (
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16">
-                <AvatarFallback
-                  className="text-xl font-bold text-white"
-                  style={{ backgroundColor: "#4361ee" }}
-                >
-                  {employee.initials}
-                </AvatarFallback>
-              </Avatar>
+              <PersonAvatar
+                name={employee.name}
+                initials={employee.initials}
+                gender={employee.gender}
+                className="w-16 h-16"
+                fallbackClassName="text-xl font-bold text-white bg-[#4361ee]"
+              />
               <div>
                 <p className="font-bold text-foreground text-lg leading-snug">
                   {employee.name}

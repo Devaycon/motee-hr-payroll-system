@@ -31,6 +31,7 @@ import {
 } from "@/src/components/ui/dialog";
 import { DEMO_ANNOUNCEMENTS } from "@/src/data/motee-demo";
 import type { Announcement } from "@/src/data/motee-demo";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 type StatusFilter = "all" | "published" | "scheduled" | "draft" | "expired";
 
@@ -231,12 +232,12 @@ export function NoticesPage() {
                     </div>
                     {ann.status === "published" && ann.publishedAt && (
                       <span className="text-xs text-muted-foreground">
-                        Published {ann.publishedAt.split("T")[0]}
+                        Published {formatDate(ann.publishedAt)}
                       </span>
                     )}
                     {ann.status === "scheduled" && ann.publishedAt && (
                       <span className="text-xs text-blue-500">
-                        Scheduled {ann.publishedAt.split("T")[0]}
+                        Scheduled {formatDate(ann.publishedAt)}
                       </span>
                     )}
                   </div>

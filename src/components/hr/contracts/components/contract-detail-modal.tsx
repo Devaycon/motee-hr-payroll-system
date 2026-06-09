@@ -11,7 +11,6 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
-import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import {
@@ -48,7 +47,7 @@ function formatDate(date?: string) {
   if (!date) return "—";
   return new Date(date).toLocaleDateString("en-GB", {
     day: "2-digit",
-    month: "short",
+    month: "long",
     year: "numeric",
   });
 }
@@ -84,7 +83,7 @@ export function ContractDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +124,7 @@ export function ContractDetailModal({
           />
 
           <TabsContent value="details">
-            <ScrollArea className="max-h-80 pr-1">
+            <div className="pr-1">
               <div className="space-y-4 py-2">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                   <div>
@@ -226,11 +225,11 @@ export function ContractDetailModal({
                   </>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
 
           <TabsContent value="signatories">
-            <ScrollArea className="max-h-80 pr-1">
+            <div className="pr-1">
               <div className="space-y-3 py-2">
                 {contract.signatories.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">
@@ -274,11 +273,11 @@ export function ContractDetailModal({
                   ))
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
 
           <TabsContent value="notes">
-            <ScrollArea className="max-h-80 pr-1">
+            <div className="pr-1">
               <div className="space-y-3 py-2">
                 {contract.notes.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">
@@ -306,7 +305,7 @@ export function ContractDetailModal({
                     ))
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
         </Tabs>
 

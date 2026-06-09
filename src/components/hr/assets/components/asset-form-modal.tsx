@@ -1,5 +1,6 @@
 "use client";
 
+import { currentCurrencySymbol } from "@/src/lib/hooks/use-currency";
 import { useState, useRef } from "react";
 import { ImagePlus, X } from "lucide-react";
 import { z } from "zod";
@@ -325,7 +326,9 @@ export function AssetFormModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="purchaseValue">Purchase Value (₦)</Label>
+              <Label htmlFor="purchaseValue">
+                Purchase Value ({currentCurrencySymbol()})
+              </Label>
               <Input
                 id="purchaseValue"
                 type="number"

@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Separator } from "@/src/components/ui/separator";
 import {
   SUGGESTION_STATUS_CONFIG,
@@ -261,11 +261,12 @@ export function SuggestionDetailModal({
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Avatar className="w-7 h-7">
-                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                    {suggestion.submitterInitials}
-                  </AvatarFallback>
-                </Avatar>
+                <PersonAvatar
+                  name={suggestion.submitterName ?? "Anonymous"}
+                  initials={suggestion.submitterInitials}
+                  className="w-7 h-7"
+                  fallbackClassName="text-xs bg-primary/10 text-primary"
+                />
                 <div>
                   <p className="text-sm font-medium text-foreground leading-none">
                     {suggestion.submitterName}
@@ -413,11 +414,12 @@ export function SuggestionDetailModal({
                 <div className="space-y-3">
                   {suggestion.comments.map((c) => (
                     <div key={c.id} className="flex items-start gap-2.5">
-                      <Avatar className="w-6 h-6 shrink-0">
-                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                          {c.authorInitials}
-                        </AvatarFallback>
-                      </Avatar>
+                      <PersonAvatar
+                        name={c.authorName}
+                        initials={c.authorInitials}
+                        className="w-6 h-6 shrink-0"
+                        fallbackClassName="text-[10px] bg-primary/10 text-primary"
+                      />
                       <div className="flex-1 space-y-0.5">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium text-foreground">

@@ -26,6 +26,18 @@ export const CONTRACT_DURATION_STYLES: Record<ContractDuration, { color: string;
 };
 
 export const STATUTORY_DEDUCTION_OPTIONS: string[] = ["PAYE", "NHF", "NHIS", "WHT", "NSITF", "ITF"];
+
+/** Statutory deduction options per country (ng/uk), used by the employment-type modal. */
+export const STATUTORY_DEDUCTIONS_BY_COUNTRY: Record<string, string[]> = {
+  ng: ["PAYE", "NHF", "NHIS", "WHT", "NSITF", "ITF"],
+  uk: [
+    "PAYE",
+    "National Insurance",
+    "Pension (Auto-Enrolment)",
+    "Student Loan",
+    "Apprenticeship Levy",
+  ],
+};
 export const BENEFITS_OPTIONS: string[] = ["Health Insurance", "Life Insurance", "Annual Leave", "Sick Leave", "Maternity Leave", "Paternity Leave", "Transport Allowance", "Housing Allowance", "Meal Allowance"];
 
 export const EMPLOYMENT_TYPES: EmploymentTypeRow[] = [

@@ -1,7 +1,13 @@
 ﻿import { Users, UserRoundPlus, Home, Cake, UserMinus, CalendarCheck, HeartPulse, CalendarDays } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ChartConfig } from "@/src/components/ui/chart";
-import type { RadialSeries } from "@/src/components/shared/charts/radial-chart";
+
+interface RadialSeries {
+  key: string;
+  label: string;
+  value: number;
+  color: string;
+}
 
 export const STAT_CARDS: {
   label: string; link: string; icon: LucideIcon; value: string | number; sub: string; trend: string; up: boolean;

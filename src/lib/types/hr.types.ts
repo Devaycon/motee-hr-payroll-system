@@ -1,4 +1,5 @@
-export type EmploymentType = "full_time" | "part_time" | "contract";
+import type { EmploymentType } from "@/src/lib/constants/employment-types";
+export type { EmploymentType };
 
 export type EmployeeStatus = "active" | "on_leave" | "probation";
 

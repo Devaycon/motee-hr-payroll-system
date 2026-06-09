@@ -1,22 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useContracts } from "./hooks";
 import { FileText, PenLine } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
 import { StatCards } from "./components/stat-cards";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
 import { ContractsTable } from "./components/contracts-table";
 import { ContractFormModal } from "./components/contract-form-modal";
 import { ContractDetailModal } from "./components/contract-detail-modal";
 import { ContractLetterModal } from "./components/contract-letter-modal";
 import { HRSignatureModal } from "./components/hr-signature-modal";
 import { SignModal } from "./components/sign-modal";
-import { CONTRACTS } from "./data";
 import type { Contract, NewContract, SignatureStatus } from "./types";
 
 export function ContractsPage() {
-  const [contracts, setContracts] = useState<Contract[]>(CONTRACTS);
+  const { data, loading } = useContracts();
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  useEffect(() => {
+    if (data) setContracts(data);
+  }, [data]);
   const [activeTab, setActiveTab] = useState("all");
 
   const [formModalOpen, setFormModalOpen] = useState(false);
@@ -182,6 +188,15 @@ export function ContractsPage() {
     }
   }
 
+  if (loading && !contracts.length) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -223,6 +238,7 @@ export function ContractsPage() {
               value: "drafts",
               label: drafts.length > 0 ? `Drafts (${drafts.length})` : "Drafts",
             },
+            { value: "approval_chain", label: "Approval Chain" },
           ]}
         />
 
@@ -263,6 +279,10 @@ export function ContractsPage() {
             onPreview={handlePreview}
             onMoveToDocuments={handleMoveToDocuments}
           />
+        </TabsContent>
+
+        <TabsContent value="approval_chain" className="mt-4">
+          <ApprovalChainTab documentType="contract" />
         </TabsContent>
       </Tabs>
 

@@ -1,8 +1,11 @@
-﻿export type EmploymentType = "full_time" | "part_time" | "contract";
+﻿import type { EmploymentType } from "@/src/lib/constants/employment-types";
+export type { EmploymentType };
 export type EmployeeStatus = "active" | "on_leave" | "probation";
 
 export interface EmployeeRow {
   id: string;
+  /** Optional HR-provided / external identifier (the form's "Employee ID"). */
+  referenceId?: string;
   name: string;
   initials: string;
   email: string;

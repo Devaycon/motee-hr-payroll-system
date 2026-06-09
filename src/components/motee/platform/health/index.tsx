@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/src/components/ui/dialog";
-import { AreaChartCard } from "@/src/components/shared/charts/area-chart";
+import { AreaChart } from "@/src/components/shared/charts";
 import {
   SYSTEM_HEALTH,
   DEMO_JOB_QUEUES,
@@ -71,12 +71,6 @@ const queueStatusStyles: Record<string, string> = {
   healthy: "bg-[#4ED251]/10 text-[#4ED251]",
   warning: "bg-amber-500/10 text-amber-500",
   failing: "bg-red-500/10 text-red-500",
-};
-
-const apiChartConfig = {
-  avg: { label: "Avg (ms)", color: "#ff8b2d" },
-  p95: { label: "P95 (ms)", color: "#4ED251" },
-  p99: { label: "P99 (ms)", color: "#6366f1" },
 };
 
 export function PlatformHealthPage() {
@@ -196,17 +190,15 @@ export function PlatformHealthPage() {
         </div>
       </div>
 
-      <AreaChartCard
+      <AreaChart
         title="API Response Times (ms)"
         icon={Activity}
-        data={API_RESPONSE_TIME_DATA}
-        config={apiChartConfig}
+        categories={API_RESPONSE_TIME_DATA.map((d) => d.month)}
         series={[
-          { key: "avg", color: "#ff8b2d" },
-          { key: "p95", color: "#4ED251" },
-          { key: "p99", color: "#6366f1" },
+          { name: "Avg (ms)", data: API_RESPONSE_TIME_DATA.map((d) => d.avg), color: "#ff8b2d" },
+          { name: "P95 (ms)", data: API_RESPONSE_TIME_DATA.map((d) => d.p95), color: "#4ED251" },
+          { name: "P99 (ms)", data: API_RESPONSE_TIME_DATA.map((d) => d.p99), color: "#6366f1" },
         ]}
-        xAxisKey="month"
       />
 
       <Card>

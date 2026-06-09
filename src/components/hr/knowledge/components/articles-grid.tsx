@@ -1,4 +1,5 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import { useState } from "react";
 import {
@@ -234,7 +235,7 @@ function ArticleCard({ article, onView, featured }: ArticleCardProps) {
             </span>
           )}
         </div>
-        <span>{article.updatedAt}</span>
+        <span>{formatDate(article.updatedAt)}</span>
       </div>
     </button>
   );

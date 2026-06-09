@@ -58,7 +58,7 @@ export function DocumentSignModal({
 
   const today = new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
-    month: "short",
+    month: "long",
     year: "numeric",
   });
 
@@ -92,7 +92,7 @@ export function DocumentSignModal({
               Sent on{" "}
               {new Date(document.sentDate).toLocaleDateString("en-GB", {
                 day: "2-digit",
-                month: "short",
+                month: "long",
                 year: "numeric",
               })}
             </p>

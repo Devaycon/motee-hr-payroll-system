@@ -51,9 +51,6 @@ export function WelcomePage() {
         <TipsCard tipIndex={tipIndex} setTipIndex={setTipIndex} />
         <div className="flex flex-col gap-4">
           <div>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
-              To Motee
-            </p>
             <FeedbackCard />
           </div>
           <VersionCard />

@@ -1,4 +1,5 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import { useState } from "react";
 import { AlertTriangle, Check, Lock, Send, UserPlus } from "lucide-react";
@@ -21,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Separator } from "@/src/components/ui/separator";
 import {
   TICKET_STATUS_CONFIG,
@@ -255,7 +256,7 @@ export function CaseDetailModal({
           </div>
 
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span>Opened {ticket.createdAt}</span>
+            <span>Opened {formatDate(ticket.createdAt)}</span>
             <span>SLA due {ticket.slaDueAt}</span>
             {ticket.firstResponseAt && (
               <span>First response {ticket.firstResponseAt}</span>
@@ -274,17 +275,16 @@ export function CaseDetailModal({
                   key={m.id}
                   className={`flex items-start gap-2.5 ${m.isHR ? "flex-row-reverse" : ""}`}
                 >
-                  <Avatar className="w-7 h-7 shrink-0">
-                    <AvatarFallback
-                      className={`text-xs ${
-                        m.isHR
-                          ? "bg-primary/10 text-primary"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {m.authorInitials}
-                    </AvatarFallback>
-                  </Avatar>
+                  <PersonAvatar
+                    name={m.authorName}
+                    initials={m.authorInitials}
+                    className="w-7 h-7 shrink-0"
+                    fallbackClassName={`text-xs ${
+                      m.isHR
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  />
                   <div
                     className={`flex-1 space-y-1 ${m.isHR ? "items-end" : "items-start"} flex flex-col`}
                   >
@@ -303,7 +303,7 @@ export function CaseDetailModal({
                         </Badge>
                       )}
                       <span className="text-[10px] text-muted-foreground">
-                        {m.createdAt}
+                        {formatDate(m.createdAt)}
                       </span>
                     </div>
                     <div
@@ -342,7 +342,7 @@ export function CaseDetailModal({
                           {n.authorName}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
-                          {n.createdAt}
+                          {formatDate(n.createdAt)}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">

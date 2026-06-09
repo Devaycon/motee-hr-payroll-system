@@ -12,6 +12,7 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { updateCompanyProfile, markStepComplete, setCurrentStep } from "@/src/lib/stores/onboarding-slice";
 import { INDUSTRIES, COMPANY_SIZES } from "@/src/lib/types/onboarding-setup.types";
+import { COUNTRY_NAMES } from "@/src/config/system-data";
 
 const schema = z.object({
   companyName: z.string().min(2, "Required"),
@@ -97,8 +98,20 @@ export function Step1CompanyProfile() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="country">Country</Label>
-          <Input id="country" placeholder="Nigeria" {...register("country")} />
+          <Label>Country</Label>
+          <Select
+            defaultValue={profile.country}
+            onValueChange={(v) => setValue("country", v)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select country" />
+            </SelectTrigger>
+            <SelectContent>
+              {COUNTRY_NAMES.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {errors.country && <span className="text-xs text-destructive">{errors.country.message}</span>}
         </div>
 

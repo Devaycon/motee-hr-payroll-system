@@ -1,4 +1,12 @@
 import type { EventType, CalEvent } from "./types";
+import type { EventTypeOption } from "@/src/components/shared/calendar";
+
+export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
+  { value: "meeting", label: "Meeting" },
+  { value: "deadline", label: "Deadline" },
+  { value: "reminder", label: "Reminder" },
+  { value: "holiday", label: "Holiday" },
+];
 
 export const EVENT_TYPE_COLORS: Record<EventType, string> = {
   meeting:  "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",

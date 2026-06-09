@@ -1,6 +1,7 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Search,
   MoreHorizontal,
@@ -10,6 +11,7 @@ import {
   RefreshCw,
   AlertTriangle,
 } from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -30,7 +32,12 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
+import {
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
 import {
   TICKET_STATUS_CONFIG,
   TICKET_CATEGORY_CONFIG,
@@ -90,6 +97,223 @@ export function CasesTable({
       if (!a.isOverdue && b.isOverdue) return 1;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
+
+  const columns = useMemo<ColumnDef<HelpDeskTicket>[]>(
+    () => [
+      {
+        accessorKey: "id",
+        header: sortableHeader("Ref #"),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            {row.original.isOverdue && (
+              <AlertTriangle className="w-3 h-3 text-red-500 shrink-0" />
+            )}
+            <span className="text-xs font-mono font-medium text-muted-foreground">
+              {row.original.id}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "subject",
+        header: sortableHeader("Subject"),
+        cell: ({ row }) => (
+          <div className="max-w-56">
+            <button
+              type="button"
+              onClick={() => onView(row.original)}
+              className="text-left text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2 leading-snug"
+            >
+              {row.original.subject}
+            </button>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {row.original.messages.length} message
+              {row.original.messages.filter((m) => !m.isInternalNote).length !==
+              1
+                ? "s"
+                : ""}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "category",
+        header: sortableHeader("Category"),
+        cell: ({ row }) => {
+          const catConfig = TICKET_CATEGORY_CONFIG[row.original.category];
+          return (
+            <Badge
+              variant="outline"
+              className={`text-xs whitespace-nowrap ${catConfig.color} ${catConfig.bg} ${catConfig.border}`}
+            >
+              {catConfig.icon} {catConfig.label}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: sortableHeader("Status"),
+        cell: ({ row }) => {
+          const statusConfig = TICKET_STATUS_CONFIG[row.original.status];
+          return (
+            <Badge
+              variant="outline"
+              className={`text-xs whitespace-nowrap ${statusConfig.color} ${statusConfig.bg} ${statusConfig.border}`}
+            >
+              {statusConfig.label}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: "priority",
+        header: sortableHeader("Priority"),
+        cell: ({ row }) => {
+          const priorityConfig = TICKET_PRIORITY_CONFIG[row.original.priority];
+          return (
+            <Badge
+              variant="outline"
+              className={`text-xs whitespace-nowrap ${priorityConfig.color} ${priorityConfig.bg} ${priorityConfig.border}`}
+            >
+              {priorityConfig.label}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: "submitterName",
+        header: sortableHeader("Submitter"),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <PersonAvatar
+              name={row.original.submitterName}
+              initials={row.original.submitterInitials}
+              className="w-6 h-6"
+              fallbackClassName="text-[10px] bg-primary/10 text-primary"
+            />
+            <div>
+              <p className="text-xs font-medium text-foreground leading-none">
+                {row.original.submitterName}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {row.original.submitterDept}
+              </p>
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "assignedTo",
+        header: sortableHeader("Assigned To"),
+        cell: ({ row }) =>
+          row.original.assignedTo ? (
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <PersonAvatar
+                name={row.original.assignedTo}
+                initials={row.original.assignedInitials}
+                className="w-5 h-5"
+                fallbackClassName="text-[9px] bg-teal-500/10 text-teal-600"
+              />
+              <span className="text-xs text-muted-foreground">
+                {row.original.assignedTo}
+              </span>
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground/60 italic">
+              Unassigned
+            </span>
+          ),
+      },
+      {
+        accessorKey: "slaDueAt",
+        header: sortableHeader("SLA Due"),
+        cell: ({ row }) => (
+          <span
+            className={`text-xs whitespace-nowrap ${
+              row.original.isOverdue
+                ? "text-red-500 font-medium"
+                : "text-muted-foreground"
+            }`}
+          >
+            {row.original.slaDueAt}
+            {row.original.isOverdue && " ⚠"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: sortableHeader("Date"),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {formatDate(row.original.createdAt)}
+          </span>
+        ),
+      },
+      actionsColumn<HelpDeskTicket>((t) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="w-7 h-7">
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => onView(t)}>
+              <Eye className="w-3.5 h-3.5 mr-2" />
+              View Case
+            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <RefreshCw className="w-3.5 h-3.5 mr-2" />
+                Change Status
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {TICKET_STATUS_OPTIONS.map((s) => (
+                  <DropdownMenuItem
+                    key={s}
+                    onClick={() => onUpdateStatus(t.id, s)}
+                    className={
+                      t.status === s ? "font-medium text-primary" : ""
+                    }
+                  >
+                    {TICKET_STATUS_CONFIG[s].label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <UserPlus className="w-3.5 h-3.5 mr-2" />
+                Assign To
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {HR_AGENTS.map((a) => (
+                  <DropdownMenuItem
+                    key={a.name}
+                    onClick={() => onAssign(t.id, a.name, a.initials)}
+                    className={
+                      t.assignedTo === a.name ? "font-medium text-primary" : ""
+                    }
+                  >
+                    {a.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => onDelete(t.id)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )),
+    ],
+    [onView, onUpdateStatus, onAssign, onDelete],
+  );
 
   return (
     <div className="space-y-4">
@@ -154,243 +378,12 @@ export function CasesTable({
         </Select>
       </div>
 
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted">
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
-                  Ref #
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
-                  Subject
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
-                  Category
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
-                  Status
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
-                  Priority
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
-                  Submitter
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
-                  Assigned To
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
-                  SLA Due
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
-                  Date
-                </th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={10}
-                    className="text-center py-10 text-sm text-muted-foreground"
-                  >
-                    No cases match your filters.
-                  </td>
-                </tr>
-              )}
-              {filtered.map((t) => {
-                const catConfig = TICKET_CATEGORY_CONFIG[t.category];
-                const statusConfig = TICKET_STATUS_CONFIG[t.status];
-                const priorityConfig = TICKET_PRIORITY_CONFIG[t.priority];
-                return (
-                  <tr
-                    key={t.id}
-                    className={`hover:bg-muted/50 transition-colors ${
-                      t.isOverdue ? "bg-red-500/5" : ""
-                    }`}
-                  >
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        {t.isOverdue && (
-                          <AlertTriangle className="w-3 h-3 text-red-500 shrink-0" />
-                        )}
-                        <span className="text-xs font-mono font-medium text-muted-foreground">
-                          {t.id}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 max-w-56">
-                      <button
-                        type="button"
-                        onClick={() => onView(t)}
-                        className="text-left text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2 leading-snug"
-                      >
-                        {t.subject}
-                      </button>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {t.messages.length} message
-                        {t.messages.filter((m) => !m.isInternalNote).length !==
-                        1
-                          ? "s"
-                          : ""}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <Badge
-                        variant="outline"
-                        className={`text-xs ${catConfig.color} ${catConfig.bg} ${catConfig.border}`}
-                      >
-                        {catConfig.icon} {catConfig.label}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <Badge
-                        variant="outline"
-                        className={`text-xs ${statusConfig.color} ${statusConfig.bg} ${statusConfig.border}`}
-                      >
-                        {statusConfig.label}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <Badge
-                        variant="outline"
-                        className={`text-xs ${priorityConfig.color} ${priorityConfig.bg} ${priorityConfig.border}`}
-                      >
-                        {priorityConfig.label}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-6 h-6">
-                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                            {t.submitterInitials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-xs font-medium text-foreground leading-none">
-                            {t.submitterName}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {t.submitterDept}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {t.assignedTo ? (
-                        <div className="flex items-center gap-1.5">
-                          <Avatar className="w-5 h-5">
-                            <AvatarFallback className="text-[9px] bg-teal-500/10 text-teal-600">
-                              {t.assignedInitials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs text-muted-foreground">
-                            {t.assignedTo}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/60 italic">
-                          Unassigned
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span
-                        className={`text-xs ${
-                          t.isOverdue
-                            ? "text-red-500 font-medium"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {t.slaDueAt}
-                        {t.isOverdue && " ⚠"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-xs text-muted-foreground">
-                        {t.createdAt}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-7 h-7"
-                          >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => onView(t)}>
-                            <Eye className="w-3.5 h-3.5 mr-2" />
-                            View Case
-                          </DropdownMenuItem>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              <RefreshCw className="w-3.5 h-3.5 mr-2" />
-                              Change Status
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                              {TICKET_STATUS_OPTIONS.map((s) => (
-                                <DropdownMenuItem
-                                  key={s}
-                                  onClick={() => onUpdateStatus(t.id, s)}
-                                  className={
-                                    t.status === s
-                                      ? "font-medium text-primary"
-                                      : ""
-                                  }
-                                >
-                                  {TICKET_STATUS_CONFIG[s].label}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              <UserPlus className="w-3.5 h-3.5 mr-2" />
-                              Assign To
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                              {HR_AGENTS.map((a) => (
-                                <DropdownMenuItem
-                                  key={a.name}
-                                  onClick={() =>
-                                    onAssign(t.id, a.name, a.initials)
-                                  }
-                                  className={
-                                    t.assignedTo === a.name
-                                      ? "font-medium text-primary"
-                                      : ""
-                                  }
-                                >
-                                  {a.name}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => onDelete(t.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        data={filtered}
+        getRowId={(t) => t.id}
+        emptyMessage="No cases match your filters."
+      />
 
       <p className="text-xs text-muted-foreground">
         Showing {filtered.length} of {tickets.length} cases

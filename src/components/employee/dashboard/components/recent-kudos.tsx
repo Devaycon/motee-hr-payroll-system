@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Separator } from "@/src/components/ui/separator";
 import { EMPLOYEE_RECENT_KUDOS } from "@/src/data/employee-dashboard-demo";
 
@@ -42,11 +42,12 @@ export function RecentKudos() {
             <div key={k.id}>
               {idx > 0 && <Separator className="my-2" />}
               <div className="flex items-start gap-3">
-                <Avatar className="w-8 h-8 shrink-0">
-                  <AvatarFallback className="text-[11px] bg-[#7F77DD]/10 text-[#7F77DD]">
-                    {k.senderInitials}
-                  </AvatarFallback>
-                </Avatar>
+                <PersonAvatar
+                  name={k.senderName}
+                  initials={k.senderInitials}
+                  className="w-8 h-8 shrink-0"
+                  fallbackClassName="text-[11px] bg-[#7F77DD]/10 text-[#7F77DD]"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <span className="text-xs font-medium text-foreground">

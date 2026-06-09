@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDate } from "@/src/lib/utils/format-date";
 import {
   FileText,
   Image,
@@ -75,13 +76,6 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString("en-NG", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function getExpiryInfo(expiryDate?: string) {
   if (!expiryDate) return null;

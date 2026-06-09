@@ -24,6 +24,16 @@ export interface MyProfile extends Employee {
   emergencyContact: EmergencyContact;
   bankAccount: BankAccount;
   address: Address;
+  managerName?: string | null;
+  dateOfBirth?: string;
+  gender?: string;
+  nationality?: string;
+  maritalStatus?: string;
+  workMode?: string;
+  workLocation?: string;
+  grade?: string;
+  /** Country-specific identity/tax IDs, e.g. { nin, tin } (NG) or { nino, utr } (UK). */
+  identifiers?: Record<string, string>;
 }
 
 export interface Payslip {

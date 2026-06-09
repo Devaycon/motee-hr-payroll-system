@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useKudos } from "./hooks";
 import { Star, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
@@ -8,12 +10,15 @@ import { StatCards } from "./components/stat-cards";
 import { KudosFeed } from "./components/kudos-feed";
 import { Leaderboard } from "./components/leaderboard";
 import { SendKudosModal } from "./components/send-kudos-modal";
-import { KUDOS_POSTS, LEADERBOARD } from "./data";
 import type { KudosPost, NewKudos, ReactionType } from "./types";
 
 export function KudosPage() {
-  const [posts, setPosts] = useState<KudosPost[]>(KUDOS_POSTS);
-  const [leaderboard] = useState(LEADERBOARD);
+  const { data, loading } = useKudos();
+  const [posts, setPosts] = useState<KudosPost[]>([]);
+  const leaderboard = data?.leaderboard ?? [];
+  useEffect(() => {
+    if (data) setPosts(data.posts);
+  }, [data]);
   const [sendOpen, setSendOpen] = useState(false);
   const [myReactions, setMyReactions] = useState<
     Record<string, ReactionType | null>
@@ -105,6 +110,15 @@ export function KudosPage() {
           ],
         };
       }),
+    );
+  }
+
+  if (loading && !posts.length) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
     );
   }
 

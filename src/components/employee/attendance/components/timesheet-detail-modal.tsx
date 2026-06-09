@@ -39,12 +39,12 @@ export function TimesheetDetailModal({
                   <p className="text-[11px] text-muted-foreground mt-0.5">
                     {new Date(detailTs.weekStart).toLocaleDateString("en-GB", {
                       day: "numeric",
-                      month: "short",
+                      month: "long",
                     })}{" "}
                     –{" "}
                     {new Date(detailTs.weekEnd).toLocaleDateString("en-GB", {
                       day: "numeric",
-                      month: "short",
+                      month: "long",
                       year: "numeric",
                     })}
                   </p>
@@ -103,7 +103,7 @@ export function TimesheetDetailModal({
                     <div className="px-2.5 py-2.5 text-[10px] text-muted-foreground">
                       {new Date(e.date).toLocaleDateString("en-GB", {
                         day: "numeric",
-                        month: "short",
+                        month: "long",
                       })}
                     </div>
                     <div className="px-2.5 py-2.5 text-[11px] tabular-nums text-foreground">
@@ -137,7 +137,7 @@ export function TimesheetDetailModal({
                     {detailTs.approvedBy}
                   </span>
                   {detailTs.approvedAt
-                    ? ` on ${new Date(detailTs.approvedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
+                    ? ` on ${new Date(detailTs.approvedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}`
                     : ""}
                 </p>
               )}

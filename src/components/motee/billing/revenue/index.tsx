@@ -7,11 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { AreaChartCard } from "@/src/components/shared/charts/area-chart";
-import { BarChartCard } from "@/src/components/shared/charts/bar-chart";
+import { AreaChart, BarChart, ColumnChart } from "@/src/components/shared/charts";
 import {
   REVENUE_TREND_DATA,
-  REVENUE_TREND_CONFIG,
   DEMO_TENANTS,
   DEMO_CHURN_RECORDS,
   CHURN_MONTHLY_DATA,
@@ -146,21 +144,29 @@ export function BillingRevenuePage() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
-          <AreaChartCard
+          <AreaChart
             title="MRR Trend (12 months)"
             icon={TrendingUp}
-            data={REVENUE_TREND_DATA}
-            config={REVENUE_TREND_CONFIG}
-            series={[{ key: "revenue", color: "#ff8b2d" }]}
-            xAxisKey="month"
+            money
+            categories={REVENUE_TREND_DATA.map((d) => d.month)}
+            series={[
+              {
+                name: "Revenue",
+                data: REVENUE_TREND_DATA.map((d) => d.revenue),
+                color: "#ff8b2d",
+              },
+            ]}
           />
         </div>
-        <BarChartCard
+        <ColumnChart
           title="Revenue by Plan"
           icon={DollarSign}
-          data={planRevenue}
-          config={planRevenueConfig}
-          layout="vertical"
+          money
+          categories={planRevenue.map(
+            (p) => planRevenueConfig[p.category as keyof typeof planRevenueConfig]?.label ?? p.category,
+          )}
+          series={[{ name: "MRR", data: planRevenue.map((p) => p.value) }]}
+          colors={planRevenue.map((p) => p.fill)}
         />
       </div>
 
@@ -282,16 +288,12 @@ export function BillingRevenuePage() {
         </Card>
       </div>
 
-      <BarChartCard
+      <BarChart
         title="Monthly Churn Rate (%)"
         icon={TrendingUp}
-        data={CHURN_MONTHLY_DATA.map((d) => ({
-          category: d.month,
-          value: d.churnRate,
-          fill: "#ef4444",
-        }))}
-        config={{ churnRate: { label: "Churn Rate", color: "#ef4444" } }}
-        layout="horizontal"
+        categories={CHURN_MONTHLY_DATA.map((d) => d.month)}
+        series={[{ name: "Churn Rate", data: CHURN_MONTHLY_DATA.map((d) => d.churnRate) }]}
+        colors={CHURN_MONTHLY_DATA.map(() => "#ef4444")}
       />
 
       <Card>

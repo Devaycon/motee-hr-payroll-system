@@ -1,19 +1,27 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ShieldCheck, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { ACCESS_LEVELS } from "./data";
 import type { AccessLevel, NewAccessLevel } from "./types";
+import { useAccessLevels } from "./hooks";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
+import {
+  createLevel,
+  updateLevel,
+  deleteLevel,
+  duplicateLevel,
+} from "@/src/lib/stores/access-levels-slice";
 import { StatCards } from "./components/stat-cards";
 import { AccessLevelsList } from "./components/access-levels-list";
 import { PermissionsMatrixModal } from "./components/permissions-matrix-modal";
 import { AccessLevelFormModal } from "./components/access-level-form-modal";
 
 export function AccessLevelsPage() {
-  const [levels, setLevels] = useState<AccessLevel[]>(ACCESS_LEVELS);
+  const dispatch = useAppDispatch();
+  const levels = useAccessLevels();
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingLevel, setEditingLevel] = useState<AccessLevel | null>(null);
@@ -47,45 +55,20 @@ export function AccessLevelsPage() {
   }
 
   function handleDuplicate(level: AccessLevel) {
-    const copy: AccessLevel = {
-      ...level,
-      id: `al-${Date.now()}`,
-      name: `${level.name} (Copy)`,
-      kind: "custom",
-      employeeCount: 0,
-      lastModifiedBy: "You",
-      lastModifiedAt: "2026-04-04",
-      permissions: level.permissions.map((p) => ({
-        ...p,
-        actions: [...p.actions],
-      })),
-    };
-    setLevels((prev) => [...prev, copy]);
-    toast.success(`Duplicated &ldquo;${level.name}&rdquo;`);
+    dispatch(duplicateLevel(level.id));
+    toast.success(`Duplicated "${level.name}"`);
   }
 
   function handleDelete(id: string) {
-    setLevels((prev) => prev.filter((l) => l.id !== id));
+    dispatch(deleteLevel(id));
     toast.success("Access level deleted");
   }
 
   function handleSave(data: NewAccessLevel | AccessLevel) {
     if ("id" in data) {
-      setLevels((prev) =>
-        prev.map((l) =>
-          l.id === (data as AccessLevel).id ? (data as AccessLevel) : l,
-        ),
-      );
+      dispatch(updateLevel(data as AccessLevel));
     } else {
-      const newLevel: AccessLevel = {
-        ...(data as NewAccessLevel),
-        id: `al-${Date.now()}`,
-        kind: "custom",
-        employeeCount: 0,
-        lastModifiedBy: "You",
-        lastModifiedAt: "2026-04-04",
-      };
-      setLevels((prev) => [...prev, newLevel]);
+      dispatch(createLevel(data as NewAccessLevel));
     }
   }
 

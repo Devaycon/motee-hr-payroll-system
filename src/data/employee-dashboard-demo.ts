@@ -151,7 +151,6 @@ export const EMPLOYEE_QUICK_LINKS: {
 }[] = [
   { id: "eql-001", icon: CalendarDays, label: "Request Leave",     link: "/time-off/request",     color: "text-blue-600",   bg: "bg-blue-500/10"   },
   { id: "eql-002", icon: Clock,        label: "Attendance",        link: "/time-off/attendance",  color: "text-violet-600", bg: "bg-violet-500/10" },
-  { id: "eql-003", icon: FileText,     label: "My Payslips",       link: "/profile/payslips",     color: "text-emerald-600",bg: "bg-emerald-500/10"},
   { id: "eql-004", icon: TrendingUp,   label: "Performance",       link: "/growth/performance",   color: "text-amber-600",  bg: "bg-amber-500/10"  },
   { id: "eql-005", icon: BookOpen,     label: "My Courses",        link: "/growth/training",      color: "text-teal-600",   bg: "bg-teal-500/10"   },
   { id: "eql-006", icon: LifeBuoy,     label: "HR Help Desk",      link: "/company/helpdesk",     color: "text-rose-600",   bg: "bg-rose-500/10"   },

@@ -1,4 +1,5 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -49,7 +50,7 @@ import { MoreHorizontal, AlignJustify, ChevronsUpDown } from "lucide-react";
 import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Select,
@@ -92,22 +93,16 @@ import {
 } from "@/src/components/ui/drawer";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import {
-  DEMO_EMPLOYEES,
-  DEMO_ATTENDANCE_TODAY,
-  DEMO_LEAVE_REQUESTS,
-} from "@/src/data/hr-demo";
 import { useIsMobile } from "@/src/lib/hooks/use-mobile";
 import { cn } from "@/src/lib/utils";
-import { CITIES, WORK_MODES_MAP } from "@/src/data/dashboard-demo";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import {
   type EmployeeRow,
   type AttendanceRow,
   type LeaveRow,
-  getInitials,
-  employmentLabel,
   leaveTypeLabel,
 } from "@/src/lib/types/dashboard";
+import { useDashboardTableData } from "../hooks";
 
 function DragHandle({ id }: { id: number }) {
   const { attributes, listeners } = useSortable({ id });
@@ -277,95 +272,22 @@ function DraggableLeaveRow({ row }: { row: Row<LeaveRow> }) {
 
 export function EmployeeTable() {
   const router = useRouter();
-  const managerMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    DEMO_EMPLOYEES.forEach((e) => {
-      map[e.id] = e.name;
-    });
-    return map;
-  }, []);
+  const { data: tableData, loading: tableLoading } = useDashboardTableData();
 
-  const initialEmployeeData = useMemo<EmployeeRow[]>(() => {
-    return DEMO_EMPLOYEES.map((emp, i) => ({
-      id: i + 1,
-      empId: `emp-${String(i + 1).padStart(3, "0")}`,
-      name: emp.name,
-      initials: getInitials(emp.name),
-      email: emp.email,
-      city: CITIES[i % CITIES.length],
-      title: emp.jobTitle,
-      department: emp.department,
-      workMode: WORK_MODES_MAP[i % WORK_MODES_MAP.length],
-      teamLead: emp.managerId ? (managerMap[emp.managerId] ?? "—") : "—",
-      employmentType: emp.employmentType,
-      status: emp.status,
-      startDate: emp.startDate,
-      managerName: emp.managerId ? (managerMap[emp.managerId] ?? null) : null,
-    }));
-  }, [managerMap]);
+  const [employeeData, setEmployeeData] = useState<EmployeeRow[]>([]);
+  const [absentData, setAbsentData] = useState<AttendanceRow[]>([]);
+  const [onLeaveData, setOnLeaveData] = useState<AttendanceRow[]>([]);
+  const [lateData, setLateData] = useState<AttendanceRow[]>([]);
+  const [leaveData, setLeaveData] = useState<LeaveRow[]>([]);
 
-  const initialAbsentData = useMemo<AttendanceRow[]>(() => {
-    return DEMO_ATTENDANCE_TODAY.filter((r) => r.status === "absent").map(
-      (r, i) => {
-        const emp = DEMO_EMPLOYEES.find((e) => e.id === r.employeeId);
-        return {
-          id: i + 1,
-          name: r.employeeName,
-          status: r.status,
-          clockIn: r.clockInTime ?? "—",
-          department: emp?.department ?? "—",
-        };
-      },
-    );
-  }, []);
-
-  const initialOnLeaveData = useMemo<AttendanceRow[]>(() => {
-    return DEMO_EMPLOYEES.filter((e) => e.status === "on_leave").map(
-      (e, i) => ({
-        id: i + 1,
-        name: e.name,
-        status: "on_leave",
-        clockIn: "—",
-        department: e.department,
-      }),
-    );
-  }, []);
-
-  const initialLateData = useMemo<AttendanceRow[]>(() => {
-    return DEMO_ATTENDANCE_TODAY.filter((r) => r.status === "late").map(
-      (r, i) => {
-        const emp = DEMO_EMPLOYEES.find((e) => e.id === r.employeeId);
-        return {
-          id: i + 1,
-          name: r.employeeName,
-          status: r.status,
-          clockIn: r.clockInTime ?? "—",
-          department: emp?.department ?? "—",
-        };
-      },
-    );
-  }, []);
-
-  const initialLeaveRows = useMemo<LeaveRow[]>(() => {
-    return DEMO_LEAVE_REQUESTS.map((lr, i) => ({
-      id: i + 1,
-      name: lr.employeeName,
-      leaveType: lr.type,
-      startDate: lr.startDate,
-      endDate: lr.endDate,
-      days: lr.days,
-      status: lr.status,
-    }));
-  }, []);
-
-  const [employeeData, setEmployeeData] =
-    useState<EmployeeRow[]>(initialEmployeeData);
-  const [absentData, setAbsentData] =
-    useState<AttendanceRow[]>(initialAbsentData);
-  const [onLeaveData, setOnLeaveData] =
-    useState<AttendanceRow[]>(initialOnLeaveData);
-  const [lateData, setLateData] = useState<AttendanceRow[]>(initialLateData);
-  const [leaveData, setLeaveData] = useState<LeaveRow[]>(initialLeaveRows);
+  React.useEffect(() => {
+    if (!tableData) return;
+    setEmployeeData(tableData.employees);
+    setAbsentData(tableData.absent);
+    setOnLeaveData(tableData.onLeave);
+    setLateData(tableData.late);
+    setLeaveData(tableData.leaveRequests);
+  }, [tableData]);
 
   const [empSorting, setEmpSorting] = useState<SortingState>([]);
   const [empColVis, setEmpColVis] = useState<VisibilityState>({});
@@ -479,11 +401,12 @@ export function EmployeeTable() {
         ),
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
-            <Avatar className="size-8 shrink-0">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                {row.original.initials}
-              </AvatarFallback>
-            </Avatar>
+            <PersonAvatar
+              name={row.original.name}
+              initials={row.original.initials}
+              className="size-8 shrink-0"
+              fallbackClassName="bg-primary/10 text-primary text-xs font-semibold"
+            />
             <div>
               <button
                 className="text-sm font-medium text-foreground hover:text-primary hover:underline text-left"
@@ -598,7 +521,7 @@ export function EmployeeTable() {
             <span className="text-sm text-muted-foreground whitespace-nowrap">
               {d.toLocaleDateString("en-GB", {
                 day: "2-digit",
-                month: "short",
+                month: "long",
                 year: "numeric",
               })}
             </span>
@@ -705,11 +628,11 @@ export function EmployeeTable() {
         ),
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <Avatar className="size-7 shrink-0">
-              <AvatarFallback className="bg-[#4ED251]/10 text-[#4ED251] text-xs font-semibold">
-                {getInitials(row.original.name)}
-              </AvatarFallback>
-            </Avatar>
+            <PersonAvatar
+              name={row.original.name}
+              className="size-7 shrink-0"
+              fallbackClassName="bg-[#4ED251]/10 text-[#4ED251] text-xs font-semibold"
+            />
             <span className="text-sm font-medium text-foreground">
               {row.original.name}
             </span>
@@ -844,11 +767,11 @@ export function EmployeeTable() {
         ),
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <Avatar className="size-7 shrink-0">
-              <AvatarFallback className="bg-[#4ED251]/10 text-[#4ED251] text-xs font-semibold">
-                {getInitials(row.original.name)}
-              </AvatarFallback>
-            </Avatar>
+            <PersonAvatar
+              name={row.original.name}
+              className="size-7 shrink-0"
+              fallbackClassName="bg-[#4ED251]/10 text-[#4ED251] text-xs font-semibold"
+            />
             <span className="text-sm font-medium text-foreground">
               {row.original.name}
             </span>
@@ -882,7 +805,7 @@ export function EmployeeTable() {
         header: "Start Date",
         cell: ({ row }) => (
           <span className="text-sm text-foreground">
-            {row.original.startDate}
+            {formatDate(row.original.startDate)}
           </span>
         ),
       },
@@ -1234,6 +1157,10 @@ export function EmployeeTable() {
         </DropdownMenuContent>
       </DropdownMenu>
     );
+  }
+
+  if (tableLoading && !employeeData.length) {
+    return <Skeleton className="h-96 w-full rounded-xl col-span-3" />;
   }
 
   return (

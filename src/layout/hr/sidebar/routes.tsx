@@ -1,5 +1,4 @@
 import {
-  House,
   LayoutDashboard,
   BriefcaseBusiness,
   Building2,
@@ -7,19 +6,16 @@ import {
   GitFork,
   Users,
   Layers,
+  Globe2,
   ListOrdered,
   CalendarRange,
   UserRoundPlus,
   Timer,
   UserRoundMinus,
-  ClipboardCheck,
   TrendingUp,
   GraduationCap,
   Clock,
   CalendarDays,
-  Wallet,
-  Star,
-  CircleDollarSign,
   Package,
   Library,
   FileText,
@@ -34,10 +30,14 @@ import {
   UsersRound,
   ShieldCheck,
   ClipboardList,
+  FileStack,
   Scale,
   Settings,
   LucideIcon,
   Hand,
+  UserCircle,
+  CheckSquare,
+  Workflow,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -58,26 +58,108 @@ export interface Route {
 export const routes: Route[] = [
   { group: "Overview", icon: Hand, label: "Welcome", link: "/welcome" },
   { group: "Overview", icon: LayoutDashboard, label: "Dashboard", link: "/hr" },
+  {
+    group: "Overview",
+    icon: UserCircle,
+    label: "My Profile",
+    link: "/my-profile/profile",
+  },
+  {
+    group: "Overview",
+    icon: CheckSquare,
+    label: "Submissions & Approvals",
+    link: "/hr-action-center/submissions",
+    badge: 5,
+    exact: true,
+  },
 
   {
     group: "My Workspace",
     icon: BriefcaseBusiness,
-    label: "Overview",
-    link: "/my-workspace",
-    badge: 10,
+    label: "HR Action Center",
+    link: "/hr-action-center",
+    badge: 47,
     exact: true,
   },
   {
     group: "My Workspace",
     icon: ClipboardList,
-    label: "Tasks",
-    link: "/my-workspace/tasks",
+    label: "My Tasks",
+    link: "/hr-action-center/tasks",
   },
   {
     group: "My Workspace",
     icon: CalendarDays,
-    label: "Events",
-    link: "/my-workspace/events",
+    label: "Calendar",
+    link: "/hr-action-center/events",
+  },
+  {
+    group: "My Workspace",
+    icon: Workflow,
+    label: "Workflows",
+    link: "/hr-action-center/workflows",
+  },
+
+  {
+    group: "Employee Management",
+    icon: Users,
+    label: "Employees",
+    link: "/organization/employees",
+  },
+  {
+    group: "Employee Management",
+    icon: Globe2,
+    label: "Employer of Record",
+    link: "/organization/eor",
+  },
+  {
+    group: "Employee Management",
+    icon: Layers,
+    label: "Employment Types",
+    link: "/organization/employment-types",
+  },
+
+  {
+    group: "Employee Management",
+    icon: BarChart3,
+    label: "Workforce Planning",
+    link: "/operations/workforce",
+  },
+  {
+    group: "Employee Management",
+    icon: ClipboardList,
+    label: "Workforce Requests",
+    link: "/talent/workforce-requests",
+    badge: 6,
+    exact: true,
+  },
+  {
+    group: "Employee Management",
+    icon: FileStack,
+    label: "Requisition",
+    link: "/talent/requisition",
+    badge: 4,
+    exact: true,
+  },
+  {
+    group: "Employee Management",
+    icon: UserRoundPlus,
+    label: "Recruitment",
+    link: "/talent/recruitment",
+    badge: 10,
+  },
+  {
+    group: "Employee Management",
+    icon: Timer,
+    label: "Preboarding & Onboarding",
+    link: "/talent/onboarding",
+    badge: 5,
+  },
+  {
+    group: "Employee Management",
+    icon: UserRoundMinus,
+    label: "Offboarding",
+    link: "/talent/offboarding",
   },
 
   {
@@ -100,25 +182,6 @@ export const routes: Route[] = [
   },
   {
     group: "Organization",
-    icon: Users,
-    label: "Employees",
-    link: "/organization/employees",
-    badge: 247,
-  },
-  {
-    group: "Organization",
-    icon: Layers,
-    label: "Employment Types",
-    link: "/organization/employment-types",
-  },
-  {
-    group: "Organization",
-    icon: ClipboardList,
-    label: "Employee Checklist",
-    link: "/organization/employee-checklist",
-  },
-  {
-    group: "Organization",
     icon: ListOrdered,
     label: "Roles & Positions",
     link: "/organization/roles",
@@ -132,32 +195,6 @@ export const routes: Route[] = [
 
   {
     group: "Talent",
-    icon: UserRoundPlus,
-    label: "Recruitment",
-    link: "/talent/recruitment",
-    badge: 12,
-  },
-  {
-    group: "Talent",
-    icon: Timer,
-    label: "Onboarding",
-    link: "/talent/onboarding",
-    badge: 5,
-  },
-  {
-    group: "Talent",
-    icon: UserRoundMinus,
-    label: "Offboarding",
-    link: "/talent/offboarding",
-  },
-  {
-    group: "Talent",
-    icon: ClipboardCheck,
-    label: "Employee Checklists",
-    link: "/talent/checklists",
-  },
-  {
-    group: "Talent",
     icon: TrendingUp,
     label: "Performance",
     link: "/talent/performance",
@@ -167,6 +204,12 @@ export const routes: Route[] = [
     icon: GraduationCap,
     label: "Learning & Development",
     link: "/talent/training",
+  },
+  {
+    group: "Talent",
+    icon: BookOpen,
+    label: "Knowledge Base",
+    link: "/workspace/knowledge",
   },
 
   {
@@ -182,29 +225,11 @@ export const routes: Route[] = [
     link: "/time-payroll/leave",
     badge: 3,
   },
-  {
-    group: "Time & Payroll",
-    icon: Wallet,
-    label: "Payroll",
-    link: "/time-payroll/payroll",
-  },
-  {
-    group: "Time & Payroll",
-    icon: Star,
-    label: "Benefits",
-    link: "/time-payroll/benefits",
-  },
-  {
-    group: "Time & Payroll",
-    icon: CircleDollarSign,
-    label: "Compensation",
-    link: "/time-payroll/compensation",
-  },
 
   {
     group: "Operations",
     icon: Package,
-    label: "Assets",
+    label: "Assets Tracking",
     link: "/operations/assets",
   },
   {
@@ -224,12 +249,6 @@ export const routes: Route[] = [
     icon: TrendingUpDown,
     label: "Reports & Analytics",
     link: "/operations/reports",
-  },
-  {
-    group: "Operations",
-    icon: BarChart3,
-    label: "Workforce Planning",
-    link: "/operations/workforce",
   },
 
   {
@@ -263,12 +282,7 @@ export const routes: Route[] = [
     label: "HR Help Desk",
     link: "/workspace/helpdesk",
   },
-  {
-    group: "Engagement",
-    icon: BookOpen,
-    label: "Knowledge Base",
-    link: "/workspace/knowledge",
-  },
+
   {
     group: "Engagement",
     icon: UsersRound,
@@ -291,13 +305,13 @@ export const routes: Route[] = [
   {
     group: "Admin",
     icon: Scale,
-    label: "Grievance & Disciplinary",
+    label: "Employee Relations Cases",
     link: "/admin/grievance",
   },
   {
     group: "Admin",
     icon: Settings,
-    label: "Settings & Permissions",
+    label: "Settings & Configuration",
     link: "/admin/settings",
   },
 ];

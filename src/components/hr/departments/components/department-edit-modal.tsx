@@ -1,5 +1,6 @@
 "use client";
 
+import { currentCurrencySymbol } from "@/src/lib/hooks/use-currency";
 import { useState } from "react";
 import {
   Dialog,
@@ -88,8 +89,8 @@ export function DepartmentEditModal({
       description: form.description.trim(),
       createdAt:
         editingDept?.createdAt ??
-        new Date().toLocaleDateString("en-US", {
-          month: "short",
+        new Date().toLocaleDateString("en-GB", {
+          month: "long",
           day: "numeric",
           year: "numeric",
         }),
@@ -165,7 +166,9 @@ export function DepartmentEditModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-medium">Monthly Budget (₦)</Label>
+              <Label className="text-xs font-medium">
+                Monthly Budget ({currentCurrencySymbol()})
+              </Label>
               <Input
                 type="number"
                 placeholder="e.g. 2000000"

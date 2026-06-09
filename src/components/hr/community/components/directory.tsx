@@ -1,4 +1,5 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import { useState } from "react";
 import {
@@ -270,7 +271,7 @@ function EmployeeCard({ employee, onMessage }: EmployeeCardProps) {
       )}
 
       <div className="mt-3 border-t border-border pt-2.5 text-[10px] text-muted-foreground">
-        {employee.employmentType} · Since {employee.startDate}
+        {employee.employmentType} · Since {formatDate(employee.startDate)}
       </div>
 
       <Button

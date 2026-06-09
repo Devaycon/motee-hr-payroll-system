@@ -1,4 +1,5 @@
 ﻿import type { Department, DepartmentStatus } from "@/src/lib/types/departments";
+import { currentCurrencyCode } from "@/src/lib/hooks/use-currency";
 
 export const STATUS_STYLES: Record<DepartmentStatus, string> = {
   active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
@@ -6,8 +7,11 @@ export const STATUS_STYLES: Record<DepartmentStatus, string> = {
   restructuring: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
 };
 
-export function formatBudget(amount: number, currency = "NGN"): string {
-  return new Intl.NumberFormat("en-NG", {
+export function formatBudget(
+  amount: number,
+  currency = currentCurrencyCode(),
+): string {
+  return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency,
     maximumFractionDigits: 0,

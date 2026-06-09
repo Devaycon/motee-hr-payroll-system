@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { TaskList } from "./components/task-list";
 import { NewTaskForm } from "./components/new-task-form";
-import { INITIAL_TASKS } from "./data";
 import type { Task, Priority } from "./types";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useHrTasks } from "./hooks";
 
 export function TasksPage() {
-  const router = useRouter();
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const { data, loading } = useHrTasks();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  useEffect(() => {
+    if (data) setTasks(data);
+  }, [data]);
   const [filter, setFilter] = useState<"all" | "active" | "done">("all");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
   const [newLabel, setNewLabel] = useState("");
@@ -38,6 +41,15 @@ export function TasksPage() {
   }
 
   const doneCount = tasks.filter((t) => t.done).length;
+
+  if (loading && !tasks.length) {
+    return (
+      <div className="flex flex-col gap-5 pb-10">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5 pb-10">

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useAssets } from "./hooks";
 import { Package2 } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
@@ -10,11 +12,15 @@ import { PendingReturnsTable } from "./components/pending-returns-table";
 import { DetailModal } from "./components/detail-modal";
 import { AssetFormModal } from "./components/asset-form-modal";
 import { AssignModal } from "./components/assign-modal";
-import { ASSETS } from "./data";
+import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
 import type { Asset, AssetCondition, NewAsset } from "./types";
 
 export function AssetsPage() {
-  const [assets, setAssets] = useState<Asset[]>(ASSETS);
+  const { data, loading } = useAssets();
+  const [assets, setAssets] = useState<Asset[]>([]);
+  useEffect(() => {
+    if (data) setAssets(data);
+  }, [data]);
   const [activeTab, setActiveTab] = useState("all");
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -271,6 +277,15 @@ export function AssetsPage() {
     );
   }
 
+  if (loading && !assets.length) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -295,6 +310,7 @@ export function AssetsPage() {
                   ? `Pending Returns (${pendingReturns.length})`
                   : "Pending Returns",
             },
+            { value: "approval_chain", label: "Approval Chain" },
           ]}
         />
 
@@ -317,6 +333,10 @@ export function AssetsPage() {
             onMarkReturned={handleMarkReturned}
             onView={handleViewAsset}
           />
+        </TabsContent>
+
+        <TabsContent value="approval_chain" className="mt-5">
+          <ApprovalChainTab documentType="asset_request" />
         </TabsContent>
       </Tabs>
 

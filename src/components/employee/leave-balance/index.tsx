@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { LEAVE_POLICIES } from "@/src/data/leave-demo";
-import { MY_BALANCES, MY_HISTORY } from "./components/data";
+import { MY_BALANCES as SEED_BALANCES, MY_HISTORY as SEED_HISTORY } from "./components/data";
+import { useMyLeaveBalances, useMyLeaveHistory } from "./hooks";
 import { LeaveStatCards } from "./components/stat-cards";
 import { EntitlementCard } from "./components/entitlement-card";
 import { HistoryRow } from "./components/history-row";
@@ -13,6 +14,10 @@ import { PolicyModal } from "./components/policy-modal";
 import type { LeaveTypeName } from "@/src/lib/types/leave";
 
 export function MyLeaveBalancePage() {
+  useMyLeaveBalances();
+  useMyLeaveHistory();
+  const MY_BALANCES = SEED_BALANCES;
+  const MY_HISTORY = SEED_HISTORY;
   const [policyPlan, setPolicyPlan] = useState<(typeof LEAVE_POLICIES)[0] | null>(null);
   const [expandedType, setExpandedType] = useState<LeaveTypeName | null>(null);
 
