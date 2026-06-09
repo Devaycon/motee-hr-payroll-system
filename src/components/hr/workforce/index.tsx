@@ -16,44 +16,21 @@ import {
   TURNOVER_RECORDS,
 } from "./data";
 import { ATTRITION_RISKS } from "@/src/components/hr/headcount/data";
-import { HEADCOUNT_PLANS } from "@/src/components/hr/headcount/data";
+import { useWorkforceOverview } from "./hooks";
 
 const CURRENT_PERIOD = "Q1 2026";
 
-function computeStats() {
-  const currentPlans = HEADCOUNT_PLANS.filter(
-    (p) => p.period === CURRENT_PERIOD,
-  );
-  const totalHeadcount = currentPlans.reduce((s, p) => s + p.actual, 0);
-
+export function WorkforcePage() {
+  const { data: overview } = useWorkforceOverview();
+  const totalHeadcount = overview?.totalHeadcount ?? 0;
+  const avgTenureYears = overview?.avgTenureYears ?? 0;
   const trends = buildTurnoverTrends(TURNOVER_RECORDS);
   const currentTrend = trends.find((t) => t.period === CURRENT_PERIOD);
   const currentTurnoverRate = currentTrend?.rate ?? 0;
-
-  const avgTenureYears =
-    ATTRITION_RISKS.length > 0
-      ? Math.round(
-          (ATTRITION_RISKS.reduce((s, r) => s + r.tenureYears, 0) /
-            ATTRITION_RISKS.length) *
-            10,
-        ) / 10
-      : 0;
-
   const criticalSkills = SKILLS_GAPS.filter(
     (s) => s.severity === "critical",
   ).length;
 
-  return {
-    totalHeadcount,
-    currentTurnoverRate,
-    avgTenureYears,
-    criticalSkills,
-  };
-}
-
-const stats = computeStats();
-
-export function WorkforcePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -69,11 +46,11 @@ export function WorkforcePage() {
       </div>
 
       <OverviewCards
-        totalHeadcount={stats.totalHeadcount}
+        totalHeadcount={totalHeadcount}
         hiringMetrics={HIRING_METRICS}
-        currentTurnoverRate={stats.currentTurnoverRate}
+        currentTurnoverRate={currentTurnoverRate}
         attritionRisks={ATTRITION_RISKS}
-        avgTenureYears={stats.avgTenureYears}
+        avgTenureYears={avgTenureYears}
       />
 
       <Tabs defaultValue="headcount">
@@ -85,8 +62,8 @@ export function WorkforcePage() {
             {
               value: "skills",
               label:
-                stats.criticalSkills > 0
-                  ? `Skills Gap (${stats.criticalSkills})`
+                criticalSkills > 0
+                  ? `Skills Gap (${criticalSkills})`
                   : "Skills Gap",
             },
             { value: "demographics", label: "Demographics" },

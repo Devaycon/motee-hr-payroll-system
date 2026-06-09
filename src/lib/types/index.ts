@@ -1,9 +1,11 @@
 ﻿export * from "./auth.types";
+export * from "./locale";
 export * from "./onboarding-setup.types";
 export type { EmergencyContact, BankAccount, Address, MyProfile, Payslip, LeaveBalanceType, MyAsset } from "./employee.types";
 export type { Employee, JobPostingStatus, JobPosting, PayrollStatus, PayrollRun, CandidateStage, Candidate } from "./hr.types";
 export type { TenantPlan, TenantStatus, Tenant, InvoiceStatus, Invoice, SupportTicket, PlatformStats } from "./motee.types";
 export * from "./access-levels";
+export * from "./approvals";
 export * from "./announcements";
 export * from "./assets";
 export * from "./attendance";

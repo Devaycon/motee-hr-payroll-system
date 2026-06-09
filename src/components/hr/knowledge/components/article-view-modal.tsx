@@ -1,4 +1,5 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import { useState } from "react";
 import {
@@ -128,7 +129,7 @@ export function ArticleViewModal({
                 </div>
                 <span>{article.authorName}</span>
               </div>
-              <span>Updated {article.updatedAt}</span>
+              <span>Updated {formatDate(article.updatedAt)}</span>
               <span className="flex items-center gap-1">
                 <Eye className="h-3 w-3" />
                 {article.views.toLocaleString()} views

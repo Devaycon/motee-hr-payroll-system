@@ -131,8 +131,8 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
       {
         id: Date.now(),
         text: noteText.trim(),
-        time: new Date().toLocaleString("en-US", {
-          month: "short",
+        time: new Date().toLocaleString("en-GB", {
+          month: "long",
           day: "numeric",
           hour: "2-digit",
           minute: "2-digit",
@@ -312,7 +312,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <Calendar className="h-3 w-3 text-muted-foreground" />
                     <p className="text-sm font-medium text-foreground">
-                      {new Date(tenant.createdAt).toLocaleDateString("en-US", {
+                      {new Date(tenant.createdAt).toLocaleDateString("en-GB", {
                         month: "long",
                         day: "numeric",
                         year: "numeric",

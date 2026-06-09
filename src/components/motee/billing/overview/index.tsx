@@ -18,13 +18,11 @@ import {
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { AreaChartCard } from "@/src/components/shared/charts/area-chart";
-import { PieChartCard } from "@/src/components/shared/charts/pie-chart";
+import { AreaChart, PieChart } from "@/src/components/shared/charts";
 import {
   DEMO_INVOICES,
   DEMO_TENANTS,
   REVENUE_TREND_DATA,
-  REVENUE_TREND_CONFIG,
 } from "@/src/data/motee-demo";
 
 const invoiceStatusStyles: Record<string, string> = {
@@ -53,12 +51,6 @@ const planDistributionData = [
     fill: "#6366f1",
   },
 ];
-
-const planDistributionConfig = {
-  enterprise: { label: "Enterprise", color: "#ff8b2d" },
-  growth: { label: "Growth", color: "#4ED251" },
-  starter: { label: "Starter", color: "#6366f1" },
-};
 
 const currentMonth = new Date().toISOString().slice(0, 7);
 const currentYear = new Date().getFullYear().toString();
@@ -190,22 +182,27 @@ export function BillingOverviewPage() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
-          <AreaChartCard
+          <AreaChart
             title="MRR Trend (12 months)"
             icon={TrendingUp}
-            data={REVENUE_TREND_DATA}
-            config={REVENUE_TREND_CONFIG}
-            series={[{ key: "revenue", color: "#ff8b2d" }]}
-            xAxisKey="month"
+            money
+            categories={REVENUE_TREND_DATA.map((d) => d.month)}
+            series={[
+              {
+                name: "Revenue",
+                data: REVENUE_TREND_DATA.map((d) => d.revenue),
+                color: "#ff8b2d",
+              },
+            ]}
           />
         </div>
 
-        <PieChartCard
-          id="billing-plan-distribution"
+        <PieChart
           title="Tenants by Plan"
           icon={Building2}
-          data={planDistributionData}
-          config={planDistributionConfig}
+          labels={planDistributionData.map((d) => d.label)}
+          values={planDistributionData.map((d) => d.value)}
+          colors={planDistributionData.map((d) => d.fill)}
         />
       </div>
 

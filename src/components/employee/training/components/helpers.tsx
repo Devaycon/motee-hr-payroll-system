@@ -3,13 +3,7 @@ export function daysUntil(dateStr: string): number {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+export { formatDate } from "@/src/lib/utils/format-date";
 
 export function ProgressBar({
   value,

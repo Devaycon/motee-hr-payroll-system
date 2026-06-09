@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { MoreHorizontal, Target, Pencil, Trash2 } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { useMemo, useState } from "react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
 import {
@@ -22,6 +22,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import {
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
 import {
   GOAL_STATUS_LABELS,
   GOAL_STATUS_STYLES,
@@ -63,6 +68,117 @@ export function GoalsTable({
     return matchSearch && matchDept && matchCat && matchStatus;
   });
 
+  const columns = useMemo<ColumnDef<PerformanceGoal>[]>(
+    () => [
+      {
+        accessorKey: "employeeName",
+        header: sortableHeader("Employee"),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-[10px] font-semibold shrink-0">
+              {row.original.employeeInitials}
+            </div>
+            <span className="text-xs font-medium">
+              {row.original.employeeName}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "department",
+        header: sortableHeader("Department"),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {row.original.department}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "goalTitle",
+        header: sortableHeader("Goal Title"),
+        cell: ({ row }) => (
+          <p className="text-xs font-medium truncate max-w-48">
+            {row.original.goalTitle}
+          </p>
+        ),
+      },
+      {
+        accessorKey: "category",
+        header: sortableHeader("Category"),
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${GOAL_CATEGORY_STYLES[row.original.category]}`}
+          >
+            {GOAL_CATEGORY_LABELS[row.original.category]}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "progress",
+        header: "Progress",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2 w-36">
+            <Progress value={row.original.progress} className="h-1.5 flex-1" />
+            <span className="text-[10px] text-muted-foreground shrink-0 w-7 text-right">
+              {row.original.progress}%
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "dueDate",
+        header: sortableHeader("Due Date"),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {new Date(row.original.dueDate).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            })}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: sortableHeader("Status"),
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${GOAL_STATUS_STYLES[row.original.status]}`}
+          >
+            {GOAL_STATUS_LABELS[row.original.status]}
+          </span>
+        ),
+      },
+      actionsColumn<PerformanceGoal>((goal) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => onEdit(goal)}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit / Update
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-xs gap-2 text-destructive focus:text-destructive"
+              onClick={() => setDeleteId(goal.id)}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )),
+    ],
+    [onEdit],
+  );
+
   return (
     <>
       <GoalsToolbar
@@ -76,149 +192,14 @@ export function GoalsTable({
         onStatusFilterChange={setStatusFilter}
         onAddGoal={onAddGoal}
       />
-      <Card className="mt-4">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Employee
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Department
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Goal Title
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Category
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs w-36">
-                    Progress
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Due Date
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Status
-                  </th>
-                  <th className="text-right font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-16 text-center">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <Target className="w-8 h-8 opacity-30" />
-                        <p className="text-sm font-medium">No goals found</p>
-                        <p className="text-xs">
-                          Try adjusting your search or filters
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((goal) => (
-                    <tr
-                      key={goal.id}
-                      className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-[10px] font-semibold shrink-0">
-                            {goal.employeeInitials}
-                          </div>
-                          <span className="text-xs font-medium">
-                            {goal.employeeName}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-muted-foreground">
-                          {goal.department}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 max-w-48">
-                        <p className="text-xs font-medium truncate">
-                          {goal.goalTitle}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${GOAL_CATEGORY_STYLES[goal.category]}`}
-                        >
-                          {GOAL_CATEGORY_LABELS[goal.category]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Progress
-                            value={goal.progress}
-                            className="h-1.5 flex-1"
-                          />
-                          <span className="text-[10px] text-muted-foreground shrink-0 w-7 text-right">
-                            {goal.progress}%
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(goal.dueDate).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${GOAL_STATUS_STYLES[goal.status]}`}
-                        >
-                          {GOAL_STATUS_LABELS[goal.status]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                            >
-                              <MoreHorizontal className="w-3.5 h-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-36">
-                            <DropdownMenuItem
-                              className="text-xs gap-2"
-                              onClick={() => onEdit(goal)}
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                              Edit / Update
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-xs gap-2 text-destructive focus:text-destructive"
-                              onClick={() => setDeleteId(goal.id)}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="mt-4">
+        <DataTable
+          columns={columns}
+          data={filtered}
+          getRowId={(g) => g.id}
+          emptyMessage="No goals found."
+        />
+      </div>
 
       <AlertDialog
         open={!!deleteId}

@@ -1,18 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { CalendarCard } from "./components/calendar-card";
-import { AllEventsList } from "./components/all-events-list";
-import { NewEventDialog } from "./components/new-event-dialog";
-import { INITIAL_EVENTS } from "./data";
-import type { CalEvent } from "./types";
+import {
+  CalendarCard,
+  AllEventsList,
+  NewEventDialog,
+  type CalEvent,
+} from "@/src/components/shared/calendar";
+import { EVENT_TYPE_COLORS, EVENT_TYPE_OPTIONS } from "./data";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useCalendarEvents } from "./hooks";
 
 type NewEventData = Omit<CalEvent, "id">;
 
 export function EventsPage() {
-  const router = useRouter();
-  const [events, setEvents] = useState<CalEvent[]>(INITIAL_EVENTS);
+  const { data, loading } = useCalendarEvents();
+  const [events, setEvents] = useState<CalEvent[]>([]);
+  // Seed (and re-seed on country switch) without an effect.
+  const [seeded, setSeeded] = useState<CalEvent[] | null>(null);
+  if (data && data !== seeded) {
+    setSeeded(data);
+    setEvents(data);
+  }
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
 
   function handleCreate(data: NewEventData) {
@@ -23,25 +32,46 @@ export function EventsPage() {
     setEvents((prev) => prev.filter((e) => e.id !== id));
   }
 
+  if (loading && !events.length) {
+    return (
+      <div className="flex flex-col gap-5 pb-10">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5 pb-10">
       <div className="flex items-center justify-between py-6">
         <div>
-          <h1 className="text-4xl font-bold text-foreground">Events</h1>
+          <h1 className="text-4xl font-bold text-foreground">Calender</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {events.length} scheduled events
           </p>
         </div>
-        <NewEventDialog selectedDay={selectedDay} onConfirm={handleCreate} />
+        <NewEventDialog
+          selectedDay={selectedDay}
+          onConfirm={handleCreate}
+          typeOptions={EVENT_TYPE_OPTIONS}
+          defaultType="meeting"
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[min-content_1fr] gap-5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-5 items-stretch">
         <CalendarCard
           events={events}
           selectedDay={selectedDay}
           onSelectDay={setSelectedDay}
+          typeColors={EVENT_TYPE_COLORS}
         />
-        <AllEventsList events={events} onDelete={handleDelete} />
+        <AllEventsList
+          events={events}
+          onDelete={handleDelete}
+          typeColors={EVENT_TYPE_COLORS}
+          pageSize={6}
+          emptyMessage="No events yet. Click New Event to create one."
+        />
       </div>
     </div>
   );

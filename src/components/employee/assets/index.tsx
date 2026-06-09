@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Package2, Search } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { ASSETS, ASSET_TYPE_LABELS } from "@/src/data/assets-demo";
@@ -8,10 +8,19 @@ import type { Asset } from "@/src/lib/types/assets";
 import { MY_EMPLOYEE } from "./components/constants";
 import { AssetCard } from "./components/asset-card";
 import { AssetPreviewModal } from "./components/asset-preview-modal";
-
-const MY_ASSETS = ASSETS.filter((a) => a.assignedTo === MY_EMPLOYEE);
+import { useAssets } from "@/src/components/hr/assets/hooks";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 
 export function MyAssetsPage() {
+  const { data: localeAssets } = useAssets();
+  const employeeName = useAppSelector((s) => s.auth.user?.name);
+  const MY_ASSETS = useMemo(() => {
+    if (localeAssets && employeeName) {
+      const own = localeAssets.filter((a) => a.assignedTo === employeeName);
+      if (own.length) return own;
+    }
+    return ASSETS.filter((a) => a.assignedTo === MY_EMPLOYEE);
+  }, [localeAssets, employeeName]);
   const [search, setSearch] = useState("");
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
 

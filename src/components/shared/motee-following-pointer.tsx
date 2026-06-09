@@ -127,8 +127,8 @@ export function MoteeFollowingPointer({ logoSrc }: { logoSrc: string }) {
                 height={24}
                 className="object-contain"
               />
-              <span className="uppercase hitespace-nowrap text-[14px] font-medium text-foreground">
-                powered by motee solution
+              <span className="uppercase whitespace-nowrap text-[14px] font-medium text-foreground">
+                powered by motee solutions
               </span>
             </div>
           </motion.div>

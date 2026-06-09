@@ -2,7 +2,7 @@
 
 import { AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { cn } from "@/src/lib/utils";
 import { RISK_LABELS, RISK_STYLES } from "../data";
 import type { AttritionRisk } from "../types";
@@ -62,11 +62,12 @@ export function AttritionRiskTable({ risks }: AttritionRiskTableProps) {
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
-                      <Avatar className="h-7 w-7">
-                        <AvatarFallback className="text-[10px] font-semibold">
-                          {risk.initials}
-                        </AvatarFallback>
-                      </Avatar>
+                      <PersonAvatar
+                        name={risk.employeeName}
+                        initials={risk.initials}
+                        className="h-7 w-7"
+                        fallbackClassName="text-[10px] font-semibold"
+                      />
                       <div>
                         <p className="text-sm font-medium text-foreground leading-none">
                           {risk.employeeName}

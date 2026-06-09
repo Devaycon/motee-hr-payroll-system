@@ -36,8 +36,10 @@ type ProfileTabProps = {
   profileDraft: ProfileData;
   setProfileDraft: React.Dispatch<React.SetStateAction<ProfileData>>;
   setProfile: React.Dispatch<React.SetStateAction<ProfileData>>;
+  cacLabel: string;
   cacStatus: VerificationStage;
   cacNumber: string;
+  tinLabel: string;
   tinStatus: VerificationStage;
   tinNumber: string;
 };
@@ -49,8 +51,10 @@ export function ProfileTab({
   profileDraft,
   setProfileDraft,
   setProfile,
+  cacLabel,
   cacStatus,
   cacNumber,
+  tinLabel,
   tinStatus,
   tinNumber,
 }: ProfileTabProps) {
@@ -259,12 +263,12 @@ export function ProfileTab({
                 {(
                   [
                     {
-                      label: "CAC Registration",
+                      label: cacLabel,
                       status: cacStatus,
                       number: cacNumber,
                     },
                     {
-                      label: "Tax ID (TIN)",
+                      label: tinLabel,
                       status: tinStatus,
                       number: tinNumber,
                     },

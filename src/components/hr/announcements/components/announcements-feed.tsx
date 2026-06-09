@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDate } from "@/src/lib/utils/format-date";
 import {
   Pin,
   AlertTriangle,
@@ -232,10 +233,10 @@ export function AnnouncementsFeed({
                     </span>
                     <span>
                       {a.publishedAt
-                        ? `Published ${new Date(a.publishedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
+                        ? `Published ${formatDate(a.publishedAt)}`
                         : a.scheduledFor
-                          ? `Scheduled ${new Date(a.scheduledFor).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
-                          : `Created ${new Date(a.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
+                          ? `Scheduled ${formatDate(a.scheduledFor)}`
+                          : `Created ${formatDate(a.createdAt)}`}
                     </span>
                     {a.status === "published" && (
                       <span className="flex items-center gap-1">

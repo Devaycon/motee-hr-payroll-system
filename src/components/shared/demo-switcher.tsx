@@ -1,22 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Building2,
-  Users,
-  User,
   LogIn,
   UserPlus,
   Rocket,
   ShieldCheck,
   KeyRound,
   X,
-  Link,
+  Link as LinkIcon,
+  IdCard,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { loadLocale, setCountry } from "@/src/lib/stores/locale-slice";
+import { loginAsRoleThunk } from "@/src/lib/stores/auth-slice";
+import { landingPathForUser } from "@/src/lib/auth/landing";
+import type { CountryKey } from "@/src/lib/types/locale";
 
-const ROLES = [
+const NAV_ITEMS = [
   {
     key: "login",
     label: "Login",
@@ -57,56 +62,54 @@ const ROLES = [
     href: "/onboarding",
     prefixes: ["/onboarding"],
   },
-  {
-    key: "hr",
-    label: "HR Admin",
-    icon: Users,
-    accent: "#7F77DD",
-    href: "/hr",
-    prefixes: [
-      "/hr",
-      "/organization",
-      "/talent",
-      "/time-payroll",
-      "/operations",
-      "/workspace",
-      "/admin",
-    ],
-  },
-  {
-    key: "employee",
-    label: "Employee",
-    icon: User,
-    accent: "#1D9E75",
-    href: "/employee/dashboard",
-    prefixes: ["/employee", "/profile", "/time-off", "/growth", "/company"],
-  },
-  // {
-  //   key: "motee",
-  //   label: "CMS",
-  //   icon: Building2,
-  //   accent: "#D85A30",
-  //   href: "/motee",
-  //   prefixes: [
-  //     "/motee",
-  //     "/tenants",
-  //     "/billing",
-  //     "/platform",
-  //     "/support",
-  //     "/settings",
-  //   ],
-  // },
 ] as const;
+
+/**
+ * Roles offered as one-click demo logins (in display order). All other roles
+ * still exist in the system (Access Levels, permissions, etc.) — they're just
+ * not exposed as quick-login credentials here.
+ */
+const DEMO_LOGIN_ROLE_IDS = ["ROLE-HRADMIN", "ROLE-MGR", "ROLE-EMP"];
 
 export function DemoSwitcher() {
   const pathname = usePathname();
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const country = useAppSelector((s) => s.locale.country);
+  const localeStatus = useAppSelector((s) => s.locale.status);
+  const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
+  // Only HR Admin, Line Manager and Employee are offered as demo logins.
+  const demoRoles = DEMO_LOGIN_ROLE_IDS.map((id) =>
+    roles.find((r) => r.id === id),
+  ).filter((r): r is (typeof roles)[number] => Boolean(r));
+
   const [open, setOpen] = useState(false);
+  const [credentialsOpen, setCredentialsOpen] = useState(false);
+
+  useEffect(() => {
+    if (open && credentialsOpen && localeStatus === "idle") {
+      dispatch(loadLocale(country));
+    }
+  }, [open, credentialsOpen, localeStatus, country, dispatch]);
 
   const activeKey =
-    ROLES.find((r) =>
+    NAV_ITEMS.find((r) =>
       r.prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`)),
     )?.key ?? null;
+
+  const handleRoleLogin = async (roleId: string) => {
+    const result = await dispatch(loginAsRoleThunk(roleId));
+    if (loginAsRoleThunk.fulfilled.match(result)) {
+      router.push(landingPathForUser(result.payload));
+      setOpen(false);
+      setCredentialsOpen(false);
+    }
+  };
+
+  const handleCountrySwitch = (next: CountryKey) => {
+    dispatch(setCountry(next));
+    dispatch(loadLocale(next));
+  };
 
   return (
     <div
@@ -126,11 +129,12 @@ export function DemoSwitcher() {
           style={{
             display: "flex",
             flexDirection: "column",
-            alignItems: "flex-end",
+            alignItems: "stretch",
             gap: 6,
             backgroundColor: "#1A1A18",
             borderRadius: 16,
             padding: "10px 10px",
+            minWidth: 220,
           }}
         >
           <span
@@ -147,15 +151,14 @@ export function DemoSwitcher() {
             DEMO
           </span>
 
-          {ROLES.map((role) => {
-            const Icon = role.icon;
-            const isActive = activeKey === role.key;
-
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeKey === item.key;
             return (
               <button
-                key={role.key}
+                key={item.key}
                 onClick={() => {
-                  router.push(role.href);
+                  router.push(item.href);
                   setOpen(false);
                 }}
                 className={cn(
@@ -166,7 +169,7 @@ export function DemoSwitcher() {
                   fontSize: 12,
                   fontWeight: 500,
                   backgroundColor: isActive
-                    ? role.accent
+                    ? item.accent
                     : "rgba(255,255,255,0.07)",
                   color: isActive ? "#ffffff" : "rgba(255,255,255,0.55)",
                   border: isActive
@@ -176,10 +179,123 @@ export function DemoSwitcher() {
                 }}
               >
                 <Icon size={13} strokeWidth={2} />
-                {role.label}
+                {item.label}
               </button>
             );
           })}
+
+          {/* Employee Credentials group */}
+          <button
+            onClick={() => setCredentialsOpen((v) => !v)}
+            className="flex items-center gap-1.5 rounded-full px-3 transition-all duration-150 cursor-pointer w-full"
+            style={{
+              height: 32,
+              fontSize: 12,
+              fontWeight: 500,
+              backgroundColor: credentialsOpen
+                ? "#7F77DD"
+                : "rgba(255,255,255,0.07)",
+              color: credentialsOpen ? "#ffffff" : "rgba(255,255,255,0.55)",
+              border: credentialsOpen
+                ? "none"
+                : "1px solid rgba(255,255,255,0.12)",
+              justifyContent: "flex-start",
+            }}
+          >
+            <IdCard size={13} strokeWidth={2} />
+            <span style={{ flex: 1, textAlign: "left" }}>
+              Employee Credentials
+            </span>
+            {credentialsOpen ? (
+              <ChevronDown size={12} strokeWidth={2.5} />
+            ) : (
+              <ChevronRight size={12} strokeWidth={2.5} />
+            )}
+          </button>
+
+          {credentialsOpen && (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                padding: "6px 4px 4px 14px",
+                borderLeft: "1px solid rgba(255,255,255,0.12)",
+                marginLeft: 12,
+              }}
+            >
+              {/* <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  marginBottom: 4,
+                }}
+              >
+                {(["ng", "uk"] as const).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => handleCountrySwitch(key)}
+                    title={key === "ng" ? "Nigeria" : "United Kingdom"}
+                    style={{
+                      fontSize: 12,
+                      height: 22,
+                      width: 26,
+                      borderRadius: 999,
+                      border:
+                        country === key
+                          ? "1px solid rgba(255,255,255,0.3)"
+                          : "1px solid transparent",
+                      backgroundColor:
+                        country === key
+                          ? "rgba(255,255,255,0.1)"
+                          : "transparent",
+                      color: "#fff",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: country === key ? 1 : 0.5,
+                    }}
+                  >
+                    {key === "ng" ? "🇳🇬" : "🇬🇧"}
+                  </button>
+                ))}
+              </div> */}
+
+              {localeStatus === "loading" && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.5)",
+                    padding: "4px 8px",
+                  }}
+                >
+                  Loading…
+                </span>
+              )}
+
+              {localeStatus === "ready" &&
+                demoRoles.map((role) => (
+                  <button
+                    key={role.id}
+                    onClick={() => handleRoleLogin(role.id)}
+                    className="flex items-center gap-1.5 rounded-full px-3 transition-all duration-150 cursor-pointer w-full"
+                    style={{
+                      height: 28,
+                      fontSize: 11.5,
+                      fontWeight: 500,
+                      backgroundColor: "rgba(255,255,255,0.05)",
+                      color: "rgba(255,255,255,0.7)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      justifyContent: "flex-start",
+                    }}
+                  >
+                    {role.name}
+                  </button>
+                ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -209,7 +325,7 @@ export function DemoSwitcher() {
           </>
         ) : (
           <>
-            <Link size={13} strokeWidth={2.5} />
+            <LinkIcon size={13} strokeWidth={2.5} />
             Demo Links
           </>
         )}

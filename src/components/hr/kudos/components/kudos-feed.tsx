@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MessageCircle, Search, Megaphone, Pin, Star } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -185,23 +186,23 @@ export function KudosFeed({
               <div className="p-5">
                 <div className="flex items-start gap-3 mb-4">
                   <div className="flex items-center gap-1 shrink-0 relative">
-                    <Avatar className="size-10 ring-2 ring-background">
-                      <AvatarFallback
-                        className={`text-xs font-bold ${cfg.bg} ${cfg.color}`}
-                      >
-                        {post.senderInitials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <PersonAvatar
+                      name={post.senderName}
+                      initials={post.senderInitials}
+                      className="size-10 ring-2 ring-background"
+                      fallbackClassName={`text-xs font-bold ${cfg.bg} ${cfg.color}`}
+                    />
                     <div
                       className={`-ml-1 z-10 flex items-center justify-center size-6 rounded-full ${cfg.bg} border border-background`}
                     >
                       <cfg.icon className={`size-3.5 ${cfg.color}`} />
                     </div>
-                    <Avatar className="size-10 ring-2 ring-background -ml-1">
-                      <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
-                        {post.recipientInitials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <PersonAvatar
+                      name={post.recipientName}
+                      initials={post.recipientInitials}
+                      className="size-10 ring-2 ring-background -ml-1"
+                      fallbackClassName="text-xs font-bold bg-primary/10 text-primary"
+                    />
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -285,7 +286,7 @@ export function KudosFeed({
                     <span className="text-xs text-muted-foreground">
                       {new Date(post.createdAt).toLocaleDateString("en-GB", {
                         day: "numeric",
-                        month: "short",
+                        month: "long",
                         year: "numeric",
                       })}
                     </span>
@@ -298,11 +299,12 @@ export function KudosFeed({
                     <div className="space-y-3">
                       {post.comments.map((c) => (
                         <div key={c.id} className="flex gap-2.5">
-                          <Avatar className="size-7 shrink-0">
-                            <AvatarFallback className="text-[10px] font-bold bg-muted text-muted-foreground">
-                              {c.authorInitials}
-                            </AvatarFallback>
-                          </Avatar>
+                          <PersonAvatar
+                            name={c.authorName}
+                            initials={c.authorInitials}
+                            className="size-7 shrink-0"
+                            fallbackClassName="text-[10px] font-bold bg-muted text-muted-foreground"
+                          />
                           <div className="flex-1 bg-muted/40 rounded-xl px-3 py-2">
                             <p className="text-xs font-semibold text-foreground">
                               {c.authorName}

@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { EMPLOYMENT_TYPES } from "./data";
 import type { EmploymentTypeRow, NewEmploymentType } from "./types";
 import { EmploymentTypeTable } from "./components/employment-type-table";
 import { EmploymentTypeModal } from "./components/employment-type-modal";
+import { useEmploymentTypes } from "./hooks";
 
 export function EmploymentTypesPage() {
-  const [types, setTypes] = useState<EmploymentTypeRow[]>(EMPLOYMENT_TYPES);
+  const { data } = useEmploymentTypes();
+  const [types, setTypes] = useState<EmploymentTypeRow[]>([]);
+  useEffect(() => {
+    if (data) setTypes(data);
+  }, [data]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingType, setEditingType] = useState<EmploymentTypeRow | null>(
     null,
@@ -41,8 +45,8 @@ export function EmploymentTypesPage() {
         id: `et-${Date.now()}`,
         employeeCount: 0,
         isActive: true,
-        createdAt: new Date().toLocaleDateString("en-US", {
-          month: "short",
+        createdAt: new Date().toLocaleDateString("en-GB", {
+          month: "long",
           day: "numeric",
           year: "numeric",
         }),

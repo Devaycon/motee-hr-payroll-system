@@ -17,7 +17,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
 import { Separator } from "@/src/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Download, ShieldCheck } from "lucide-react";
 import {
   SURVEY_TYPE_CONFIG,
@@ -412,11 +412,12 @@ export function SurveyResultsModal({
                   className="bg-card border border-border rounded-lg p-4 space-y-3"
                 >
                   <div className="flex items-center gap-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                        {resp.respondentInitials ?? `R${idx + 1}`}
-                      </AvatarFallback>
-                    </Avatar>
+                    <PersonAvatar
+                      name={resp.respondentName ?? `Respondent ${idx + 1}`}
+                      initials={resp.respondentInitials ?? `R${idx + 1}`}
+                      className="w-8 h-8"
+                      fallbackClassName="text-xs bg-primary/10 text-primary"
+                    />
                     <div>
                       <p className="text-sm font-medium text-foreground">
                         {resp.respondentName ?? `Respondent ${idx + 1}`}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Search, SlidersHorizontal, Users } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { useMemo, useState } from "react";
+import { Search, SlidersHorizontal } from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -14,6 +14,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import {
+  DataTable,
+  sortableHeader,
+} from "@/src/components/shared/data-table";
 import {
   LEAVE_TYPE_LABELS,
   LEAVE_TYPE_STYLES,
@@ -71,6 +75,105 @@ export function BalancesTable({ balances }: BalancesTableProps) {
     if (pct >= 60) return "text-amber-600 dark:text-amber-400";
     return "text-emerald-600 dark:text-emerald-400";
   }
+
+  const columns = useMemo<ColumnDef<LeaveBalance>[]>(
+    () => [
+      {
+        accessorKey: "employeeName",
+        header: sortableHeader("Employee"),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-[10px] font-semibold shrink-0">
+              {row.original.employeeInitials}
+            </div>
+            <div>
+              <p className="text-xs font-medium leading-tight">
+                {row.original.employeeName}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {row.original.department}
+              </p>
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "leaveType",
+        header: sortableHeader("Leave Type"),
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${LEAVE_TYPE_STYLES[row.original.leaveType as LeaveTypeName]}`}
+          >
+            {LEAVE_TYPE_LABELS[row.original.leaveType as LeaveTypeName]}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "totalEntitlement",
+        header: sortableHeader("Entitlement"),
+        cell: ({ row }) => (
+          <span className="text-xs font-medium">
+            {row.original.totalEntitlement}d
+          </span>
+        ),
+      },
+      {
+        accessorKey: "daysUsed",
+        header: sortableHeader("Used"),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {row.original.daysUsed}d
+          </span>
+        ),
+      },
+      {
+        accessorKey: "daysPending",
+        header: sortableHeader("Pending"),
+        cell: ({ row }) => (
+          <span
+            className={`text-xs ${row.original.daysPending > 0 ? "text-amber-600 dark:text-amber-400 font-medium" : "text-muted-foreground"}`}
+          >
+            {row.original.daysPending > 0 ? `${row.original.daysPending}d` : "—"}
+          </span>
+        ),
+      },
+      {
+        id: "remaining",
+        header: "Remaining",
+        cell: ({ row }) => (
+          <span
+            className={`text-xs font-semibold ${getRemainingColor(row.original)}`}
+          >
+            {getRemaining(row.original)}d
+          </span>
+        ),
+      },
+      {
+        id: "balance",
+        header: "Balance",
+        cell: ({ row }) => {
+          const pct = getProgressPercent(row.original);
+          return (
+            <div className="space-y-1 w-40">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground">
+                  {pct}% used
+                </span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${getProgressColor(row.original)}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   return (
     <>
@@ -152,127 +255,14 @@ export function BalancesTable({ balances }: BalancesTableProps) {
         </DropdownMenu>
       </div>
 
-      <Card className="mt-4">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Employee
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Leave Type
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Entitlement
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Used
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Pending
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Remaining
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs w-40">
-                    Balance
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-16 text-center">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <Users className="w-8 h-8 opacity-30" />
-                        <p className="text-sm font-medium">No balances found</p>
-                        <p className="text-xs">
-                          Try adjusting your search or filters
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((b) => {
-                    const remaining = getRemaining(b);
-                    const pct = getProgressPercent(b);
-                    return (
-                      <tr
-                        key={b.id}
-                        className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-[10px] font-semibold shrink-0">
-                              {b.employeeInitials}
-                            </div>
-                            <div>
-                              <p className="text-xs font-medium leading-tight">
-                                {b.employeeName}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground">
-                                {b.department}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${LEAVE_TYPE_STYLES[b.leaveType as LeaveTypeName]}`}
-                          >
-                            {LEAVE_TYPE_LABELS[b.leaveType as LeaveTypeName]}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs font-medium">
-                            {b.totalEntitlement}d
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs text-muted-foreground">
-                            {b.daysUsed}d
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`text-xs ${b.daysPending > 0 ? "text-amber-600 dark:text-amber-400 font-medium" : "text-muted-foreground"}`}
-                          >
-                            {b.daysPending > 0 ? `${b.daysPending}d` : "—"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`text-xs font-semibold ${getRemainingColor(b)}`}
-                          >
-                            {remaining}d
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] text-muted-foreground">
-                                {pct}% used
-                              </span>
-                            </div>
-                            <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all ${getProgressColor(b)}`}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="mt-4">
+        <DataTable
+          columns={columns}
+          data={filtered}
+          getRowId={(b) => b.id}
+          emptyMessage="No balances found."
+        />
+      </div>
     </>
   );
 }

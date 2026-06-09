@@ -1,4 +1,5 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import Link from "next/link";
 import { Bell, ChevronRight, Pin } from "lucide-react";
@@ -80,7 +81,7 @@ export function AnnouncementsFeed() {
                   </Badge>
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  {ann.createdAt}
+                  {formatDate(ann.createdAt)}
                 </p>
               </div>
             </div>

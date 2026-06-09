@@ -1,17 +1,33 @@
-﻿"use client";
+"use client";
 
 import { Users } from "lucide-react";
-import { RadialChartCard } from "@/src/components/shared/charts/radial-chart";
-import { GENDER_SPLIT_SERIES, GENDER_SPLIT_CONFIG } from "@/src/data/dashboard-demo";
+import { DonutChart } from "@/src/components/shared/charts";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useGenderSplit } from "../hooks";
 
 export function GenderSplitCard() {
+  const { data, loading } = useGenderSplit();
+
+  if (loading || !data) {
+    return <Skeleton className="h-64 w-full rounded-xl" />;
+  }
+
   return (
-    <RadialChartCard
+    <DonutChart
       title="Gender Split"
+      description="Workforce gender breakdown"
       icon={Users}
-      series={GENDER_SPLIT_SERIES}
-      config={GENDER_SPLIT_CONFIG}
       centerLabel="Employees"
+      viewMoreHref="/operations/reports/employees"
+      labels={data.series.map((s) => s.label)}
+      values={data.series.map((s) => s.value)}
+      colors={data.series.map((s) => s.color)}
+      details={data.series.map((s) => ({
+        label: s.label,
+        value: s.value,
+        color: s.color,
+        pct: true,
+      }))}
     />
   );
 }

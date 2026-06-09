@@ -5,6 +5,11 @@ export const metadata: Metadata = {
   title: "New Employee Onboarding",
 };
 
-export default function NewOnboardingRoute() {
-  return <OnboardingFormPage />;
+export default async function NewOnboardingRoute({
+  searchParams,
+}: {
+  searchParams: Promise<{ preboarding?: string }>;
+}) {
+  const sp = await searchParams;
+  return <OnboardingFormPage preboardingId={sp.preboarding} />;
 }

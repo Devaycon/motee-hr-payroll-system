@@ -4,15 +4,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Zap } from "lucide-react";
+import { ChevronDown, ChevronRight, Zap, Search, X } from "lucide-react";
 import { routes } from "./routes";
+import type { Route } from "./routes";
+import { useVisibleRoutes } from "./permissions";
 import { cn } from "@/src/lib/utils";
 
 const Sidebar = () => {
   const pathname = usePathname();
+  const visibleRoutes = useVisibleRoutes(routes);
+  const [query, setQuery] = useState("");
 
-  const overviewRoutes = routes.filter((r) => r.group === "Overview");
-  const otherRoutes = routes.filter((r) => r.group !== "Overview");
+  const q = query.trim().toLowerCase();
+  const searching = q.length > 0;
+  const matches = searching
+    ? visibleRoutes.filter(
+        (r) =>
+          r.label.toLowerCase().includes(q) ||
+          r.group.toLowerCase().includes(q),
+      )
+    : [];
+
+  const overviewRoutes = visibleRoutes.filter((r) => r.group === "Overview");
+  const otherRoutes = visibleRoutes.filter((r) => r.group !== "Overview");
 
   const grouped = otherRoutes.reduce<{ group: string; items: typeof routes }[]>(
     (acc, route) => {
@@ -37,6 +51,33 @@ const Sidebar = () => {
     return pathname === link || pathname.startsWith(`${link}/`);
   };
 
+  const renderRouteLink = (route: Route) => {
+    const Icon = route.icon;
+    const active = isActive(route.link, route.exact);
+    return (
+      <li key={`${route.group}-${route.label}`}>
+        <Link
+          href={route.link}
+          onClick={() => setQuery("")}
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-4 text-sm transition-colors",
+            active
+              ? "bg-primary text-white border-l-4 border-[#4ED251]"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground",
+          )}
+        >
+          {Icon && <Icon size={15} strokeWidth={1.75} className="shrink-0" />}
+          <span className="flex-1 truncate">{route.label}</span>
+          {route.badge !== undefined && (
+            <span className="flex items-center justify-center min-w-5 h-5 rounded-full bg-primary text-white text-[10px] font-semibold px-1">
+              {route.badge}
+            </span>
+          )}
+        </Link>
+      </li>
+    );
+  };
+
   return (
     <aside className="fixed left-0 top-0 z-50 flex h-screen w-[20%] flex-col bg-sidebar border-r border-border">
       <div className="flex h-24 items-center px-5 shrink-0">
@@ -49,7 +90,46 @@ const Sidebar = () => {
         />
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
+      <div className="px-3 pb-2 shrink-0">
+        <div className="relative">
+          <Search
+            size={15}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search modules..."
+            aria-label="Search modules"
+            className="w-full h-9 rounded-md bg-accent/40 border border-border pl-8 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+          {searching && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto px-3 py-2 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/60">
+        {searching ? (
+          <ul className="flex flex-col gap-1">
+            {matches.length === 0 ? (
+              <li className="px-3 py-4 text-sm text-muted-foreground">
+                No modules match &ldquo;{query.trim()}&rdquo;.
+              </li>
+            ) : (
+              matches.map((route) => renderRouteLink(route))
+            )}
+          </ul>
+        ) : (
+          <>
         <ul
           data-tutorial="sidebar-overview"
           className="flex flex-col gap-2 mb-4"
@@ -156,6 +236,8 @@ const Sidebar = () => {
             </button>
           </div>
         </div>
+          </>
+        )}
       </nav>
     </aside>
   );

@@ -1,6 +1,7 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Search,
   MoreHorizontal,
@@ -15,6 +16,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -33,13 +35,10 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/src/components/ui/table";
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -116,6 +115,182 @@ export function ArticlesTable({
     return "Re-publish";
   }
 
+  const columns = useMemo<ColumnDef<KnowledgeArticle>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: sortableHeader("Title"),
+        cell: ({ row }) => (
+          <div className="flex items-start gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground max-w-60">
+                {row.original.title}
+              </p>
+              <div className="mt-0.5 flex flex-wrap gap-1">
+                {row.original.tags.slice(0, 2).map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="px-1 py-0 text-[10px]"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            {row.original.isFeatured && (
+              <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "category",
+        header: sortableHeader("Category"),
+        cell: ({ row }) => {
+          const catCfg = ARTICLE_CATEGORY_CONFIG[row.original.category];
+          return (
+            <span
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${catCfg.bg} ${catCfg.color} ${catCfg.border}`}
+            >
+              {catCfg.label}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: sortableHeader("Status"),
+        cell: ({ row }) => {
+          const statusCfg = ARTICLE_STATUS_CONFIG[row.original.status];
+          return (
+            <span
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusCfg.bg} ${statusCfg.color} ${statusCfg.border}`}
+            >
+              {statusCfg.label}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "authorName",
+        header: sortableHeader("Author"),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+              {row.original.authorInitials}
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {row.original.authorName}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "views",
+        header: sortableHeader("Views"),
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.views.toLocaleString()}
+          </span>
+        ),
+      },
+      {
+        id: "helpful",
+        header: "Helpful",
+        cell: ({ row }) => {
+          const rate = helpfulRate(row.original);
+          return (
+            <span className="text-sm text-muted-foreground">
+              {rate > 0 ? `${rate}%` : "—"}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "updatedAt",
+        header: sortableHeader("Updated"),
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatDate(row.original.updatedAt)}
+          </span>
+        ),
+      },
+      actionsColumn<KnowledgeArticle>((article) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onView(article)}>
+              <Eye className="mr-2 h-4 w-4" />
+              View
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(article)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                onToggleStatus(article.id, nextStatus(article.status));
+                toast.success(
+                  `Article ${nextStatus(article.status) === "published" ? "published" : "unpublished"}.`,
+                );
+              }}
+            >
+              {article.status === "published" ? (
+                <FileEdit className="mr-2 h-4 w-4" />
+              ) : (
+                <Globe className="mr-2 h-4 w-4" />
+              )}
+              {statusActionLabel(article.status)}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                onToggleFeatured(article.id);
+                toast.success(
+                  article.isFeatured
+                    ? "Removed from featured."
+                    : "Added to featured.",
+                );
+              }}
+            >
+              {article.isFeatured ? (
+                <StarOff className="mr-2 h-4 w-4" />
+              ) : (
+                <Star className="mr-2 h-4 w-4" />
+              )}
+              {article.isFeatured ? "Remove Featured" : "Mark as Featured"}
+            </DropdownMenuItem>
+            {article.status !== "archived" && (
+              <DropdownMenuItem
+                onClick={() => {
+                  onToggleStatus(article.id, "archived");
+                  toast.success("Article archived.");
+                }}
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Archive
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => setDeleteId(article.id)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )),
+    ],
+    [onView, onEdit, onToggleStatus, onToggleFeatured],
+  );
+
   return (
     <>
       <div className="space-y-4">
@@ -160,184 +335,12 @@ export function ArticlesTable({
           </div>
         </div>
 
-        <div className="rounded-xl border border-border overflow-hidden bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted">
-                <TableHead className="w-[30%]">Title</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Author</TableHead>
-                <TableHead className="text-right">Views</TableHead>
-                <TableHead className="text-right">Helpful</TableHead>
-                <TableHead>Updated</TableHead>
-                <TableHead className="w-10" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={8}
-                    className="py-12 text-center text-sm text-muted-foreground"
-                  >
-                    No articles match your filters.
-                  </TableCell>
-                </TableRow>
-              )}
-              {filtered.map((article) => {
-                const catCfg = ARTICLE_CATEGORY_CONFIG[article.category];
-                const statusCfg = ARTICLE_STATUS_CONFIG[article.status];
-                const rate = helpfulRate(article);
-                const isDraft = article.status === "draft";
-
-                return (
-                  <TableRow
-                    key={article.id}
-                    className={isDraft ? "bg-card" : "bg-card"}
-                  >
-                    <TableCell>
-                      <div className="flex items-start gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-foreground max-w-60">
-                            {article.title}
-                          </p>
-                          <div className="mt-0.5 flex flex-wrap gap-1">
-                            {article.tags.slice(0, 2).map((tag) => (
-                              <Badge
-                                key={tag}
-                                variant="secondary"
-                                className="px-1 py-0 text-[10px]"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        {article.isFeatured && (
-                          <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${catCfg.bg} ${catCfg.color} ${catCfg.border}`}
-                      >
-                        {catCfg.label}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusCfg.bg} ${statusCfg.color} ${statusCfg.border}`}
-                      >
-                        {statusCfg.label}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
-                          {article.authorInitials}
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {article.authorName}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right text-sm text-muted-foreground">
-                      {article.views.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right text-sm text-muted-foreground">
-                      {rate > 0 ? `${rate}%` : "—"}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                      {article.updatedAt}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onView(article)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onEdit(article)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              onToggleStatus(
-                                article.id,
-                                nextStatus(article.status),
-                              );
-                              toast.success(
-                                `Article ${nextStatus(article.status) === "published" ? "published" : "unpublished"}.`,
-                              );
-                            }}
-                          >
-                            {article.status === "published" ? (
-                              <FileEdit className="mr-2 h-4 w-4" />
-                            ) : (
-                              <Globe className="mr-2 h-4 w-4" />
-                            )}
-                            {statusActionLabel(article.status)}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              onToggleFeatured(article.id);
-                              toast.success(
-                                article.isFeatured
-                                  ? "Removed from featured."
-                                  : "Added to featured.",
-                              );
-                            }}
-                          >
-                            {article.isFeatured ? (
-                              <StarOff className="mr-2 h-4 w-4" />
-                            ) : (
-                              <Star className="mr-2 h-4 w-4" />
-                            )}
-                            {article.isFeatured
-                              ? "Remove Featured"
-                              : "Mark as Featured"}
-                          </DropdownMenuItem>
-                          {article.status !== "archived" && (
-                            <DropdownMenuItem
-                              onClick={() => {
-                                onToggleStatus(article.id, "archived");
-                                toast.success("Article archived.");
-                              }}
-                            >
-                              <Archive className="mr-2 h-4 w-4" />
-                              Archive
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => setDeleteId(article.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <DataTable
+          columns={columns}
+          data={filtered}
+          getRowId={(a) => a.id}
+          emptyMessage="No articles match your filters."
+        />
 
         <p className="text-xs text-muted-foreground">
           Showing {filtered.length} of {articles.length} articles

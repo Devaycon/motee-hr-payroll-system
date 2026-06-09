@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useLeaveData } from "./hooks";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { submitApproval } from "@/src/lib/stores/approvals-slice";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
 import { StatCards } from "./components/stat-cards";
 import { RequestsTable } from "./components/requests-table";
 import { BalancesTable } from "./components/balances-table";
@@ -10,7 +16,6 @@ import { PoliciesTable } from "./components/policies-table";
 import { RequestModal } from "./components/request-modal";
 import { ReviewModal } from "./components/review-modal";
 import { PolicyModal } from "./components/policy-modal";
-import { LEAVE_REQUESTS, LEAVE_BALANCES, LEAVE_POLICIES } from "./data";
 import type {
   LeaveRequest,
   NewLeaveRequest,
@@ -20,9 +25,19 @@ import type {
 } from "./types";
 
 export function LeaveManagementPage() {
-  const [requests, setRequests] = useState<LeaveRequest[]>(LEAVE_REQUESTS);
-  const [balances] = useState<LeaveBalance[]>(LEAVE_BALANCES);
-  const [policies, setPolicies] = useState<LeavePolicy[]>(LEAVE_POLICIES);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((s) => s.auth.user);
+  const { data, loading } = useLeaveData();
+  const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [balances, setBalances] = useState<LeaveBalance[]>([]);
+  const [policies, setPolicies] = useState<LeavePolicy[]>([]);
+  useEffect(() => {
+    if (data) {
+      setRequests(data.requests);
+      setBalances(data.balances);
+      setPolicies(data.policies);
+    }
+  }, [data]);
 
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(
@@ -55,6 +70,32 @@ export function LeaveManagementPage() {
         submittedAt: new Date().toISOString().slice(0, 10),
       };
       setRequests((prev) => [newRequest, ...prev]);
+      if (user) {
+        void dispatch(
+          submitApproval({
+            documentType: "leave_request",
+            documentId: newRequest.id,
+            documentTitle: `${data.leaveType} leave – ${data.totalDays} day${data.totalDays === 1 ? "" : "s"}`,
+            documentSummary: `${data.employeeName} · ${data.startDate} → ${data.endDate}`,
+            payloadSnapshot: {
+              leaveType: data.leaveType,
+              startDate: data.startDate,
+              endDate: data.endDate,
+              totalDays: data.totalDays,
+              department: data.department,
+              jobTitle: data.jobTitle,
+              notes: data.notes ?? "",
+            },
+            submitter: {
+              employeeId: user.employeeId,
+              name: user.name,
+              initials: user.initials,
+              departmentName: user.departmentName,
+            },
+          }),
+        );
+        toast.success("Leave submitted to the central approval hub");
+      }
     }
   }
 
@@ -127,6 +168,15 @@ export function LeaveManagementPage() {
     setPolicies((prev) => prev.filter((p) => p.id !== id));
   }
 
+  if (loading && !requests.length) {
+    return (
+      <div className="space-y-5">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div>
@@ -144,6 +194,7 @@ export function LeaveManagementPage() {
             { value: "requests", label: "Requests" },
             { value: "balances", label: "Balances" },
             { value: "policies", label: "Policies" },
+            { value: "approval_chain", label: "Approval Chain" },
           ]}
         />
 
@@ -168,6 +219,10 @@ export function LeaveManagementPage() {
             onDelete={handleDeletePolicy}
             onAddPolicy={handleAddPolicy}
           />
+        </TabsContent>
+
+        <TabsContent value="approval_chain" className="mt-4 space-y-4">
+          <ApprovalChainTab documentType="leave_request" />
         </TabsContent>
       </Tabs>
 

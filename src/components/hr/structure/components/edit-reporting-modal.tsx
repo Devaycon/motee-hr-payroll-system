@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Label } from "@/src/components/ui/label";
 import { Button } from "@/src/components/ui/button";
 import { DEPT_OPTIONS } from "../data";
@@ -74,11 +74,13 @@ export function EditReportingModal({
 
         {node && (
           <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-            <Avatar className="size-9 shrink-0">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                {node.initials}
-              </AvatarFallback>
-            </Avatar>
+            <PersonAvatar
+              name={node.name}
+              initials={node.initials}
+              gender={node.gender}
+              className="size-9 shrink-0"
+              fallbackClassName="bg-primary/10 text-primary text-xs font-semibold"
+            />
             <div>
               <p className="text-sm font-medium text-foreground">{node.name}</p>
               <p className="text-xs text-muted-foreground">{node.jobTitle}</p>

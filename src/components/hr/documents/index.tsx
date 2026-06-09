@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useDocuments } from "./hooks";
 import { FolderOpen, Upload, FolderPlus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { StatCards } from "./components/stat-cards";
@@ -10,7 +12,7 @@ import { UploadModal } from "./components/upload-modal";
 import { DocumentDetailModal } from "./components/document-detail-modal";
 import { ShareModal } from "./components/share-modal";
 import { CreateFolderModal } from "./components/create-folder-modal";
-import { FOLDERS, DOCUMENTS } from "./data";
+import { FOLDERS as SEED_FOLDERS } from "./data";
 import type { HRDocument, Folder, NewDocument, NewShare } from "./types";
 
 function getDocumentsForFolder(
@@ -37,8 +39,18 @@ function getDocumentsForFolder(
 }
 
 export function DocumentsPage() {
-  const [documents, setDocuments] = useState<HRDocument[]>(DOCUMENTS);
-  const [folders, setFolders] = useState<Folder[]>(FOLDERS);
+  const { data, loading } = useDocuments();
+  const [documents, setDocuments] = useState<HRDocument[]>([]);
+  const [folders, setFolders] = useState<Folder[]>(SEED_FOLDERS);
+  useEffect(() => {
+    if (data) {
+      setDocuments(data.documents);
+      setFolders((prev) => {
+        const ids = new Set(prev.map((f) => f.id));
+        return [...prev, ...data.folders.filter((f) => !ids.has(f.id))];
+      });
+    }
+  }, [data]);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -197,6 +209,15 @@ export function DocumentsPage() {
     };
     setFolders((prev) => [...prev, newFolder]);
     setCreateFolderModalOpen(false);
+  }
+
+  if (loading && !documents.length) {
+    return (
+      <div className="flex flex-col gap-5">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
   }
 
   return (

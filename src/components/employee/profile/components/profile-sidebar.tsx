@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Mail, Phone, Building2, MapPin, Pencil, Lock } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
@@ -48,15 +48,12 @@ export function ProfileSidebar() {
       <Card>
         <CardContent className="p-5 flex flex-col items-center gap-3">
           <div className="relative mt-1">
-            <Avatar className="size-20 ring-2 ring-border">
-              <AvatarFallback className="bg-[#7F77DD]/10 text-[#7F77DD] text-2xl font-bold">
-                {p.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .slice(0, 2)}
-              </AvatarFallback>
-            </Avatar>
+            <PersonAvatar
+              name={p.name}
+              gender={(p as { gender?: string }).gender}
+              className="size-20 ring-2 ring-border"
+              fallbackClassName="bg-[#7F77DD]/10 text-[#7F77DD] text-2xl font-bold"
+            />
             <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#7F77DD] flex items-center justify-center shadow-sm">
               <Pencil className="w-3 h-3 text-white" />
             </button>

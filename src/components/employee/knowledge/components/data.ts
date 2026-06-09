@@ -9,10 +9,4 @@ export type {
   ArticleCategory,
 } from "@/src/lib/types/knowledge";
 
-export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+export { formatDate } from "@/src/lib/utils/format-date";

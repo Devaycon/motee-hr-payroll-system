@@ -1,19 +1,42 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { Separator } from "@/src/components/ui/separator";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { clearAuthError, loginThunk } from "@/src/lib/stores/auth-slice";
+import { landingPathForUser } from "@/src/lib/auth/landing";
 
 export function LoginForm() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const authStatus = useAppSelector((s) => s.auth.status);
+  const authError = useAppSelector((s) => s.auth.error);
+  const localeStatus = useAppSelector((s) => s.locale.status);
+  const tenantName = useAppSelector((s) => s.locale.data?.tenant.name);
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearAuthError());
+    };
+  }, [dispatch]);
+
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/hr");
+    const result = await dispatch(loginThunk({ email, password }));
+    if (loginThunk.fulfilled.match(result)) {
+      router.push(landingPathForUser(result.payload));
+    }
   };
+
+  const submitting = authStatus === "loading";
+  const localeLoading = localeStatus === "loading" || localeStatus === "idle";
 
   return (
     <div className="flex flex-col w-full gap-8">
@@ -22,7 +45,9 @@ export function LoginForm() {
           Welcome back
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sign in to your Motee Solutions account
+          {tenantName
+            ? `Sign in to ${tenantName}`
+            : "Sign in to your Motee Solutions account"}
         </p>
       </div>
 
@@ -32,14 +57,23 @@ export function LoginForm() {
           <Input
             id="email"
             type="email"
-            defaultValue="admin@moteesolutions.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@company.com"
+            autoComplete="email"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="password">Password</Label>
-
-          <Input id="password" type="password" defaultValue="password" />
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+          />
           <Link
             href="/auth/forgot-password"
             className="text-[13px]  mt-1 text-muted-foreground hover:text-foreground hover:underline transition-colors"
@@ -48,50 +82,24 @@ export function LoginForm() {
           </Link>
         </div>
 
+        {authError && (
+          <p className="text-[13px] text-red-500" role="alert">
+            {authError}
+          </p>
+        )}
+
         <Button
           type="submit"
+          disabled={submitting || localeLoading || !email || !password}
           className="w-full mt-1 h-10 text-sm font-semibold"
           style={{ backgroundColor: "#D85A30", borderColor: "#D85A30" }}
         >
-          Login
+          {submitting ? "Signing in…" : "Login"}
         </Button>
+        <p className="text-[11px] text-muted-foreground text-center">
+          Tip: open the Demo Links button (bottom-right) to log in as any role.
+        </p>
       </form>
-
-      <div className="flex items-center gap-3">
-        <Separator className="flex-1" />
-        <span className="text-xs text-muted-foreground whitespace-nowrap">
-          or use demo links
-        </span>
-        <Separator className="flex-1" />
-      </div>
-
-      {/* <div className="flex flex-col gap-2.5">
-        {QUICK_ACCESS.map((role) => {
-          const Icon = role.icon;
-          return (
-            <button
-              key={role.href}
-              type="button"
-              onClick={() => router.push(role.href)}
-              className="flex items-center gap-3 rounded-lg px-4 h-11 text-sm font-medium transition-colors text-left cursor-pointer"
-              style={{
-                border: `1.5px solid ${role.border}`,
-                color: role.accent,
-                backgroundColor: "transparent",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = role.hover)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "transparent")
-              }
-            >
-              <Icon size={15} strokeWidth={2} style={{ color: role.accent }} />
-              {role.label}
-            </button>
-          );
-        })}
-      </div> */}
     </div>
   );
 }

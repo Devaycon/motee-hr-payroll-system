@@ -1,4 +1,5 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import { useState } from "react";
 import { PartyPopper, SlidersHorizontal } from "lucide-react";
@@ -161,7 +162,7 @@ function CelebrationCard({
           {entry.detail}
         </p>
         <p className="mt-1 text-[10px] text-muted-foreground">
-          {entry.department} · {entry.date}
+          {entry.department} · {formatDate(entry.date)}
         </p>
       </div>
 

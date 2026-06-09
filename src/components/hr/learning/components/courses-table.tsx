@@ -1,15 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import {
-  MoreHorizontal,
-  BookOpen,
-  Pencil,
-  Trash2,
-  Clock,
-  Users,
-} from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { useMemo, useState } from "react";
+import { MoreHorizontal, Pencil, Trash2, Clock, Users, ListChecks } from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -29,6 +22,11 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import {
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
+import {
   COURSE_CATEGORY_LABELS,
   COURSE_CATEGORY_STYLES,
   DELIVERY_MODE_LABELS,
@@ -43,6 +41,7 @@ interface CoursesTableProps {
   onEdit: (course: Course) => void;
   onDelete: (id: string) => void;
   onAddCourse: () => void;
+  onManageQuiz: (course: Course) => void;
 }
 
 export function CoursesTable({
@@ -50,6 +49,7 @@ export function CoursesTable({
   onEdit,
   onDelete,
   onAddCourse,
+  onManageQuiz,
 }: CoursesTableProps) {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -70,6 +70,130 @@ export function CoursesTable({
     return matchSearch && matchCat && matchMode && matchStatus;
   });
 
+  const columns = useMemo<ColumnDef<Course>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: sortableHeader("Course"),
+        cell: ({ row }) => (
+          <div className="max-w-56">
+            <p className="text-xs font-medium truncate">{row.original.title}</p>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+              {row.original.description}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "category",
+        header: sortableHeader("Category"),
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${COURSE_CATEGORY_STYLES[row.original.category]}`}
+          >
+            {COURSE_CATEGORY_LABELS[row.original.category]}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "instructor",
+        header: "Provider",
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {row.original.instructor}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "durationHours",
+        header: sortableHeader("Duration"),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="w-3 h-3" />
+            {row.original.durationHours}h
+          </div>
+        ),
+      },
+      {
+        accessorKey: "deliveryMode",
+        header: "Delivery",
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {DELIVERY_MODE_LABELS[row.original.deliveryMode]}
+          </span>
+        ),
+      },
+      {
+        id: "enrolled",
+        header: "Enrolled / Completed",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Users className="w-3 h-3" />
+            {row.original.enrolledCount} / {row.original.completionCount}
+          </div>
+        ),
+      },
+      {
+        id: "quiz",
+        header: "Quiz",
+        cell: ({ row }) => {
+          const n = row.original.quiz?.questions.length ?? 0;
+          return (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <ListChecks className="w-3 h-3" />
+              {n > 0 ? `${n} Q` : "—"}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: sortableHeader("Status"),
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${COURSE_STATUS_STYLES[row.original.status]}`}
+          >
+            {COURSE_STATUS_LABELS[row.original.status]}
+          </span>
+        ),
+      },
+      actionsColumn<Course>((course) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => onEdit(course)}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => onManageQuiz(course)}
+            >
+              <ListChecks className="w-3.5 h-3.5" />
+              Manage quiz
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-xs gap-2 text-destructive focus:text-destructive"
+              onClick={() => setDeleteId(course.id)}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )),
+    ],
+    [onEdit, onManageQuiz],
+  );
+
   return (
     <>
       <CoursesToolbar
@@ -83,139 +207,14 @@ export function CoursesTable({
         onStatusFilterChange={setStatusFilter}
         onAddCourse={onAddCourse}
       />
-      <Card className="mt-4">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Course
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Category
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Provider
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Duration
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Delivery
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Enrolled / Completed
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Status
-                  </th>
-                  <th className="text-right font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-16 text-center">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <BookOpen className="w-8 h-8 opacity-30" />
-                        <p className="text-sm font-medium">No courses found</p>
-                        <p className="text-xs">
-                          Try adjusting your search or filters
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((course) => (
-                    <tr
-                      key={course.id}
-                      className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-4 py-3 max-w-56">
-                        <p className="text-xs font-medium truncate">
-                          {course.title}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                          {course.description}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${COURSE_CATEGORY_STYLES[course.category]}`}
-                        >
-                          {COURSE_CATEGORY_LABELS[course.category]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-muted-foreground">
-                          {course.instructor}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {course.durationHours}h
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-muted-foreground">
-                          {DELIVERY_MODE_LABELS[course.deliveryMode]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="w-3 h-3" />
-                          {course.enrolledCount} / {course.completionCount}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${COURSE_STATUS_STYLES[course.status]}`}
-                        >
-                          {COURSE_STATUS_LABELS[course.status]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                            >
-                              <MoreHorizontal className="w-3.5 h-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-36">
-                            <DropdownMenuItem
-                              className="text-xs gap-2"
-                              onClick={() => onEdit(course)}
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-xs gap-2 text-destructive focus:text-destructive"
-                              onClick={() => setDeleteId(course.id)}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="mt-4">
+        <DataTable
+          columns={columns}
+          data={filtered}
+          getRowId={(c) => c.id}
+          emptyMessage="No courses found."
+        />
+      </div>
 
       <AlertDialog
         open={!!deleteId}

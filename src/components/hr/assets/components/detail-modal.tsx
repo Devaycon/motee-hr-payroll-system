@@ -1,5 +1,7 @@
 "use client";
 
+import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
+import { formatDate } from "@/src/lib/utils/format-date";
 import {
   Laptop2,
   Monitor,
@@ -50,17 +52,9 @@ const ASSET_TYPE_ICONS: Record<string, React.ElementType> = {
 
 function formatNaira(value?: number) {
   if (value === undefined || value === null) return "—";
-  return `₦${value.toLocaleString("en-NG")}`;
+  return formatMoneyLocale(value);
 }
 
-function formatDate(date?: string) {
-  if (!date) return "—";
-  return new Date(date).toLocaleDateString("en-NG", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 interface DetailModalProps {
   open: boolean;

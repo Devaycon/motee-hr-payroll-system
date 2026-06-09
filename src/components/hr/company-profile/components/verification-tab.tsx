@@ -1,4 +1,5 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 import { useRef } from "react";
 import { AlertCircle, Download, Eye, FileText, Upload, X } from "lucide-react";
@@ -19,7 +20,7 @@ import { STAGE_ICONS, STAGE_STYLES } from "../data";
 type VerificationDocProps = {
   label: string;
   description: string;
-  numberKey: "CAC" | "TIN";
+  numberLabel: string;
   number: string;
   setNumber: (v: string) => void;
   status: VerificationStage;
@@ -32,7 +33,7 @@ type VerificationDocProps = {
 function VerificationDocCard({
   label,
   description,
-  numberKey,
+  numberLabel,
   number,
   setNumber,
   status,
@@ -63,7 +64,7 @@ function VerificationDocCard({
       <CardContent className="px-4 pb-4 flex flex-col gap-4">
         <div>
           <Label className="text-xs text-muted-foreground mb-1 block">
-            {numberKey} Number
+            {numberLabel}
           </Label>
           <Input
             value={number}
@@ -160,7 +161,7 @@ function VerificationDocCard({
                     {entry.stage}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    {entry.date}
+                    {formatDate(entry.date)}
                   </span>
                   {entry.reviewer && (
                     <span className="text-xs text-muted-foreground">
@@ -192,6 +193,9 @@ function VerificationDocCard({
 }
 
 type VerificationTabProps = {
+  cacLabel: string;
+  cacDescription: string;
+  cacNumberLabel: string;
   cacNumber: string;
   setCacNumber: (v: string) => void;
   cacStatus: VerificationStage;
@@ -199,6 +203,9 @@ type VerificationTabProps = {
   cacFile: string | null;
   setCacFile: (v: string | null) => void;
   cacHistory: VerificationHistoryEntry[];
+  tinLabel: string;
+  tinDescription: string;
+  tinNumberLabel: string;
   tinNumber: string;
   setTinNumber: (v: string) => void;
   tinStatus: VerificationStage;
@@ -209,6 +216,9 @@ type VerificationTabProps = {
 };
 
 export function VerificationTab({
+  cacLabel,
+  cacDescription,
+  cacNumberLabel,
   cacNumber,
   setCacNumber,
   cacStatus,
@@ -216,6 +226,9 @@ export function VerificationTab({
   cacFile,
   setCacFile,
   cacHistory,
+  tinLabel,
+  tinDescription,
+  tinNumberLabel,
   tinNumber,
   setTinNumber,
   tinStatus,
@@ -227,9 +240,9 @@ export function VerificationTab({
   return (
     <div className="grid grid-cols-2 gap-4">
       <VerificationDocCard
-        label="CAC Registration"
-        description="Corporate Affairs Commission certificate"
-        numberKey="CAC"
+        label={cacLabel}
+        description={cacDescription}
+        numberLabel={cacNumberLabel}
         number={cacNumber}
         setNumber={setCacNumber}
         status={cacStatus}
@@ -239,9 +252,9 @@ export function VerificationTab({
         history={cacHistory}
       />
       <VerificationDocCard
-        label="Tax Identification Number (TIN)"
-        description="Federal Inland Revenue Service TIN certificate"
-        numberKey="TIN"
+        label={tinLabel}
+        description={tinDescription}
+        numberLabel={tinNumberLabel}
         number={tinNumber}
         setNumber={setTinNumber}
         status={tinStatus}

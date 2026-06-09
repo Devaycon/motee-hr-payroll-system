@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Megaphone, Plus } from "lucide-react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useAnnouncements } from "./hooks";
 import { toast } from "sonner";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
@@ -10,12 +12,14 @@ import { StatCards } from "./components/stat-cards";
 import { AnnouncementsFeed } from "./components/announcements-feed";
 import { AnnouncementDetailModal } from "./components/announcement-detail-modal";
 import { AnnouncementFormModal } from "./components/announcement-form-modal";
-import { ANNOUNCEMENTS } from "./data";
 import type { Announcement, NewAnnouncement } from "./types";
 
 export function AnnouncementsPage() {
-  const [announcements, setAnnouncements] =
-    useState<Announcement[]>(ANNOUNCEMENTS);
+  const { data, loading } = useAnnouncements();
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  useEffect(() => {
+    if (data) setAnnouncements(data);
+  }, [data]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Announcement | null>(null);
@@ -91,6 +95,15 @@ export function AnnouncementsPage() {
   function handleDelete(id: string) {
     setAnnouncements((prev) => prev.filter((a) => a.id !== id));
     toast.success("Announcement deleted");
+  }
+
+  if (loading && !announcements.length) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
   }
 
   return (

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Textarea } from "@/src/components/ui/textarea";
 import {
   Dialog,
@@ -267,11 +267,12 @@ export function CommunityTab() {
                   className={post.isPinned ? "bg-[#4361ee]/5" : "bg-card"}
                 >
                   <div className="flex gap-3 px-5 pt-4 pb-3">
-                    <Avatar className="h-11 w-11 shrink-0">
-                      <AvatarFallback className="bg-[#4361ee]/10 text-[#4361ee] text-sm font-bold">
-                        {post.authorInitials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <PersonAvatar
+                      name={post.authorName}
+                      initials={post.authorInitials}
+                      className="h-11 w-11 shrink-0"
+                      fallbackClassName="bg-[#4361ee]/10 text-[#4361ee] text-sm font-bold"
+                    />
 
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
@@ -403,11 +404,12 @@ export function CommunityTab() {
                     <div className="border-t border-border px-5 pb-4 pt-3 space-y-3 bg-muted/30">
                       {post.comments.map((c) => (
                         <div key={c.id} className="flex gap-2.5">
-                          <Avatar className="h-7 w-7 shrink-0">
-                            <AvatarFallback className="bg-muted text-xs font-semibold">
-                              {c.authorInitials}
-                            </AvatarFallback>
-                          </Avatar>
+                          <PersonAvatar
+                            name={c.authorName}
+                            initials={c.authorInitials}
+                            className="h-7 w-7 shrink-0"
+                            fallbackClassName="bg-muted text-xs font-semibold"
+                          />
                           <div className="min-w-0 flex-1">
                             <div className="rounded-lg bg-card border border-border px-3 py-2">
                               <p className="text-xs font-semibold text-foreground">
@@ -421,11 +423,12 @@ export function CommunityTab() {
                         </div>
                       ))}
                       <div className="flex gap-2.5 pt-1">
-                        <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarFallback className="bg-[#4361ee]/10 text-[#4361ee] text-xs font-bold">
-                            {MY_INITIALS}
-                          </AvatarFallback>
-                        </Avatar>
+                        <PersonAvatar
+                          name={MY_NAME}
+                          initials={MY_INITIALS}
+                          className="h-8 w-8 shrink-0"
+                          fallbackClassName="bg-[#4361ee]/10 text-[#4361ee] text-xs font-bold"
+                        />
                         <div className="flex-1 flex gap-2">
                           <Input
                             placeholder="Write a comment…"
@@ -512,9 +515,12 @@ export function CommunityTab() {
                 const cfg = CELEBRATION_KIND_CONFIG[c.kind];
                 return (
                   <div key={c.id} className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-foreground">
-                      {c.personInitials}
-                    </div>
+                    <PersonAvatar
+                      name={c.personName}
+                      initials={c.personInitials}
+                      className="h-8 w-8 shrink-0"
+                      fallbackClassName="bg-muted text-xs font-bold text-foreground"
+                    />
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-foreground truncate">
                         {c.personName}

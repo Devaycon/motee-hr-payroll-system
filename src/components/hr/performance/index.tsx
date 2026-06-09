@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { usePerformance } from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { StatCards } from "./components/stat-cards";
@@ -8,7 +10,6 @@ import { ReviewsTable } from "./components/reviews-table";
 import { GoalsTable } from "./components/goals-table";
 import { ReviewModal } from "./components/review-modal";
 import { GoalModal } from "./components/goal-modal";
-import { PERFORMANCE_REVIEWS, PERFORMANCE_GOALS } from "./data";
 import type {
   PerformanceReview,
   PerformanceGoal,
@@ -19,9 +20,15 @@ import type {
 } from "./types";
 
 export function PerformancePage() {
-  const [reviews, setReviews] =
-    useState<PerformanceReview[]>(PERFORMANCE_REVIEWS);
-  const [goals, setGoals] = useState<PerformanceGoal[]>(PERFORMANCE_GOALS);
+  const { data, loading } = usePerformance();
+  const [reviews, setReviews] = useState<PerformanceReview[]>([]);
+  const [goals, setGoals] = useState<PerformanceGoal[]>([]);
+  useEffect(() => {
+    if (data) {
+      setReviews(data.reviews);
+      setGoals(data.goals);
+    }
+  }, [data]);
 
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [viewingReview, setViewingReview] = useState<PerformanceReview | null>(
@@ -113,6 +120,15 @@ export function PerformancePage() {
 
   function handleDeleteGoal(id: string) {
     setGoals((prev) => prev.filter((g) => g.id !== id));
+  }
+
+  if (loading && !reviews.length && !goals.length) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
   }
 
   return (

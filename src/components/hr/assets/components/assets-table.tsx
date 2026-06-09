@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
+import { useMemo, useState } from "react";
 import {
   Laptop2,
   Monitor,
@@ -22,14 +23,7 @@ import {
   Wrench,
   Trash2,
 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/src/components/ui/table";
+import { type ColumnDef } from "@tanstack/react-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +34,11 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
+import {
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
 import {
   Select,
   SelectContent,
@@ -85,7 +84,7 @@ interface AssetsTableProps {
 
 function formatNaira(value?: number) {
   if (value === undefined || value === null) return "—";
-  return `₦${value.toLocaleString("en-NG")}`;
+  return formatMoneyLocale(value);
 }
 
 export function AssetsTable({
@@ -115,6 +114,164 @@ export function AssetsTable({
       deptFilter === "all" || a.assignedToDepartment === deptFilter;
     return matchSearch && matchType && matchStatus && matchDept;
   });
+
+  const columns = useMemo<ColumnDef<Asset>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: sortableHeader("Asset"),
+        cell: ({ row }) => {
+          const TypeIcon =
+            ASSET_TYPE_ICONS[row.original.assetType] ?? Package2;
+          return (
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <TypeIcon className="size-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">
+                  {row.original.name}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {row.original.serialNumber}
+                </p>
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "assetType",
+        header: sortableHeader("Type"),
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {ASSET_TYPE_LABELS[row.original.assetType]}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "assignedTo",
+        header: sortableHeader("Assigned To"),
+        cell: ({ row }) =>
+          row.original.assignedTo ? (
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                  {row.original.assignedToInitials}
+                </div>
+                {row.original.pendingReturn && (
+                  <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-red-500 ring-2 ring-card" />
+                )}
+              </div>
+              <span className="text-sm">{row.original.assignedTo}</span>
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground">—</span>
+          ),
+      },
+      {
+        accessorKey: "assignedToDepartment",
+        header: sortableHeader("Department"),
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.assignedToDepartment ?? "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "condition",
+        header: sortableHeader("Condition"),
+        cell: ({ row }) => (
+          <Badge
+            variant="secondary"
+            className={`text-xs font-medium ${ASSET_CONDITION_STYLES[row.original.condition]}`}
+          >
+            {ASSET_CONDITION_LABELS[row.original.condition]}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "purchaseValue",
+        header: sortableHeader("Value"),
+        cell: ({ row }) => (
+          <span className="text-sm font-medium">
+            {formatNaira(row.original.purchaseValue)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: sortableHeader("Status"),
+        cell: ({ row }) => (
+          <Badge
+            variant="secondary"
+            className={`text-xs font-medium ${ASSET_STATUS_STYLES[row.original.status]}`}
+          >
+            {ASSET_STATUS_LABELS[row.original.status]}
+          </Badge>
+        ),
+      },
+      actionsColumn<Asset>((asset) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="ghost" className="size-8">
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => onView(asset)}>
+              <Eye className="mr-2 size-4" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(asset)}>
+              <Pencil className="mr-2 size-4" />
+              Edit
+            </DropdownMenuItem>
+            {asset.status === "available" && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onAssign(asset)}>
+                  <UserPlus className="mr-2 size-4" />
+                  Assign to Employee
+                </DropdownMenuItem>
+              </>
+            )}
+            {asset.status === "assigned" && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onReturn(asset)}>
+                  <Undo2 className="mr-2 size-4" />
+                  Record Return
+                </DropdownMenuItem>
+              </>
+            )}
+            {asset.status !== "under_maintenance" &&
+              asset.status !== "decommissioned" && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => onSendToMaintenance(asset.id)}
+                  >
+                    <Wrench className="mr-2 size-4" />
+                    Send to Maintenance
+                  </DropdownMenuItem>
+                </>
+              )}
+            {asset.status !== "decommissioned" && (
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => onDecommission(asset.id)}
+              >
+                <Trash2 className="mr-2 size-4" />
+                Decommission
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )),
+    ],
+    [onView, onEdit, onAssign, onReturn, onSendToMaintenance, onDecommission],
+  );
 
   return (
     <div className="space-y-4">
@@ -188,166 +345,12 @@ export function AssetsTable({
         </Button>
       </div>
 
-      <div className="rounded-lg border border-border/60 bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-65">Asset</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Assigned To</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Condition</TableHead>
-              <TableHead>Value</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-13" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8}>
-                  <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
-                    <Package2 className="size-8 opacity-30" />
-                    <p className="text-sm">No assets found.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-            {filtered.map((asset) => {
-              const TypeIcon = ASSET_TYPE_ICONS[asset.assetType] ?? Package2;
-              return (
-                <TableRow key={asset.id} className="group">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                        <TypeIcon className="size-4 text-muted-foreground" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {asset.name}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {asset.serialNumber}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {ASSET_TYPE_LABELS[asset.assetType]}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {asset.assignedTo ? (
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                            {asset.assignedToInitials}
-                          </div>
-                          {asset.pendingReturn && (
-                            <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-red-500 ring-2 ring-card" />
-                          )}
-                        </div>
-                        <span className="text-sm">{asset.assignedTo}</span>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {asset.assignedToDepartment ?? "—"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={`text-xs font-medium ${ASSET_CONDITION_STYLES[asset.condition]}`}
-                    >
-                      {ASSET_CONDITION_LABELS[asset.condition]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm font-medium">
-                      {formatNaira(asset.purchaseValue)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={`text-xs font-medium ${ASSET_STATUS_STYLES[asset.status]}`}
-                    >
-                      {ASSET_STATUS_LABELS[asset.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-8 opacity-0 group-hover:opacity-100"
-                        >
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => onView(asset)}>
-                          <Eye className="mr-2 size-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onEdit(asset)}>
-                          <Pencil className="mr-2 size-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        {asset.status === "available" && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => onAssign(asset)}>
-                              <UserPlus className="mr-2 size-4" />
-                              Assign to Employee
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        {asset.status === "assigned" && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => onReturn(asset)}>
-                              <Undo2 className="mr-2 size-4" />
-                              Record Return
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        {asset.status !== "under_maintenance" &&
-                          asset.status !== "decommissioned" && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => onSendToMaintenance(asset.id)}
-                              >
-                                <Wrench className="mr-2 size-4" />
-                                Send to Maintenance
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        {asset.status !== "decommissioned" && (
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => onDecommission(asset.id)}
-                          >
-                            <Trash2 className="mr-2 size-4" />
-                            Decommission
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={filtered}
+        getRowId={(a) => a.id}
+        emptyMessage="No assets found."
+      />
       <p className="text-xs text-muted-foreground">
         Showing {filtered.length} of {assets.length} assets
       </p>

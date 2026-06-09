@@ -1,14 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import type { Course } from "@/src/lib/types/learning";
-import {
-  MY_ENROLLMENTS,
-  MOCK_ASSESSMENT,
-  COURSES,
-} from "./components/data";
+import { MY_ENROLLMENTS, COURSES } from "./components/data";
 import type { MyEnrollment } from "./components/data";
 import { TrainingStatCards } from "./components/stat-cards";
 import { MyLearningTab } from "./components/my-learning-tab";
@@ -20,7 +16,7 @@ import { CertificateModal } from "./components/certificate-modal";
 import { EnrollModal } from "./components/enroll-modal";
 import { CourseDetailModal } from "./components/course-detail-modal";
 
-export function EmployeeTraining() {
+export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
   const [enrollments, setEnrollments] = useState<MyEnrollment[]>(MY_ENROLLMENTS);
   const [librarySearch, setLibrarySearch] = useState("");
   const [libraryCategoryFilter, setLibraryCategoryFilter] = useState<string>("all");
@@ -34,85 +30,102 @@ export function EmployeeTraining() {
   const [enrollConfirmOpen, setEnrollConfirmOpen] = useState(false);
   const [courseDetailOpen, setCourseDetailOpen] = useState(false);
 
-  const [playerProgress, setPlayerProgress] = useState(0);
-  const [playerPlaying, setPlayerPlaying] = useState(false);
-  const playerInterval = useRef<NodeJS.Timeout | null>(null);
-
-  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [answers, setAnswers] = useState<Record<string, number>>({});
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
   const [assessmentScore, setAssessmentScore] = useState<number | null>(null);
+  const [assessmentPassed, setAssessmentPassed] = useState(false);
   const [enrolledCourseId, setEnrolledCourseId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (playerPlaying) {
-      playerInterval.current = setInterval(() => {
-        setPlayerProgress((p) => {
-          if (p >= 100) {
-            setPlayerPlaying(false);
-            clearInterval(playerInterval.current!);
-            return 100;
-          }
-          return p + 0.5;
-        });
-      }, 200);
-    } else {
-      if (playerInterval.current) clearInterval(playerInterval.current);
-    }
-    return () => {
-      if (playerInterval.current) clearInterval(playerInterval.current);
-    };
-  }, [playerPlaying]);
+  const quizForCourse = (courseId?: string) =>
+    COURSES.find((c) => c.id === courseId)?.quiz ?? null;
 
   function openPlayer(enrollment: MyEnrollment) {
     setSelectedEnrollment(enrollment);
-    setPlayerProgress(enrollment.progress);
-    setPlayerPlaying(false);
     setAssessmentSubmitted(false);
     setAnswers({});
     setAssessmentScore(null);
     setPlayerOpen(true);
   }
 
-  function handleSaveProgress() {
-    const newProgress = Math.round(playerProgress);
+  // Persist watched progress + resume position; bump status to in_progress.
+  function handleSaveProgress(percent: number, positionSeconds: number) {
+    const newProgress = Math.round(percent);
     setEnrollments((prev) =>
       prev.map((e) =>
         e.id === selectedEnrollment?.id
           ? {
               ...e,
-              progress: newProgress,
-              status:
-                newProgress === 100
-                  ? "completed"
-                  : newProgress > 0
-                    ? "in_progress"
-                    : e.status,
-              completedAt:
-                newProgress === 100
-                  ? new Date().toISOString().split("T")[0]
-                  : e.completedAt,
+              progress: Math.max(e.progress, newProgress),
+              status: newProgress > 0 && e.status === "enrolled" ? "in_progress" : e.status,
+              lastPositionSeconds: positionSeconds,
             }
           : e,
       ),
     );
     setPlayerOpen(false);
-    if (newProgress === 100 && !assessmentSubmitted) {
-      setAssessmentOpen(true);
-    }
   }
 
+  // Video finished (or marked watched). With a quiz, completion is gated on passing it;
+  // without one, the training is complete.
+  function handleCompleteTraining() {
+    const quiz = quizForCourse(selectedEnrollment?.courseId);
+    const today = new Date().toISOString().split("T")[0];
+    setEnrollments((prev) =>
+      prev.map((e) =>
+        e.id === selectedEnrollment?.id
+          ? {
+              ...e,
+              progress: 100,
+              status: quiz
+                ? e.status === "enrolled"
+                  ? "in_progress"
+                  : e.status
+                : "completed",
+              completedAt: quiz ? e.completedAt : e.completedAt ?? today,
+            }
+          : e,
+      ),
+    );
+    setPlayerOpen(false);
+    if (quiz && !assessmentSubmitted) setAssessmentOpen(true);
+  }
+
+  // Weighted grade vs the quiz's passing score; records the attempt and gates completion.
   function handleSubmitAssessment() {
-    const correct = MOCK_ASSESSMENT.filter((q) => answers[q.id] === q.correct).length;
-    const score = Math.round((correct / MOCK_ASSESSMENT.length) * 100);
+    if (!selectedEnrollment) return;
+    const quiz = quizForCourse(selectedEnrollment.courseId);
+    if (!quiz) return;
+    const totalPoints = quiz.questions.reduce((s, q) => s + q.points, 0) || 1;
+    const earned = quiz.questions.reduce(
+      (s, q) => s + (answers[q.id] === q.correctIndex ? q.points : 0),
+      0,
+    );
+    const score = Math.round((earned / totalPoints) * 100);
+    const passed = score >= quiz.passingScore;
     setAssessmentScore(score);
+    setAssessmentPassed(passed);
     setAssessmentSubmitted(true);
-    if (score >= 70) {
-      setEnrollments((prev) =>
-        prev.map((e) =>
-          e.id === selectedEnrollment?.id ? { ...e, score } : e,
-        ),
-      );
-    }
+    setEnrollments((prev) =>
+      prev.map((e) => {
+        if (e.id !== selectedEnrollment.id) return e;
+        const attempts = [
+          ...(e.quizAttempts ?? []),
+          { at: new Date().toISOString().split("T")[0], score, passed },
+        ];
+        const outOfAttempts =
+          quiz.maxAttempts != null && attempts.length >= quiz.maxAttempts;
+        return {
+          ...e,
+          quizAttempts: attempts,
+          quizPassed: passed,
+          score,
+          status: passed ? "completed" : outOfAttempts ? "failed" : e.status,
+          completedAt: passed
+            ? e.completedAt ?? new Date().toISOString().split("T")[0]
+            : e.completedAt,
+        };
+      }),
+    );
   }
 
   function handleConfirmEnroll() {
@@ -141,12 +154,14 @@ export function EmployeeTraining() {
 
   return (
     <div className="flex flex-col gap-5 pb-10">
-      <div className="py-6 w-fit">
-        <h1 className="text-4xl font-bold text-foreground">Learning & Development</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Track your courses, complete training, and grow your skills.
-        </p>
-      </div>
+      {!embedded && (
+        <div className="py-6 w-fit">
+          <h1 className="text-4xl font-bold text-foreground">Learning & Development</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Track your courses, complete training, and grow your skills.
+          </p>
+        </div>
+      )}
 
       <TrainingStatCards enrollments={enrollments} />
 
@@ -198,26 +213,29 @@ export function EmployeeTraining() {
       <PlayerModal
         open={playerOpen}
         enrollment={selectedEnrollment}
-        playerProgress={playerProgress}
-        playerPlaying={playerPlaying}
-        onTogglePlay={() => setPlayerPlaying((p) => !p)}
         onSaveProgress={handleSaveProgress}
+        onComplete={handleCompleteTraining}
         onClose={() => setPlayerOpen(false)}
       />
 
       <AssessmentModal
         open={assessmentOpen}
         enrollment={selectedEnrollment}
-        questions={MOCK_ASSESSMENT}
+        quiz={quizForCourse(selectedEnrollment?.courseId)}
         answers={answers}
         submitted={assessmentSubmitted}
         score={assessmentScore}
+        passed={assessmentPassed}
+        attemptsUsed={
+          enrollments.find((e) => e.id === selectedEnrollment?.id)?.quizAttempts?.length ?? 0
+        }
         onAnswer={(qId, idx) => setAnswers((prev) => ({ ...prev, [qId]: idx }))}
         onSubmit={handleSubmitAssessment}
         onRetake={() => {
           setAnswers({});
           setAssessmentSubmitted(false);
           setAssessmentScore(null);
+          setAssessmentPassed(false);
         }}
         onViewCertificate={() => {
           setAssessmentOpen(false);

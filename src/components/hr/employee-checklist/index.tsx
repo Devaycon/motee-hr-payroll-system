@@ -1,19 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useEmployeeChecklist } from "./hooks";
 import { Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { CHECKLIST_ITEMS, NEW_HIRES } from "./data";
 import type { ChecklistItem, NewChecklistItem, NewHire } from "./types";
 import { ChecklistTable } from "./components/checklist-table";
 import { NewHiresTable } from "./components/new-hires-table";
 import { ChecklistItemModal } from "./components/checklist-item-modal";
 
 export function EmployeeChecklistPage() {
-  const [items, setItems] = useState<ChecklistItem[]>(CHECKLIST_ITEMS);
-  const [hires] = useState<NewHire[]>(NEW_HIRES);
+  const { data, loading } = useEmployeeChecklist();
+  const [items, setItems] = useState<ChecklistItem[]>([]);
+  const [hires, setHires] = useState<NewHire[]>([]);
+  useEffect(() => {
+    if (data) {
+      setItems(data.items);
+      setHires(data.hires);
+    }
+  }, [data]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ChecklistItem | null>(null);
 
@@ -65,6 +73,15 @@ export function EmployeeChecklistPage() {
       };
       setItems((prev) => [...prev, newItem]);
     }
+  }
+
+  if (loading && !items.length) {
+    return (
+      <div className="flex flex-col gap-6 py-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
   }
 
   return (

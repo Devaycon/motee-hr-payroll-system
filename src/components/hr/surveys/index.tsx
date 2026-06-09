@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useSurveys } from "./hooks";
 import { ClipboardList, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
@@ -21,7 +23,6 @@ import { EngagementTrend } from "./components/engagement-trend";
 import { SurveyResultsModal } from "./components/survey-results-modal";
 import { SurveyFormModal } from "./components/survey-form-modal";
 import {
-  SURVEYS,
   SURVEY_TYPE_CONFIG,
   PULSE_FREQUENCY_LABEL,
   getResponseRate,
@@ -29,7 +30,11 @@ import {
 import type { Survey, NewSurvey } from "./types";
 
 export function SurveysPage() {
-  const [surveys, setSurveys] = useState<Survey[]>(SURVEYS);
+  const { data, loading } = useSurveys();
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+  useEffect(() => {
+    if (data) setSurveys(data);
+  }, [data]);
   const [formOpen, setFormOpen] = useState(false);
   const [editSurvey, setEditSurvey] = useState<Survey | null>(null);
   const [resultsSurvey, setResultsSurvey] = useState<Survey | null>(null);
@@ -139,6 +144,15 @@ export function SurveysPage() {
   const pulseSurveys = surveys.filter(
     (s) => s.type === "pulse" && !s.isArchived,
   );
+
+  if (loading && !surveys.length) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

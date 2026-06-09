@@ -60,7 +60,7 @@ function SelectTrigger({
 function SelectContent({
   className,
   children,
-  position = "item-aligned",
+  position = "popper",
   align = "center",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
@@ -83,8 +83,11 @@ function SelectContent({
         <SelectPrimitive.Viewport
           data-position={position}
           className={cn(
-            "data-[position=popper]:h-(--radix-select-trigger-height) data-[position=popper]:w-full data-[position=popper]:min-w-(--radix-select-trigger-width)",
-            position === "popper" && "",
+            // In popper mode size to content (the Content handles max-height +
+            // scrolling); only match the trigger width. Avoid pinning the
+            // viewport to the trigger height, which clips the list.
+            position === "popper" &&
+              "w-full min-w-(--radix-select-trigger-width)",
           )}
         >
           {children}

@@ -24,7 +24,7 @@ import {
 } from "@/src/components/ui/select";
 import { Separator } from "@/src/components/ui/separator";
 import { Badge } from "@/src/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import {
   KUDOS_TYPE_CONFIG,
   KUDOS_TYPE_OPTIONS,
@@ -171,11 +171,12 @@ export function SendKudosModal({ open, onClose, onSave }: SendKudosModalProps) {
                 <SelectTrigger>
                   {selectedEmployee ? (
                     <div className="flex items-center gap-2">
-                      <Avatar className="size-5">
-                        <AvatarFallback className="text-[9px] font-bold bg-primary/10 text-primary">
-                          {selectedEmployee.initials}
-                        </AvatarFallback>
-                      </Avatar>
+                      <PersonAvatar
+                        name={selectedEmployee.name}
+                        initials={selectedEmployee.initials}
+                        className="size-5"
+                        fallbackClassName="text-[9px] font-bold bg-primary/10 text-primary"
+                      />
                       <span className="text-sm">{selectedEmployee.name}</span>
                       <span className="text-xs text-muted-foreground">
                         · {selectedEmployee.dept}
@@ -189,11 +190,12 @@ export function SendKudosModal({ open, onClose, onSave }: SendKudosModalProps) {
                   {EMPLOYEE_ROSTER.map((e) => (
                     <SelectItem key={e.name} value={e.name}>
                       <div className="flex items-center gap-2">
-                        <Avatar className="size-5">
-                          <AvatarFallback className="text-[9px] font-bold bg-primary/10 text-primary">
-                            {e.initials}
-                          </AvatarFallback>
-                        </Avatar>
+                        <PersonAvatar
+                          name={e.name}
+                          initials={e.initials}
+                          className="size-5"
+                          fallbackClassName="text-[9px] font-bold bg-primary/10 text-primary"
+                        />
                         <span>{e.name}</span>
                         <span className="text-xs text-muted-foreground">
                           · {e.dept}

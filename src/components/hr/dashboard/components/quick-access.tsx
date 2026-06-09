@@ -8,7 +8,6 @@ import {
   Package,
   TrendingUp,
   Clock,
-  Wallet,
   GraduationCap,
   History,
 } from "lucide-react";
@@ -26,7 +25,6 @@ const RECENT_MODULES = [
   { label: "Assets", link: "/operations/assets", icon: Package },
   { label: "Performance", link: "/talent/performance", icon: TrendingUp },
   { label: "Attendance", link: "/time-payroll/attendance", icon: Clock },
-  { label: "Payroll", link: "/time-payroll/payroll", icon: Wallet },
   { label: "Training", link: "/talent/training", icon: GraduationCap },
 ];
 

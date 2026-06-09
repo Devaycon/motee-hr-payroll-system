@@ -1,12 +1,14 @@
 ﻿import dynamic from "next/dynamic";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Onboarding" };
+export const metadata: Metadata = { title: "Preboarding & Onboarding" };
 
-const OnboardingPage = dynamic(() =>
-  import("@/src/components/hr/onboarding").then((m) => m.OnboardingPage),
+const PreboardingOnboardingPage = dynamic(() =>
+  import("@/src/components/hr/onboarding/preboarding-onboarding").then(
+    (m) => m.PreboardingOnboardingPage,
+  ),
 );
 
 export default function OnboardingRoute() {
-  return <OnboardingPage />;
+  return <PreboardingOnboardingPage />;
 }

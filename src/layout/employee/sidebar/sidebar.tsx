@@ -7,13 +7,18 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Zap, Settings } from "lucide-react";
 import { routes } from "./routes";
 import { cn } from "@/src/lib/utils";
+import { useHasDirectReports } from "@/src/components/employee/team/hooks";
 
 const Sidebar = () => {
   const pathname = usePathname();
+  const hasReports = useHasDirectReports();
 
-  const overviewRoutes = routes.filter((r) => r.group === "Overview");
-  const settingsRoute = routes.find((r) => r.group === "Settings");
-  const otherRoutes = routes.filter(
+  // Manager-only items (e.g. My Team) are hidden unless the user has reports.
+  const visibleRoutes = routes.filter((r) => !r.managerOnly || hasReports);
+
+  const overviewRoutes = visibleRoutes.filter((r) => r.group === "Overview");
+  const settingsRoute = visibleRoutes.find((r) => r.group === "Settings");
+  const otherRoutes = visibleRoutes.filter(
     (r) => r.group !== "Overview" && r.group !== "Settings",
   );
 

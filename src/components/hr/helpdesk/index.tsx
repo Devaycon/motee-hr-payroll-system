@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useHelpdeskTickets } from "./hooks";
 import { HeadphonesIcon, Plus, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
@@ -21,7 +23,6 @@ import { CaseDetailModal } from "./components/case-detail-modal";
 import { NewCaseModal } from "./components/new-case-modal";
 import { FAQPanel } from "./components/faq-panel";
 import {
-  TICKETS,
   FAQ_ARTICLES,
   TICKET_CATEGORY_CONFIG,
   TICKET_CATEGORY_OPTIONS,
@@ -41,7 +42,11 @@ import type {
 } from "./types";
 
 export function HelpdeskPage() {
-  const [tickets, setTickets] = useState<HelpDeskTicket[]>(TICKETS);
+  const { data, loading } = useHelpdeskTickets();
+  const [tickets, setTickets] = useState<HelpDeskTicket[]>([]);
+  useEffect(() => {
+    if (data) setTickets(data);
+  }, [data]);
   const [faqArticles, setFaqArticles] = useState<FAQArticle[]>(FAQ_ARTICLES);
   const [newCaseOpen, setNewCaseOpen] = useState(false);
   const [detailTicket, setDetailTicket] = useState<HelpDeskTicket | null>(null);
@@ -192,6 +197,15 @@ export function HelpdeskPage() {
   const stats = computeHelpdeskStats(tickets);
   const categoryBreakdown = getCategoryBreakdown(tickets);
   const statusBreakdown = getStatusBreakdown(tickets);
+
+  if (loading && !tickets.length) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

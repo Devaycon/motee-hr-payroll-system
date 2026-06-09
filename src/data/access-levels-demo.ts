@@ -44,10 +44,11 @@ export const ACTION_LABELS: Record<PermissionAction, string> = {
   edit: "Edit",
   delete: "Delete",
   export: "Export",
+  approve: "Approve",
 };
 
 export function buildEmptyPermissions(): ModulePermission[] {
-  return ALL_MODULES.map((module) => ({ module, actions: [] }));
+  return ALL_MODULES.map((module) => ({ module, access: false, actions: [] }));
 }
 
 export interface AccessLevelStats {
@@ -82,6 +83,7 @@ function makeLevel(
 ): AccessLevel {
   const permissions: ModulePermission[] = ALL_MODULES.map((module) => ({
     module,
+    access: (modPerms[module] ?? []).length > 0,
     actions: modPerms[module] ?? [],
   }));
   return {

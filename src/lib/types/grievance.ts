@@ -1,49 +1,47 @@
-﻿export type GrievanceCategory =
+// Unified "Employee Relations Cases" model.
+// One case model covers grievance, disciplinary and all related complaint types,
+// progressing through a single 8-stage workflow.
+
+export type CaseComplaintType =
+  | "grievance"
+  | "disciplinary"
   | "harassment"
-  | "unfair_treatment"
-  | "pay_dispute"
-  | "working_conditions"
   | "discrimination"
-  | "other";
-
-export type DisciplinaryCategory =
+  | "pay_dispute"
   | "misconduct"
-  | "poor_performance"
   | "attendance"
-  | "insubordination"
   | "policy_violation"
-  | "other";
+  | "working_conditions";
 
-export type GrievanceStatus =
+export type CaseStage =
   | "raised"
-  | "under_review"
-  | "under_investigation"
-  | "hearing_scheduled"
-  | "mediation"
-  | "resolved"
-  | "closed"
-  | "appealed";
-
-export type DisciplinaryStatus =
-  | "reported"
+  | "triage"
+  | "assigned"
   | "investigation"
-  | "hearing_scheduled"
+  | "hearing"
   | "outcome_issued"
-  | "appealed"
+  | "appeal"
   | "closed";
 
-export type DisciplinaryOutcome =
+export type ConfidentialityLevel =
+  | "standard"
+  | "confidential"
+  | "highly_confidential";
+
+export type CaseOutcome =
   | "verbal_warning"
   | "written_warning"
   | "final_written_warning"
   | "suspension"
   | "demotion"
   | "termination"
-  | "no_action";
+  | "no_action"
+  | "upheld"
+  | "partially_upheld"
+  | "not_upheld"
+  | "resolved";
 
 export type CasePriority = "low" | "medium" | "high" | "urgent";
-
-export type CaseType = "grievance" | "disciplinary";
 
 export interface CaseNote {
   id: string;
@@ -56,80 +54,69 @@ export interface CaseNote {
   isInternal?: boolean;
 }
 
-export interface GrievanceCase {
+export interface CaseWitness {
+  name: string;
+  statement?: string;
+}
+
+export interface CaseEvidence {
+  name: string;
+  url?: string;
+  uploadedAt: string;
+}
+
+export interface ERCase {
   id: string;
-  type: "grievance";
+  /** Human-readable case ID, e.g. ERC-001. */
   caseNumber: string;
+  complaintType: CaseComplaintType;
   employeeName: string;
   employeeInitials: string;
   employeeDept: string;
   dateRaised: string;
   incidentDate?: string;
   description: string;
-  category: GrievanceCategory;
-  status: GrievanceStatus;
+  stage: CaseStage;
   priority: CasePriority;
+  confidentialityLevel: ConfidentialityLevel;
   assignedTo?: string;
   assignedInitials?: string;
+  // Investigation
+  witnesses: CaseWitness[];
+  evidence: CaseEvidence[];
+  // Hearing
+  hearingDate?: string;
+  hearingPanel: string[];
+  // Outcome
+  outcome?: CaseOutcome | string;
+  outcomeDate?: string;
+  suspensionDays?: number;
+  // Appeal
   hasAppeal: boolean;
   appealCaseId?: string;
-  hearingDate?: string;
-  outcome?: string;
-  outcomeDate?: string;
+  appealReviewer?: string;
+  appealGrounds?: string;
+  // Closure
+  retentionPeriod?: string;
+  closureDate?: string;
+  // Trail
   notes: CaseNote[];
   createdAt: string;
   updatedAt: string;
-  resolvedAt?: string;
 }
 
-export interface DisciplinaryCase {
-  id: string;
-  type: "disciplinary";
-  caseNumber: string;
-  employeeName: string;
-  employeeInitials: string;
-  employeeDept: string;
-  incidentDate: string;
-  dateRaised: string;
-  description: string;
-  category: DisciplinaryCategory;
-  status: DisciplinaryStatus;
-  priority: CasePriority;
-  assignedTo?: string;
-  assignedInitials?: string;
-  outcome?: DisciplinaryOutcome;
-  hasAppeal: boolean;
-  appealCaseId?: string;
-  hearingDate?: string;
-  outcomeDate?: string;
-  notes: CaseNote[];
-  createdAt: string;
-  updatedAt: string;
-  resolvedAt?: string;
-}
+/** Backwards-compatibility alias for consumers migrating to the unified model. */
+export type AnyCase = ERCase;
 
-export type AnyCase = GrievanceCase | DisciplinaryCase;
-
-export interface NewGrievanceCase {
-  type: "grievance";
+export interface NewERCase {
+  complaintType: CaseComplaintType;
   employeeName: string;
   employeeDept: string;
   incidentDate?: string;
   description: string;
-  category: string;
-  priority: string;
+  priority: CasePriority;
+  confidentialityLevel: ConfidentialityLevel;
   assignedTo?: string;
+  witnesses?: CaseWitness[];
+  evidence?: CaseEvidence[];
 }
-
-export interface NewDisciplinaryCase {
-  type: "disciplinary";
-  employeeName: string;
-  employeeDept: string;
-  incidentDate: string;
-  description: string;
-  category: string;
-  priority: string;
-  assignedTo?: string;
-}
-
-

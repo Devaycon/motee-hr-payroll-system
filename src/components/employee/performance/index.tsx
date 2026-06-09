@@ -5,6 +5,8 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import type { PerformanceGoal, GoalCategory, PerformanceReview } from "@/src/lib/types/performance";
 import { MY_GOALS_INITIAL, MY_NAME, SELF_ASSESSMENT_DRAFT, MY_REVIEW } from "./components/data";
+import { useMyGoals } from "./hooks";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { daysUntil } from "./components/helpers";
 import { PerformanceStatCards } from "./components/stat-cards";
 import { ReviewBanner } from "./components/review-banner";
@@ -19,8 +21,13 @@ import { ReviewDetailModal } from "./components/review-detail-modal";
 import { PeerFeedbackModal } from "./components/peer-feedback-modal";
 
 export function MyPerformancePage() {
+  const { data: localeGoals } = useMyGoals();
+  const currentUser = useAppSelector((s) => s.auth.user);
+  const myName = currentUser?.name ?? MY_NAME;
   const [tab, setTab] = useState("overview");
-  const [goals, setGoals] = useState<PerformanceGoal[]>(MY_GOALS_INITIAL);
+  const [goals, setGoals] = useState<PerformanceGoal[]>(
+    localeGoals && localeGoals.length ? localeGoals : MY_GOALS_INITIAL,
+  );
 
   const [goalDetail, setGoalDetail] = useState<PerformanceGoal | null>(null);
   const [progressGoal, setProgressGoal] = useState<PerformanceGoal | null>(null);
@@ -69,8 +76,8 @@ export function MyPerformancePage() {
   }) {
     const goal: PerformanceGoal = {
       id: `pg-me-${Date.now()}`,
-      employeeName: MY_NAME,
-      employeeInitials: "AO",
+      employeeName: myName,
+      employeeInitials: currentUser?.initials ?? "AO",
       department: "Engineering",
       goalTitle: data.title,
       description: data.desc || undefined,

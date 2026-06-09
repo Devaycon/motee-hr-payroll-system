@@ -1,262 +1,201 @@
-﻿import type {
-  JobRequisition,
-  Applicant,
+import type {
   RequisitionStatus,
-  RequisitionEmploymentType,
-  ApplicationStage,
+  RecruitmentStageType,
+  HiringPriority,
+  FormFieldType,
+  RequisitionFlow,
+  CriteriaCondition,
 } from "@/src/lib/types/recruitment";
 
 export const REQUISITION_STATUS_LABELS: Record<RequisitionStatus, string> = {
   draft: "Draft",
   pending_approval: "Pending Approval",
   approved: "Approved",
-  rejected: "Rejected",
-  closed: "Closed",
+  open: "Open",
+  interviewing: "Interviewing",
+  offer_stage: "Offer Stage",
   filled: "Filled",
+  closed: "Closed",
+  cancelled: "Cancelled",
+  on_hold: "On Hold",
 };
 
 export const REQUISITION_STATUS_STYLES: Record<RequisitionStatus, string> = {
   draft: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-  pending_approval: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
-  approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
-  rejected: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
+  pending_approval:
+    "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+  approved:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
+  open: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400",
+  interviewing:
+    "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+  offer_stage:
+    "bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400",
+  filled: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
   closed: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-  filled: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
+  on_hold:
+    "bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400",
 };
 
-export const EMPLOYMENT_TYPE_LABELS: Record<RequisitionEmploymentType, string> = {
-  full_time: "Full-time",
-  part_time: "Part-time",
-  contract: "Contract",
-  internship: "Internship",
+export { EMPLOYMENT_TYPE_LABELS } from "@/src/lib/constants/employment-types";
+
+export const HIRING_PRIORITY_LABELS: Record<HiringPriority, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+  urgent: "Urgent",
 };
 
-export const STAGE_LABELS: Record<ApplicationStage, string> = {
-  applied: "Applied",
-  screening: "Screening",
+export const HIRING_PRIORITY_STYLES: Record<HiringPriority, string> = {
+  low: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+  medium: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400",
+  high: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+  urgent: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
+};
+
+// ── Recruitment stage types (per-requisition pipeline) ───────────────────────
+/** All stage types in pipeline order. */
+export const RECRUITMENT_STAGE_TYPES: RecruitmentStageType[] = [
+  "applicants",
+  "shortlisted",
+  "interview",
+  "hired",
+];
+
+/** Stages that can be toggled on/off (applicants & hired are always present). */
+export const OPTIONAL_STAGES: RecruitmentStageType[] = [
+  "shortlisted",
+  "interview",
+];
+
+export const STAGE_TYPE_LABELS: Record<RecruitmentStageType, string> = {
+  applicants: "Applicants",
+  shortlisted: "Shortlisted",
   interview: "Interview",
-  assessment: "Assessment",
-  offer: "Offer",
   hired: "Hired",
-  rejected: "Rejected",
 };
 
-export const STAGE_STYLES: Record<ApplicationStage, string> = {
-  applied: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-  screening: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
-  interview: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
-  assessment: "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-400",
-  offer: "bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400",
-  hired: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
-  rejected: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
+export const STAGE_TYPE_STYLES: Record<RecruitmentStageType, string> = {
+  applicants:
+    "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+  shortlisted:
+    "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-400",
+  interview:
+    "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+  hired:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
 };
 
-export const STAGE_ORDER: ApplicationStage[] = [
-  "applied", "screening", "interview", "assessment", "offer", "hired", "rejected",
+/**
+ * Default pipeline: a fixed three-tab pipeline — Applicants → Interview → Hired,
+ * each advanced manually by a recruiter. Shortlisted is disabled (removed from
+ * the product); applicants advance straight to the interview stage.
+ */
+export function defaultFlow(): RequisitionFlow {
+  return {
+    stages: [
+      { type: "applicants", enabled: true },
+      { type: "shortlisted", enabled: false, gate: { manual: true } },
+      { type: "interview", enabled: true, gate: { manual: true } },
+      { type: "hired", enabled: true, gate: { manual: true } },
+    ],
+  };
+}
+
+/** Operators available when building filter constraints / conditions. */
+export const OPERATOR_OPTIONS: {
+  value: CriteriaCondition["operator"];
+  label: string;
+}[] = [
+  { value: "eq", label: "is" },
+  { value: "neq", label: "is not" },
+  { value: "includes", label: "contains" },
+  { value: "gte", label: "≥" },
+  { value: "lte", label: "≤" },
 ];
 
 export const SOURCE_LABELS: Record<string, string> = {
   linkedin: "LinkedIn",
+  jobberman: "Jobberman",
   referral: "Referral",
-  website: "Company Website",
-  jobboard: "Job Board",
-  agency: "Agency",
-  direct: "Direct Application",
+  careers_page: "Careers Page",
+  agency: "Recruitment Agency",
+  nysc_portal: "NYSC Portal",
+  internal_transfer: "Internal Transfer",
 };
 
-export const DEPARTMENT_OPTIONS = [
-  "Engineering",
-  "Human Resources",
-  "Finance",
-  "Marketing",
-  "Product",
-  "Sales",
-  "Operations",
-  "Legal",
-];
+export const SOURCE_OPTIONS = Object.keys(SOURCE_LABELS);
 
-export function formatSalary(amount: number): string {
-  return `\u20A6${amount.toLocaleString("en-NG")}`;
+// Department options are sourced from the centralized system-data config.
+export { DEPARTMENTS as DEPARTMENT_OPTIONS } from "@/src/config/system-data";
+
+// ── Job-posting platforms ────────────────────────────────────────────────────
+export interface PostingPlatform {
+  id: string;
+  label: string;
+  /** Short description of the channel. */
+  hint: string;
 }
 
-export const JOB_REQUISITIONS: JobRequisition[] = [
-  {
-    id: "req-001",
-    positionTitle: "Senior Software Engineer",
-    department: "Engineering",
-    hiringManager: "Emeka Obi",
-    employmentType: "full_time",
-    status: "approved",
-    openings: 2,
-    salaryMin: 800000,
-    salaryMax: 1200000,
-    jobDescription: "We are looking for a Senior Software Engineer to design and build scalable services.",
-    requiredSkills: ["Node.js", "TypeScript", "PostgreSQL", "AWS"],
-    targetStartDate: "2026-05-01",
-    applicantCount: 12,
-    createdAt: "2026-03-01",
-  },
-  {
-    id: "req-002",
-    positionTitle: "HR Officer",
-    department: "Human Resources",
-    hiringManager: "Amaka Nwosu",
-    employmentType: "full_time",
-    status: "pending_approval",
-    openings: 1,
-    salaryMin: 280000,
-    salaryMax: 420000,
-    jobDescription: "We need an HR Officer to support HR operations including onboarding and employee relations.",
-    requiredSkills: ["HR Management", "Recruitment", "Labour Law"],
-    targetStartDate: "2026-05-15",
-    applicantCount: 7,
-    createdAt: "2026-03-10",
-  },
-  {
-    id: "req-003",
-    positionTitle: "Financial Analyst",
-    department: "Finance",
-    hiringManager: "Tunde Adeyemi",
-    employmentType: "full_time",
-    status: "approved",
-    openings: 1,
-    salaryMin: 400000,
-    salaryMax: 600000,
-    jobDescription: "Join the finance team to conduct modelling and budgetary analysis.",
-    requiredSkills: ["Financial Modelling", "Excel", "PowerBI", "IFRS"],
-    targetStartDate: "2026-06-01",
-    applicantCount: 4,
-    createdAt: "2026-03-15",
-  },
-  {
-    id: "req-004",
-    positionTitle: "DevOps Engineer",
-    department: "Engineering",
-    hiringManager: "Emeka Obi",
-    employmentType: "full_time",
-    status: "filled",
-    openings: 1,
-    salaryMin: 650000,
-    salaryMax: 950000,
-    jobDescription: "Manage CI/CD pipelines and ensure infrastructure reliability.",
-    requiredSkills: ["Kubernetes", "Terraform", "AWS", "Linux"],
-    targetStartDate: "2026-04-01",
-    applicantCount: 6,
-    createdAt: "2026-02-01",
-  },
-  {
-    id: "req-005",
-    positionTitle: "Product Designer",
-    department: "Product",
-    hiringManager: "Ngozi Okeke",
-    employmentType: "contract",
-    status: "approved",
-    openings: 1,
-    salaryMin: 300000,
-    salaryMax: 500000,
-    jobDescription: "Design intuitive product experiences aligned with our design system.",
-    requiredSkills: ["Figma", "UX Research", "Prototyping"],
-    targetStartDate: "2026-05-01",
-    applicantCount: 9,
-    createdAt: "2026-03-20",
-  },
+export const POSTING_PLATFORMS: PostingPlatform[] = [
+  { id: "careers_page", label: "Company Careers Page", hint: "Your own site" },
+  { id: "linkedin", label: "LinkedIn", hint: "Professional network" },
+  { id: "indeed", label: "Indeed", hint: "Global job board" },
+  { id: "jobberman", label: "Jobberman", hint: "Top job board in Nigeria" },
+  { id: "glassdoor", label: "Glassdoor", hint: "Reviews + jobs" },
+  { id: "nysc_portal", label: "NYSC Portal", hint: "Graduate placements" },
+  { id: "referral", label: "Referral Network", hint: "Employee referrals" },
 ];
 
-export const APPLICANTS: Applicant[] = [
-  {
-    id: "app-001",
-    requisitionId: "req-001",
-    requisitionTitle: "Senior Software Engineer",
-    name: "Tomiwa Adebayo",
-    initials: "TA",
-    email: "tomiwa@gmail.com",
-    source: "linkedin",
-    stage: "interview",
-    appliedAt: "2026-03-05",
-    updatedAt: "2026-03-15",
-  },
-  {
-    id: "app-002",
-    requisitionId: "req-001",
-    requisitionTitle: "Senior Software Engineer",
-    name: "Grace Okonkwo",
-    initials: "GO",
-    email: "grace.ok@gmail.com",
-    source: "referral",
-    stage: "screening",
-    appliedAt: "2026-03-06",
-    updatedAt: "2026-03-10",
-  },
-  {
-    id: "app-003",
-    requisitionId: "req-001",
-    requisitionTitle: "Senior Software Engineer",
-    name: "David Mensah",
-    initials: "DM",
-    email: "d.mensah@gmail.com",
-    source: "website",
-    stage: "offer",
-    appliedAt: "2026-03-04",
-    updatedAt: "2026-03-25",
-  },
-  {
-    id: "app-004",
-    requisitionId: "req-002",
-    requisitionTitle: "HR Officer",
-    name: "Sade Williams",
-    initials: "SW",
-    email: "sade.w@gmail.com",
-    source: "jobboard",
-    stage: "applied",
-    appliedAt: "2026-03-12",
-    updatedAt: "2026-03-12",
-  },
-  {
-    id: "app-005",
-    requisitionId: "req-002",
-    requisitionTitle: "HR Officer",
-    name: "Emeka Osei",
-    initials: "EO",
-    email: "emeka.os@gmail.com",
-    source: "referral",
-    stage: "screening",
-    appliedAt: "2026-03-11",
-    updatedAt: "2026-03-16",
-  },
-  {
-    id: "app-006",
-    requisitionId: "req-003",
-    requisitionTitle: "Financial Analyst",
-    name: "Chidi Nwosu",
-    initials: "CN",
-    email: "chidi.n@gmail.com",
-    source: "website",
-    stage: "applied",
-    appliedAt: "2026-03-18",
-    updatedAt: "2026-03-18",
-  },
-  {
-    id: "app-007",
-    requisitionId: "req-004",
-    requisitionTitle: "DevOps Engineer",
-    name: "Nneka Obiora",
-    initials: "NO",
-    email: "nneka.ob@gmail.com",
-    source: "agency",
-    stage: "hired",
-    appliedAt: "2026-02-05",
-    updatedAt: "2026-03-01",
-  },
-  {
-    id: "app-008",
-    requisitionId: "req-005",
-    requisitionTitle: "Product Designer",
-    name: "Funmi Adesanya",
-    initials: "FA",
-    email: "funmi.a@gmail.com",
-    source: "linkedin",
-    stage: "interview",
-    appliedAt: "2026-03-22",
-    updatedAt: "2026-03-28",
-  },
+// ── Application form builder ──────────────────────────────────────────────────
+export const FORM_FIELD_TYPE_LABELS: Record<FormFieldType, string> = {
+  short_text: "Short text",
+  long_text: "Paragraph",
+  email: "Email",
+  phone: "Phone",
+  number: "Number",
+  date: "Date",
+  dropdown: "Dropdown",
+  radio: "Single choice",
+  checkboxes: "Multiple choice",
+  yes_no: "Yes / No",
+  file: "File upload",
+};
+
+/** Choice-style fields that need an options list. */
+export const CHOICE_FIELD_TYPES: FormFieldType[] = [
+  "dropdown",
+  "radio",
+  "checkboxes",
 ];
+
+// ── Requisition display status (Requisition tab) ─────────────────────────────
+export type RequisitionDisplayTone = "ongoing" | "completed" | "inactive";
+
+export const REQUISITION_DISPLAY_STATUS: Record<
+  RequisitionStatus,
+  { label: string; tone: RequisitionDisplayTone }
+> = {
+  draft: { label: "Draft", tone: "inactive" },
+  pending_approval: { label: "Pending Approval", tone: "ongoing" },
+  approved: { label: "Approved", tone: "ongoing" },
+  open: { label: "Ongoing — Open", tone: "ongoing" },
+  interviewing: { label: "Ongoing — Interviewing", tone: "ongoing" },
+  offer_stage: { label: "Ongoing — Offer", tone: "ongoing" },
+  filled: { label: "Completed — Filled", tone: "completed" },
+  closed: { label: "Completed — Closed", tone: "completed" },
+  cancelled: { label: "Cancelled", tone: "inactive" },
+  on_hold: { label: "On Hold", tone: "inactive" },
+};
+
+export const REQUISITION_DISPLAY_TONE_STYLES: Record<
+  RequisitionDisplayTone,
+  string
+> = {
+  ongoing: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+  completed:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
+  inactive:
+    "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+};

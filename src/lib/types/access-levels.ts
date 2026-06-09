@@ -1,7 +1,14 @@
-﻿export type PermissionAction = "view" | "create" | "edit" | "delete" | "export";
+export type PermissionAction =
+  | "view"
+  | "create"
+  | "edit"
+  | "delete"
+  | "export"
+  | "approve";
 
 export interface ModulePermission {
   module: string;
+  access: boolean;
   actions: PermissionAction[];
 }
 
@@ -21,4 +28,3 @@ export interface NewAccessLevel {
   description: string;
   permissions: ModulePermission[];
 }
-

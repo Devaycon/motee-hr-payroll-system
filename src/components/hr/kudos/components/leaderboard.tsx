@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Progress } from "@/src/components/ui/progress";
 import {
   Card,
@@ -80,15 +80,12 @@ export function Leaderboard({ entries }: LeaderboardProps) {
                   <span className={`text-base ${MEDAL_STYLES[rankIdx]}`}>
                     #{rankIdx + 1}
                   </span>
-                  <Avatar
+                  <PersonAvatar
+                    name={entry.employeeName}
+                    initials={entry.employeeInitials}
                     className={`${style.size} ring-2 ${style.ring} ring-offset-1 ring-offset-background`}
-                  >
-                    <AvatarFallback
-                      className={`font-bold text-sm ${style.bg} ${style.text}`}
-                    >
-                      {entry.employeeInitials}
-                    </AvatarFallback>
-                  </Avatar>
+                    fallbackClassName={`font-bold text-sm ${style.bg} ${style.text}`}
+                  />
                   <div className="text-center">
                     <p className="text-xs font-semibold text-foreground leading-tight max-w-20 truncate">
                       {entry.employeeName.split(" ")[0]}
@@ -118,11 +115,12 @@ export function Leaderboard({ entries }: LeaderboardProps) {
                 <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">
                   {entry.rank}
                 </span>
-                <Avatar className="size-7 shrink-0">
-                  <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">
-                    {entry.employeeInitials}
-                  </AvatarFallback>
-                </Avatar>
+                <PersonAvatar
+                  name={entry.employeeName}
+                  initials={entry.employeeInitials}
+                  className="size-7 shrink-0"
+                  fallbackClassName="text-[10px] font-bold bg-primary/10 text-primary"
+                />
                 <div className="flex-1 min-w-0 space-y-0.5">
                   <div className="flex items-center justify-between gap-1">
                     <p className="text-xs font-medium text-foreground truncate">

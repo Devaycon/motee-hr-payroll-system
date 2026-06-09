@@ -22,6 +22,11 @@ import {
 } from "@/src/components/ui/select";
 import { DEPARTMENT_OPTIONS } from "../data";
 import type { InviteOnboardingData } from "../types";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import {
+  getOnboardingTemplates,
+  getDefaultOnboardingTemplate,
+} from "../instantiate";
 
 const formSchema = z.object({
   firstName: z.string().min(1, "Required"),
@@ -55,8 +60,13 @@ export function InviteOnboardingModal({
   onClose,
   onSend,
 }: InviteOnboardingModalProps) {
+  const templates = useAppSelector((s) => s.approvals.templates);
+  const onboardingTemplates = getOnboardingTemplates(templates);
+  const defaultTemplate = getDefaultOnboardingTemplate(templates);
+
   const [fields, setFields] = useState<FormFields>(EMPTY);
   const [touched, setTouched] = useState<TouchedFields>({});
+  const [workflowId, setWorkflowId] = useState<string>("");
 
   const [prevOpen, setPrevOpen] = useState(open);
   if (prevOpen !== open) {
@@ -64,8 +74,11 @@ export function InviteOnboardingModal({
     if (open) {
       setFields(EMPTY);
       setTouched({});
+      setWorkflowId(defaultTemplate?.id ?? "");
     }
   }
+
+  const selectedWorkflowId = workflowId || defaultTemplate?.id || "";
 
   const result = formSchema.safeParse(fields);
 
@@ -86,7 +99,7 @@ export function InviteOnboardingModal({
     ) as TouchedFields;
     setTouched(allTouched);
     if (!result.success) return;
-    onSend(result.data);
+    onSend({ ...result.data, workflowTemplateId: selectedWorkflowId });
   };
 
   return (
@@ -209,6 +222,26 @@ export function InviteOnboardingModal({
                 {fieldError("startDate")}
               </p>
             )}
+          </div>
+          <div className="col-span-2 flex flex-col gap-1.5">
+            <Label className="text-xs font-medium">Onboarding Workflow</Label>
+            <Select value={selectedWorkflowId} onValueChange={setWorkflowId}>
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue placeholder="Select workflow" />
+              </SelectTrigger>
+              <SelectContent>
+                {onboardingTemplates.map((t) => (
+                  <SelectItem key={t.id} value={t.id} className="text-sm">
+                    {t.name}
+                    {t.isDefault ? " (Default)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              The workflow&apos;s tasks &amp; reviewers will be assigned to this
+              hire.
+            </p>
           </div>
         </div>
 

@@ -17,14 +17,7 @@ import {
 } from "@/src/data/leave-demo";
 import type { LeaveRequestEntry } from "./types";
 
-function formatDate(iso: string) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+import { formatDate } from "@/src/lib/utils/format-date";
 
 interface LeaveDetailModalProps {
   request: LeaveRequestEntry | null;

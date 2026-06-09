@@ -1,15 +1,26 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
-import { INITIAL_EMPLOYEE_EVENTS } from "./data";
+import {
+  INITIAL_EMPLOYEE_EVENTS,
+  EVENT_TYPE_COLORS,
+  EVENT_TYPE_LABELS,
+} from "./data";
 import type { EmployeeCalEvent } from "./types";
-import { CalendarCard } from "./components/calendar-card";
-import { AllEventsList } from "./components/all-events-list";
+import { CalendarCard, AllEventsList } from "@/src/components/shared/calendar";
+import { useEmployeeEvents } from "./hooks";
 
 export function EmployeeEventsPage() {
+  const { data: localeEvents } = useEmployeeEvents();
   const [events, setEvents] = useState<EmployeeCalEvent[]>(
     INITIAL_EMPLOYEE_EVENTS,
   );
+  // Seed (and re-seed on country switch) without an effect.
+  const [seeded, setSeeded] = useState<EmployeeCalEvent[] | null>(null);
+  if (localeEvents && localeEvents.length && localeEvents !== seeded) {
+    setSeeded(localeEvents);
+    setEvents(localeEvents);
+  }
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
 
   function handleDelete(id: string) {
@@ -29,8 +40,17 @@ export function EmployeeEventsPage() {
           events={events}
           selectedDay={selectedDay}
           onSelectDay={setSelectedDay}
+          typeColors={EVENT_TYPE_COLORS}
+          typeLabels={EVENT_TYPE_LABELS}
         />
-        <AllEventsList events={events} onDelete={handleDelete} />
+        <AllEventsList
+          events={events}
+          onDelete={handleDelete}
+          typeColors={EVENT_TYPE_COLORS}
+          typeLabels={EVENT_TYPE_LABELS}
+          pageSize={6}
+          emptyMessage="No events scheduled."
+        />
       </div>
     </div>
   );

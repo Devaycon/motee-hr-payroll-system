@@ -1,3 +1,4 @@
+import { currentCurrencySymbol } from "@/src/lib/hooks/use-currency";
 import { useState } from "react";
 import {
   Clock,
@@ -72,7 +73,7 @@ export function HiringSection() {
           },
           {
             label: "Avg Cost per Hire",
-            value: `₦${(avgCost / 1000).toFixed(0)}k`,
+            value: `${currentCurrencySymbol()}${(avgCost / 1000).toFixed(0)}k`,
             icon: DollarSign,
             iconClass: "text-violet-500 dark:text-violet-400",
             iconBg: "bg-violet-500/10",
@@ -152,7 +153,8 @@ export function HiringSection() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      ₦{((metric.costPerHire ?? 0) / 1000).toFixed(0)}k
+                      {currentCurrencySymbol()}
+                      {((metric.costPerHire ?? 0) / 1000).toFixed(0)}k
                     </td>
                     <td className="px-4 py-3">
                       <span

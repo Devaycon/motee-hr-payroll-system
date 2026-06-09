@@ -6,13 +6,18 @@ import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { ARTICLES, ARTICLE_CATEGORY_CONFIG } from "./components/data";
+import { ARTICLES as SEED_ARTICLES, ARTICLE_CATEGORY_CONFIG } from "./components/data";
 import type { KnowledgeArticle, ArticleCategory } from "./components/data";
+import { useKnowledgeArticles } from "@/src/components/hr/knowledge/hooks";
 import { CategoryStatCards } from "./components/category-stat-cards";
 import { ArticleList } from "./components/article-list";
 import { ArticleReader } from "./components/article-reader";
 
 export function EmployeeKnowledgeBase() {
+  const { data: localeArticles } = useKnowledgeArticles();
+  const ARTICLES = (
+    localeArticles && localeArticles.length ? localeArticles : SEED_ARTICLES
+  ) as unknown as KnowledgeArticle[];
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<ArticleCategory | "all">("all");
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());

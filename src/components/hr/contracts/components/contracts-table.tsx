@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   MoreHorizontal,
   PlusCircle,
@@ -12,14 +12,7 @@ import {
   PenLine,
   Trash2,
 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/src/components/ui/table";
+import { type ColumnDef } from "@tanstack/react-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +23,11 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
+import {
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
 import {
   Select,
   SelectContent,
@@ -49,7 +47,6 @@ import {
   DEPARTMENT_OPTIONS,
 } from "../data";
 import type { Contract, ContractStatus, ContractType } from "../types";
-import { Card } from "@/src/components/ui/card";
 
 interface ContractsTableProps {
   contracts: Contract[];
@@ -96,7 +93,7 @@ export function ContractsTable({
     if (!date) return "—";
     return new Date(date).toLocaleDateString("en-GB", {
       day: "2-digit",
-      month: "short",
+      month: "long",
       year: "numeric",
     });
   }
@@ -106,6 +103,155 @@ export function ContractsTable({
     if (currency === "NGN") return `₦${amount.toLocaleString("en-NG")}`;
     return `${currency} ${amount.toLocaleString()}`;
   }
+
+  const columns = useMemo<ColumnDef<Contract>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => (
+          <span className="pl-2 text-xs text-muted-foreground">
+            {row.index + 1}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "title",
+        header: sortableHeader("Contract"),
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium leading-tight">
+              {row.original.title}
+            </p>
+            <p className="text-xs text-muted-foreground">{row.original.id}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "employeeName",
+        header: sortableHeader("Employee"),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+              {row.original.employeeInitials}
+            </div>
+            <div>
+              <p className="text-sm font-medium">{row.original.employeeName}</p>
+              <p className="text-xs text-muted-foreground">
+                {row.original.department}
+              </p>
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "contractType",
+        header: sortableHeader("Type"),
+        cell: ({ row }) => (
+          <Badge
+            variant="outline"
+            className={`text-xs ${CONTRACT_TYPE_STYLES[row.original.contractType]}`}
+          >
+            {CONTRACT_TYPE_LABELS[row.original.contractType]}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: sortableHeader("Status"),
+        cell: ({ row }) => (
+          <Badge
+            variant="outline"
+            className={`text-xs ${CONTRACT_STATUS_STYLES[row.original.status]}`}
+          >
+            {CONTRACT_STATUS_LABELS[row.original.status]}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "signatureStatus",
+        header: sortableHeader("Signature"),
+        cell: ({ row }) => (
+          <Badge
+            variant="outline"
+            className={`text-xs ${SIGNATURE_STATUS_STYLES[row.original.signatureStatus]}`}
+          >
+            {SIGNATURE_STATUS_LABELS[row.original.signatureStatus]}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "startDate",
+        header: sortableHeader("Start Date"),
+        cell: ({ row }) => (
+          <span className="text-sm">{formatDate(row.original.startDate)}</span>
+        ),
+      },
+      {
+        accessorKey: "endDate",
+        header: sortableHeader("End Date"),
+        cell: ({ row }) => (
+          <span className="text-sm">{formatDate(row.original.endDate)}</span>
+        ),
+      },
+      {
+        id: "salary",
+        header: "Salary / Rate",
+        cell: ({ row }) => (
+          <span className="text-sm font-medium">
+            {formatSalary(row.original.salary, row.original.contractCurrency)}
+          </span>
+        ),
+      },
+      actionsColumn<Contract>((contract) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="size-8">
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => onView(contract)}>
+              <Eye className="mr-2 size-4" />
+              View Details
+            </DropdownMenuItem>
+            {onPreview && (
+              <DropdownMenuItem onClick={() => onPreview(contract)}>
+                <FileText className="mr-2 size-4" />
+                Preview Letter
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onEdit(contract)}>
+              <Pencil className="mr-2 size-4" />
+              Edit Contract
+            </DropdownMenuItem>
+            {contract.signatureStatus !== "fully_signed" && (
+              <DropdownMenuItem onClick={() => onSign(contract)}>
+                <PenLine className="mr-2 size-4" />
+                Record Signature
+              </DropdownMenuItem>
+            )}
+            {onMoveToDocuments && !contract.movedToDocuments && (
+              <DropdownMenuItem onClick={() => onMoveToDocuments(contract)}>
+                <FolderInput className="mr-2 size-4" />
+                Move to Documents
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDelete(contract)}
+            >
+              <Trash2 className="mr-2 size-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )),
+    ],
+    [onView, onEdit, onSign, onDelete, onPreview, onMoveToDocuments],
+  );
 
   return (
     <div className="space-y-4">
@@ -172,161 +318,18 @@ export function ContractsTable({
         </Button>
       </div>
 
-      <Card className="rounded-lg border border-border/60 bg-card p-3">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border/60">
-              <TableHead className="w-10 pl-4">#</TableHead>
-              <TableHead>Contract</TableHead>
-              <TableHead>Employee</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Signature</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>End Date</TableHead>
-              <TableHead>Salary / Rate</TableHead>
-              <TableHead className="w-10"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={10}
-                  className="py-12 text-center text-sm text-muted-foreground"
-                >
-                  No contracts found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((contract, idx) => (
-                <TableRow
-                  key={contract.id}
-                  className="cursor-pointer border-border/60 hover:bg-muted/40"
-                  onClick={() => onView(contract)}
-                >
-                  <TableCell className="pl-4 text-xs text-muted-foreground">
-                    {idx + 1}
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-medium leading-tight">
-                        {contract.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {contract.id}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                        {contract.employeeInitials}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {contract.employeeName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {contract.department}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${CONTRACT_TYPE_STYLES[contract.contractType]}`}
-                    >
-                      {CONTRACT_TYPE_LABELS[contract.contractType]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${CONTRACT_STATUS_STYLES[contract.status]}`}
-                    >
-                      {CONTRACT_STATUS_LABELS[contract.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${SIGNATURE_STATUS_STYLES[contract.signatureStatus]}`}
-                    >
-                      {SIGNATURE_STATUS_LABELS[contract.signatureStatus]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {formatDate(contract.startDate)}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {formatDate(contract.endDate)}
-                  </TableCell>
-                  <TableCell className="text-sm font-medium">
-                    {formatSalary(contract.salary, contract.contractCurrency)}
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => onView(contract)}>
-                          <Eye className="mr-2 size-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        {onPreview && (
-                          <DropdownMenuItem onClick={() => onPreview(contract)}>
-                            <FileText className="mr-2 size-4" />
-                            Preview Letter
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onEdit(contract)}>
-                          <Pencil className="mr-2 size-4" />
-                          Edit Contract
-                        </DropdownMenuItem>
-                        {contract.signatureStatus !== "fully_signed" && (
-                          <DropdownMenuItem onClick={() => onSign(contract)}>
-                            <PenLine className="mr-2 size-4" />
-                            Record Signature
-                          </DropdownMenuItem>
-                        )}
-                        {onMoveToDocuments && !contract.movedToDocuments && (
-                          <DropdownMenuItem
-                            onClick={() => onMoveToDocuments(contract)}
-                          >
-                            <FolderInput className="mr-2 size-4" />
-                            Move to Documents
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => onDelete(contract)}
-                        >
-                          <Trash2 className="mr-2 size-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        {filtered.length > 0 && (
-          <div className="border-t border-border/60 px-4 py-2.5">
-            <p className="text-xs text-muted-foreground">
-              {filtered.length} contract{filtered.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-        )}
-      </Card>
+      <DataTable
+        columns={columns}
+        data={filtered}
+        getRowId={(c) => c.id}
+        onRowClick={(c) => onView(c)}
+        emptyMessage="No contracts found."
+      />
+      {filtered.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {filtered.length} contract{filtered.length !== 1 ? "s" : ""}
+        </p>
+      )}
     </div>
   );
 }

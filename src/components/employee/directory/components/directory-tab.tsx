@@ -1,3 +1,5 @@
+"use client";
+
 import { Search } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
@@ -9,7 +11,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { EmployeeCard } from "./employee-card";
-import { DEPT_OPTIONS } from "./data";
+import { useDepartmentOptions } from "@/src/components/hr/employees/hooks";
 import type { EmployeeRow } from "./data";
 
 interface DirectoryTabProps {
@@ -29,7 +31,8 @@ export function DirectoryTab({
   setDeptFilter,
   onSelect,
 }: DirectoryTabProps) {
-  const depts = DEPT_OPTIONS.filter((d) => d !== "all");
+  const { data: deptOptions } = useDepartmentOptions();
+  const depts = (deptOptions ?? ["all"]).filter((d) => d !== "all");
 
   return (
     <div className="space-y-4">

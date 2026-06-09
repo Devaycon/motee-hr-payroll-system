@@ -1,6 +1,7 @@
 "use client";
+import { formatDate } from "@/src/lib/utils/format-date";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -23,7 +24,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import {
   Card,
   CardContent,
@@ -34,9 +35,11 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { Separator } from "@/src/components/ui/separator";
 import { cn } from "@/src/lib/utils";
-import { DEPARTMENTS, STATUS_STYLES, formatBudget } from "../data";
-import { EMPLOYEES } from "@/src/data/employees-demo";
+import { STATUS_STYLES, formatBudget } from "../data";
+import { useDepartments } from "../hooks";
+import { useEmployees } from "@/src/components/hr/employees/hooks";
 import { AddEmployeeModal } from "./add-employee-modal";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import type { EmployeeRow } from "@/src/lib/types/employees";
 
 const STATUS_ICONS = {
@@ -198,12 +201,38 @@ interface DepartmentDetailPageProps {
 
 export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
   const router = useRouter();
-  const dept = DEPARTMENTS.find((d) => d.id === id);
+  const { data: deptData } = useDepartments();
+  const { data: empData } = useEmployees();
 
-  const [members, setMembers] = useState<EmployeeRow[]>(() =>
-    EMPLOYEES.filter((e) => e.department === (dept?.name ?? "")),
+  const dept = useMemo(
+    () => (deptData ?? []).find((d) => d.id === id) ?? null,
+    [deptData, id],
+  );
+
+  // Members come from the active locale (switches with the Nigeria/UK selector);
+  // any locally-added employees are layered on top.
+  const baseMembers = useMemo(
+    () =>
+      empData && dept
+        ? empData.filter((e) => e.department === dept.name)
+        : [],
+    [empData, dept],
+  );
+  const [addedMembers, setAddedMembers] = useState<EmployeeRow[]>([]);
+  const members = useMemo(
+    () => [...baseMembers, ...addedMembers],
+    [baseMembers, addedMembers],
   );
   const [addEmpOpen, setAddEmpOpen] = useState(false);
+
+  if (!deptData || !empData) {
+    return (
+      <div className="flex flex-col gap-5">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   if (!dept) {
     return (
@@ -220,7 +249,9 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
   }
 
   const StatusIcon = STATUS_ICONS[dept.status];
-  const annualBudget = (dept.budgetMonthly ?? 0) * 12;
+  // Budget is derived from the active locale's salaries (currency-correct).
+  const budgetMonthly = members.reduce((sum, m) => sum + (m.salary ?? 0), 0);
+  const annualBudget = budgetMonthly * 12;
   const activeMembers = members.filter((m) => m.status === "active").length;
   const onLeave = members.filter((m) => m.status === "on_leave").length;
   const activity = ACTIVITY_BY_DEPT[dept.name] ?? [];
@@ -283,7 +314,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
           onOpenChange={setAddEmpOpen}
           departmentName={dept.name}
           currentMembers={members}
-          onAdd={(emps) => setMembers((prev) => [...prev, ...emps])}
+          onAdd={(emps) => setAddedMembers((prev) => [...prev, ...emps])}
         />
       </div>
 
@@ -304,7 +335,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
           {
             icon: CircleDollarSign,
             label: "Monthly Budget",
-            value: formatBudget(dept.budgetMonthly ?? 0),
+            value: formatBudget(budgetMonthly),
             sub: "Operating cost",
           },
           {
@@ -382,7 +413,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                   {
                     icon: CircleDollarSign,
                     label: "Monthly Budget",
-                    value: formatBudget(dept.budgetMonthly ?? 0),
+                    value: formatBudget(budgetMonthly ?? 0),
                   },
                 ].map((row) => (
                   <div key={row.label} className="flex items-start gap-3">
@@ -572,11 +603,13 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                       >
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2.5">
-                            <Avatar className="size-7 shrink-0">
-                              <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
-                                {m.initials}
-                              </AvatarFallback>
-                            </Avatar>
+                            <PersonAvatar
+                              name={m.name}
+                              initials={m.initials}
+                              gender={m.gender}
+                              className="size-7 shrink-0"
+                              fallbackClassName="bg-primary/10 text-primary text-[10px] font-semibold"
+                            />
                             <div>
                               <p className="text-sm font-medium text-foreground">
                                 {m.name}
@@ -626,7 +659,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                         </td>
                         <td className="px-5 py-3">
                           <span className="text-xs text-muted-foreground">
-                            {m.startDate}
+                            {formatDate(m.startDate)}
                           </span>
                         </td>
                       </tr>
@@ -653,7 +686,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
               <CardContent className="px-5 py-5 flex flex-col gap-4">
                 {BUDGET_ALLOCATIONS.map((row) => {
                   const amount = Math.round(
-                    ((dept.budgetMonthly ?? 0) * row.percent) / 100,
+                    ((budgetMonthly ?? 0) * row.percent) / 100,
                   );
                   return (
                     <div key={row.label} className="flex flex-col gap-1.5">
@@ -697,11 +730,11 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                   {[
                     {
                       label: "Monthly Budget",
-                      value: formatBudget(dept.budgetMonthly ?? 0),
+                      value: formatBudget(budgetMonthly ?? 0),
                     },
                     {
                       label: "Quarterly Budget",
-                      value: formatBudget((dept.budgetMonthly ?? 0) * 3),
+                      value: formatBudget((budgetMonthly ?? 0) * 3),
                     },
                     {
                       label: "Annual Budget",
@@ -712,7 +745,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                       value: formatBudget(
                         dept.employeeCount > 0
                           ? Math.round(
-                              (dept.budgetMonthly ?? 0) / dept.employeeCount,
+                              (budgetMonthly ?? 0) / dept.employeeCount,
                             )
                           : 0,
                       ),
@@ -799,7 +832,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                       <div className="pt-1.5">
                         <p className="text-sm text-foreground">{item.text}</p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">
-                          {item.date}
+                          {formatDate(item.date)}
                         </p>
                       </div>
                     </div>

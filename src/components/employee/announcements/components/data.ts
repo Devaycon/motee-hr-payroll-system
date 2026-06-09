@@ -11,13 +11,7 @@ export type { Announcement, AnnouncementType } from "@/src/lib/types/announcemen
 export const MY_EMPLOYEE_ID = "emp-current";
 export const MY_DEPT = "Engineering";
 
-export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+export { formatDate } from "@/src/lib/utils/format-date";
 
 export function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();

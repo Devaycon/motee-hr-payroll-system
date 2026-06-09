@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useKnowledgeArticles } from "./hooks";
 import { BookOpen, Plus, TrendingUp } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
@@ -19,7 +21,6 @@ import { ArticlesTable } from "./components/articles-table";
 import { ArticleViewModal } from "./components/article-view-modal";
 import { ArticleFormModal } from "./components/article-form-modal";
 import {
-  ARTICLES,
   ARTICLE_CATEGORY_CONFIG,
   ARTICLE_CATEGORY_OPTIONS,
   ARTICLE_STATUS_CONFIG,
@@ -30,7 +31,11 @@ import {
 import type { KnowledgeArticle, NewArticle, ArticleStatus } from "./types";
 
 export function KnowledgePage() {
-  const [articles, setArticles] = useState<KnowledgeArticle[]>(ARTICLES);
+  const { data, loading } = useKnowledgeArticles();
+  const [articles, setArticles] = useState<KnowledgeArticle[]>([]);
+  useEffect(() => {
+    if (data) setArticles(data);
+  }, [data]);
   const [formOpen, setFormOpen] = useState(false);
   const [editArticle, setEditArticle] = useState<KnowledgeArticle | null>(null);
   const [viewArticle, setViewArticle] = useState<KnowledgeArticle | null>(null);
@@ -175,6 +180,15 @@ export function KnowledgePage() {
     (s, n) => s + n,
     0,
   );
+
+  if (loading && !articles.length) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">

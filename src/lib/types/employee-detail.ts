@@ -1,0 +1,51 @@
+// Computed/aggregate types for the Employee Detail page. Raw per-record shapes
+// live in locale.ts as Locale* interfaces and are reused directly by the UI.
+
+export interface EmployeeStats {
+  leaveRemaining: number;
+  openTasks: number;
+  pendingApprovals: number;
+  assignedAssets: number;
+  kudosReceived: number;
+}
+
+export interface LeaveSummaryRow {
+  policyId: string;
+  policyName: string;
+  allowance: number;
+  adjustments: number;
+  booked: number;
+  taken: number;
+  remaining: number;
+}
+
+export interface SicknessSummary {
+  totalDaysThisYear: number;
+  longestAbsenceDays: number;
+  episodes: number;
+  bradfordFactor: number; // S^2 * D
+}
+
+export interface TimeLogsSummary {
+  monthlyHours: number;
+  daysPresent: number;
+  daysLate: number;
+  daysAbsent: number;
+}
+
+export interface LeaveUsageBucket {
+  month: string; // YYYY-MM
+  byType: Record<string, number>;
+  total: number;
+}
+
+export interface EffectivePermissionRow {
+  id: string; // `${employeeId}::${module}`
+  module: string;
+  label: string;
+  view: boolean;
+  create: boolean;
+  edit: boolean;
+  delete: boolean;
+  approve: boolean;
+}

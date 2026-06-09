@@ -1,5 +1,7 @@
 "use client";
 
+import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
+import { useMemo } from "react";
 import {
   Laptop2,
   Monitor,
@@ -16,16 +18,14 @@ import {
   Undo2,
   Eye,
 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/src/components/ui/table";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
+import {
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
 import {
   ASSET_CONDITION_LABELS,
   ASSET_CONDITION_STYLES,
@@ -49,7 +49,7 @@ const ASSET_TYPE_ICONS: Record<string, React.ElementType> = {
 
 function formatNaira(value?: number) {
   if (value === undefined || value === null) return "—";
-  return `₦${value.toLocaleString("en-NG")}`;
+  return formatMoneyLocale(value);
 }
 
 interface PendingReturnsTableProps {
@@ -64,6 +64,118 @@ export function PendingReturnsTable({
   onView,
 }: PendingReturnsTableProps) {
   const pending = assets.filter((a) => a.pendingReturn === true);
+
+  const columns = useMemo<ColumnDef<Asset>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: sortableHeader("Asset"),
+        cell: ({ row }) => {
+          const TypeIcon =
+            ASSET_TYPE_ICONS[row.original.assetType] ?? Package2;
+          return (
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <TypeIcon className="size-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">
+                  {row.original.name}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {row.original.serialNumber}
+                </p>
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "assetType",
+        header: sortableHeader("Type"),
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {ASSET_TYPE_LABELS[row.original.assetType]}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "assignedTo",
+        header: sortableHeader("Last Assigned To"),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <div className="flex size-7 items-center justify-center rounded-full bg-red-500/10 text-xs font-semibold text-red-500">
+              {row.original.assignedToInitials}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm">{row.original.assignedTo}</p>
+              <Badge
+                variant="secondary"
+                className="mt-0.5 bg-red-500/10 text-xs text-red-600 dark:text-red-400"
+              >
+                Offboarded
+              </Badge>
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "assignedToDepartment",
+        header: sortableHeader("Department"),
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.assignedToDepartment ?? "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "condition",
+        header: sortableHeader("Condition"),
+        cell: ({ row }) => (
+          <Badge
+            variant="secondary"
+            className={`text-xs font-medium ${ASSET_CONDITION_STYLES[row.original.condition]}`}
+          >
+            {ASSET_CONDITION_LABELS[row.original.condition]}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "purchaseValue",
+        header: sortableHeader("Value"),
+        cell: ({ row }) => (
+          <span className="text-sm font-medium">
+            {formatNaira(row.original.purchaseValue)}
+          </span>
+        ),
+      },
+      actionsColumn<Asset>(
+        (asset) => (
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => onView(asset)}
+            >
+              <Eye className="size-3.5" />
+              Details
+            </Button>
+            <Button
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => onMarkReturned(asset.id)}
+            >
+              <Undo2 className="size-3.5" />
+              Mark Returned
+            </Button>
+          </div>
+        ),
+        "Actions",
+      ),
+    ],
+    [onView, onMarkReturned],
+  );
 
   if (pending.length === 0) {
     return (
@@ -94,105 +206,12 @@ export function PendingReturnsTable({
         </p>
       </div>
 
-      <div className="rounded-lg border border-border/60 bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-65">Asset</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Last Assigned To</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Condition</TableHead>
-              <TableHead>Value</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pending.map((asset) => {
-              const TypeIcon = ASSET_TYPE_ICONS[asset.assetType] ?? Package2;
-              return (
-                <TableRow key={asset.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                        <TypeIcon className="size-4 text-muted-foreground" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {asset.name}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {asset.serialNumber}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {ASSET_TYPE_LABELS[asset.assetType]}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="flex size-7 items-center justify-center rounded-full bg-red-500/10 text-xs font-semibold text-red-500">
-                        {asset.assignedToInitials}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm">{asset.assignedTo}</p>
-                        <Badge
-                          variant="secondary"
-                          className="mt-0.5 bg-red-500/10 text-xs text-red-600 dark:text-red-400"
-                        >
-                          Offboarded
-                        </Badge>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {asset.assignedToDepartment ?? "—"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={`text-xs font-medium ${ASSET_CONDITION_STYLES[asset.condition]}`}
-                    >
-                      {ASSET_CONDITION_LABELS[asset.condition]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm font-medium">
-                      {formatNaira(asset.purchaseValue)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 gap-1.5 text-xs"
-                        onClick={() => onView(asset)}
-                      >
-                        <Eye className="size-3.5" />
-                        Details
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="h-8 gap-1.5 text-xs"
-                        onClick={() => onMarkReturned(asset.id)}
-                      >
-                        <Undo2 className="size-3.5" />
-                        Mark Returned
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={pending}
+        getRowId={(a) => a.id}
+        emptyMessage="No pending returns."
+      />
     </div>
   );
 }

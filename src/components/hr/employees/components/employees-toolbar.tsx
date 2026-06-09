@@ -12,7 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { DEPT_OPTIONS, EMPLOYMENT_TYPE_LABELS } from "../data";
+import { EMPLOYMENT_TYPE_LABELS } from "../data";
+import { useDepartmentOptions } from "../hooks";
 
 interface EmployeesToolbarProps {
   search: string;
@@ -35,6 +36,9 @@ export function EmployeesToolbar({
   statusFilter,
   onStatusFilterChange,
 }: EmployeesToolbarProps) {
+  const { data: deptOptions } = useDepartmentOptions();
+  const depts = deptOptions ?? ["all"];
+
   const hasActiveFilter =
     deptFilter !== "all" || typeFilter !== "all" || statusFilter !== "all";
 
@@ -83,7 +87,7 @@ export function EmployeesToolbar({
               value={deptFilter}
               onValueChange={onDeptFilterChange}
             >
-              {DEPT_OPTIONS.map((d) => (
+              {depts.map((d) => (
                 <DropdownMenuRadioItem key={d} value={d} className="text-xs">
                   {d === "all" ? "All Departments" : d}
                 </DropdownMenuRadioItem>

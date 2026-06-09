@@ -1,17 +1,22 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useOffboardingRecords } from "./hooks";
 import { toast } from "sonner";
 import { StatCards } from "./components/stat-cards";
 import { PipelineToolbar } from "./components/pipeline-toolbar";
 import { PipelineTable } from "./components/pipeline-table";
 import { OffboardingModal } from "./components/offboarding-modal";
-import { OFFBOARDING_RECORDS, DEFAULT_CLEARANCE_ITEMS } from "./data";
 import type { OffboardingRecord, NewOffboardingRecord } from "./types";
+import { buildClearanceItems } from "./instantiate";
 
 export function OffboardingPage() {
-  const [records, setRecords] =
-    useState<OffboardingRecord[]>(OFFBOARDING_RECORDS);
+  const { data, loading } = useOffboardingRecords();
+  const [records, setRecords] = useState<OffboardingRecord[]>([]);
+  useEffect(() => {
+    if (data) setRecords(data);
+  }, [data]);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -48,11 +53,12 @@ export function OffboardingPage() {
 
   const handleSave = (data: NewOffboardingRecord) => {
     const id = `off-${Date.now()}`;
+    const clearanceItems = buildClearanceItems(id);
     const newRecord: OffboardingRecord = {
       ...data,
       id,
       exitInterviewCompleted: false,
-      clearanceItems: DEFAULT_CLEARANCE_ITEMS.map((item) => ({ ...item })),
+      clearanceItems,
       status: "pending",
       initiatedAt: new Date().toISOString().slice(0, 10),
     };
@@ -131,6 +137,15 @@ export function OffboardingPage() {
     setRecords((prev) => prev.filter((r) => r.id !== id));
     toast.success("Offboarding record removed");
   };
+
+  if (loading && !records.length) {
+    return (
+      <div className="flex flex-col gap-5">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">

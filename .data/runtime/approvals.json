@@ -1,0 +1,3169 @@
+{
+  "templates": [
+    {
+      "id": "ACT-DEFAULT-LEAVE-REQUEST",
+      "documentType": "leave_request",
+      "name": "Standard Leave Approval",
+      "description": "Default leave request workflow",
+      "isDefault": true,
+      "kind": "system",
+      "steps": [
+        {
+          "id": "ACT-STEP-LEAVE-REQUEST-1",
+          "order": 1,
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-LEAVE-REQUEST-2",
+          "order": 2,
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "attachments": {
+        "allowed": false,
+        "required": false
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      }
+    },
+    {
+      "id": "ACT-DEFAULT-JOB-REQUISITION",
+      "documentType": "job_requisition",
+      "name": "Standard Job Requisition Approval",
+      "description": "Default job requisition workflow",
+      "isDefault": true,
+      "kind": "system",
+      "steps": [
+        {
+          "id": "ACT-STEP-JOB-REQUISITION-1",
+          "order": 1,
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-JOB-REQUISITION-2",
+          "order": 2,
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-JOB-REQUISITION-3",
+          "order": 3,
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "attachments": {
+        "allowed": false,
+        "required": false
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      }
+    },
+    {
+      "id": "ACT-DEFAULT-CONTRACT",
+      "documentType": "contract",
+      "name": "Standard Contract Approval",
+      "description": "Default contract workflow",
+      "isDefault": true,
+      "kind": "system",
+      "steps": [
+        {
+          "id": "ACT-STEP-CONTRACT-1",
+          "order": 1,
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-CONTRACT-2",
+          "order": 2,
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "attachments": {
+        "allowed": false,
+        "required": false
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      }
+    },
+    {
+      "id": "ACT-DEFAULT-OFFBOARDING-CLEARANCE",
+      "documentType": "offboarding_clearance",
+      "name": "Standard Offboarding Clearance",
+      "description": "Default offboarding clearance workflow",
+      "isDefault": true,
+      "kind": "system",
+      "steps": [
+        {
+          "id": "ACT-STEP-OFFBOARDING-CLEARANCE-1",
+          "order": 1,
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-OFFBOARDING-CLEARANCE-2",
+          "order": 2,
+          "label": "IT Admin",
+          "approver": "ROLE:ROLE-IT",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-OFFBOARDING-CLEARANCE-3",
+          "order": 3,
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-OFFBOARDING-CLEARANCE-4",
+          "order": 4,
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "attachments": {
+        "allowed": false,
+        "required": false
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      }
+    },
+    {
+      "id": "ACT-DEFAULT-PROMOTION-REQUEST",
+      "documentType": "promotion_request",
+      "name": "Standard Promotion / Salary Change",
+      "description": "Default promotion request workflow",
+      "isDefault": true,
+      "kind": "system",
+      "steps": [
+        {
+          "id": "ACT-STEP-PROMOTION-REQUEST-1",
+          "order": 1,
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-PROMOTION-REQUEST-2",
+          "order": 2,
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-PROMOTION-REQUEST-3",
+          "order": 3,
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "attachments": {
+        "allowed": false,
+        "required": false
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      }
+    },
+    {
+      "id": "ACT-DEFAULT-TRAINING-REQUEST",
+      "documentType": "training_request",
+      "name": "Standard Training Request",
+      "description": "Default training request workflow",
+      "isDefault": true,
+      "kind": "system",
+      "steps": [
+        {
+          "id": "ACT-STEP-TRAINING-REQUEST-1",
+          "order": 1,
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-TRAINING-REQUEST-2",
+          "order": 2,
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "attachments": {
+        "allowed": false,
+        "required": false
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      }
+    },
+    {
+      "id": "ACT-DEFAULT-ASSET-REQUEST",
+      "documentType": "asset_request",
+      "name": "Standard Asset Request",
+      "description": "Default asset request workflow",
+      "isDefault": true,
+      "kind": "system",
+      "steps": [
+        {
+          "id": "ACT-STEP-ASSET-REQUEST-1",
+          "order": 1,
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-ASSET-REQUEST-2",
+          "order": 2,
+          "label": "IT Admin",
+          "approver": "ROLE:ROLE-IT",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "attachments": {
+        "allowed": false,
+        "required": false
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      }
+    },
+    {
+      "id": "ACT-DEFAULT-EXPENSE-CLAIM",
+      "documentType": "expense_claim",
+      "name": "Standard Expense Claim",
+      "description": "Default expense claim workflow",
+      "isDefault": true,
+      "kind": "system",
+      "steps": [
+        {
+          "id": "ACT-STEP-EXPENSE-CLAIM-1",
+          "order": 1,
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-EXPENSE-CLAIM-2",
+          "order": 2,
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "attachments": {
+        "allowed": false,
+        "required": false
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      }
+    },
+    {
+      "id": "ACT-DEFAULT-ONBOARDING",
+      "documentType": "onboarding",
+      "name": "Standard Onboarding Workflow",
+      "description": "Default onboarding workflow",
+      "isDefault": true,
+      "kind": "system",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "steps": [
+        {
+          "id": "ACT-STEP-ONBOARDING-1",
+          "order": 1,
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-ONBOARDING-2",
+          "order": 2,
+          "label": "IT Admin",
+          "approver": "ROLE:ROLE-IT",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-ONBOARDING-3",
+          "order": 3,
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "attachments": {
+        "allowed": true,
+        "required": false,
+        "description": "Attach the signed offer letter or onboarding pack (optional)."
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      },
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01"
+    },
+    {
+      "id": "ACT-DEFAULT-WORKFORCE-REQUEST",
+      "documentType": "workforce_request",
+      "name": "Standard Workforce Request Approval",
+      "description": "Default workforce request workflow",
+      "isDefault": true,
+      "kind": "system",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "steps": [
+        {
+          "id": "ACT-STEP-WORKFORCE-REQUEST-1",
+          "order": 1,
+          "label": "HR Review",
+          "approver": "ROLE:ROLE-HRMGR",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-WORKFORCE-REQUEST-2",
+          "order": 2,
+          "label": "Finance Approval",
+          "approver": "ROLE:ROLE-FIN",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-WORKFORCE-REQUEST-3",
+          "order": 3,
+          "label": "Executive Approval",
+          "approver": "ROLE:ROLE-EXEC",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "attachments": {
+        "allowed": true,
+        "required": false,
+        "description": "Attach a budget breakdown or business case (optional)."
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      },
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01"
+    }
+  ],
+  "requests": [
+    {
+      "id": "SEED-APR-leave_request-0-NG-EMP-0001",
+      "documentType": "leave_request",
+      "documentId": "SEED-DOC-leave_request-0",
+      "documentTitle": "Annual leave – 5 days",
+      "documentSummary": "Folake Afolayan requesting Jun 8–12",
+      "payloadSnapshot": {
+        "leaveType": "Annual",
+        "startDate": "2026-06-08",
+        "endDate": "2026-06-12",
+        "totalDays": 5
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0001",
+        "name": "Folake Afolayan",
+        "initials": "FA",
+        "departmentName": "Executive Office"
+      },
+      "submittedAt": "2026-05-05T11:35:05.426Z",
+      "chainTemplateId": "ACT-DEFAULT-LEAVE-REQUEST",
+      "currentStepIndex": 0,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "SEED-STEP-leave_request-NG-EMP-0001-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": null,
+          "resolvedEmployeeName": null,
+          "status": "pending"
+        },
+        {
+          "id": "SEED-STEP-leave_request-NG-EMP-0001-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-leave_request-0",
+          "at": "2026-05-05T11:35:05.426Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "submitted"
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-leave_request-1-NG-EMP-0002",
+      "documentType": "leave_request",
+      "documentId": "SEED-DOC-leave_request-1",
+      "documentTitle": "Sick leave – 2 days",
+      "documentSummary": "Ifeoma Bello unwell",
+      "payloadSnapshot": {
+        "leaveType": "Sick",
+        "startDate": "2026-05-28",
+        "endDate": "2026-05-29",
+        "totalDays": 2
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0002",
+        "name": "Ifeoma Bello",
+        "initials": "IB",
+        "departmentName": "Executive Office"
+      },
+      "submittedAt": "2026-05-06T11:35:05.427Z",
+      "chainTemplateId": "ACT-DEFAULT-LEAVE-REQUEST",
+      "currentStepIndex": 2,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "SEED-STEP-leave_request-NG-EMP-0002-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-05-07T11:35:05.427Z"
+        },
+        {
+          "id": "SEED-STEP-leave_request-NG-EMP-0002-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-06T11:35:05.427Z"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-leave_request-1",
+          "at": "2026-05-06T11:35:05.427Z",
+          "actorEmployeeId": "NG-EMP-0002",
+          "actorName": "Ifeoma Bello",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-leave_request-1-0",
+          "at": "2026-05-07T11:35:05.427Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-APP-leave_request-1-1",
+          "at": "2026-05-06T11:35:05.427Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "approved",
+          "stepOrder": 2
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0002-0-1626",
+          "name": "medical_certificate.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1816,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%230EA5E9%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EMedical%20Certificate%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3ESahel%20General%20Hospital%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-95765%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-11%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22349%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22557%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22338%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22362%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22532%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22382%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22341%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22342%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22520%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22351%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22486%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22347%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.427Z",
+          "uploadedByEmployeeId": "NG-EMP-0002"
+        }
+      ],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-leave_request-2-NG-EMP-0003",
+      "documentType": "leave_request",
+      "documentId": "SEED-DOC-leave_request-2",
+      "documentTitle": "Compassionate – 3 days",
+      "documentSummary": "Chinedu Olawale bereavement",
+      "payloadSnapshot": {
+        "leaveType": "Compassionate",
+        "startDate": "2026-06-02",
+        "endDate": "2026-06-04",
+        "totalDays": 3
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0003",
+        "name": "Chinedu Olawale",
+        "initials": "CO",
+        "departmentName": "Executive Office"
+      },
+      "submittedAt": "2026-05-07T11:35:05.427Z",
+      "chainTemplateId": "ACT-DEFAULT-LEAVE-REQUEST",
+      "currentStepIndex": 1,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "SEED-STEP-leave_request-NG-EMP-0003-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-05-08T11:35:05.427Z"
+        },
+        {
+          "id": "SEED-STEP-leave_request-NG-EMP-0003-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-leave_request-2",
+          "at": "2026-05-07T11:35:05.427Z",
+          "actorEmployeeId": "NG-EMP-0003",
+          "actorName": "Chinedu Olawale",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-leave_request-2-0",
+          "at": "2026-05-08T11:35:05.427Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-leave_request-3-NG-EMP-0005",
+      "documentType": "leave_request",
+      "documentId": "SEED-DOC-leave_request-3",
+      "documentTitle": "Study leave – 10 days",
+      "documentSummary": "Ngozi Mohammed for AWS exam preparation",
+      "payloadSnapshot": {
+        "leaveType": "Study",
+        "startDate": "2026-07-15",
+        "endDate": "2026-07-26",
+        "totalDays": 10
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0005",
+        "name": "Ngozi Mohammed",
+        "initials": "NM",
+        "departmentName": "Engineering"
+      },
+      "submittedAt": "2026-05-08T11:35:05.427Z",
+      "chainTemplateId": "ACT-DEFAULT-LEAVE-REQUEST",
+      "currentStepIndex": 0,
+      "status": "returned",
+      "steps": [
+        {
+          "id": "SEED-STEP-leave_request-NG-EMP-0005-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0004",
+          "resolvedEmployeeName": "Tochukwu Lawal",
+          "status": "returned",
+          "note": "Please attach the exam booking confirmation.",
+          "decidedAt": "2026-05-28T11:35:05.427Z"
+        },
+        {
+          "id": "SEED-STEP-leave_request-NG-EMP-0005-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-leave_request-3",
+          "at": "2026-05-08T11:35:05.427Z",
+          "actorEmployeeId": "NG-EMP-0005",
+          "actorName": "Ngozi Mohammed",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-RET-3",
+          "at": "2026-05-28T11:35:05.427Z",
+          "actorEmployeeId": "NG-EMP-0004",
+          "actorName": "Tochukwu Lawal",
+          "type": "returned",
+          "stepOrder": 1,
+          "note": "Please attach the exam booking confirmation."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-job_requisition-4-NG-EMP-0007",
+      "documentType": "job_requisition",
+      "documentId": "SEED-DOC-job_requisition-4",
+      "documentTitle": "Hire Senior Backend Engineer",
+      "documentSummary": "Replacing departing senior in Engineering",
+      "payloadSnapshot": {
+        "positionTitle": "Senior Backend Engineer",
+        "department": "Engineering",
+        "openings": 1,
+        "salaryRange": "₦12–16M"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0007",
+        "name": "Ibrahim Adeyemi",
+        "initials": "IA",
+        "departmentName": "Engineering"
+      },
+      "submittedAt": "2026-05-09T11:35:05.427Z",
+      "chainTemplateId": "ACT-DEFAULT-JOB-REQUISITION",
+      "currentStepIndex": 1,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "SEED-STEP-job_requisition-NG-EMP-0007-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0004",
+          "resolvedEmployeeName": "Tochukwu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-10T11:35:05.427Z"
+        },
+        {
+          "id": "SEED-STEP-job_requisition-NG-EMP-0007-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "pending"
+        },
+        {
+          "id": "SEED-STEP-job_requisition-NG-EMP-0007-3",
+          "order": 3,
+          "templateStepId": "seed-3",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "skipped",
+          "skippedReason": "on_leave",
+          "decidedAt": "2026-05-09T11:35:05.427Z",
+          "reassignedFromName": "Adebayo Finance"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-job_requisition-4",
+          "at": "2026-05-09T11:35:05.427Z",
+          "actorEmployeeId": "NG-EMP-0007",
+          "actorName": "Ibrahim Adeyemi",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-job_requisition-4-0",
+          "at": "2026-05-10T11:35:05.427Z",
+          "actorEmployeeId": "NG-EMP-0004",
+          "actorName": "Tochukwu Lawal",
+          "type": "approved",
+          "stepOrder": 1
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-job_requisition-5-NG-EMP-0008",
+      "documentType": "job_requisition",
+      "documentId": "SEED-DOC-job_requisition-5",
+      "documentTitle": "Hire Junior Frontend Engineer",
+      "documentSummary": "Backfill for Q3 roadmap",
+      "payloadSnapshot": {
+        "positionTitle": "Junior Frontend Engineer",
+        "department": "Engineering",
+        "openings": 2,
+        "salaryRange": "₦6–9M"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0008",
+        "name": "Folake Nwosu",
+        "initials": "FN",
+        "departmentName": "Engineering"
+      },
+      "submittedAt": "2026-05-10T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-JOB-REQUISITION",
+      "currentStepIndex": 3,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "SEED-STEP-job_requisition-NG-EMP-0008-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0004",
+          "resolvedEmployeeName": "Tochukwu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-11T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-job_requisition-NG-EMP-0008-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-10T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-job_requisition-NG-EMP-0008-3",
+          "order": 3,
+          "templateStepId": "seed-3",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "approved",
+          "decidedAt": "2026-05-09T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-5-0"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-job_requisition-5",
+          "at": "2026-05-10T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0008",
+          "actorName": "Folake Nwosu",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-job_requisition-5-0",
+          "at": "2026-05-11T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0004",
+          "actorName": "Tochukwu Lawal",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-APP-job_requisition-5-1",
+          "at": "2026-05-10T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "approved",
+          "stepOrder": 2
+        },
+        {
+          "id": "SEED-EVT-APP-job_requisition-5-2",
+          "at": "2026-05-09T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0016",
+          "actorName": "Yusuf Eze",
+          "type": "approved",
+          "stepOrder": 3
+        }
+      ],
+      "attachments": [],
+      "signatures": [
+        {
+          "id": "SEED-SIG-REV-5-0",
+          "signerEmployeeId": "NG-EMP-0016",
+          "signerName": "Yusuf Eze",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M12%2038%20C%2030%2012%2050%2050%2070%2030%20S%20110%2012%20130%2038%20S%20170%2016%20192%2032%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%22186%22%20cy%3D%2232%22%20r%3D%223%22%20fill%3D%22%23111%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-09T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-job_requisition-NG-EMP-0008-3"
+        }
+      ]
+    },
+    {
+      "id": "SEED-APR-job_requisition-6-NG-EMP-0009",
+      "documentType": "job_requisition",
+      "documentId": "SEED-DOC-job_requisition-6",
+      "documentTitle": "Hire Marketing Lead",
+      "documentSummary": "Drive growth into 2H",
+      "payloadSnapshot": {
+        "positionTitle": "Marketing Lead",
+        "department": "Growth",
+        "openings": 1,
+        "salaryRange": "₦14–18M"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0009",
+        "name": "Femi Sanusi",
+        "initials": "FS",
+        "departmentName": "Engineering"
+      },
+      "submittedAt": "2026-05-11T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-JOB-REQUISITION",
+      "currentStepIndex": 1,
+      "status": "rejected",
+      "steps": [
+        {
+          "id": "SEED-STEP-job_requisition-NG-EMP-0009-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0004",
+          "resolvedEmployeeName": "Tochukwu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-12T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-job_requisition-NG-EMP-0009-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "rejected",
+          "note": "Budget freeze until Q4. Reopen after October planning.",
+          "decidedAt": "2026-05-28T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-job_requisition-NG-EMP-0009-3",
+          "order": 3,
+          "templateStepId": "seed-3",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-job_requisition-6",
+          "at": "2026-05-11T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0009",
+          "actorName": "Femi Sanusi",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-job_requisition-6-0",
+          "at": "2026-05-12T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0004",
+          "actorName": "Tochukwu Lawal",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-REJ-6",
+          "at": "2026-05-28T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "rejected",
+          "stepOrder": 2,
+          "note": "Budget freeze until Q4. Reopen after October planning."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-contract-7-NG-EMP-0010",
+      "documentType": "contract",
+      "documentId": "SEED-DOC-contract-7",
+      "documentTitle": "Employment contract – Emeka Abubakar",
+      "documentSummary": "New hire onboarding contract",
+      "payloadSnapshot": {
+        "counterparty": "Emeka Abubakar",
+        "contractType": "Employment",
+        "startDate": "2026-06-15"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0010",
+        "name": "Emeka Abubakar",
+        "initials": "EA",
+        "departmentName": "Product & Design"
+      },
+      "submittedAt": "2026-05-12T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-CONTRACT",
+      "currentStepIndex": 2,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "SEED-STEP-contract-NG-EMP-0010-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-13T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-7-0"
+        },
+        {
+          "id": "SEED-STEP-contract-NG-EMP-0010-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-12T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-7-1"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-contract-7",
+          "at": "2026-05-12T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0010",
+          "actorName": "Emeka Abubakar",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-contract-7-0",
+          "at": "2026-05-13T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-APP-contract-7-1",
+          "at": "2026-05-12T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "approved",
+          "stepOrder": 2
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0010-0-3234",
+          "name": "employment_contract.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1810,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%231E40AF%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EEmployment%20Contract%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3ESahel%20Fintech%20HR%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-81691%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-21%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22460%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22337%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22528%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22356%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22526%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22528%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22464%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22371%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22338%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22439%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22434%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22473%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0010"
+        }
+      ],
+      "signatures": [
+        {
+          "id": "SEED-SIG-SUB-7",
+          "signerEmployeeId": "NG-EMP-0010",
+          "signerName": "Emeka Abubakar",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M10%2040%20Q%2025%2018%2045%2035%20T%2080%2030%20Q%2095%2022%20110%2038%20T%20145%2032%20Q%20160%2022%20180%2036%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-12T11:35:05.428Z",
+          "role": "submitter"
+        },
+        {
+          "id": "SEED-SIG-REV-7-0",
+          "signerEmployeeId": "NG-EMP-0017",
+          "signerName": "Chinedu Lawal",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M12%2038%20C%2030%2012%2050%2050%2070%2030%20S%20110%2012%20130%2038%20S%20170%2016%20192%2032%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%22186%22%20cy%3D%2232%22%20r%3D%223%22%20fill%3D%22%23111%22%2F%3E%3C%2Fsvg%3E",
+          "placement": {
+            "attachmentId": "SEED-ATT-NG-EMP-0010-0-3234",
+            "x": 0.18,
+            "y": 0.92,
+            "width": 0.22
+          },
+          "signedAt": "2026-05-13T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-contract-NG-EMP-0010-1"
+        },
+        {
+          "id": "SEED-SIG-REV-7-1",
+          "signerEmployeeId": "NG-EMP-0017",
+          "signerName": "Chinedu Lawal",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M14%2044%20Q%2030%2014%2050%2032%20Q%2070%2050%2088%2026%20Q%20108%208%20124%2036%20Q%20140%2056%20158%2030%20Q%20178%2012%20188%2038%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.6%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": {
+            "attachmentId": "SEED-ATT-NG-EMP-0010-0-3234",
+            "x": 0.7,
+            "y": 0.92,
+            "width": 0.22
+          },
+          "signedAt": "2026-05-12T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-contract-NG-EMP-0010-2"
+        }
+      ]
+    },
+    {
+      "id": "SEED-APR-contract-8-NG-EMP-0011",
+      "documentType": "contract",
+      "documentId": "SEED-DOC-contract-8",
+      "documentTitle": "NDA – Adaeze Okonkwo",
+      "documentSummary": "Confidentiality agreement for contractor",
+      "payloadSnapshot": {
+        "counterparty": "Adaeze Okonkwo",
+        "contractType": "NDA",
+        "startDate": "2026-06-01"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0011",
+        "name": "Adaeze Okonkwo",
+        "initials": "AO",
+        "departmentName": "Product & Design"
+      },
+      "submittedAt": "2026-05-13T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-CONTRACT",
+      "currentStepIndex": 1,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "SEED-STEP-contract-NG-EMP-0011-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-14T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-contract-NG-EMP-0011-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-contract-8",
+          "at": "2026-05-13T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0011",
+          "actorName": "Adaeze Okonkwo",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-contract-8-0",
+          "at": "2026-05-14T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "approved",
+          "stepOrder": 1
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0011-0-2459",
+          "name": "employment_contract.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1810,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%231E40AF%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EEmployment%20Contract%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3ESahel%20Fintech%20HR%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-10193%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-23%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22327%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22398%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22336%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22426%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22455%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22344%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22354%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22398%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22472%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22440%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22548%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22464%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0011"
+        }
+      ],
+      "signatures": [
+        {
+          "id": "SEED-SIG-SUB-8",
+          "signerEmployeeId": "NG-EMP-0011",
+          "signerName": "Adaeze Okonkwo",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M14%2044%20Q%2030%2014%2050%2032%20Q%2070%2050%2088%2026%20Q%20108%208%20124%2036%20Q%20140%2056%20158%2030%20Q%20178%2012%20188%2038%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.6%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-13T11:35:05.428Z",
+          "role": "submitter"
+        }
+      ]
+    },
+    {
+      "id": "SEED-APR-contract-9-NG-EMP-0012",
+      "documentType": "contract",
+      "documentId": "SEED-DOC-contract-9",
+      "documentTitle": "Contract amendment – Chinedu Sanusi",
+      "documentSummary": "Update notice period to 60 days",
+      "payloadSnapshot": {
+        "counterparty": "Chinedu Sanusi",
+        "contractType": "Amendment",
+        "startDate": "2026-06-01"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0012",
+        "name": "Chinedu Sanusi",
+        "initials": "CS",
+        "departmentName": "Product & Design"
+      },
+      "submittedAt": "2026-05-14T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-CONTRACT",
+      "currentStepIndex": 0,
+      "status": "returned",
+      "steps": [
+        {
+          "id": "SEED-STEP-contract-NG-EMP-0012-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "returned",
+          "note": "Please attach the signed amendment PDF.",
+          "decidedAt": "2026-05-28T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-contract-NG-EMP-0012-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-contract-9",
+          "at": "2026-05-14T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0012",
+          "actorName": "Chinedu Sanusi",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-RET-9",
+          "at": "2026-05-28T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "returned",
+          "stepOrder": 1,
+          "note": "Please attach the signed amendment PDF."
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0012-0-8390",
+          "name": "employment_contract.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1810,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%231E40AF%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EEmployment%20Contract%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3ESahel%20Fintech%20HR%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-76392%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-09%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22359%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22555%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22358%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22384%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22410%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22478%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22459%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22466%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22553%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22552%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22403%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22490%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0012"
+        }
+      ],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-offboarding_clearance-10-NG-EMP-0013",
+      "documentType": "offboarding_clearance",
+      "documentId": "SEED-DOC-offboarding_clearance-10",
+      "documentTitle": "Offboarding – Ngozi Adebayo",
+      "documentSummary": "Final day 2026-06-30, resigned",
+      "payloadSnapshot": {
+        "lastDay": "2026-06-30",
+        "reason": "Resigned"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0013",
+        "name": "Ngozi Adebayo",
+        "initials": "NA",
+        "departmentName": "Risk & Compliance"
+      },
+      "submittedAt": "2026-05-15T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-OFFBOARDING-CLEARANCE",
+      "currentStepIndex": 2,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "SEED-STEP-offboarding_clearance-NG-EMP-0013-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-05-16T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-10-0"
+        },
+        {
+          "id": "SEED-STEP-offboarding_clearance-NG-EMP-0013-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "IT Admin",
+          "approver": "ROLE:ROLE-IT",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "reassignedFromEmployeeId": "NG-EMP-0004",
+          "reassignedFromName": "Tunde IT",
+          "skippedReason": "on_leave",
+          "decidedAt": "2026-05-15T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-offboarding_clearance-NG-EMP-0013-3",
+          "order": 3,
+          "templateStepId": "seed-3",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "pending"
+        },
+        {
+          "id": "SEED-STEP-offboarding_clearance-NG-EMP-0013-4",
+          "order": 4,
+          "templateStepId": "seed-4",
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-offboarding_clearance-10",
+          "at": "2026-05-15T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0013",
+          "actorName": "Ngozi Adebayo",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-offboarding_clearance-10-0",
+          "at": "2026-05-16T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-APP-offboarding_clearance-10-1",
+          "at": "2026-05-15T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 2
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0013-0-8719",
+          "name": "exit_checklist.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1805,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%23DC2626%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EExit%20Checklist%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3ESahel%20Fintech%20HR%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-52383%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-15%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22418%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22329%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22340%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22481%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22555%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22368%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22539%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22364%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22527%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22533%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22396%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22546%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0013"
+        }
+      ],
+      "signatures": [
+        {
+          "id": "SEED-SIG-SUB-10",
+          "signerEmployeeId": "NG-EMP-0013",
+          "signerName": "Ngozi Adebayo",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M10%2040%20Q%2025%2018%2045%2035%20T%2080%2030%20Q%2095%2022%20110%2038%20T%20145%2032%20Q%20160%2022%20180%2036%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-15T11:35:05.428Z",
+          "role": "submitter"
+        },
+        {
+          "id": "SEED-SIG-REV-10-0",
+          "signerEmployeeId": "NG-EMP-0001",
+          "signerName": "Folake Afolayan",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M10%2040%20Q%2025%2018%2045%2035%20T%2080%2030%20Q%2095%2022%20110%2038%20T%20145%2032%20Q%20160%2022%20180%2036%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-16T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-offboarding_clearance-NG-EMP-0013-1"
+        }
+      ]
+    },
+    {
+      "id": "SEED-APR-offboarding_clearance-11-NG-EMP-0014",
+      "documentType": "offboarding_clearance",
+      "documentId": "SEED-DOC-offboarding_clearance-11",
+      "documentTitle": "Offboarding – Amaka Afolayan",
+      "documentSummary": "Junior dev leaving for further studies",
+      "payloadSnapshot": {
+        "lastDay": "2026-07-15",
+        "reason": "Resigned"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0014",
+        "name": "Amaka Afolayan",
+        "initials": "AA",
+        "departmentName": "Risk & Compliance"
+      },
+      "submittedAt": "2026-05-16T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-OFFBOARDING-CLEARANCE",
+      "currentStepIndex": 4,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "SEED-STEP-offboarding_clearance-NG-EMP-0014-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0013",
+          "resolvedEmployeeName": "Ngozi Adebayo",
+          "status": "approved",
+          "decidedAt": "2026-05-17T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-11-0"
+        },
+        {
+          "id": "SEED-STEP-offboarding_clearance-NG-EMP-0014-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "IT Admin",
+          "approver": "ROLE:ROLE-IT",
+          "resolvedEmployeeId": "NG-EMP-0004",
+          "resolvedEmployeeName": "Tochukwu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-16T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-11-1"
+        },
+        {
+          "id": "SEED-STEP-offboarding_clearance-NG-EMP-0014-3",
+          "order": 3,
+          "templateStepId": "seed-3",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "approved",
+          "decidedAt": "2026-05-15T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-11-2"
+        },
+        {
+          "id": "SEED-STEP-offboarding_clearance-NG-EMP-0014-4",
+          "order": 4,
+          "templateStepId": "seed-4",
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-14T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-11-3"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-offboarding_clearance-11",
+          "at": "2026-05-16T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0014",
+          "actorName": "Amaka Afolayan",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-offboarding_clearance-11-0",
+          "at": "2026-05-17T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0013",
+          "actorName": "Ngozi Adebayo",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-APP-offboarding_clearance-11-1",
+          "at": "2026-05-16T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0004",
+          "actorName": "Tochukwu Lawal",
+          "type": "approved",
+          "stepOrder": 2
+        },
+        {
+          "id": "SEED-EVT-APP-offboarding_clearance-11-2",
+          "at": "2026-05-15T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0016",
+          "actorName": "Yusuf Eze",
+          "type": "approved",
+          "stepOrder": 3
+        },
+        {
+          "id": "SEED-EVT-APP-offboarding_clearance-11-3",
+          "at": "2026-05-14T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "approved",
+          "stepOrder": 4
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0014-0-4983",
+          "name": "exit_checklist.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1805,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%23DC2626%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EExit%20Checklist%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3ESahel%20Fintech%20HR%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-15915%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-01%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22500%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22486%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22468%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22433%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22329%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22491%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22534%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22332%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22495%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22506%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22330%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22400%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0014"
+        }
+      ],
+      "signatures": [
+        {
+          "id": "SEED-SIG-SUB-11",
+          "signerEmployeeId": "NG-EMP-0014",
+          "signerName": "Amaka Afolayan",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M12%2038%20C%2030%2012%2050%2050%2070%2030%20S%20110%2012%20130%2038%20S%20170%2016%20192%2032%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%22186%22%20cy%3D%2232%22%20r%3D%223%22%20fill%3D%22%23111%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-16T11:35:05.428Z",
+          "role": "submitter"
+        },
+        {
+          "id": "SEED-SIG-REV-11-0",
+          "signerEmployeeId": "NG-EMP-0013",
+          "signerName": "Ngozi Adebayo",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M10%2040%20Q%2025%2018%2045%2035%20T%2080%2030%20Q%2095%2022%20110%2038%20T%20145%2032%20Q%20160%2022%20180%2036%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-17T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-offboarding_clearance-NG-EMP-0014-1"
+        },
+        {
+          "id": "SEED-SIG-REV-11-1",
+          "signerEmployeeId": "NG-EMP-0004",
+          "signerName": "Tochukwu Lawal",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M12%2038%20C%2030%2012%2050%2050%2070%2030%20S%20110%2012%20130%2038%20S%20170%2016%20192%2032%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%22186%22%20cy%3D%2232%22%20r%3D%223%22%20fill%3D%22%23111%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-16T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-offboarding_clearance-NG-EMP-0014-2"
+        },
+        {
+          "id": "SEED-SIG-REV-11-2",
+          "signerEmployeeId": "NG-EMP-0016",
+          "signerName": "Yusuf Eze",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M14%2044%20Q%2030%2014%2050%2032%20Q%2070%2050%2088%2026%20Q%20108%208%20124%2036%20Q%20140%2056%20158%2030%20Q%20178%2012%20188%2038%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.6%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-15T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-offboarding_clearance-NG-EMP-0014-3"
+        },
+        {
+          "id": "SEED-SIG-REV-11-3",
+          "signerEmployeeId": "NG-EMP-0017",
+          "signerName": "Chinedu Lawal",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M10%2040%20Q%2025%2018%2045%2035%20T%2080%2030%20Q%2095%2022%20110%2038%20T%20145%2032%20Q%20160%2022%20180%2036%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-14T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-offboarding_clearance-NG-EMP-0014-4"
+        }
+      ]
+    },
+    {
+      "id": "SEED-APR-promotion_request-12-NG-EMP-0015",
+      "documentType": "promotion_request",
+      "documentId": "SEED-DOC-promotion_request-12",
+      "documentTitle": "Promote Nneka Sanusi to Tech Lead",
+      "documentSummary": "4y tenure, consistently exceeds expectations",
+      "payloadSnapshot": {
+        "newTitle": "Tech Lead",
+        "newGrade": "L5",
+        "newSalary": 18000000,
+        "effectiveDate": "2026-07-01"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0015",
+        "name": "Nneka Sanusi",
+        "initials": "NS",
+        "departmentName": "Risk & Compliance"
+      },
+      "submittedAt": "2026-05-17T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-PROMOTION-REQUEST",
+      "currentStepIndex": 1,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "SEED-STEP-promotion_request-NG-EMP-0015-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0013",
+          "resolvedEmployeeName": "Ngozi Adebayo",
+          "status": "approved",
+          "decidedAt": "2026-05-18T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-12-0"
+        },
+        {
+          "id": "SEED-STEP-promotion_request-NG-EMP-0015-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "pending"
+        },
+        {
+          "id": "SEED-STEP-promotion_request-NG-EMP-0015-3",
+          "order": 3,
+          "templateStepId": "seed-3",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-promotion_request-12",
+          "at": "2026-05-17T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0015",
+          "actorName": "Nneka Sanusi",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-promotion_request-12-0",
+          "at": "2026-05-18T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0013",
+          "actorName": "Ngozi Adebayo",
+          "type": "approved",
+          "stepOrder": 1
+        }
+      ],
+      "attachments": [],
+      "signatures": [
+        {
+          "id": "SEED-SIG-REV-12-0",
+          "signerEmployeeId": "NG-EMP-0013",
+          "signerName": "Ngozi Adebayo",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M12%2038%20C%2030%2012%2050%2050%2070%2030%20S%20110%2012%20130%2038%20S%20170%2016%20192%2032%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%22186%22%20cy%3D%2232%22%20r%3D%223%22%20fill%3D%22%23111%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-18T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-promotion_request-NG-EMP-0015-1"
+        }
+      ]
+    },
+    {
+      "id": "SEED-APR-promotion_request-13-NG-EMP-0016",
+      "documentType": "promotion_request",
+      "documentId": "SEED-DOC-promotion_request-13",
+      "documentTitle": "Promote Yusuf Eze to Senior Analyst",
+      "documentSummary": "Performance review cycle outcome",
+      "payloadSnapshot": {
+        "newTitle": "Senior Analyst",
+        "newGrade": "L4",
+        "newSalary": 11000000,
+        "effectiveDate": "2026-08-01"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0016",
+        "name": "Yusuf Eze",
+        "initials": "YE",
+        "departmentName": "Finance & Treasury"
+      },
+      "submittedAt": "2026-05-18T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-PROMOTION-REQUEST",
+      "currentStepIndex": 3,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "SEED-STEP-promotion_request-NG-EMP-0016-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-05-19T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-13-0"
+        },
+        {
+          "id": "SEED-STEP-promotion_request-NG-EMP-0016-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-18T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-13-1"
+        },
+        {
+          "id": "SEED-STEP-promotion_request-NG-EMP-0016-3",
+          "order": 3,
+          "templateStepId": "seed-3",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "approved",
+          "decidedAt": "2026-05-17T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-13-2"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-promotion_request-13",
+          "at": "2026-05-18T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0016",
+          "actorName": "Yusuf Eze",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-promotion_request-13-0",
+          "at": "2026-05-19T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-APP-promotion_request-13-1",
+          "at": "2026-05-18T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "approved",
+          "stepOrder": 2
+        },
+        {
+          "id": "SEED-EVT-APP-promotion_request-13-2",
+          "at": "2026-05-17T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0016",
+          "actorName": "Yusuf Eze",
+          "type": "approved",
+          "stepOrder": 3
+        }
+      ],
+      "attachments": [],
+      "signatures": [
+        {
+          "id": "SEED-SIG-REV-13-0",
+          "signerEmployeeId": "NG-EMP-0001",
+          "signerName": "Folake Afolayan",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M10%2040%20Q%2025%2018%2045%2035%20T%2080%2030%20Q%2095%2022%20110%2038%20T%20145%2032%20Q%20160%2022%20180%2036%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-19T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-promotion_request-NG-EMP-0016-1"
+        },
+        {
+          "id": "SEED-SIG-REV-13-1",
+          "signerEmployeeId": "NG-EMP-0017",
+          "signerName": "Chinedu Lawal",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M12%2038%20C%2030%2012%2050%2050%2070%2030%20S%20110%2012%20130%2038%20S%20170%2016%20192%2032%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%22186%22%20cy%3D%2232%22%20r%3D%223%22%20fill%3D%22%23111%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-18T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-promotion_request-NG-EMP-0016-2"
+        },
+        {
+          "id": "SEED-SIG-REV-13-2",
+          "signerEmployeeId": "NG-EMP-0016",
+          "signerName": "Yusuf Eze",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M14%2044%20Q%2030%2014%2050%2032%20Q%2070%2050%2088%2026%20Q%20108%208%20124%2036%20Q%20140%2056%20158%2030%20Q%20178%2012%20188%2038%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.6%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-17T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-promotion_request-NG-EMP-0016-3"
+        }
+      ]
+    },
+    {
+      "id": "SEED-APR-promotion_request-14-NG-EMP-0017",
+      "documentType": "promotion_request",
+      "documentId": "SEED-DOC-promotion_request-14",
+      "documentTitle": "Salary adjustment – Chinedu Lawal",
+      "documentSummary": "Market correction",
+      "payloadSnapshot": {
+        "newTitle": "Operations Manager",
+        "newGrade": "M2",
+        "newSalary": 14500000,
+        "effectiveDate": "2026-07-15"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0017",
+        "name": "Chinedu Lawal",
+        "initials": "CL",
+        "departmentName": "People Operations"
+      },
+      "submittedAt": "2026-05-19T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-PROMOTION-REQUEST",
+      "currentStepIndex": 0,
+      "status": "returned",
+      "steps": [
+        {
+          "id": "SEED-STEP-promotion_request-NG-EMP-0017-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "returned",
+          "note": "Please attach the benchmarking data referenced in the proposal.",
+          "decidedAt": "2026-05-28T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-promotion_request-NG-EMP-0017-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Admin",
+          "approver": "ROLE:ROLE-HRADMIN",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "pending"
+        },
+        {
+          "id": "SEED-STEP-promotion_request-NG-EMP-0017-3",
+          "order": 3,
+          "templateStepId": "seed-3",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-promotion_request-14",
+          "at": "2026-05-19T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-RET-14",
+          "at": "2026-05-28T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "returned",
+          "stepOrder": 1,
+          "note": "Please attach the benchmarking data referenced in the proposal."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-training_request-15-NG-EMP-0018",
+      "documentType": "training_request",
+      "documentId": "SEED-DOC-training_request-15",
+      "documentTitle": "AWS SA Associate – Femi Ogundimu",
+      "documentSummary": "Self-paced course + exam",
+      "payloadSnapshot": {
+        "course": "AWS Solutions Architect Associate",
+        "provider": "A Cloud Guru",
+        "cost": 200000,
+        "startDate": "2026-06-15"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0018",
+        "name": "Femi Ogundimu",
+        "initials": "FO",
+        "departmentName": "Growth & Marketing"
+      },
+      "submittedAt": "2026-05-20T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-TRAINING-REQUEST",
+      "currentStepIndex": 2,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "SEED-STEP-training_request-NG-EMP-0018-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-05-21T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-training_request-NG-EMP-0018-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-20T11:35:05.428Z"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-training_request-15",
+          "at": "2026-05-20T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0018",
+          "actorName": "Femi Ogundimu",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-training_request-15-0",
+          "at": "2026-05-21T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-APP-training_request-15-1",
+          "at": "2026-05-20T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "approved",
+          "stepOrder": 2
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0018-0-5349",
+          "name": "pro-forma_invoice.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1804,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%237C3AED%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EPro-forma%20Invoice%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3EA%20Cloud%20Guru%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-89421%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-26%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22421%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22535%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22443%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22379%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22443%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22344%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22335%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22438%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22508%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22365%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22425%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22320%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0018"
+        }
+      ],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-training_request-16-NG-EMP-0019",
+      "documentType": "training_request",
+      "documentId": "SEED-DOC-training_request-16",
+      "documentTitle": "PMP Certification – Folake Ibrahim",
+      "documentSummary": "Project Management Professional",
+      "payloadSnapshot": {
+        "course": "PMP Certification",
+        "provider": "PMI Nigeria",
+        "cost": 450000,
+        "startDate": "2026-08-01"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0019",
+        "name": "Folake Ibrahim",
+        "initials": "FI",
+        "departmentName": "Growth & Marketing"
+      },
+      "submittedAt": "2026-05-21T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-TRAINING-REQUEST",
+      "currentStepIndex": 1,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "SEED-STEP-training_request-NG-EMP-0019-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0018",
+          "resolvedEmployeeName": "Femi Ogundimu",
+          "status": "approved",
+          "decidedAt": "2026-05-22T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-training_request-NG-EMP-0019-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-training_request-16",
+          "at": "2026-05-21T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0019",
+          "actorName": "Folake Ibrahim",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-training_request-16-0",
+          "at": "2026-05-22T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0018",
+          "actorName": "Femi Ogundimu",
+          "type": "approved",
+          "stepOrder": 1
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0019-0-9925",
+          "name": "pro-forma_invoice.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1804,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%237C3AED%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EPro-forma%20Invoice%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3EA%20Cloud%20Guru%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-83365%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-20%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22472%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22518%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22389%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22538%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22537%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22478%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22529%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22452%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22412%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22345%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22506%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22456%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0019"
+        }
+      ],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-training_request-17-NG-EMP-0020",
+      "documentType": "training_request",
+      "documentId": "SEED-DOC-training_request-17",
+      "documentTitle": "DevConf attendance – Zainab Uche",
+      "documentSummary": "International conference + travel",
+      "payloadSnapshot": {
+        "course": "DevConf 2026",
+        "provider": "Linux Foundation",
+        "cost": 1200000,
+        "startDate": "2026-09-10"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0020",
+        "name": "Zainab Uche",
+        "initials": "ZU",
+        "departmentName": "Customer Support"
+      },
+      "submittedAt": "2026-05-22T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-TRAINING-REQUEST",
+      "currentStepIndex": 1,
+      "status": "rejected",
+      "steps": [
+        {
+          "id": "SEED-STEP-training_request-NG-EMP-0020-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-05-23T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-training_request-NG-EMP-0020-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "HR Manager",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "NG-EMP-0017",
+          "resolvedEmployeeName": "Chinedu Lawal",
+          "status": "rejected",
+          "note": "Travel budget already allocated to AWS Summit. Re-apply in 2027.",
+          "decidedAt": "2026-05-28T11:35:05.428Z"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-training_request-17",
+          "at": "2026-05-22T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0020",
+          "actorName": "Zainab Uche",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-training_request-17-0",
+          "at": "2026-05-23T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-REJ-17",
+          "at": "2026-05-28T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0017",
+          "actorName": "Chinedu Lawal",
+          "type": "rejected",
+          "stepOrder": 2,
+          "note": "Travel budget already allocated to AWS Summit. Re-apply in 2027."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-asset_request-18-NG-EMP-0001",
+      "documentType": "asset_request",
+      "documentId": "SEED-DOC-asset_request-18",
+      "documentTitle": "MacBook Pro 16\" – Folake Afolayan",
+      "documentSummary": "Current laptop is 4y old",
+      "payloadSnapshot": {
+        "assetType": "Laptop",
+        "model": "MacBook Pro 16\" M3 Max",
+        "justification": "Performance replacement"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0001",
+        "name": "Folake Afolayan",
+        "initials": "FA",
+        "departmentName": "Executive Office"
+      },
+      "submittedAt": "2026-05-23T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-ASSET-REQUEST",
+      "currentStepIndex": 1,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "SEED-STEP-asset_request-NG-EMP-0001-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": null,
+          "resolvedEmployeeName": null,
+          "status": "approved",
+          "decidedAt": "2026-05-24T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-asset_request-NG-EMP-0001-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "IT Admin",
+          "approver": "ROLE:ROLE-IT",
+          "resolvedEmployeeId": "NG-EMP-0004",
+          "resolvedEmployeeName": "Tochukwu Lawal",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-asset_request-18",
+          "at": "2026-05-23T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-asset_request-18-0",
+          "at": "2026-05-24T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Approver",
+          "type": "approved",
+          "stepOrder": 1
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0001-0-8136",
+          "name": "vendor_quote.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1812,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%23D97706%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EVendor%20Quote%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3EApple%20Authorised%20Reseller%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-14966%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-20%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22326%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22407%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22400%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22362%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22364%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22345%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22393%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22488%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22335%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22421%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22415%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22460%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0001"
+        }
+      ],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-asset_request-19-NG-EMP-0002",
+      "documentType": "asset_request",
+      "documentId": "SEED-DOC-asset_request-19",
+      "documentTitle": "iPhone 15 work device – Ifeoma Bello",
+      "documentSummary": "Company phone for on-call rotation",
+      "payloadSnapshot": {
+        "assetType": "Phone",
+        "model": "iPhone 15",
+        "justification": "On-call"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0002",
+        "name": "Ifeoma Bello",
+        "initials": "IB",
+        "departmentName": "Executive Office"
+      },
+      "submittedAt": "2026-05-24T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-ASSET-REQUEST",
+      "currentStepIndex": 2,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "SEED-STEP-asset_request-NG-EMP-0002-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-05-25T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-asset_request-NG-EMP-0002-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "IT Admin",
+          "approver": "ROLE:ROLE-IT",
+          "resolvedEmployeeId": "NG-EMP-0004",
+          "resolvedEmployeeName": "Tochukwu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-24T11:35:05.428Z"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-asset_request-19",
+          "at": "2026-05-24T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0002",
+          "actorName": "Ifeoma Bello",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-asset_request-19-0",
+          "at": "2026-05-25T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-APP-asset_request-19-1",
+          "at": "2026-05-24T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0004",
+          "actorName": "Tochukwu Lawal",
+          "type": "approved",
+          "stepOrder": 2
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-asset_request-20-NG-EMP-0001",
+      "documentType": "asset_request",
+      "documentId": "SEED-DOC-asset_request-20",
+      "documentTitle": "External monitor – Folake Afolayan",
+      "documentSummary": "Dual-screen setup for design work",
+      "payloadSnapshot": {
+        "assetType": "Monitor",
+        "model": "Dell U2723QE 27\"",
+        "justification": "Design productivity"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0001",
+        "name": "Folake Afolayan",
+        "initials": "FA",
+        "departmentName": "Executive Office"
+      },
+      "submittedAt": "2026-05-25T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-ASSET-REQUEST",
+      "currentStepIndex": 0,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "SEED-STEP-asset_request-NG-EMP-0001-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": null,
+          "resolvedEmployeeName": null,
+          "status": "pending"
+        },
+        {
+          "id": "SEED-STEP-asset_request-NG-EMP-0001-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "IT Admin",
+          "approver": "ROLE:ROLE-IT",
+          "resolvedEmployeeId": "NG-EMP-0004",
+          "resolvedEmployeeName": "Tochukwu Lawal",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-asset_request-20",
+          "at": "2026-05-25T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "submitted"
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-expense_claim-21-NG-EMP-0002",
+      "documentType": "expense_claim",
+      "documentId": "SEED-DOC-expense_claim-21",
+      "documentTitle": "Client dinner – Ifeoma Bello",
+      "documentSummary": "Q2 quarterly partner dinner",
+      "payloadSnapshot": {
+        "category": "Meals & Entertainment",
+        "amount": 65000,
+        "incurredOn": "2026-05-22",
+        "merchant": "RSVP Restaurant"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0002",
+        "name": "Ifeoma Bello",
+        "initials": "IB",
+        "departmentName": "Executive Office"
+      },
+      "submittedAt": "2026-05-26T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-EXPENSE-CLAIM",
+      "currentStepIndex": 0,
+      "status": "rejected",
+      "steps": [
+        {
+          "id": "SEED-STEP-expense_claim-NG-EMP-0002-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "rejected",
+          "note": "Exceeds policy cap of ₦40k for client meals.",
+          "decidedAt": "2026-05-28T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-expense_claim-NG-EMP-0002-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-expense_claim-21",
+          "at": "2026-05-26T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0002",
+          "actorName": "Ifeoma Bello",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-REJ-21",
+          "at": "2026-05-28T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "rejected",
+          "stepOrder": 1,
+          "note": "Exceeds policy cap of ₦40k for client meals."
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0002-0-9415",
+          "name": "receipt.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1797,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%2316A34A%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EReceipt%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3ERSVP%20Restaurant%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-53912%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-28%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22362%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22406%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22407%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22498%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22518%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22458%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22478%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22432%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22543%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22395%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22555%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22320%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0002"
+        }
+      ],
+      "signatures": []
+    },
+    {
+      "id": "SEED-APR-expense_claim-22-NG-EMP-0003",
+      "documentType": "expense_claim",
+      "documentId": "SEED-DOC-expense_claim-22",
+      "documentTitle": "Travel reimbursement – Chinedu Olawale",
+      "documentSummary": "Client site visit, Abuja",
+      "payloadSnapshot": {
+        "category": "Travel",
+        "amount": 145000,
+        "incurredOn": "2026-05-15",
+        "merchant": "Air Peace + Bolt"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0003",
+        "name": "Chinedu Olawale",
+        "initials": "CO",
+        "departmentName": "Executive Office"
+      },
+      "submittedAt": "2026-05-27T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-EXPENSE-CLAIM",
+      "currentStepIndex": 2,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "SEED-STEP-expense_claim-NG-EMP-0003-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0001",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-05-28T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-expense_claim-NG-EMP-0003-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "approved",
+          "decidedAt": "2026-05-27T11:35:05.428Z",
+          "signatureId": "SEED-SIG-REV-22-0"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-expense_claim-22",
+          "at": "2026-05-27T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0003",
+          "actorName": "Chinedu Olawale",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-expense_claim-22-0",
+          "at": "2026-05-28T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0001",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1
+        },
+        {
+          "id": "SEED-EVT-APP-expense_claim-22-1",
+          "at": "2026-05-27T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0016",
+          "actorName": "Yusuf Eze",
+          "type": "approved",
+          "stepOrder": 2
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0003-0-3419",
+          "name": "receipt.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1797,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%2316A34A%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EReceipt%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3ERSVP%20Restaurant%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-73382%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-05%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22530%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22398%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22392%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22352%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22389%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22337%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22379%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22392%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22420%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22418%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22413%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22498%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0003"
+        }
+      ],
+      "signatures": [
+        {
+          "id": "SEED-SIG-REV-22-0",
+          "signerEmployeeId": "NG-EMP-0016",
+          "signerName": "Yusuf Eze",
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2060%22%3E%3Cpath%20d%3D%22M10%2040%20Q%2025%2018%2045%2035%20T%2080%2030%20Q%2095%2022%20110%2038%20T%20145%2032%20Q%20160%2022%20180%2036%22%20stroke%3D%22%23111%22%20fill%3D%22none%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E",
+          "placement": null,
+          "signedAt": "2026-05-27T11:35:05.428Z",
+          "role": "reviewer",
+          "stepId": "SEED-STEP-expense_claim-NG-EMP-0003-2"
+        }
+      ]
+    },
+    {
+      "id": "SEED-APR-expense_claim-23-NG-EMP-0005",
+      "documentType": "expense_claim",
+      "documentId": "SEED-DOC-expense_claim-23",
+      "documentTitle": "Software subscription – Ngozi Mohammed",
+      "documentSummary": "Notion team plan, 1 year",
+      "payloadSnapshot": {
+        "category": "Software",
+        "amount": 360000,
+        "incurredOn": "2026-05-01",
+        "merchant": "Notion Labs"
+      },
+      "submittedBy": {
+        "employeeId": "NG-EMP-0005",
+        "name": "Ngozi Mohammed",
+        "initials": "NM",
+        "departmentName": "Engineering"
+      },
+      "submittedAt": "2026-05-28T11:35:05.428Z",
+      "chainTemplateId": "ACT-DEFAULT-EXPENSE-CLAIM",
+      "currentStepIndex": 1,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "SEED-STEP-expense_claim-NG-EMP-0005-1",
+          "order": 1,
+          "templateStepId": "seed-1",
+          "label": "Line Manager",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "NG-EMP-0004",
+          "resolvedEmployeeName": "Tochukwu Lawal",
+          "status": "approved",
+          "decidedAt": "2026-05-29T11:35:05.428Z"
+        },
+        {
+          "id": "SEED-STEP-expense_claim-NG-EMP-0005-2",
+          "order": 2,
+          "templateStepId": "seed-2",
+          "label": "Finance",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "NG-EMP-0016",
+          "resolvedEmployeeName": "Yusuf Eze",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "SEED-EVT-SUB-expense_claim-23",
+          "at": "2026-05-28T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0005",
+          "actorName": "Ngozi Mohammed",
+          "type": "submitted"
+        },
+        {
+          "id": "SEED-EVT-APP-expense_claim-23-0",
+          "at": "2026-05-29T11:35:05.428Z",
+          "actorEmployeeId": "NG-EMP-0004",
+          "actorName": "Tochukwu Lawal",
+          "type": "approved",
+          "stepOrder": 1
+        }
+      ],
+      "attachments": [
+        {
+          "id": "SEED-ATT-NG-EMP-0005-0-5979",
+          "name": "receipt.svg",
+          "mimeType": "image/svg+xml",
+          "sizeBytes": 1797,
+          "dataUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20800%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22800%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22120%22%20fill%3D%22%2316A34A%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%2280%22%20font-family%3D%22sans-serif%22%20font-size%3D%2236%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%3EReceipt%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22160%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20fill%3D%22%23374151%22%3ERSVP%20Restaurant%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22200%22%20x2%3D%22560%22%20y2%3D%22200%22%20stroke%3D%22%23e5e7eb%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22240%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EReference%3A%20DOC-95290%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%236b7280%22%3EIssued%3A%202026-05-22%3C%2Ftext%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22320%22%20x2%3D%22453%22%20y2%3D%22320%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22350%22%20x2%3D%22368%22%20y2%3D%22350%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22380%22%20x2%3D%22553%22%20y2%3D%22380%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22410%22%20x2%3D%22483%22%20y2%3D%22410%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22440%22%20x2%3D%22403%22%20y2%3D%22440%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22470%22%20x2%3D%22375%22%20y2%3D%22470%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22500%22%20x2%3D%22547%22%20y2%3D%22500%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22530%22%20x2%3D%22406%22%20y2%3D%22530%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22560%22%20x2%3D%22472%22%20y2%3D%22560%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22590%22%20x2%3D%22396%22%20y2%3D%22590%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22620%22%20x2%3D%22438%22%20y2%3D%22620%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2240%22%20y1%3D%22650%22%20x2%3D%22342%22%20y2%3D%22650%22%20stroke%3D%22%23d1d5db%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22700%22%20width%3D%22200%22%20height%3D%2260%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-dasharray%3D%224%204%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%22735%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%236b7280%22%3ESignature%20area%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "uploadedAt": "2026-05-05T11:35:05.428Z",
+          "uploadedByEmployeeId": "NG-EMP-0005"
+        }
+      ],
+      "signatures": []
+    },
+    {
+      "id": "APR-WFR-DEMO-1",
+      "documentType": "workforce_request",
+      "documentId": "WFR-DEMO-1",
+      "documentTitle": "3 hires — Engineering",
+      "documentSummary": "Scale the platform team for the Q3 product roadmap.",
+      "payloadSnapshot": {
+        "department": "Engineering",
+        "numberOfHires": 3,
+        "reason": "Scale the platform team for the Q3 product roadmap.",
+        "budgetEstimate": 24000000,
+        "urgency": "high",
+        "expectedStartDate": "2026-09-01"
+      },
+      "submittedBy": {
+        "employeeId": "",
+        "name": "Ifeoma Nwosu",
+        "initials": "IN",
+        "departmentName": "Engineering"
+      },
+      "submittedAt": "2026-06-03T19:50:03.268Z",
+      "chainTemplateId": "ACT-DEFAULT-WORKFORCE-REQUEST",
+      "currentStepIndex": 0,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "APR-WFR-DEMO-1-S1",
+          "order": 1,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-1",
+          "label": "Review role justification",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "EMP-HRMGR",
+          "resolvedEmployeeName": "Amara Okafor",
+          "status": "pending"
+        },
+        {
+          "id": "APR-WFR-DEMO-1-S2",
+          "order": 2,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-2",
+          "label": "Confirm budget availability",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "EMP-FIN",
+          "resolvedEmployeeName": "Tunde Bello",
+          "status": "pending"
+        },
+        {
+          "id": "APR-WFR-DEMO-1-S3",
+          "order": 3,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-3",
+          "label": "Executive authorization",
+          "approver": "ROLE:ROLE-EXEC",
+          "resolvedEmployeeId": "EMP-EXEC",
+          "resolvedEmployeeName": "Chidi Eze",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "APR-WFR-DEMO-1-E0",
+          "at": "2026-06-03T19:50:03.268Z",
+          "actorEmployeeId": "",
+          "actorName": "Ifeoma Nwosu",
+          "type": "submitted"
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "APR-WFR-DEMO-2",
+      "documentType": "workforce_request",
+      "documentId": "WFR-DEMO-2",
+      "documentTitle": "2 hires — Customer Success",
+      "documentSummary": "Reduce ticket backlog and improve response SLAs.",
+      "payloadSnapshot": {
+        "department": "Customer Success",
+        "numberOfHires": 2,
+        "reason": "Reduce ticket backlog and improve response SLAs.",
+        "budgetEstimate": 8000000,
+        "urgency": "medium",
+        "expectedStartDate": "2026-08-15"
+      },
+      "submittedBy": {
+        "employeeId": "",
+        "name": "Bola Adeyemi",
+        "initials": "BA",
+        "departmentName": "Customer Success"
+      },
+      "submittedAt": "2026-05-31T19:50:03.268Z",
+      "chainTemplateId": "ACT-DEFAULT-WORKFORCE-REQUEST",
+      "currentStepIndex": 1,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "APR-WFR-DEMO-2-S1",
+          "order": 1,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-1",
+          "label": "Review role justification",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "EMP-HRMGR",
+          "resolvedEmployeeName": "Amara Okafor",
+          "status": "approved",
+          "decidedAt": "2026-06-01T19:50:03.268Z",
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-2-S2",
+          "order": 2,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-2",
+          "label": "Confirm budget availability",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "EMP-FIN",
+          "resolvedEmployeeName": "Tunde Bello",
+          "status": "pending"
+        },
+        {
+          "id": "APR-WFR-DEMO-2-S3",
+          "order": 3,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-3",
+          "label": "Executive authorization",
+          "approver": "ROLE:ROLE-EXEC",
+          "resolvedEmployeeId": "EMP-EXEC",
+          "resolvedEmployeeName": "Chidi Eze",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "APR-WFR-DEMO-2-E0",
+          "at": "2026-05-31T19:50:03.268Z",
+          "actorEmployeeId": "",
+          "actorName": "Bola Adeyemi",
+          "type": "submitted"
+        },
+        {
+          "id": "APR-WFR-DEMO-2-E1",
+          "at": "2026-06-01T19:50:03.268Z",
+          "actorEmployeeId": "EMP-HRMGR",
+          "actorName": "Amara Okafor",
+          "type": "approved",
+          "stepOrder": 1,
+          "note": "Looks good — approved."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "APR-WFR-DEMO-3",
+      "documentType": "workforce_request",
+      "documentId": "WFR-DEMO-3",
+      "documentTitle": "1 hire — Marketing",
+      "documentSummary": "Hire a brand designer ahead of the rebrand launch.",
+      "payloadSnapshot": {
+        "department": "Marketing",
+        "numberOfHires": 1,
+        "reason": "Hire a brand designer ahead of the rebrand launch.",
+        "budgetEstimate": 6000000,
+        "urgency": "medium",
+        "expectedStartDate": "2026-07-20"
+      },
+      "submittedBy": {
+        "employeeId": "",
+        "name": "Kemi Johnson",
+        "initials": "KJ",
+        "departmentName": "Marketing"
+      },
+      "submittedAt": "2026-05-28T19:50:03.268Z",
+      "chainTemplateId": "ACT-DEFAULT-WORKFORCE-REQUEST",
+      "currentStepIndex": 2,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "APR-WFR-DEMO-3-S1",
+          "order": 1,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-1",
+          "label": "Review role justification",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "EMP-HRMGR",
+          "resolvedEmployeeName": "Amara Okafor",
+          "status": "approved",
+          "decidedAt": "2026-05-29T19:50:03.268Z",
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-3-S2",
+          "order": 2,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-2",
+          "label": "Confirm budget availability",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "EMP-FIN",
+          "resolvedEmployeeName": "Tunde Bello",
+          "status": "approved",
+          "decidedAt": "2026-05-30T19:50:03.268Z",
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-3-S3",
+          "order": 3,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-3",
+          "label": "Executive authorization",
+          "approver": "ROLE:ROLE-EXEC",
+          "resolvedEmployeeId": "EMP-EXEC",
+          "resolvedEmployeeName": "Chidi Eze",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "APR-WFR-DEMO-3-E0",
+          "at": "2026-05-28T19:50:03.268Z",
+          "actorEmployeeId": "",
+          "actorName": "Kemi Johnson",
+          "type": "submitted"
+        },
+        {
+          "id": "APR-WFR-DEMO-3-E1",
+          "at": "2026-05-29T19:50:03.268Z",
+          "actorEmployeeId": "EMP-HRMGR",
+          "actorName": "Amara Okafor",
+          "type": "approved",
+          "stepOrder": 1,
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-3-E2",
+          "at": "2026-05-30T19:50:03.268Z",
+          "actorEmployeeId": "EMP-FIN",
+          "actorName": "Tunde Bello",
+          "type": "approved",
+          "stepOrder": 2,
+          "note": "Looks good — approved."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "APR-WFR-DEMO-4",
+      "documentType": "workforce_request",
+      "documentId": "WFR-DEMO-4",
+      "documentTitle": "1 hire — Finance",
+      "documentSummary": "Backfill a financial analyst who is relocating.",
+      "payloadSnapshot": {
+        "department": "Finance",
+        "numberOfHires": 1,
+        "reason": "Backfill a financial analyst who is relocating.",
+        "budgetEstimate": 7000000,
+        "urgency": "low",
+        "expectedStartDate": "2026-09-30"
+      },
+      "submittedBy": {
+        "employeeId": "",
+        "name": "Uche Okeke",
+        "initials": "UO",
+        "departmentName": "Finance"
+      },
+      "submittedAt": "2026-05-30T19:50:03.268Z",
+      "chainTemplateId": "ACT-DEFAULT-WORKFORCE-REQUEST",
+      "currentStepIndex": 1,
+      "status": "returned",
+      "steps": [
+        {
+          "id": "APR-WFR-DEMO-4-S1",
+          "order": 1,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-1",
+          "label": "Review role justification",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "EMP-HRMGR",
+          "resolvedEmployeeName": "Amara Okafor",
+          "status": "approved",
+          "decidedAt": "2026-05-31T19:50:03.268Z",
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-4-S2",
+          "order": 2,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-2",
+          "label": "Confirm budget availability",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "EMP-FIN",
+          "resolvedEmployeeName": "Tunde Bello",
+          "status": "returned",
+          "decidedAt": "2026-06-01T19:50:03.268Z",
+          "note": "Please attach a detailed cost breakdown before I can approve."
+        },
+        {
+          "id": "APR-WFR-DEMO-4-S3",
+          "order": 3,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-3",
+          "label": "Executive authorization",
+          "approver": "ROLE:ROLE-EXEC",
+          "resolvedEmployeeId": "EMP-EXEC",
+          "resolvedEmployeeName": "Chidi Eze",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "APR-WFR-DEMO-4-E0",
+          "at": "2026-05-30T19:50:03.268Z",
+          "actorEmployeeId": "",
+          "actorName": "Uche Okeke",
+          "type": "submitted"
+        },
+        {
+          "id": "APR-WFR-DEMO-4-E1",
+          "at": "2026-05-31T19:50:03.268Z",
+          "actorEmployeeId": "EMP-HRMGR",
+          "actorName": "Amara Okafor",
+          "type": "approved",
+          "stepOrder": 1,
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-4-ER",
+          "at": "2026-06-01T19:50:03.268Z",
+          "actorEmployeeId": "EMP-FIN",
+          "actorName": "Tunde Bello",
+          "type": "returned",
+          "stepOrder": 2,
+          "note": "Please attach a detailed cost breakdown before I can approve."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "APR-WFR-DEMO-5",
+      "documentType": "workforce_request",
+      "documentId": "WFR-DEMO-5",
+      "documentTitle": "4 hires — Sales",
+      "documentSummary": "Expand into the East region with a new sales pod.",
+      "payloadSnapshot": {
+        "department": "Sales",
+        "numberOfHires": 4,
+        "reason": "Expand into the East region with a new sales pod.",
+        "budgetEstimate": 18000000,
+        "urgency": "high",
+        "expectedStartDate": "2026-08-01"
+      },
+      "submittedBy": {
+        "employeeId": "",
+        "name": "Ngozi Eze",
+        "initials": "NE",
+        "departmentName": "Sales"
+      },
+      "submittedAt": "2026-05-22T19:50:03.268Z",
+      "chainTemplateId": "ACT-DEFAULT-WORKFORCE-REQUEST",
+      "currentStepIndex": 3,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "APR-WFR-DEMO-5-S1",
+          "order": 1,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-1",
+          "label": "Review role justification",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "EMP-HRMGR",
+          "resolvedEmployeeName": "Amara Okafor",
+          "status": "approved",
+          "decidedAt": "2026-05-23T19:50:03.268Z",
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-5-S2",
+          "order": 2,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-2",
+          "label": "Confirm budget availability",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "EMP-FIN",
+          "resolvedEmployeeName": "Tunde Bello",
+          "status": "approved",
+          "decidedAt": "2026-05-24T19:50:03.268Z",
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-5-S3",
+          "order": 3,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-3",
+          "label": "Executive authorization",
+          "approver": "ROLE:ROLE-EXEC",
+          "resolvedEmployeeId": "EMP-EXEC",
+          "resolvedEmployeeName": "Chidi Eze",
+          "status": "approved",
+          "decidedAt": "2026-05-25T19:50:03.268Z",
+          "note": "Looks good — approved."
+        }
+      ],
+      "history": [
+        {
+          "id": "APR-WFR-DEMO-5-E0",
+          "at": "2026-05-22T19:50:03.268Z",
+          "actorEmployeeId": "",
+          "actorName": "Ngozi Eze",
+          "type": "submitted"
+        },
+        {
+          "id": "APR-WFR-DEMO-5-E1",
+          "at": "2026-05-23T19:50:03.268Z",
+          "actorEmployeeId": "EMP-HRMGR",
+          "actorName": "Amara Okafor",
+          "type": "approved",
+          "stepOrder": 1,
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-5-E2",
+          "at": "2026-05-24T19:50:03.268Z",
+          "actorEmployeeId": "EMP-FIN",
+          "actorName": "Tunde Bello",
+          "type": "approved",
+          "stepOrder": 2,
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-5-E3",
+          "at": "2026-05-25T19:50:03.268Z",
+          "actorEmployeeId": "EMP-EXEC",
+          "actorName": "Chidi Eze",
+          "type": "approved",
+          "stepOrder": 3,
+          "note": "Looks good — approved."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "APR-WFR-DEMO-6",
+      "documentType": "workforce_request",
+      "documentId": "WFR-DEMO-6",
+      "documentTitle": "2 hires — Operations",
+      "documentSummary": "Staff the new distribution hub before peak season.",
+      "payloadSnapshot": {
+        "department": "Operations",
+        "numberOfHires": 2,
+        "reason": "Staff the new distribution hub before peak season.",
+        "budgetEstimate": 9500000,
+        "urgency": "critical",
+        "expectedStartDate": "2026-07-10"
+      },
+      "submittedBy": {
+        "employeeId": "",
+        "name": "Yusuf Bello",
+        "initials": "YB",
+        "departmentName": "Operations"
+      },
+      "submittedAt": "2026-05-16T19:50:03.268Z",
+      "chainTemplateId": "ACT-DEFAULT-WORKFORCE-REQUEST",
+      "currentStepIndex": 3,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "APR-WFR-DEMO-6-S1",
+          "order": 1,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-1",
+          "label": "Review role justification",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "EMP-HRMGR",
+          "resolvedEmployeeName": "Amara Okafor",
+          "status": "approved",
+          "decidedAt": "2026-05-17T19:50:03.268Z",
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-6-S2",
+          "order": 2,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-2",
+          "label": "Confirm budget availability",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "EMP-FIN",
+          "resolvedEmployeeName": "Tunde Bello",
+          "status": "approved",
+          "decidedAt": "2026-05-18T19:50:03.268Z",
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-6-S3",
+          "order": 3,
+          "templateStepId": "ACT-DEFAULT-WORKFORCE-REQUEST-3",
+          "label": "Executive authorization",
+          "approver": "ROLE:ROLE-EXEC",
+          "resolvedEmployeeId": "EMP-EXEC",
+          "resolvedEmployeeName": "Chidi Eze",
+          "status": "approved",
+          "decidedAt": "2026-05-19T19:50:03.268Z",
+          "note": "Looks good — approved."
+        }
+      ],
+      "history": [
+        {
+          "id": "APR-WFR-DEMO-6-E0",
+          "at": "2026-05-16T19:50:03.268Z",
+          "actorEmployeeId": "",
+          "actorName": "Yusuf Bello",
+          "type": "submitted"
+        },
+        {
+          "id": "APR-WFR-DEMO-6-E1",
+          "at": "2026-05-17T19:50:03.268Z",
+          "actorEmployeeId": "EMP-HRMGR",
+          "actorName": "Amara Okafor",
+          "type": "approved",
+          "stepOrder": 1,
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-6-E2",
+          "at": "2026-05-18T19:50:03.268Z",
+          "actorEmployeeId": "EMP-FIN",
+          "actorName": "Tunde Bello",
+          "type": "approved",
+          "stepOrder": 2,
+          "note": "Looks good — approved."
+        },
+        {
+          "id": "APR-WFR-DEMO-6-E3",
+          "at": "2026-05-19T19:50:03.268Z",
+          "actorEmployeeId": "EMP-EXEC",
+          "actorName": "Chidi Eze",
+          "type": "approved",
+          "stepOrder": 3,
+          "note": "Looks good — approved."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    }
+  ]
+}

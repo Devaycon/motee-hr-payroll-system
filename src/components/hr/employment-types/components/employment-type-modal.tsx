@@ -23,8 +23,10 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { Switch } from "@/src/components/ui/switch";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { cn } from "@/src/lib/utils";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   STATUTORY_DEDUCTION_OPTIONS,
+  STATUTORY_DEDUCTIONS_BY_COUNTRY,
   BENEFITS_OPTIONS,
   PAY_FREQUENCY_LABELS,
   CONTRACT_DURATION_LABELS,
@@ -108,6 +110,9 @@ export function EmploymentTypeModal({
   editingType,
   onSave,
 }: EmploymentTypeModalProps) {
+  const country = useAppSelector((s) => s.locale.country);
+  const deductionOptions =
+    STATUTORY_DEDUCTIONS_BY_COUNTRY[country] ?? STATUTORY_DEDUCTION_OPTIONS;
   const [form, setForm] = useState({ ...EMPTY });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Partial<Record<FormFields, boolean>>>(
@@ -397,7 +402,7 @@ export function EmploymentTypeModal({
             <div className="space-y-2">
               <Label className="text-xs">Statutory Deductions</Label>
               <div className="grid grid-cols-3 gap-y-2.5 gap-x-3">
-                {STATUTORY_DEDUCTION_OPTIONS.map((d) => (
+                {deductionOptions.map((d) => (
                   <div key={d} className="flex items-center gap-2">
                     <Checkbox
                       id={`ded-${d}`}

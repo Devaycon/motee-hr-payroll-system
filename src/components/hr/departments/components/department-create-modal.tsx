@@ -1,5 +1,6 @@
 "use client";
 
+import { currentCurrencySymbol } from "@/src/lib/hooks/use-currency";
 import { useRef, useState } from "react";
 import {
   Download,
@@ -137,8 +138,8 @@ function parseCSVFile(text: string): {
       status: obj.status === "inactive" ? "inactive" : "active",
       employeeCount: 0,
       openPositions: 0,
-      createdAt: new Date().toLocaleDateString("en-US", {
-        month: "short",
+      createdAt: new Date().toLocaleDateString("en-GB", {
+        month: "long",
         day: "numeric",
         year: "numeric",
       }),
@@ -205,8 +206,8 @@ export function DepartmentCreateModal({
       budgetMonthly: budget ?? undefined,
       status: form.status,
       description: form.description.trim(),
-      createdAt: new Date().toLocaleDateString("en-US", {
-        month: "short",
+      createdAt: new Date().toLocaleDateString("en-GB", {
+        month: "long",
         day: "numeric",
         year: "numeric",
       }),
@@ -334,7 +335,7 @@ export function DepartmentCreateModal({
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs font-medium">
-                  Monthly Budget (₦)
+                  Monthly Budget ({currentCurrencySymbol()})
                 </Label>
                 <Input
                   type="number"

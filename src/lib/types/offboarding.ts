@@ -35,6 +35,7 @@ export interface OffboardingRecord {
   exitInterviewCompleted: boolean;
   exitInterviewNotes?: string;
   initiatedAt: string;
+  workflowTemplateId?: string;
 }
 
 export interface NewOffboardingRecord {
@@ -45,5 +46,6 @@ export interface NewOffboardingRecord {
   lastWorkingDate: string;
   exitReason: ExitReason;
   exitInterviewNotes?: string;
+  workflowTemplateId?: string;
 }
 

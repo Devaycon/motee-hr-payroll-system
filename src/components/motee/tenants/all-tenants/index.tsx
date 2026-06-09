@@ -202,8 +202,8 @@ export function AllTenantsPage() {
                 <div className="mt-3 pt-3 border-t border-border">
                   <p className="text-xs text-muted-foreground">
                     Registered{" "}
-                    {new Date(tenant.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
+                    {new Date(tenant.createdAt).toLocaleDateString("en-GB", {
+                      month: "long",
                       day: "numeric",
                       year: "numeric",
                     })}

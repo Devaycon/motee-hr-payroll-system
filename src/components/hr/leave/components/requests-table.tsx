@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Search,
   SlidersHorizontal,
@@ -9,9 +9,8 @@ import {
   Eye,
   CheckCircle2,
   XCircle,
-  CalendarOff,
 } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -24,6 +23,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from "@/src/components/ui/dropdown-menu";
+import { useCan } from "@/src/lib/permissions/use-can";
+import {
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
 import {
   LEAVE_STATUS_LABELS,
   LEAVE_STATUS_STYLES,
@@ -49,6 +54,8 @@ export function RequestsTable({
   onRejectClick,
   onNewRequest,
 }: RequestsTableProps) {
+  const canApprove = useCan("time-payroll.leave", "approve");
+  const canCreate = useCan("time-payroll.leave", "create");
   const today = new Date().toISOString().slice(0, 10);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
@@ -76,10 +83,142 @@ export function RequestsTable({
   function formatDate(d: string) {
     return new Date(d).toLocaleDateString("en-GB", {
       day: "2-digit",
-      month: "short",
+      month: "long",
       year: "numeric",
     });
   }
+
+  const columns = useMemo<ColumnDef<LeaveRequest>[]>(
+    () => [
+      {
+        accessorKey: "employeeName",
+        header: sortableHeader("Employee"),
+        cell: ({ row }) => {
+          const isOnLeaveNow =
+            row.original.status === "approved" &&
+            row.original.startDate <= today &&
+            row.original.endDate >= today;
+          return (
+            <div className="flex items-center gap-2.5">
+              <div className="relative flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-[10px] font-semibold shrink-0">
+                {row.original.employeeInitials}
+                {isOnLeaveNow && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500 ring-1 ring-background" />
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-medium leading-tight">
+                  {row.original.employeeName}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {row.original.department}
+                </p>
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "leaveType",
+        header: sortableHeader("Leave Type"),
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${LEAVE_TYPE_STYLES[row.original.leaveType as LeaveTypeName]}`}
+          >
+            {LEAVE_TYPE_LABELS[row.original.leaveType as LeaveTypeName]}
+          </span>
+        ),
+      },
+      {
+        id: "dateRange",
+        header: "Date Range",
+        cell: ({ row }) => (
+          <div>
+            <span className="text-xs">
+              {formatDate(row.original.startDate)}
+              {row.original.startDate !== row.original.endDate && (
+                <> – {formatDate(row.original.endDate)}</>
+              )}
+            </span>
+            {row.original.isHalfDay && row.original.halfDayPeriod && (
+              <p className="text-[10px] text-muted-foreground capitalize">
+                {row.original.halfDayPeriod} half
+              </p>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "totalDays",
+        header: sortableHeader("Duration"),
+        cell: ({ row }) => (
+          <span className="text-xs font-medium">
+            {row.original.totalDays === 0.5
+              ? "½ day"
+              : `${row.original.totalDays} day${row.original.totalDays !== 1 ? "s" : ""}`}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "submittedAt",
+        header: sortableHeader("Submitted"),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {formatDate(row.original.submittedAt)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: sortableHeader("Status"),
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${LEAVE_STATUS_STYLES[row.original.status]}`}
+          >
+            {LEAVE_STATUS_LABELS[row.original.status]}
+          </span>
+        ),
+      },
+      actionsColumn<LeaveRequest>((req) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => onView(req)}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              View Details
+            </DropdownMenuItem>
+            {req.status === "pending" && canApprove && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-xs gap-2 text-emerald-600 focus:text-emerald-600"
+                  onClick={() => onApprove(req.id)}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Quick Approve
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-xs gap-2 text-destructive focus:text-destructive"
+                  onClick={() => onRejectClick(req)}
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                  Reject
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )),
+    ],
+    [today, canApprove, onView, onApprove, onRejectClick],
+  );
 
   return (
     <>
@@ -186,178 +325,23 @@ export function RequestsTable({
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
-            size="lg"
-            onClick={onNewRequest}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            New Request
-          </Button>
+          {canCreate && (
+            <Button size="lg" onClick={onNewRequest}>
+              <Plus className="w-3.5 h-3.5" />
+              New Request
+            </Button>
+          )}
         </div>
       </div>
 
-      <Card className="mt-4">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Employee
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Leave Type
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Date Range
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Duration
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Submitted
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Status
-                  </th>
-                  <th className="text-right font-medium text-muted-foreground px-4 py-3 text-xs">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-16 text-center">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <CalendarOff className="w-8 h-8 opacity-30" />
-                        <p className="text-sm font-medium">
-                          No leave requests found
-                        </p>
-                        <p className="text-xs">
-                          Try adjusting your search or filters
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((req) => {
-                    const isOnLeaveNow =
-                      req.status === "approved" &&
-                      req.startDate <= today &&
-                      req.endDate >= today;
-                    return (
-                      <tr
-                        key={req.id}
-                        className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="relative flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-[10px] font-semibold shrink-0">
-                              {req.employeeInitials}
-                              {isOnLeaveNow && (
-                                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500 ring-1 ring-background" />
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-xs font-medium leading-tight">
-                                {req.employeeName}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground">
-                                {req.department}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${LEAVE_TYPE_STYLES[req.leaveType as LeaveTypeName]}`}
-                          >
-                            {LEAVE_TYPE_LABELS[req.leaveType as LeaveTypeName]}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs">
-                            {formatDate(req.startDate)}
-                            {req.startDate !== req.endDate && (
-                              <> – {formatDate(req.endDate)}</>
-                            )}
-                          </span>
-                          {req.isHalfDay && req.halfDayPeriod && (
-                            <p className="text-[10px] text-muted-foreground capitalize">
-                              {req.halfDayPeriod} half
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs font-medium">
-                            {req.totalDays === 0.5
-                              ? "½ day"
-                              : `${req.totalDays} day${req.totalDays !== 1 ? "s" : ""}`}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(req.submittedAt)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${LEAVE_STATUS_STYLES[req.status]}`}
-                          >
-                            {LEAVE_STATUS_LABELS[req.status]}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                              >
-                                <MoreHorizontal className="w-3.5 h-3.5" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem
-                                className="text-xs gap-2"
-                                onClick={() => onView(req)}
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                                View Details
-                              </DropdownMenuItem>
-                              {req.status === "pending" && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="text-xs gap-2 text-emerald-600 focus:text-emerald-600"
-                                    onClick={() => onApprove(req.id)}
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    Quick Approve
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-xs gap-2 text-destructive focus:text-destructive"
-                                    onClick={() => onRejectClick(req)}
-                                  >
-                                    <XCircle className="w-3.5 h-3.5" />
-                                    Reject
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="mt-4">
+        <DataTable
+          columns={columns}
+          data={filtered}
+          getRowId={(r) => r.id}
+          emptyMessage="No leave requests found."
+        />
+      </div>
     </>
   );
 }

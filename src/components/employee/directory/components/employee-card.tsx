@@ -1,7 +1,7 @@
 import { MapPin, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { EMPLOYMENT_TYPE_LABELS, EMPLOYMENT_TYPE_STYLES } from "./data";
 import type { EmployeeRow } from "./data";
 
@@ -18,14 +18,13 @@ export function EmployeeCard({ emp, onClick }: EmployeeCardProps) {
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <Avatar className="w-11 h-11 shrink-0">
-            <AvatarFallback
-              className="text-sm font-semibold text-white"
-              style={{ backgroundColor: "#4361ee" }}
-            >
-              {emp.initials}
-            </AvatarFallback>
-          </Avatar>
+          <PersonAvatar
+            name={emp.name}
+            initials={emp.initials}
+            gender={emp.gender}
+            className="w-11 h-11 shrink-0"
+            fallbackClassName="text-sm font-semibold text-white bg-[#4361ee]"
+          />
           <div className="flex-1 min-w-0 space-y-1">
             <div className="flex items-start justify-between gap-1">
               <p className="text-sm font-semibold text-foreground leading-snug truncate">

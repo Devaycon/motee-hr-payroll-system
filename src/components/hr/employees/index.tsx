@@ -3,20 +3,36 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
-import { EMPLOYEES } from "./data";
 import type { EmployeeRow } from "./types";
 import { StatCards } from "./components/stat-cards";
 import { EmployeesToolbar } from "./components/employees-toolbar";
 import { AdvancedEmployeesTable } from "./components/advanced-employees-table";
 import { Button } from "@/src/components/ui/button";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useEmployees } from "./hooks";
+import { PermissionGate } from "@/src/components/shared/permission-gate";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 
 export function EmployeesPage() {
   const router = useRouter();
-  const [employees, setEmployees] = useState<EmployeeRow[]>(EMPLOYEES);
+  const { data, loading } = useEmployees();
+  // Hires cleared from completed onboarding workflows.
+  const cleared = useAppSelector((s) => s.onboardingRecords.cleared);
+  const [employees, setEmployees] = useState<EmployeeRow[]>([]);
+  const [prevData, setPrevData] = useState<EmployeeRow[] | null>(null);
+  const [prevCleared, setPrevCleared] = useState<EmployeeRow[] | null>(null);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Sync local list when locale data resolves or a hire is cleared
+  // (no effect — adjust state during render).
+  if (data && (data !== prevData || cleared !== prevCleared)) {
+    setPrevData(data);
+    setPrevCleared(cleared);
+    setEmployees(cleared.length ? [...cleared, ...data] : data);
+  }
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -37,6 +53,20 @@ export function EmployeesPage() {
     setEmployees((prev) => prev.filter((e) => e.id !== id));
   }
 
+  if (loading && !employees.length) {
+    return (
+      <div className="flex flex-col gap-6 py-6">
+        <Skeleton className="h-16 w-72" />
+        <div className="grid grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 w-full rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="py-6 flex items-start justify-between gap-4">
@@ -46,13 +76,15 @@ export function EmployeesPage() {
             Manage your workforce, track employee details and reporting lines.
           </p>
         </div>
-        <Button
-          className="mt-1 gap-1.5"
-          onClick={() => router.push("/talent/onboarding")}
-        >
-          <UserPlus className="w-4 h-4" />
-          Onboard Employee
-        </Button>
+        <PermissionGate module="organization.employees" action="create">
+          <Button
+            className="mt-1 gap-1.5"
+            onClick={() => router.push("/talent/onboarding")}
+          >
+            <UserPlus className="w-4 h-4" />
+            Onboard Employee
+          </Button>
+        </PermissionGate>
       </div>
 
       <StatCards employees={employees} />

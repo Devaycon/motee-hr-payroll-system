@@ -22,6 +22,13 @@ import {
 } from "@/src/components/ui/select";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/src/components/ui/tabs";
+import { QuizEditor, cleanQuiz } from "./quiz-editor";
+import {
   COURSE_CATEGORY_LABELS,
   DELIVERY_MODE_LABELS,
   COURSE_STATUS_LABELS,
@@ -32,6 +39,7 @@ import type {
   CourseCategory,
   CourseDeliveryMode,
   CourseStatus,
+  CourseQuizQuestion,
 } from "../types";
 
 const courseSchema = z.object({
@@ -77,10 +85,17 @@ export function CourseModal({
   const [prevOpen, setPrevOpen] = useState(open);
   const [form, setForm] = useState(defaultForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState("details");
+
+  // Quiz tab state.
+  const [questions, setQuestions] = useState<CourseQuizQuestion[]>([]);
+  const [passingScore, setPassingScore] = useState(70);
+  const [maxAttempts, setMaxAttempts] = useState("");
 
   if (prevOpen !== open) {
     setPrevOpen(open);
     if (open) {
+      setTab("details");
       if (editingCourse) {
         setForm({
           title: editingCourse.title,
@@ -94,6 +109,10 @@ export function CourseModal({
       } else {
         setForm(defaultForm);
       }
+      const quiz = editingCourse?.quiz;
+      setQuestions(quiz?.questions.map((q) => ({ ...q })) ?? []);
+      setPassingScore(quiz?.passingScore ?? 70);
+      setMaxAttempts(quiz?.maxAttempts != null ? String(quiz.maxAttempts) : "");
       setErrors({});
     }
   }
@@ -112,8 +131,12 @@ export function CourseModal({
         if (!fieldErrors[key]) fieldErrors[key] = issue.message;
       }
       setErrors(fieldErrors);
+      setTab("details");
       return;
     }
+    // Build the quiz from the Quiz tab (null when no valid questions). Pass it
+    // through so a course can be created with its quiz in one step.
+    const quiz = cleanQuiz(questions, passingScore, maxAttempts) ?? undefined;
     onSave({
       title: form.title,
       category: form.category as CourseCategory,
@@ -124,6 +147,7 @@ export function CourseModal({
       status: form.status as CourseStatus,
       instructor: editingCourse?.instructor ?? "",
       tags: editingCourse?.tags ?? [],
+      quiz,
     });
     onClose();
   }
@@ -132,15 +156,26 @@ export function CourseModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-base">
             {isEdit ? "Edit Course" : "Add Course"}
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[65vh] pr-2">
-          <div className="space-y-4 py-1">
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList className="h-8">
+            <TabsTrigger value="details" className="text-xs">
+              Details
+            </TabsTrigger>
+            <TabsTrigger value="quiz" className="text-xs">
+              Quiz
+            </TabsTrigger>
+          </TabsList>
+
+          <ScrollArea className="max-h-[60vh] pr-2 mt-3">
+            <TabsContent value="details" className="mt-0">
+              <div className="space-y-4 py-1">
             <div className="space-y-1.5">
               <Label className="text-xs">
                 Course Title <span className="text-destructive">*</span>
@@ -285,8 +320,21 @@ export function CourseModal({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-        </ScrollArea>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="quiz" className="mt-0">
+              <QuizEditor
+                questions={questions}
+                setQuestions={setQuestions}
+                passingScore={passingScore}
+                setPassingScore={setPassingScore}
+                maxAttempts={maxAttempts}
+                setMaxAttempts={setMaxAttempts}
+              />
+            </TabsContent>
+          </ScrollArea>
+        </Tabs>
 
         <DialogFooter>
           <Button

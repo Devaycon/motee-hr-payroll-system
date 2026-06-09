@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useCasesData } from "./hooks";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -10,136 +12,88 @@ import { GrievanceStatCards } from "./components/stat-cards";
 import { CasesTable } from "./components/cases-table";
 import { CaseFormModal } from "./components/case-form-modal";
 import { CaseDetailModal } from "./components/case-detail-modal";
-import type {
-  AnyCase,
-  GrievanceCase,
-  DisciplinaryCase,
-  CaseType,
-  CaseNote,
-  GrievanceStatus,
-  DisciplinaryStatus,
-  NewGrievanceCase,
-  NewDisciplinaryCase,
-} from "./types";
-import { GRIEVANCES, DISCIPLINARY_CASES } from "./data";
+import type { ERCase, CaseNote, NewERCase } from "./types";
 
 export function GrievancePage() {
-  const [grievances, setGrievances] = useState<GrievanceCase[]>(GRIEVANCES);
-  const [disciplinary, setDisciplinary] =
-    useState<DisciplinaryCase[]>(DISCIPLINARY_CASES);
+  const { data, loading } = useCasesData();
+  const [cases, setCases] = useState<ERCase[]>([]);
+  // Seed (and re-seed on country switch) from locale data without an effect,
+  // using the "adjust state during render" pattern.
+  const [seededData, setSeededData] = useState<ERCase[] | null>(null);
+  if (data && data !== seededData) {
+    setSeededData(data);
+    setCases(data);
+  }
+
   const [formOpen, setFormOpen] = useState(false);
-  const [editingCase, setEditingCase] = useState<AnyCase | null>(null);
-  const [detailCase, setDetailCase] = useState<AnyCase | null>(null);
+  const [editingCase, setEditingCase] = useState<ERCase | null>(null);
+  const [detailCase, setDetailCase] = useState<ERCase | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  function generateCaseNumber(type: CaseType) {
-    const prefix = type === "grievance" ? "GRV" : "DISC";
-    const count =
-      type === "grievance" ? grievances.length + 1 : disciplinary.length + 1;
-    return `${prefix}-${String(count).padStart(3, "0")}`;
+  function generateCaseNumber() {
+    return `ERC-${String(cases.length + 1).padStart(3, "0")}`;
   }
 
   function generateId() {
     return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   }
 
-  function handleCreate(
-    type: CaseType,
-    data: NewGrievanceCase | NewDisciplinaryCase,
-  ) {
+  function handleCreate(d: NewERCase) {
     const today = new Date().toISOString().split("T")[0];
-    if (type === "grievance") {
-      const d = data as NewGrievanceCase;
-      const newCase: GrievanceCase = {
-        id: generateId(),
-        type: "grievance",
-        caseNumber: generateCaseNumber("grievance"),
-        employeeName: d.employeeName,
-        employeeInitials: d.employeeName
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-          .slice(0, 2),
-        employeeDept: d.employeeDept,
-        dateRaised: today,
-        incidentDate: d.incidentDate,
-        description: d.description,
-        category: d.category as GrievanceCase["category"],
-        status: "raised",
-        priority: d.priority as GrievanceCase["priority"],
-        assignedTo: d.assignedTo,
-        assignedInitials: d.assignedTo
-          ? d.assignedTo
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase()
-          : undefined,
-        hasAppeal: false,
-        notes: [],
-        createdAt: today,
-        updatedAt: today,
-      };
-      setGrievances((prev) => [newCase, ...prev]);
-    } else {
-      const d = data as NewDisciplinaryCase;
-      const newCase: DisciplinaryCase = {
-        id: generateId(),
-        type: "disciplinary",
-        caseNumber: generateCaseNumber("disciplinary"),
-        employeeName: d.employeeName,
-        employeeInitials: d.employeeName
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-          .slice(0, 2),
-        employeeDept: d.employeeDept,
-        incidentDate: d.incidentDate,
-        dateRaised: today,
-        description: d.description,
-        category: d.category as DisciplinaryCase["category"],
-        status: "reported",
-        priority: d.priority as DisciplinaryCase["priority"],
-        assignedTo: d.assignedTo,
-        assignedInitials: d.assignedTo
-          ? d.assignedTo
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase()
-          : undefined,
-        hasAppeal: false,
-        notes: [],
-        createdAt: today,
-        updatedAt: today,
-      };
-      setDisciplinary((prev) => [newCase, ...prev]);
-    }
+    const newCase: ERCase = {
+      id: generateId(),
+      caseNumber: generateCaseNumber(),
+      complaintType: d.complaintType,
+      employeeName: d.employeeName,
+      employeeInitials: d.employeeName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2),
+      employeeDept: d.employeeDept,
+      dateRaised: today,
+      incidentDate: d.incidentDate,
+      description: d.description,
+      stage: "raised",
+      priority: d.priority,
+      confidentialityLevel: d.confidentialityLevel,
+      assignedTo: d.assignedTo,
+      assignedInitials: d.assignedTo
+        ? d.assignedTo
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2)
+        : undefined,
+      witnesses: d.witnesses ?? [],
+      evidence: d.evidence ?? [],
+      hearingPanel: [],
+      hasAppeal: false,
+      notes: [],
+      createdAt: today,
+      updatedAt: today,
+    };
+    setCases((prev) => [newCase, ...prev]);
   }
 
-  function handleUpdate(id: string, data: Partial<AnyCase>) {
+  function handleUpdateCase(id: string, patch: Partial<ERCase>) {
     const today = new Date().toISOString().split("T")[0];
-    setGrievances((prev) =>
-      prev.map((g) =>
-        g.id === id
-          ? ({ ...g, ...data, updatedAt: today } as GrievanceCase)
-          : g,
+    setCases((prev) =>
+      prev.map((c) =>
+        c.id === id ? ({ ...c, ...patch, updatedAt: today } as ERCase) : c,
       ),
     );
-    setDisciplinary((prev) =>
-      prev.map((d) =>
-        d.id === id
-          ? ({ ...d, ...data, updatedAt: today } as DisciplinaryCase)
-          : d,
-      ),
+    setDetailCase((prev) =>
+      prev && prev.id === id
+        ? ({ ...prev, ...patch, updatedAt: today } as ERCase)
+        : prev,
     );
   }
 
   function handleDelete(id: string) {
-    setGrievances((prev) => prev.filter((g) => g.id !== id));
-    setDisciplinary((prev) => prev.filter((d) => d.id !== id));
+    setCases((prev) => prev.filter((c) => c.id !== id));
     toast.success("Case deleted.");
     if (detailCase?.id === id) {
       setDetailOpen(false);
@@ -150,190 +104,44 @@ export function GrievancePage() {
   function handleAddNote(id: string, note: Omit<CaseNote, "id">) {
     const newNote: CaseNote = { id: generateId(), ...note };
     const today = new Date().toISOString().split("T")[0];
-    setGrievances((prev) =>
-      prev.map((g) =>
-        g.id === id
-          ? { ...g, notes: [...g.notes, newNote], updatedAt: today }
-          : g,
+    setCases((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, notes: [...c.notes, newNote], updatedAt: today }
+          : c,
       ),
     );
-    setDisciplinary((prev) =>
-      prev.map((d) =>
-        d.id === id
-          ? { ...d, notes: [...d.notes, newNote], updatedAt: today }
-          : d,
-      ),
+    setDetailCase((prev) =>
+      prev && prev.id === id
+        ? { ...prev, notes: [...prev.notes, newNote], updatedAt: today }
+        : prev,
     );
-    setDetailCase((prev) => {
-      if (!prev || prev.id !== id) return prev;
-      return { ...prev, notes: [...prev.notes, newNote], updatedAt: today };
-    });
   }
 
-  function handleUpdateStatus(
-    id: string,
-    status: GrievanceStatus | DisciplinaryStatus,
-  ) {
-    const today = new Date().toISOString().split("T")[0];
-    setGrievances((prev) =>
-      prev.map((g) =>
-        g.id === id
-          ? { ...g, status: status as GrievanceStatus, updatedAt: today }
-          : g,
-      ),
-    );
-    setDisciplinary((prev) =>
-      prev.map((d) =>
-        d.id === id
-          ? { ...d, status: status as DisciplinaryStatus, updatedAt: today }
-          : d,
-      ),
-    );
-    setDetailCase((prev) => {
-      if (!prev || prev.id !== id) return prev;
-      return { ...prev, status, updatedAt: today } as AnyCase;
-    });
-    toast.success("Status updated.");
-  }
-
-  function handleRecordOutcome(
-    id: string,
-    outcome: string,
-    outcomeDate: string,
-    suspensionDays?: number,
-  ) {
-    const today = new Date().toISOString().split("T")[0];
-    setGrievances((prev) =>
-      prev.map((g) =>
-        g.id === id
-          ? {
-              ...g,
-              outcome,
-              outcomeDate,
-              status: "resolved" as GrievanceStatus,
-              updatedAt: today,
-            }
-          : g,
-      ),
-    );
-    setDisciplinary((prev) =>
-      prev.map((d) =>
-        d.id === id
-          ? {
-              ...d,
-              outcome: outcome as DisciplinaryCase["outcome"],
-              outcomeDate,
-              suspensionDays,
-              status: "outcome_issued" as DisciplinaryStatus,
-              updatedAt: today,
-            }
-          : d,
-      ),
-    );
-    setDetailCase((prev) => {
-      if (!prev || prev.id !== id) return prev;
-      if (prev.type === "grievance") {
-        return {
-          ...prev,
-          outcome,
-          outcomeDate,
-          status: "resolved",
-          updatedAt: today,
-        } as AnyCase;
-      }
-      return {
-        ...prev,
-        outcome: outcome as DisciplinaryCase["outcome"],
-        outcomeDate,
-        suspensionDays,
-        status: "outcome_issued",
-        updatedAt: today,
-      } as AnyCase;
-    });
-  }
-
-  function handleRaiseAppeal(id: string) {
-    const today = new Date().toISOString().split("T")[0];
-    const appealId = `APPEAL-${id.slice(0, 6).toUpperCase()}`;
-    setGrievances((prev) =>
-      prev.map((g) =>
-        g.id === id
-          ? { ...g, hasAppeal: true, appealCaseId: appealId, updatedAt: today }
-          : g,
-      ),
-    );
-    setDisciplinary((prev) =>
-      prev.map((d) =>
-        d.id === id
-          ? {
-              ...d,
-              hasAppeal: true,
-              appealCaseId: appealId,
-              status: "appealed" as DisciplinaryStatus,
-              updatedAt: today,
-            }
-          : d,
-      ),
-    );
-    setDetailCase((prev) => {
-      if (!prev || prev.id !== id) return prev;
-      return {
-        ...prev,
-        hasAppeal: true,
-        appealCaseId: appealId,
-        updatedAt: today,
-      } as AnyCase;
-    });
-  }
-
-  function handleScheduleHearing(id: string, date: string) {
-    const today = new Date().toISOString().split("T")[0];
-    setGrievances((prev) =>
-      prev.map((g) =>
-        g.id === id
-          ? {
-              ...g,
-              hearingDate: date,
-              status: "hearing_scheduled" as GrievanceStatus,
-              updatedAt: today,
-            }
-          : g,
-      ),
-    );
-    setDisciplinary((prev) =>
-      prev.map((d) =>
-        d.id === id
-          ? {
-              ...d,
-              hearingDate: date,
-              status: "hearing_scheduled" as DisciplinaryStatus,
-              updatedAt: today,
-            }
-          : d,
-      ),
-    );
-    setDetailCase((prev) => {
-      if (!prev || prev.id !== id) return prev;
-      return { ...prev, hearingDate: date, updatedAt: today } as AnyCase;
-    });
-  }
-
-  function handleView(c: AnyCase) {
+  function handleView(c: ERCase) {
     setDetailCase(c);
     setDetailOpen(true);
   }
 
-  function handleEdit(c: AnyCase) {
+  function handleEdit(c: ERCase) {
     setEditingCase(c);
     setFormOpen(true);
   }
 
-  const allCases: AnyCase[] = [
-    ...grievances.map((g) => g as AnyCase),
-    ...disciplinary.map((d) => d as AnyCase),
-  ].sort(
+  const sorted = [...cases].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
+  const openCases = sorted.filter((c) => c.stage !== "closed");
+  const closedCases = sorted.filter((c) => c.stage === "closed");
+
+  if (loading && cases.length === 0) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -341,10 +149,11 @@ export function GrievancePage() {
         <div className="flex items-center gap-3">
           <div>
             <h1 className="text-4xl font-semibold text-foreground">
-              Grievance &amp; Disciplinary
+              Employee Relations Cases
             </h1>
             <p className="text-sm text-muted-foreground">
-              Manage employee grievance and disciplinary cases.
+              Manage grievances, disciplinary and all employee relations cases
+              through a single workflow.
             </p>
           </div>
         </div>
@@ -361,39 +170,36 @@ export function GrievancePage() {
         </Button>
       </div>
 
-      <GrievanceStatCards grievances={grievances} disciplinary={disciplinary} />
+      <GrievanceStatCards cases={cases} />
 
       <Tabs defaultValue="all">
         <PageTabsList
           tabs={[
-            { value: "all", label: `All Cases (${allCases.length})` },
-            { value: "grievances", label: `Grievances (${grievances.length})` },
-            {
-              value: "disciplinary",
-              label: `Disciplinary (${disciplinary.length})`,
-            },
+            { value: "all", label: `All Cases (${sorted.length})` },
+            { value: "open", label: `Open (${openCases.length})` },
+            { value: "closed", label: `Closed (${closedCases.length})` },
           ]}
         />
 
         <TabsContent value="all" className="mt-4">
           <CasesTable
-            cases={allCases}
+            cases={sorted}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
         </TabsContent>
-        <TabsContent value="grievances" className="mt-4">
+        <TabsContent value="open" className="mt-4">
           <CasesTable
-            cases={grievances}
+            cases={openCases}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
         </TabsContent>
-        <TabsContent value="disciplinary" className="mt-4">
+        <TabsContent value="closed" className="mt-4">
           <CasesTable
-            cases={disciplinary}
+            cases={closedCases}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
@@ -409,7 +215,7 @@ export function GrievancePage() {
           setEditingCase(null);
         }}
         onCreate={handleCreate}
-        onUpdate={handleUpdate}
+        onUpdate={handleUpdateCase}
       />
 
       <CaseDetailModal
@@ -420,10 +226,7 @@ export function GrievancePage() {
           setDetailCase(null);
         }}
         onAddNote={handleAddNote}
-        onUpdateStatus={handleUpdateStatus}
-        onRecordOutcome={handleRecordOutcome}
-        onRaiseAppeal={handleRaiseAppeal}
-        onScheduleHearing={handleScheduleHearing}
+        onUpdateCase={handleUpdateCase}
       />
     </div>
   );

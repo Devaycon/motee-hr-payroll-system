@@ -1,4 +1,5 @@
 import { PRIORITY_STYLES as BASE_PRIORITY_STYLES } from "@/src/data/employee-dashboard-demo";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 export const PRIORITY_STYLES = BASE_PRIORITY_STYLES;
 
@@ -21,9 +22,5 @@ export function getDueStatus(due: string, done: boolean): "overdue" | "soon" | "
 }
 
 export function formatDue(due: string): string {
-  return new Date(due).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return formatDate(due);
 }

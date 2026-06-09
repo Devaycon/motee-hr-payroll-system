@@ -10,9 +10,8 @@ import {
 } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
-import { ORG_NODES } from "../data";
-
-type OrgNode = (typeof ORG_NODES)[0];
+import { useOrgChart } from "../hooks";
+import type { OrgNode } from "@/src/lib/types/company-profile";
 
 function RootCard({ node }: { node: OrgNode }) {
   return (
@@ -154,6 +153,7 @@ function OrgBranch({
 }
 
 export function OrganogramTab() {
+  const nodes = useOrgChart();
   const [zoom, setZoom] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
@@ -227,8 +227,7 @@ export function OrganogramTab() {
     }, 400);
   }
 
-  const root = ORG_NODES.find((n) => n.reportsTo === null);
-  if (!root) return null;
+  const root = nodes.find((n) => n.reportsTo === null);
 
   return (
     <Card className="relative">
@@ -263,7 +262,13 @@ export function OrganogramTab() {
             className="py-8 px-8 w-max min-w-full"
             style={{ zoom }}
           >
-            <OrgBranch node={root} all={ORG_NODES} level={1} />
+            {root ? (
+              <OrgBranch node={root} all={nodes} level={1} />
+            ) : (
+              <p className="text-sm text-muted-foreground py-10 text-center w-full">
+                No organisation structure available.
+              </p>
+            )}
           </div>
         </div>
 

@@ -72,7 +72,7 @@ export function AssetCard({ asset, onPreview }: AssetCardProps) {
               <span className="text-foreground font-medium">
                 {new Date(asset.assignedDate).toLocaleDateString("en-GB", {
                   day: "2-digit",
-                  month: "short",
+                  month: "long",
                   year: "numeric",
                 })}
               </span>

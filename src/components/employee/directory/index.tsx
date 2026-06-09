@@ -3,8 +3,8 @@
 import { useState, useMemo } from "react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { EMPLOYEES} from "./components/data";
 import type { EmployeeRow } from "./components/data";
+import { useDirectoryEmployees } from "./hooks";
 import { DirectoryStatCards } from "./components/stat-cards";
 // import { CelebrationsBanner } from "./components/celebrations-banner";
 import { DirectoryTab } from "./components/directory-tab";
@@ -12,6 +12,8 @@ import { OrgChartTab } from "./components/org-chart-tab";
 import { EmployeeDetailModal } from "./components/employee-detail-modal";
 
 export function EmployeeOrgChart() {
+  const { data: employees } = useDirectoryEmployees();
+  const allEmployees = useMemo(() => employees ?? [], [employees]);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeRow | null>(
@@ -20,7 +22,7 @@ export function EmployeeOrgChart() {
   const [detailOpen, setDetailOpen] = useState(false);
 
   const filtered = useMemo(() => {
-    return EMPLOYEES.filter((e) => {
+    return allEmployees.filter((e) => {
       const matchSearch =
         search === "" ||
         e.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -30,7 +32,7 @@ export function EmployeeOrgChart() {
       const matchDept = deptFilter === "all" || e.department === deptFilter;
       return matchSearch && matchDept;
     });
-  }, [search, deptFilter]);
+  }, [allEmployees, search, deptFilter]);
 
   // const { birthdays, anniversaries } = getThisMonthCelebrations(EMPLOYEES);
 

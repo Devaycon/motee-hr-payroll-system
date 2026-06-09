@@ -12,14 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import {
-  HEADCOUNT_PLANS,
-  ATTRITION_RISKS,
-  DEMOGRAPHICS_EMPLOYMENT_TYPE,
-  DEMOGRAPHICS_TENURE,
-  DEMOGRAPHICS_DEPARTMENT,
-  PLAN_PERIODS,
-} from "./data";
+import { PLAN_PERIODS } from "./data";
+import { useHeadcount } from "./hooks";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useEffect } from "react";
 import type {
   HeadcountPlan,
   NewHeadcountPlan,
@@ -40,7 +36,13 @@ function deriveGap(target: number, actual: number): GapStatus {
 }
 
 export function HeadcountPage() {
-  const [plans, setPlans] = useState<HeadcountPlan[]>(HEADCOUNT_PLANS);
+  const { data, loading } = useHeadcount();
+  const [plans, setPlans] = useState<HeadcountPlan[]>([]);
+  useEffect(() => {
+    if (data) setPlans(data.plans);
+  }, [data]);
+  const attritionRisks = data?.attritionRisks ?? [];
+  const demographics = data?.demographics;
   const [activePeriod, setActivePeriod] = useState<PlanPeriod>("Q1 2026");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<HeadcountPlan | null>(null);
@@ -85,6 +87,15 @@ export function HeadcountPage() {
     }
   }
 
+  if (loading && !plans.length) {
+    return (
+      <div className="flex flex-col gap-6 py-6">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="py-6 w-fit">
@@ -97,7 +108,7 @@ export function HeadcountPage() {
         </p>
       </div>
 
-      <StatCards plans={periodPlans} attritionRisks={ATTRITION_RISKS} />
+      <StatCards plans={periodPlans} attritionRisks={attritionRisks} />
 
       <Tabs defaultValue="plan">
         <PageTabsList
@@ -156,7 +167,7 @@ export function HeadcountPage() {
             Employees flagged based on tenure, promotion history, and
             performance trends
           </p>
-          <AttritionRiskTable risks={ATTRITION_RISKS} />
+          <AttritionRiskTable risks={attritionRisks} />
         </TabsContent>
 
         <TabsContent value="demographics" className="mt-6">
@@ -165,9 +176,9 @@ export function HeadcountPage() {
             department
           </p>
           <Demographics
-            employmentType={DEMOGRAPHICS_EMPLOYMENT_TYPE}
-            tenure={DEMOGRAPHICS_TENURE}
-            department={DEMOGRAPHICS_DEPARTMENT}
+            employmentType={demographics?.employmentType ?? []}
+            tenure={demographics?.tenure ?? []}
+            department={demographics?.department ?? []}
           />
         </TabsContent>
       </Tabs>

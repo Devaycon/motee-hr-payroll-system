@@ -8,6 +8,7 @@ import {
 } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
 import { DEMO_MY_PROFILE } from "@/src/data/employee-demo";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -49,7 +50,7 @@ export function JobInfoCard() {
             label="Employment type"
             value={EMP_TYPE_LABELS[p.employmentType] ?? p.employmentType}
           />
-          <InfoRow label="Start date" value={p.startDate} />
+          <InfoRow label="Start date" value={formatDate(p.startDate)} />
           <InfoRow label="Work location" value="Victoria Island Office" />
           <InfoRow label="Work mode" value="Hybrid" />
           <InfoRow label="Grade" value="L4 — Senior Engineer" />
