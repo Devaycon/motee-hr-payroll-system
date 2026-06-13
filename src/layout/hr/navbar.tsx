@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Clock,
   Calendar,
   Bell,
   Search,
@@ -25,6 +24,7 @@ import { ScreenShareModal } from "@/src/components/shared/screen-share-modal";
 import { SendKudosModal } from "@/src/components/hr/kudos/components/send-kudos-modal";
 import type { NewKudos } from "@/src/components/hr/kudos/types";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 
 const formatDate = (date: Date) =>
   date.toLocaleDateString("en-GB", {
@@ -48,6 +48,10 @@ const Navbar = () => {
   const [notifOpen, setNotifOpen] = useState(false);
   const [screenShareOpen, setScreenShareOpen] = useState(false);
   const [kudosOpen, setKudosOpen] = useState(false);
+  const user = useAppSelector((s) => s.auth.user);
+  const adminName = user?.name ?? "Admin Officer";
+  const adminInitials = user?.initials ?? "AO";
+  const adminSubtitle = "HR Admin";
 
   function handleSendKudos(data: NewKudos) {
     toast.success(`Kudos sent to ${data.recipientName}! 🌟`);
@@ -142,18 +146,18 @@ const Navbar = () => {
                 className="cursor-pointer flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2"
               >
                 <PersonAvatar
-                  name="Admin Officer"
-                  initials="AO"
+                  name={adminName}
+                  initials={adminInitials}
                   size="sm"
                   className="size-7"
                   fallbackClassName="bg-primary text-primary-foreground text-xs font-semibold"
                 />
                 <div className="flex flex-col">
                   <span className="text-xs font-medium text-foreground leading-none">
-                    Admin Officer
+                    {adminName}
                   </span>
                   <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
-                    HR Administrator
+                    {adminSubtitle}
                   </span>
                 </div>
               </div>

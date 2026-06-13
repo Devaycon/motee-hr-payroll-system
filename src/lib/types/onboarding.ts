@@ -98,16 +98,20 @@ export interface NewOnboardingRecord {
 }
 
 export interface ManualOnboardingData {
+  title: string;
   firstName: string;
+  middleName: string;
   lastName: string;
-  surname: string;
+  preferredName: string;
+  maidenName: string;
+  initials: string;
   email: string;
   phone: string;
   dateOfBirth: string;
   gender: string;
   nationality: string;
+  ethnicity: string;
   maritalStatus: string;
-  bloodType: string;
   address: string;
   state: string;
   country: string;
@@ -135,7 +139,8 @@ export interface ManualOnboardingData {
   emergencyContactName: string;
   emergencyContactRelationship: string;
   emergencyContactPhone: string;
-  // Medical facts (blood type already captured in Personal)
+  emergencyContactEmail: string;
+  // Medical facts
   allergies: string;
   conditions: string;
   medications: string;

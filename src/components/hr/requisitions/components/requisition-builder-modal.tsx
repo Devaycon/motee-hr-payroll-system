@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
-import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
+import { useCurrency } from "@/src/lib/hooks/use-currency";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { store } from "@/src/lib/stores/store";
 import { DEPARTMENT_OPTIONS } from "@/src/data/recruitment-demo";
@@ -83,6 +83,7 @@ interface Props {
 
 export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) {
   const dispatch = useAppDispatch();
+  const { format: formatMoney } = useCurrency();
   const country = useAppSelector((s) => s.locale.country);
   const user = useAppSelector((s) => s.auth.user);
   const workforceRequests = useAppSelector(
@@ -407,11 +408,11 @@ export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) 
                 { label: "Department", value: form.department },
                 { label: "Location", value: form.location || "—" },
                 { label: "Positions", value: String(form.numberOfPositions) },
-                { label: "Salary range", value: `${formatMoneyLocale(form.salaryMin)} – ${formatMoneyLocale(form.salaryMax)}` },
+                { label: "Salary range", value: `${formatMoney(form.salaryMin)} – ${formatMoney(form.salaryMax)}` },
                 { label: "Start date", value: form.startDate || "—" },
                 { label: "Duration", value: form.durationMonths ? `${form.durationMonths} months` : "Permanent" },
                 { label: "Reporting manager", value: form.reportingManager || "—" },
-                { label: "Budget", value: formatMoneyLocale(form.budgetAllocation) },
+                { label: "Budget", value: formatMoney(form.budgetAllocation) },
               ].map((f) => (
                 <div key={f.label} className="flex flex-col gap-0.5">
                   <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{f.label}</dt>

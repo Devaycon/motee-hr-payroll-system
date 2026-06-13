@@ -99,6 +99,12 @@ export const routes: Route[] = [
     label: "Workflows",
     link: "/hr-action-center/workflows",
   },
+  {
+    group: "My Workspace",
+    icon: UsersRound,
+    label: "My Team",
+    link: "/hr-action-center/team",
+  },
 
   {
     group: "Employee Management",

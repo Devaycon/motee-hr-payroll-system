@@ -20,6 +20,7 @@ function toEmployeeRow(
   emp: LocaleEmployee,
   empTypeName: string | undefined,
   managerName: string | null,
+  directReportCount: number,
 ): EmployeeRow {
   return {
     id: emp.id,
@@ -36,11 +37,11 @@ function toEmployeeRow(
     salary: emp.salary?.amount ?? 0,
     managerId: emp.managerId,
     managerName,
+    directReportCount,
     dateOfBirth: emp.dateOfBirth,
     gender: emp.gender,
     nationality: emp.nationality,
     maritalStatus: emp.maritalStatus,
-    bloodType: emp.bloodType,
     address: emp.address?.line1,
     state: emp.address?.region,
     country: emp.address?.country,
@@ -69,12 +70,23 @@ function buildEmployees(bundle: LocaleBundle): EmployeeRow[] {
   const empTypeNameById = new Map(
     bundle.employmentTypes.map((t) => [t.id, t.name]),
   );
+  // Count direct reports per manager so the table can flag line managers.
+  const directReportCounts = new Map<string, number>();
+  for (const e of bundle.employees) {
+    if (e.managerId) {
+      directReportCounts.set(
+        e.managerId,
+        (directReportCounts.get(e.managerId) ?? 0) + 1,
+      );
+    }
+  }
   return bundle.employees.map((e) => {
     const manager = e.managerId ? employeesById.get(e.managerId) : null;
     return toEmployeeRow(
       e,
       empTypeNameById.get(e.employmentTypeId),
       manager?.fullName ?? null,
+      directReportCounts.get(e.id) ?? 0,
     );
   });
 }

@@ -18,11 +18,12 @@ export interface EmployeeRow {
   salary: number;
   managerId: string | null;
   managerName: string | null;
+  /** Number of employees reporting to this person (0 = not a line manager). */
+  directReportCount?: number;
   dateOfBirth?: string;
   gender?: string;
   nationality?: string;
   maritalStatus?: string;
-  bloodType?: string;
   address?: string;
   state?: string;
   country?: string;

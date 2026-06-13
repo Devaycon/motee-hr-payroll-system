@@ -50,6 +50,7 @@ import {
   type ProfileFieldGroup,
 } from "@/src/lib/profile/fields";
 import { formatDate } from "@/src/lib/utils/format-date";
+import { optionLabel } from "./record-form";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
 import type { ChangeRequest } from "@/src/lib/types/profile-edits";
 
@@ -127,8 +128,8 @@ function FieldEditDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {field.options.map((o) => (
-                    <SelectItem key={o} value={o} className="text-sm capitalize">
-                      {o}
+                    <SelectItem key={o} value={o} className="text-sm">
+                      {optionLabel(o)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -285,8 +286,8 @@ function BulkFieldsEditModal({
                   </SelectTrigger>
                   <SelectContent>
                     {f.options.map((o) => (
-                      <SelectItem key={o} value={o} className="text-sm capitalize">
-                        {o.replace(/_/g, " ")}
+                      <SelectItem key={o} value={o} className="text-sm">
+                        {optionLabel(o)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -442,10 +443,10 @@ export function ProfileFieldsEditor({
                     key={f.key}
                     className="flex items-center gap-2 py-1.5 border-b border-border/50 group/row"
                   >
-                    <span className="text-xs text-muted-foreground w-36 shrink-0">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
                       {f.label}:
                     </span>
-                    <span className="text-xs font-medium text-foreground flex-1 truncate">
+                    <span className={`text-xs font-medium text-foreground flex-1 min-w-0 truncate${f.type === "select" || f.key === "workMode" ? " capitalize" : ""}`}>
                       {val || <span className="italic text-muted-foreground/50">—</span>}
                     </span>
                     {f.system && (

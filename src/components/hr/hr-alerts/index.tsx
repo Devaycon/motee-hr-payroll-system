@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BellRing, ChevronRight } from "lucide-react";
+import { BellRing, ChevronRight, UserPlus } from "lucide-react";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   Card,
   CardContent,
@@ -20,6 +21,7 @@ import {
   HR_ALERT_SEVERITY_STYLES,
   HR_ALERT_TOTAL,
   type HrAlert,
+  type HrAlertCategory,
 } from "@/src/data/hr-alerts-demo";
 
 function AlertRow({ alert, Icon }: { alert: HrAlert; Icon: typeof BellRing }) {
@@ -57,6 +59,39 @@ function AlertRow({ alert, Icon }: { alert: HrAlert; Icon: typeof BellRing }) {
 
 export function HrAlertsCard() {
   const [tab, setTab] = useState(HR_ALERT_CATEGORIES[0]?.key ?? "");
+  const onboardingRecords = useAppSelector((s) => s.onboardingRecords.records);
+
+  // Surface self-onboarding invites that the new hire hasn't started or finished.
+  const onboardingCategory = useMemo<HrAlertCategory>(() => {
+    const alerts: HrAlert[] = onboardingRecords
+      .filter(
+        (r) =>
+          r.mode === "invited" &&
+          (r.status === "not_started" || r.status === "in_progress"),
+      )
+      .map((r) => ({
+        id: `onb-${r.id}`,
+        title: r.employeeName,
+        description:
+          r.status === "not_started"
+            ? `Self-onboarding not started · ${r.jobTitle} · ${r.department}`
+            : `Self-onboarding incomplete (${r.completedTasks}/${r.totalTasks}) · ${r.jobTitle} · ${r.department}`,
+        severity: r.status === "not_started" ? "warning" : "info",
+        href: `/talent/onboarding/${r.id}`,
+      }));
+    return {
+      key: "self_onboarding",
+      label: "Self-Onboarding",
+      icon: UserPlus,
+      alerts,
+    };
+  }, [onboardingRecords]);
+
+  const categories = useMemo(
+    () => [...HR_ALERT_CATEGORIES, onboardingCategory],
+    [onboardingCategory],
+  );
+  const openTotal = HR_ALERT_TOTAL + onboardingCategory.alerts.length;
 
   return (
     <Card>
@@ -66,7 +101,7 @@ export function HrAlertsCard() {
           <CardTitle className="text-base">Pending Approvals &amp; Alerts</CardTitle>
         </div>
         <Badge variant="outline" className="text-xs border-rose-500/30 bg-rose-500/10 text-rose-600">
-          {HR_ALERT_TOTAL} open
+          {openTotal} open
         </Badge>
       </CardHeader>
       <CardContent>
@@ -74,7 +109,7 @@ export function HrAlertsCard() {
           <OverflowTabsList
             value={tab}
             onValueChange={setTab}
-            tabs={HR_ALERT_CATEGORIES.map((c) => ({
+            tabs={categories.map((c) => ({
               value: c.key,
               badgeCount: c.alerts.length,
               label: (
@@ -88,7 +123,7 @@ export function HrAlertsCard() {
             }))}
           />
 
-          {HR_ALERT_CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <TabsContent key={c.key} value={c.key} className="mt-4">
               {c.alerts.length === 0 ? (
                 <div className="py-10 text-center text-sm text-muted-foreground">

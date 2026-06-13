@@ -494,7 +494,6 @@
       "gender": "male",
       "nationality": "British",
       "maritalStatus": "married",
-      "bloodType": "A+",
       "address": {
         "line1": "195 Park Road",
         "city": "Bristol",
@@ -704,7 +703,6 @@
       "gender": "prefer_not_to_say",
       "nationality": "British",
       "maritalStatus": "married",
-      "bloodType": "A-",
       "address": {
         "line1": "98 Queens Road",
         "city": "London",
@@ -914,7 +912,6 @@
       "gender": "male",
       "nationality": "British",
       "maritalStatus": "married",
-      "bloodType": "AB-",
       "address": {
         "line1": "37 Queens Road",
         "city": "Bristol",
@@ -1124,7 +1121,6 @@
       "gender": "female",
       "nationality": "British",
       "maritalStatus": "single",
-      "bloodType": "O+",
       "address": {
         "line1": "197 Market Square",
         "city": "Birmingham",
@@ -1328,7 +1324,6 @@
       "gender": "male",
       "nationality": "Indian",
       "maritalStatus": "divorced",
-      "bloodType": "A-",
       "address": {
         "line1": "188 Awolowo Way",
         "city": "Birmingham",
@@ -1537,7 +1532,6 @@
       "gender": "male",
       "nationality": "British",
       "maritalStatus": "married",
-      "bloodType": "A+",
       "address": {
         "line1": "59 Church Lane",
         "city": "Bristol",
@@ -1740,7 +1734,6 @@
       "gender": "female",
       "nationality": "British",
       "maritalStatus": "single",
-      "bloodType": "B-",
       "address": {
         "line1": "49 Awolowo Way",
         "city": "London",
@@ -1949,7 +1942,6 @@
       "gender": "female",
       "nationality": "British",
       "maritalStatus": "single",
-      "bloodType": "A+",
       "address": {
         "line1": "149 High Street",
         "city": "Leeds",
@@ -2158,7 +2150,6 @@
       "gender": "male",
       "nationality": "British",
       "maritalStatus": "single",
-      "bloodType": "O+",
       "address": {
         "line1": "118 Market Square",
         "city": "Manchester",
@@ -2368,7 +2359,6 @@
       "gender": "male",
       "nationality": "British",
       "maritalStatus": "single",
-      "bloodType": "O+",
       "address": {
         "line1": "155 King Street",
         "city": "Manchester",
@@ -2583,7 +2573,6 @@
       "gender": "male",
       "nationality": "British",
       "maritalStatus": "single",
-      "bloodType": "B+",
       "address": {
         "line1": "11 Queens Road",
         "city": "Manchester",
@@ -2792,7 +2781,6 @@
       "gender": "female",
       "nationality": "Polish",
       "maritalStatus": "divorced",
-      "bloodType": "O-",
       "address": {
         "line1": "79 King Street",
         "city": "London",
@@ -3001,7 +2989,6 @@
       "gender": "male",
       "nationality": "British",
       "maritalStatus": "married",
-      "bloodType": "A+",
       "address": {
         "line1": "134 King Street",
         "city": "London",
@@ -3211,7 +3198,6 @@
       "gender": "female",
       "nationality": "British",
       "maritalStatus": "married",
-      "bloodType": "O-",
       "address": {
         "line1": "120 Awolowo Way",
         "city": "Birmingham",
@@ -3426,7 +3412,6 @@
       "gender": "female",
       "nationality": "Indian",
       "maritalStatus": "single",
-      "bloodType": "A+",
       "address": {
         "line1": "229 Church Lane",
         "city": "Edinburgh",
@@ -3619,7 +3604,7 @@
       "phone": "+44 7884 896 9540",
       "departmentId": "DEPT-PEOPLE",
       "departmentName": "People & Culture",
-      "jobTitle": "Head of People",
+      "jobTitle": "HR Admin",
       "grade": "L7",
       "level": 2,
       "employmentTypeId": "ET-FT",
@@ -3635,7 +3620,6 @@
       "gender": "male",
       "nationality": "Irish",
       "maritalStatus": "single",
-      "bloodType": "AB-",
       "address": {
         "line1": "20 Queens Road",
         "city": "Birmingham",
@@ -3839,7 +3823,6 @@
       "gender": "male",
       "nationality": "British",
       "maritalStatus": "divorced",
-      "bloodType": "AB+",
       "address": {
         "line1": "138 King Street",
         "city": "Birmingham",
@@ -4054,7 +4037,6 @@
       "gender": "male",
       "nationality": "British",
       "maritalStatus": "married",
-      "bloodType": "O+",
       "address": {
         "line1": "214 Church Lane",
         "city": "Birmingham",
@@ -4270,7 +4252,6 @@
       "gender": "non_binary",
       "nationality": "British",
       "maritalStatus": "single",
-      "bloodType": "A+",
       "address": {
         "line1": "238 Queens Road",
         "city": "Edinburgh",
@@ -4485,7 +4466,6 @@
       "gender": "male",
       "nationality": "British",
       "maritalStatus": "married",
-      "bloodType": "B+",
       "address": {
         "line1": "112 Park Road",
         "city": "Leeds",
@@ -65366,7 +65346,6 @@
   "medicalFacts": [
     {
       "employeeId": "GB-EMP-0001",
-      "bloodType": "A+",
       "allergies": [
         "Penicillin"
       ],
@@ -65382,7 +65361,6 @@
     },
     {
       "employeeId": "GB-EMP-0002",
-      "bloodType": "A-",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -65398,7 +65376,6 @@
     },
     {
       "employeeId": "GB-EMP-0003",
-      "bloodType": "AB-",
       "allergies": [
         "Peanuts"
       ],
@@ -65418,7 +65395,6 @@
     },
     {
       "employeeId": "GB-EMP-0004",
-      "bloodType": "O+",
       "allergies": [],
       "conditions": [
         "Asthma"
@@ -65434,7 +65410,6 @@
     },
     {
       "employeeId": "GB-EMP-0005",
-      "bloodType": "A-",
       "allergies": [],
       "conditions": [],
       "medications": [
@@ -65450,7 +65425,6 @@
     },
     {
       "employeeId": "GB-EMP-0006",
-      "bloodType": "A+",
       "allergies": [
         "Pollen",
         "Dust"
@@ -65471,7 +65445,6 @@
     },
     {
       "employeeId": "GB-EMP-0007",
-      "bloodType": "B-",
       "allergies": [
         "Penicillin"
       ],
@@ -65489,7 +65462,6 @@
     },
     {
       "employeeId": "GB-EMP-0008",
-      "bloodType": "A+",
       "allergies": [
         "Peanuts"
       ],
@@ -65507,7 +65479,6 @@
     },
     {
       "employeeId": "GB-EMP-0009",
-      "bloodType": "O+",
       "allergies": [],
       "conditions": [],
       "medications": [
@@ -65523,7 +65494,6 @@
     },
     {
       "employeeId": "GB-EMP-0010",
-      "bloodType": "O+",
       "allergies": [],
       "conditions": [],
       "medications": [
@@ -65541,7 +65511,6 @@
     },
     {
       "employeeId": "GB-EMP-0011",
-      "bloodType": "B+",
       "allergies": [],
       "conditions": [
         "Asthma"
@@ -65559,7 +65528,6 @@
     },
     {
       "employeeId": "GB-EMP-0012",
-      "bloodType": "O-",
       "allergies": [
         "Penicillin"
       ],
@@ -65575,7 +65543,6 @@
     },
     {
       "employeeId": "GB-EMP-0013",
-      "bloodType": "A+",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -65589,7 +65556,6 @@
     },
     {
       "employeeId": "GB-EMP-0014",
-      "bloodType": "O-",
       "allergies": [],
       "conditions": [
         "Hypertension"
@@ -65605,7 +65571,6 @@
     },
     {
       "employeeId": "GB-EMP-0015",
-      "bloodType": "A+",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -65619,7 +65584,6 @@
     },
     {
       "employeeId": "GB-EMP-0016",
-      "bloodType": "AB-",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -65633,7 +65597,6 @@
     },
     {
       "employeeId": "GB-EMP-0017",
-      "bloodType": "AB+",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -65649,7 +65612,6 @@
     },
     {
       "employeeId": "GB-EMP-0018",
-      "bloodType": "O+",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -65665,7 +65627,6 @@
     },
     {
       "employeeId": "GB-EMP-0019",
-      "bloodType": "A+",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -65679,7 +65640,6 @@
     },
     {
       "employeeId": "GB-EMP-0020",
-      "bloodType": "B+",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -66155,7 +66115,7 @@
       "previousAmount": 106920,
       "newAmount": 132000,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Performance bonus",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66177,7 +66137,7 @@
       "previousAmount": 85536,
       "newAmount": 106920,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Annual increment",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66188,7 +66148,7 @@
       "previousAmount": 67729,
       "newAmount": 86832,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66199,7 +66159,7 @@
       "previousAmount": 86832,
       "newAmount": 107200,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Market adjustment",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66276,7 +66236,7 @@
       "previousAmount": 74800,
       "newAmount": 88000,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66287,7 +66247,7 @@
       "previousAmount": 63580,
       "newAmount": 74800,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66298,7 +66258,7 @@
       "previousAmount": 43416,
       "newAmount": 53600,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Performance bonus",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66309,7 +66269,7 @@
       "previousAmount": 53600,
       "newAmount": 67000,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Performance bonus",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66430,7 +66390,7 @@
       "previousAmount": 104580,
       "newAmount": 124500,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Market adjustment",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66452,7 +66412,7 @@
       "previousAmount": 70470,
       "newAmount": 87000,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66540,7 +66500,7 @@
       "previousAmount": 102000,
       "newAmount": 120000,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Market adjustment",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66573,7 +66533,7 @@
       "previousAmount": 62775,
       "newAmount": 77500,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Annual increment",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66595,7 +66555,7 @@
       "previousAmount": 50220,
       "newAmount": 62775,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66606,7 +66566,7 @@
       "previousAmount": 51745,
       "newAmount": 65500,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Market adjustment",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66617,7 +66577,7 @@
       "previousAmount": 43466,
       "newAmount": 51745,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Annual increment",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66672,7 +66632,7 @@
       "previousAmount": 55600,
       "newAmount": 69500,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66738,7 +66698,7 @@
       "previousAmount": 95865,
       "newAmount": 124500,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Annual increment",
       "approvedBy": "GB-EMP-0001"
     },
@@ -66793,7 +66753,7 @@
       "previousAmount": 66980,
       "newAmount": 83725,
       "currency": "GBP",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Annual increment",
       "approvedBy": "GB-EMP-0001"
     }

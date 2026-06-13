@@ -21,12 +21,12 @@ const HrDashboard = () => {
       <div className="py-6 w-fit">
         {greetingName ? (
           <h1 className="text-4xl font-bold text-foreground">
-            Welcome, {user?.name}
+            Welcome back, {user?.name}
           </h1>
         ) : (
           <Skeleton className="h-10 w-80" />
         )}
-        <p className=" w-[60%] text-sm text-muted-foreground mt-0.5">
+        <p className=" w-[100%] text-sm text-muted-foreground mt-0.5">
           Stay on top of employee activities, workforce updates, and HR
           operations from one place.
         </p>

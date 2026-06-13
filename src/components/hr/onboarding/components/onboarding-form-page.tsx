@@ -43,13 +43,23 @@ const WORK_MODE_OPTIONS = [
   { value: "hybrid", label: "Hybrid" },
 ];
 
-const BLOOD_TYPE_OPTIONS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
 
 const MARITAL_STATUS_OPTIONS = [
   { value: "single", label: "Single" },
   { value: "married", label: "Married" },
   { value: "divorced", label: "Divorced" },
   { value: "widowed", label: "Widowed" },
+];
+
+const TITLE_OPTIONS = ["Dr", "Mr", "Mrs", "Miss", "Ms"];
+
+const ETHNICITY_OPTIONS = [
+  "Asian / Asian British",
+  "Black / African / Caribbean / Black British",
+  "Mixed / Multiple ethnic groups",
+  "White",
+  "Other ethnic group",
+  "Prefer not to say",
 ];
 
 const STEPS = [
@@ -64,16 +74,20 @@ const STEPS = [
 ];
 
 const step1Schema = z.object({
+  title: z.string().optional(),
   firstName: z.string().min(1, "Required"),
+  middleName: z.string().optional(),
   lastName: z.string().min(1, "Required"),
-  surname: z.string().min(1, "Required"),
+  preferredName: z.string().optional(),
+  maidenName: z.string().optional(),
+  initials: z.string().optional(),
   email: z.string().email("Valid email required"),
   phone: z.string().min(7, "At least 7 digits"),
   dateOfBirth: z.string().min(1, "Required"),
   gender: z.string().min(1, "Required"),
   nationality: z.string().min(1, "Required"),
+  ethnicity: z.string().optional(),
   maritalStatus: z.string().optional(),
-  bloodType: z.string().optional(),
   address: z.string().min(5, "At least 5 characters"),
   state: z.string().optional(),
   country: z.string().min(1, "Required"),
@@ -113,6 +127,11 @@ const step5Schema = z.object({
   emergencyContactName: z.string().min(2, "At least 2 characters"),
   emergencyContactRelationship: z.string().min(2, "At least 2 characters"),
   emergencyContactPhone: z.string().min(7, "At least 7 digits"),
+  emergencyContactEmail: z
+    .string()
+    .email("Valid email required")
+    .optional()
+    .or(z.literal("")),
 });
 
 const step6Schema = z.object({
@@ -132,16 +151,20 @@ const step7Schema = z.object({
 });
 
 const EMPTY_DATA: ManualOnboardingData = {
+  title: "",
   firstName: "",
+  middleName: "",
   lastName: "",
-  surname: "",
+  preferredName: "",
+  maidenName: "",
+  initials: "",
   email: "",
   phone: "",
   dateOfBirth: "",
   gender: "",
   nationality: "",
+  ethnicity: "",
   maritalStatus: "",
-  bloodType: "",
   address: "",
   state: "",
   country: "",
@@ -169,6 +192,7 @@ const EMPTY_DATA: ManualOnboardingData = {
   emergencyContactName: "",
   emergencyContactRelationship: "",
   emergencyContactPhone: "",
+  emergencyContactEmail: "",
   allergies: "",
   conditions: "",
   medications: "",
@@ -364,6 +388,24 @@ export function OnboardingFormPage({ preboardingId }: { preboardingId?: string }
             <Separator />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Title</Label>
+                <Select
+                  value={data.title}
+                  onValueChange={(v) => update("title", v)}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select title" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TITLE_OPTIONS.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
                   First Name <span className="text-destructive">*</span>
                 </Label>
@@ -376,6 +418,15 @@ export function OnboardingFormPage({ preboardingId }: { preboardingId?: string }
                 {err("firstName") && (
                   <p className="text-xs text-destructive">{err("firstName")}</p>
                 )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Middle Name</Label>
+                <Input
+                  value={data.middleName}
+                  onChange={(e) => update("middleName", e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="e.g. Michael"
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
@@ -392,18 +443,34 @@ export function OnboardingFormPage({ preboardingId }: { preboardingId?: string }
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">
-                  Surname <span className="text-destructive">*</span>
-                </Label>
+                <Label className="text-xs">Preferred Name</Label>
                 <Input
-                  value={data.surname}
-                  onChange={(e) => update("surname", e.target.value)}
+                  value={data.preferredName}
+                  onChange={(e) => update("preferredName", e.target.value)}
                   className="h-9 text-sm"
-                  placeholder="e.g. Johnson"
+                  placeholder="e.g. Johnny"
                 />
-                {err("surname") && (
-                  <p className="text-xs text-destructive">{err("surname")}</p>
-                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Maiden Name</Label>
+                <Input
+                  value={data.maidenName}
+                  onChange={(e) => update("maidenName", e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="e.g. Smith"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Initials</Label>
+                <Input
+                  value={data.initials}
+                  onChange={(e) =>
+                    update("initials", e.target.value.toUpperCase())
+                  }
+                  className="h-9 text-sm"
+                  maxLength={5}
+                  placeholder="e.g. JMD"
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
@@ -511,18 +578,18 @@ export function OnboardingFormPage({ preboardingId }: { preboardingId?: string }
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Blood Type</Label>
+                <Label className="text-xs">Ethnicity</Label>
                 <Select
-                  value={data.bloodType}
-                  onValueChange={(v) => update("bloodType", v)}
+                  value={data.ethnicity}
+                  onValueChange={(v) => update("ethnicity", v)}
                 >
                   <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="Select blood type" />
+                    <SelectValue placeholder="Select ethnicity" />
                   </SelectTrigger>
                   <SelectContent>
-                    {BLOOD_TYPE_OPTIONS.map((b) => (
-                      <SelectItem key={b} value={b}>
-                        {b}
+                    {ETHNICITY_OPTIONS.map((e) => (
+                      <SelectItem key={e} value={e}>
+                        {e}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -984,6 +1051,23 @@ export function OnboardingFormPage({ preboardingId }: { preboardingId?: string }
                   </p>
                 )}
               </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Email Address</Label>
+                <Input
+                  type="email"
+                  value={data.emergencyContactEmail}
+                  onChange={(e) =>
+                    update("emergencyContactEmail", e.target.value)
+                  }
+                  className="h-9 text-sm"
+                  placeholder="contact@example.com"
+                />
+                {err("emergencyContactEmail") && (
+                  <p className="text-xs text-destructive">
+                    {err("emergencyContactEmail")}
+                  </p>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -1121,15 +1205,20 @@ export function OnboardingFormPage({ preboardingId }: { preboardingId?: string }
                 </p>
                 <ReviewRow
                   label="Full Name"
-                  value={`${data.firstName} ${data.lastName} ${data.surname}`}
+                  value={[data.title, data.firstName, data.middleName, data.lastName]
+                    .filter(Boolean)
+                    .join(" ")}
                 />
+                <ReviewRow label="Preferred Name" value={data.preferredName} />
+                <ReviewRow label="Maiden Name" value={data.maidenName} />
+                <ReviewRow label="Initials" value={data.initials} />
                 <ReviewRow label="Email" value={data.email} />
                 <ReviewRow label="Phone" value={data.phone} />
                 <ReviewRow label="Date of Birth" value={data.dateOfBirth} />
                 <ReviewRow label="Gender" value={data.gender} />
                 <ReviewRow label="Nationality" value={data.nationality} />
+                <ReviewRow label="Ethnicity" value={data.ethnicity} />
                 <ReviewRow label="Marital Status" value={data.maritalStatus} />
-                <ReviewRow label="Blood Type" value={data.bloodType} />
                 <ReviewRow label="Address" value={data.address} />
                 <ReviewRow label="State" value={data.state} />
                 <ReviewRow label="Country" value={data.country} />
@@ -1194,6 +1283,7 @@ export function OnboardingFormPage({ preboardingId }: { preboardingId?: string }
                   value={data.emergencyContactRelationship}
                 />
                 <ReviewRow label="Phone" value={data.emergencyContactPhone} />
+                <ReviewRow label="Email" value={data.emergencyContactEmail} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">

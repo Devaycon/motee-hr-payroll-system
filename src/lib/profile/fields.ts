@@ -49,7 +49,7 @@ export const PROFILE_GROUP_LABELS: Record<ProfileFieldGroup, string> = {
   bank: "Bank Details",
   identity: "Identity Numbers",
   work: "Work Pattern",
-  employment: "Employment (system-driven)",
+  employment: "Employment (System-driven)",
   compensation: "Compensation",
   offboarding: "Offboarding",
   access: "Access",
@@ -90,10 +90,9 @@ export const ID_LABELS: Record<string, string> = {
   taxCode: "Tax Code",
 };
 
-const GENDER_OPTIONS = ["male", "female", "other", "prefer not to say"];
+const GENDER_OPTIONS = ["Male", "Female", "Other", "Prefer not to say"];
 const TITLE_OPTIONS = ["Dr", "Mr", "Mrs", "Miss", "Ms"];
 const MARITAL_OPTIONS = ["Divorced", "Married", "Separated", "Single", "Widowed"];
-const BLOOD_TYPE_OPTIONS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Unknown"];
 const ETHNICITY_OPTIONS = [
   "Asian / Asian British",
   "Black / African / Caribbean / Black British",
@@ -128,6 +127,25 @@ const REASON_FOR_LEAVING_OPTIONS = [
 ];
 const PROBATION_OPTIONS = ["Open", "Closed", "Failed"];
 const YES_NO_OPTIONS = ["Yes", "No"];
+const LANGUAGE_OPTIONS = [
+  "(en-GB) English",
+  "(en-US) English",
+  "(fr) French",
+  "(es) Spanish",
+  "(de) German",
+  "(pt) Portuguese",
+  "(it) Italian",
+  "(nl) Dutch",
+  "(ru) Russian",
+  "(ar) Arabic",
+  "(zh-CN) Mandarin",
+  "(hi) Hindi",
+  "(bn) Bengali",
+  "(ja) Japanese",
+  "(ko) Korean",
+  "(tr) Turkish",
+  "(sw) Swahili",
+];
 
 const SCHEDULE_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 const SCHEDULE_FIELDS: ProfileField[] = SCHEDULE_DAYS.flatMap((d) => [
@@ -138,7 +156,7 @@ const SCHEDULE_FIELDS: ProfileField[] = SCHEDULE_DAYS.flatMap((d) => [
 const STATIC_FIELDS: ProfileField[] = [
   { key: "title", label: "Title", group: "personal", type: "select", options: TITLE_OPTIONS },
   { key: "firstName", label: "Legal First Name", group: "personal", type: "text" },
-  { key: "middleName", label: "Middle Name(s)", group: "personal", type: "text" },
+  { key: "middleName", label: "Middle Name", group: "personal", type: "text" },
   { key: "lastName", label: "Legal Last Name", group: "personal", type: "text" },
   { key: "preferredName", label: "Preferred Name", group: "personal", type: "text" },
   { key: "maidenName", label: "Maiden Name", group: "personal", type: "text" },
@@ -148,7 +166,6 @@ const STATIC_FIELDS: ProfileField[] = [
   { key: "maritalStatus", label: "Marital status", group: "personal", type: "select", options: MARITAL_OPTIONS },
   { key: "nationality", label: "Nationality", group: "personal", type: "select", options: NATIONALITY_OPTIONS },
   { key: "ethnicity", label: "Ethnicity", group: "personal", type: "select", options: ETHNICITY_OPTIONS },
-  { key: "bloodType", label: "Blood type", group: "personal", type: "select", options: BLOOD_TYPE_OPTIONS },
 
   { key: "email", label: "Work email", group: "contact", type: "email" },
   { key: "personalEmail", label: "Personal email", group: "contact", type: "email" },
@@ -169,7 +186,7 @@ const STATIC_FIELDS: ProfileField[] = [
   ...SCHEDULE_FIELDS,
 
   // Employment — system-driven (owned by org module) — editing warns first.
-  { key: "employeeNumber", label: "Reference number", group: "employment", type: "text", system: true, source: "Organization" },
+  { key: "employeeNumber", label: "System ID", group: "employment", type: "text", system: true, source: "Organization" },
   { key: "jobTitle", label: "Job title", group: "employment", type: "text", system: true, source: "Organization" },
   { key: "departmentName", label: "Department", group: "employment", type: "select", options: DEPARTMENTS, system: true, source: "Organization" },
   { key: "grade", label: "Grade", group: "employment", type: "text", system: true, source: "Organization" },
@@ -209,7 +226,7 @@ const STATIC_FIELDS: ProfileField[] = [
 
   // Preferences (self-service settings)
   { key: "preferences.notifications", label: "Notifications", group: "preferences", type: "select", options: ["Email + In-app", "Email only", "In-app only", "None"] },
-  { key: "preferences.language", label: "Language", group: "preferences", type: "text" },
+  { key: "preferences.language", label: "Language", group: "preferences", type: "select", options: LANGUAGE_OPTIONS },
   { key: "preferences.timezone", label: "Timezone", group: "preferences", type: "text" },
   { key: "preferences.theme", label: "Theme", group: "preferences", type: "select", options: ["System", "Light", "Dark"] },
 ];
@@ -219,6 +236,14 @@ function labelFromKey(k: string): string {
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** UK addresses use "county"; everywhere else keeps "state / region". */
+export function regionWordForCountry(country?: string | null): string {
+  const c = (country ?? "").trim().toLowerCase();
+  return c === "united kingdom" || c === "uk" || c === "gb"
+    ? "county"
+    : "state / region";
 }
 
 /** The full set of employee-provided, editable fields for an employee. */
@@ -245,14 +270,15 @@ export function getEmployeeProfileFields(emp: LocaleEmployee): ProfileField[] {
   // on each block's own selected country.
   const addressFields: ProfileField[] = ADDRESS_TYPE_OPTIONS.flatMap((label) => {
     const slug = label.toLowerCase();
-    const states = statesForCountry(getFieldString(emp, `addresses.${slug}.country`));
+    const country = getFieldString(emp, `addresses.${slug}.country`);
+    const states = statesForCountry(country);
     return [
       { key: `addresses.${slug}.line1`, label: `${label} address line 1`, group: "address", type: "text" },
       { key: `addresses.${slug}.line2`, label: `${label} address line 2`, group: "address", type: "text" },
       { key: `addresses.${slug}.city`, label: `${label} city`, group: "address", type: "text" },
       {
         key: `addresses.${slug}.region`,
-        label: `${label} state / region`,
+        label: `${label} ${regionWordForCountry(country)}`,
         group: "address",
         type: states.length > 0 ? "select" : "text",
         ...(states.length > 0 ? { options: states } : {}),

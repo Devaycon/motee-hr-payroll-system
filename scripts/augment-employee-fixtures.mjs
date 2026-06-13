@@ -494,7 +494,6 @@ function augment(tenantData) {
     // medicalFacts (1)
     out.medicalFacts.push({
       employeeId: emp.id,
-      bloodType: emp.bloodType || pick(["O+", "A+", "B+", "AB+", "O-"]),
       allergies: chance(0.4) ? pick([["Penicillin"], ["Peanuts"], ["Pollen", "Dust"]]) : [],
       conditions: chance(0.3) ? pick([["Asthma"], ["Hypertension"], ["Type 2 Diabetes"]]) : [],
       medications: chance(0.25) ? pick([["Salbutamol inhaler"], ["Metformin"]]) : [],

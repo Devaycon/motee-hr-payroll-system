@@ -500,7 +500,6 @@
       "gender": "female",
       "nationality": "Nigerian",
       "maritalStatus": "married",
-      "bloodType": "O+",
       "address": {
         "line1": "138 Church Lane",
         "city": "Ibadan",
@@ -719,7 +718,6 @@
       "gender": "female",
       "nationality": "Nigerian",
       "maritalStatus": "married",
-      "bloodType": "AB-",
       "address": {
         "line1": "109 Park Road",
         "city": "Port Harcourt",
@@ -938,7 +936,6 @@
       "gender": "male",
       "nationality": "Nigerian",
       "maritalStatus": "married",
-      "bloodType": "B-",
       "address": {
         "line1": "235 Allen Avenue",
         "city": "Port Harcourt",
@@ -1151,7 +1148,6 @@
       "gender": "male",
       "nationality": "Nigerian",
       "maritalStatus": "single",
-      "bloodType": "O-",
       "address": {
         "line1": "157 High Street",
         "city": "Kano",
@@ -1364,7 +1360,6 @@
       "gender": "female",
       "nationality": "Nigerian",
       "maritalStatus": "single",
-      "bloodType": "O+",
       "address": {
         "line1": "136 Queens Road",
         "city": "Kano",
@@ -1577,7 +1572,6 @@
       "gender": "male",
       "nationality": "Nigerian",
       "maritalStatus": "single",
-      "bloodType": "AB+",
       "address": {
         "line1": "248 Market Square",
         "city": "Lagos",
@@ -1783,7 +1777,6 @@
       "gender": "male",
       "nationality": "Nigerian",
       "maritalStatus": "married",
-      "bloodType": "AB-",
       "address": {
         "line1": "198 Queens Road",
         "city": "Port Harcourt",
@@ -1989,7 +1982,6 @@
       "gender": "female",
       "nationality": "Nigerian",
       "maritalStatus": "married",
-      "bloodType": "O+",
       "address": {
         "line1": "64 Awolowo Way",
         "city": "Kano",
@@ -2201,7 +2193,6 @@
       "gender": "male",
       "nationality": "Nigerian",
       "maritalStatus": "single",
-      "bloodType": "AB+",
       "address": {
         "line1": "146 Market Square",
         "city": "Enugu",
@@ -2413,7 +2404,6 @@
       "gender": "male",
       "nationality": "Nigerian",
       "maritalStatus": "single",
-      "bloodType": "O-",
       "address": {
         "line1": "119 Awolowo Way",
         "city": "Abuja",
@@ -2626,7 +2616,6 @@
       "gender": "female",
       "nationality": "Nigerian",
       "maritalStatus": "widowed",
-      "bloodType": "B+",
       "address": {
         "line1": "246 Awolowo Way",
         "city": "Port Harcourt",
@@ -2832,7 +2821,6 @@
       "gender": "male",
       "nationality": "Nigerian",
       "maritalStatus": "single",
-      "bloodType": "O+",
       "address": {
         "line1": "53 King Street",
         "city": "Port Harcourt",
@@ -3038,7 +3026,6 @@
       "gender": "female",
       "nationality": "Nigerian",
       "maritalStatus": "married",
-      "bloodType": "O-",
       "address": {
         "line1": "203 High Street",
         "city": "Ibadan",
@@ -3251,7 +3238,6 @@
       "gender": "female",
       "nationality": "Nigerian",
       "maritalStatus": "divorced",
-      "bloodType": "B-",
       "address": {
         "line1": "227 Church Lane",
         "city": "Enugu",
@@ -3469,7 +3455,6 @@
       "gender": "female",
       "nationality": "Nigerian",
       "maritalStatus": "divorced",
-      "bloodType": "AB-",
       "address": {
         "line1": "100 Queens Road",
         "city": "Lagos",
@@ -3687,7 +3672,6 @@
       "gender": "male",
       "nationality": "Nigerian",
       "maritalStatus": "divorced",
-      "bloodType": "B-",
       "address": {
         "line1": "147 Park Road",
         "city": "Enugu",
@@ -3883,7 +3867,7 @@
       "phone": "+234 80336 399 8300",
       "departmentId": "DEPT-PEOPLE",
       "departmentName": "People Operations",
-      "jobTitle": "Head of People",
+      "jobTitle": "HR Admin",
       "grade": "L7",
       "level": 2,
       "employmentTypeId": "ET-FT",
@@ -3899,7 +3883,6 @@
       "gender": "male",
       "nationality": "Nigerian",
       "maritalStatus": "married",
-      "bloodType": "AB+",
       "address": {
         "line1": "116 Church Lane",
         "city": "Port Harcourt",
@@ -4112,7 +4095,6 @@
       "gender": "male",
       "nationality": "Nigerian",
       "maritalStatus": "single",
-      "bloodType": "A+",
       "address": {
         "line1": "19 Queens Road",
         "city": "Kano",
@@ -4331,7 +4313,6 @@
       "gender": "female",
       "nationality": "Nigerian",
       "maritalStatus": "single",
-      "bloodType": "B+",
       "address": {
         "line1": "105 King Street",
         "city": "Enugu",
@@ -4549,7 +4530,6 @@
       "gender": "female",
       "nationality": "Nigerian",
       "maritalStatus": "single",
-      "bloodType": "B-",
       "address": {
         "line1": "234 Allen Avenue",
         "city": "Lagos",
@@ -70018,7 +69998,6 @@
   "medicalFacts": [
     {
       "employeeId": "NG-EMP-0001",
-      "bloodType": "O+",
       "allergies": [
         "Peanuts"
       ],
@@ -70036,7 +70015,6 @@
     },
     {
       "employeeId": "NG-EMP-0002",
-      "bloodType": "AB-",
       "allergies": [],
       "conditions": [
         "Type 2 Diabetes"
@@ -70054,7 +70032,6 @@
     },
     {
       "employeeId": "NG-EMP-0003",
-      "bloodType": "B-",
       "allergies": [
         "Penicillin"
       ],
@@ -70070,7 +70047,6 @@
     },
     {
       "employeeId": "NG-EMP-0004",
-      "bloodType": "O-",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -70084,7 +70060,6 @@
     },
     {
       "employeeId": "NG-EMP-0005",
-      "bloodType": "O+",
       "allergies": [
         "Peanuts"
       ],
@@ -70102,7 +70077,6 @@
     },
     {
       "employeeId": "NG-EMP-0006",
-      "bloodType": "AB+",
       "allergies": [],
       "conditions": [],
       "medications": [
@@ -70118,7 +70092,6 @@
     },
     {
       "employeeId": "NG-EMP-0007",
-      "bloodType": "AB-",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -70134,7 +70107,6 @@
     },
     {
       "employeeId": "NG-EMP-0008",
-      "bloodType": "O+",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -70150,7 +70122,6 @@
     },
     {
       "employeeId": "NG-EMP-0009",
-      "bloodType": "AB+",
       "allergies": [
         "Peanuts"
       ],
@@ -70168,7 +70139,6 @@
     },
     {
       "employeeId": "NG-EMP-0010",
-      "bloodType": "O-",
       "allergies": [
         "Pollen",
         "Dust"
@@ -70185,7 +70155,6 @@
     },
     {
       "employeeId": "NG-EMP-0011",
-      "bloodType": "B+",
       "allergies": [
         "Peanuts"
       ],
@@ -70203,7 +70172,6 @@
     },
     {
       "employeeId": "NG-EMP-0012",
-      "bloodType": "O+",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -70219,7 +70187,6 @@
     },
     {
       "employeeId": "NG-EMP-0013",
-      "bloodType": "O-",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -70233,7 +70200,6 @@
     },
     {
       "employeeId": "NG-EMP-0014",
-      "bloodType": "B-",
       "allergies": [
         "Peanuts"
       ],
@@ -70255,7 +70221,6 @@
     },
     {
       "employeeId": "NG-EMP-0015",
-      "bloodType": "AB-",
       "allergies": [
         "Penicillin"
       ],
@@ -70273,7 +70238,6 @@
     },
     {
       "employeeId": "NG-EMP-0016",
-      "bloodType": "B-",
       "allergies": [
         "Penicillin"
       ],
@@ -70291,7 +70255,6 @@
     },
     {
       "employeeId": "NG-EMP-0017",
-      "bloodType": "AB+",
       "allergies": [
         "Pollen",
         "Dust"
@@ -70310,7 +70273,6 @@
     },
     {
       "employeeId": "NG-EMP-0018",
-      "bloodType": "A+",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -70326,7 +70288,6 @@
     },
     {
       "employeeId": "NG-EMP-0019",
-      "bloodType": "B+",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -70340,7 +70301,6 @@
     },
     {
       "employeeId": "NG-EMP-0020",
-      "bloodType": "B-",
       "allergies": [],
       "conditions": [],
       "medications": [],
@@ -70781,7 +70741,7 @@
       "previousAmount": 20454000,
       "newAmount": 24350000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Market adjustment",
       "approvedBy": "NG-EMP-0001"
     },
@@ -70814,7 +70774,7 @@
       "previousAmount": 16567740,
       "newAmount": 20454000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Annual increment",
       "approvedBy": "NG-EMP-0001"
     },
@@ -70847,7 +70807,7 @@
       "previousAmount": 13719051,
       "newAmount": 16937100,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "NG-EMP-0001"
     },
@@ -70902,7 +70862,7 @@
       "previousAmount": 21320000,
       "newAmount": 26650000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "NG-EMP-0001"
     },
@@ -70935,7 +70895,7 @@
       "previousAmount": 9729720,
       "newAmount": 12474000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Performance bonus",
       "approvedBy": "NG-EMP-0001"
     },
@@ -70946,7 +70906,7 @@
       "previousAmount": 12474000,
       "newAmount": 16200000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Performance bonus",
       "approvedBy": "NG-EMP-0001"
     },
@@ -70979,7 +70939,7 @@
       "previousAmount": 8931000,
       "newAmount": 11450000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71012,7 +70972,7 @@
       "previousAmount": 8154900,
       "newAmount": 9945000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71023,7 +70983,7 @@
       "previousAmount": 9945000,
       "newAmount": 12750000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71034,7 +70994,7 @@
       "previousAmount": 10394730,
       "newAmount": 12833000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71111,7 +71071,7 @@
       "previousAmount": 18387000,
       "newAmount": 22700000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Market adjustment",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71188,7 +71148,7 @@
       "previousAmount": 17255000,
       "newAmount": 20300000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Promotion",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71221,7 +71181,7 @@
       "previousAmount": 6167056,
       "newAmount": 7520800,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Market adjustment",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71232,7 +71192,7 @@
       "previousAmount": 4748633,
       "newAmount": 6167056,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Annual increment",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71254,7 +71214,7 @@
       "previousAmount": 6108180,
       "newAmount": 7449000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Performance bonus",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71265,7 +71225,7 @@
       "previousAmount": 7449000,
       "newAmount": 9550000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Annual increment",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71276,7 +71236,7 @@
       "previousAmount": 12520000,
       "newAmount": 15650000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Annual increment",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71309,7 +71269,7 @@
       "previousAmount": 13573560,
       "newAmount": 17402000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Performance bonus",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71320,7 +71280,7 @@
       "previousAmount": 11266055,
       "newAmount": 13573560,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Market adjustment",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71353,7 +71313,7 @@
       "previousAmount": 16600000,
       "newAmount": 20000000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Market adjustment",
       "approvedBy": "NG-EMP-0001"
     },
@@ -71386,7 +71346,7 @@
       "previousAmount": 15147500,
       "newAmount": 18250000,
       "currency": "NGN",
-      "changeType": "raise",
+      "changeType": "increment",
       "reason": "Performance bonus",
       "approvedBy": "NG-EMP-0001"
     },

@@ -147,7 +147,7 @@ export function EmployeeProfileWorkspace({
         {stats && (
           <StatStrip
             items={[
-              { label: "Leave remaining", value: `${stats.leaveRemaining}d`, accent: "text-emerald-600" },
+              { label: "Leave remaining", value: `${stats.leaveRemaining}days`, accent: "text-emerald-600" },
               { label: "Open tasks", value: stats.openTasks },
               { label: "Pending approvals", value: stats.pendingApprovals },
               { label: "Assets", value: stats.assignedAssets },

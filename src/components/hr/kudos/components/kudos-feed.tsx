@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, Search, Megaphone, Pin, Star } from "lucide-react";
+import { MessageCircle, Search, Megaphone, Pin, Star, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Badge } from "@/src/components/ui/badge";
@@ -28,6 +28,9 @@ interface KudosFeedProps {
   myReactions: Record<string, ReactionType | null>;
   onReact: (postId: string, reaction: ReactionType) => void;
   onAddComment: (postId: string, message: string) => void;
+  /** When true, an admin delete control is shown on each post. */
+  canDelete?: boolean;
+  onDelete?: (postId: string) => void;
 }
 
 const DEPT_OPTIONS = [
@@ -48,6 +51,8 @@ export function KudosFeed({
   myReactions,
   onReact,
   onAddComment,
+  canDelete = false,
+  onDelete,
 }: KudosFeedProps) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<KudosType | "all">("all");
@@ -234,6 +239,16 @@ export function KudosFeed({
                       >
                         {COMPANY_VALUE_CONFIG[post.companyValue].label}
                       </Badge>
+                    )}
+                    {canDelete && onDelete && (
+                      <button
+                        type="button"
+                        title="Delete kudos"
+                        onClick={() => onDelete(post.id)}
+                        className="mt-0.5 flex items-center justify-center size-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
                     )}
                   </div>
                 </div>

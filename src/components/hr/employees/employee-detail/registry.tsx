@@ -62,6 +62,7 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "profile", label: "Profile", group: "Profile", icon: User, Component: Mod.ProfileModule },
   { key: "job", label: "Job", group: "Profile", icon: BriefcaseBusiness, Component: Mod.JobModule },
   { key: "compensation", label: "Compensation", group: "Profile", icon: Coins, Component: Mod.CompensationModule },
+  { key: "payslips", label: "Payslips", group: "Profile", icon: Banknote, Component: Mod.PayslipsModule },
   { key: "preferences", label: "Preferences", group: "Profile", icon: Settings2, Component: Mod.PreferencesModule },
   { key: "documents", label: "Employee Documents", group: "Profile", icon: FileText, Component: EmployeeDocumentsModule },
   { key: "contracts", label: "Contracts", group: "Profile", icon: ScrollText, Component: ContractsModule },
@@ -74,11 +75,11 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "bookings", label: "Location Bookings", group: "Time & Attendance", icon: MapPin, Component: Mod.BookingsModule },
 
   { key: "performance", label: "Performance", group: "Growth", icon: TrendingUp, Component: Mod.PerformanceModule },
-  { key: "learn", label: "Learn", group: "Growth", icon: BookOpen, Component: Mod.LearnModule },
+  { key: "learn", label: "Learning", group: "Growth", icon: BookOpen, Component: Mod.LearnModule },
   { key: "training-videos", label: "Training", group: "Growth", icon: MonitorPlay, Component: Mod.TrainingDashboardModule },
   { key: "training", label: "Certifications", group: "Growth", icon: GraduationCap, Component: Mod.TrainingModule },
   { key: "kudos", label: "Kudos", group: "Growth", icon: Award, Component: Mod.KudosModule },
-  { key: "jobs", label: "Jobs", group: "Growth", icon: Briefcase, Component: Mod.JobsModule },
+  { key: "jobs", label: "Internal Moves", group: "Growth", icon: Briefcase, Component: Mod.JobsModule },
 
   
   { key: "assets", label: "Assigned Assets", group: "Assets", icon: Package, Component: Mod.AssetsModule },
@@ -121,8 +122,10 @@ export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
   "jobs",
   "pay",
   "compensation",
+  "payslips",
   "assets",
   "dbs",
+  "tasks",
 ]);
 
 /** Modules the current viewer is allowed to see (sensitive ones gated). */

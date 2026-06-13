@@ -143,6 +143,20 @@ export function AdvancedEmployeesTable({
           ),
       },
       {
+        accessorKey: "directReportCount",
+        header: sortableHeader("Line Manager Status"),
+        cell: ({ row }) => {
+          const count = row.original.directReportCount ?? 0;
+          return count > 0 ? (
+            <span className="text-[10px] px-2 py-0.5 rounded-full border font-medium border-emerald-500/30 bg-emerald-500/10 text-emerald-600 whitespace-nowrap">
+              Active Line Manager
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground italic">Not a Manager</span>
+          );
+        },
+      },
+      {
         accessorKey: "startDate",
         header: sortableHeader("Start Date"),
         cell: ({ row }) => (
