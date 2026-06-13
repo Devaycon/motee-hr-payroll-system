@@ -19,7 +19,7 @@ import {
 } from "@/src/components/ui/select";
 import { OnboardingStepper } from "@/src/components/auth/company-onboarding/stepper";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
+import { useCurrency } from "@/src/lib/hooks/use-currency";
 import { formatDate } from "@/src/lib/utils/format-date";
 import {
   addRequisition,
@@ -55,7 +55,8 @@ const STEPS = [
   { number: 1, label: "Select requisition" },
   { number: 2, label: "Requisition details" },
   { number: 3, label: "Application form" },
-  { number: 4, label: "Publish & review" },
+  { number: 4, label: "Publish settings" },
+  { number: 5, label: "Review" },
 ];
 
 interface RequisitionBuilderProps {
@@ -71,6 +72,7 @@ export function RequisitionBuilder({
 }: RequisitionBuilderProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { format: formatMoney } = useCurrency();
   const country = useAppSelector((s) => s.locale.country);
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
   const requisitions = useAppSelector(
@@ -283,7 +285,7 @@ export function RequisitionBuilder({
   }
 
   const selReq = requisitions.find((r) => r.id === sourceReqId);
-  const salaryRange = `${formatMoneyLocale(role.salaryMin)} – ${formatMoneyLocale(role.salaryMax)}`;
+  const salaryRange = `${formatMoney(role.salaryMin)} – ${formatMoney(role.salaryMax)}`;
 
   return (
     <div className="w-full space-y-6">
@@ -390,7 +392,7 @@ export function RequisitionBuilder({
                       { label: "Salary range", value: salaryRange },
                       { label: "Start date", value: role.targetStartDate ? formatDate(role.targetStartDate) : "—" },
                       { label: "Reporting manager", value: role.reportingManager || "—" },
-                      { label: "Budget", value: role.budgetAllocation ? formatMoneyLocale(role.budgetAllocation) : "—" },
+                      { label: "Budget", value: role.budgetAllocation ? formatMoney(role.budgetAllocation) : "—" },
                       { label: "Source workforce", value: role.workforceLabel || "—" },
                     ].map((f) => (
                       <div key={f.label} className="flex flex-col gap-0.5">
@@ -606,29 +608,110 @@ export function RequisitionBuilder({
                 ))}
               </div>
 
-              {/* Review summary */}
+            </div>
+          )}
+
+          {/* Step 5 — Review (read-only summary with edit jump-back) */}
+          {step === 5 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Review &amp; publish</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Check everything below. Use the Edit links to jump back to any step and make changes.
+                </p>
+              </div>
+
+              {/* Role details */}
               <div className="rounded-lg border border-border/60 p-4 space-y-2 text-sm">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Review
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Role details
+                  </h3>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[11px]"
+                    onClick={() => setStep(2)}
+                  >
+                    Edit
+                  </Button>
+                </div>
                 <p className="text-foreground font-medium">
                   {role.positionTitle || "Untitled role"}{" "}
                   <span className="font-normal text-muted-foreground">· {role.department}</span>
                 </p>
                 <p className="text-muted-foreground">
                   {role.openings} opening{role.openings === 1 ? "" : "s"} · {salaryRange}
-                </p>
-                <p className="text-muted-foreground">
-                  {fields.filter((f) => f.label.trim()).length} application field
-                  {fields.filter((f) => f.label.trim()).length === 1 ? "" : "s"} ·{" "}
-                  {platforms.length} platform{platforms.length === 1 ? "" : "s"} ·{" "}
-                  {interviewPlan.length} interview round{interviewPlan.length === 1 ? "" : "s"}
+                  {role.location ? ` · ${role.location}` : ""}
                 </p>
                 {selReq && (
                   <p className="text-muted-foreground">
                     Sourced from approved requisition — {selReq.title}
                   </p>
                 )}
+              </div>
+
+              {/* Application form */}
+              <div className="rounded-lg border border-border/60 p-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Application form
+                  </h3>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[11px]"
+                    onClick={() => setStep(3)}
+                  >
+                    Edit
+                  </Button>
+                </div>
+                <p className="text-muted-foreground">
+                  {fields.filter((f) => f.label.trim()).length} application field
+                  {fields.filter((f) => f.label.trim()).length === 1 ? "" : "s"}
+                  {constraints.filter((c) => c.name.trim()).length > 0
+                    ? ` · ${constraints.filter((c) => c.name.trim()).length} filter${constraints.filter((c) => c.name.trim()).length === 1 ? "" : "s"}`
+                    : ""}
+                </p>
+                {fields.filter((f) => f.label.trim()).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {fields
+                      .filter((f) => f.label.trim())
+                      .map((f) => (
+                        <Badge key={f.id} variant="outline" className="text-[10px]">
+                          {f.label}
+                        </Badge>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Publish settings */}
+              <div className="rounded-lg border border-border/60 p-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Publish settings
+                  </h3>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[11px]"
+                    onClick={() => setStep(4)}
+                  >
+                    Edit
+                  </Button>
+                </div>
+                <p className="text-muted-foreground">
+                  {platforms.length} platform{platforms.length === 1 ? "" : "s"} ·{" "}
+                  {interviewPlan.length} interview round{interviewPlan.length === 1 ? "" : "s"}
+                </p>
+                <p className="text-muted-foreground">
+                  Hiring manager:{" "}
+                  {employees.find((e) => e.id === hiringManagerId)?.fullName ?? "Unassigned"}
+                </p>
               </div>
             </div>
           )}

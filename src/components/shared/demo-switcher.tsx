@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LogIn,
@@ -85,6 +86,11 @@ export function DemoSwitcher() {
 
   const [open, setOpen] = useState(false);
   const [credentialsOpen, setCredentialsOpen] = useState(false);
+  // Bounds the draggable widget to the viewport.
+  const dragBoundsRef = useRef<HTMLDivElement>(null);
+  // Tracks whether the last pointer interaction was a drag, so a drag-release
+  // doesn't also fire the toggle button's click.
+  const draggedRef = useRef(false);
 
   useEffect(() => {
     if (open && credentialsOpen && localeStatus === "idle") {
@@ -113,15 +119,34 @@ export function DemoSwitcher() {
 
   return (
     <div
+      ref={dragBoundsRef}
       style={{
         position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        pointerEvents: "none",
+      }}
+    >
+    <motion.div
+      drag
+      dragConstraints={dragBoundsRef}
+      dragMomentum={false}
+      dragElastic={0.15}
+      onDragStart={() => {
+        draggedRef.current = true;
+      }}
+      whileDrag={{ cursor: "grabbing" }}
+      style={{
+        position: "absolute",
         bottom: 20,
         right: 20,
-        zIndex: 9999,
+        pointerEvents: "auto",
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-end",
         gap: 8,
+        cursor: "grab",
+        touchAction: "none",
       }}
     >
       {open && (
@@ -300,7 +325,14 @@ export function DemoSwitcher() {
       )}
 
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          // Swallow the click that ends a drag so dragging doesn't toggle.
+          if (draggedRef.current) {
+            draggedRef.current = false;
+            return;
+          }
+          setOpen((v) => !v);
+        }}
         style={{
           height: 36,
           paddingLeft: 16,
@@ -330,6 +362,7 @@ export function DemoSwitcher() {
           </>
         )}
       </button>
+    </motion.div>
     </div>
   );
 }

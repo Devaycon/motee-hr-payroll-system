@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Upload } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { BulkCsvUploadModal } from "@/src/components/shared/bulk-csv-upload-modal";
 import { useLeaveData } from "./hooks";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { submitApproval } from "@/src/lib/stores/approvals-slice";
@@ -51,6 +54,15 @@ export function LeaveManagementPage() {
 
   const [policyModalOpen, setPolicyModalOpen] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<LeavePolicy | null>(null);
+
+  const [bulkOpen, setBulkOpen] = useState(false);
+
+  function handleBulkImport(imported: LeaveRequest[]) {
+    setRequests((prev) => [...imported, ...prev]);
+    toast.success(
+      `Imported ${imported.length} leave request${imported.length === 1 ? "" : "s"}`,
+    );
+  }
 
   function handleNewRequest() {
     setEditingRequest(null);
@@ -179,11 +191,20 @@ export function LeaveManagementPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-4xl font-semibold">Leave Management</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Manage leave requests, employee balances, and leave policies
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-semibold">Leave Management</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Manage leave requests, employee balances, and leave policies
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="gap-2 shrink-0"
+          onClick={() => setBulkOpen(true)}
+        >
+          <Upload className="w-4 h-4" /> Bulk Upload
+        </Button>
       </div>
 
       <StatCards requests={requests} />
@@ -246,6 +267,85 @@ export function LeaveManagementPage() {
         onClose={() => setPolicyModalOpen(false)}
         editingPolicy={editingPolicy}
         onSave={handleSavePolicy}
+      />
+
+      <BulkCsvUploadModal<LeaveRequest>
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        title="Bulk Upload Leave Requests"
+        description="Download the CSV template, fill it in, then upload to import multiple leave requests."
+        templateFileName="leave_requests_template.csv"
+        headers={[
+          "employeeName",
+          "employeeInitials",
+          "department",
+          "jobTitle",
+          "leaveType",
+          "startDate",
+          "endDate",
+          "totalDays",
+          "notes",
+        ]}
+        sampleRows={[
+          [
+            "Chidi Okonkwo",
+            "CO",
+            "Engineering",
+            "Software Engineer",
+            "annual",
+            "2026-07-01",
+            "2026-07-05",
+            "5",
+            "Family holiday",
+          ],
+          [
+            "Amara Nwosu",
+            "AN",
+            "Product",
+            "Product Manager",
+            "sick",
+            "2026-07-10",
+            "2026-07-11",
+            "2",
+            "",
+          ],
+        ]}
+        parseRow={(o) => ({
+          id: `LR-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          employeeName: o.employeeName ?? "",
+          employeeInitials: (
+            o.employeeInitials ||
+            o.employeeName
+              ?.split(" ")
+              .map((p) => p[0])
+              .join("") ||
+            ""
+          )
+            .slice(0, 3)
+            .toUpperCase(),
+          department: o.department ?? "",
+          jobTitle: o.jobTitle ?? "",
+          leaveType: (o.leaveType || "annual") as LeaveRequest["leaveType"],
+          startDate: o.startDate ?? "",
+          endDate: o.endDate ?? "",
+          totalDays: Number(o.totalDays) || 0,
+          isHalfDay: false,
+          status: "pending",
+          notes: o.notes || undefined,
+          submittedAt: new Date().toISOString().slice(0, 10),
+        })}
+        isRowValid={(r) =>
+          !!(r.employeeName && r.startDate && r.endDate && r.totalDays > 0)
+        }
+        columns={[
+          { label: "Employee", get: (r) => r.employeeName, required: true },
+          { label: "Type", get: (r) => r.leaveType },
+          { label: "Start", get: (r) => r.startDate, required: true },
+          { label: "End", get: (r) => r.endDate, required: true },
+          { label: "Days", get: (r) => String(r.totalDays || "") },
+        ]}
+        onImport={handleBulkImport}
+        entityNoun="leave request"
       />
     </div>
   );

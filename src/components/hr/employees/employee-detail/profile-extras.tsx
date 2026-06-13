@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import { useCan } from "@/src/lib/permissions/use-can";
@@ -50,7 +51,7 @@ export function EmploymentOverview({ employee }: { employee: LocaleEmployee }) {
       <InfoGrid
         rows={[
           { label: "Employee ID", value: employee.id },
-          { label: "Reference number", value: employee.employeeNumber },
+          { label: "System ID", value: employee.employeeNumber },
           { label: "Age", value: formatDuration(employee.dateOfBirth) },
           { label: "Length of service", value: formatDuration(employee.startDate) },
         ]}
@@ -60,7 +61,10 @@ export function EmploymentOverview({ employee }: { employee: LocaleEmployee }) {
           Line manager
         </p>
         {manager ? (
-          <div className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-xs ring-1 ring-foreground/10">
+          <Link
+            href={`/organization/employees/${manager.id}`}
+            className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-xs ring-1 ring-foreground/10 transition-shadow hover:ring-primary/40 hover:shadow-sm"
+          >
             <PersonAvatar
               name={manager.fullName}
               initials={manager.initials}
@@ -75,7 +79,7 @@ export function EmploymentOverview({ employee }: { employee: LocaleEmployee }) {
                 {manager.employeeNumber ? ` · ${manager.employeeNumber}` : ""}
               </p>
             </div>
-          </div>
+          </Link>
         ) : (
           <p className="text-xs text-muted-foreground">No line manager assigned.</p>
         )}
@@ -141,6 +145,11 @@ function PayItemTable({
 /** Salary-change history with the current effective date and edit/add support. */
 function SalaryHistory({ employeeId }: { employeeId: string }) {
   const { data, loading } = useEmployeePay(employeeId);
+  const { data: empNames } = useLocaleSection<Record<string, string>>((b) => {
+    const map: Record<string, string> = {};
+    for (const e of b.employees) map[e.id] = e.fullName;
+    return map;
+  });
   const canEdit = useCan("organization.employees", "edit");
   const rf = useRecordForm(COLLECTION_SCHEMAS.payHistory, employeeId);
   const history = data?.history ?? [];
@@ -157,7 +166,7 @@ function SalaryHistory({ employeeId }: { employeeId: string }) {
         <Empty label="No salary changes recorded." />
       ) : (
         <DataTable
-          columns={["Effective", "Type", "Previous", "New", "Reason", ...(canEdit ? [""] : [])]}
+          columns={["Effective", "Type", "Previous", "New", "Reason", "Changed By", ...(canEdit ? [""] : [])]}
         >
           {history.map((p) => (
             <Row key={p.id}>
@@ -166,6 +175,7 @@ function SalaryHistory({ employeeId }: { employeeId: string }) {
               <Cell>{money(p.previousAmount)}</Cell>
               <Cell className="font-semibold">{money(p.newAmount)}</Cell>
               <Cell>{p.reason}</Cell>
+              <Cell>{empNames?.[p.approvedBy] ?? p.approvedBy ?? "—"}</Cell>
               {canEdit && (
                 <Cell>
                   <EditButton onClick={() => rf.openEdit(p)} />

@@ -3,9 +3,21 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useKudos } from "./hooks";
-import { Star, Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { Button } from "@/src/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { StatCards } from "./components/stat-cards";
 import { KudosFeed } from "./components/kudos-feed";
 import { Leaderboard } from "./components/leaderboard";
@@ -23,6 +35,21 @@ export function KudosPage() {
   const [myReactions, setMyReactions] = useState<
     Record<string, ReactionType | null>
   >({});
+  const user = useAppSelector((s) => s.auth.user);
+  // HR admins can moderate (delete) any kudos; demo links (no user) fall open.
+  const canDelete = !user || user.roleId === "ROLE-HRADMIN";
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  function handleDeleteKudos(postId: string) {
+    setConfirmDeleteId(postId);
+  }
+
+  function handleConfirmDelete() {
+    if (!confirmDeleteId) return;
+    setPosts((prev) => prev.filter((p) => p.id !== confirmDeleteId));
+    setConfirmDeleteId(null);
+    toast.success("Kudos deleted");
+  }
 
   function handleSendKudos(data: NewKudos) {
     const now = new Date().toISOString().split("T")[0];
@@ -152,6 +179,8 @@ export function KudosPage() {
           onReact={handleReact}
           myReactions={myReactions}
           onAddComment={handleAddComment}
+          canDelete={canDelete}
+          onDelete={handleDeleteKudos}
         />
         <Leaderboard entries={leaderboard} />
       </div>
@@ -161,6 +190,29 @@ export function KudosPage() {
         onClose={() => setSendOpen(false)}
         onSave={handleSendKudos}
       />
+
+      <AlertDialog
+        open={!!confirmDeleteId}
+        onOpenChange={(o) => { if (!o) setConfirmDeleteId(null); }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia>
+              <Trash2 className="text-destructive" />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Delete kudos?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This kudos post will be permanently removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -28,33 +28,61 @@ import type { PreboardAsset } from "../types";
 const STEPS = ["Personal information", "Asset assignment", "Review & submit"];
 const GENDER_OPTIONS = ["Male", "Female", "Other", "Prefer not to say"];
 const CONDITION_OPTIONS = ["New", "Good", "Fair", "Damaged"];
+const TITLE_OPTIONS = ["Dr", "Mr", "Mrs", "Miss", "Ms"];
+const MARITAL_OPTIONS = ["Single", "Married", "Divorced", "Widowed"];
+const ETHNICITY_OPTIONS = [
+  "Asian / Asian British",
+  "Black / African / Caribbean / Black British",
+  "Mixed / Multiple ethnic groups",
+  "White",
+  "Other ethnic group",
+  "Prefer not to say",
+];
 
 interface PersonalForm {
+  title: string;
   firstName: string;
+  middleName: string;
   lastName: string;
+  preferredName: string;
+  maidenName: string;
+  initials: string;
   email: string;
   phone: string;
   dateOfBirth: string;
   gender: string;
+  nationality: string;
+  ethnicity: string;
+  maritalStatus: string;
   address: string;
   country: string;
   state: string;
   nextOfKinName: string;
-  nextOfKinContact: string;
+  nextOfKinPhone: string;
+  nextOfKinEmail: string;
 }
 
 const EMPTY_PERSONAL: PersonalForm = {
+  title: "",
   firstName: "",
+  middleName: "",
   lastName: "",
+  preferredName: "",
+  maidenName: "",
+  initials: "",
   email: "",
   phone: "",
   dateOfBirth: "",
   gender: "",
+  nationality: "",
+  ethnicity: "",
+  maritalStatus: "",
   address: "",
   country: "",
   state: "",
   nextOfKinName: "",
-  nextOfKinContact: "",
+  nextOfKinPhone: "",
+  nextOfKinEmail: "",
 };
 
 function newAsset(): PreboardAsset {
@@ -125,17 +153,26 @@ export function PreboardingFormPage() {
         mode: "manual",
         assets: cleanAssets,
         preboardingData: {
+          title: p.title,
           firstName: p.firstName,
+          middleName: p.middleName,
           lastName: p.lastName,
+          preferredName: p.preferredName,
+          maidenName: p.maidenName,
+          initials: p.initials,
           email: p.email,
           phone: p.phone,
           dateOfBirth: p.dateOfBirth,
           gender: p.gender,
+          nationality: p.nationality,
+          ethnicity: p.ethnicity,
+          maritalStatus: p.maritalStatus,
           address: p.address,
           country: p.country,
           state: p.state,
           emergencyContactName: p.nextOfKinName,
-          emergencyContactPhone: p.nextOfKinContact,
+          emergencyContactPhone: p.nextOfKinPhone,
+          emergencyContactEmail: p.nextOfKinEmail,
           assetCategory: first?.assetType ?? "",
           assetSerialNumber: first?.serialNumber ?? "",
         },
@@ -189,12 +226,37 @@ export function PreboardingFormPage() {
           {step === 0 && (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
+                <Label className="text-xs">Title</Label>
+                <Select value={p.title} onValueChange={(v) => set("title", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {TITLE_OPTIONS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
                 <Label className="text-xs">First name</Label>
                 <Input value={p.firstName} onChange={(e) => set("firstName", e.target.value)} />
               </div>
               <div className="space-y-1.5">
+                <Label className="text-xs">Middle name</Label>
+                <Input value={p.middleName} onChange={(e) => set("middleName", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
                 <Label className="text-xs">Last name</Label>
                 <Input value={p.lastName} onChange={(e) => set("lastName", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Preferred name</Label>
+                <Input value={p.preferredName} onChange={(e) => set("preferredName", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Maiden name</Label>
+                <Input value={p.maidenName} onChange={(e) => set("maidenName", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Initials</Label>
+                <Input value={p.initials} maxLength={5} onChange={(e) => set("initials", e.target.value.toUpperCase())} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Email address</Label>
@@ -214,6 +276,28 @@ export function PreboardingFormPage() {
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     {GENDER_OPTIONS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Nationality</Label>
+                <Input value={p.nationality} onChange={(e) => set("nationality", e.target.value)} placeholder="e.g. Nigerian" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Ethnicity</Label>
+                <Select value={p.ethnicity} onValueChange={(v) => set("ethnicity", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {ETHNICITY_OPTIONS.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Marital status</Label>
+                <Select value={p.maritalStatus} onValueChange={(v) => set("maritalStatus", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {MARITAL_OPTIONS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -248,8 +332,12 @@ export function PreboardingFormPage() {
                 <Input value={p.nextOfKinName} onChange={(e) => set("nextOfKinName", e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Next of kin contact</Label>
-                <Input value={p.nextOfKinContact} onChange={(e) => set("nextOfKinContact", e.target.value)} />
+                <Label className="text-xs">Next of kin phone</Label>
+                <Input type="tel" value={p.nextOfKinPhone} onChange={(e) => set("nextOfKinPhone", e.target.value)} placeholder="+234 800 000 0000" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Next of kin email</Label>
+                <Input type="email" value={p.nextOfKinEmail} onChange={(e) => set("nextOfKinEmail", e.target.value)} placeholder="kin@example.com" />
               </div>
             </div>
           )}
@@ -319,16 +407,23 @@ export function PreboardingFormPage() {
                 </h3>
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
                   {[
-                    { label: "Name", value: `${p.firstName} ${p.lastName}`.trim() },
+                    { label: "Name", value: [p.title, p.firstName, p.middleName, p.lastName].filter(Boolean).join(" ") },
+                    { label: "Preferred name", value: p.preferredName },
+                    { label: "Maiden name", value: p.maidenName },
+                    { label: "Initials", value: p.initials },
                     { label: "Email", value: p.email },
                     { label: "Phone", value: p.phone },
                     { label: "Date of birth", value: p.dateOfBirth },
                     { label: "Gender", value: p.gender },
+                    { label: "Nationality", value: p.nationality },
+                    { label: "Ethnicity", value: p.ethnicity },
+                    { label: "Marital status", value: p.maritalStatus },
                     { label: "Country", value: p.country },
                     { label: "State / City", value: p.state },
                     { label: "Address", value: p.address },
                     { label: "Next of kin", value: p.nextOfKinName },
-                    { label: "Next of kin contact", value: p.nextOfKinContact },
+                    { label: "Next of kin phone", value: p.nextOfKinPhone },
+                    { label: "Next of kin email", value: p.nextOfKinEmail },
                   ].map((f) => (
                     <div key={f.label} className="flex flex-col gap-0.5">
                       <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{f.label}</dt>

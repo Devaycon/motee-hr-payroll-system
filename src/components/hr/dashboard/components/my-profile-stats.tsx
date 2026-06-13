@@ -76,7 +76,7 @@ export function MyProfileStats() {
       label: "Direct Reports",
       value: f.reports,
       sub: "team members",
-      link: "/organization/employees",
+      link: "/hr-action-center/team",
     },
     {
       icon: UserRound,

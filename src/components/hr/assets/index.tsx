@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useAssets } from "./hooks";
-import { Package2 } from "lucide-react";
+import { UserPlus } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { StatCards } from "./components/stat-cards";
@@ -34,6 +35,15 @@ export function AssetsPage() {
   const [assignMode, setAssignMode] = useState<"assign" | "return">("assign");
 
   const pendingReturns = assets.filter((a) => a.pendingReturn === true);
+  const unassignedAssets = assets.filter(
+    (a) => a.status === "available" && !a.assignedTo,
+  );
+
+  function handleAssignNew() {
+    setAssigningAsset(null);
+    setAssignMode("assign");
+    setAssignModalOpen(true);
+  }
 
   function generateId() {
     const max = assets.reduce((acc, a) => {
@@ -288,13 +298,17 @@ export function AssetsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-4xl font-semibold">Assets</h1>
           <p className="text-sm text-muted-foreground">
             Track and manage all company assets and equipment.
           </p>
         </div>
+        <Button onClick={handleAssignNew} className="flex items-center gap-2">
+          <UserPlus className="w-4 h-4" />
+          Assign Asset
+        </Button>
       </div>
 
       <StatCards assets={assets} />
@@ -303,6 +317,13 @@ export function AssetsPage() {
         <PageTabsList
           tabs={[
             { value: "all", label: "All Assets" },
+            {
+              value: "unassigned",
+              label:
+                unassignedAssets.length > 0
+                  ? `Unassigned Assets (${unassignedAssets.length})`
+                  : "Unassigned Assets",
+            },
             {
               value: "pending_returns",
               label:
@@ -317,6 +338,19 @@ export function AssetsPage() {
         <TabsContent value="all" className="mt-5">
           <AssetsTable
             assets={assets}
+            onView={handleViewAsset}
+            onEdit={handleEditAsset}
+            onAssign={handleAssign}
+            onReturn={handleReturn}
+            onSendToMaintenance={handleSendToMaintenance}
+            onDecommission={handleDecommission}
+            onAddAsset={handleAddAsset}
+          />
+        </TabsContent>
+
+        <TabsContent value="unassigned" className="mt-5">
+          <AssetsTable
+            assets={unassignedAssets}
             onView={handleViewAsset}
             onEdit={handleEditAsset}
             onAssign={handleAssign}
@@ -367,6 +401,7 @@ export function AssetsPage() {
         }}
         asset={assigningAsset}
         mode={assignMode}
+        availableAssets={unassignedAssets}
         onAssign={handleSaveAssign}
         onReturn={handleSaveReturn}
       />

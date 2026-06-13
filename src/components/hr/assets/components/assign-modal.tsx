@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { z } from "zod";
 import {
   Dialog,
@@ -20,8 +20,72 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import type { LocaleEmployee } from "@/src/lib/types/locale";
 import { DEPARTMENT_OPTIONS, ASSET_CONDITION_LABELS } from "../data";
 import type { Asset, AssetCondition } from "../types";
+
+/**
+ * Live employee search: shows matching employees in a dropdown as the user
+ * types, and fills the assignment form (name + initials + department) on pick.
+ */
+function EmployeeSearch({
+  value,
+  onChange,
+  onPick,
+}: {
+  value: string;
+  onChange: (name: string) => void;
+  onPick: (emp: LocaleEmployee) => void;
+}) {
+  const { data: employees } = useLocaleSection((b) => b.employees);
+  const [open, setOpen] = useState(false);
+  const matches = useMemo(() => {
+    const q = value.trim().toLowerCase();
+    if (!q) return [];
+    return (employees ?? [])
+      .filter((e) => e.fullName.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [employees, value]);
+
+  return (
+    <div className="relative">
+      <Input
+        id="empName"
+        placeholder="Search employee by name…"
+        autoComplete="off"
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 120)}
+      />
+      {open && matches.length > 0 && (
+        <div className="absolute z-50 mt-1 max-h-56 w-full overflow-auto rounded-md border border-border bg-popover shadow-md">
+          {matches.map((e) => (
+            <button
+              type="button"
+              key={e.id}
+              onMouseDown={(ev) => ev.preventDefault()}
+              onClick={() => {
+                onPick(e);
+                setOpen(false);
+              }}
+              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent"
+            >
+              <span className="truncate">{e.fullName}</span>
+              <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                {e.departmentName}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const assignSchema = z.object({
   employeeName: z.string().min(2, { message: "Employee name is required." }),
@@ -43,6 +107,11 @@ interface AssignModalProps {
   onClose: () => void;
   asset: Asset | null;
   mode: "assign" | "return";
+  /**
+   * When the modal is opened without a preselected `asset` (e.g. the page-level
+   * "Assign Asset" button), these unassigned assets are offered in a picker.
+   */
+  availableAssets?: Asset[];
   onAssign: (
     id: string,
     data: {
@@ -69,6 +138,7 @@ export function AssignModal({
   onClose,
   asset,
   mode,
+  availableAssets,
   onAssign,
   onReturn,
 }: AssignModalProps) {
@@ -81,6 +151,8 @@ export function AssignModal({
   const [returnCondition, setReturnCondition] =
     useState<AssetCondition>("good");
   const [returnNotes, setReturnNotes] = useState("");
+  // Used only when no `asset` is preselected — the page-level assign flow.
+  const [selectedAssetId, setSelectedAssetId] = useState("");
 
   if (open !== prevOpen || asset !== prevAsset || mode !== prevMode) {
     setPrevOpen(open);
@@ -91,8 +163,13 @@ export function AssignModal({
       setErrors({});
       setReturnCondition("good");
       setReturnNotes("");
+      setSelectedAssetId("");
     }
   }
+
+  // The asset being acted on: the preselected one, or the picked one.
+  const activeAsset =
+    asset ?? availableAssets?.find((a) => a.id === selectedAssetId) ?? null;
 
   function set<K extends keyof AssignForm>(key: K, value: AssignForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -110,8 +187,8 @@ export function AssignModal({
       setErrors(errs);
       return;
     }
-    if (!asset) return;
-    onAssign(asset.id, {
+    if (!activeAsset) return;
+    onAssign(activeAsset.id, {
       employeeName: form.employeeName,
       employeeInitials: form.employeeInitials.toUpperCase(),
       department: form.department,
@@ -120,11 +197,13 @@ export function AssignModal({
   }
 
   function handleReturn() {
-    if (!asset) return;
-    onReturn(asset.id, returnCondition, returnNotes || undefined);
+    if (!activeAsset) return;
+    onReturn(activeAsset.id, returnCondition, returnNotes || undefined);
   }
 
-  if (!asset) return null;
+  // Render when we have a target asset, or (assign mode) a picker to choose one.
+  const showPicker = mode === "assign" && !asset && Boolean(availableAssets);
+  if (!activeAsset && !showPicker) return null;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -134,22 +213,62 @@ export function AssignModal({
             {mode === "assign" ? "Assign to Employee" : "Record Asset Return"}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            {asset.name}{" "}
-            <span className="text-muted-foreground/60">
-              · {asset.serialNumber}
-            </span>
+            {activeAsset ? (
+              <>
+                {activeAsset.name}{" "}
+                <span className="text-muted-foreground/60">
+                  · {activeAsset.serialNumber}
+                </span>
+              </>
+            ) : (
+              "Select an asset to assign."
+            )}
           </p>
         </DialogHeader>
 
         {mode === "assign" ? (
           <div className="grid grid-cols-2 gap-x-4 gap-y-4 px-6 pb-2">
+            {showPicker && (
+              <div className="col-span-2 space-y-1.5">
+                <Label>Asset</Label>
+                <Select
+                  value={selectedAssetId}
+                  onValueChange={setSelectedAssetId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an available asset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(availableAssets ?? []).length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-muted-foreground">
+                        No unassigned assets available.
+                      </div>
+                    ) : (
+                      (availableAssets ?? []).map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name} · {a.serialNumber}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="col-span-2 space-y-1.5">
               <Label htmlFor="empName">Employee Name</Label>
-              <Input
-                id="empName"
-                placeholder="e.g. Chukwuemeka Okonkwo"
+              <EmployeeSearch
                 value={form.employeeName}
-                onChange={(e) => set("employeeName", e.target.value)}
+                onChange={(name) => set("employeeName", name)}
+                onPick={(emp) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    employeeName: emp.fullName,
+                    employeeInitials: emp.initials,
+                    department: emp.departmentName,
+                  }));
+                  setErrors({});
+                }}
               />
               {errors.employeeName && (
                 <p className="text-xs text-destructive">
@@ -216,10 +335,12 @@ export function AssignModal({
         ) : (
           <div className="space-y-4 px-6 pb-2">
             <div className="rounded-lg bg-muted/50 p-3 text-sm">
-              <p className="font-medium">{asset.name}</p>
+              <p className="font-medium">{activeAsset?.name}</p>
               <p className="text-xs text-muted-foreground">
                 Previously assigned to{" "}
-                <span className="font-medium">{asset.assignedTo ?? "—"}</span>
+                <span className="font-medium">
+                  {activeAsset?.assignedTo ?? "—"}
+                </span>
               </p>
             </div>
 
@@ -260,7 +381,7 @@ export function AssignModal({
             Cancel
           </Button>
           {mode === "assign" ? (
-            <Button size="sm" onClick={handleAssign}>
+            <Button size="sm" onClick={handleAssign} disabled={!activeAsset}>
               Assign Asset
             </Button>
           ) : (

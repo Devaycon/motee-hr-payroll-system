@@ -571,6 +571,53 @@ export function useEmployeeTasks(id: string) {
     (t, i) => t.assigneeId === i,
   );
 }
+
+// ── payslips (generated from the employee's salary) ─────────────────────────--
+export interface EmployeePayslip {
+  id: string;
+  period: string;
+  gross: number;
+  deductions: number;
+  net: number;
+  paidDate: string;
+  downloadUrl: string;
+}
+/**
+ * Demo payslips: the last 6 months derived from the employee's annual salary
+ * (monthly gross = annual/12, ~20% statutory deductions). No payslip fixtures
+ * exist yet, so these are generated deterministically per employee.
+ */
+export function useEmployeePayslips(id: string) {
+  const { data: bundle, loading, error } = useLocaleSection<LocaleBundle>((b) => b);
+  const data = useMemo<EmployeePayslip[] | null>(() => {
+    if (!bundle) return null;
+    const emp = bundle.employees.find((e) => e.id === id);
+    const annual = emp?.salary?.amount ?? 0;
+    const monthlyGross = Math.round(annual / 12);
+    const now = new Date();
+    const out: EmployeePayslip[] = [];
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const ym = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const deductions = Math.round(monthlyGross * 0.2);
+      // Last calendar day of the month is the pay date.
+      const paidDate = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+        .toISOString()
+        .slice(0, 10);
+      out.push({
+        id: `PS-${id}-${ym}`,
+        period: d.toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
+        gross: monthlyGross,
+        deductions,
+        net: monthlyGross - deductions,
+        paidDate,
+        downloadUrl: "#",
+      });
+    }
+    return out;
+  }, [bundle, id]);
+  return { data, loading, error };
+}
 export interface EmployeeTimeLogsData {
   records: RawAttendance[];
   summary: TimeLogsSummary;

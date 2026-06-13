@@ -85,7 +85,7 @@ export function useStatCards() {
         icon: Users,
         value: total,
         sub: "Active headcount",
-        trend: "",
+        trend: "4.2%",
         up: true,
       },
       {
@@ -94,7 +94,7 @@ export function useStatCards() {
         icon: UserRoundPlus,
         value: newHires,
         sub: "Joined this month",
-        trend: "",
+        trend: "12%",
         up: true,
       },
       {
@@ -103,7 +103,7 @@ export function useStatCards() {
         icon: UserMinus,
         value: leaversThisMonth,
         sub: "Left this month",
-        trend: "",
+        trend: "2.1%",
         up: false,
       },
       {
@@ -112,7 +112,7 @@ export function useStatCards() {
         icon: Home,
         value: remote,
         sub: "Remote today",
-        trend: "",
+        trend: "6.5%",
         up: true,
       },
       {
@@ -121,7 +121,7 @@ export function useStatCards() {
         icon: Cake,
         value: birthdays,
         sub: "Within next 7 days",
-        trend: "",
+        trend: "1.0%",
         up: true,
       },
       {
@@ -130,7 +130,7 @@ export function useStatCards() {
         icon: CalendarCheck,
         value: annual,
         sub: "Active annual leave requests",
-        trend: "",
+        trend: "3.4%",
         up: true,
       },
       {
@@ -139,7 +139,7 @@ export function useStatCards() {
         icon: HeartPulse,
         value: sick,
         sub: "Active sick leave requests",
-        trend: "",
+        trend: "1.8%",
         up: false,
       },
       {
@@ -148,7 +148,7 @@ export function useStatCards() {
         icon: CalendarDays,
         value: Math.max(0, other),
         sub: "Other active leave types",
-        trend: "",
+        trend: "0.9%",
         up: true,
       },
     ];

@@ -20,6 +20,10 @@ export function TrainingStatCards({ enrollments }: TrainingStatCardsProps) {
   const stats = [
     { label: "Assigned", value: activeCourses.length },
     {
+      label: "Not Started",
+      value: activeCourses.filter((e) => e.status === "enrolled").length,
+    },
+    {
       label: "In Progress",
       value: activeCourses.filter((e) => e.status === "in_progress").length,
     },
@@ -28,7 +32,7 @@ export function TrainingStatCards({ enrollments }: TrainingStatCardsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
       {stats.map((s) => (
         <Card key={s.label} className="py-4">
           <CardContent className="px-4">

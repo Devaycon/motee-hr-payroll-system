@@ -1,15 +1,16 @@
 "use client";
 
 import {
-  Clock,
   Calendar,
   Bell,
   Search,
   MessageSquare,
   Monitor,
+  Award,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { User, LogOut } from "lucide-react";
 import {
   Popover,
@@ -21,6 +22,9 @@ import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { ChatPanel } from "@/src/components/shared/chat-panel";
 import { NotificationsPanel } from "@/src/components/shared/notifications-panel";
 import { ScreenShareModal } from "@/src/components/shared/screen-share-modal";
+import { SendKudosModal } from "@/src/components/hr/kudos/components/send-kudos-modal";
+import type { NewKudos } from "@/src/components/hr/kudos/types";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 
 const formatDate = (date: Date) =>
   date.toLocaleDateString("en-GB", {
@@ -43,6 +47,16 @@ const Navbar = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [screenShareOpen, setScreenShareOpen] = useState(false);
+  const [kudosOpen, setKudosOpen] = useState(false);
+  const user = useAppSelector((s) => s.auth.user);
+  const userName = user?.name ?? "James Adeyemi";
+  const userInitials = user?.initials ?? "JA";
+  const userSubtitle = user?.email ?? "j.adeyemi@company.com";
+
+  function handleSendKudos(data: NewKudos) {
+    toast.success(`Kudos sent to ${data.recipientName}! 🌟`);
+    setKudosOpen(false);
+  }
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 60000);
@@ -63,24 +77,35 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2.5">
-            <Calendar size={13} className="text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">
-              {formatDate(now)}
+          <div className="flex items-center gap-3 bg-background border border-border rounded-lg px-3 py-2.5">
+            <span className="flex items-center gap-2">
+              <Calendar size={13} className="text-muted-foreground" />
+              <span className="text-xs font-medium text-foreground">
+                {formatDate(now)}
+              </span>
+            </span>
+            <span className="h-3.5 w-px bg-border" />
+            <span className="flex items-center gap-2">
+              <span className="text-xs font-medium text-foreground">
+                {formatTime(now)}
+              </span>
             </span>
           </div>
 
-          <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2.5">
-            <Clock size={13} className="text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">
-              {formatTime(now)}
-            </span>
-          </div>
           <span data-tutorial="theme">
             <ThemeToggle />
           </span>
 
           <div className="flex items-center gap-3 border py-1 rounded-lg px-2 bg-card">
+            <button
+              data-tutorial="kudos"
+              title="Send kudos"
+              onClick={() => setKudosOpen(true)}
+              className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-background border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              <Award size={16} />
+            </button>
+
             <button
               data-tutorial="chat"
               onClick={() => setChatOpen(true)}
@@ -119,18 +144,18 @@ const Navbar = () => {
                 className="cursor-pointer flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5"
               >
                 <PersonAvatar
-                  name="James Adeyemi"
-                  initials="JA"
+                  name={userName}
+                  initials={userInitials}
                   size="sm"
                   className="size-7"
                   fallbackClassName="bg-primary text-primary-foreground text-xs font-semibold"
                 />
                 <div className="flex flex-col">
                   <span className="text-xs font-medium text-foreground leading-none">
-                    James Adeyemi
+                    {userName}
                   </span>
                   <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
-                    j.adeyemi@company.com
+                    {userSubtitle}
                   </span>
                 </div>
               </div>
@@ -162,6 +187,11 @@ const Navbar = () => {
       <ScreenShareModal
         isOpen={screenShareOpen}
         onClose={() => setScreenShareOpen(false)}
+      />
+      <SendKudosModal
+        open={kudosOpen}
+        onClose={() => setKudosOpen(false)}
+        onSave={handleSendKudos}
       />
     </>
   );

@@ -1,8 +1,21 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
+import { MoreHorizontal, Download, Mail, Trash2, Pencil } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { OverflowTabsList } from "@/src/components/shared/overflow-tabs";
+import { Button } from "@/src/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { removeRecord } from "@/src/lib/stores/collection-edits-slice";
+import { ContactReferenceModal } from "./contact-reference-modal";
 import {
   Section,
   StatStrip,
@@ -17,14 +30,13 @@ import {
   titleCase,
   daysUntil,
 } from "./ui";
-import { useEmployeeDocuments } from "./hooks";
+import { useEmployeeDocuments, type RawDocument } from "./hooks";
 import type { ModuleProps } from "./modules";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { COLLECTION_SCHEMAS } from "@/src/lib/profile/collections";
 import {
   useRecordForm,
   AddButton,
-  EditButton,
 } from "@/src/components/shared/profile-fields/record-form";
 import { ProfileFieldsEditor } from "@/src/components/shared/profile-fields";
 
@@ -82,8 +94,24 @@ export function EmployeeDocumentsModule({ employeeId, employee }: ModuleProps) {
   const { data, loading } = useEmployeeDocuments(employeeId);
   const canEdit = useCan("organization.employees", "edit");
   const rf = useRecordForm(COLLECTION_SCHEMAS.documents, employeeId);
+  const dispatch = useAppDispatch();
   const ids = Object.entries(employee.identifiers ?? {}).filter(([, v]) => v);
   const [tab, setTab] = React.useState("id-numbers");
+  const [contactDoc, setContactDoc] = React.useState<RawDocument | null>(null);
+
+  function handleDownload(d: RawDocument) {
+    const url = d.fileUrl;
+    if (!url || url === "#") {
+      toast.info("File not available in this demo.");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function handleDelete(d: RawDocument) {
+    dispatch(removeRecord({ key: "documents", id: d.id }));
+    toast.success("Document removed");
+  }
 
   if (loading && !data) return <LoadingPanel />;
   const docs = data ?? [];
@@ -174,7 +202,7 @@ export function EmployeeDocumentsModule({ employeeId, employee }: ModuleProps) {
         {/* One tab per document category */}
         {orderedCats.map((cat) => (
           <TabsContent key={cat} value={cat} className="mt-4">
-            <DataTable columns={["Document", "KYC", "Issuer", "Uploaded", "Expires", "Status", "File", ...(canEdit ? [""] : [])]}>
+            <DataTable columns={["Document", "KYC", "Issuer", "Uploaded", "Expires", "Status", ""]}>
               {groups.get(cat)!.map((d) => {
                 const n = daysUntil(d.expiresAt);
                 const due = n != null && n >= 0 && n <= 60;
@@ -199,8 +227,39 @@ export function EmployeeDocumentsModule({ employeeId, employee }: ModuleProps) {
                       )}
                     </Cell>
                     <Cell><StatusBadge status={d.status} /></Cell>
-                    <Cell><span className="cursor-not-allowed text-muted-foreground/60" title="File not available in this demo">Open</span></Cell>
-                    {canEdit && <Cell><EditButton onClick={() => rf.openEdit(d)} /></Cell>}
+                    <Cell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem onClick={() => handleDownload(d)}>
+                            <Download className="h-3.5 w-3.5" /> Download
+                          </DropdownMenuItem>
+                          {d.category === "reference" && (
+                            <DropdownMenuItem onClick={() => setContactDoc(d)}>
+                              <Mail className="h-3.5 w-3.5" /> Contact reference
+                            </DropdownMenuItem>
+                          )}
+                          {canEdit && (
+                            <>
+                              <DropdownMenuItem onClick={() => rf.openEdit(d)}>
+                                <Pencil className="h-3.5 w-3.5" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => handleDelete(d)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" /> Delete
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </Cell>
                   </Row>
                 );
               })}
@@ -208,6 +267,13 @@ export function EmployeeDocumentsModule({ employeeId, employee }: ModuleProps) {
           </TabsContent>
         ))}
       </Tabs>
+
+      <ContactReferenceModal
+        open={contactDoc !== null}
+        onClose={() => setContactDoc(null)}
+        employeeName={employee.fullName}
+        referenceName={contactDoc?.issuer ?? undefined}
+      />
     </Section>
   );
 }

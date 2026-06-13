@@ -64,7 +64,7 @@ These are visible to the Motee platform team (super-admin), not the tenant. Gene
 
 ### 2.1 Employees (THE BACKBONE — seed second after foundation)
 - **Entity:** `EmployeeRow`
-- **Fields:** name, initials, email, phone, department, jobTitle, employmentType, status (active | on_leave | probation), startDate, salary, managerId, DOB, gender, nationality, marital status, blood type, address, state, country, workMode (remote/hybrid/onsite), workLocation, grade, bank details, emergency contact, NIN, passport, driver license, tax ID, pension ID, NHF number
+- **Fields:** name, initials, email, phone, department, jobTitle, employmentType, status (active | on_leave | probation), startDate, salary, managerId, DOB, gender, nationality, marital status, address, state, country, workMode (remote/hybrid/onsite), workLocation, grade, bank details, emergency contact, NIN, passport, driver license, tax ID, pension ID, NHF number
 - **Count:** 50–200 (recommended: 120 for realistic feel)
 - **Depends on:** Departments, Employment Types, Roles
 - **Notes:** Build a manager hierarchy 3–4 levels deep. Mix statuses (~80% active, 10% on_leave, 10% probation).

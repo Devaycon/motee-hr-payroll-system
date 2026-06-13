@@ -5,6 +5,10 @@
     },
     "NG-EMP-0002": {
       "workPattern.holidayEntitlementDays": "60"
+    },
+    "GB-EMP-0001": {
+      "gender": "Male",
+      "maritalStatus": "Married"
     }
   },
   "requests": []

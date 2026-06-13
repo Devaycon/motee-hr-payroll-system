@@ -70,7 +70,6 @@ export interface LocaleEmployee {
   gender?: string;
   nationality?: string;
   maritalStatus?: string;
-  bloodType?: string;
   address?: Record<string, string>;
   /** Detailed addresses keyed by type slug (home, work, holiday, …). */
   addresses?: Record<string, Record<string, string>>;
@@ -178,7 +177,6 @@ export interface LocaleLocationBooking {
 
 export interface LocaleMedicalFacts {
   employeeId: string;
-  bloodType: string;
   allergies: string[];
   conditions: string[];
   medications: string[];
@@ -206,7 +204,7 @@ export interface LocalePayChange {
   previousAmount: number;
   newAmount: number;
   currency: string;
-  changeType: "raise" | "promotion" | "adjustment" | "bonus";
+  changeType: "increment" | "promotion" | "adjustment" | "bonus";
   reason: string;
   approvedBy: string;
 }

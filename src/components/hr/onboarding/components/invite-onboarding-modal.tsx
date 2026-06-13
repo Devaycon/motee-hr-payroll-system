@@ -154,10 +154,10 @@ export function InviteOnboardingModal({
             )}
           </div>
           <div className="col-span-2 flex flex-col gap-1.5">
-            <Label className="text-xs font-medium">Work Email Address</Label>
+            <Label className="text-xs font-medium">Personal Email Address</Label>
             <Input
               type="email"
-              placeholder="john.doe@company.com"
+              placeholder="john.doe@gmail.com"
               value={fields.email}
               onChange={(e) => set("email", e.target.value)}
               onBlur={() => touch("email")}

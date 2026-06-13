@@ -121,7 +121,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
       f("effectiveDate", "Effective date", "date"),
       f("previousAmount", "Previous amount", "number"),
       f("newAmount", "New amount", "number"),
-      f("changeType", "Type", "select", ["raise", "promotion", "adjustment", "bonus"]),
+      f("changeType", "Type", "select", ["increment", "promotion", "adjustment", "bonus"]),
       f("reason", "Reason"),
       f("approvedBy", "Approved by"),
     ],
@@ -302,7 +302,6 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
     addable: false,
     source: "Medical",
     fields: [
-      f("bloodType", "Blood type"),
       f("allergies", "Allergies (comma-separated)"),
       f("conditions", "Conditions (comma-separated)"),
       f("medications", "Medications (comma-separated)"),

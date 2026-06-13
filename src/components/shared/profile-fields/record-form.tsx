@@ -40,6 +40,15 @@ function uid(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
+/** Human-readable option label: "full_time" → "Full Time". */
+export function optionLabel(value: string): string {
+  return value
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 type Mode = "create" | "edit";
 
 interface DialogState {
@@ -218,8 +227,8 @@ function RecordFormDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {f.options.map((o) => (
-                      <SelectItem key={o} value={o} className="text-sm capitalize">
-                        {o.replace(/_/g, " ")}
+                      <SelectItem key={o} value={o} className="text-sm">
+                        {optionLabel(o)}
                       </SelectItem>
                     ))}
                   </SelectContent>

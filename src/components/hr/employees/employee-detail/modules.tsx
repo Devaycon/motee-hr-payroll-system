@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Pin } from "lucide-react";
+import { AlertTriangle, Pin, ChevronRight } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -10,6 +10,13 @@ import {
 } from "@/src/components/ui/tabs";
 import { OverflowTabsList } from "@/src/components/shared/overflow-tabs";
 import { Card, CardContent } from "@/src/components/ui/card";
+import { Button } from "@/src/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
@@ -22,6 +29,7 @@ import {
   EditButton,
 } from "@/src/components/shared/profile-fields/record-form";
 import { COLLECTION_SCHEMAS } from "@/src/lib/profile/collections";
+import { regionWordForCountry } from "@/src/lib/profile/fields";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { useProfileVariant } from "./variant";
 import { LeaveRequestPanel } from "@/src/components/employee/leave-request/panel";
@@ -65,11 +73,13 @@ import {
   useEmployeeMedical,
   useEmployeeNotes,
   useEmployeePay,
+  useEmployeePayslips,
   useEmployeePermissions,
   useEmployeeTasks,
   useEmployeeTimeLogs,
   type RawCertification,
 } from "./hooks";
+import { AssignAssetModal } from "./assign-asset-modal";
 
 export interface ModuleProps {
   employeeId: string;
@@ -77,6 +87,85 @@ export interface ModuleProps {
 }
 
 const money = (n?: number | null) => (n == null ? "—" : formatMoneyLocale(n));
+
+// ── Address preview (home summary + "View all" modal) ────────────────────────
+function AddressTabContent({
+  employee,
+  employeeId,
+  mode,
+}: {
+  employee: LocaleEmployee;
+  employeeId: string;
+  mode: "edit" | "request";
+}) {
+  const [open, setOpen] = React.useState(false);
+  const home = (employee.addresses?.home ?? {}) as Record<string, string>;
+  const regionWord = regionWordForCountry(home.country);
+  const regionLabel = regionWord.charAt(0).toUpperCase() + regionWord.slice(1);
+  const summaryRows = [
+    { label: "Address line 1", value: home.line1 },
+    { label: "Address line 2", value: home.line2 },
+    { label: "City", value: home.city },
+    { label: regionLabel, value: home.region },
+    { label: "Postal code", value: home.postalCode },
+    { label: "Country", value: home.country },
+  ].filter((r) => r.value);
+
+  return (
+    <>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <h3 className="text-sm font-semibold text-foreground">Home Address</h3>
+          {summaryRows.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+              {summaryRows.map((r) => (
+                <div
+                  key={r.label}
+                  className="flex items-center gap-2 py-1.5 border-b border-border/50"
+                >
+                  <span className="text-xs text-muted-foreground">
+                    {r.label}:
+                  </span>
+                  <span className="text-xs font-medium text-foreground flex-1 truncate">
+                    {r.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">
+              No home address recorded.
+            </p>
+          )}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="self-start h-8 gap-1.5 text-xs"
+          onClick={() => setOpen(true)}
+        >
+          View all addresses
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>All Addresses</DialogTitle>
+          </DialogHeader>
+          <ProfileFieldsEditor
+            employee={employee}
+            employeeId={employeeId}
+            mode={mode}
+            groups={["address"]}
+            bulkEditLabel="Address"
+          />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 // ── Profile (sub-tabs) ───────────────────────────────────────────────────────
 export function ProfileModule({ employeeId, employee }: ModuleProps) {
@@ -124,7 +213,11 @@ export function ProfileModule({ employeeId, employee }: ModuleProps) {
           {editor(["contact"], "Contact")}
         </TabsContent>
         <TabsContent value="address" className="mt-4">
-          {editor(["address"], "Address")}
+          <AddressTabContent
+            employee={employee}
+            employeeId={employeeId}
+            mode={variant.mode}
+          />
         </TabsContent>
         <TabsContent value="bank" className="mt-4">
           {editor(["bank"], "Bank")}
@@ -348,7 +441,7 @@ export function SicknessModule({ employeeId }: ModuleProps) {
         items={[
           { label: "Sick days (yr)", value: data.summary.totalDaysThisYear },
           { label: "Episodes", value: data.summary.episodes },
-          { label: "Longest absence", value: `${data.summary.longestAbsenceDays}d` },
+          { label: "Longest absence", value: `${data.summary.longestAbsenceDays}` },
           {
             label: "Bradford Factor",
             value: data.summary.bradfordFactor,
@@ -384,7 +477,7 @@ export function LearnModule({ employeeId }: ModuleProps) {
   const rows = data ?? [];
   return (
     <Section
-      title="Learn"
+      title="Learning"
       description="Course enrolments."
       action={canEdit ? <AddButton label="Add enrolment" onClick={rf.openCreate} /> : undefined}
     >
@@ -706,14 +799,20 @@ export function AssetsModule({ employeeId }: ModuleProps) {
   const { data, loading } = useEmployeeAssets(employeeId);
   const canEdit = useCan("organization.employees", "edit");
   const rf = useRecordForm(COLLECTION_SCHEMAS.assets, employeeId);
+  const [assignOpen, setAssignOpen] = React.useState(false);
   if (loading && !data) return <LoadingPanel />;
   const rows = data ?? [];
   return (
     <Section
       title="Assigned Assets"
-      action={canEdit ? <AddButton label="Assign asset" onClick={rf.openCreate} /> : undefined}
+      action={canEdit ? <AddButton label="Assign asset" onClick={() => setAssignOpen(true)} /> : undefined}
     >
       {rf.node}
+      <AssignAssetModal
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        employeeId={employeeId}
+      />
       {rows.length === 0 ? (
         <Empty label="No assets assigned." />
       ) : (
@@ -731,6 +830,57 @@ export function AssetsModule({ employeeId }: ModuleProps) {
             </Row>
           ))}
         </DataTable>
+      )}
+    </Section>
+  );
+}
+
+// ── Payslips ────────────────────────────────────────────────────────────────
+export function PayslipsModule({ employeeId }: ModuleProps) {
+  const { data, loading } = useEmployeePayslips(employeeId);
+  if (loading && !data) return <LoadingPanel />;
+  const rows = data ?? [];
+  const ytdGross = rows.reduce((s, p) => s + p.gross, 0);
+  const ytdDeductions = rows.reduce((s, p) => s + p.deductions, 0);
+  const ytdNet = rows.reduce((s, p) => s + p.net, 0);
+  const latestNet = rows[0]?.net ?? null;
+  return (
+    <Section
+      title="Payslips"
+      description="Monthly payslips generated from the employee's salary."
+    >
+      {rows.length === 0 ? (
+        <Empty label="No payslips available." />
+      ) : (
+        <div className="flex flex-col gap-4">
+          <StatStrip
+            items={[
+              { label: `Gross (last ${rows.length} mo)`, value: money(ytdGross) },
+              { label: "Total deductions", value: money(ytdDeductions), accent: "text-amber-600" },
+              { label: "Net paid", value: money(ytdNet), accent: "text-emerald-600" },
+              { label: "Latest net", value: money(latestNet) },
+            ]}
+          />
+        <DataTable columns={["Period", "Gross", "Deductions", "Net", "Paid", ""]}>
+          {rows.map((p) => (
+            <Row key={p.id}>
+              <Cell>{p.period}</Cell>
+              <Cell>{money(p.gross)}</Cell>
+              <Cell>{money(p.deductions)}</Cell>
+              <Cell className="font-semibold">{money(p.net)}</Cell>
+              <Cell>{fmtDate(p.paidDate)}</Cell>
+              <Cell>
+                <a
+                  href={p.downloadUrl}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Download
+                </a>
+              </Cell>
+            </Row>
+          ))}
+        </DataTable>
+        </div>
       )}
     </Section>
   );
@@ -965,7 +1115,6 @@ export function MedicalModule({ employeeId }: ModuleProps) {
       {rf.node}
       <InfoGrid
         rows={[
-          { label: "Blood type", value: data.bloodType },
           { label: "Allergies", value: list(data.allergies) },
           { label: "Conditions", value: list(data.conditions) },
           { label: "Medications", value: list(data.medications) },
@@ -1100,35 +1249,52 @@ export function PermissionsModule({ employeeId }: ModuleProps) {
   );
 }
 
-// ── Tasks ─────────────────────────────────────────────────────────────────--
+// ── Tasks (My Tasks: Ongoing / Completed) ───────────────────────────────────-
 export function TasksModule({ employeeId }: ModuleProps) {
   const { data, loading } = useEmployeeTasks(employeeId);
   const canEdit = useCan("organization.employees", "edit");
   const rf = useRecordForm(COLLECTION_SCHEMAS.tasks, employeeId);
   if (loading && !data) return <LoadingPanel />;
   const rows = data ?? [];
+  const ongoing = rows.filter((t) => t.status !== "done");
+  const completed = rows.filter((t) => t.status === "done");
+
+  const renderTable = (list: typeof rows, emptyLabel: string) =>
+    list.length === 0 ? (
+      <Empty label={emptyLabel} />
+    ) : (
+      <DataTable columns={["Task", "Due", "Priority", "Linked", "Status", ...(canEdit ? [""] : [])]}>
+        {list.map((t) => (
+          <Row key={t.id}>
+            <Cell>{t.title}</Cell>
+            <Cell>{fmtDate(t.dueDate)}</Cell>
+            <Cell>{titleCase(t.priority)}</Cell>
+            <Cell>{t.linkedTo ? titleCase(t.linkedTo) : "—"}</Cell>
+            <Cell><StatusBadge status={t.status} /></Cell>
+            {canEdit && <Cell><EditButton onClick={() => rf.openEdit(t)} /></Cell>}
+          </Row>
+        ))}
+      </DataTable>
+    );
+
   return (
     <Section
-      title="Tasks"
+      title="My Tasks"
       action={canEdit ? <AddButton label="Add task" onClick={rf.openCreate} /> : undefined}
     >
       {rf.node}
-      {rows.length === 0 ? (
-        <Empty label="No tasks assigned." />
-      ) : (
-        <DataTable columns={["Task", "Due", "Priority", "Linked", "Status", ...(canEdit ? [""] : [])]}>
-          {rows.map((t) => (
-            <Row key={t.id}>
-              <Cell>{t.title}</Cell>
-              <Cell>{fmtDate(t.dueDate)}</Cell>
-              <Cell>{titleCase(t.priority)}</Cell>
-              <Cell>{t.linkedTo ? titleCase(t.linkedTo) : "—"}</Cell>
-              <Cell><StatusBadge status={t.status} /></Cell>
-              {canEdit && <Cell><EditButton onClick={() => rf.openEdit(t)} /></Cell>}
-            </Row>
-          ))}
-        </DataTable>
-      )}
+      <Tabs defaultValue="ongoing">
+        <TabsList>
+          <TabsTrigger value="ongoing">Ongoing ({ongoing.length})</TabsTrigger>
+          <TabsTrigger value="completed">Completed ({completed.length})</TabsTrigger>
+        </TabsList>
+        <TabsContent value="ongoing" className="mt-4">
+          {renderTable(ongoing, "No ongoing tasks.")}
+        </TabsContent>
+        <TabsContent value="completed" className="mt-4">
+          {renderTable(completed, "No completed tasks.")}
+        </TabsContent>
+      </Tabs>
     </Section>
   );
 }

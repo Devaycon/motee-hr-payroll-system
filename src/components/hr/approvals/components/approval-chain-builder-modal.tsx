@@ -33,13 +33,25 @@ import type {
   ApprovalChainTemplate,
   ApprovalDocumentType,
   ApproverResolver,
+  OnLeaveAction,
 } from "@/src/lib/types/approvals";
 
 interface StageDraft {
   label: string;
   approver: ApproverResolver;
   required: boolean;
+  onLeaveAction: OnLeaveAction;
 }
+
+/** The fallback choices shown in the "If approver is unavailable" selector. */
+type FallbackKey = "skip" | "reassign_to_manager" | "auto_assign_hr" | "reassign_to_role";
+
+const FALLBACK_OPTIONS: { value: FallbackKey; label: string }[] = [
+  { value: "skip", label: "Skip this step" },
+  { value: "reassign_to_manager", label: "Reassign to their manager" },
+  { value: "auto_assign_hr", label: "Auto-assign to HR" },
+  { value: "reassign_to_role", label: "Reassign to chosen role" },
+];
 
 interface ApprovalChainBuilderModalProps {
   open: boolean;
@@ -52,7 +64,12 @@ interface ApprovalChainBuilderModalProps {
 }
 
 function emptyStage(): StageDraft {
-  return { label: "", approver: "LINE_MANAGER", required: true };
+  return {
+    label: "",
+    approver: "LINE_MANAGER",
+    required: true,
+    onLeaveAction: { kind: "skip" },
+  };
 }
 
 export function ApprovalChainBuilderModal({
@@ -78,6 +95,36 @@ export function ApprovalChainBuilderModal({
     [roles],
   );
 
+  // Resolve an HR role so the "Auto-assign to HR" fallback can target it.
+  const hrRoleResolver = useMemo<ApproverResolver | null>(() => {
+    const hr = roles.find((r) => /\b(hr|human)\b/i.test(r.name));
+    return hr ? (`ROLE:${hr.id}` as ApproverResolver) : null;
+  }, [roles]);
+
+  // Map a stored OnLeaveAction to the selector key shown in the UI.
+  function fallbackKeyOf(action: OnLeaveAction): FallbackKey {
+    if (action.kind === "skip") return "skip";
+    if (action.kind === "reassign_to_manager") return "reassign_to_manager";
+    if (hrRoleResolver && action.approver === hrRoleResolver) return "auto_assign_hr";
+    return "reassign_to_role";
+  }
+
+  // Build an OnLeaveAction from a selector key, preserving any chosen role.
+  function buildFallback(key: FallbackKey, current: OnLeaveAction): OnLeaveAction {
+    if (key === "skip") return { kind: "skip" };
+    if (key === "reassign_to_manager") return { kind: "reassign_to_manager" };
+    if (key === "auto_assign_hr") {
+      // Fall back to a picked role when no HR role exists.
+      const approver = hrRoleResolver ?? approverOptions[0]?.value ?? "LINE_MANAGER";
+      return { kind: "reassign_to_role", approver };
+    }
+    const approver =
+      current.kind === "reassign_to_role"
+        ? current.approver
+        : approverOptions[0]?.value ?? "LINE_MANAGER";
+    return { kind: "reassign_to_role", approver };
+  }
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [stages, setStages] = useState<StageDraft[]>([emptyStage()]);
@@ -94,6 +141,7 @@ export function ApprovalChainBuilderModal({
           label: s.label,
           approver: s.approver,
           required: s.required,
+          onLeaveAction: s.onLeaveAction ?? { kind: "skip" },
         })),
       );
       setSetActive(template.isDefault);
@@ -146,7 +194,7 @@ export function ApprovalChainBuilderModal({
       label: s.label,
       approver: s.approver,
       required: s.required,
-      onLeaveAction: { kind: "skip" as const },
+      onLeaveAction: s.onLeaveAction,
     }));
 
     if (template) {
@@ -288,6 +336,63 @@ export function ApprovalChainBuilderModal({
                         />
                         Required
                       </label>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] text-muted-foreground">
+                        If approver is unavailable
+                      </span>
+                      <Select
+                        value={fallbackKeyOf(stage.onLeaveAction)}
+                        disabled={readOnly}
+                        onValueChange={(v) =>
+                          updateStage(i, {
+                            onLeaveAction: buildFallback(
+                              v as FallbackKey,
+                              stage.onLeaveAction,
+                            ),
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-52">
+                          <SelectValue placeholder="Fallback action" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FALLBACK_OPTIONS.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fallbackKeyOf(stage.onLeaveAction) === "reassign_to_role" && (
+                        <Select
+                          value={
+                            stage.onLeaveAction.kind === "reassign_to_role"
+                              ? stage.onLeaveAction.approver
+                              : undefined
+                          }
+                          disabled={readOnly}
+                          onValueChange={(v) =>
+                            updateStage(i, {
+                              onLeaveAction: {
+                                kind: "reassign_to_role",
+                                approver: v as ApproverResolver,
+                              },
+                            })
+                          }
+                        >
+                          <SelectTrigger className="h-8 w-48">
+                            <SelectValue placeholder="Pick a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {approverOptions.map((o) => (
+                              <SelectItem key={o.value} value={o.value}>
+                                {o.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                   </div>
                   {!readOnly && (

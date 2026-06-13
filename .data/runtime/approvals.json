@@ -3164,6 +3164,377 @@
       ],
       "attachments": [],
       "signatures": []
+    },
+    {
+      "id": "APR-REQ-DEMO-1",
+      "documentType": "job_requisition",
+      "documentId": "REQ-DEMO-1",
+      "documentTitle": "Sales Representative — Sales",
+      "documentSummary": "Drive new business in the East region as part of the new sales pod.",
+      "payloadSnapshot": {
+        "title": "Sales Representative",
+        "department": "Sales",
+        "location": "Lagos (Hybrid)",
+        "numberOfPositions": 2,
+        "salaryMin": 3500000,
+        "salaryMax": 4500000
+      },
+      "submittedBy": {
+        "employeeId": "",
+        "name": "Ngozi Eze",
+        "initials": "NE",
+        "departmentName": "Sales"
+      },
+      "submittedAt": "2026-05-30T20:13:59.811Z",
+      "chainTemplateId": "ACT-DEFAULT-JOB-REQUISITION",
+      "currentStepIndex": 3,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "APR-REQ-DEMO-1-S1",
+          "order": 1,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-1",
+          "label": "Approve role need",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "EMP-MGR",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-05-31T20:13:59.811Z",
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-1-S2",
+          "order": 2,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-2",
+          "label": "Confirm headcount & grade",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "EMP-HRMGR",
+          "resolvedEmployeeName": "Amara Okafor",
+          "status": "approved",
+          "decidedAt": "2026-06-01T20:13:59.811Z",
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-1-S3",
+          "order": 3,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-3",
+          "label": "Budget approval",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "EMP-FIN",
+          "resolvedEmployeeName": "Tunde Bello",
+          "status": "approved",
+          "decidedAt": "2026-06-02T20:13:59.811Z",
+          "note": "Approved."
+        }
+      ],
+      "history": [
+        {
+          "id": "APR-REQ-DEMO-1-E0",
+          "at": "2026-05-30T20:13:59.811Z",
+          "actorEmployeeId": "",
+          "actorName": "Ngozi Eze",
+          "type": "submitted"
+        },
+        {
+          "id": "APR-REQ-DEMO-1-E1",
+          "at": "2026-05-31T20:13:59.811Z",
+          "actorEmployeeId": "EMP-MGR",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1,
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-1-E2",
+          "at": "2026-06-01T20:13:59.811Z",
+          "actorEmployeeId": "EMP-HRMGR",
+          "actorName": "Amara Okafor",
+          "type": "approved",
+          "stepOrder": 2,
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-1-E3",
+          "at": "2026-06-02T20:13:59.811Z",
+          "actorEmployeeId": "EMP-FIN",
+          "actorName": "Tunde Bello",
+          "type": "approved",
+          "stepOrder": 3,
+          "note": "Approved."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "APR-REQ-DEMO-2",
+      "documentType": "job_requisition",
+      "documentId": "REQ-DEMO-2",
+      "documentTitle": "Operations Associate — Operations",
+      "documentSummary": "Staff the new distribution hub ahead of the peak season.",
+      "payloadSnapshot": {
+        "title": "Operations Associate",
+        "department": "Operations",
+        "location": "Ibadan (On-site)",
+        "numberOfPositions": 2,
+        "salaryMin": 2800000,
+        "salaryMax": 3400000
+      },
+      "submittedBy": {
+        "employeeId": "",
+        "name": "Yusuf Bello",
+        "initials": "YB",
+        "departmentName": "Operations"
+      },
+      "submittedAt": "2026-05-24T20:13:59.811Z",
+      "chainTemplateId": "ACT-DEFAULT-JOB-REQUISITION",
+      "currentStepIndex": 3,
+      "status": "approved",
+      "steps": [
+        {
+          "id": "APR-REQ-DEMO-2-S1",
+          "order": 1,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-1",
+          "label": "Approve role need",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "EMP-MGR",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-05-25T20:13:59.811Z",
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-2-S2",
+          "order": 2,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-2",
+          "label": "Confirm headcount & grade",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "EMP-HRMGR",
+          "resolvedEmployeeName": "Amara Okafor",
+          "status": "approved",
+          "decidedAt": "2026-05-26T20:13:59.811Z",
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-2-S3",
+          "order": 3,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-3",
+          "label": "Budget approval",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "EMP-FIN",
+          "resolvedEmployeeName": "Tunde Bello",
+          "status": "approved",
+          "decidedAt": "2026-05-27T20:13:59.811Z",
+          "note": "Approved."
+        }
+      ],
+      "history": [
+        {
+          "id": "APR-REQ-DEMO-2-E0",
+          "at": "2026-05-24T20:13:59.811Z",
+          "actorEmployeeId": "",
+          "actorName": "Yusuf Bello",
+          "type": "submitted"
+        },
+        {
+          "id": "APR-REQ-DEMO-2-E1",
+          "at": "2026-05-25T20:13:59.811Z",
+          "actorEmployeeId": "EMP-MGR",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1,
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-2-E2",
+          "at": "2026-05-26T20:13:59.811Z",
+          "actorEmployeeId": "EMP-HRMGR",
+          "actorName": "Amara Okafor",
+          "type": "approved",
+          "stepOrder": 2,
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-2-E3",
+          "at": "2026-05-27T20:13:59.811Z",
+          "actorEmployeeId": "EMP-FIN",
+          "actorName": "Tunde Bello",
+          "type": "approved",
+          "stepOrder": 3,
+          "note": "Approved."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "APR-REQ-DEMO-3",
+      "documentType": "job_requisition",
+      "documentId": "REQ-DEMO-3",
+      "documentTitle": "Senior Account Executive — Sales",
+      "documentSummary": "Own strategic enterprise accounts for the East region pod.",
+      "payloadSnapshot": {
+        "title": "Senior Account Executive",
+        "department": "Sales",
+        "location": "Remote",
+        "numberOfPositions": 1,
+        "salaryMin": 5000000,
+        "salaryMax": 6500000
+      },
+      "submittedBy": {
+        "employeeId": "",
+        "name": "Ngozi Eze",
+        "initials": "NE",
+        "departmentName": "Sales"
+      },
+      "submittedAt": "2026-06-06T20:13:59.811Z",
+      "chainTemplateId": "ACT-DEFAULT-JOB-REQUISITION",
+      "currentStepIndex": 1,
+      "status": "in_progress",
+      "steps": [
+        {
+          "id": "APR-REQ-DEMO-3-S1",
+          "order": 1,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-1",
+          "label": "Approve role need",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "EMP-MGR",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-06-07T20:13:59.811Z",
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-3-S2",
+          "order": 2,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-2",
+          "label": "Confirm headcount & grade",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "EMP-HRMGR",
+          "resolvedEmployeeName": "Amara Okafor",
+          "status": "pending"
+        },
+        {
+          "id": "APR-REQ-DEMO-3-S3",
+          "order": 3,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-3",
+          "label": "Budget approval",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "EMP-FIN",
+          "resolvedEmployeeName": "Tunde Bello",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "APR-REQ-DEMO-3-E0",
+          "at": "2026-06-06T20:13:59.811Z",
+          "actorEmployeeId": "",
+          "actorName": "Ngozi Eze",
+          "type": "submitted"
+        },
+        {
+          "id": "APR-REQ-DEMO-3-E1",
+          "at": "2026-06-07T20:13:59.811Z",
+          "actorEmployeeId": "EMP-MGR",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1,
+          "note": "Approved."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
+    },
+    {
+      "id": "APR-REQ-DEMO-4",
+      "documentType": "job_requisition",
+      "documentId": "REQ-DEMO-4",
+      "documentTitle": "Warehouse Supervisor — Operations",
+      "documentSummary": "Lead the day shift at the new distribution hub.",
+      "payloadSnapshot": {
+        "title": "Warehouse Supervisor",
+        "department": "Operations",
+        "location": "Ibadan (On-site)",
+        "numberOfPositions": 1,
+        "salaryMin": 3200000,
+        "salaryMax": 3800000
+      },
+      "submittedBy": {
+        "employeeId": "",
+        "name": "Yusuf Bello",
+        "initials": "YB",
+        "departmentName": "Operations"
+      },
+      "submittedAt": "2026-06-04T20:13:59.811Z",
+      "chainTemplateId": "ACT-DEFAULT-JOB-REQUISITION",
+      "currentStepIndex": 1,
+      "status": "returned",
+      "steps": [
+        {
+          "id": "APR-REQ-DEMO-4-S1",
+          "order": 1,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-1",
+          "label": "Approve role need",
+          "approver": "LINE_MANAGER",
+          "resolvedEmployeeId": "EMP-MGR",
+          "resolvedEmployeeName": "Folake Afolayan",
+          "status": "approved",
+          "decidedAt": "2026-06-05T20:13:59.811Z",
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-4-S2",
+          "order": 2,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-2",
+          "label": "Confirm headcount & grade",
+          "approver": "ROLE:ROLE-HRMGR",
+          "resolvedEmployeeId": "EMP-HRMGR",
+          "resolvedEmployeeName": "Amara Okafor",
+          "status": "returned",
+          "decidedAt": "2026-06-06T20:13:59.811Z",
+          "note": "Please confirm the grade band before I can approve."
+        },
+        {
+          "id": "APR-REQ-DEMO-4-S3",
+          "order": 3,
+          "templateStepId": "ACT-DEFAULT-JOB-REQUISITION-3",
+          "label": "Budget approval",
+          "approver": "ROLE:ROLE-FIN",
+          "resolvedEmployeeId": "EMP-FIN",
+          "resolvedEmployeeName": "Tunde Bello",
+          "status": "pending"
+        }
+      ],
+      "history": [
+        {
+          "id": "APR-REQ-DEMO-4-E0",
+          "at": "2026-06-04T20:13:59.811Z",
+          "actorEmployeeId": "",
+          "actorName": "Yusuf Bello",
+          "type": "submitted"
+        },
+        {
+          "id": "APR-REQ-DEMO-4-E1",
+          "at": "2026-06-05T20:13:59.811Z",
+          "actorEmployeeId": "EMP-MGR",
+          "actorName": "Folake Afolayan",
+          "type": "approved",
+          "stepOrder": 1,
+          "note": "Approved."
+        },
+        {
+          "id": "APR-REQ-DEMO-4-ER",
+          "at": "2026-06-06T20:13:59.811Z",
+          "actorEmployeeId": "EMP-HRMGR",
+          "actorName": "Amara Okafor",
+          "type": "returned",
+          "stepOrder": 2,
+          "note": "Please confirm the grade band before I can approve."
+        }
+      ],
+      "attachments": [],
+      "signatures": []
     }
   ]
 }
