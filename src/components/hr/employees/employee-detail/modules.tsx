@@ -77,6 +77,7 @@ import {
   useEmployeePermissions,
   useEmployeeTasks,
   useEmployeeTimeLogs,
+  useEmployeeExpenses,
   type RawCertification,
 } from "./hooks";
 import { AssignAssetModal } from "./assign-asset-modal";
@@ -738,6 +739,67 @@ export function DbsModule({ employeeId }: ModuleProps) {
           );
         })}
       </div>
+      )}
+    </Section>
+  );
+}
+
+// ── Expenses ────────────────────────────────────────────────────────────────
+export function ExpensesModule({ employeeId }: ModuleProps) {
+  const { data, loading } = useEmployeeExpenses(employeeId);
+  if (loading && !data) return <LoadingPanel />;
+  const rows = data ?? [];
+  const fmt = (amount: number, currency: string) =>
+    `${currency} ${amount.toLocaleString()}`;
+  const pending = rows.filter((e) => e.status === "submitted");
+  const reimbursed = rows.filter((e) => e.status === "reimbursed");
+  const pendingTotal = pending.reduce((s, e) => s + e.amount, 0);
+  const currency = rows[0]?.currency ?? "";
+  return (
+    <Section title="Expenses">
+      {rows.length === 0 ? (
+        <Empty label="No expense claims on record." />
+      ) : (
+        <div className="flex flex-col gap-4">
+          <StatStrip
+            items={[
+              { label: "Total claims", value: rows.length },
+              {
+                label: "Pending approval",
+                value: pending.length,
+                accent: "text-amber-600",
+              },
+              {
+                label: "Pending amount",
+                value: fmt(pendingTotal, currency),
+              },
+              {
+                label: "Reimbursed",
+                value: reimbursed.length,
+                accent: "text-emerald-600",
+              },
+            ]}
+          />
+          <DataTable
+            columns={["Date", "Description", "Category", "Amount", "Status"]}
+          >
+            {rows.map((e) => (
+              <Row key={e.id}>
+                <Cell className="whitespace-nowrap text-muted-foreground">
+                  {fmtDate(e.date)}
+                </Cell>
+                <Cell>{e.description}</Cell>
+                <Cell className="capitalize">{e.category}</Cell>
+                <Cell className="whitespace-nowrap font-medium tabular-nums">
+                  {fmt(e.amount, e.currency)}
+                </Cell>
+                <Cell>
+                  <StatusBadge status={e.status} />
+                </Cell>
+              </Row>
+            ))}
+          </DataTable>
+        </div>
       )}
     </Section>
   );

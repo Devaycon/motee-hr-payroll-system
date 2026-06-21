@@ -7,6 +7,7 @@ import type {
 } from "@/src/lib/types/learning";
 
 export type EnrollmentStatus =
+  | "not_attempted"
   | "enrolled"
   | "in_progress"
   | "completed"

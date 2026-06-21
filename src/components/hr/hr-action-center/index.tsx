@@ -4,9 +4,10 @@ import { useState } from "react";
 import { MY_TASKS, PENDING_LEAVES } from "./data";
 import { StatCards } from "./components/stat-cards";
 import { MyTasks } from "./components/my-tasks";
-import { UpcomingEvents } from "./components/upcoming-events";
+// import { UpcomingEvents } from "./components/upcoming-events";
 import { RecentActivity } from "./components/recent-activity";
 import { HrAlertsCard } from "@/src/components/hr/hr-alerts";
+import { UpcomingEventsCard } from "./components/upcoming-events-card";
 
 export function MyWorkspacePage() {
   const [tasks, setTasks] = useState(MY_TASKS);
@@ -41,7 +42,7 @@ export function MyWorkspacePage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <UpcomingEvents />
+        <UpcomingEventsCard />
         <div id="tasks" className="scroll-mt-24">
           <MyTasks tasks={tasks} setTasks={setTasks} />
         </div>

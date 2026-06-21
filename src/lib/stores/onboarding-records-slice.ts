@@ -1,5 +1,9 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { OnboardingRecord } from "@/src/lib/types/onboarding";
+import type {
+  ManualOnboardingData,
+  OnboardingRecord,
+} from "@/src/lib/types/onboarding";
+import type { StarterTaxRecord } from "@/src/lib/types/starter-tax";
 import type { EmployeeRow } from "@/src/lib/types/employees";
 import { ONBOARDING_RECORDS } from "@/src/data/onboarding-demo";
 import { onboardingRecordToEmployee } from "@/src/lib/demo/pending-employees";
@@ -55,9 +59,34 @@ const onboardingRecordsSlice = createSlice({
       const r = state.records.find((x) => x.id === action.payload);
       if (r) r.welcomeEmailSent = true;
     },
-    advancePhase(state, action: PayloadAction<string>) {
-      const r = state.records.find((x) => x.id === action.payload);
-      if (r) r.phase = "onboarding";
+    /** A joiner submits their own details via the invite onboarding wizard. */
+    completeSelfOnboarding(
+      state,
+      action: PayloadAction<{
+        id: string;
+        joinerData: Partial<ManualOnboardingData>;
+        starterTax?: StarterTaxRecord;
+      }>,
+    ) {
+      const { id, joinerData, starterTax } = action.payload;
+      const r = state.records.find((x) => x.id === id);
+      if (!r) return;
+      const at = new Date().toISOString();
+      r.joinerData = joinerData;
+      if (starterTax) r.starterTax = starterTax;
+      r.selfOnboardingCompletedAt = at;
+      r.welcomeEmailSent = true;
+      const submissions = r.submissions ?? [];
+      submissions.push({
+        id: `sub-${Date.now()}`,
+        label: "Joiner onboarding details submitted",
+        kind: "field",
+        value: [joinerData.firstName, joinerData.lastName]
+          .filter(Boolean)
+          .join(" "),
+        submittedAt: at,
+      });
+      r.submissions = submissions;
     },
     /** A reviewer approves a workflow task. */
     approveTask(
@@ -112,7 +141,7 @@ export const {
   addRecords,
   removeRecord,
   sendWelcomeEmail,
-  advancePhase,
+  completeSelfOnboarding,
   approveTask,
 } = onboardingRecordsSlice.actions;
 

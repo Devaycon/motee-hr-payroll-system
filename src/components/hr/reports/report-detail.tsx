@@ -8,12 +8,8 @@ import { useAppSelector } from "@/src/lib/stores/hooks";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/src/components/ui/tabs";
+import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { PageTabsList } from "@/src/components/shared/page-tabs";
 import {
   Select,
   SelectContent,
@@ -25,7 +21,7 @@ import type { LocaleBundle } from "@/src/lib/types/locale";
 import { getReport } from "@/src/lib/reports/registry";
 import { ReportAnalyticsView } from "./components/report-analytics";
 import { ReportTable } from "./components/report-table";
-import { ExportMenu } from "./components/export-menu";
+import { ExportModal } from "./components/export-modal";
 
 function BackLink() {
   return (
@@ -139,11 +135,13 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
             )}
           </div>
         </div>
-        <ExportMenu
+        <ExportModal
           baseName={def.id}
           title={def.label}
           columns={def.columns}
           rows={filteredRows}
+          allRows={allRows}
+          params={def.exportParams ?? []}
           stats={analytics?.stats ?? []}
         />
       </div>
@@ -186,10 +184,12 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
       </div>
 
       <Tabs defaultValue="analytics">
-        <TabsList>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="report">Report</TabsTrigger>
-        </TabsList>
+        <PageTabsList
+          tabs={[
+            { value: "analytics", label: "Analytics" },
+            { value: "report", label: "Report" },
+          ]}
+        />
         <TabsContent value="analytics" className="mt-4">
           {analytics && <ReportAnalyticsView analytics={analytics} />}
         </TabsContent>

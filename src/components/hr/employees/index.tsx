@@ -98,6 +98,7 @@ export function EmployeesPage() {
         onTypeFilterChange={setTypeFilter}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        exportRows={filtered}
       />
 
       <AdvancedEmployeesTable employees={filtered} onDelete={handleDelete} />

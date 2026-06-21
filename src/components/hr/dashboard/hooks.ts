@@ -9,9 +9,11 @@ import {
   CalendarCheck,
   HeartPulse,
   CalendarDays,
+  TrendingDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { employmentTypeFromName } from "@/src/lib/constants/employment-types";
+import { TURNOVER_RECORDS, buildTurnoverTrends } from "@/src/data/workforce-demo";
 import type { ChartConfig } from "@/src/components/ui/chart";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import type {
@@ -78,6 +80,16 @@ export function useStatCards() {
     const sick = activeLeave.filter((r) => r.type === "sick").length;
     const other = activeLeave.length - annual - sick;
 
+    // Org-wide turnover: latest period rate and delta vs the prior period.
+    const turnoverTrends = buildTurnoverTrends(TURNOVER_RECORDS);
+    const latestTurnover = turnoverTrends[turnoverTrends.length - 1];
+    const priorTurnover = turnoverTrends[turnoverTrends.length - 2];
+    const turnoverRate = latestTurnover?.rate ?? 0;
+    const turnoverDelta =
+      latestTurnover && priorTurnover
+        ? Math.round((latestTurnover.rate - priorTurnover.rate) * 10) / 10
+        : 0;
+
     return [
       {
         label: "Total Employees",
@@ -117,7 +129,7 @@ export function useStatCards() {
       },
       {
         label: "Birthdays (Next 7 Days)",
-        link: "/organization/employees",
+        link: "/hr-action-center/events",
         icon: Cake,
         value: birthdays,
         sub: "Within next 7 days",
@@ -150,6 +162,15 @@ export function useStatCards() {
         sub: "Other active leave types",
         trend: "0.9%",
         up: true,
+      },
+      {
+        label: "Turnover Rate",
+        link: "/operations/workforce",
+        icon: TrendingDown,
+        value: `${turnoverRate}%`,
+        sub: `${turnoverDelta <= 0 ? "↓" : "↑"} ${Math.abs(turnoverDelta)}% vs last quarter`,
+        trend: `${Math.abs(turnoverDelta)}%`,
+        up: turnoverDelta > 0,
       },
     ];
   });

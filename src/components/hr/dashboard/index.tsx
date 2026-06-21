@@ -7,6 +7,7 @@ import { SalaryDistributionCard } from "./components/salary-distribution-card";
 import { HeadcountTrendCard } from "./components/headcount-trend-card";
 import { GenderSplitCard } from "./components/gender-split-card";
 import { MyProfileStats } from "./components/my-profile-stats";
+import { UpcomingEventsCard } from "./components/upcoming-events-card";
 import { HrAlertsCard } from "@/src/components/hr/hr-alerts";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -20,7 +21,7 @@ const HrDashboard = () => {
     <div className="flex flex-col gap-6">
       <div className="py-6 w-fit">
         {greetingName ? (
-          <h1 className="text-4xl font-bold text-foreground">
+          <h1 className="text-3xl font-bold text-foreground">
             Welcome back, {user?.name}
           </h1>
         ) : (
@@ -45,10 +46,17 @@ const HrDashboard = () => {
         <GenderSplitCard />
       </div>
 
-      <HrAlertsCard />
+      <div className="">
+        <HrAlertsCard />
+      </div>
+      <div className="">
+        <UpcomingEventsCard />
+      </div>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-foreground">My Profile Stats</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          My Profile Stats
+        </h2>
         <MyProfileStats />
       </section>
     </div>

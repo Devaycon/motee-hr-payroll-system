@@ -2,11 +2,12 @@
 import { formatDate } from "@/src/lib/utils/format-date";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   MoreHorizontal,
   ListChecks,
   Mail,
-  ChevronRight,
+  Rocket,
   Trash2,
 } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
@@ -42,14 +43,12 @@ import {
   ONBOARDING_STAGE_STYLES,
   ONBOARDING_STATUS_LABELS,
   ONBOARDING_STATUS_STYLES,
-  STAGE_ORDER,
 } from "../data";
 import type { OnboardingRecord } from "../types";
 
 interface PipelineTableProps {
   records: OnboardingRecord[];
   onViewTasks: (record: OnboardingRecord) => void;
-  onAdvanceStage: (id: string) => void;
   onSendWelcomeEmail: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -57,10 +56,10 @@ interface PipelineTableProps {
 export function PipelineTable({
   records,
   onViewTasks,
-  onAdvanceStage,
   onSendWelcomeEmail,
   onDelete,
 }: PipelineTableProps) {
+  const router = useRouter();
   const columns = useMemo<ColumnDef<OnboardingRecord>[]>(
     () => [
       {
@@ -157,11 +156,6 @@ export function PipelineTable({
         ),
       },
       actionsColumn<OnboardingRecord>((record) => {
-        const currentStageIdx = STAGE_ORDER.indexOf(record.stage);
-        const canAdvance =
-          currentStageIdx >= 0 &&
-          currentStageIdx < STAGE_ORDER.length - 1 &&
-          record.stage !== "completed";
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -177,15 +171,6 @@ export function PipelineTable({
                 <ListChecks className="w-3.5 h-3.5" />
                 View Tasks
               </DropdownMenuItem>
-              {canAdvance && (
-                <DropdownMenuItem
-                  className="text-xs gap-2"
-                  onClick={() => onAdvanceStage(record.id)}
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                  Advance Stage
-                </DropdownMenuItem>
-              )}
               {!record.welcomeEmailSent && (
                 <DropdownMenuItem
                   className="text-xs gap-2"
@@ -193,6 +178,15 @@ export function PipelineTable({
                 >
                   <Mail className="w-3.5 h-3.5" />
                   Send Welcome Email
+                </DropdownMenuItem>
+              )}
+              {record.mode === "invited" && (
+                <DropdownMenuItem
+                  className="text-xs gap-2"
+                  onClick={() => router.push(`/join/${record.id}`)}
+                >
+                  <Rocket className="w-3.5 h-3.5" />
+                  Open Onboarding Wizard
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
@@ -235,7 +229,7 @@ export function PipelineTable({
         );
       }),
     ],
-    [onViewTasks, onAdvanceStage, onSendWelcomeEmail, onDelete],
+    [onViewTasks, onSendWelcomeEmail, onDelete, router],
   );
 
   return (

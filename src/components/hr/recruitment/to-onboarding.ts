@@ -9,7 +9,7 @@ interface RoleLite {
 }
 
 /**
- * Turn a hired candidate into a pre-boarding onboarding record, mirroring the
+ * Turn a hired candidate into an onboarding record, mirroring the
  * "Send to onboarding" action in the candidate drawer. Reuses
  * `buildTasksForSelection` to instantiate tasks from the default onboarding
  * workflow.
@@ -33,7 +33,6 @@ export function candidateToOnboardingRecord(
     startDate: requisition?.targetStartDate ?? today,
     stage: "pre_boarding",
     status: "not_started",
-    phase: "pre_onboarding",
     workflowTemplateId: template?.id,
     workflowName: template?.name,
     tasks,

@@ -70,6 +70,14 @@ export function KudosTab() {
   const [sendValues, setSendValues] = useState<CompanyValue[]>([]);
   const [sendMessage, setSendMessage] = useState("");
   const [sendPublic, setSendPublic] = useState(true);
+  const [sendScope, setSendScope] = useState<"individual" | "department">(
+    "individual",
+  );
+  const [sendDepartment, setSendDepartment] = useState("");
+
+  const departments = [
+    ...new Set(EMPLOYEE_ROSTER.map((e) => e.department)),
+  ].sort();
 
   const filtered = kudosPosts.filter((k) => {
     if (kudosTypeFilter !== "all" && k.kudosType !== kudosTypeFilter)
@@ -123,16 +131,28 @@ export function KudosTab() {
   }
 
   function submitKudos() {
+    if (!sendMessage.trim()) return;
+
+    const isDept = sendScope === "department";
     const recipient = EMPLOYEE_ROSTER.find((e) => e.name === sendRecipient);
-    if (!recipient || !sendMessage.trim()) return;
+    // Individual needs a valid colleague; department needs a selected team.
+    if (isDept ? !sendDepartment : !recipient) return;
+
+    const deptInitials = sendDepartment
+      .split(/\s+/)
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
     const newKudos: KudosPost = {
       id: `kp-new-${Date.now()}`,
       senderName: MY_NAME,
       senderInitials: MY_INITIALS,
       senderDept: MY_DEPT,
-      recipientName: recipient.name,
-      recipientInitials: recipient.initials,
-      recipientDept: recipient.department,
+      recipientName: isDept ? `${sendDepartment} Team` : recipient!.name,
+      recipientInitials: isDept ? deptInitials : recipient!.initials,
+      recipientDept: isDept ? sendDepartment : recipient!.department,
       kudosType: sendType,
       companyValue: sendValues[0] ?? "integrity",
       message: sendMessage,
@@ -140,10 +160,13 @@ export function KudosTab() {
       comments: [],
       createdAt: new Date().toISOString(),
       isPublic: sendPublic,
+      isBroadcast: isDept,
     };
     setKudosPosts((prev) => [newKudos, ...prev]);
     setShowSendModal(false);
     setSendRecipient("");
+    setSendDepartment("");
+    setSendScope("individual");
     setSendMessage("");
     setSendValues([]);
   }
@@ -459,22 +482,65 @@ export function KudosTab() {
             <div className="space-y-4 pt-2 pb-1">
               <div>
                 <label className="text-xs font-medium text-foreground mb-1.5 block">
-                  Recipient
+                  Give kudos to
                 </label>
-                <Select value={sendRecipient} onValueChange={setSendRecipient}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select colleague" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EMPLOYEE_ROSTER.filter(
-                      (e) => e.initials !== MY_INITIALS,
-                    ).map((e) => (
-                      <SelectItem key={e.initials} value={e.name}>
-                        {e.name} · {e.department}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {(
+                    [
+                      { value: "individual", label: "Individual", Icon: Users },
+                      { value: "department", label: "Department", Icon: Megaphone },
+                    ] as const
+                  ).map(({ value, label, Icon }) => {
+                    const active = sendScope === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setSendScope(value)}
+                        className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-medium transition-all ${
+                          active
+                            ? "border-primary border-2 bg-primary/5 text-primary"
+                            : "border-border text-muted-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        <Icon className="size-4" />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {sendScope === "individual" ? (
+                  <Select value={sendRecipient} onValueChange={setSendRecipient}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select colleague" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EMPLOYEE_ROSTER.filter(
+                        (e) => e.initials !== MY_INITIALS,
+                      ).map((e) => (
+                        <SelectItem key={e.initials} value={e.name}>
+                          {e.name} · {e.department}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select
+                    value={sendDepartment}
+                    onValueChange={setSendDepartment}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((d) => (
+                        <SelectItem key={d} value={d}>
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div>
@@ -579,7 +645,11 @@ export function KudosTab() {
             </Button>
             <Button
               onClick={submitKudos}
-              disabled={!sendRecipient || !sendMessage.trim()}
+              disabled={
+                (sendScope === "individual"
+                  ? !sendRecipient
+                  : !sendDepartment) || !sendMessage.trim()
+              }
               className="flex items-center gap-2 bg-[#4361ee] hover:bg-[#3451d1] text-white"
             >
               <Star className="w-4 h-4" />

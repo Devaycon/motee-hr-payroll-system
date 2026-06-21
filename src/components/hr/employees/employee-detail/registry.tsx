@@ -33,6 +33,7 @@ import {
   Settings2,
   Lock,
   ScrollText,
+  Receipt,
 } from "lucide-react";
 import { useCan } from "@/src/lib/permissions/use-can";
 import * as Mod from "./modules";
@@ -73,6 +74,7 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "sickness", label: "Sickness", group: "Time & Attendance", icon: Thermometer, Component: Mod.SicknessModule },
   { key: "time-logs", label: "Time Logs", group: "Time & Attendance", icon: Clock, Component: Mod.TimeLogsModule },
   { key: "bookings", label: "Location Bookings", group: "Time & Attendance", icon: MapPin, Component: Mod.BookingsModule },
+  { key: "expenses", label: "Expenses", group: "Time & Attendance", icon: Receipt, Component: Mod.ExpensesModule },
 
   { key: "performance", label: "Performance", group: "Growth", icon: TrendingUp, Component: Mod.PerformanceModule },
   { key: "learn", label: "Learning", group: "Growth", icon: BookOpen, Component: Mod.LearnModule },
@@ -114,6 +116,7 @@ export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
   "sickness",
   "time-logs",
   "bookings",
+  "expenses",
   "performance",
   "learn",
   "training-videos",

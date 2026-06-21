@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { formatDate } from "@/src/lib/utils/format-date";
 import {
   FileText,
@@ -15,6 +16,7 @@ import {
   Info,
   CheckCircle2,
   Eye,
+  BellRing,
 } from "lucide-react";
 import {
   Dialog,
@@ -267,6 +269,31 @@ export function DocumentDetailModal({
                   </p>
                 </div>
               )}
+              <div className="col-span-2 space-y-1">
+                <p className="text-xs text-muted-foreground">Assigned To</p>
+                <p className="text-sm font-medium capitalize">
+                  {doc.assignment?.scope === "department"
+                    ? `Department · ${doc.assignment.departments?.join(", ") ?? "—"}`
+                    : doc.assignment?.scope === "global"
+                      ? "All employees"
+                      : "Specific employees"}
+                </p>
+              </div>
+              {doc.requiresAcknowledgement && (
+                <div className="col-span-2 space-y-1 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="size-4 text-amber-600" />
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                      Read acknowledgement required
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {(doc.acknowledgements?.length ?? 0)} of{" "}
+                    {doc.totalAssigned ?? doc.acknowledgements?.length ?? 0}{" "}
+                    assigned employees have acknowledged.
+                  </p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -390,6 +417,25 @@ export function DocumentDetailModal({
               <Share2 className="mr-2 size-4" />
               Share
             </Button>
+            {doc.requiresAcknowledgement && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const outstanding =
+                    (doc.totalAssigned ?? 0) -
+                    (doc.acknowledgements?.length ?? 0);
+                  toast.success(
+                    outstanding > 0
+                      ? `Reminder sent to ${outstanding} employee${outstanding > 1 ? "s" : ""} who haven't acknowledged "${doc.name}".`
+                      : `Reminder sent for "${doc.name}".`,
+                  );
+                }}
+              >
+                <BellRing className="mr-2 size-4" />
+                Send Reminder
+              </Button>
+            )}
             <Button variant="outline" size="sm">
               <Download className="mr-2 size-4" />
               Download

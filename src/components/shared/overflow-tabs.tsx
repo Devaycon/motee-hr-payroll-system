@@ -161,7 +161,10 @@ export function OverflowTabsList({
                 <ChevronDown className="size-3.5" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
+            <DropdownMenuContent
+              align="end"
+              className="max-h-72 w-56 mt-2 overflow-y-auto"
+            >
               {overflow.map((t) => (
                 <DropdownMenuItem
                   key={t.value}

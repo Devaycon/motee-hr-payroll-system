@@ -45,6 +45,7 @@ export const DELIVERY_MODE_LABELS: Record<CourseDeliveryMode, string> = {
 };
 
 export const ENROLLMENT_STATUS_LABELS: Record<EnrollmentStatus, string> = {
+  not_attempted: "Not Attempted",
   enrolled:    "Enrolled",
   in_progress: "In Progress",
   completed:   "Completed",
@@ -53,6 +54,7 @@ export const ENROLLMENT_STATUS_LABELS: Record<EnrollmentStatus, string> = {
 };
 
 export const ENROLLMENT_STATUS_STYLES: Record<EnrollmentStatus, string> = {
+  not_attempted: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
   enrolled:    "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
   in_progress: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
   completed:   "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
@@ -134,7 +136,7 @@ export const COURSES: Course[] = [
 
 export const ENROLLMENTS: Enrollment[] = [
   { id: "en-001", courseId: "c-001", courseName: "Python for Data Analysis", employeeName: "Emeka Nwosu", employeeInitials: "EN", employeeDept: "Engineering", status: "in_progress", progress: 60, enrolledAt: "2026-02-01", dueDate: "2026-03-15", score: undefined },
-  { id: "en-002", courseId: "c-001", courseName: "Python for Data Analysis", employeeName: "Tunde Badmus", employeeInitials: "TB", employeeDept: "Engineering", status: "enrolled", progress: 0, enrolledAt: "2026-02-01", dueDate: "2026-03-15" },
+  { id: "en-002", courseId: "c-001", courseName: "Python for Data Analysis", employeeName: "Tunde Badmus", employeeInitials: "TB", employeeDept: "Engineering", status: "not_attempted", progress: 0, enrolledAt: "2026-02-01", dueDate: "2026-03-15" },
   { id: "en-003", courseId: "c-002", courseName: "Leadership Essentials", employeeName: "Chukwuebuka Obi", employeeInitials: "CO", employeeDept: "Sales", status: "completed", progress: 100, enrolledAt: "2026-02-10", completedAt: "2026-02-12", score: 88 },
   { id: "en-004", courseId: "c-003", courseName: "Anti-Money Laundering (AML) 2026", employeeName: "Halima Musa", employeeInitials: "HM", employeeDept: "Human Resources", status: "completed", progress: 100, enrolledAt: "2026-01-05", dueDate: "2026-02-01", completedAt: "2026-01-06", score: 92, quizPassed: true, quizAttempts: [{ at: "2026-01-06", score: 92, passed: true }] },
   { id: "en-005", courseId: "c-003", courseName: "Anti-Money Laundering (AML) 2026", employeeName: "Aisha Garba", employeeInitials: "AG", employeeDept: "Legal", status: "completed", progress: 100, enrolledAt: "2026-01-05", dueDate: "2026-02-01", completedAt: "2026-01-07", score: 100, quizPassed: true, quizAttempts: [{ at: "2026-01-06", score: 60, passed: false }, { at: "2026-01-07", score: 100, passed: true }] },

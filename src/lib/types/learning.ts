@@ -11,6 +11,7 @@ export type CourseStatus = "active" | "draft" | "archived";
 export type CourseDeliveryMode = "online" | "in_person" | "hybrid";
 
 export type EnrollmentStatus =
+  | "not_attempted"
   | "enrolled"
   | "in_progress"
   | "completed"

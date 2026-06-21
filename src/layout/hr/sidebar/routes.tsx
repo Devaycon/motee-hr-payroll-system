@@ -38,6 +38,7 @@ import {
   UserCircle,
   CheckSquare,
   Workflow,
+  Receipt,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -92,6 +93,12 @@ export const routes: Route[] = [
     icon: CalendarDays,
     label: "Calendar",
     link: "/hr-action-center/events",
+  },
+  {
+    group: "My Workspace",
+    icon: Receipt,
+    label: "My Expenses",
+    link: "/my-profile/expenses",
   },
   {
     group: "My Workspace",
@@ -157,7 +164,7 @@ export const routes: Route[] = [
   {
     group: "Employee Management",
     icon: Timer,
-    label: "Preboarding & Onboarding",
+    label: "Onboarding",
     link: "/talent/onboarding",
     badge: 5,
   },

@@ -45,9 +45,22 @@ export function AllEventsList({
   const totalPages = pageSize
     ? Math.max(1, Math.ceil(sorted.length / pageSize))
     : 1;
+  // Clamp so a shrinking/growing event list never strands us on a missing page.
+  const currentPage = Math.min(page, totalPages);
   const visible = pageSize
-    ? sorted.slice((page - 1) * pageSize, page * pageSize)
+    ? sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
     : sorted;
+
+  // Windowed page numbers (max 5) so large lists don't render a giant button row.
+  const windowStart = Math.max(
+    1,
+    Math.min(currentPage - 2, totalPages - 4),
+  );
+  const windowEnd = Math.min(totalPages, windowStart + 4);
+  const pageWindow = Array.from(
+    { length: windowEnd - windowStart + 1 },
+    (_, i) => windowStart + i,
+  );
 
   const label = (type: string) => typeLabels?.[type] ?? type;
 
@@ -119,22 +132,39 @@ export function AllEventsList({
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-4">
               <p className="text-xs text-muted-foreground">
-                Page {page} of {totalPages}
+                Page {currentPage} of {totalPages}
               </p>
               <div className="flex items-center gap-1">
                 <Button
                   variant="outline"
                   size="icon"
                   className="size-7"
-                  disabled={page === 1}
-                  onClick={() => setPage((p) => p - 1)}
+                  disabled={currentPage === 1}
+                  onClick={() => setPage(currentPage - 1)}
                 >
                   <ChevronLeft className="size-3.5" />
                 </Button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                {windowStart > 1 && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-7 text-xs"
+                      onClick={() => setPage(1)}
+                    >
+                      1
+                    </Button>
+                    {windowStart > 2 && (
+                      <span className="px-0.5 text-xs text-muted-foreground">
+                        …
+                      </span>
+                    )}
+                  </>
+                )}
+                {pageWindow.map((p) => (
                   <Button
                     key={p}
-                    variant={p === page ? "default" : "outline"}
+                    variant={p === currentPage ? "default" : "outline"}
                     size="icon"
                     className="size-7 text-xs"
                     onClick={() => setPage(p)}
@@ -142,12 +172,29 @@ export function AllEventsList({
                     {p}
                   </Button>
                 ))}
+                {windowEnd < totalPages && (
+                  <>
+                    {windowEnd < totalPages - 1 && (
+                      <span className="px-0.5 text-xs text-muted-foreground">
+                        …
+                      </span>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-7 text-xs"
+                      onClick={() => setPage(totalPages)}
+                    >
+                      {totalPages}
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant="outline"
                   size="icon"
                   className="size-7"
-                  disabled={page === totalPages}
-                  onClick={() => setPage((p) => p + 1)}
+                  disabled={currentPage === totalPages}
+                  onClick={() => setPage(currentPage + 1)}
                 >
                   <ChevronRight className="size-3.5" />
                 </Button>

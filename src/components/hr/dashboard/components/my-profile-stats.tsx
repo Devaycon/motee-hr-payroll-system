@@ -1,6 +1,15 @@
 "use client";
 
-import { CalendarDays, ListTodo, Users, UserRound } from "lucide-react";
+import {
+  CalendarDays,
+  ListTodo,
+  Users,
+  UserRound,
+  Receipt,
+  MapPin,
+  FileText,
+  GraduationCap,
+} from "lucide-react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import {
@@ -12,10 +21,27 @@ const YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
 
 interface Figures {
   leave: number;
+  documents: number;
+  expenses: number;
+  expensesPending: number;
+  courses: number;
   tasks: number;
+  bookings: number;
   reports: number;
   years: number;
 }
+
+const EMPTY: Figures = {
+  leave: 0,
+  documents: 0,
+  expenses: 0,
+  expensesPending: 0,
+  courses: 0,
+  tasks: 0,
+  bookings: 0,
+  reports: 0,
+  years: 0,
+};
 
 /** Personal figures for the logged-in user (falls back to a real employee). */
 function useMyFigures(): Figures {
@@ -26,7 +52,7 @@ function useMyFigures(): Figures {
       b.employees.find((e) => e.status === "active") ??
       b.employees[0] ??
       null;
-    if (!me) return { leave: 0, tasks: 0, reports: 0, years: 0 };
+    if (!me) return EMPTY;
 
     const balances = ((b.leaveBalances ?? []) as Array<{
       employeeId?: string;
@@ -38,8 +64,28 @@ function useMyFigures(): Figures {
       0,
     );
 
+    const documents = ((b.documents ?? []) as Array<{ employeeId?: string }>).filter(
+      (d) => d.employeeId === me.id,
+    ).length;
+
+    const myExpenses = (b.expenses ?? []).filter((x) => x.employeeId === me.id);
+    const expenses = myExpenses.length;
+    const expensesPending = myExpenses.filter(
+      (x) => x.status === "submitted",
+    ).length;
+
+    const enrollments = (
+      (b.learning as { enrollments?: Array<{ employeeId?: string; status?: string }> })
+        ?.enrollments ?? []
+    ).filter((x) => x.employeeId === me.id);
+    const courses = enrollments.filter((x) => x.status !== "completed").length;
+
     const tasks = ((b.tasks ?? []) as Array<{ assigneeId?: string; status?: string }>).filter(
       (t) => t.assigneeId === me.id && t.status !== "done" && t.status !== "completed",
+    ).length;
+
+    const bookings = (b.locationBookings ?? []).filter(
+      (x) => x.employeeId === me.id && x.status === "confirmed",
     ).length;
 
     const reports = b.employees.filter((e) => e.managerId === me.id).length;
@@ -49,9 +95,19 @@ function useMyFigures(): Figures {
       ? Math.max(0, Math.floor((ref.getTime() - new Date(me.startDate).getTime()) / YEAR_MS))
       : 0;
 
-    return { leave, tasks, reports, years };
+    return {
+      leave,
+      documents,
+      expenses,
+      expensesPending,
+      courses,
+      tasks,
+      bookings,
+      reports,
+      years,
+    };
   });
-  return data ?? { leave: 0, tasks: 0, reports: 0, years: 0 };
+  return data ?? EMPTY;
 }
 
 export function MyProfileStats() {
@@ -59,10 +115,31 @@ export function MyProfileStats() {
   const stats: HrStatCardItem[] = [
     {
       icon: CalendarDays,
-      label: "Leave Balance",
+      label: "My Leave",
       value: f.leave,
       sub: "days remaining",
       link: "/my-time-off/balance",
+    },
+    {
+      icon: FileText,
+      label: "My Documents",
+      value: f.documents,
+      sub: "personal documents",
+      link: "/my-profile/documents",
+    },
+    {
+      icon: Receipt,
+      label: "My Expenses",
+      value: f.expenses,
+      sub: `${f.expensesPending} pending approval`,
+      link: "/my-profile/expenses",
+    },
+    {
+      icon: GraduationCap,
+      label: "My Courses",
+      value: f.courses,
+      sub: "in progress / assigned",
+      link: "/talent/training",
     },
     {
       icon: ListTodo,
@@ -70,6 +147,13 @@ export function MyProfileStats() {
       value: f.tasks,
       sub: "assigned to me",
       link: "/hr-action-center/tasks",
+    },
+    {
+      icon: MapPin,
+      label: "Location Bookings",
+      value: f.bookings,
+      sub: "confirmed bookings",
+      link: "/my-profile/profile",
     },
     {
       icon: Users,

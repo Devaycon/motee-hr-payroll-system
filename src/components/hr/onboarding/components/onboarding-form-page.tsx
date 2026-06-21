@@ -21,8 +21,7 @@ import { cn } from "@/src/lib/utils";
 import { DEPARTMENT_OPTIONS } from "../data";
 import type { ManualOnboardingData } from "../types";
 import { addPendingRecord } from "@/src/lib/demo/pending-onboarding";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { removeRecord } from "@/src/lib/stores/onboarding-records-slice";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   getOnboardingTemplates,
   getDefaultOnboardingTemplate,
@@ -182,6 +181,7 @@ const EMPTY_DATA: ManualOnboardingData = {
   bankAccountNumber: "",
   bankAccountName: "",
   ninNumber: "",
+  niNumber: "",
   passportNumber: "",
   passportExpiry: "",
   passportCountry: "",
@@ -218,23 +218,15 @@ function ReviewRow({ label, value }: { label: string; value?: string }) {
   );
 }
 
-export function OnboardingFormPage({ preboardingId }: { preboardingId?: string } = {}) {
+export function OnboardingFormPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const templates = useAppSelector((s) => s.approvals.templates);
   const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
-  const preRecord = useAppSelector((s) =>
-    preboardingId
-      ? s.onboardingRecords.records.find((r) => r.id === preboardingId)
-      : undefined,
-  );
   const onboardingTemplates = getOnboardingTemplates(templates);
   const defaultTemplate = getDefaultOnboardingTemplate(templates);
   const [step, setStep] = useState(0);
-  // Prefill from a preboarding record when promoting one into full onboarding.
   const [data, setData] = useState<ManualOnboardingData>(() => ({
     ...EMPTY_DATA,
-    ...(preRecord?.preboardingData ?? {}),
   }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -310,7 +302,6 @@ export function OnboardingFormPage({ preboardingId }: { preboardingId?: string }
       startDate: data.startDate,
       stage: "pre_boarding",
       status: "not_started",
-      phase: "pre_onboarding",
       workflowTemplateId: template?.id,
       workflowName: template?.name,
       tasks,
@@ -320,10 +311,6 @@ export function OnboardingFormPage({ preboardingId }: { preboardingId?: string }
       initiatedAt: new Date().toISOString().slice(0, 10),
       mode: "manual",
     });
-
-    // Promoting a preboarding hire — remove the preboarding record now that it's
-    // a full onboarding record.
-    if (preboardingId) dispatch(removeRecord(preboardingId));
 
     toast.success(`Onboarding initiated for ${fullName}`);
     router.push("/talent/onboarding");

@@ -311,7 +311,6 @@ export function CandidateDrawer({
                       new Date().toISOString().slice(0, 10),
                     stage: "pre_boarding",
                     status: "not_started",
-                    phase: "pre_onboarding",
                     workflowTemplateId: template?.id,
                     workflowName: template?.name,
                     tasks,

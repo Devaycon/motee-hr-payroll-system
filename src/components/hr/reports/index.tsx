@@ -1,15 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Wand2 } from "lucide-react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { Card } from "@/src/components/ui/card";
+import { Button } from "@/src/components/ui/button";
 import { ALL_REPORTS, REPORT_GROUPS } from "@/src/lib/reports/registry";
+import { CustomReportModal } from "./components/custom-report-modal";
 
 export function ReportsPage() {
   const accessLevelId = useAppSelector((s) => s.auth.user?.accessLevelId);
   const levels = useAppSelector((s) => s.accessLevels.levels);
+  const [customOpen, setCustomOpen] = useState(false);
 
   const visibleReports = useMemo(() => {
     const level = accessLevelId
@@ -24,13 +27,19 @@ export function ReportsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="py-2">
-        <h1 className="text-4xl font-semibold text-foreground">
-          Reports &amp; Analytics
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Pick a module to view its analytics dashboard and export the report.
-        </p>
+      <div className="flex items-start justify-between gap-4 py-2">
+        <div>
+          <h1 className="text-4xl font-semibold text-foreground">
+            Reports &amp; Analytics
+          </h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Pick a module to view its analytics dashboard and export the report.
+          </p>
+        </div>
+        <Button className="mt-1 gap-1.5" onClick={() => setCustomOpen(true)}>
+          <Wand2 className="h-4 w-4" />
+          Build Custom Report
+        </Button>
       </div>
 
       {REPORT_GROUPS.map((group) => {
@@ -80,6 +89,12 @@ export function ReportsPage() {
           </section>
         );
       })}
+
+      <CustomReportModal
+        open={customOpen}
+        onClose={() => setCustomOpen(false)}
+        allowedReportIds={visibleReports.map((r) => r.id)}
+      />
     </div>
   );
 }

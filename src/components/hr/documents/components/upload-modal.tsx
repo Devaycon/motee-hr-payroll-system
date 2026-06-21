@@ -28,6 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { Switch } from "@/src/components/ui/switch";
+import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { cn } from "@/src/lib/utils";
 import {
   DOCUMENT_CATEGORY_LABELS,
@@ -39,6 +41,7 @@ import type {
   Folder,
   DocumentFileType,
   DocumentCategory,
+  DocumentAssignmentScope,
   NewDocument,
 } from "../types";
 
@@ -114,7 +117,15 @@ export function UploadModal({
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [scope, setScope] = useState<DocumentAssignmentScope>("global");
+  const [department, setDepartment] = useState<string>("");
+  const [requiresAck, setRequiresAck] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: departmentNames } = useLocaleSection<string[]>((b) =>
+    b.departments.map((d) => d.name),
+  );
+  const departments = departmentNames ?? [];
 
   if (open !== prevOpen || defaultFolderId !== prevFolder) {
     setPrevOpen(open);
@@ -124,6 +135,9 @@ export function UploadModal({
       setErrors({});
       setSelectedFile(null);
       setFileError(null);
+      setScope("global");
+      setDepartment("");
+      setRequiresAck(false);
     }
   }
 
@@ -186,6 +200,12 @@ export function UploadModal({
       description: d.description || undefined,
       fileSize: selectedFile.size,
       expiryDate: d.expiryDate || undefined,
+      assignment: {
+        scope,
+        departments:
+          scope === "department" && department ? [department] : undefined,
+      },
+      requiresAcknowledgement: requiresAck,
     });
   }
 
@@ -371,6 +391,66 @@ export function UploadModal({
               <p className="text-xs text-muted-foreground">
                 An automated reminder will be sent before the expiry date.
               </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Assign To</Label>
+              <Select
+                value={scope}
+                onValueChange={(v) => setScope(v as DocumentAssignmentScope)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">All employees (global)</SelectItem>
+                  <SelectItem value="department">Specific department</SelectItem>
+                  <SelectItem value="specific">Specific employees</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {scope === "department" ? (
+              <div className="space-y-1.5">
+                <Label>Department</Label>
+                <Select value={department} onValueChange={setDepartment}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        {d}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground">Sharing</Label>
+                <p className="pt-2 text-xs text-muted-foreground">
+                  {scope === "global"
+                    ? "Visible to everyone in the organisation."
+                    : "Share with individual employees after upload."}
+                </p>
+              </div>
+            )}
+
+            <div className="col-span-2 flex items-center justify-between rounded-lg border border-border/60 px-3 py-2.5">
+              <div className="space-y-0.5">
+                <Label htmlFor="requires-ack" className="cursor-pointer">
+                  Require read acknowledgement
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Assigned employees must confirm they have read this document.
+                </p>
+              </div>
+              <Switch
+                id="requires-ack"
+                checked={requiresAck}
+                onCheckedChange={setRequiresAck}
+              />
             </div>
           </div>
         </div>
