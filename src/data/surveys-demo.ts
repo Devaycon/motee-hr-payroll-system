@@ -296,7 +296,7 @@ export const SURVEYS: Survey[] = [
 		id: "SRV-002",
 		title: "Monthly eNPS Check-in",
 		description: "Track employee advocacy with a lightweight recurring survey.",
-		type: "pulse",
+		type: "enps",
 		status: "active",
 		audience: "all_staff",
 		isAnonymous: true,

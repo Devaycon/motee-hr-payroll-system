@@ -10,6 +10,7 @@ import {
   Users,
   LifeBuoy,
   CheckSquare,
+  Receipt,
   LucideIcon,
 } from "lucide-react";
 
@@ -51,7 +52,7 @@ export const routes: Route[] = [
   {
     group: "Overview",
     icon: CalendarDays,
-    label: "My Events",
+    label: "Calendar",
     link: "/employee/events",
   },
   {
@@ -62,10 +63,15 @@ export const routes: Route[] = [
   },
   {
     group: "Overview",
+    icon: Receipt,
+    label: "My Expenses",
+    link: "/employee/expenses",
+  },
+  {
+    group: "Overview",
     icon: Users,
     label: "My Team",
     link: "/employee/team",
-    managerOnly: true,
   },
 
   {

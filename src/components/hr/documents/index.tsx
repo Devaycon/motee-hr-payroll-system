@@ -90,6 +90,9 @@ export function DocumentsPage() {
         },
       ],
       shares: [],
+      assignment: data.assignment,
+      requiresAcknowledgement: data.requiresAcknowledgement,
+      acknowledgements: [],
     };
     setDocuments((prev) => [newDoc, ...prev]);
     setUploadModalOpen(false);

@@ -16,6 +16,20 @@ export interface ReportFilterDef<T> {
   match: (row: T, value: string) => boolean;
 }
 
+/**
+ * A domain-specific, export-only parameter rendered as a toggle in the export
+ * dialog (e.g. "Line managers only", "Active employees only"). When enabled,
+ * only rows passing {@link predicate} are exported. Generic column filters
+ * (ranges, date ranges, category pickers, text search) are derived automatically
+ * from a report's columns and do not need to be declared here.
+ */
+export interface ReportExportParam<T> {
+  key: string;
+  label: string;
+  description?: string;
+  predicate: (row: T) => boolean;
+}
+
 export interface ReportStat {
   label: string;
   value: string | number;
@@ -140,6 +154,8 @@ export interface ReportDef<T> {
   select: (bundle: LocaleBundle) => T[];
   columns: ReportColumn<T>[];
   filters?: ReportFilterDef<T>[];
+  /** Optional domain-specific toggles shown in the export dialog. */
+  exportParams?: ReportExportParam<T>[];
   /** Free-text search haystack for a row. */
   searchText?: (row: T) => string;
   analytics: (rows: T[], bundle: LocaleBundle) => ReportAnalytics;

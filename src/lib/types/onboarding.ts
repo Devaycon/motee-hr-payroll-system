@@ -1,4 +1,6 @@
-﻿export type OnboardingStage =
+﻿import type { StarterTaxRecord } from "./starter-tax";
+
+export type OnboardingStage =
   | "pre_boarding"
   | "day_one"
   | "first_week"
@@ -14,16 +16,6 @@ export type OnboardingTaskStatus = "pending" | "completed" | "overdue";
 export type OnboardingTaskAssignee = "hr" | "manager" | "employee" | "it";
 
 export type OnboardingMode = "manual" | "invited" | "bulk";
-
-export type OnboardingPhase = "preboarding" | "pre_onboarding" | "onboarding";
-
-/** A lightweight asset captured during preboarding. */
-export interface PreboardAsset {
-  assetType: string;
-  serialNumber: string;
-  condition: string;
-  notes: string;
-}
 
 export interface OnboardingTask {
   id: string;
@@ -68,8 +60,6 @@ export interface OnboardingRecord {
   startDate: string;
   stage: OnboardingStage;
   status: OnboardingStatus;
-  /** Which tab the record lives in. */
-  phase: OnboardingPhase;
   tasks: OnboardingTask[];
   completedTasks: number;
   totalTasks: number;
@@ -83,10 +73,12 @@ export interface OnboardingRecord {
   /** Items the hire has submitted (docs / form values). */
   submissions?: OnboardingSubmission[];
   history?: OnboardingHistoryEvent[];
-  /** Lightweight data captured during preboarding, used to prefill full onboarding. */
-  preboardingData?: Partial<ManualOnboardingData>;
-  /** Assets captured during preboarding. */
-  assets?: PreboardAsset[];
+  /** Data the joiner submitted themselves via the invite onboarding wizard. */
+  joinerData?: Partial<ManualOnboardingData>;
+  /** UK PAYE starter-tax record captured by the joiner (UK tenants only). */
+  starterTax?: StarterTaxRecord;
+  /** Set when the joiner completes the self-service onboarding wizard. */
+  selfOnboardingCompletedAt?: string;
 }
 
 export interface NewOnboardingRecord {
@@ -129,6 +121,8 @@ export interface ManualOnboardingData {
   bankAccountNumber: string;
   bankAccountName: string;
   ninNumber: string;
+  /** UK National Insurance number (kept distinct from the NG-labelled NIN). */
+  niNumber: string;
   passportNumber: string;
   passportExpiry: string;
   passportCountry: string;

@@ -89,6 +89,20 @@ const assetsReport = defineReport<AssetRow>({
       match: (r, v) => r.status === v,
     },
   ],
+  exportParams: [
+    {
+      key: "assigned",
+      label: "Assigned only",
+      description: "Assets currently issued to an employee.",
+      predicate: (r) => r.assignedTo !== "Unassigned",
+    },
+    {
+      key: "unassigned",
+      label: "Unassigned only",
+      description: "Assets sitting in the pool.",
+      predicate: (r) => r.assignedTo === "Unassigned",
+    },
+  ],
   searchText: (r) => `${r.assetTag} ${r.name} ${r.category} ${r.assignedTo}`,
   analytics: (rows) => {
     const inUse = rows.filter((r) => r.status === "in_use").length;
@@ -377,8 +391,174 @@ const grievanceReport = defineReport<GrvRow>({
   },
 });
 
+// ── Document Acknowledgement ────────────────────────────────────────────────
+interface DocAckRow {
+  document: string;
+  employeeNumber: string;
+  employee: string;
+  department: string;
+  assignedOn: string;
+  status: string; // "Acknowledged" | "Outstanding"
+  acknowledgedOn: string;
+}
+
+const MANDATORY_POLICIES: { name: string; assignedOn: string }[] = [
+  { name: "Employee Handbook 2026", assignedOn: "2026-01-02" },
+  { name: "Code of Conduct Policy", assignedOn: "2024-01-10" },
+  { name: "Leave & Absence Policy", assignedOn: "2026-03-08" },
+  { name: "Data Protection Policy", assignedOn: "2025-06-01" },
+];
+
+/** Deterministic 0–99 from a string, so ack status is stable across renders. */
+function hashPct(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1000;
+  return h % 100;
+}
+
+function addDays(iso: string, days: number): string {
+  const d = new Date(iso);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+const documentAckReport = defineReport<DocAckRow>({
+  id: "document-acknowledgement",
+  label: "Document Acknowledgement",
+  description:
+    "Who has read and acknowledged assigned company policies — and who hasn't.",
+  icon: CheckCircle2,
+  group: "Operations",
+  permission: "operations.documents",
+  select: (b) => {
+    const rows: DocAckRow[] = [];
+    const active = b.employees.filter((e) => e.status !== "offboarded");
+    for (const policy of MANDATORY_POLICIES) {
+      for (const e of active) {
+        // ~75% acknowledge; the rest are outstanding (deterministic).
+        const acknowledged = hashPct(`${e.id}:${policy.name}`) < 75;
+        rows.push({
+          document: policy.name,
+          employeeNumber: e.employeeNumber,
+          employee: e.fullName,
+          department: e.departmentName,
+          assignedOn: policy.assignedOn,
+          status: acknowledged ? "Acknowledged" : "Outstanding",
+          acknowledgedOn: acknowledged ? addDays(policy.assignedOn, 3) : "—",
+        });
+      }
+    }
+    return rows;
+  },
+  columns: [
+    { key: "document", header: "Document", value: (r) => r.document },
+    { key: "employee", header: "Employee", value: (r) => r.employee },
+    { key: "department", header: "Department", value: (r) => r.department },
+    { key: "assignedOn", header: "Assigned", value: (r) => r.assignedOn },
+    { key: "status", header: "Status", value: (r) => r.status },
+    { key: "acknowledgedOn", header: "Acknowledged On", value: (r) => r.acknowledgedOn },
+  ],
+  filters: [
+    {
+      key: "document",
+      label: "Document",
+      options: (rows) => [...new Set(rows.map((r) => r.document))],
+      match: (r, v) => r.document === v,
+    },
+    {
+      key: "department",
+      label: "Department",
+      options: (rows) => [...new Set(rows.map((r) => r.department))],
+      match: (r, v) => r.department === v,
+    },
+    {
+      key: "status",
+      label: "Status",
+      options: (rows) => [...new Set(rows.map((r) => r.status))],
+      match: (r, v) => r.status === v,
+    },
+  ],
+  exportParams: [
+    {
+      key: "outstandingOnly",
+      label: "Outstanding only",
+      description: "Employees who have not yet acknowledged.",
+      predicate: (r) => r.status === "Outstanding",
+    },
+  ],
+  searchText: (r) => `${r.employee} ${r.department} ${r.document}`,
+  analytics: (rows) => {
+    const acknowledged = rows.filter((r) => r.status === "Acknowledged").length;
+    const outstanding = rows.length - acknowledged;
+    const rate = Math.round((acknowledged / (rows.length || 1)) * 100);
+    const outstandingByDept = new Map<string, number>();
+    for (const r of rows) {
+      if (r.status === "Outstanding") {
+        outstandingByDept.set(
+          r.department,
+          (outstandingByDept.get(r.department) ?? 0) + 1,
+        );
+      }
+    }
+    return {
+      stats: [
+        {
+          label: "Total Assignments",
+          value: rows.length,
+          sub: "Employee × document",
+          icon: Layers,
+        },
+        {
+          label: "Acknowledged",
+          value: acknowledged,
+          sub: `${rate}% acknowledgement rate`,
+          icon: CheckCircle2,
+          trend: `${rate}%`,
+          up: true,
+        },
+        {
+          label: "Outstanding",
+          value: outstanding,
+          sub: "Not yet acknowledged",
+          icon: CircleDot,
+          trend: `${100 - rate}%`,
+          up: false,
+        },
+      ],
+      charts: [
+        pieSpec(
+          "doc-ack-status",
+          "Acknowledged vs Outstanding",
+          [
+            { label: "Acknowledged", value: acknowledged },
+            { label: "Outstanding", value: outstanding },
+          ],
+          { centerLabel: "Assignments", description: "Overall read status." },
+        ),
+        barSpec(
+          "Outstanding by Department",
+          [...outstandingByDept.entries()].map(([label, value]) => ({
+            label,
+            value,
+          })),
+          {
+            valueLabel: "Outstanding",
+            layout: "horizontal",
+            description: "Where the non-readers are concentrated.",
+          },
+        ),
+        barSpec("By Document", countBy(rows, (r) => r.document), {
+          valueLabel: "Assignments",
+          description: "Assignment volume per policy.",
+        }),
+      ],
+    };
+  },
+});
+
 export const OPERATIONS_REPORTS: AnyReportDef[] = [
   assetsReport,
   disciplinaryReport,
   grievanceReport,
+  documentAckReport,
 ];

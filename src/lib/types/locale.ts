@@ -1,3 +1,5 @@
+import type { StarterTaxRecord } from "./starter-tax";
+
 export type CountryKey = "ng" | "uk";
 
 export interface LocaleTenant {
@@ -300,6 +302,8 @@ export interface LocaleBundle {
   medicalFacts?: LocaleMedicalFacts[];
   employeeNotes?: LocaleEmployeeNote[];
   payHistory?: LocalePayChange[];
+  /** UK PAYE new-starter tax records (UK tenants only). */
+  starterTaxRecords?: StarterTaxRecord[];
 }
 
 export interface AuthUser {

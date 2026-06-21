@@ -188,6 +188,10 @@ export const DOCUMENTS: HRDocument[] = [
 			},
 		],
 		shares: [share("SH-001", "Adaeze Okonkwo", "AO", "view_only", "2026-01-12")],
+		assignment: { scope: "global" },
+		requiresAcknowledgement: true,
+		totalAssigned: 183,
+		acknowledgements: [],
 	},
 	{
 		id: "DOC-002",
@@ -278,6 +282,10 @@ export const DOCUMENTS: HRDocument[] = [
 			},
 		],
 		shares: [],
+		assignment: { scope: "department", departments: ["Finance"] },
+		requiresAcknowledgement: true,
+		totalAssigned: 15,
+		acknowledgements: [],
 	},
 	{
 		id: "DOC-006",

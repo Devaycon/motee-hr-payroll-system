@@ -172,6 +172,20 @@ export const DEMO_DOCUMENTS: EmployeeDocument[] = [
 ];
 
 const MY_EMPLOYEE = "Adaeze Okonkwo";
+const MY_DEPARTMENT = "Engineering";
+
+/**
+ * A document reaches an employee when it is directly shared with them, assigned
+ * to the whole organisation (global), or assigned to their department.
+ */
+function isAssignedToMe(d: HRDocument): boolean {
+  if (d.shares.some((s) => s.employeeName === MY_EMPLOYEE)) return true;
+  const scope = d.assignment?.scope;
+  if (scope === "global") return true;
+  if (scope === "department")
+    return (d.assignment?.departments ?? []).includes(MY_DEPARTMENT);
+  return false;
+}
 
 function hrFileTypeToExt(ft: string): FileExt {
   if (ft === "doc") return "docx";
@@ -186,7 +200,7 @@ export function formatFileBytes(bytes: number): string {
 }
 
 export const SHARED_WITH_ME: EmployeeDocument[] = HR_DOCUMENTS.filter(
-  (d: HRDocument) => d.shares.some((s) => s.employeeName === MY_EMPLOYEE),
+  isAssignedToMe,
 ).map((d: HRDocument) => ({
   id: `shared-${d.id}`,
   name: d.name,
@@ -197,7 +211,7 @@ export const SHARED_WITH_ME: EmployeeDocument[] = HR_DOCUMENTS.filter(
   uploadedAt: d.uploadedAt,
   fileSize: formatFileBytes(d.fileSize),
   expiryDate: d.expiryDate,
-  requiresAck: false,
+  requiresAck: d.requiresAcknowledgement ?? false,
   acknowledged: false,
   isShared: true,
 }));

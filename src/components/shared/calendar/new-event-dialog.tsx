@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -42,6 +43,9 @@ export function NewEventDialog({
   const [title, setTitle] = useState("");
   const [type, setType] = useState<string>(defaultType);
   const [description, setDescription] = useState("");
+  const [allDay, setAllDay] = useState(false);
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("10:00");
 
   function handleCreate() {
     if (!title.trim() || !selectedDay) return;
@@ -50,10 +54,16 @@ export function NewEventDialog({
       date: format(selectedDay, "yyyy-MM-dd"),
       type,
       description: description.trim() || undefined,
+      allDay: allDay || undefined,
+      startTime: allDay ? undefined : startTime || undefined,
+      endTime: allDay ? undefined : endTime || undefined,
     });
     setTitle("");
     setType(defaultType);
     setDescription("");
+    setAllDay(false);
+    setStartTime("09:00");
+    setEndTime("10:00");
     setOpen(false);
   }
 
@@ -96,6 +106,35 @@ export function NewEventDialog({
               </SelectContent>
             </Select>
           </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Checkbox
+              checked={allDay}
+              onCheckedChange={(v) => setAllDay(v === true)}
+            />
+            All day
+          </label>
+          {!allDay && (
+            <div className="flex gap-3">
+              <div className="flex flex-1 flex-col gap-1.5">
+                <label className="text-xs text-muted-foreground">Start</label>
+                <Input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="flex flex-1 flex-col gap-1.5">
+                <label className="text-xs text-muted-foreground">End</label>
+                <Input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground">
               Description (optional)

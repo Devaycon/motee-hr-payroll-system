@@ -9,6 +9,43 @@ interface SeedTask {
   reviewerRoleId?: string;
 }
 
+// Before day one — compliance, logistics and data collection to ready the
+// system and the new hire. Initiated from Recruitment when a candidate is hired.
+const PREBOARDING_TASKS: SeedTask[] = [
+  {
+    title: "Send offer & employment contract",
+    description:
+      "Issue the formal offer and employment contract for the new hire to sign.",
+    assigneeRoleId: "ROLE-HRMGR",
+  },
+  {
+    title: "Collect signed contract & right-to-work documents",
+    description:
+      "Confirm the signed contract and upload ID / right-to-work documentation.",
+    assigneeRoleId: "ROLE-HRADMIN",
+    reviewerRoleId: "ROLE-HRMGR",
+  },
+  {
+    title: "Capture payroll, bank & tax details",
+    description:
+      "Collect bank, tax and pension details so payroll can be set up.",
+    assigneeRoleId: "ROLE-FIN",
+  },
+  {
+    title: "Provision IT equipment & accounts",
+    description:
+      "Order the laptop and create email / system accounts ahead of day one.",
+    assigneeRoleId: "ROLE-IT",
+  },
+  {
+    title: "Build employee profile & confirm start date",
+    description:
+      "Create the employee profile from the collected data and confirm the start date.",
+    assigneeRoleId: "ROLE-HRADMIN",
+    reviewerRoleId: "ROLE-HRMGR",
+  },
+];
+
 // Adapted from the onboarding/offboarding steps in approval-seeds.ts, split into
 // an explicit doer (assignee) plus an optional reviewer.
 const ONBOARDING_TASKS: SeedTask[] = [
@@ -68,6 +105,24 @@ function buildTasks(prefix: string, seeds: SeedTask[]): WorkflowTask[] {
 }
 
 export const DEFAULT_WORKFLOWS: Workflow[] = [
+  {
+    id: "WF-DEFAULT-PREBOARDING",
+    title: "Standard Preboarding",
+    description:
+      "Before day one — compliance, logistics and data collection to ready the system and the new hire. Initiated from Recruitment when a candidate is hired.",
+    triggerMode: "automatic",
+    schedule: {
+      kind: "relative",
+      event: "preboarding_initiated",
+      offsetValue: 0,
+      offsetUnit: "days",
+    },
+    scope: { kind: "all" },
+    kind: "system",
+    tasks: buildTasks("WF-PREBOARDING", PREBOARDING_TASKS),
+    lastModifiedBy: "System",
+    lastModifiedAt: "2026-01-01",
+  },
   {
     id: "WF-DEFAULT-ONBOARDING",
     title: "Standard Onboarding",

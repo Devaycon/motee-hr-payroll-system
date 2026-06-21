@@ -21,6 +21,47 @@ export function useDirectReports() {
   return { reports, loading };
 }
 
+/**
+ * The logged-in user's team context: who they report to (manager), their peers
+ * (same manager), and their own direct reports. Drives the "My Team" view for
+ * every employee — not just line managers. Falls back to a real employee in the
+ * demo data when the session has no linked employee record.
+ */
+export function useMyTeam() {
+  const employeeId = useAppSelector((s) => s.auth.user?.employeeId);
+  const { data, loading } = useEmployees();
+  return useMemo(() => {
+    if (!data || data.length === 0) {
+      return { me: null, manager: null, peers: [], reports: [], loading };
+    }
+    // Employees who manage at least one person (mirrors the line-manager /
+    // structure module, which builds the org chart from reporting lines).
+    const managerIds = new Set(
+      data.map((e) => e.managerId).filter((id): id is string => !!id),
+    );
+    const me =
+      // 1) the logged-in employee, when the session is linked to one
+      (employeeId ? data.find((e) => e.id === employeeId) : null) ??
+      // 2) otherwise a real line manager, so the organogram is populated
+      data.find((e) => managerIds.has(e.id)) ??
+      // 3) fall back to anyone with a manager, then the first employee
+      data.find((e) => e.managerId) ??
+      data[0] ??
+      null;
+    if (!me) {
+      return { me: null, manager: null, peers: [], reports: [], loading };
+    }
+    const manager = me.managerId
+      ? data.find((e) => e.id === me.managerId) ?? null
+      : null;
+    const reports = data.filter((e) => e.managerId === me.id);
+    const peers = me.managerId
+      ? data.filter((e) => e.managerId === me.managerId && e.id !== me.id)
+      : [];
+    return { me, manager, peers, reports, loading };
+  }, [data, employeeId, loading]);
+}
+
 /** Whether the logged-in user manages anyone (has at least one direct report). */
 export function useHasDirectReports(): boolean {
   const employeeId = useAppSelector((s) => s.auth.user?.employeeId);

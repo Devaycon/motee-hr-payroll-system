@@ -19,6 +19,7 @@ import type {
   LocaleMedicalFacts,
   LocaleEmployeeNote,
   LocalePayChange,
+  LocaleExpense,
 } from "@/src/lib/types/locale";
 import type {
   EmployeeStats,
@@ -449,6 +450,13 @@ export function useEmployeeGrievances(id: string) {
     id,
     (b) => (b.grievances as unknown as RawGrievance[]) ?? [],
     (g, i) => g.raisedBy === i || g.assignedTo === i,
+  );
+}
+export function useEmployeeExpenses(id: string) {
+  return useEmployeeCollection<LocaleExpense>(
+    "expenses",
+    id,
+    (b) => b.expenses ?? [],
   );
 }
 export function useEmployeeHistory(id: string) {

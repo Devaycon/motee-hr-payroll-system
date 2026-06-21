@@ -3,20 +3,16 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
-import { Badge } from "@/src/components/ui/badge";
 import { StatCards } from "./components/stat-cards";
 import { PipelineToolbar } from "./components/pipeline-toolbar";
 import { PipelineTable } from "./components/pipeline-table";
 import { MethodSelector } from "./components/method-selector";
 import { InviteOnboardingModal } from "./components/invite-onboarding-modal";
 import { BulkOnboardingModal } from "./components/bulk-onboarding-modal";
-import { PreboardingPickerModal } from "./components/preboarding-picker-modal";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import {
   addRecord,
   addRecords,
-  advancePhase,
   removeRecord,
   sendWelcomeEmail,
 } from "@/src/lib/stores/onboarding-records-slice";
@@ -43,12 +39,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
   const [methodSelectorOpen, setMethodSelectorOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
-  const [preboardingPickerOpen, setPreboardingPickerOpen] = useState(false);
-
-  const preboardingRecords = useMemo(
-    () => records.filter((r) => r.phase === "preboarding"),
-    [records],
-  );
 
   // Consume any records handed over from the recruitment "send to onboarding"
   // bridge (runs once on mount).
@@ -65,10 +55,9 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
     }
   }, [dispatch]);
 
-  // Completed records have moved on to Employees, and preboarding records live in
-  // the Preboarding tab — keep both out of the onboarding pipeline.
+  // Completed records have moved on to Employees — keep them out of the pipeline.
   const active = useMemo(
-    () => records.filter((r) => r.status !== "completed" && r.phase !== "preboarding"),
+    () => records.filter((r) => r.status !== "completed"),
     [records],
   );
 
@@ -86,9 +75,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
     });
   }, [active, search, deptFilter, stageFilter, statusFilter]);
 
-  const preOnboarding = filtered.filter((r) => r.phase === "pre_onboarding");
-  const onboarding = filtered.filter((r) => r.phase === "onboarding");
-
   const handleViewTasks = (record: OnboardingRecord) => {
     router.push(`/talent/onboarding/${record.id}`);
   };
@@ -97,7 +83,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
     setMethodSelectorOpen(false);
     if (method === "manual") router.push("/talent/onboarding/new");
     else if (method === "invite") setInviteModalOpen(true);
-    else if (method === "preboarding") setPreboardingPickerOpen(true);
     else setBulkModalOpen(true);
   };
 
@@ -122,7 +107,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         startDate: data.startDate,
         stage: "pre_boarding",
         status: "not_started",
-        phase: "pre_onboarding",
         workflowTemplateId: template?.id,
         workflowName: template?.name,
         tasks,
@@ -135,6 +119,16 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
     );
     toast.success(`Invite sent to ${data.email}`);
     setInviteModalOpen(false);
+    // Simulate the joiner clicking the "Launch onboarding wizard" link in their
+    // invite email — open their self-service wizard.
+    const qs = new URLSearchParams({
+      name: fullName,
+      email: data.email,
+      jobTitle: data.jobTitle,
+      department: data.department,
+      startDate: data.startDate,
+    }).toString();
+    router.push(`/join/${id}?${qs}`);
   };
 
   const handleBulkImport = (rows: BulkOnboardingRow[]) => {
@@ -159,7 +153,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         startDate: row.startDate,
         stage: "pre_boarding" as const,
         status: "not_started" as const,
-        phase: "pre_onboarding" as const,
         workflowTemplateId: template?.id,
         workflowName: template?.name,
         tasks,
@@ -175,11 +168,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
       `${rows.length} employee${rows.length !== 1 ? "s" : ""} onboarded`,
     );
     setBulkModalOpen(false);
-  };
-
-  const handleAdvancePhase = (id: string) => {
-    dispatch(advancePhase(id));
-    toast.success("Moved to onboarding");
   };
 
   const handleSendWelcomeEmail = (id: string) => {
@@ -219,54 +207,12 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         onOpenMethodSelector={() => setMethodSelectorOpen(true)}
       />
 
-      {embedded ? (
-        // Inside the combined Preboarding & Onboarding page — a single flat list
-        // (no nested phase sub-tabs).
-        <PipelineTable
-          records={filtered}
-          onViewTasks={handleViewTasks}
-          onAdvanceStage={handleAdvancePhase}
-          onSendWelcomeEmail={handleSendWelcomeEmail}
-          onDelete={handleDelete}
-        />
-      ) : (
-        <Tabs defaultValue="pre" className="w-full">
-          <TabsList className="h-9">
-            <TabsTrigger value="pre" className="text-xs gap-1.5">
-              Pre-onboarding
-              <Badge variant="secondary" className="text-[10px]">
-                {preOnboarding.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="onboarding" className="text-xs gap-1.5">
-              Onboarding
-              <Badge variant="secondary" className="text-[10px]">
-                {onboarding.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pre" className="mt-4">
-            <PipelineTable
-              records={preOnboarding}
-              onViewTasks={handleViewTasks}
-              onAdvanceStage={handleAdvancePhase}
-              onSendWelcomeEmail={handleSendWelcomeEmail}
-              onDelete={handleDelete}
-            />
-          </TabsContent>
-
-          <TabsContent value="onboarding" className="mt-4">
-            <PipelineTable
-              records={onboarding}
-              onViewTasks={handleViewTasks}
-              onAdvanceStage={handleAdvancePhase}
-              onSendWelcomeEmail={handleSendWelcomeEmail}
-              onDelete={handleDelete}
-            />
-          </TabsContent>
-        </Tabs>
-      )}
+      <PipelineTable
+        records={filtered}
+        onViewTasks={handleViewTasks}
+        onSendWelcomeEmail={handleSendWelcomeEmail}
+        onDelete={handleDelete}
+      />
 
       <MethodSelector
         open={methodSelectorOpen}
@@ -284,16 +230,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         open={bulkModalOpen}
         onClose={() => setBulkModalOpen(false)}
         onImport={handleBulkImport}
-      />
-
-      <PreboardingPickerModal
-        open={preboardingPickerOpen}
-        onClose={() => setPreboardingPickerOpen(false)}
-        records={preboardingRecords}
-        onPick={(id) => {
-          setPreboardingPickerOpen(false);
-          router.push(`/talent/onboarding/new?preboarding=${id}`);
-        }}
       />
     </div>
   );

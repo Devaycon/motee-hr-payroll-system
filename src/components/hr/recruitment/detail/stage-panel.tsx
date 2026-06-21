@@ -76,7 +76,7 @@ import type {
   RecruitmentStageType,
 } from "@/src/lib/types/recruitment";
 import { getFlow, nextEnabledStage, matchesConstraint } from "../flow";
-import { candidateToOnboardingRecord } from "../preboard";
+import { candidateToOnboardingRecord } from "../to-onboarding";
 import { CandidateDrawer } from "../components/candidate-drawer";
 import { openMailto } from "../components/mailto";
 

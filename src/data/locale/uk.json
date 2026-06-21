@@ -67538,5 +67538,65 @@
       "currency": "GBP",
       "date": "2026-02-17"
     }
+  ],
+  "starterTaxRecords": [
+    {
+      "employeeId": "GB-EMP-0007",
+      "tenantId": "tenant_uk_001",
+      "source": "starter_checklist",
+      "employmentStartDate": "2026-06-15",
+      "p45": null,
+      "starterChecklist": {
+        "employeeStatement": {
+          "hasAnotherJob": false,
+          "receivesPension": false,
+          "recentPaymentsSince6April": false
+        },
+        "starterDeclaration": "A",
+        "studentLoan": {
+          "hasPlan": true,
+          "plan": "PLAN_5",
+          "postgraduateLoan": false
+        }
+      },
+      "derived": {
+        "taxCode": "1257L",
+        "basis": "cumulative",
+        "studentLoanDeduction": true,
+        "studentLoanPlan": "PLAN_5",
+        "postgraduateLoan": false,
+        "derivationSource": "starter_declaration_A"
+      },
+      "retainUntil": "2030-04-05"
+    },
+    {
+      "employeeId": "GB-EMP-0006",
+      "tenantId": "tenant_uk_001",
+      "source": "p45",
+      "employmentStartDate": "2026-06-01",
+      "p45": {
+        "documentRef": "doc_p45_GB-EMP-0006.pdf",
+        "payeOfficeNumber": "120",
+        "payeReferenceNumber": "AB456",
+        "previousEmployerPayeRef": "120/AB456",
+        "niNumber": "QQ847581C",
+        "leavingDate": "2026-05-31",
+        "continueStudentLoan": true,
+        "taxCodeAtLeaving": "1257L",
+        "week1Month1": true,
+        "weekNumber": "",
+        "monthNumber": "",
+        "totalPayToDate": 8450.0,
+        "totalTaxToDate": 690.0
+      },
+      "starterChecklist": null,
+      "derived": {
+        "taxCode": "1257L",
+        "basis": "week1month1",
+        "studentLoanDeduction": true,
+        "derivationSource": "p45_current_year"
+      },
+      "retainUntil": "2030-04-05"
+    }
   ]
 }

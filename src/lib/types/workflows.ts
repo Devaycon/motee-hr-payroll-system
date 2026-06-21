@@ -14,6 +14,7 @@ export type WorkflowScheduleOffsetUnit = "minutes" | "hours" | "days";
 
 /** The lifecycle event a relative schedule is anchored to. */
 export type WorkflowTriggerEvent =
+  | "preboarding_initiated"
   | "onboarding_initiated"
   | "offboarding_initiated";
 
@@ -78,6 +79,7 @@ export const TRIGGER_MODE_LABELS: Record<WorkflowTriggerMode, string> = {
 };
 
 export const TRIGGER_EVENT_LABELS: Record<WorkflowTriggerEvent, string> = {
+  preboarding_initiated: "a candidate is hired",
   onboarding_initiated: "onboarding is initiated",
   offboarding_initiated: "offboarding is initiated",
 };

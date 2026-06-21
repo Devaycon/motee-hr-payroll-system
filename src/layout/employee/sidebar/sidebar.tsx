@@ -56,7 +56,7 @@ const Sidebar = () => {
         />
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
+      <nav className="flex-1 overflow-y-auto px-3 py-2 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/60">
         <ul
           data-tutorial="sidebar-overview"
           className="flex flex-col gap-2 mb-4"

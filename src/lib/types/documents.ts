@@ -36,6 +36,24 @@ export interface DocumentShare {
 	sharedBy: string;
 }
 
+/** Who a document is assigned to. */
+export type DocumentAssignmentScope = "global" | "department" | "specific";
+
+export interface DocumentAssignment {
+	scope: DocumentAssignmentScope;
+	/** Department names when scope is "department". */
+	departments?: string[];
+}
+
+/** Record of an employee who has read & acknowledged a document. */
+export interface DocumentAcknowledgement {
+	id: string;
+	employeeName: string;
+	employeeInitials: string;
+	department: string;
+	acknowledgedAt: string;
+}
+
 export interface HRDocument {
 	id: string;
 	name: string;
@@ -52,6 +70,14 @@ export interface HRDocument {
 	trashedAt?: string;
 	versions: DocumentVersion[];
 	shares: DocumentShare[];
+	/** Assignment scope — defaults to "specific" (per-employee shares) when omitted. */
+	assignment?: DocumentAssignment;
+	/** When true, assigned employees must read & acknowledge the document. */
+	requiresAcknowledgement?: boolean;
+	/** Employees who have acknowledged the document. */
+	acknowledgements?: DocumentAcknowledgement[];
+	/** Headcount the document is assigned to (for acknowledgement reporting). */
+	totalAssigned?: number;
 }
 
 export interface Folder {
@@ -71,6 +97,8 @@ export interface NewDocument {
 	description?: string;
 	fileSize: number;
 	expiryDate?: string;
+	assignment?: DocumentAssignment;
+	requiresAcknowledgement?: boolean;
 }
 
 export interface NewShare {

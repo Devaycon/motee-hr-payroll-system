@@ -42,6 +42,9 @@ interface EmpRow {
   grade: string;
   age: number;
   startDate: string;
+  tenureYears: number;
+  manager: string;
+  directReports: number;
   salary: number;
 }
 
@@ -62,17 +65,27 @@ const employeesReport = defineReport<EmpRow>({
   permission: "organization.employees",
   select: (b) => {
     const types = new Map(b.employmentTypes.map((t) => [t.id, t.name]));
+    const names = new Map(b.employees.map((e) => [e.id, e.fullName]));
+    const reportCounts = new Map<string, number>();
+    for (const e of b.employees) {
+      if (e.managerId)
+        reportCounts.set(e.managerId, (reportCounts.get(e.managerId) ?? 0) + 1);
+    }
     const ref = b._meta?.referenceDate
       ? new Date(b._meta.referenceDate)
       : new Date();
+    const YEAR_MS = 365.25 * 24 * 3600 * 1000;
     return b.employees.map((e) => {
       const dob = e.dateOfBirth ? new Date(e.dateOfBirth) : null;
       const age = dob
+        ? Math.max(0, Math.floor((ref.getTime() - dob.getTime()) / YEAR_MS))
+        : 0;
+      const tenureYears = e.startDate
         ? Math.max(
             0,
-            Math.floor(
-              (ref.getTime() - dob.getTime()) / (365.25 * 24 * 3600 * 1000),
-            ),
+            Math.round(
+              ((ref.getTime() - new Date(e.startDate).getTime()) / YEAR_MS) * 10,
+            ) / 10,
           )
         : 0;
       return {
@@ -86,6 +99,9 @@ const employeesReport = defineReport<EmpRow>({
         grade: e.grade ?? "—",
         age,
         startDate: e.startDate,
+        tenureYears,
+        manager: e.managerId ? names.get(e.managerId) ?? "—" : "—",
+        directReports: reportCounts.get(e.id) ?? 0,
         salary: e.salary?.amount ?? 0,
       };
     });
@@ -98,6 +114,10 @@ const employeesReport = defineReport<EmpRow>({
     { key: "employmentType", header: "Type", value: (r) => r.employmentType },
     { key: "grade", header: "Grade", value: (r) => r.grade },
     { key: "status", header: "Status", value: (r) => r.status },
+    { key: "manager", header: "Manager", value: (r) => r.manager },
+    { key: "directReports", header: "Direct Reports", value: (r) => r.directReports },
+    { key: "age", header: "Age", value: (r) => r.age },
+    { key: "tenureYears", header: "Tenure (yrs)", value: (r) => r.tenureYears },
     { key: "startDate", header: "Start Date", value: (r) => r.startDate },
     { key: "salary", header: "Annual Salary", value: (r) => r.salary, money: true },
   ],
@@ -113,6 +133,32 @@ const employeesReport = defineReport<EmpRow>({
       label: "Employment type",
       options: (rows) => [...new Set(rows.map((r) => r.employmentType))],
       match: (r, v) => r.employmentType === v,
+    },
+  ],
+  exportParams: [
+    {
+      key: "lineManagers",
+      label: "Line managers only",
+      description: "Employees with at least one direct report.",
+      predicate: (r) => r.directReports > 0,
+    },
+    {
+      key: "individualContributors",
+      label: "Individual contributors only",
+      description: "Employees with no direct reports.",
+      predicate: (r) => r.directReports === 0,
+    },
+    {
+      key: "active",
+      label: "Active employees only",
+      description: "Exclude probation, leave and exited staff.",
+      predicate: (r) => r.status === "active",
+    },
+    {
+      key: "recentHires",
+      label: "Recent hires (≤ 1 year)",
+      description: "Joined within the last year.",
+      predicate: (r) => r.tenureYears <= 1,
     },
   ],
   searchText: (r) => `${r.fullName} ${r.department} ${r.jobTitle}`,

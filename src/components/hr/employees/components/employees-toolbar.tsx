@@ -1,11 +1,19 @@
 "use client";
 
-import { Search, SlidersHorizontal } from "lucide-react";
+import {
+  Search,
+  SlidersHorizontal,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Printer,
+} from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -14,6 +22,26 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { EMPLOYMENT_TYPE_LABELS } from "../data";
 import { useDepartmentOptions } from "../hooks";
+import type { EmployeeRow } from "../types";
+import type { ReportColumn } from "@/src/lib/reports/types";
+import { exportCsv, exportXlsx, printPdf } from "@/src/lib/reports/export";
+
+const EXPORT_COLUMNS: ReportColumn<EmployeeRow>[] = [
+  { key: "name", header: "Name", value: (r) => r.name },
+  { key: "email", header: "Email", value: (r) => r.email },
+  { key: "phone", header: "Phone", value: (r) => r.phone ?? "" },
+  { key: "department", header: "Department", value: (r) => r.department },
+  { key: "jobTitle", header: "Job Title", value: (r) => r.jobTitle },
+  {
+    key: "employmentType",
+    header: "Employment Type",
+    value: (r) => EMPLOYMENT_TYPE_LABELS[r.employmentType] ?? r.employmentType,
+  },
+  { key: "status", header: "Status", value: (r) => r.status },
+  { key: "startDate", header: "Start Date", value: (r) => r.startDate },
+  { key: "managerName", header: "Line Manager", value: (r) => r.managerName ?? "—" },
+  { key: "salary", header: "Salary", value: (r) => r.salary, money: true },
+];
 
 interface EmployeesToolbarProps {
   search: string;
@@ -24,6 +52,8 @@ interface EmployeesToolbarProps {
   onTypeFilterChange: (v: string) => void;
   statusFilter: string;
   onStatusFilterChange: (v: string) => void;
+  /** Rows to export — the currently filtered employee list. */
+  exportRows: EmployeeRow[];
 }
 
 export function EmployeesToolbar({
@@ -35,6 +65,7 @@ export function EmployeesToolbar({
   onTypeFilterChange,
   statusFilter,
   onStatusFilterChange,
+  exportRows,
 }: EmployeesToolbarProps) {
   const { data: deptOptions } = useDepartmentOptions();
   const depts = deptOptions ?? ["all"];
@@ -133,6 +164,45 @@ export function EmployeesToolbar({
                 Probation
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="lg"
+              className="h-10 text-xs gap-1.5 bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuLabel className="text-xs">
+              Export {exportRows.length} employees
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => exportCsv("employees", EXPORT_COLUMNS, exportRows)}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => exportXlsx("employees", EXPORT_COLUMNS, exportRows)}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              Excel
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => printPdf("Employees", EXPORT_COLUMNS, exportRows)}
+            >
+              <Printer className="w-3.5 h-3.5" />
+              Print / PDF
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

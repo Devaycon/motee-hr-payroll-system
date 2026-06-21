@@ -229,7 +229,11 @@ export function AdvancedEmployeesTable({
       <Tabs defaultValue="all" className="w-full flex flex-col flex-1">
         <TabsList className="h-8 bg-muted/60 mb-3 **:data-[slot=badge]:size-4 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 **:data-[slot=badge]:text-[9px]">
           {tabs.map((t) => (
-            <TabsTrigger key={t.value} value={t.value} className="text-xs px-2.5">
+            <TabsTrigger
+              key={t.value}
+              value={t.value}
+              className="text-xs px-2.5 data-[state=active]:bg-[#ff8b2d]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
+            >
               {t.label} <Badge variant="secondary">{t.rows.length}</Badge>
             </TabsTrigger>
           ))}

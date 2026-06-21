@@ -10,6 +10,7 @@ import {
   Laptop,
   UserCog,
   AlertTriangle,
+  ShieldCheck,
 } from "lucide-react";
 
 export type HrAlertSeverity = "critical" | "warning" | "info";
@@ -45,6 +46,20 @@ export const HR_ALERT_SEVERITY_LABELS: Record<HrAlertSeverity, string> = {
 };
 
 export const HR_ALERT_CATEGORIES: HrAlertCategory[] = [
+  {
+    key: "right_to_work",
+    label: "Right to Work & Compliance",
+    icon: ShieldCheck,
+    alerts: [
+      { id: "rtw-1", title: "Right to Work verification missing", description: "Oliver Hughes · Operations", severity: "critical", href: "/organization/employees" },
+      { id: "rtw-2", title: "Share code expired", description: "Amara Okafor · Engineering", severity: "critical", href: "/organization/employees" },
+      { id: "rtw-3", title: "Visa expiry within 90 days", description: "Wei Chen · Sales", severity: "warning", href: "/organization/employees" },
+      { id: "rtw-4", title: "P45 outstanding", description: "Joshua Wood · new starter", severity: "warning", href: "/talent/onboarding" },
+      { id: "rtw-5", title: "HMRC Starter Checklist incomplete", description: "2 new starters this month", severity: "warning", href: "/talent/onboarding" },
+      { id: "rtw-6", title: "DBS renewal due", description: "Sofia Romano · Care Team", severity: "warning", href: "/organization/employees" },
+      { id: "rtw-7", title: "Probation review due", description: "3 employees within 14 days", severity: "info", href: "/organization/employees" },
+    ],
+  },
   {
     key: "compliance",
     label: "Employee Data Compliance",
