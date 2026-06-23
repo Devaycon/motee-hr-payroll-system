@@ -45,9 +45,7 @@ export function LoginForm() {
           Welcome back
         </h1>
         <p className="text-sm text-muted-foreground">
-          {tenantName
-            ? `Sign in to ${tenantName}`
-            : "Sign in to your Motee Solutions account"}
+          Access your MOTEE HRIS account
         </p>
       </div>
 
