@@ -67,11 +67,11 @@ const VerifyOtpIndex = () => {
           />
         </div>
         <div className="flex flex-col gap-3 max-w-xl">
-          <h1 className="text-5xl font-extrabold text-white leading-tight">
+          <h1 className="text-3xl font-extrabold text-white leading-tight">
             One step away.
           </h1>
           <div className="w-10 h-1 rounded-full bg-white" />
-          <p className="text-xl text-white leading-relaxed">
+          <p className="text-sm text-white leading-relaxed">
             We sent a verification code to your email. Enter it below to confirm
             your identity and activate your account.
           </p>

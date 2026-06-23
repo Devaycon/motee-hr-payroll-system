@@ -25,7 +25,12 @@ import { Badge } from "@/src/components/ui/badge";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -90,6 +95,7 @@ import {
 } from "./calendar-links";
 import { getFlow, enabledStages, synthResponse } from "../flow";
 import { cn } from "@/src/lib/utils";
+import { openMailto } from "./mailto";
 
 function StarInput({
   value,
@@ -144,9 +150,7 @@ export function CandidateDrawer({
   const templates = useAppSelector((s) => s.approvals.templates);
   const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
 
-  const myInterviews = interviews.filter(
-    (i) => i.candidateId === candidate.id,
-  );
+  const myInterviews = interviews.filter((i) => i.candidateId === candidate.id);
 
   // Stage options are the requisition's enabled stages (fallback to all types).
   const stageOptions: RecruitmentStageType[] = requisition
@@ -166,6 +170,7 @@ export function CandidateDrawer({
     { value: "comms", label: `Comms (${candidate.communications.length})` },
     { value: "offers", label: `Offers (${candidate.offers.length})` },
     { value: "files", label: `Files (${candidate.attachments.length})` },
+    { value: "references", label: "References" },
   ];
   const INLINE = 4;
   const inlineTabs = tabs.slice(0, INLINE);
@@ -262,7 +267,9 @@ export function CandidateDrawer({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Reject {candidate.name}?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Reject {candidate.name}?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
                       This marks {candidate.name} as rejected. You can restore
                       them later from this panel.
@@ -407,6 +414,9 @@ export function CandidateDrawer({
           <TabsContent value="files" className="mt-5">
             <FilesTab candidate={candidate} />
           </TabsContent>
+          <TabsContent value="references" className="mt-5">
+            <ReferencesTab candidateName={candidate.name} />
+          </TabsContent>
         </Tabs>
       </SheetContent>
     </Sheet>
@@ -537,7 +547,9 @@ function InterviewsTab({
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-md border border-border p-3 space-y-2.5">
-        <p className="text-xs font-semibold text-foreground">Schedule interview</p>
+        <p className="text-xs font-semibold text-foreground">
+          Schedule interview
+        </p>
         <div className="grid grid-cols-2 gap-2">
           <Input
             placeholder="Round (e.g. Interview 1)"
@@ -545,7 +557,10 @@ function InterviewsTab({
             onChange={(e) => setRound(e.target.value)}
             className="h-8 text-sm"
           />
-          <Select value={mode} onValueChange={(v) => setMode(v as InterviewMode)}>
+          <Select
+            value={mode}
+            onValueChange={(v) => setMode(v as InterviewMode)}
+          >
             <SelectTrigger className="h-8 text-sm">
               <SelectValue />
             </SelectTrigger>
@@ -639,7 +654,11 @@ function InterviewsTab({
             {iv.status !== "cancelled" && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <a href={icsDataUrl(iv)} download={`${iv.round}.ics`}>
-                  <Button variant="outline" size="sm" className="h-7 gap-1 text-[11px]">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1 text-[11px]"
+                  >
                     <Download className="w-3 h-3" /> ICS
                   </Button>
                 </a>
@@ -662,7 +681,9 @@ function InterviewsTab({
                   variant="ghost"
                   size="sm"
                   className="h-7 text-[11px] text-destructive"
-                  onClick={() => dispatch(cancelInterview({ country, id: iv.id }))}
+                  onClick={() =>
+                    dispatch(cancelInterview({ country, id: iv.id }))
+                  }
                 >
                   Cancel
                 </Button>
@@ -722,7 +743,9 @@ function ScorecardsTab({
       comment: comment || undefined,
       recommendation: overall >= 4 ? "yes" : "no",
     };
-    dispatch(addScorecard({ country, candidateId: candidate.id, scorecard: sc }));
+    dispatch(
+      addScorecard({ country, candidateId: candidate.id, scorecard: sc }),
+    );
     toast.success("Scorecard saved");
     setScores({});
     setComment("");
@@ -731,7 +754,9 @@ function ScorecardsTab({
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-md border border-border p-3 space-y-2.5">
-        <p className="text-xs font-semibold text-foreground">Add interview score</p>
+        <p className="text-xs font-semibold text-foreground">
+          Add interview score
+        </p>
         {DEFAULT_CRITERIA.map((label) => (
           <div key={label} className="flex items-center justify-between">
             <span className="text-sm text-foreground">{label}</span>
@@ -765,7 +790,10 @@ function ScorecardsTab({
         </div>
       ) : (
         candidate.scorecards.map((sc) => (
-          <div key={sc.id} className="rounded-md border border-border p-3 space-y-1.5">
+          <div
+            key={sc.id}
+            className="rounded-md border border-border p-3 space-y-1.5"
+          >
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">{sc.by}</span>
               <Badge variant="outline" className="text-[10px] gap-1">
@@ -775,7 +803,10 @@ function ScorecardsTab({
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-0.5">
               {sc.criteria.map((c) => (
-                <span key={c.label} className="text-[11px] text-muted-foreground">
+                <span
+                  key={c.label}
+                  className="text-[11px] text-muted-foreground"
+                >
                   {c.label}: {c.score}
                 </span>
               ))}
@@ -831,7 +862,10 @@ function CommsTab({
     <div className="flex flex-col gap-4">
       <div className="rounded-md border border-border p-3 space-y-2.5">
         <div className="flex items-center gap-2">
-          <Select value={channel} onValueChange={(v) => setChannel(v as typeof channel)}>
+          <Select
+            value={channel}
+            onValueChange={(v) => setChannel(v as typeof channel)}
+          >
             <SelectTrigger className="h-8 w-28 text-sm">
               <SelectValue />
             </SelectTrigger>
@@ -860,7 +894,10 @@ function CommsTab({
         </Button>
       </div>
       {candidate.communications.map((c) => (
-        <div key={c.id} className="rounded-md border border-border p-3 space-y-1">
+        <div
+          key={c.id}
+          className="rounded-md border border-border p-3 space-y-1"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium capitalize">
               {c.channel}
@@ -931,7 +968,10 @@ function OffersTab({
         </Button>
       </div>
       {candidate.offers.map((o) => (
-        <div key={o.id} className="rounded-md border border-border p-3 space-y-1.5">
+        <div
+          key={o.id}
+          className="rounded-md border border-border p-3 space-y-1.5"
+        >
           <div className="flex items-center justify-between">
             <Badge variant="outline" className="text-[10px] capitalize">
               {o.status}
@@ -1003,6 +1043,70 @@ function FilesTab({ candidate }: { candidate: Candidate }) {
           {a.name}
         </a>
       ))}
+    </div>
+  );
+}
+
+function ReferencesTab({ candidateName }: { candidateName: string }) {
+  const defaultSubject = `Reference request for ${candidateName}`;
+  const defaultBody =
+    `Hello,\n\n` +
+    `${candidateName} has listed you as a reference. We would be grateful if you ` +
+    `could confirm your reference for them at your earliest convenience.\n\nKind regards,\nHR Team`;
+
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState(defaultSubject);
+  const [body, setBody] = useState(defaultBody);
+
+  function handleSend() {
+    if (!/.+@.+\..+/.test(email)) {
+      toast.error("Enter a valid email address.");
+      return;
+    }
+    openMailto({ to: [email], subject, body });
+    toast.success("Reference email drafted in your mail client");
+    setEmail("");
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-md border border-border p-4 space-y-3">
+        <p className="text-xs font-semibold text-foreground">
+          Send reference request
+        </p>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-[11px] font-medium">
+            Referee / Company Email
+          </Label>
+          <Input
+            type="email"
+            placeholder="referee@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-[11px] font-medium">Subject</Label>
+          <Input
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-[11px] font-medium">Message</Label>
+          <Textarea
+            rows={6}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            className="text-sm"
+          />
+        </div>
+        <Button size="sm" className="h-8 gap-1.5" onClick={handleSend}>
+          <Mail className="w-3.5 h-3.5" /> Send Email
+        </Button>
+      </div>
     </div>
   );
 }

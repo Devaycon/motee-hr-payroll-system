@@ -19,6 +19,7 @@ import {
   AlertCircle,
   CheckCircle2,
   RotateCcw,
+  PenLine,
 } from "lucide-react";
 import {
   Table,
@@ -76,7 +77,6 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-
 function getExpiryInfo(expiryDate?: string) {
   if (!expiryDate) return null;
   const today = new Date();
@@ -132,6 +132,7 @@ interface DocumentGridProps {
   onSelectFolder: (id: string | null) => void;
   onView: (doc: HRDocument) => void;
   onShare: (doc: HRDocument) => void;
+  onSign: (doc: HRDocument) => void;
   onArchive: (id: string) => void;
   onDelete: (id: string) => void;
   onRestore?: (id: string) => void;
@@ -147,6 +148,7 @@ export function DocumentGrid({
   onSelectFolder,
   onView,
   onShare,
+  onSign,
   onArchive,
   onDelete,
   onRestore,
@@ -387,6 +389,12 @@ export function DocumentGrid({
                             View Details
                           </DropdownMenuItem>
                           {!isTrashView && (
+                            <DropdownMenuItem onClick={() => onSign(doc)}>
+                              <PenLine className="mr-2 size-3.5" />
+                              Sign Document
+                            </DropdownMenuItem>
+                          )}
+                          {!isTrashView && (
                             <DropdownMenuItem>
                               <Download className="mr-2 size-3.5" />
                               Download
@@ -548,6 +556,12 @@ export function DocumentGrid({
                               <Eye className="mr-2 size-4" />
                               View Details
                             </DropdownMenuItem>
+                            {!isTrashView && (
+                              <DropdownMenuItem onClick={() => onSign(doc)}>
+                                <PenLine className="mr-2 size-4" />
+                                Sign Document
+                              </DropdownMenuItem>
+                            )}
                             {!isTrashView && (
                               <DropdownMenuItem>
                                 <Download className="mr-2 size-4" />

@@ -34,11 +34,11 @@ const RegisterIndex = () => {
         </div>
 
         <div className="flex flex-col gap-3 max-w-xl">
-          <h1 className="text-5xl font-extrabold text-white leading-tight">
+          <h1 className="text-3xl font-extrabold text-white leading-tight">
             Get started in minutes
           </h1>
           <div className="w-10 h-1 rounded-full bg-white" />
-          <p className="text-xl text-white leading-relaxed">
+          <p className="text-sm text-white leading-relaxed">
             Set up your organisation, configure workflows, and onboard your team
             — all from one powerful platform.
           </p>

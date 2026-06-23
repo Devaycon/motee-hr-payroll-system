@@ -43,7 +43,7 @@ const AuthIndex = () => {
 
         <div className="flex flex-col gap-3 max-w-2xl">
           <h1>
-            <span className="text-6xl text-white font-black">
+            <span className="text-3xl text-white font-black">
               Welcome to MOTEE HRIS
             </span>
           </h1>
@@ -51,7 +51,7 @@ const AuthIndex = () => {
             className="w-10 h-1 rounded-full"
             style={{ backgroundColor: "#D85A30" }}
           />
-          <p className="text-xl text-white dark:text-white/80 leading-relaxed">
+          <p className="text-sm text-white dark:text-white/80 leading-relaxed">
             Sign in to manage your team, track performance, and access your
             professional tools in one secure place.
           </p>

@@ -11,6 +11,7 @@ import {
   LifeBuoy,
   CheckSquare,
   Receipt,
+  FolderOpen,
   LucideIcon,
 } from "lucide-react";
 
@@ -66,6 +67,12 @@ export const routes: Route[] = [
     icon: Receipt,
     label: "My Expenses",
     link: "/employee/expenses",
+  },
+  {
+    group: "Overview",
+    icon: FolderOpen,
+    label: "My Documents",
+    link: "/employee/documents",
   },
   {
     group: "Overview",

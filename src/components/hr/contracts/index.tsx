@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useContracts } from "./hooks";
-import { FileText, PenLine } from "lucide-react";
+import { PenLine } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
 import { StatCards } from "./components/stat-cards";
@@ -14,15 +15,12 @@ import { ContractFormModal } from "./components/contract-form-modal";
 import { ContractDetailModal } from "./components/contract-detail-modal";
 import { ContractLetterModal } from "./components/contract-letter-modal";
 import { HRSignatureModal } from "./components/hr-signature-modal";
-import { SignModal } from "./components/sign-modal";
-import type { Contract, NewContract, SignatureStatus } from "./types";
+import type { Contract, NewContract } from "./types";
 
 export function ContractsPage() {
+  const router = useRouter();
   const { data, loading } = useContracts();
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  useEffect(() => {
-    if (data) setContracts(data);
-  }, [data]);
+  const [contracts, setContracts] = useState<Contract[]>(() => data ?? []);
   const [activeTab, setActiveTab] = useState("all");
 
   const [formModalOpen, setFormModalOpen] = useState(false);
@@ -30,9 +28,6 @@ export function ContractsPage() {
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [viewingContract, setViewingContract] = useState<Contract | null>(null);
-
-  const [signModalOpen, setSignModalOpen] = useState(false);
-  const [signingContract, setSigningContract] = useState<Contract | null>(null);
 
   const [letterModalOpen, setLetterModalOpen] = useState(false);
   const [letterContract, setLetterContract] = useState<Contract | null>(null);
@@ -70,8 +65,12 @@ export function ContractsPage() {
   }
 
   function handleSign(contract: Contract) {
-    setSigningContract(contract);
-    setSignModalOpen(true);
+    const params = new URLSearchParams({
+      name: contract.title,
+      fileType: "pdf",
+      back: "/operations/contracts",
+    });
+    router.push(`/sign?${params.toString()}`);
   }
 
   function handleDelete(contract: Contract) {
@@ -116,49 +115,6 @@ export function ContractsPage() {
     setFormModalOpen(false);
   }
 
-  function handleSignConfirm(contractId: string, newStatus: SignatureStatus) {
-    const now = new Date().toISOString().split("T")[0];
-    setContracts((prev) =>
-      prev.map((c) => {
-        if (c.id !== contractId) return c;
-        const updatedSignatories = c.signatories.map((sig, idx) => {
-          if (newStatus === "employee_signed" && idx === 0 && !sig.signedAt) {
-            return { ...sig, signedAt: now };
-          }
-          if (newStatus === "fully_signed" && !sig.signedAt) {
-            return { ...sig, signedAt: now };
-          }
-          return sig;
-        });
-        const newContractStatus =
-          newStatus === "fully_signed" &&
-          (c.status === "pending_signature" || c.status === "draft")
-            ? "active"
-            : c.status;
-        return {
-          ...c,
-          signatureStatus: newStatus,
-          signatories: updatedSignatories,
-          status: newContractStatus,
-          lastModifiedAt: now,
-          notes: [
-            ...c.notes,
-            {
-              id: `N-${c.id}-${Date.now()}`,
-              content:
-                newStatus === "fully_signed"
-                  ? "Contract fully signed by all parties."
-                  : "Employee signature recorded.",
-              createdAt: now,
-              createdBy: "HR Admin",
-            },
-          ],
-        };
-      }),
-    );
-    setSignModalOpen(false);
-  }
-
   function handleDetailEdit(contract: Contract) {
     setDetailModalOpen(false);
     setEditingContract(contract);
@@ -166,8 +122,13 @@ export function ContractsPage() {
   }
 
   function handleDetailSign(contract: Contract) {
-    setSigningContract(contract);
-    setSignModalOpen(true);
+    setDetailModalOpen(false);
+    const params = new URLSearchParams({
+      name: contract.title,
+      fileType: "pdf",
+      back: "/operations/contracts",
+    });
+    router.push(`/sign?${params.toString()}`);
   }
 
   function handlePreview(contract: Contract) {
@@ -302,13 +263,6 @@ export function ContractsPage() {
         onPreview={handlePreview}
         onMoveToDocuments={handleMoveToDocuments}
         hrSignature={hrSignature}
-      />
-
-      <SignModal
-        open={signModalOpen}
-        contract={signingContract}
-        onClose={() => setSignModalOpen(false)}
-        onConfirm={handleSignConfirm}
       />
 
       <ContractLetterModal

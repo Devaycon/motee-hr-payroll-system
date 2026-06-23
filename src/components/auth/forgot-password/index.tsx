@@ -54,7 +54,7 @@ const ForgotPasswordIndex = () => {
         </div>
         <div className="flex flex-col gap-3 max-w-2xl">
           <h1>
-            <span className="text-6xl text-white font-black">
+            <span className="text-3xl text-white font-black">
               Regain access in seconds.
             </span>
           </h1>
@@ -62,7 +62,7 @@ const ForgotPasswordIndex = () => {
             className="w-10 h-1 rounded-full"
             style={{ backgroundColor: "#D85A30" }}
           />
-          <p className="text-xl text-white dark:text-white/80 leading-relaxed">
+          <p className="text-sm text-white dark:text-white/80 leading-relaxed">
             Enter your registered email and we&apos;ll send you a secure code to
             reset your password.
           </p>
@@ -89,7 +89,7 @@ const ForgotPasswordIndex = () => {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#D85A30]/10 mb-2">
                 <Mail className="h-6 w-6 text-[#D85A30]" />
               </div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              <h1 className="text-xl font-bold text-foreground tracking-tight">
                 Forgot your password?
               </h1>
               <p className="text-sm text-muted-foreground">

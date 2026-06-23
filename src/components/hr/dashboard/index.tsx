@@ -21,7 +21,7 @@ const HrDashboard = () => {
     <div className="flex flex-col gap-6">
       <div className="py-6 w-fit">
         {greetingName ? (
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-foreground">
             Welcome back, {user?.name}
           </h1>
         ) : (

@@ -5,6 +5,7 @@ import {
   Eye,
   FolderInput,
   MoreHorizontal,
+  PenLine,
   RotateCcw,
   Trash2,
 } from "lucide-react";
@@ -27,6 +28,7 @@ export function FileCard({
   sharedAcked = false,
   onPreview,
   onMove,
+  onSign,
   onDelete,
   onRestore,
   isTrashView = false,
@@ -37,6 +39,7 @@ export function FileCard({
   sharedAcked?: boolean;
   onPreview: (doc: EmployeeDocument) => void;
   onMove: (doc: EmployeeDocument) => void;
+  onSign: (doc: EmployeeDocument) => void;
   onDelete: (id: string) => void;
   onRestore?: (id: string) => void;
   isTrashView?: boolean;
@@ -67,6 +70,14 @@ export function FileCard({
               >
                 <Eye className="w-3.5 h-3.5" /> Preview
               </DropdownMenuItem>
+              {!isTrashView && (
+                <DropdownMenuItem
+                  className="text-xs gap-2"
+                  onClick={() => onSign(doc)}
+                >
+                  <PenLine className="w-3.5 h-3.5" /> Sign Document
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem className="text-xs gap-2">
                 <Download className="w-3.5 h-3.5" /> Download
               </DropdownMenuItem>
