@@ -32,16 +32,16 @@ import {
 } from "./tax-step";
 
 const GENDER_OPTIONS = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
-  { value: "other", label: "Other" },
-  { value: "prefer_not_to_say", label: "Prefer not to say" },
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" },
+  { value: "Other", label: "Other" },
+  { value: "Prefer_not_to_say", label: "Prefer not to say" },
 ];
 const MARITAL_STATUS_OPTIONS = [
-  { value: "single", label: "Single" },
-  { value: "married", label: "Married" },
-  { value: "divorced", label: "Divorced" },
-  { value: "widowed", label: "Widowed" },
+  { value: "Single", label: "Single" },
+  { value: "Married", label: "Married" },
+  { value: "Divorced", label: "Divorced" },
+  { value: "Widowed", label: "Widowed" },
 ];
 const TITLE_OPTIONS = ["Dr", "Mr", "Mrs", "Miss", "Ms"];
 const ETHNICITY_OPTIONS = [
