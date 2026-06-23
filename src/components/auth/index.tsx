@@ -59,9 +59,10 @@ const AuthIndex = () => {
 
         <Link
           href="https://motee-solutions.vercel.app/"
+          
           className="self-start px-5 py-2 rounded-md border border-white/50 bg-white text-gray-900  text-sm font-medium hover:bg-white/90 transition-colors"
         >
-          Learn more
+          Visit Website
         </Link>
 
         <p className="text-[11px] text-white/30 py-8">
