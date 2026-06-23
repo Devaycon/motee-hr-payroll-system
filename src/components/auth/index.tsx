@@ -59,7 +59,7 @@ const AuthIndex = () => {
 
         <Link
           href="https://motee-solutions.vercel.app/"
-          
+          target="_blank"
           className="self-start px-5 py-2 rounded-md border border-white/50 bg-white text-gray-900  text-sm font-medium hover:bg-white/90 transition-colors"
         >
           Visit Website
