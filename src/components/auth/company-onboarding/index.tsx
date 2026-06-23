@@ -129,7 +129,7 @@ export default function CompanyOnboardingIndex() {
         </div>
 
         <div className="flex flex-col gap-3 max-w-2xl">
-          <h1 className="text-5xl font-extrabold text-white leading-tight">
+          <h1 className="text-3xl font-extrabold text-white leading-tight">
             {entryMode === null
               ? "Set up your organisation"
               : isBulkUploadStep
@@ -137,7 +137,7 @@ export default function CompanyOnboardingIndex() {
                 : (activeStepMeta?.title ?? "Organisation Setup")}
           </h1>
           <div className="w-10 h-1 rounded-full bg-white" />
-          <p className="text-xl text-white leading-relaxed">
+          <p className="text-sm text-white leading-relaxed">
             {entryMode === null
               ? "Configure your HR platform, define your structure, and get your team up and running in minutes."
               : isBulkUploadStep
@@ -164,7 +164,7 @@ export default function CompanyOnboardingIndex() {
                 >
                   {step}
                 </div>
-                <span className="text-lg text-white">{label}</span>
+                <span className="text-sm text-white">{label}</span>
               </div>
             ))}
           </div>
@@ -236,10 +236,10 @@ export default function CompanyOnboardingIndex() {
         {entryMode === null && (
           <div className="flex flex-col items-center gap-6 px-8 pt-2 pb-8 overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40">
             <div className="flex flex-col items-center gap-2 text-center">
-              <h1 className="text-4xl font-bold text-foreground tracking-tight">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
                 How would you like to set up?
               </h1>
-              <p className="text-md text-muted-foreground max-w-xl leading-relaxed">
+              <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
                 Fill in your details step by step, or upload a bulk template to
                 auto-populate everything at once.
               </p>

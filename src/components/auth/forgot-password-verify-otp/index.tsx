@@ -68,7 +68,7 @@ const ForgotPasswordVerifyOtpIndex = () => {
         </div>
         <div className="flex flex-col gap-3 max-w-2xl">
           <h1>
-            <span className="text-6xl text-white font-black">
+            <span className="text-3xl text-white font-black">
               Check your inbox.
             </span>
           </h1>
@@ -76,7 +76,7 @@ const ForgotPasswordVerifyOtpIndex = () => {
             className="w-10 h-1 rounded-full"
             style={{ backgroundColor: "#D85A30" }}
           />
-          <p className="text-xl text-white dark:text-white/80 leading-relaxed">
+          <p className="text-sm text-white dark:text-white/80 leading-relaxed">
             We sent a 6-digit reset code to your email. Enter it below to
             continue resetting your password.
           </p>

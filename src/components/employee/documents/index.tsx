@@ -69,8 +69,10 @@ import {
   RequestModal,
   UploadModal,
 } from "./components/doc-modals";
+import { useRouter } from "next/navigation";
 
 export function MyDocumentsPage() {
+  const router = useRouter();
   const [docs, setDocs] = useState<EmployeeDocument[]>(DEMO_DOCUMENTS);
   const [folders, setFolders] = useState<DocFolder[]>(DEMO_FOLDERS);
 
@@ -102,6 +104,15 @@ export function MyDocumentsPage() {
   const [previewDoc, setPreviewDoc] = useState<EmployeeDocument | null>(null);
   const [sharedAckedIds, setSharedAckedIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  function handleSignDoc(doc: EmployeeDocument) {
+    const params = new URLSearchParams({
+      name: doc.name,
+      fileType: doc.ext,
+      back: "/employee/documents",
+    });
+    router.push(`/sign?${params.toString()}`);
+  }
 
   const currentFolder = folders.find((f) => f.id === currentFolderId) ?? null;
   const isTrashView = currentFolderId === "trash";
@@ -550,6 +561,7 @@ export function MyDocumentsPage() {
                             onAckShared={handleAcknowledgeShared}
                             onPreview={setPreviewDoc}
                             onMove={openMove}
+                            onSign={handleSignDoc}
                             onDelete={handleDeleteDoc}
                           />
                         ))}
@@ -593,6 +605,7 @@ export function MyDocumentsPage() {
                         onMove={
                           isTrashView || isSharedView ? () => {} : openMove
                         }
+                        onSign={handleSignDoc}
                         onDelete={
                           isTrashView
                             ? handlePermanentDeleteDoc

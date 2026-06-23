@@ -170,7 +170,7 @@ const Sidebar = () => {
               onClick={() => toggleGroup(section.group)}
               className="w-full flex items-center justify-between px-3 py-4 hover:bg-accent/60 transition-colors cursor-pointer"
             >
-              <span className="text-sm font-semibold uppercase text-muted-foreground">
+              <span className="text-sm font-semibold text-muted-foreground">
                 {section.group}
               </span>
               {openGroups[section.group] ? (

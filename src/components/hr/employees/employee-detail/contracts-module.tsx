@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { ContractStats } from "@/src/components/employee/contracts/components/contract-stats";
@@ -8,7 +9,6 @@ import { ContractsTable } from "@/src/components/employee/contracts/components/c
 import { UnsignedContractsTable } from "@/src/components/employee/contracts/components/unsigned-contracts-table";
 import { ContractDetailModal } from "@/src/components/hr/contracts/components/contract-detail-modal";
 import { ContractLetterModal } from "@/src/components/hr/contracts/components/contract-letter-modal";
-import { EmployeeSignModal } from "@/src/components/employee/contracts/components/employee-sign-modal";
 import { useContracts } from "@/src/components/hr/contracts/hooks";
 import type { Contract } from "@/src/lib/types/contracts";
 import type { ModuleProps } from "./modules";
@@ -19,8 +19,9 @@ import { Section, Empty } from "./ui";
  * page and the HR employee-details page (scoped by the employee's name).
  */
 export function ContractsModule({ employee }: ModuleProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const { data: localeContracts } = useContracts();
-  // Locally-signed contracts (id → updated contract) layered over the resolved list.
   const [signed, setSigned] = useState<Record<string, Contract>>({});
 
   const source = useMemo(
@@ -36,8 +37,6 @@ export function ContractsModule({ employee }: ModuleProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [letterModalOpen, setLetterModalOpen] = useState(false);
   const [letterContract, setLetterContract] = useState<Contract | null>(null);
-  const [signModalOpen, setSignModalOpen] = useState(false);
-  const [signingContract, setSigningContract] = useState<Contract | null>(null);
 
   const active = source.filter((c) => c.status === "active");
   const expiring = source.filter((c) => c.status === "expiring_soon");
@@ -55,35 +54,26 @@ export function ContractsModule({ employee }: ModuleProps) {
   }
 
   function handleSign(contract: Contract) {
-    setSigningContract(contract);
-    setSignModalOpen(true);
-  }
-
-  function handleSignConfirm(contractId: string) {
-    const target = source.find((c) => c.id === contractId);
-    if (target) {
-      setSigned((prev) => ({
-        ...prev,
-        [contractId]: {
-          ...target,
-          signatureStatus: "employee_signed" as const,
-          signatories: target.signatories.map((s) =>
-            s.role.toLowerCase().includes("employee")
-              ? { ...s, signedAt: new Date().toISOString().split("T")[0] }
-              : s,
-          ),
-        },
-      }));
-    }
-    setSignModalOpen(false);
-    setSigningContract(null);
+    const params = new URLSearchParams({
+      name: contract.title,
+      fileType: "pdf",
+      back: pathname,
+    });
+    router.push(`/sign?${params.toString()}`);
   }
 
   const tabContracts =
-    activeTab === "active" ? active : activeTab === "expiring" ? expiring : source;
+    activeTab === "active"
+      ? active
+      : activeTab === "expiring"
+        ? expiring
+        : source;
 
   return (
-    <Section title="Contracts" description="Employment contracts and agreements.">
+    <Section
+      title="Contracts"
+      description="Employment contracts and agreements."
+    >
       {source.length === 0 ? (
         <Empty label="No contracts on file." />
       ) : (
@@ -101,7 +91,8 @@ export function ContractsModule({ employee }: ModuleProps) {
                 { value: "all", label: `All (${source.length})` },
                 {
                   value: "active",
-                  label: active.length > 0 ? `Active (${active.length})` : "Active",
+                  label:
+                    active.length > 0 ? `Active (${active.length})` : "Active",
                 },
                 {
                   value: "expiring",
@@ -113,7 +104,9 @@ export function ContractsModule({ employee }: ModuleProps) {
                 {
                   value: "unsigned",
                   label:
-                    unsigned.length > 0 ? `Unsigned (${unsigned.length})` : "Unsigned",
+                    unsigned.length > 0
+                      ? `Unsigned (${unsigned.length})`
+                      : "Unsigned",
                 },
               ]}
             />
@@ -129,7 +122,10 @@ export function ContractsModule({ employee }: ModuleProps) {
             ))}
 
             <TabsContent value="unsigned" className="mt-4">
-              <UnsignedContractsTable contracts={unsigned} onSign={handleSign} />
+              <UnsignedContractsTable
+                contracts={unsigned}
+                onSign={handleSign}
+              />
             </TabsContent>
           </Tabs>
         </>
@@ -149,16 +145,6 @@ export function ContractsModule({ employee }: ModuleProps) {
         open={letterModalOpen}
         contract={letterContract}
         onClose={() => setLetterModalOpen(false)}
-      />
-
-      <EmployeeSignModal
-        open={signModalOpen}
-        contract={signingContract}
-        onClose={() => {
-          setSignModalOpen(false);
-          setSigningContract(null);
-        }}
-        onConfirm={handleSignConfirm}
       />
     </Section>
   );

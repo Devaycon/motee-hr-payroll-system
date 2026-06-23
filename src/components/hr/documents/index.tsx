@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useDocuments } from "./hooks";
 import { FolderOpen, Upload, FolderPlus } from "lucide-react";
@@ -13,6 +14,7 @@ import { DocumentDetailModal } from "./components/document-detail-modal";
 import { ShareModal } from "./components/share-modal";
 import { CreateFolderModal } from "./components/create-folder-modal";
 import { FOLDERS as SEED_FOLDERS } from "./data";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import type { HRDocument, Folder, NewDocument, NewShare } from "./types";
 
 function getDocumentsForFolder(
@@ -39,9 +41,32 @@ function getDocumentsForFolder(
 }
 
 export function DocumentsPage() {
+  const router = useRouter();
   const { data, loading } = useDocuments();
+  const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
+
   const [documents, setDocuments] = useState<HRDocument[]>([]);
   const [folders, setFolders] = useState<Folder[]>(SEED_FOLDERS);
+
+  useEffect(() => {
+    const employeeFolders: Folder[] = employees.map((emp) => ({
+      id: `emp-${emp.id}`,
+      name: emp.fullName,
+      type: "custom" as const,
+      parentId: "emp-files",
+      createdAt: emp.startDate ?? new Date().toISOString().slice(0, 10),
+      createdBy: "HR Admin",
+    }));
+    setFolders((prev) => {
+      const seedIds = new Set(SEED_FOLDERS.map((f) => f.id));
+      const empIds = new Set(employeeFolders.map((f) => f.id));
+      const custom = prev.filter(
+        (f) => !seedIds.has(f.id) && !empIds.has(f.id),
+      );
+      return [...SEED_FOLDERS, ...employeeFolders, ...custom];
+    });
+  }, [employees]);
+
   useEffect(() => {
     if (data) {
       setDocuments(data.documents);
@@ -51,6 +76,7 @@ export function DocumentsPage() {
       });
     }
   }, [data]);
+
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -63,6 +89,15 @@ export function DocumentsPage() {
     null,
   );
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
+
+  function handleSign(doc: HRDocument) {
+    const params = new URLSearchParams({
+      name: doc.name,
+      fileType: doc.fileType,
+      back: "/operations/documents",
+    });
+    router.push(`/sign?${params.toString()}`);
+  }
 
   const filteredDocuments = getDocumentsForFolder(
     selectedFolderId,
@@ -274,6 +309,7 @@ export function DocumentsPage() {
           onSelectFolder={setSelectedFolderId}
           onView={handleViewDocument}
           onShare={handleShareDocument}
+          onSign={handleSign}
           onArchive={handleArchive}
           onDelete={handleDelete}
           onRestore={handleRestore}
