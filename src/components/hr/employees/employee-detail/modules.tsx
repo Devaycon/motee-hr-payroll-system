@@ -1562,7 +1562,7 @@ export function WorkPatternModule({ employeeId, employee }: ModuleProps) {
       )}
       {wp?.schedule && <WorkScheduleTable schedule={wp.schedule} />}
       {wp && (
-        <div className="rounded-xl border border-border p-4">
+        <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-sm font-semibold text-foreground">Holiday Allowance</p>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[

@@ -40,6 +40,8 @@ import {
   Workflow,
   Receipt,
   Stethoscope,
+  Plane,
+  CalendarPlus,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -100,6 +102,18 @@ export const routes: Route[] = [
     icon: Receipt,
     label: "My Expenses",
     link: "/my-profile/expenses",
+  },
+  {
+    group: "My Workspace",
+    icon: Plane,
+    label: "My Leave",
+    link: "/my-time-off/balance",
+  },
+  {
+    group: "My Workspace",
+    icon: CalendarPlus,
+    label: "Request Leave",
+    link: "/my-time-off/request",
   },
   {
     group: "My Workspace",

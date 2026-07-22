@@ -6,6 +6,7 @@ import { Button } from "@/src/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import { LEAVE_TYPE_LABELS, LEAVE_POLICIES } from "@/src/data/leave-demo";
@@ -48,16 +49,18 @@ export function EntitlementCard({
             </div>
             <div>
               {policy?.description ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <p className="text-xs font-semibold text-foreground underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 cursor-help">
-                      {LEAVE_TYPE_LABELS[b.type]}
-                    </p>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-56 text-xs">
-                    {policy.description}
-                  </TooltipContent>
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-xs font-semibold text-foreground underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 cursor-help">
+                        {LEAVE_TYPE_LABELS[b.type]}
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-56 text-xs">
+                      {policy.description}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ) : (
                 <p className="text-xs font-semibold text-foreground">
                   {LEAVE_TYPE_LABELS[b.type]}

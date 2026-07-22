@@ -81,7 +81,7 @@ export function LeaveCalendar({
     setCursor((c) => new Date(c.getFullYear(), c.getMonth() + delta, 1));
 
   return (
-    <div className="rounded-xl border border-border">
+    <div className="rounded-xl border border-border bg-card">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <p className="text-sm font-semibold text-foreground">

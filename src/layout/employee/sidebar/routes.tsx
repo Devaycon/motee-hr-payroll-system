@@ -12,6 +12,8 @@ import {
   CheckSquare,
   Receipt,
   FolderOpen,
+  Plane,
+  CalendarPlus,
   LucideIcon,
 } from "lucide-react";
 
@@ -61,6 +63,18 @@ export const routes: Route[] = [
     icon: CheckSquare,
     label: "My Submissions",
     link: "/employee/submissions",
+  },
+  {
+    group: "Overview",
+    icon: Plane,
+    label: "My Leave",
+    link: "/time-off/balance",
+  },
+  {
+    group: "Overview",
+    icon: CalendarPlus,
+    label: "Request Leave",
+    link: "/time-off/request",
   },
   {
     group: "Overview",

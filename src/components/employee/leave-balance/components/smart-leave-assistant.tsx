@@ -79,7 +79,7 @@ export function SmartLeaveAssistant() {
   const willExpire = Math.max(0, annualRemaining - carryCap);
 
   return (
-    <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+    <Card className="border-primary/30">
       <CardContent className="p-4">
         <div className="mb-3 flex items-center gap-2">
           <span className="flex size-7 items-center justify-center rounded-lg bg-primary/15">
