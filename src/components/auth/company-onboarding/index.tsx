@@ -147,7 +147,7 @@ export default function CompanyOnboardingIndex() {
         </div>
 
         {entryMode === null && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col  gap-3">
             {[
               { step: "1", label: "Set up company profile" },
               { step: "2", label: "Define roles & permissions" },
