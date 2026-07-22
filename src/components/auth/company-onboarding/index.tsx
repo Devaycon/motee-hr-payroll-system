@@ -156,7 +156,7 @@ export default function CompanyOnboardingIndex() {
             ].map(({ step, label }) => (
               <div key={step} className="flex items-center  gap-3">
                 <div
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                  className="flex h-6 w-6 shrink-0 items-center  justify-center rounded-full text-[11px] font-bold text-white"
                   style={{
                     backgroundColor: "rgba(216,90,48,0.4)",
                     border: "1px solid rgba(216,90,48,0.6)",
