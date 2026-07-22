@@ -39,6 +39,7 @@ import {
   CheckSquare,
   Workflow,
   Receipt,
+  Stethoscope,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -237,6 +238,12 @@ export const routes: Route[] = [
     label: "Leave Management",
     link: "/time-payroll/leave",
     badge: 3,
+  },
+  {
+    group: "Time & Payroll",
+    icon: Stethoscope,
+    label: "Occupational Health",
+    link: "/time-payroll/occupational-health",
   },
 
   {

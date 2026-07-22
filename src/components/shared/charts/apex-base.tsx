@@ -98,6 +98,8 @@ export interface ChartCardProps {
   icon?: LucideIcon;
   footer?: React.ReactNode;
   details?: ChartDetailItem[];
+  /** Custom legend block rendered in place of the default DetailsLegend. */
+  legend?: React.ReactNode;
   fullWidth?: boolean;
   className?: string;
   /** Optional control rendered on the right of the header (e.g. a selector). */
@@ -226,6 +228,7 @@ export function ChartCard({
   icon: Icon,
   footer,
   details,
+  legend,
   fullWidth,
   className,
   action,
@@ -254,7 +257,7 @@ export function ChartCard({
       </CardHeader>
       <CardContent className="px-4 pb-3">
         {children}
-        {details?.length ? <DetailsLegend details={details} /> : null}
+        {legend ?? (details?.length ? <DetailsLegend details={details} /> : null)}
       </CardContent>
       {(footer || viewMoreHref) && (
         <CardFooter className="flex items-center justify-between gap-2 px-4 pt-0 pb-4">

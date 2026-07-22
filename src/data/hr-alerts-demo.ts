@@ -23,7 +23,24 @@ export interface HrAlert {
   severity: HrAlertSeverity;
   /** Deep link to the page where the alert is actioned. */
   href?: string;
+  /** Per-row icon; when unset the row derives one from the title keyword. */
+  icon?: LucideIcon;
+  /** Days until the item is due (negative = overdue). Drives the due date + countdown. */
+  dueInDays?: number;
+  /** Employee reference folded into the identity meta line. */
+  employeeId?: string;
 }
+
+/**
+ * Fallback due window (in days) by severity, so every action row shows a due
+ * date even when a specific deadline isn't modelled. Critical items are due
+ * soonest.
+ */
+export const HR_ALERT_DEFAULT_DUE_DAYS: Record<HrAlertSeverity, number> = {
+  critical: 3,
+  warning: 14,
+  info: 30,
+};
 
 export interface HrAlertCategory {
   key: string;
@@ -48,21 +65,21 @@ export const HR_ALERT_SEVERITY_LABELS: Record<HrAlertSeverity, string> = {
 export const HR_ALERT_CATEGORIES: HrAlertCategory[] = [
   {
     key: "right_to_work",
-    label: "Right to Work & Compliance",
+    label: "Right to Work",
     icon: ShieldCheck,
     alerts: [
-      { id: "rtw-1", title: "Right to Work verification missing", description: "Oliver Hughes · Operations", severity: "critical", href: "/organization/employees" },
-      { id: "rtw-2", title: "Share code expired", description: "Amara Okafor · Engineering", severity: "critical", href: "/organization/employees" },
-      { id: "rtw-3", title: "Visa expiry within 90 days", description: "Wei Chen · Sales", severity: "warning", href: "/organization/employees" },
-      { id: "rtw-4", title: "P45 outstanding", description: "Joshua Wood · new starter", severity: "warning", href: "/talent/onboarding" },
-      { id: "rtw-5", title: "HMRC Starter Checklist incomplete", description: "2 new starters this month", severity: "warning", href: "/talent/onboarding" },
-      { id: "rtw-6", title: "DBS renewal due", description: "Sofia Romano · Care Team", severity: "warning", href: "/organization/employees" },
-      { id: "rtw-7", title: "Probation review due", description: "3 employees within 14 days", severity: "info", href: "/organization/employees" },
+      { id: "rtw-1", title: "Right to Work verification missing", description: "Oliver Hughes · Operations", employeeId: "10238", severity: "critical", dueInDays: 2, href: "/organization/employees" },
+      { id: "rtw-2", title: "Share code expired", description: "Amara Okafor · Engineering", employeeId: "10412", severity: "critical", dueInDays: 1, href: "/organization/employees" },
+      { id: "rtw-3", title: "Visa expiry", description: "Wei Chen · Sales", employeeId: "10570", severity: "warning", dueInDays: 68, href: "/organization/employees" },
+      { id: "rtw-4", title: "P45 outstanding", description: "Joshua Wood · new starter", employeeId: "10604", severity: "warning", dueInDays: 7, href: "/talent/onboarding" },
+      { id: "rtw-5", title: "HMRC Starter Checklist incomplete", description: "2 new starters this month", severity: "warning", dueInDays: 10, href: "/talent/onboarding" },
+      { id: "rtw-6", title: "DBS renewal due", description: "Sofia Romano · Care Team", employeeId: "10199", severity: "warning", dueInDays: 21, href: "/organization/employees" },
+      { id: "rtw-7", title: "Probation review due", description: "3 employees due this cycle", severity: "info", dueInDays: 14, href: "/organization/employees" },
     ],
   },
   {
     key: "compliance",
-    label: "Employee Data Compliance",
+    label: "Employee Data",
     icon: ClipboardCheck,
     alerts: [
       { id: "cmp-1", title: "Missing bank account details", description: "Tunde Badmus · Engineering", severity: "warning", href: "/organization/employees" },
@@ -75,7 +92,7 @@ export const HR_ALERT_CATEGORIES: HrAlertCategory[] = [
   },
   {
     key: "payroll",
-    label: "Payroll & Finance",
+    label: "Payroll",
     icon: Banknote,
     alerts: [
       { id: "pay-1", title: "Employee without payroll setup", description: "Halima Musa · Human Resources", severity: "critical", href: "/organization/employees" },
@@ -88,7 +105,7 @@ export const HR_ALERT_CATEGORIES: HrAlertCategory[] = [
   },
   {
     key: "recruitment",
-    label: "Recruitment & Talent",
+    label: "Recruitment",
     icon: Briefcase,
     alerts: [
       { id: "rec-1", title: "Requisition awaiting approval", description: "Senior Backend Engineer · Engineering", severity: "warning", href: "/talent/recruitment" },

@@ -117,6 +117,22 @@ export function EmployeeProfileWorkspace({
               <h2 className="text-xl font-bold text-foreground text-center break-words">
                 {emp.fullName}
               </h2>
+              {emp.startDate && (
+                <div className="w-full rounded-xl bg-muted/40 px-4 py-3 text-center">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Employee since
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">
+                    {new Date(emp.startDate).toLocaleDateString("en-GB", {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                  <p className="text-xs capitalize text-muted-foreground">
+                    {formatDuration(emp.startDate)}
+                  </p>
+                </div>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -147,12 +163,11 @@ export function EmployeeProfileWorkspace({
         {stats && (
           <StatStrip
             items={[
-              { label: "Leave remaining", value: `${stats.leaveRemaining}days`, accent: "text-emerald-600" },
+              { label: "Available", value: `${stats.leaveRemaining} days`, accent: "text-emerald-600" },
               { label: "Open tasks", value: stats.openTasks },
               { label: "Pending approvals", value: stats.pendingApprovals },
               { label: "Assets", value: stats.assignedAssets },
               { label: "Kudos", value: stats.kudosReceived },
-              { label: "Tenure", value: formatDuration(emp.startDate) },
             ]}
           />
         )}

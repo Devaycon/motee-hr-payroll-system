@@ -9,6 +9,7 @@ import { GenderSplitCard } from "./components/gender-split-card";
 import { MyProfileStats } from "./components/my-profile-stats";
 import { UpcomingEventsCard } from "./components/upcoming-events-card";
 import { HrAlertsCard } from "@/src/components/hr/hr-alerts";
+import { EmployeesAtRiskCard } from "./components/employees-at-risk";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
@@ -19,17 +20,17 @@ const HrDashboard = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="py-6 w-fit">
+      <div className="py-4 w-fit">
         {greetingName ? (
           <h1 className="text-2xl font-bold text-foreground">
-            Welcome back, {user?.name}
+            Welcome back, {user?.name}!
           </h1>
         ) : (
           <Skeleton className="h-10 w-80" />
         )}
-        <p className=" w-[100%] text-sm text-muted-foreground mt-0.5">
-          Stay on top of employee activities, workforce updates, and HR
-          operations from one place.
+        <p className="w-full text-sm font-semibold text-muted-foreground mt-0.5">
+          Here&apos;s an overview of today&apos;s workforce activity and key HR
+          metrics.
         </p>
       </div>
 
@@ -46,8 +47,11 @@ const HrDashboard = () => {
         <GenderSplitCard />
       </div>
 
-      <div className="">
-        <HrAlertsCard />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <HrAlertsCard />
+        </div>
+        <EmployeesAtRiskCard />
       </div>
       <div className="">
         <UpcomingEventsCard />

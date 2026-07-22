@@ -3,9 +3,14 @@
 import { CalendarDays, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { LEAVE_TYPE_LABELS, LEAVE_POLICIES } from "@/src/data/leave-demo";
 import type { BalanceEntry } from "./data";
-import { TYPE_COLORS, remaining } from "./data";
+import { TYPE_COLORS, daysRemaining, daysAvailable } from "./data";
 
 interface EntitlementCardProps {
   balance: BalanceEntry;
@@ -20,7 +25,8 @@ export function EntitlementCard({
   onToggleExpand,
   onViewPolicy,
 }: EntitlementCardProps) {
-  const rem = remaining(b);
+  const rem = daysRemaining(b);
+  const avail = daysAvailable(b);
   const usedPct = (b.daysUsed / b.totalEntitlement) * 100;
   const pendPct = (b.daysPending / b.totalEntitlement) * 100;
   const colors = TYPE_COLORS[b.type];
@@ -41,9 +47,22 @@ export function EntitlementCard({
               />
             </div>
             <div>
-              <p className="text-xs font-semibold text-foreground">
-                {LEAVE_TYPE_LABELS[b.type]}
-              </p>
+              {policy?.description ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-xs font-semibold text-foreground underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 cursor-help">
+                      {LEAVE_TYPE_LABELS[b.type]}
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-56 text-xs">
+                    {policy.description}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <p className="text-xs font-semibold text-foreground">
+                  {LEAVE_TYPE_LABELS[b.type]}
+                </p>
+              )}
               <p className="text-[10px] text-muted-foreground">
                 {b.totalEntitlement} days/yr
                 {b.carryOver ? ` · ${b.carryOver} days carried over` : ""}
@@ -53,14 +72,14 @@ export function EntitlementCard({
           <div className="flex items-center gap-3 ml-auto">
             <div className="text-right hidden sm:block">
               <p className="text-xs font-bold text-foreground">
-                {rem}{" "}
+                {avail}{" "}
                 <span className="font-normal text-muted-foreground text-[10px]">
-                  remaining
+                  available
                 </span>
               </p>
               {b.daysPending > 0 && (
                 <p className="text-[10px] text-amber-600">
-                  {b.daysPending} pending
+                  {b.daysPending} booked
                 </p>
               )}
             </div>
@@ -119,13 +138,12 @@ export function EntitlementCard({
           <div className="border-t border-border/50 pt-3 grid grid-cols-3 gap-3">
             {[
               { label: "Entitlement", value: `${b.totalEntitlement} days` },
-              { label: "Days Used", value: `${b.daysUsed} days` },
+              { label: "Used", value: `${b.daysUsed} days` },
               { label: "Remaining", value: `${rem} days` },
+              { label: "Booked", value: `${b.daysPending} days` },
+              { label: "Available", value: `${avail} days` },
               ...(b.carryOver
                 ? [{ label: "Carried Over", value: `${b.carryOver} days` }]
-                : []),
-              ...(b.daysPending > 0
-                ? [{ label: "Pending", value: `${b.daysPending} days` }]
                 : []),
             ].map((r) => (
               <div key={r.label} className="flex flex-col gap-0.5">

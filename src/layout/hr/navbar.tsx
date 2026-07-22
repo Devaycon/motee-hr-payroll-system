@@ -3,11 +3,11 @@
 import {
   Calendar,
   Bell,
-  Search,
   MessageSquare,
   Monitor,
   Award,
 } from "lucide-react";
+import { GlobalSearch } from "@/src/components/shared/global-search";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -67,15 +67,7 @@ const Navbar = () => {
     <>
       <header className="sticky top-0 z-20 flex h-18 items-center justify-between bg-sidebar border-b border-border px-6">
         <div className="flex items-center gap-3 flex-1 max-w-md">
-          <div
-            data-tutorial="search"
-            className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2.5 w-full"
-          >
-            <Search size={14} className="text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              Search employees, documents...
-            </span>
-          </div>
+          <GlobalSearch />
         </div>
 
         <div className="flex items-center gap-3">

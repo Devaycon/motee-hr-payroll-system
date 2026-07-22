@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Mail, Phone, ChevronRight } from "lucide-react";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import { useCan } from "@/src/lib/permissions/use-can";
@@ -61,25 +62,51 @@ export function EmploymentOverview({ employee }: { employee: LocaleEmployee }) {
           Line manager
         </p>
         {manager ? (
-          <Link
-            href={`/organization/employees/${manager.id}`}
-            className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-xs ring-1 ring-foreground/10 transition-shadow hover:ring-primary/40 hover:shadow-sm"
-          >
-            <PersonAvatar
-              name={manager.fullName}
-              initials={manager.initials}
-              gender={manager.gender}
-              className="w-11 h-11 shrink-0"
-              fallbackClassName="bg-primary/10 text-sm font-bold text-primary/70"
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">{manager.fullName}</p>
-              <p className="text-xs text-muted-foreground">
-                {manager.jobTitle}
-                {manager.employeeNumber ? ` · ${manager.employeeNumber}` : ""}
-              </p>
+          <div className="flex flex-col gap-3 rounded-xl bg-card px-4 py-3 shadow-xs ring-1 ring-foreground/10">
+            <div className="flex items-center gap-3">
+              <PersonAvatar
+                name={manager.fullName}
+                initials={manager.initials}
+                gender={manager.gender}
+                className="w-11 h-11 shrink-0"
+                fallbackClassName="bg-primary/10 text-sm font-bold text-primary/70"
+              />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">{manager.fullName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {manager.jobTitle}
+                  {manager.departmentName ? ` · ${manager.departmentName}` : ""}
+                </p>
+              </div>
             </div>
-          </Link>
+            <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+              {manager.email && (
+                <a
+                  href={`mailto:${manager.email}`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                  Email
+                </a>
+              )}
+              {manager.phone && (
+                <a
+                  href={`tel:${manager.phone}`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                  Phone
+                </a>
+              )}
+              <Link
+                href={`/organization/employees/${manager.id}`}
+                className="ml-auto inline-flex items-center gap-0.5 text-xs font-medium text-primary hover:underline"
+              >
+                View Profile
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
         ) : (
           <p className="text-xs text-muted-foreground">No line manager assigned.</p>
         )}

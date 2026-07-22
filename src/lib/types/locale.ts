@@ -99,6 +99,12 @@ export interface LocaleWorkPattern {
   schedule: Record<string, { start: string; end: string } | null>;
   holidayEntitlementDays: number;
   publicHolidayDays: number;
+  /**
+   * Whether public holidays are granted on top of the annual entitlement
+   * ("in_addition", the UK convention) or counted within it ("included").
+   * Tenant-configurable; defaults to "in_addition" when unset.
+   */
+  publicHolidayTreatment?: "in_addition" | "included";
   contractType: "full_time" | "part_time" | "zero_hours";
 }
 

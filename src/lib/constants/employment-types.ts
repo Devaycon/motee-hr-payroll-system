@@ -16,6 +16,7 @@ export const EMPLOYMENT_TYPE_VALUES = [
   "casual",
   "seasonal",
   "remote",
+  "field_based",
 ] as const;
 
 export type EmploymentType = (typeof EMPLOYMENT_TYPE_VALUES)[number];
@@ -31,6 +32,7 @@ export const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
   casual: "Casual",
   seasonal: "Seasonal",
   remote: "Remote / Telecommuting",
+  field_based: "Field-based",
 };
 
 /** Short descriptions (from the HR spec) for tooltips / option help text. */
@@ -45,6 +47,7 @@ export const EMPLOYMENT_TYPE_DESCRIPTIONS: Record<EmploymentType, string> = {
   casual: "Irregular, no guaranteed hours; called in as needed.",
   seasonal: "Roles that exist only during certain times of the year.",
   remote: "Works from home/outside the office; can be FT, PT or freelance.",
+  field_based: "Works primarily on-site at client, site or field locations rather than a fixed office.",
 };
 
 /** Tailwind badge classes per type (bg/text/border), dark-mode aware. */
@@ -59,6 +62,7 @@ export const EMPLOYMENT_TYPE_STYLES: Record<EmploymentType, string> = {
   casual: "bg-pink-500/10 text-pink-600 border-pink-500/20",
   seasonal: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   remote: "bg-sky-500/10 text-sky-600 border-sky-500/20",
+  field_based: "bg-lime-500/10 text-lime-600 border-lime-500/20",
 };
 
 export interface EmploymentTypeOption {
@@ -86,6 +90,7 @@ const NAME_TO_TYPE: Array<[RegExp, EmploymentType]> = [
   [/temp/i, "temporary"],
   [/season/i, "seasonal"],
   [/casual|on[\s-]?call/i, "casual"],
+  [/field[\s-]?based|field[\s-]?work/i, "field_based"],
   [/remote|telecommut|work[\s-]?from[\s-]?home/i, "remote"],
   [/part[\s-]?time/i, "part_time"],
   [/contract|nysc|corps|fixed[\s-]?term/i, "contract"],

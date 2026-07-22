@@ -72,7 +72,9 @@ const Navbar = () => {
             className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2.5 w-full"
           >
             <Search size={14} className="text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Search...</span>
+            <span className="text-xs text-muted-foreground">
+              Search employees, leave, payroll, assets, documents and more.
+            </span>
           </div>
         </div>
 

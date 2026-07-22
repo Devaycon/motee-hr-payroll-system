@@ -22,7 +22,7 @@ export interface HistoryEntry {
 }
 
 export const MY_BALANCES: BalanceEntry[] = [
-  { type: "annual", totalEntitlement: 20, daysUsed: 8, daysPending: 0, carryOver: 3 },
+  { type: "annual", totalEntitlement: 20, daysUsed: 8, daysPending: 3, carryOver: 3 },
   { type: "sick", totalEntitlement: 10, daysUsed: 2, daysPending: 0 },
   { type: "compassionate", totalEntitlement: 3, daysUsed: 0, daysPending: 0 },
   { type: "study", totalEntitlement: 5, daysUsed: 0, daysPending: 0 },
@@ -51,7 +51,7 @@ export const MY_HISTORY: HistoryEntry[] = [
     totalDays: 2,
     status: "approved",
     notes: "Doctor's visit",
-    approvedBy: "Chidinma Okeke",
+    approvedBy: "System",
     submittedAt: "2026-03-11",
   },
   {
@@ -87,6 +87,39 @@ export const TYPE_COLORS: Record<LeaveTypeName, { bar: string; bg: string }> = {
   study: { bar: "#0D9488", bg: "#0D948818" },
 };
 
-export function remaining(b: BalanceEntry): number {
+// ── Five-value leave model (§15.3) ──────────────────────────────────────────
+// Enterprise HR distinguishes approved-but-not-yet-taken leave ("Booked") from
+// what is still bookable ("Available"). The five figures relate as:
+//   Entitlement − Used            = Remaining
+//   Remaining   − Booked          = Available
+// where "Booked" is future approved/pending leave (daysPending here).
+
+/** Total annual entitlement (carry-over shown separately). */
+export function entitlement(b: BalanceEntry): number {
+  return b.totalEntitlement;
+}
+
+/** Days already taken. */
+export function used(b: BalanceEntry): number {
+  return b.daysUsed;
+}
+
+/** Approved/pending future leave not yet taken. */
+export function booked(b: BalanceEntry): number {
+  return b.daysPending;
+}
+
+/** Entitlement minus used — excludes booked future leave. */
+export function daysRemaining(b: BalanceEntry): number {
+  return b.totalEntitlement - b.daysUsed;
+}
+
+/** What the employee can still book: remaining minus already-booked leave. */
+export function daysAvailable(b: BalanceEntry): number {
   return b.totalEntitlement - b.daysUsed - b.daysPending;
+}
+
+/** @deprecated Use {@link daysAvailable} — kept for back-compat; means "available". */
+export function remaining(b: BalanceEntry): number {
+  return daysAvailable(b);
 }

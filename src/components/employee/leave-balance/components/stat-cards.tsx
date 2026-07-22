@@ -2,21 +2,21 @@
 
 import { CalendarDays, Clock, CheckCircle2, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
-import { MY_BALANCES, MY_HISTORY, remaining } from "./data";
+import { MY_BALANCES, MY_HISTORY, daysRemaining } from "./data";
 
 export function LeaveStatCards() {
   const pendingCount = MY_HISTORY.filter((h) => h.status === "pending").length;
 
   const stats = [
     {
-      label: "Annual Remaining",
-      value: `${remaining(MY_BALANCES[0])} days`,
+      label: "Annual Leave Remaining",
+      value: `${daysRemaining(MY_BALANCES[0])} days`,
       icon: CalendarDays,
       color: "#2563EB",
     },
     {
-      label: "Sick Remaining",
-      value: `${remaining(MY_BALANCES[1])} days`,
+      label: "Sick Leave Remaining",
+      value: `${daysRemaining(MY_BALANCES[1])} days`,
       icon: TrendingUp,
       color: "#EF4444",
     },

@@ -9,13 +9,13 @@ export function StatCards() {
 
   if (loading || !data) {
     return (
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {Array.from({ length: 9 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 w-full rounded-xl" />
+          <Skeleton key={i} className="h-20 w-full rounded-xl" />
         ))}
       </div>
     );
   }
 
-  return <HrStatCardsGrid stats={data} columns={3} />;
+  return <HrStatCardsGrid stats={data} columns={5} />;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,39 @@ import {
   LEAVE_TYPE_LABELS,
   LEAVE_TYPE_STYLES,
 } from "../data";
+import { LEAVE_REQUESTS } from "@/src/data/leave-demo";
 import type { LeaveRequest, LeaveTypeName } from "../types";
+
+// Demo department sizes + minimum coverage rule (§16.2). In production these
+// are configured per team/department.
+const DEPARTMENT_SIZE: Record<string, number> = {
+  Engineering: 12,
+  Finance: 8,
+  HR: 6,
+  Marketing: 7,
+  Operations: 9,
+  Sales: 10,
+};
+
+/** Overlapping-leave / coverage check fired at approval time. */
+function coverageCheck(req: LeaveRequest) {
+  const teamSize = DEPARTMENT_SIZE[req.department] ?? 10;
+  const minCoverage = Math.ceil(teamSize * 0.75);
+  const overlapping = LEAVE_REQUESTS.filter(
+    (r) =>
+      r.id !== req.id &&
+      r.department === req.department &&
+      (r.status === "approved" || r.status === "pending") &&
+      r.startDate <= req.endDate &&
+      r.endDate >= req.startDate,
+  ).length;
+  const availableIfApproved = teamSize - (overlapping + 1);
+  return {
+    breaches: availableIfApproved < minCoverage,
+    availableIfApproved,
+    minCoverage,
+  };
+}
 
 interface ReviewModalProps {
   open: boolean;
@@ -165,6 +198,23 @@ export function ReviewModal({
             </div>
           )}
         </div>
+
+        {req.status === "pending" &&
+          (() => {
+            const cov = coverageCheck(req);
+            if (!cov.breaches) return null;
+            return (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-700">
+                <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+                <p>
+                  <span className="font-semibold">Coverage warning.</span> Approving this
+                  request will leave only {cov.availableIfApproved} employees available in{" "}
+                  {req.department}. Minimum required coverage is {cov.minCoverage}. Review
+                  carefully before approving.
+                </p>
+              </div>
+            );
+          })()}
 
         {req.status === "pending" && (
           <div className="space-y-2.5 pt-1">

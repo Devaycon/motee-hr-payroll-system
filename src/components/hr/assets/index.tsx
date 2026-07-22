@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useAssets } from "./hooks";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Upload } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { BulkCsvUploadModal } from "@/src/components/shared/bulk-csv-upload-modal";
 import { StatCards } from "./components/stat-cards";
 import { AssetsTable } from "./components/assets-table";
 import { PendingReturnsTable } from "./components/pending-returns-table";
@@ -14,14 +15,18 @@ import { DetailModal } from "./components/detail-modal";
 import { AssetFormModal } from "./components/asset-form-modal";
 import { AssignModal } from "./components/assign-modal";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
-import type { Asset, AssetCondition, NewAsset } from "./types";
+import type { Asset, AssetCondition, AssetType, NewAsset } from "./types";
 
 export function AssetsPage() {
   const { data, loading } = useAssets();
   const [assets, setAssets] = useState<Asset[]>([]);
-  useEffect(() => {
-    if (data) setAssets(data);
-  }, [data]);
+  // Seed/refresh local working copy when the async source data changes, without
+  // a setState-in-effect (React render-phase sync pattern).
+  const [syncedData, setSyncedData] = useState<Asset[] | null>(null);
+  if (data && data !== syncedData) {
+    setSyncedData(data);
+    setAssets(data);
+  }
   const [activeTab, setActiveTab] = useState("all");
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -33,6 +38,8 @@ export function AssetsPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assigningAsset, setAssigningAsset] = useState<Asset | null>(null);
   const [assignMode, setAssignMode] = useState<"assign" | "return">("assign");
+
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const pendingReturns = assets.filter((a) => a.pendingReturn === true);
   const unassignedAssets = assets.filter(
@@ -110,6 +117,34 @@ export function AssetsPage() {
     }
     setFormModalOpen(false);
     setEditingAsset(null);
+  }
+
+  function handleBulkImport(newAssets: NewAsset[]) {
+    const today = new Date().toISOString().split("T")[0];
+    setAssets((prev) => {
+      let max = prev.reduce((acc, a) => {
+        const num = parseInt(a.id.replace("AST-", ""), 10);
+        return Number.isFinite(num) && num > acc ? num : acc;
+      }, 0);
+      const created = newAssets.map((data) => {
+        max += 1;
+        const newId = `AST-${String(max).padStart(3, "0")}`;
+        return {
+          ...data,
+          id: newId,
+          history: [
+            {
+              id: `H-${newId}-1`,
+              action: "created" as const,
+              date: today,
+              description: "Asset added to inventory via bulk upload.",
+              performedBy: "HR Admin",
+            },
+          ],
+        } satisfies Asset;
+      });
+      return [...created, ...prev];
+    });
   }
 
   function handleAssign(asset: Asset) {
@@ -305,10 +340,20 @@ export function AssetsPage() {
             Track and manage all company assets and equipment.
           </p>
         </div>
-        <Button onClick={handleAssignNew} className="flex items-center gap-2">
-          <UserPlus className="w-4 h-4" />
-          Assign Asset
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setBulkOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            Bulk Upload
+          </Button>
+          <Button onClick={handleAssignNew} className="flex items-center gap-2">
+            <UserPlus className="w-4 h-4" />
+            Assign Asset
+          </Button>
+        </div>
       </div>
 
       <StatCards assets={assets} />
@@ -404,6 +449,49 @@ export function AssetsPage() {
         availableAssets={unassignedAssets}
         onAssign={handleSaveAssign}
         onReturn={handleSaveReturn}
+      />
+
+      <BulkCsvUploadModal<NewAsset>
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        title="Bulk Upload Assets"
+        description="Download the CSV template, fill it in, then upload to add multiple assets to inventory."
+        templateFileName="assets_template.csv"
+        headers={[
+          "name",
+          "assetType",
+          "serialNumber",
+          "condition",
+          "purchaseDate",
+          "purchaseValue",
+        ]}
+        sampleRows={[
+          ["MacBook Pro 14\"", "laptop", "C02XL0ABJGH5", "new", "2026-01-15", "2400"],
+          ["Dell UltraSharp 27\"", "monitor", "CN0P2VX8", "good", "2025-11-02", "450"],
+        ]}
+        parseRow={(o) => ({
+          name: o.name ?? "",
+          assetType: (o.assetType || "other").toLowerCase() as AssetType,
+          serialNumber: o.serialNumber ?? "",
+          condition: (o.condition || "good").toLowerCase() as AssetCondition,
+          status: "available",
+          purchaseDate: o.purchaseDate || undefined,
+          purchaseValue: o.purchaseValue ? Number(o.purchaseValue) : undefined,
+        })}
+        isRowValid={(r) => !!(r.name && r.serialNumber)}
+        columns={[
+          { label: "Name", get: (r) => r.name, required: true },
+          { label: "Type", get: (r) => r.assetType },
+          { label: "Serial", get: (r) => r.serialNumber, required: true },
+          { label: "Condition", get: (r) => r.condition },
+          { label: "Purchased", get: (r) => r.purchaseDate ?? "" },
+          {
+            label: "Value",
+            get: (r) => (r.purchaseValue ? String(r.purchaseValue) : ""),
+          },
+        ]}
+        onImport={handleBulkImport}
+        entityNoun="asset"
       />
     </div>
   );

@@ -99,13 +99,13 @@ export function LeaveRequestPanel() {
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Submit a new leave request or manage your existing ones.
+          View your leave balances, submit requests and track approval status.
         </p>
         <Button
           className="gap-2 bg-[#4361ee] hover:bg-[#3451d1] text-white shrink-0"
           onClick={() => setFormOpen(true)}
         >
-          <Plus className="w-3.5 h-3.5" /> New Request
+          <Plus className="w-3.5 h-3.5" /> Request Leave
         </Button>
       </div>
 
@@ -135,7 +135,7 @@ export function LeaveRequestPanel() {
         </p>
         {past.length === 0 ? (
           <p className="text-xs text-muted-foreground py-4">
-            No past leave requests.
+            No leave requests have been submitted yet.
           </p>
         ) : (
           <Card>

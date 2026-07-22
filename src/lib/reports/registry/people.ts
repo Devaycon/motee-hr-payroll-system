@@ -388,15 +388,26 @@ const attendanceReport = defineReport<AttRow>({
         radialSpec(
           "Attendance Rate",
           [
-            { key: "attended", label: "Attended", value: attended, color: "#4ED251" },
             {
-              key: "missed",
-              label: "Absent / Leave",
-              value: Math.max(0, scheduled - attended),
-              color: "#f43f5e",
+              key: "rate",
+              label: "Attendance Rate",
+              value: rate,
+              total: 100,
+              color: "#4ED251",
             },
           ],
-          { centerLabel: "Scheduled", description: "Attended vs missed scheduled days." },
+          {
+            centerLabel: "Attendance Rate",
+            description: "Attended as a share of scheduled days.",
+            details: [
+              { label: "Attended", value: attended, color: "#4ED251" },
+              {
+                label: "Absent / Leave",
+                value: Math.max(0, scheduled - attended),
+                color: "#f43f5e",
+              },
+            ],
+          },
         ),
       ],
     };

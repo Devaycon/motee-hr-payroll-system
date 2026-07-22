@@ -14,9 +14,14 @@ export interface LeaveSummaryRow {
   policyName: string;
   allowance: number;
   adjustments: number;
+  /** allowance + adjustments — total leave the employee is entitled to. */
+  entitlement: number;
   booked: number;
   taken: number;
+  /** entitlement − taken (excludes booked future leave). */
   remaining: number;
+  /** remaining − booked — what the employee can still book. */
+  available: number;
 }
 
 export interface SicknessSummary {

@@ -320,14 +320,19 @@ export function useEmployeeLeave(id: string) {
         .filter((r) => r.leavePolicyId === p.id)
         .reduce((s, r) => s + (r.days ?? 0), 0);
       const allowance = bal?.entitlement ?? p.defaultDays ?? 0;
+      const entitlement = allowance + adj;
+      const remaining = entitlement - takenDays; // excludes booked future leave
+      const available = remaining - bookedDays; // still bookable
       return {
         policyId: p.id,
         policyName: p.name,
         allowance,
         adjustments: adj,
+        entitlement,
         booked: bookedDays,
         taken: takenDays,
-        remaining: bal?.remaining ?? allowance + adj - takenDays - bookedDays,
+        remaining,
+        available,
       };
     });
 

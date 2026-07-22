@@ -19,6 +19,8 @@ interface AreaChartProps extends ChartCardProps {
   stacked?: boolean;
   money?: boolean;
   height?: number;
+  /** Cap the number of X-axis labels shown (thins a crowded date axis). */
+  tickAmount?: number;
 }
 
 export function AreaChart({
@@ -27,6 +29,7 @@ export function AreaChart({
   stacked,
   money,
   height = 280,
+  tickAmount,
   ...card
 }: AreaChartProps) {
   const base = useApexTheme();
@@ -41,6 +44,7 @@ export function AreaChart({
     markers: { size: 0, hover: { size: 5 } },
     xaxis: {
       categories,
+      ...(tickAmount ? { tickAmount } : {}),
       labels: { hideOverlappingLabels: true },
       axisBorder: { show: false },
       axisTicks: { show: false },

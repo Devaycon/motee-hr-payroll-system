@@ -254,7 +254,7 @@ export function lineSpec(
 export function radialSpec(
   title: string,
   series: RadialSeriesItem[],
-  opts: { centerLabel?: string } & Chrome = {},
+  opts: { centerLabel?: string; details?: ChartDetail[] } & Chrome = {},
 ): ReportChartSpec {
   return {
     kind: "radial",
@@ -264,11 +264,13 @@ export function radialSpec(
     fullWidth: opts.fullWidth,
     centerLabel: opts.centerLabel,
     series,
-    details: series.map((s) => ({
-      label: s.label,
-      value: s.value,
-      color: s.color,
-    })),
+    details:
+      opts.details ??
+      series.map((s) => ({
+        label: s.label,
+        value: s.value,
+        color: s.color,
+      })),
   };
 }
 

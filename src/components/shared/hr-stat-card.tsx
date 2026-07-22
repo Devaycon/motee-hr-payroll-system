@@ -25,13 +25,13 @@ interface HrStatCardProps {
 
 export function HrStatCard({ stat }: HrStatCardProps) {
   return (
-    <Card className="transition-shadow">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-[#7F77DD]/10">
-            <stat.icon className="w-3.5 h-3.5 text-[#7F77DD]" />
+    <Card className="transition-shadow gap-0 py-0">
+      <CardHeader className="flex flex-row items-center justify-between px-3 pt-3">
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-center w-5 h-5 rounded-md bg-[#7F77DD]/10">
+            <stat.icon className="w-3 h-3 text-[#7F77DD]" />
           </div>
-          <span className="text-sm font-medium text-muted-foreground">
+          <span className="text-xs font-medium text-muted-foreground">
             {stat.label}
           </span>
         </div>
@@ -40,7 +40,7 @@ export function HrStatCard({ stat }: HrStatCardProps) {
             variant="ghost"
             size="sm"
             asChild
-            className="h-6 text-xs px-2 text-muted-foreground hover:text-foreground gap-1"
+            className="h-5 text-[11px] px-1.5 text-muted-foreground hover:text-foreground gap-0.5"
           >
             <Link href={stat.link}>
               View
@@ -49,17 +49,19 @@ export function HrStatCard({ stat }: HrStatCardProps) {
           </Button>
         )}
       </CardHeader>
-      <CardContent className="px-4 pb-4">
+      <CardContent className="px-3 pb-3 pt-1.5">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{stat.sub}</p>
+            <p className="text-xl font-bold text-foreground leading-none">
+              {stat.value}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">{stat.sub}</p>
           </div>
           {stat.trend !== undefined && (
             <Badge
               variant="outline"
               className={cn(
-                "text-xs px-2 py-0.5 font-medium gap-0.5",
+                "text-[10px] px-1.5 py-0 font-medium gap-0.5",
                 stat.up
                   ? "border-[#4ED251]/40 bg-[#4ED251]/10 text-[#4ED251]"
                   : "border-orange-600/50 bg-orange-600/5 text-red-600",
@@ -81,16 +83,17 @@ export function HrStatCard({ stat }: HrStatCardProps) {
 
 interface HrStatCardsGridProps {
   stats: HrStatCardItem[];
-  columns?: 2 | 3 | 4 | 8;
+  columns?: 2 | 3 | 4 | 5 | 8;
 }
 
 export function HrStatCardsGrid({ stats, columns = 4 }: HrStatCardsGridProps) {
   return (
     <div
-      className={cn("grid gap-4", {
+      className={cn("grid gap-3", {
         "grid-cols-2": columns === 2,
         "grid-cols-3": columns === 3,
         "grid-cols-4": columns === 4,
+        "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5": columns === 5,
         "grid-cols-4 xl:grid-cols-8": columns === 8,
       })}
     >

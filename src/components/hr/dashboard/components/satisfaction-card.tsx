@@ -14,8 +14,8 @@ export function SatisfactionCard() {
   const items = data.data;
   return (
     <DonutChart
-      title="Employment Type"
-      description="Workforce by contract type"
+      title="Employment Type Distribution"
+      description="Employee distribution by employment type"
       className="col-span-2"
       height={300}
       centerLabel="Employees"

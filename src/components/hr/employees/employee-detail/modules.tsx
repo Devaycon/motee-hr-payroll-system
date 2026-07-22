@@ -56,6 +56,8 @@ import {
   titleCase,
   daysUntil,
 } from "./ui";
+import { employmentTypeLabel } from "@/src/lib/constants/employment-types";
+import { sicknessReasonDisplay } from "@/src/lib/constants/sickness";
 import {
   useEmployeeLeave,
   useEmployeeSickness,
@@ -202,7 +204,7 @@ export function ProfileModule({ employeeId, employee }: ModuleProps) {
             { value: "bank", label: "Bank" },
             {
               value: "requests",
-              label: `My Requests${pending > 0 ? ` (${pending})` : ""}`,
+              label: `Profile Change Requests${pending > 0 ? ` (${pending})` : ""}`,
             },
           ]}
         />
@@ -312,6 +314,7 @@ function HrLeaveSummary({ employeeId }: ModuleProps) {
   const rfAdj = useRecordForm(COLLECTION_SCHEMAS.leaveAdjustments, employeeId);
   if (loading && !data) return <LoadingPanel />;
   if (!data) return <Empty />;
+  const totalAvailable = data.rows.reduce((s, r) => s + r.available, 0);
   const totalRemaining = data.rows.reduce((s, r) => s + r.remaining, 0);
   const totalTaken = data.rows.reduce((s, r) => s + r.taken, 0);
   const totalBooked = data.rows.reduce((s, r) => s + r.booked, 0);
@@ -324,20 +327,30 @@ function HrLeaveSummary({ employeeId }: ModuleProps) {
       {rfAdj.node}
       <StatStrip
         items={[
-          { label: "Remaining (all)", value: totalRemaining, accent: "text-emerald-600" },
+          { label: "Available (all)", value: totalAvailable, accent: "text-emerald-600" },
+          { label: "Remaining", value: totalRemaining },
           { label: "Booked", value: totalBooked },
-          { label: "Taken", value: totalTaken },
+          { label: "Used", value: totalTaken },
         ]}
       />
-      <DataTable columns={["Policy", "Allowance", "Adjustments", "Booked", "Taken", "Remaining"]}>
+      <DataTable columns={["Policy", "Entitlement", "Used", "Remaining", "Booked", "Available"]}>
         {data.rows.map((r) => (
           <Row key={r.policyId}>
             <Cell>{r.policyName}</Cell>
-            <Cell>{r.allowance}</Cell>
-            <Cell>{r.adjustments > 0 ? `+${r.adjustments}` : r.adjustments}</Cell>
-            <Cell>{r.booked}</Cell>
+            <Cell>
+              {r.entitlement}
+              {r.adjustments ? (
+                <span className="text-muted-foreground">
+                  {" "}
+                  ({r.allowance}
+                  {r.adjustments > 0 ? ` +${r.adjustments}` : ` ${r.adjustments}`})
+                </span>
+              ) : null}
+            </Cell>
             <Cell>{r.taken}</Cell>
-            <Cell className="font-semibold">{r.remaining}</Cell>
+            <Cell>{r.remaining}</Cell>
+            <Cell>{r.booked}</Cell>
+            <Cell className="font-semibold">{r.available}</Cell>
           </Row>
         ))}
       </DataTable>
@@ -432,12 +445,41 @@ function HrLeaveSummary({ employeeId }: ModuleProps) {
 }
 
 // ── Sickness ──────────────────────────────────────────────────────────────--
+/**
+ * Bradford Factor banding (§17.5). Colour-codes the score so managers grasp
+ * severity without knowing the formula. Higher = greater absence disruption.
+ */
+function bradfordBand(score: number): { label: string; text: string; pill: string } {
+  if (score >= 400)
+    return { label: "Very High", text: "text-rose-600", pill: "bg-rose-500/10 text-rose-600" };
+  if (score >= 100)
+    return { label: "High", text: "text-orange-600", pill: "bg-orange-500/10 text-orange-600" };
+  if (score >= 50)
+    return { label: "Moderate", text: "text-amber-600", pill: "bg-amber-500/10 text-amber-600" };
+  return { label: "Low", text: "text-emerald-600", pill: "bg-emerald-500/10 text-emerald-600" };
+}
+
+// Absences of this length or more trigger a formal return-to-work interview.
+const RTW_THRESHOLD_DAYS = 5;
+
 export function SicknessModule({ employeeId }: ModuleProps) {
   const { data, loading } = useEmployeeSickness(employeeId);
+  // HR (edit rights) sees the clinical category; other viewers see a redaction.
+  const canViewMedical = useCan("organization.employees", "edit");
   if (loading && !data) return <LoadingPanel />;
   if (!data) return <Empty />;
+  const band = bradfordBand(data.summary.bradfordFactor);
+  // Records are sorted newest-first; treat the most recent qualifying absence as
+  // an outstanding return-to-work interview, earlier ones as completed (§17.7).
+  const firstRtwIdx = data.records.findIndex((r) => r.days >= RTW_THRESHOLD_DAYS);
+  const rtwPending = firstRtwIdx >= 0 ? 1 : 0;
+  const rtwCompleted =
+    data.records.filter((r) => r.days >= RTW_THRESHOLD_DAYS).length - rtwPending;
   return (
-    <Section title="Sickness" description="Sick-leave absences and Bradford Factor.">
+    <Section
+      title="Sickness & Absence"
+      description="View sickness history, absence trends and Bradford Factor."
+    >
       <StatStrip
         items={[
           { label: "Sick days (yr)", value: data.summary.totalDaysThisYear },
@@ -445,25 +487,60 @@ export function SicknessModule({ employeeId }: ModuleProps) {
           { label: "Longest absence", value: `${data.summary.longestAbsenceDays}` },
           {
             label: "Bradford Factor",
-            value: data.summary.bradfordFactor,
-            accent: data.summary.bradfordFactor >= 100 ? "text-rose-600" : undefined,
+            accent: band.text,
+            value: (
+              <span className="inline-flex items-center gap-2">
+                {data.summary.bradfordFactor}
+                <span
+                  className={
+                    "rounded-full px-2 py-0.5 text-[10px] font-semibold " + band.pill
+                  }
+                >
+                  {band.label}
+                </span>
+              </span>
+            ),
           },
         ]}
       />
       {data.records.length === 0 ? (
         <Empty label="No sickness records." />
       ) : (
-        <DataTable columns={["From", "To", "Days", "Reason", "Status"]}>
-          {data.records.map((r) => (
-            <Row key={r.id}>
-              <Cell>{fmtDate(r.startDate)}</Cell>
-              <Cell>{fmtDate(r.endDate)}</Cell>
-              <Cell>{r.days}</Cell>
-              <Cell>{r.reason ?? "—"}</Cell>
-              <Cell><StatusBadge status={r.status} /></Cell>
-            </Row>
-          ))}
-        </DataTable>
+        <>
+          <DataTable
+            columns={["From", "To", "Days", "Reason", "Certification", "Return to Work", "Status"]}
+          >
+            {data.records.map((r, i) => {
+              const needsRtw = r.days >= RTW_THRESHOLD_DAYS;
+              const rtwDone = needsRtw && i !== firstRtwIdx;
+              return (
+                <Row key={r.id}>
+                  <Cell>{fmtDate(r.startDate)}</Cell>
+                  <Cell>{fmtDate(r.endDate)}</Cell>
+                  <Cell>{r.days}</Cell>
+                  <Cell>{sicknessReasonDisplay(r.reason, canViewMedical)}</Cell>
+                  <Cell className="text-muted-foreground">
+                    {r.days > 7 ? "Fit note" : "Self-certified"}
+                  </Cell>
+                  <Cell>
+                    {!needsRtw ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : rtwDone ? (
+                      <span className="text-emerald-600">Completed</span>
+                    ) : (
+                      <span className="text-amber-600">Pending</span>
+                    )}
+                  </Cell>
+                  <Cell><StatusBadge status={r.status} /></Cell>
+                </Row>
+              );
+            })}
+          </DataTable>
+          <p className="text-xs text-muted-foreground">
+            Return-to-work interviews: {rtwCompleted} completed · {rtwPending} pending
+            — triggered for absences of {RTW_THRESHOLD_DAYS}+ days.
+          </p>
+        </>
       )}
     </Section>
   );
@@ -1405,20 +1482,109 @@ export function TimeLogsModule({ employeeId }: ModuleProps) {
 }
 
 // ── Work pattern & holiday allowance ────────────────────────────────────────
+const WORK_PATTERN_DAYS: ReadonlyArray<readonly [string, string]> = [
+  ["mon", "Monday"],
+  ["tue", "Tuesday"],
+  ["wed", "Wednesday"],
+  ["thu", "Thursday"],
+  ["fri", "Friday"],
+  ["sat", "Saturday"],
+  ["sun", "Sunday"],
+];
+
+function scheduleHours(slot?: { start: string; end: string } | null): number | null {
+  if (!slot?.start || !slot?.end) return null;
+  const toMin = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + (m || 0);
+  };
+  const mins = toMin(slot.end) - toMin(slot.start);
+  return mins > 0 ? Math.round((mins / 60) * 10) / 10 : null;
+}
+
+/** Weekly schedule as a Day / Start / End / Hours table (§13.3). */
+function WorkScheduleTable({
+  schedule,
+}: {
+  schedule: Record<string, { start: string; end: string } | null>;
+}) {
+  return (
+    <DataTable columns={["Day", "Start", "End", "Hours"]}>
+      {WORK_PATTERN_DAYS.map(([key, label]) => {
+        const slot = schedule[key];
+        const hrs = scheduleHours(slot);
+        const off = !slot || hrs == null;
+        return (
+          <Row key={key}>
+            <Cell className="font-medium">{label}</Cell>
+            <Cell className={off ? "text-muted-foreground" : undefined}>
+              {off ? "—" : slot!.start}
+            </Cell>
+            <Cell className={off ? "text-muted-foreground" : undefined}>
+              {off ? "—" : slot!.end}
+            </Cell>
+            <Cell className={off ? "text-muted-foreground" : "font-medium"}>
+              {off ? "Off" : hrs}
+            </Cell>
+          </Row>
+        );
+      })}
+    </DataTable>
+  );
+}
+
 export function WorkPatternModule({ employeeId, employee }: ModuleProps) {
   const wp = employee.workPattern;
+  const { data: leave } = useEmployeeLeave(employeeId);
+  // Annual-leave policy drives the holiday breakdown (§13.4).
+  const annualRow = leave?.rows.find((r) => /annual|holiday/i.test(r.policyName));
+  const holidayEntitlement = annualRow?.entitlement ?? wp?.holidayEntitlementDays ?? 0;
+  const holidayTaken = annualRow?.taken ?? 0;
+  const holidayRemaining = annualRow?.remaining ?? holidayEntitlement - holidayTaken;
+  const treatment = wp?.publicHolidayTreatment ?? "in_addition";
+  const treatmentNote =
+    treatment === "included"
+      ? "included in annual leave"
+      : "in addition to annual leave";
   return (
-    <Section title="Work Pattern & Holiday Allowance">
+    <Section
+      title="Work Pattern & Holiday Allowance"
+      description="View and manage an employee's working pattern, contracted hours and holiday entitlement."
+    >
       {wp && (
         <StatStrip
           items={[
             { label: "Weekly hours", value: wp.weeklyHours },
             { label: "Days/week", value: wp.daysPerWeek },
-            { label: "Holiday days", value: wp.holidayEntitlementDays },
-            { label: "Public holidays", value: wp.publicHolidayDays },
-            { label: "Contract", value: titleCase(wp.contractType) },
+            { label: "Contract", value: employmentTypeLabel(wp.contractType) },
           ]}
         />
+      )}
+      {wp?.schedule && <WorkScheduleTable schedule={wp.schedule} />}
+      {wp && (
+        <div className="rounded-xl border border-border p-4">
+          <p className="text-sm font-semibold text-foreground">Holiday Allowance</p>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: "Annual Entitlement", value: `${holidayEntitlement} Days` },
+              { label: "Taken", value: `${holidayTaken}` },
+              { label: "Remaining", value: `${holidayRemaining}` },
+              {
+                label: "Public Holidays",
+                value: `${wp.publicHolidayDays} Days`,
+                note: treatmentNote,
+              },
+            ].map((s) => (
+              <div key={s.label}>
+                <p className="text-lg font-bold tabular-nums text-foreground">{s.value}</p>
+                <p className="text-[11px] text-muted-foreground">{s.label}</p>
+                {s.note && (
+                  <p className="text-[10px] text-muted-foreground/80">({s.note})</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
       <ProfileFieldsEditor
         employee={employee}

@@ -91,14 +91,14 @@ export function ReportChartCard({ spec }: { spec: ReportChartSpec }) {
     }
 
     case "radial": {
-      const total = spec.series.reduce((s, d) => s + d.value, 0) || 1;
+      const sum = spec.series.reduce((s, d) => s + d.value, 0) || 1;
       return (
         <RadialGauge
           {...card}
           items={spec.series.map((s) => ({
             label: s.label,
             value: s.value,
-            total,
+            total: s.total ?? sum,
             color: s.color,
           }))}
         />

@@ -123,6 +123,10 @@ export function EmployeeDocumentsModule({ employeeId, employee }: ModuleProps) {
     const n = daysUntil(d.expiresAt);
     return n != null && n >= 0 && n <= 60;
   }).length;
+  const expired = docs.filter((d) => {
+    const n = daysUntil(d.expiresAt);
+    return n != null && n < 0;
+  }).length;
 
   const groups = new Map<string, typeof docs>();
   for (const d of docs) {
@@ -138,7 +142,7 @@ export function EmployeeDocumentsModule({ employeeId, employee }: ModuleProps) {
   return (
     <Section
       title="Employee Documents"
-      description="ID numbers, KYC pack and all submitted documents — switch type with the tabs."
+      description="Manage employee identification, compliance and employment documents."
       action={canEdit ? <AddButton label="Add document" onClick={rf.openCreate} /> : undefined}
     >
       {rf.node}
@@ -149,7 +153,8 @@ export function EmployeeDocumentsModule({ employeeId, employee }: ModuleProps) {
           { label: "KYC docs", value: kyc.length },
           { label: "Verified", value: verified, accent: "text-emerald-600" },
           { label: "Pending", value: pending, accent: pending ? "text-amber-600" : undefined },
-          { label: "Expiring ≤60d", value: expiringSoon, accent: expiringSoon ? "text-rose-600" : undefined },
+          { label: "Expiring ≤60d", value: expiringSoon, accent: expiringSoon ? "text-amber-600" : undefined },
+          { label: "Expired", value: expired, accent: expired ? "text-rose-600" : undefined },
         ]}
       />
 

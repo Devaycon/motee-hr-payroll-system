@@ -47,20 +47,29 @@ export function HistoryRow({ request }: HistoryRowProps) {
             {request.notes}
           </p>
         )}
-        {request.rejectionReason && (
-          <p className="text-[10px] text-red-500 mt-0.5 truncate">
-            {request.rejectionReason}
+        {request.status === "rejected" && request.rejectionReason && (
+          <p className="text-[10px] text-red-500 mt-0.5">
+            <span className="font-semibold">Reason:</span> {request.rejectionReason}
           </p>
         )}
       </div>
-      <span
-        className={cn(
-          "text-[10px] px-2 py-0.5 rounded-full border font-semibold shrink-0",
-          LEAVE_STATUS_STYLES[request.status],
-        )}
-      >
-        {LEAVE_STATUS_LABELS[request.status]}
-      </span>
+      <div className="flex flex-col items-end gap-1 shrink-0">
+        <span
+          className={cn(
+            "text-[10px] px-2 py-0.5 rounded-full border font-semibold",
+            LEAVE_STATUS_STYLES[request.status],
+          )}
+        >
+          {LEAVE_STATUS_LABELS[request.status]}
+        </span>
+        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+          {request.status === "approved"
+            ? `Approver: ${request.approvedBy ?? "System"}`
+            : request.status === "pending"
+              ? "Awaiting approval"
+              : "—"}
+        </span>
+      </div>
     </div>
   );
 }

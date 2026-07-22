@@ -72,6 +72,12 @@ export interface RadialSeriesItem {
   label: string;
   value: number;
   color: string;
+  /**
+   * Denominator for the ring's percentage. Defaults to the sum of all ring
+   * values (share-of-total). Set explicitly (e.g. 100) when `value` is already
+   * a percentage, so a single-ring gauge shows the rate rather than 100%.
+   */
+  total?: number;
 }
 export interface ChartSeries {
   key: string;
