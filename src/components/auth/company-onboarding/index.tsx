@@ -154,7 +154,7 @@ export default function CompanyOnboardingIndex() {
               { step: "3", label: "Configure HR modules" },
               { step: "4", label: "Review & go live" },
             ].map(({ step, label }) => (
-              <div key={step} className="flex items-center gap-3">
+              <div key={step} className="flex items-center  gap-3">
                 <div
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
                   style={{
