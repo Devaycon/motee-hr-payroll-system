@@ -27,6 +27,7 @@ function buildHierarchy(bundle: LocaleBundle): HierarchyNode[] {
     const manager = e.managerId ? employeesById.get(e.managerId) : null;
     return {
       id: e.id,
+      employeeNumber: e.employeeNumber,
       name: e.fullName,
       initials: e.initials,
       gender: e.gender,

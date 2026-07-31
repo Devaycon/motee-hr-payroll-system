@@ -1,6 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { isOpenLeaveStatus } from "@/src/lib/types/leave";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import type { CalEvent, EventType } from "./types";
 
@@ -20,8 +23,18 @@ function mapType(t?: string): EventType {
   if (t === "deadline" || t === "reminder" || t === "holiday") return t;
   if (t === "training") return "training";
   if (t === "all-hands" || t === "meeting") return "meeting";
-  if (t === "birthday" || t === "anniversary") return "reminder";
+  if (t === "birthday" || t === "anniversary") return t;
   return "meeting";
+}
+
+/**
+ * Recurring date (birthday / work anniversary) projected onto the years around
+ * today, so the calendar actually contains the celebrations the dashboard's
+ * "Upcoming Birthdays" card counts (client feedback round 2, §E2).
+ */
+function recurringDates(monthDay: string): string[] {
+  const year = new Date().getFullYear();
+  return [year - 1, year, year + 1].map((y) => `${y}-${monthDay}`);
 }
 
 /** Extract a local "HH:mm" from an ISO datetime, or undefined if it has no time part. */
@@ -91,9 +104,72 @@ function buildEvents(bundle: LocaleBundle): CalEvent[] {
     }))
     .filter((e) => e.date);
 
-  return [...localeEvents, ...leaveEvents, ...trainingEvents];
+  // Birthdays and work anniversaries, generated from the employee records.
+  const celebrationEvents: CalEvent[] = bundle.employees.flatMap((e) => {
+    const out: CalEvent[] = [];
+    if (e.dateOfBirth) {
+      for (const date of recurringDates(e.dateOfBirth.slice(5, 10))) {
+        out.push({
+          id: `bday-${e.id}-${date.slice(0, 4)}`,
+          title: `${e.fullName}'s birthday`,
+          date,
+          type: "birthday",
+          description: `${e.jobTitle} · ${e.departmentName}`,
+          allDay: true,
+        });
+      }
+    }
+    if (e.startDate) {
+      const startYear = Number(e.startDate.slice(0, 4));
+      for (const date of recurringDates(e.startDate.slice(5, 10))) {
+        const years = Number(date.slice(0, 4)) - startYear;
+        if (years < 1) continue; // the start date itself isn't an anniversary
+        out.push({
+          id: `anniv-${e.id}-${date.slice(0, 4)}`,
+          title: `${e.fullName} — ${years} year${years === 1 ? "" : "s"} of service`,
+          date,
+          type: "anniversary",
+          description: `${e.jobTitle} · ${e.departmentName}`,
+          allDay: true,
+        });
+      }
+    }
+    return out;
+  });
+
+  return [...localeEvents, ...leaveEvents, ...trainingEvents, ...celebrationEvents];
 }
 
 export function useCalendarEvents() {
   return useLocaleSection<CalEvent[]>(buildEvents);
+}
+
+/**
+ * "Covering" events, one per leave request with a relief assignee
+ * (client feedback §3.2).
+ *
+ * Sourced from the leave slice rather than the locale bundle — relief
+ * assignments are captured in the app, and the bundle fixtures predate them.
+ */
+export function useCoverEvents(): CalEvent[] {
+  const requests = useAppSelector((s) => s.leave.requests);
+  return useMemo(
+    () =>
+      requests
+        .filter(
+          (r) =>
+            r.reliefEmployeeName &&
+            (r.status === "approved" || isOpenLeaveStatus(r.status)),
+        )
+        .map((r) => ({
+          id: `cover-${r.id}`,
+          title: `${r.reliefEmployeeName} covering ${r.employeeName}`,
+          date: r.startDate,
+          type: "cover" as const,
+          description: `Relief cover · ${r.startDate} → ${r.endDate}`,
+          allDay: true,
+        }))
+        .filter((e) => e.date),
+    [requests],
+  );
 }

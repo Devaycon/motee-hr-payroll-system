@@ -6,7 +6,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Building2, ZoomIn, ZoomOut, Maximize2, Download } from "lucide-react";
 import { cn } from "@/src/lib/utils";
-import { personPhotoUrl } from "@/src/lib/utils/avatar";
+import { PersonPhoto } from "@/src/components/shared/person-photo";
 import { STATUS_STYLES, STATUS_LABELS } from "../data";
 import type { HierarchyNode } from "../types";
 
@@ -18,16 +18,18 @@ interface HierarchyTreeProps {
 function RootCard({ node }: { node: HierarchyNode }) {
   return (
     <div className="flex flex-col items-center gap-2.5 p-5 rounded-2xl bg-primary text-primary-foreground min-w-40 max-w-49 shadow-lg shadow-primary/25 text-center">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={personPhotoUrl(node.name, node.gender)}
-        alt={node.name}
+      <PersonPhoto
+        name={node.name}
+        gender={node.gender}
         className="w-16 h-16 rounded-full object-cover ring-2 ring-primary-foreground/30"
       />
       <div className="w-full">
         <p className="font-bold text-sm leading-tight truncate">{node.name}</p>
         <p className="text-xs text-primary-foreground/70 mt-0.5 truncate">
           {node.jobTitle}
+        </p>
+        <p className="font-mono text-[10px] text-primary-foreground/60 mt-0.5 truncate">
+          {node.employeeNumber ?? node.id}
         </p>
       </div>
       <span
@@ -45,10 +47,9 @@ function RootCard({ node }: { node: HierarchyNode }) {
 function ManagerCard({ node }: { node: HierarchyNode }) {
   return (
     <div className="flex flex-col items-center gap-2 p-3.5 rounded-xl border border-sidebar-border bg-sidebar-accent min-w-36 max-w-44 text-center">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={personPhotoUrl(node.name, node.gender)}
-        alt={node.name}
+      <PersonPhoto
+        name={node.name}
+        gender={node.gender}
         className="w-11 h-11 rounded-full object-cover ring-2 ring-sidebar-primary/25"
       />
       <div className="w-full">
@@ -57,6 +58,9 @@ function ManagerCard({ node }: { node: HierarchyNode }) {
         </p>
         <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
           {node.jobTitle}
+        </p>
+        <p className="font-mono text-[10px] text-muted-foreground/70 mt-0.5 truncate">
+          {node.employeeNumber ?? node.id}
         </p>
       </div>
       <Badge
@@ -72,10 +76,9 @@ function ManagerCard({ node }: { node: HierarchyNode }) {
 function MemberCard({ node }: { node: HierarchyNode }) {
   return (
     <div className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-border bg-card min-w-32 max-w-39 text-center hover:border-primary/40 hover:shadow-sm transition-all">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={personPhotoUrl(node.name, node.gender)}
-        alt={node.name}
+      <PersonPhoto
+        name={node.name}
+        gender={node.gender}
         className="w-8 h-8 rounded-full object-cover"
       />
       <div className="w-full">
@@ -84,6 +87,9 @@ function MemberCard({ node }: { node: HierarchyNode }) {
         </p>
         <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
           {node.jobTitle}
+        </p>
+        <p className="font-mono text-[10px] text-muted-foreground/70 mt-0.5 truncate">
+          {node.employeeNumber ?? node.id}
         </p>
       </div>
       <div className="flex flex-col items-center gap-1 w-full">

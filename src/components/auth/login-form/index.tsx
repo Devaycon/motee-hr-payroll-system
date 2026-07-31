@@ -95,7 +95,8 @@ export function LoginForm() {
           {submitting ? "Signing in…" : "Login"}
         </Button>
         <p className="text-[11px] text-muted-foreground text-center">
-          Tip: open the Demo Links button (bottom-right) to log in as any role.
+          Tip: open the Demo Links button (bottom-right) to jump between the
+          sign-up and account screens.
         </p>
       </form>
     </div>

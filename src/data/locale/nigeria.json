@@ -562,8 +562,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -580,7 +582,7 @@
           "isPrimary": false
         }
       ],
-      "title": "Mr",
+      "title": "Mrs",
       "middleName": "Emeka",
       "preferredName": "Folake",
       "maidenName": "Nwosu",
@@ -688,7 +690,8 @@
           "postalCode": "965838",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "NG-EMP-0002",
@@ -780,8 +783,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -906,7 +911,8 @@
           "postalCode": "961915",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0003",
@@ -998,8 +1004,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -1010,7 +1018,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Mrs",
+      "title": "Mr",
       "middleName": "Ada",
       "preferredName": "Chinedu",
       "maidenName": "Bello",
@@ -1118,7 +1126,8 @@
           "postalCode": "136438",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0004",
@@ -1210,8 +1219,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -1222,7 +1233,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Miss",
+      "title": "Mr",
       "middleName": "Tunde",
       "preferredName": "Tochukwu",
       "maidenName": "Eze",
@@ -1330,7 +1341,8 @@
           "postalCode": "102556",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0005",
@@ -1422,8 +1434,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -1434,7 +1448,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Mr",
+      "title": "Miss",
       "middleName": "Tunde",
       "preferredName": "Ngozi",
       "maidenName": "Balogun",
@@ -1542,7 +1556,8 @@
           "postalCode": "985528",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "invite"
     },
     {
       "id": "NG-EMP-0006",
@@ -1607,7 +1622,7 @@
       ],
       "accessLevelId": "AL-1",
       "workPattern": {
-        "weeklyHours": 24,
+        "weeklyHours": 22.5,
         "daysPerWeek": 3,
         "schedule": {
           "mon": {
@@ -1627,8 +1642,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "part_time"
       },
       "emergencyContacts": [
@@ -1747,7 +1764,8 @@
           "postalCode": "101241",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "NG-EMP-0007",
@@ -1812,7 +1830,7 @@
       ],
       "accessLevelId": "AL-1",
       "workPattern": {
-        "weeklyHours": 24,
+        "weeklyHours": 22.5,
         "daysPerWeek": 3,
         "schedule": {
           "mon": {
@@ -1832,8 +1850,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "part_time"
       },
       "emergencyContacts": [
@@ -1952,7 +1972,8 @@
           "postalCode": "222353",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "NG-EMP-0008",
@@ -2043,8 +2064,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -2163,7 +2186,8 @@
           "postalCode": "681183",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0009",
@@ -2254,8 +2278,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -2374,7 +2400,8 @@
           "postalCode": "445883",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0010",
@@ -2440,7 +2467,7 @@
       ],
       "accessLevelId": "AL-3",
       "workPattern": {
-        "weeklyHours": 24,
+        "weeklyHours": 22.5,
         "daysPerWeek": 3,
         "schedule": {
           "mon": {
@@ -2460,8 +2487,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "part_time"
       },
       "emergencyContacts": [
@@ -2586,7 +2615,8 @@
           "postalCode": "165461",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "NG-EMP-0011",
@@ -2651,7 +2681,7 @@
       ],
       "accessLevelId": "AL-1",
       "workPattern": {
-        "weeklyHours": 24,
+        "weeklyHours": 22.5,
         "daysPerWeek": 3,
         "schedule": {
           "mon": {
@@ -2671,8 +2701,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "part_time"
       },
       "emergencyContacts": [
@@ -2791,7 +2823,8 @@
           "postalCode": "348058",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "NG-EMP-0012",
@@ -2856,7 +2889,7 @@
       ],
       "accessLevelId": "AL-1",
       "workPattern": {
-        "weeklyHours": 24,
+        "weeklyHours": 22.5,
         "daysPerWeek": 3,
         "schedule": {
           "mon": {
@@ -2876,8 +2909,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "part_time"
       },
       "emergencyContacts": [
@@ -2888,7 +2923,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Miss",
+      "title": "Mr",
       "middleName": "Uche",
       "preferredName": "Chinedu",
       "maidenName": "Bello",
@@ -2996,7 +3031,8 @@
           "postalCode": "539577",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "invite"
     },
     {
       "id": "NG-EMP-0013",
@@ -3088,8 +3124,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -3208,7 +3246,8 @@
           "postalCode": "912985",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0014",
@@ -3299,8 +3338,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -3425,7 +3466,8 @@
           "postalCode": "813160",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "invite"
     },
     {
       "id": "NG-EMP-0015",
@@ -3516,8 +3558,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -3642,7 +3686,8 @@
           "postalCode": "101241",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0016",
@@ -3733,8 +3778,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -3853,7 +3900,8 @@
           "postalCode": "278734",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0017",
@@ -3945,8 +3993,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -4065,7 +4115,8 @@
           "postalCode": "108719",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0018",
@@ -4157,8 +4208,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -4175,7 +4228,7 @@
           "isPrimary": false
         }
       ],
-      "title": "Mrs",
+      "title": "Mr",
       "middleName": "Ada",
       "preferredName": "Femi",
       "maidenName": "Adeyemi",
@@ -4283,7 +4336,8 @@
           "postalCode": "432179",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0019",
@@ -4374,8 +4428,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -4392,7 +4448,7 @@
           "isPrimary": false
         }
       ],
-      "title": "Mr",
+      "title": "Miss",
       "middleName": "Tunde",
       "preferredName": "Folake",
       "maidenName": "Nwosu",
@@ -4500,7 +4556,8 @@
           "postalCode": "505693",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "NG-EMP-0020",
@@ -4592,8 +4649,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 0,
         "holidayEntitlementDays": 20,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -4712,7 +4771,8 @@
           "postalCode": "101241",
           "country": "Nigeria"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     }
   ],
   "orgStructure": [
@@ -24599,7 +24659,7 @@
       "startDate": "2025-06-09",
       "endDate": "2025-06-10",
       "days": 2,
-      "reason": "Medical appointment",
+      "reason": "Heavy cold",
       "status": "approved",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-11-10T10:00:00Z"
@@ -24612,7 +24672,7 @@
       "startDate": "2025-05-12",
       "endDate": "2025-05-13",
       "days": 2,
-      "reason": "Childcare",
+      "reason": "Migraine",
       "status": "approved",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-09-04T10:00:00Z"
@@ -24625,7 +24685,7 @@
       "startDate": "2025-04-12",
       "endDate": "2025-04-14",
       "days": 3,
-      "reason": "Wedding",
+      "reason": "Chest infection and cough",
       "status": "pending",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-12-28T10:00:00Z"
@@ -24638,7 +24698,7 @@
       "startDate": "2025-03-21",
       "endDate": "2025-03-23",
       "days": 3,
-      "reason": "Childcare",
+      "reason": "Lower back pain",
       "status": "approved",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-09-20T10:00:00Z"
@@ -24781,7 +24841,7 @@
       "startDate": "2025-04-06",
       "endDate": "2025-04-09",
       "days": 4,
-      "reason": "Childcare",
+      "reason": "Recurring migraines",
       "status": "approved",
       "approverId": "NG-EMP-0004",
       "submittedAt": "2025-10-13T10:00:00Z"
@@ -24794,7 +24854,7 @@
       "startDate": "2025-03-08",
       "endDate": "2025-03-08",
       "days": 1,
-      "reason": "Personal",
+      "reason": "Heavy cold",
       "status": "pending",
       "approverId": "NG-EMP-0004",
       "submittedAt": "2025-12-27T10:00:00Z"
@@ -24807,7 +24867,7 @@
       "startDate": "2025-02-20",
       "endDate": "2025-02-24",
       "days": 5,
-      "reason": "Wedding",
+      "reason": "Chest infection and cough",
       "status": "approved",
       "approverId": "NG-EMP-0004",
       "submittedAt": "2025-10-25T10:00:00Z"
@@ -24820,7 +24880,7 @@
       "startDate": "2025-01-09",
       "endDate": "2025-01-09",
       "days": 1,
-      "reason": "Medical appointment",
+      "reason": "Heavy cold",
       "status": "rejected",
       "approverId": "NG-EMP-0004",
       "submittedAt": "2025-09-18T10:00:00Z"
@@ -24963,7 +25023,7 @@
       "startDate": "2025-02-20",
       "endDate": "2025-02-21",
       "days": 2,
-      "reason": "Wedding",
+      "reason": "Hospital scan",
       "status": "approved",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-12-08T10:00:00Z"
@@ -24976,7 +25036,7 @@
       "startDate": "2025-01-25",
       "endDate": "2025-01-29",
       "days": 5,
-      "reason": "Medical appointment",
+      "reason": "Flu symptoms",
       "status": "pending",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2026-01-05T10:00:00Z"
@@ -24989,7 +25049,7 @@
       "startDate": "2024-12-04",
       "endDate": "2024-12-04",
       "days": 1,
-      "reason": "Wedding",
+      "reason": "Migraine",
       "status": "pending",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-11-12T10:00:00Z"
@@ -25002,7 +25062,7 @@
       "startDate": "2024-11-24",
       "endDate": "2024-11-27",
       "days": 4,
-      "reason": "Childcare",
+      "reason": "Shoulder injury",
       "status": "pending",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-12-23T10:00:00Z"
@@ -25145,7 +25205,7 @@
       "startDate": "2024-12-11",
       "endDate": "2024-12-14",
       "days": 4,
-      "reason": "Medical appointment",
+      "reason": "Recurring migraines",
       "status": "approved",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-09-30T10:00:00Z"
@@ -25158,7 +25218,7 @@
       "startDate": "2024-11-08",
       "endDate": "2024-11-11",
       "days": 4,
-      "reason": "Family time",
+      "reason": "Lower back pain",
       "status": "pending",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-11-28T10:00:00Z"
@@ -25171,7 +25231,7 @@
       "startDate": "2025-10-12",
       "endDate": "2025-10-14",
       "days": 3,
-      "reason": "Holiday abroad",
+      "reason": "Stress-related absence",
       "status": "approved",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-10-05T10:00:00Z"
@@ -25184,7 +25244,7 @@
       "startDate": "2025-09-05",
       "endDate": "2025-09-07",
       "days": 3,
-      "reason": "Medical appointment",
+      "reason": "Recurring migraines",
       "status": "pending",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-12-18T10:00:00Z"
@@ -25327,7 +25387,7 @@
       "startDate": "2025-10-11",
       "endDate": "2025-10-15",
       "days": 5,
-      "reason": "Medical appointment",
+      "reason": "Lower back pain",
       "status": "pending",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-12-22T10:00:00Z"
@@ -25340,7 +25400,7 @@
       "startDate": "2025-09-02",
       "endDate": "2025-09-04",
       "days": 3,
-      "reason": "Medical appointment",
+      "reason": "Chest infection and cough",
       "status": "pending",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-11-07T10:00:00Z"
@@ -25353,7 +25413,7 @@
       "startDate": "2025-08-23",
       "endDate": "2025-08-27",
       "days": 5,
-      "reason": "Childcare",
+      "reason": "Recurring migraines",
       "status": "approved",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-10-05T10:00:00Z"
@@ -25366,7 +25426,7 @@
       "startDate": "2025-07-20",
       "endDate": "2025-07-24",
       "days": 5,
-      "reason": "Personal",
+      "reason": "Chest infection and cough",
       "status": "rejected",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-10-29T10:00:00Z"
@@ -25509,7 +25569,7 @@
       "startDate": "2025-08-02",
       "endDate": "2025-08-04",
       "days": 3,
-      "reason": "Childcare",
+      "reason": "Chest infection and cough",
       "status": "approved",
       "approverId": "NG-EMP-0018",
       "submittedAt": "2025-09-14T10:00:00Z"
@@ -25522,7 +25582,7 @@
       "startDate": "2025-07-20",
       "endDate": "2025-07-23",
       "days": 4,
-      "reason": "Wedding",
+      "reason": "Recurring migraines",
       "status": "approved",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-09-27T10:00:00Z"
@@ -25535,7 +25595,7 @@
       "startDate": "2025-06-20",
       "endDate": "2025-06-24",
       "days": 5,
-      "reason": "Childcare",
+      "reason": "Flu symptoms",
       "status": "approved",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-12-22T10:00:00Z"
@@ -25548,10 +25608,556 @@
       "startDate": "2025-05-03",
       "endDate": "2025-05-04",
       "days": 2,
-      "reason": "Personal",
+      "reason": "Sprained ankle",
       "status": "pending",
       "approverId": "NG-EMP-0001",
       "submittedAt": "2025-11-10T10:00:00Z"
+    },
+    {
+      "id": "NG-SICK-0001",
+      "employeeId": "NG-EMP-0001",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-07-07",
+      "endDate": "2026-07-07",
+      "days": 1,
+      "reason": "Heavy cold",
+      "status": "approved",
+      "approverId": null,
+      "submittedAt": "2026-07-06T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0002",
+      "employeeId": "NG-EMP-0002",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-23",
+      "endDate": "2026-04-23",
+      "days": 1,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-04-22T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0003",
+      "employeeId": "NG-EMP-0002",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-08-06",
+      "endDate": "2026-08-10",
+      "days": 3,
+      "reason": "Flu symptoms",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-08-05T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0004",
+      "employeeId": "NG-EMP-0002",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-05",
+      "endDate": "2026-03-12",
+      "days": 6,
+      "reason": "Surgery recovery",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-03-04T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0005",
+      "employeeId": "NG-EMP-0003",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-07-20",
+      "endDate": "2026-07-20",
+      "days": 1,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-07-19T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0006",
+      "employeeId": "NG-EMP-0004",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-08-07",
+      "endDate": "2026-08-07",
+      "days": 1,
+      "reason": "Dentist appointment",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-08-06T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0007",
+      "employeeId": "NG-EMP-0004",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-13",
+      "endDate": "2026-04-14",
+      "days": 2,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-04-12T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0008",
+      "employeeId": "NG-EMP-0005",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-05-25",
+      "endDate": "2026-05-25",
+      "days": 1,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "NG-EMP-0004",
+      "submittedAt": "2026-05-24T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0009",
+      "employeeId": "NG-EMP-0005",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-18",
+      "endDate": "2026-03-20",
+      "days": 3,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": "NG-EMP-0004",
+      "submittedAt": "2026-03-17T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0010",
+      "employeeId": "NG-EMP-0005",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-07-03",
+      "endDate": "2026-07-10",
+      "days": 6,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": "NG-EMP-0004",
+      "submittedAt": "2026-07-02T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0011",
+      "employeeId": "NG-EMP-0006",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-13",
+      "endDate": "2026-04-13",
+      "days": 1,
+      "reason": "Dentist appointment",
+      "status": "approved",
+      "approverId": "NG-EMP-0004",
+      "submittedAt": "2026-04-12T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0012",
+      "employeeId": "NG-EMP-0007",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-01-29",
+      "endDate": "2026-01-29",
+      "days": 1,
+      "reason": "Mental health / wellbeing day",
+      "status": "approved",
+      "approverId": "NG-EMP-0004",
+      "submittedAt": "2026-01-28T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0013",
+      "employeeId": "NG-EMP-0008",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-09-09",
+      "endDate": "2026-09-10",
+      "days": 2,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "NG-EMP-0004",
+      "submittedAt": "2026-09-08T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0014",
+      "employeeId": "NG-EMP-0008",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-22",
+      "endDate": "2026-04-28",
+      "days": 5,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": "NG-EMP-0004",
+      "submittedAt": "2026-04-21T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0015",
+      "employeeId": "NG-EMP-0009",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-05-22",
+      "endDate": "2026-05-22",
+      "days": 1,
+      "reason": "Doctor's appointment",
+      "status": "approved",
+      "approverId": "NG-EMP-0004",
+      "submittedAt": "2026-05-21T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0016",
+      "employeeId": "NG-EMP-0009",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-08-10",
+      "endDate": "2026-08-12",
+      "days": 3,
+      "reason": "Stress-related absence",
+      "status": "approved",
+      "approverId": "NG-EMP-0004",
+      "submittedAt": "2026-08-09T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0017",
+      "employeeId": "NG-EMP-0009",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-02-23",
+      "endDate": "2026-03-02",
+      "days": 6,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": "NG-EMP-0004",
+      "submittedAt": "2026-02-22T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0018",
+      "employeeId": "NG-EMP-0010",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-29",
+      "endDate": "2026-06-29",
+      "days": 1,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-06-28T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0019",
+      "employeeId": "NG-EMP-0010",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-02-17",
+      "endDate": "2026-02-18",
+      "days": 2,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-02-16T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0020",
+      "employeeId": "NG-EMP-0011",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-08-26",
+      "endDate": "2026-08-26",
+      "days": 1,
+      "reason": "Doctor's appointment",
+      "status": "approved",
+      "approverId": "NG-EMP-0010",
+      "submittedAt": "2026-08-25T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0021",
+      "employeeId": "NG-EMP-0011",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-05",
+      "endDate": "2026-06-08",
+      "days": 2,
+      "reason": "Sprained ankle",
+      "status": "approved",
+      "approverId": "NG-EMP-0010",
+      "submittedAt": "2026-06-04T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0022",
+      "employeeId": "NG-EMP-0012",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-05-26",
+      "endDate": "2026-05-26",
+      "days": 1,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "NG-EMP-0010",
+      "submittedAt": "2026-05-25T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0023",
+      "employeeId": "NG-EMP-0012",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-01-29",
+      "endDate": "2026-01-30",
+      "days": 2,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "NG-EMP-0010",
+      "submittedAt": "2026-01-28T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0024",
+      "employeeId": "NG-EMP-0013",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-02-27",
+      "endDate": "2026-02-27",
+      "days": 1,
+      "reason": "Dentist appointment",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-02-26T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0025",
+      "employeeId": "NG-EMP-0014",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-30",
+      "endDate": "2026-03-30",
+      "days": 1,
+      "reason": "Sprained ankle",
+      "status": "approved",
+      "approverId": "NG-EMP-0013",
+      "submittedAt": "2026-03-29T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0026",
+      "employeeId": "NG-EMP-0014",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-16",
+      "endDate": "2026-03-17",
+      "days": 2,
+      "reason": "Mental health / wellbeing day",
+      "status": "approved",
+      "approverId": "NG-EMP-0013",
+      "submittedAt": "2026-03-15T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0027",
+      "employeeId": "NG-EMP-0015",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-12",
+      "endDate": "2026-06-15",
+      "days": 2,
+      "reason": "Dentist appointment",
+      "status": "approved",
+      "approverId": "NG-EMP-0013",
+      "submittedAt": "2026-06-11T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0028",
+      "employeeId": "NG-EMP-0015",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-22",
+      "endDate": "2026-07-02",
+      "days": 9,
+      "reason": "Chest infection and cough",
+      "status": "approved",
+      "approverId": "NG-EMP-0013",
+      "submittedAt": "2026-06-21T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0029",
+      "employeeId": "NG-EMP-0016",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-29",
+      "endDate": "2026-06-30",
+      "days": 2,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-06-28T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0030",
+      "employeeId": "NG-EMP-0016",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-05-15",
+      "endDate": "2026-05-27",
+      "days": 9,
+      "reason": "Post-operative recovery",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-05-14T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0031",
+      "employeeId": "NG-EMP-0017",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-07-29",
+      "endDate": "2026-07-30",
+      "days": 2,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-07-28T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0032",
+      "employeeId": "NG-EMP-0017",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-02-09",
+      "endDate": "2026-02-13",
+      "days": 5,
+      "reason": "Stress-related absence",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-02-08T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0033",
+      "employeeId": "NG-EMP-0018",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-04",
+      "endDate": "2026-03-04",
+      "days": 1,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-03-03T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0034",
+      "employeeId": "NG-EMP-0018",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-01-15",
+      "endDate": "2026-01-16",
+      "days": 2,
+      "reason": "Doctor's appointment",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-01-14T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0035",
+      "employeeId": "NG-EMP-0019",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-01-28",
+      "endDate": "2026-01-28",
+      "days": 1,
+      "reason": "Mental health / wellbeing day",
+      "status": "approved",
+      "approverId": "NG-EMP-0018",
+      "submittedAt": "2026-01-27T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0036",
+      "employeeId": "NG-EMP-0019",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-02-02",
+      "endDate": "2026-02-02",
+      "days": 1,
+      "reason": "Sprained ankle",
+      "status": "approved",
+      "approverId": "NG-EMP-0018",
+      "submittedAt": "2026-02-01T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0037",
+      "employeeId": "NG-EMP-0019",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-07-17",
+      "endDate": "2026-07-20",
+      "days": 2,
+      "reason": "Heavy cold",
+      "status": "approved",
+      "approverId": "NG-EMP-0018",
+      "submittedAt": "2026-07-16T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0038",
+      "employeeId": "NG-EMP-0019",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-02",
+      "endDate": "2026-03-04",
+      "days": 3,
+      "reason": "Stress-related absence",
+      "status": "approved",
+      "approverId": "NG-EMP-0018",
+      "submittedAt": "2026-03-01T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0039",
+      "employeeId": "NG-EMP-0019",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-07-27",
+      "endDate": "2026-07-31",
+      "days": 5,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": "NG-EMP-0018",
+      "submittedAt": "2026-07-26T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0040",
+      "employeeId": "NG-EMP-0020",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-07-09",
+      "endDate": "2026-07-09",
+      "days": 1,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-07-08T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0041",
+      "employeeId": "NG-EMP-0020",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-08-31",
+      "endDate": "2026-09-02",
+      "days": 3,
+      "reason": "Stress-related absence",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-08-30T08:30:00Z"
+    },
+    {
+      "id": "NG-SICK-0042",
+      "employeeId": "NG-EMP-0020",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-05-06",
+      "endDate": "2026-05-13",
+      "days": 6,
+      "reason": "Chest infection and cough",
+      "status": "approved",
+      "approverId": "NG-EMP-0001",
+      "submittedAt": "2026-05-05T08:30:00Z"
     }
   ],
   "recruitment": {

@@ -56,11 +56,8 @@ export function GlobalSearch() {
       >
         <Search size={14} className="text-muted-foreground shrink-0" />
         <span className="text-xs text-muted-foreground truncate">
-          Search employees, leave, payroll, assets, documents and more.
+          Search employees, leave, payroll...
         </span>
-        <kbd className="ml-auto hidden sm:inline-flex items-center rounded border border-border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">
-          ⌘K
-        </kbd>
       </button>
 
       <CommandDialog
@@ -83,6 +80,9 @@ export function GlobalSearch() {
               >
                 <User className="text-muted-foreground" />
                 <span className="truncate">{e.fullName}</span>
+                <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                  {e.employeeNumber}
+                </span>
                 <span className="ml-auto shrink-0 text-xs text-muted-foreground">
                   {e.jobTitle}
                 </span>

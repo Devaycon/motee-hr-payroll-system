@@ -28,6 +28,11 @@ import {
   actionsColumn,
 } from "@/src/components/shared/data-table";
 import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
+import {
   GOAL_STATUS_LABELS,
   GOAL_STATUS_STYLES,
   GOAL_CATEGORY_LABELS,
@@ -68,6 +73,7 @@ export function GoalsTable({
     return matchSearch && matchDept && matchCat && matchStatus;
   });
 
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<PerformanceGoal>[]>(
     () => [
       {
@@ -84,6 +90,10 @@ export function GoalsTable({
           </div>
         ),
       },
+      ...employeeIdColumns<PerformanceGoal>({
+        identity,
+        name: (r) => r.employeeName,
+      }),
       {
         accessorKey: "department",
         header: sortableHeader("Department"),
@@ -176,7 +186,7 @@ export function GoalsTable({
         </DropdownMenu>
       )),
     ],
-    [onEdit],
+    [onEdit, identity],
   );
 
   return (
@@ -195,6 +205,8 @@ export function GoalsTable({
       <div className="mt-4">
         <DataTable
           columns={columns}
+          initialColumnVisibility={HIDE_SYSTEM_ID}
+          enableColumnVisibility
           data={filtered}
           getRowId={(g) => g.id}
           emptyMessage="No goals found."

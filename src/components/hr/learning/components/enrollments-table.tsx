@@ -26,6 +26,11 @@ import {
   sortableHeader,
   actionsColumn,
 } from "@/src/components/shared/data-table";
+import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
 import { ENROLLMENT_STATUS_LABELS, ENROLLMENT_STATUS_STYLES } from "../data";
 import { formatDate } from "@/src/lib/utils/format-date";
 import type { Enrollment, Course } from "../types";
@@ -63,6 +68,7 @@ export function EnrollmentsTable({
     return matchSearch && matchDept && matchCourse && matchStatus;
   });
 
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<Enrollment>[]>(
     () => [
       {
@@ -79,6 +85,10 @@ export function EnrollmentsTable({
           </div>
         ),
       },
+      ...employeeIdColumns<Enrollment>({
+        identity,
+        name: (r) => r.employeeName,
+      }),
       {
         accessorKey: "department",
         header: sortableHeader("Department"),
@@ -181,7 +191,7 @@ export function EnrollmentsTable({
         </DropdownMenu>
       )),
     ],
-    [],
+    [identity],
   );
 
   return (
@@ -201,6 +211,8 @@ export function EnrollmentsTable({
       <div className="mt-4">
         <DataTable
           columns={columns}
+          initialColumnVisibility={HIDE_SYSTEM_ID}
+          enableColumnVisibility
           data={filtered}
           getRowId={(e) => e.id}
           emptyMessage="No enrollments found."

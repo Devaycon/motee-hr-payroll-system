@@ -3,6 +3,7 @@
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { WelcomeBanner } from "./components/welcome-banner";
 import { StatCards } from "./components/stat-cards";
+import { MyProfileStats } from "./components/my-profile-stats";
 import { LeaveBalanceCards } from "./components/leave-balance-cards";
 import { PendingItems } from "./components/pending-items";
 import { AnnouncementsFeed } from "./components/announcements-feed";
@@ -22,13 +23,15 @@ export function EmployeeDashboard() {
     day: "numeric",
     year: "numeric",
   });
-  const firstName = user?.name?.split(" ")[0] ?? "there";
+  const firstName = user?.name?.split(" ")[0] ?? "James";
 
   return (
     <div className="flex flex-col gap-6">
       <WelcomeBanner name={firstName} dayName={dayName} dateStr={dateStr} />
-
-      <StatCards />
+      <div className="flex flex-col gap-3">
+        <StatCards />
+        <MyProfileStats />
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <LeaveBalanceCards />

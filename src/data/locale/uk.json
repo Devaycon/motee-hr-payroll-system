@@ -553,8 +553,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -565,7 +567,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Mrs",
+      "title": "Mr",
       "middleName": "Louise",
       "preferredName": "Arjun",
       "maidenName": "Clarke",
@@ -673,7 +675,8 @@
           "postalCode": "EC1 5RR",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "GB-EMP-0002",
@@ -762,8 +765,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -774,7 +779,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Miss",
+      "title": "Mx",
       "middleName": "Edward",
       "preferredName": "Jack",
       "maidenName": "Clarke",
@@ -882,7 +887,8 @@
           "postalCode": "E14 5AB",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "GB-EMP-0003",
@@ -971,8 +977,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -1091,7 +1099,8 @@
           "postalCode": "M1 2JQ",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "GB-EMP-0004",
@@ -1154,7 +1163,7 @@
       ],
       "accessLevelId": "AL-2",
       "workPattern": {
-        "weeklyHours": 22.5,
+        "weeklyHours": 20.5,
         "daysPerWeek": 3,
         "schedule": {
           "mon": {
@@ -1174,8 +1183,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "part_time"
       },
       "emergencyContacts": [
@@ -1294,7 +1305,8 @@
           "postalCode": "B2 9BD",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "GB-EMP-0005",
@@ -1382,8 +1394,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -1394,7 +1408,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Miss",
+      "title": "Mr",
       "middleName": "Louise",
       "preferredName": "Oliver",
       "maidenName": "Bennett",
@@ -1502,7 +1516,8 @@
           "postalCode": "LS1 6JQ",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "GB-EMP-0006",
@@ -1564,7 +1579,7 @@
       ],
       "accessLevelId": "AL-1",
       "workPattern": {
-        "weeklyHours": 22.5,
+        "weeklyHours": 20.5,
         "daysPerWeek": 3,
         "schedule": {
           "mon": {
@@ -1584,8 +1599,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "part_time"
       },
       "emergencyContacts": [
@@ -1704,7 +1721,8 @@
           "postalCode": "SW1 8BD",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "GB-EMP-0007",
@@ -1792,8 +1810,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -1804,7 +1824,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Mrs",
+      "title": "Miss",
       "middleName": "Marie",
       "preferredName": "Charlie",
       "maidenName": "Bennett",
@@ -1912,7 +1932,8 @@
           "postalCode": "E14 5AB",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "invite"
     },
     {
       "id": "GB-EMP-0008",
@@ -2000,8 +2021,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -2012,7 +2035,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Mr",
+      "title": "Miss",
       "middleName": "Anne",
       "preferredName": "Emily",
       "maidenName": "Hughes",
@@ -2120,7 +2143,8 @@
           "postalCode": "LS1 3BD",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "GB-EMP-0009",
@@ -2209,8 +2233,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -2329,7 +2355,8 @@
           "postalCode": "EC1 7RR",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "GB-EMP-0010",
@@ -2417,8 +2444,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -2435,7 +2464,7 @@
           "isPrimary": false
         }
       ],
-      "title": "Miss",
+      "title": "Mr",
       "middleName": "Marie",
       "preferredName": "Harry",
       "maidenName": "Hughes",
@@ -2543,7 +2572,8 @@
           "postalCode": "EC1 2JQ",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "GB-EMP-0011",
@@ -2631,8 +2661,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -2751,7 +2783,8 @@
           "postalCode": "M1 2AA",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "GB-EMP-0012",
@@ -2839,8 +2872,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -2959,7 +2994,8 @@
           "postalCode": "E14 5AB",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "invite"
     },
     {
       "id": "GB-EMP-0013",
@@ -3048,8 +3084,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -3168,7 +3206,8 @@
           "postalCode": "E14 5AB",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "GB-EMP-0014",
@@ -3256,8 +3295,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -3274,7 +3315,7 @@
           "isPrimary": false
         }
       ],
-      "title": "Miss",
+      "title": "Mrs",
       "middleName": "Anne",
       "preferredName": "Ella",
       "maidenName": "Cooper",
@@ -3382,7 +3423,8 @@
           "postalCode": "EC1 9BD",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "invite"
     },
     {
       "id": "GB-EMP-0015",
@@ -3470,8 +3512,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -3482,7 +3526,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Mr",
+      "title": "Miss",
       "middleName": "Paul",
       "preferredName": "Priya",
       "maidenName": "Wright",
@@ -3590,7 +3634,8 @@
           "postalCode": "SW1 9BD",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "manual"
     },
     {
       "id": "GB-EMP-0016",
@@ -3653,7 +3698,7 @@
       ],
       "accessLevelId": "AL-3",
       "workPattern": {
-        "weeklyHours": 22.5,
+        "weeklyHours": 20.5,
         "daysPerWeek": 3,
         "schedule": {
           "mon": {
@@ -3673,8 +3718,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "part_time"
       },
       "emergencyContacts": [
@@ -3685,7 +3732,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Mrs",
+      "title": "Mr",
       "middleName": "Anne",
       "preferredName": "William",
       "maidenName": "Hughes",
@@ -3793,7 +3840,8 @@
           "postalCode": "EC1 5BD",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "GB-EMP-0017",
@@ -3881,8 +3929,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -3899,7 +3949,7 @@
           "isPrimary": false
         }
       ],
-      "title": "Miss",
+      "title": "Mr",
       "middleName": "Marie",
       "preferredName": "Harry",
       "maidenName": "Cooper",
@@ -4007,7 +4057,8 @@
           "postalCode": "SW1 9AA",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "GB-EMP-0018",
@@ -4096,8 +4147,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -4114,7 +4167,7 @@
           "isPrimary": false
         }
       ],
-      "title": "Miss",
+      "title": "Mr",
       "middleName": "Anne",
       "preferredName": "Oliver",
       "maidenName": "Clarke",
@@ -4222,7 +4275,8 @@
           "postalCode": "SW1 3BD",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "GB-EMP-0019",
@@ -4310,8 +4364,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -4328,7 +4384,7 @@
           "isPrimary": false
         }
       ],
-      "title": "Mr",
+      "title": "Mx",
       "middleName": "Louise",
       "preferredName": "Mia",
       "maidenName": "Cooper",
@@ -4436,7 +4492,8 @@
           "postalCode": "SW1 1RR",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     },
     {
       "id": "GB-EMP-0020",
@@ -4525,8 +4582,10 @@
           "sat": null,
           "sun": null
         },
+        "breakMinutes": 60,
         "holidayEntitlementDays": 25,
         "publicHolidayDays": 8,
+        "publicHolidayTreatment": "in_addition",
         "contractType": "full_time"
       },
       "emergencyContacts": [
@@ -4537,7 +4596,7 @@
           "isPrimary": true
         }
       ],
-      "title": "Miss",
+      "title": "Mr",
       "middleName": "John",
       "preferredName": "Harry",
       "maidenName": "Bennett",
@@ -4645,7 +4704,8 @@
           "postalCode": "EC1 5RR",
           "country": "United Kingdom"
         }
-      }
+      },
+      "onboardingMethod": "bulk"
     }
   ],
   "orgStructure": [
@@ -23628,7 +23688,7 @@
       "startDate": "2025-06-27",
       "endDate": "2025-06-28",
       "days": 2,
-      "reason": "Personal",
+      "reason": "Mental health / wellbeing day",
       "status": "approved",
       "approverId": null,
       "submittedAt": "2025-11-13T10:00:00Z"
@@ -23641,7 +23701,7 @@
       "startDate": "2025-05-16",
       "endDate": "2025-05-20",
       "days": 5,
-      "reason": "Holiday abroad",
+      "reason": "Shoulder injury",
       "status": "approved",
       "approverId": "GB-EMP-0001",
       "submittedAt": "2025-12-02T10:00:00Z"
@@ -23654,7 +23714,7 @@
       "startDate": "2025-04-11",
       "endDate": "2025-04-12",
       "days": 2,
-      "reason": "Childcare",
+      "reason": "Hospital scan",
       "status": "approved",
       "approverId": "GB-EMP-0001",
       "submittedAt": "2025-10-26T10:00:00Z"
@@ -23667,7 +23727,7 @@
       "startDate": "2025-03-09",
       "endDate": "2025-03-11",
       "days": 3,
-      "reason": "Medical appointment",
+      "reason": "Lower back pain",
       "status": "pending",
       "approverId": "GB-EMP-0001",
       "submittedAt": "2025-12-04T10:00:00Z"
@@ -23797,7 +23857,7 @@
       "startDate": "2025-05-22",
       "endDate": "2025-05-25",
       "days": 4,
-      "reason": "Personal",
+      "reason": "Stress-related absence",
       "status": "approved",
       "approverId": "GB-EMP-0003",
       "submittedAt": "2025-11-18T10:00:00Z"
@@ -23810,7 +23870,7 @@
       "startDate": "2025-04-07",
       "endDate": "2025-04-09",
       "days": 3,
-      "reason": "Family time",
+      "reason": "Chest infection and cough",
       "status": "pending",
       "approverId": "GB-EMP-0003",
       "submittedAt": "2025-11-09T10:00:00Z"
@@ -23823,7 +23883,7 @@
       "startDate": "2025-03-16",
       "endDate": "2025-03-20",
       "days": 5,
-      "reason": "Holiday abroad",
+      "reason": "Lower back pain",
       "status": "approved",
       "approverId": "GB-EMP-0003",
       "submittedAt": "2025-11-04T10:00:00Z"
@@ -23836,7 +23896,7 @@
       "startDate": "2025-02-25",
       "endDate": "2025-02-25",
       "days": 1,
-      "reason": "Family time",
+      "reason": "Migraine",
       "status": "pending",
       "approverId": "GB-EMP-0003",
       "submittedAt": "2025-11-17T10:00:00Z"
@@ -23966,7 +24026,7 @@
       "startDate": "2025-04-02",
       "endDate": "2025-04-06",
       "days": 5,
-      "reason": "Personal",
+      "reason": "Stress-related absence",
       "status": "pending",
       "approverId": "GB-EMP-0003",
       "submittedAt": "2025-11-24T10:00:00Z"
@@ -23979,7 +24039,7 @@
       "startDate": "2025-03-22",
       "endDate": "2025-03-22",
       "days": 1,
-      "reason": "Childcare",
+      "reason": "Sprained ankle",
       "status": "pending",
       "approverId": "GB-EMP-0003",
       "submittedAt": "2025-12-14T10:00:00Z"
@@ -23992,7 +24052,7 @@
       "startDate": "2025-02-19",
       "endDate": "2025-02-19",
       "days": 1,
-      "reason": "Holiday abroad",
+      "reason": "Heavy cold",
       "status": "approved",
       "approverId": "GB-EMP-0003",
       "submittedAt": "2025-10-08T10:00:00Z"
@@ -24005,7 +24065,7 @@
       "startDate": "2025-01-06",
       "endDate": "2025-01-06",
       "days": 1,
-      "reason": "Personal",
+      "reason": "Dentist appointment",
       "status": "rejected",
       "approverId": "GB-EMP-0001",
       "submittedAt": "2025-10-08T10:00:00Z"
@@ -24135,7 +24195,7 @@
       "startDate": "2025-03-08",
       "endDate": "2025-03-09",
       "days": 2,
-      "reason": "Holiday abroad",
+      "reason": "Dentist appointment",
       "status": "pending",
       "approverId": "GB-EMP-0009",
       "submittedAt": "2025-11-12T10:00:00Z"
@@ -24148,7 +24208,7 @@
       "startDate": "2025-02-23",
       "endDate": "2025-02-24",
       "days": 2,
-      "reason": "Holiday abroad",
+      "reason": "Doctor's appointment",
       "status": "approved",
       "approverId": "GB-EMP-0009",
       "submittedAt": "2025-12-30T10:00:00Z"
@@ -24161,7 +24221,7 @@
       "startDate": "2025-01-24",
       "endDate": "2025-01-25",
       "days": 2,
-      "reason": "Personal",
+      "reason": "Hospital scan",
       "status": "pending",
       "approverId": "GB-EMP-0009",
       "submittedAt": "2025-12-27T10:00:00Z"
@@ -24174,7 +24234,7 @@
       "startDate": "2024-12-23",
       "endDate": "2024-12-27",
       "days": 5,
-      "reason": "Wedding",
+      "reason": "Stress-related absence",
       "status": "rejected",
       "approverId": "GB-EMP-0001",
       "submittedAt": "2025-10-19T10:00:00Z"
@@ -24304,7 +24364,7 @@
       "startDate": "2025-02-03",
       "endDate": "2025-02-04",
       "days": 2,
-      "reason": "Wedding",
+      "reason": "Heavy cold",
       "status": "pending",
       "approverId": "GB-EMP-0013",
       "submittedAt": "2025-12-28T10:00:00Z"
@@ -24317,7 +24377,7 @@
       "startDate": "2025-01-17",
       "endDate": "2025-01-19",
       "days": 3,
-      "reason": "Personal",
+      "reason": "Flu symptoms",
       "status": "approved",
       "approverId": "GB-EMP-0013",
       "submittedAt": "2025-12-18T10:00:00Z"
@@ -24330,7 +24390,7 @@
       "startDate": "2024-12-23",
       "endDate": "2024-12-23",
       "days": 1,
-      "reason": "Personal",
+      "reason": "Dentist appointment",
       "status": "approved",
       "approverId": "GB-EMP-0001",
       "submittedAt": "2025-11-04T10:00:00Z"
@@ -24343,7 +24403,7 @@
       "startDate": "2024-11-01",
       "endDate": "2024-11-05",
       "days": 5,
-      "reason": "Personal",
+      "reason": "Stress-related absence",
       "status": "approved",
       "approverId": "GB-EMP-0001",
       "submittedAt": "2025-11-23T10:00:00Z"
@@ -24473,7 +24533,7 @@
       "startDate": "2025-01-20",
       "endDate": "2025-01-23",
       "days": 4,
-      "reason": "Family time",
+      "reason": "Stress-related absence",
       "status": "pending",
       "approverId": "GB-EMP-0001",
       "submittedAt": "2025-11-15T10:00:00Z"
@@ -24486,7 +24546,7 @@
       "startDate": "2024-12-09",
       "endDate": "2024-12-10",
       "days": 2,
-      "reason": "Personal",
+      "reason": "Sprained ankle",
       "status": "rejected",
       "approverId": "GB-EMP-0001",
       "submittedAt": "2025-09-20T10:00:00Z"
@@ -24499,7 +24559,7 @@
       "startDate": "2024-11-04",
       "endDate": "2024-11-04",
       "days": 1,
-      "reason": "Personal",
+      "reason": "Dentist appointment",
       "status": "approved",
       "approverId": "GB-EMP-0018",
       "submittedAt": "2025-11-29T10:00:00Z"
@@ -24512,7 +24572,7 @@
       "startDate": "2025-10-07",
       "endDate": "2025-10-11",
       "days": 5,
-      "reason": "Wedding",
+      "reason": "Stress-related absence",
       "status": "approved",
       "approverId": "GB-EMP-0018",
       "submittedAt": "2026-01-03T10:00:00Z"
@@ -24568,6 +24628,643 @@
       "status": "pending",
       "approverId": "GB-EMP-0001",
       "submittedAt": "2025-11-01T10:00:00Z"
+    },
+    {
+      "id": "GB-SICK-0001",
+      "employeeId": "GB-EMP-0001",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-24",
+      "endDate": "2026-04-24",
+      "days": 1,
+      "reason": "Doctor's appointment",
+      "status": "approved",
+      "approverId": null,
+      "submittedAt": "2026-04-23T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0002",
+      "employeeId": "GB-EMP-0001",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-07-24",
+      "endDate": "2026-07-24",
+      "days": 1,
+      "reason": "Heavy cold",
+      "status": "approved",
+      "approverId": null,
+      "submittedAt": "2026-07-23T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0003",
+      "employeeId": "GB-EMP-0001",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-01-14",
+      "endDate": "2026-01-15",
+      "days": 2,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": null,
+      "submittedAt": "2026-01-13T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0004",
+      "employeeId": "GB-EMP-0001",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-05-20",
+      "endDate": "2026-05-21",
+      "days": 2,
+      "reason": "Sprained ankle",
+      "status": "approved",
+      "approverId": null,
+      "submittedAt": "2026-05-19T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0005",
+      "employeeId": "GB-EMP-0001",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-09-11",
+      "endDate": "2026-09-16",
+      "days": 4,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": null,
+      "submittedAt": "2026-09-10T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0006",
+      "employeeId": "GB-EMP-0001",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-11",
+      "endDate": "2026-03-18",
+      "days": 6,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": null,
+      "submittedAt": "2026-03-10T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0007",
+      "employeeId": "GB-EMP-0002",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-16",
+      "endDate": "2026-03-16",
+      "days": 1,
+      "reason": "Sprained ankle",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-03-15T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0008",
+      "employeeId": "GB-EMP-0002",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-01",
+      "endDate": "2026-06-02",
+      "days": 2,
+      "reason": "Heavy cold",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-05-31T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0009",
+      "employeeId": "GB-EMP-0003",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-07-20",
+      "endDate": "2026-07-20",
+      "days": 1,
+      "reason": "Dentist appointment",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-07-19T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0010",
+      "employeeId": "GB-EMP-0003",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-09-14",
+      "endDate": "2026-09-15",
+      "days": 2,
+      "reason": "Mental health / wellbeing day",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-09-13T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0011",
+      "employeeId": "GB-EMP-0004",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-08-31",
+      "endDate": "2026-08-31",
+      "days": 1,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-08-30T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0012",
+      "employeeId": "GB-EMP-0005",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-09-03",
+      "endDate": "2026-09-04",
+      "days": 2,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-09-02T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0013",
+      "employeeId": "GB-EMP-0005",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-17",
+      "endDate": "2026-06-23",
+      "days": 5,
+      "reason": "Chest infection and cough",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-06-16T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0014",
+      "employeeId": "GB-EMP-0006",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-16",
+      "endDate": "2026-03-16",
+      "days": 1,
+      "reason": "Sprained ankle",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-03-15T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0015",
+      "employeeId": "GB-EMP-0006",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-08-03",
+      "endDate": "2026-08-04",
+      "days": 2,
+      "reason": "Mental health / wellbeing day",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-08-02T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0016",
+      "employeeId": "GB-EMP-0007",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-24",
+      "endDate": "2026-06-24",
+      "days": 1,
+      "reason": "Mental health / wellbeing day",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-06-23T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0017",
+      "employeeId": "GB-EMP-0007",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-01-29",
+      "endDate": "2026-02-02",
+      "days": 3,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-01-28T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0018",
+      "employeeId": "GB-EMP-0007",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-09",
+      "endDate": "2026-03-16",
+      "days": 6,
+      "reason": "Stress-related absence",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-03-08T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0019",
+      "employeeId": "GB-EMP-0008",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-10",
+      "endDate": "2026-03-10",
+      "days": 1,
+      "reason": "Mental health / wellbeing day",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-03-09T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0020",
+      "employeeId": "GB-EMP-0008",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-30",
+      "endDate": "2026-07-02",
+      "days": 3,
+      "reason": "Chest infection and cough",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-06-29T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0021",
+      "employeeId": "GB-EMP-0008",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-22",
+      "endDate": "2026-04-29",
+      "days": 6,
+      "reason": "Surgery recovery",
+      "status": "approved",
+      "approverId": "GB-EMP-0003",
+      "submittedAt": "2026-04-21T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0022",
+      "employeeId": "GB-EMP-0009",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-06",
+      "endDate": "2026-04-07",
+      "days": 2,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-04-05T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0023",
+      "employeeId": "GB-EMP-0009",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-18",
+      "endDate": "2026-03-24",
+      "days": 5,
+      "reason": "Chest infection and cough",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-03-17T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0024",
+      "employeeId": "GB-EMP-0010",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-20",
+      "endDate": "2026-04-21",
+      "days": 2,
+      "reason": "Doctor's appointment",
+      "status": "approved",
+      "approverId": "GB-EMP-0009",
+      "submittedAt": "2026-04-19T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0025",
+      "employeeId": "GB-EMP-0010",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-08-06",
+      "endDate": "2026-08-12",
+      "days": 5,
+      "reason": "Flu symptoms",
+      "status": "approved",
+      "approverId": "GB-EMP-0009",
+      "submittedAt": "2026-08-05T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0026",
+      "employeeId": "GB-EMP-0011",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-13",
+      "endDate": "2026-04-14",
+      "days": 2,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "GB-EMP-0009",
+      "submittedAt": "2026-04-12T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0027",
+      "employeeId": "GB-EMP-0011",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-05-01",
+      "endDate": "2026-05-07",
+      "days": 5,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": "GB-EMP-0009",
+      "submittedAt": "2026-04-30T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0028",
+      "employeeId": "GB-EMP-0012",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-25",
+      "endDate": "2026-03-25",
+      "days": 1,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "GB-EMP-0009",
+      "submittedAt": "2026-03-24T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0029",
+      "employeeId": "GB-EMP-0013",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-03",
+      "endDate": "2026-04-03",
+      "days": 1,
+      "reason": "Mental health / wellbeing day",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-04-02T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0030",
+      "employeeId": "GB-EMP-0014",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-15",
+      "endDate": "2026-06-15",
+      "days": 1,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "GB-EMP-0013",
+      "submittedAt": "2026-06-14T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0031",
+      "employeeId": "GB-EMP-0014",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-02-23",
+      "endDate": "2026-02-23",
+      "days": 1,
+      "reason": "Dentist appointment",
+      "status": "approved",
+      "approverId": "GB-EMP-0013",
+      "submittedAt": "2026-02-22T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0032",
+      "employeeId": "GB-EMP-0014",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-07-20",
+      "endDate": "2026-07-21",
+      "days": 2,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "GB-EMP-0013",
+      "submittedAt": "2026-07-19T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0033",
+      "employeeId": "GB-EMP-0014",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-01-29",
+      "endDate": "2026-02-02",
+      "days": 3,
+      "reason": "Chest infection and cough",
+      "status": "approved",
+      "approverId": "GB-EMP-0013",
+      "submittedAt": "2026-01-28T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0034",
+      "employeeId": "GB-EMP-0014",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-17",
+      "endDate": "2026-03-23",
+      "days": 5,
+      "reason": "Flu symptoms",
+      "status": "approved",
+      "approverId": "GB-EMP-0013",
+      "submittedAt": "2026-03-16T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0035",
+      "employeeId": "GB-EMP-0015",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-15",
+      "endDate": "2026-06-15",
+      "days": 1,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "GB-EMP-0013",
+      "submittedAt": "2026-06-14T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0036",
+      "employeeId": "GB-EMP-0015",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-09-15",
+      "endDate": "2026-09-16",
+      "days": 2,
+      "reason": "Sprained ankle",
+      "status": "approved",
+      "approverId": "GB-EMP-0013",
+      "submittedAt": "2026-09-14T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0037",
+      "employeeId": "GB-EMP-0016",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-23",
+      "endDate": "2026-03-23",
+      "days": 1,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-03-22T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0038",
+      "employeeId": "GB-EMP-0016",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-10",
+      "endDate": "2026-03-11",
+      "days": 2,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-03-09T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0039",
+      "employeeId": "GB-EMP-0017",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-05-19",
+      "endDate": "2026-05-19",
+      "days": 1,
+      "reason": "Dentist appointment",
+      "status": "approved",
+      "approverId": "GB-EMP-0016",
+      "submittedAt": "2026-05-18T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0040",
+      "employeeId": "GB-EMP-0017",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-09",
+      "endDate": "2026-04-10",
+      "days": 2,
+      "reason": "Hospital scan",
+      "status": "approved",
+      "approverId": "GB-EMP-0016",
+      "submittedAt": "2026-04-08T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0041",
+      "employeeId": "GB-EMP-0018",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-03-26",
+      "endDate": "2026-03-26",
+      "days": 1,
+      "reason": "Doctor's appointment",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-03-25T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0042",
+      "employeeId": "GB-EMP-0018",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-10",
+      "endDate": "2026-06-11",
+      "days": 2,
+      "reason": "Migraine",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-06-09T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0043",
+      "employeeId": "GB-EMP-0019",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-05-11",
+      "endDate": "2026-05-11",
+      "days": 1,
+      "reason": "Heavy cold",
+      "status": "approved",
+      "approverId": "GB-EMP-0018",
+      "submittedAt": "2026-05-10T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0044",
+      "employeeId": "GB-EMP-0019",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-09-11",
+      "endDate": "2026-09-11",
+      "days": 1,
+      "reason": "Doctor's appointment",
+      "status": "approved",
+      "approverId": "GB-EMP-0018",
+      "submittedAt": "2026-09-10T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0045",
+      "employeeId": "GB-EMP-0019",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-08",
+      "endDate": "2026-06-09",
+      "days": 2,
+      "reason": "Dentist appointment",
+      "status": "approved",
+      "approverId": "GB-EMP-0018",
+      "submittedAt": "2026-06-07T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0046",
+      "employeeId": "GB-EMP-0019",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-08-10",
+      "endDate": "2026-08-12",
+      "days": 3,
+      "reason": "Stress-related absence",
+      "status": "approved",
+      "approverId": "GB-EMP-0018",
+      "submittedAt": "2026-08-09T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0047",
+      "employeeId": "GB-EMP-0019",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-04-08",
+      "endDate": "2026-04-14",
+      "days": 5,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": "GB-EMP-0018",
+      "submittedAt": "2026-04-07T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0048",
+      "employeeId": "GB-EMP-0020",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-06-15",
+      "endDate": "2026-06-16",
+      "days": 2,
+      "reason": "Doctor's appointment",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-06-14T08:30:00Z"
+    },
+    {
+      "id": "GB-SICK-0049",
+      "employeeId": "GB-EMP-0020",
+      "leavePolicyId": "LP-02",
+      "leaveType": "Sick Leave",
+      "startDate": "2026-08-25",
+      "endDate": "2026-08-31",
+      "days": 5,
+      "reason": "Lower back pain",
+      "status": "approved",
+      "approverId": "GB-EMP-0001",
+      "submittedAt": "2026-08-24T08:30:00Z"
     }
   ],
   "recruitment": {
@@ -67586,8 +68283,8 @@
         "week1Month1": true,
         "weekNumber": "",
         "monthNumber": "",
-        "totalPayToDate": 8450.0,
-        "totalTaxToDate": 690.0
+        "totalPayToDate": 8450,
+        "totalTaxToDate": 690
       },
       "starterChecklist": null,
       "derived": {

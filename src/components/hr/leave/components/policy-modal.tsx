@@ -40,6 +40,10 @@ const schema = z.object({
   maxCarryOverDays: z.coerce
     .number({ message: "Must be a number" })
     .min(0, { message: "Cannot be negative" }),
+  eligibility: z.string().optional(),
+  publicHolidayRule: z.string().optional(),
+  attachmentRequirement: z.string().optional(),
+  documentUrl: z.string().optional(),
 });
 
 type FormValues = {
@@ -52,6 +56,10 @@ type FormValues = {
   requiresMedicalCertificate: boolean;
   carryOverAllowed: boolean;
   maxCarryOverDays: string;
+  eligibility: string;
+  publicHolidayRule: string;
+  attachmentRequirement: string;
+  documentUrl: string;
 };
 
 function getDefaults(policy: LeavePolicy | null): FormValues {
@@ -66,6 +74,10 @@ function getDefaults(policy: LeavePolicy | null): FormValues {
       requiresMedicalCertificate: false,
       carryOverAllowed: false,
       maxCarryOverDays: "0",
+      eligibility: "",
+      publicHolidayRule: "",
+      attachmentRequirement: "",
+      documentUrl: "",
     };
   }
   return {
@@ -78,6 +90,10 @@ function getDefaults(policy: LeavePolicy | null): FormValues {
     requiresMedicalCertificate: policy.requiresMedicalCertificate,
     carryOverAllowed: policy.carryOverAllowed,
     maxCarryOverDays: String(policy.maxCarryOverDays),
+    eligibility: policy.eligibility ?? "",
+    publicHolidayRule: policy.publicHolidayRule ?? "",
+    attachmentRequirement: policy.attachmentRequirement ?? "",
+    documentUrl: policy.documentUrl ?? "",
   };
 }
 
@@ -137,13 +153,17 @@ export function PolicyModal({
       requiresMedicalCertificate: form.requiresMedicalCertificate,
       carryOverAllowed: form.carryOverAllowed,
       maxCarryOverDays: result.data.maxCarryOverDays,
+      eligibility: result.data.eligibility || undefined,
+      publicHolidayRule: result.data.publicHolidayRule || undefined,
+      attachmentRequirement: result.data.attachmentRequirement || undefined,
+      documentUrl: result.data.documentUrl || undefined,
     });
     onClose();
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-sm font-semibold">
             {editingPolicy ? "Edit Leave Policy" : "Add Leave Policy"}
@@ -290,6 +310,49 @@ export function PolicyModal({
                 )}
               </div>
             )}
+          </div>
+
+          {/* Policy integration details surfaced on the Policies tab (§F13). */}
+          <div className="space-y-3.5 border-t border-border pt-3.5">
+            <p className="text-xs font-semibold text-foreground">
+              Policy details
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Eligibility</Label>
+              <Input
+                className="h-8 text-xs"
+                value={form.eligibility}
+                onChange={(e) => update("eligibility", e.target.value)}
+                placeholder="e.g. All employees after 3 months' service"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Public holiday rule</Label>
+              <Input
+                className="h-8 text-xs"
+                value={form.publicHolidayRule}
+                onChange={(e) => update("publicHolidayRule", e.target.value)}
+                placeholder="e.g. In addition to the annual entitlement"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Attachment requirement</Label>
+              <Input
+                className="h-8 text-xs"
+                value={form.attachmentRequirement}
+                onChange={(e) => update("attachmentRequirement", e.target.value)}
+                placeholder="e.g. Fit note required beyond 7 days"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Policy document link</Label>
+              <Input
+                className="h-8 text-xs"
+                value={form.documentUrl}
+                onChange={(e) => update("documentUrl", e.target.value)}
+                placeholder="https://…"
+              />
+            </div>
           </div>
         </div>
 

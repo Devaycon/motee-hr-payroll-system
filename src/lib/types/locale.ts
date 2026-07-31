@@ -84,6 +84,8 @@ export interface LocaleEmployee {
   workPattern?: LocaleWorkPattern;
   roleIds?: string[];
   accessLevelId?: string;
+  /** How this record was created — see lib/constants/onboarding-methods. */
+  onboardingMethod?: "manual" | "invite" | "bulk";
 }
 
 export interface LocaleEmergencyContact {
@@ -97,6 +99,13 @@ export interface LocaleWorkPattern {
   weeklyHours: number;
   daysPerWeek: number;
   schedule: Record<string, { start: string; end: string } | null>;
+  /**
+   * Unpaid break (e.g. lunch) per working day, in minutes. Deducted from the
+   * start→end span so paid daily hours reconcile against `weeklyHours`:
+   * 09:00–17:30 with a 60-minute break is 7.5 paid hours, not 8.5.
+   * Defaults to 0 when unset.
+   */
+  breakMinutes?: number;
   holidayEntitlementDays: number;
   publicHolidayDays: number;
   /**

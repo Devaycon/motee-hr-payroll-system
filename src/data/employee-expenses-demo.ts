@@ -1,3 +1,5 @@
+import type { FileAttachment } from "@/src/lib/utils/file-attachments";
+
 export type ExpenseStatus =
   | "draft"
   | "submitted"
@@ -25,6 +27,8 @@ export interface ExpenseClaim {
   status: ExpenseStatus;
   merchant: string;
   notes?: string;
+  /** Receipts and supporting documents attached when the claim was raised. */
+  attachments?: FileAttachment[];
 }
 
 /** Common payment currencies an employee may file an expense in. */

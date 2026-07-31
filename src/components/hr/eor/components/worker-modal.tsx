@@ -23,6 +23,7 @@ import {
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { systemData, COUNTRY_NAMES } from "@/src/config/system-data";
 import { getInitials } from "@/src/lib/types/dashboard";
+import { titlesForGender } from "@/src/lib/constants/titles";
 import type {
   EorWorker,
   EorProvider,
@@ -34,7 +35,6 @@ import {
   EOR_WORKER_STATUS_OPTIONS,
   EOR_CURRENCIES,
   currencySymbolFor,
-  TITLE_OPTIONS,
   GENDER_OPTIONS,
   MARITAL_OPTIONS,
   NATIONALITY_OPTIONS,
@@ -298,7 +298,7 @@ export function WorkerModal({
                     value={form.title}
                     onChange={(v) => set("title", v)}
                     placeholder="Select"
-                    options={TITLE_OPTIONS}
+                    options={titlesForGender(form.gender, form.maritalStatus)}
                   />
                 </Field>
                 <Field label="Legal First Name" error={errors.legalFirstName}>

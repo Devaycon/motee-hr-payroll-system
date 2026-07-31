@@ -1,9 +1,27 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, MoreHorizontal, Pencil, Trash2, Check, X } from "lucide-react";
+import {
+  Plus,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+  Search,
+  FileText,
+  Paperclip,
+} from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +44,11 @@ import {
   sortableHeader,
   actionsColumn,
 } from "@/src/components/shared/data-table";
-import { LEAVE_TYPE_LABELS, LEAVE_TYPE_STYLES } from "../data";
+import {
+  LEAVE_TYPE_LABELS,
+  LEAVE_TYPE_STYLES,
+  LEAVE_TYPE_OPTIONS,
+} from "../data";
 import type { LeavePolicy, LeaveTypeName } from "../types";
 
 interface PoliciesTableProps {
@@ -43,6 +65,21 @@ export function PoliciesTable({
   onAddPolicy,
 }: PoliciesTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return policies.filter((p) => {
+      const matchSearch =
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        (p.description?.toLowerCase().includes(q) ?? false) ||
+        (p.eligibility?.toLowerCase().includes(q) ?? false);
+      const matchType = typeFilter === "all" || p.leaveType === typeFilter;
+      return matchSearch && matchType;
+    });
+  }, [policies, search, typeFilter]);
 
   const columns = useMemo<ColumnDef<LeavePolicy>[]>(
     () => [
@@ -50,11 +87,45 @@ export function PoliciesTable({
         accessorKey: "name",
         header: sortableHeader("Policy Name"),
         cell: ({ row }) => (
-          <div>
+          <div className="max-w-64">
             <p className="text-xs font-medium">{row.original.name}</p>
             {row.original.description && (
-              <p className="text-[10px] text-muted-foreground mt-0.5 max-w-56 truncate">
+              <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
                 {row.original.description}
+              </p>
+            )}
+            {/* Link out to the written policy document (§F13). */}
+            {row.original.documentUrl && (
+              <a
+                href={row.original.documentUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-primary hover:underline"
+              >
+                <FileText className="w-2.5 h-2.5" /> Policy document
+              </a>
+            )}
+          </div>
+        ),
+      },
+      {
+        // Who qualifies, and what evidence is needed (§F13).
+        id: "eligibility",
+        header: "Eligibility & Evidence",
+        cell: ({ row }) => (
+          <div className="max-w-56 space-y-0.5">
+            <p className="text-[11px] text-foreground">
+              {row.original.eligibility ?? "All employees"}
+            </p>
+            {row.original.attachmentRequirement && (
+              <p className="text-[10px] text-muted-foreground">
+                <Paperclip className="inline w-2.5 h-2.5 mr-0.5" />
+                {row.original.attachmentRequirement}
+              </p>
+            )}
+            {row.original.publicHolidayRule && (
+              <p className="text-[10px] text-muted-foreground">
+                Public holidays: {row.original.publicHolidayRule}
               </p>
             )}
           </div>
@@ -154,19 +225,45 @@ export function PoliciesTable({
 
   return (
     <>
-      <div className="flex items-center justify-end">
-        <Button size="lg" onClick={onAddPolicy}>
-          <Plus className="w-3.5 h-3.5" />
-          Add Policy
-        </Button>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-48 max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search policies by name or eligibility..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8 h-8 text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="h-10 w-40 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">
+                All leave types
+              </SelectItem>
+              {LEAVE_TYPE_OPTIONS.map((t) => (
+                <SelectItem key={t} value={t} className="text-xs">
+                  {LEAVE_TYPE_LABELS[t]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="lg" onClick={onAddPolicy}>
+            <Plus className="w-3.5 h-3.5" />
+            Add Policy
+          </Button>
+        </div>
       </div>
 
       <div className="mt-4">
         <DataTable
           columns={columns}
-          data={policies}
+          data={filtered}
           getRowId={(p) => p.id}
-          emptyMessage="No policies created."
+          emptyMessage="No policies match your search."
         />
       </div>
 

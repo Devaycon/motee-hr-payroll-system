@@ -1,15 +1,26 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Zap } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { routes } from "./routes";
+import type { Route } from "./routes";
 import { cn } from "@/src/lib/utils";
+import {
+  useSidebarCollapse,
+  SidebarToggle,
+} from "@/src/layout/shared/sidebar-collapse";
+import { SidebarNavLink } from "@/src/layout/shared/sidebar-nav-link";
+import { SidebarBrand } from "@/src/layout/shared/sidebar-brand";
+
+/** The Motee admin portal's own accent, passed to the shared link. */
+const ACTIVE = "bg-[#ff8b2d] text-white border-l-4 border-[#4ED251]";
+const ACTIVE_COLLAPSED = "bg-[#ff8b2d] text-white";
+const BADGE = "bg-primary/10 text-primary";
 
 const Sidebar = () => {
   const pathname = usePathname();
+  const { collapsed, toggle, width } = useSidebarCollapse();
 
   const overviewRoutes = routes.filter((r) => r.group === "Overview");
   const otherRoutes = routes.filter((r) => r.group !== "Overview");
@@ -36,16 +47,41 @@ const Sidebar = () => {
       ? pathname === "/"
       : pathname === link || pathname.startsWith(`${link}/`);
 
+  const renderRouteLink = (route: Route) => (
+    <SidebarNavLink
+      key={route.label}
+      href={route.link}
+      label={route.label}
+      icon={route.icon}
+      badge={route.badge}
+      active={isActive(route.link)}
+      collapsed={collapsed}
+      activeClassName={ACTIVE}
+      activeCollapsedClassName={ACTIVE_COLLAPSED}
+      badgeClassName={BADGE}
+    />
+  );
+
   return (
-    <aside className="fixed left-0 top-0 z-50 flex h-screen w-[20%] flex-col bg-sidebar border-r border-border">
-      <div className="flex h-24 items-center px-5 shrink-0">
-        <Image
-          src="/admin-logo.png"
-          alt="Admin Dashboard"
-          width={200}
-          height={36}
-          className="object-contain"
+    <aside
+      style={{ width }}
+      className="fixed left-0 top-0 z-50 flex h-screen flex-col bg-sidebar border-r border-border transition-[width] duration-200"
+    >
+      {/* Collapsed, the wordmark won't fit — the tile mark stands in. */}
+      <div
+        className={cn(
+          "flex h-24 shrink-0 items-center",
+          collapsed ? "flex-col justify-center gap-2" : "gap-2 px-5",
+        )}
+      >
+        <SidebarBrand
+          href="/dashboard"
+          label="Motee Admin"
+          wordmark="/admin-logo.png"
+          collapsed={collapsed}
         />
+        {!collapsed && <div className="flex-1" />}
+        <SidebarToggle collapsed={collapsed} onToggle={toggle} />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
@@ -53,85 +89,37 @@ const Sidebar = () => {
           data-tutorial="sidebar-overview"
           className="flex flex-col gap-2 mb-4"
         >
-          {overviewRoutes.map((route) => {
-            const Icon = route.icon;
-            const active = isActive(route.link);
-            return (
-              <li key={route.label}>
-                <Link
-                  href={route.link}
-                  className={cn(
-                    "flex items-center gap-2.5 px-3 py-4 text-sm transition-colors",
-                    active
-                      ? "bg-[#ff8b2d] text-white border-l-4 border-[#4ED251]"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                  )}
-                >
-                  {Icon && (
-                    <Icon size={15} strokeWidth={1.75} className="shrink-0" />
-                  )}
-                  <span className="flex-1 truncate">{route.label}</span>
-                  {route.badge !== undefined && (
-                    <span className="flex items-center justify-center min-w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold px-1">
-                      {route.badge}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
+          {overviewRoutes.map((route) => renderRouteLink(route))}
         </ul>
 
         {grouped.map((section, idx) => (
           <div key={section.group} className="mb-2">
-            <button
-              {...(idx === 0 ? { "data-tutorial": "sidebar-nav" } : {})}
-              onClick={() => toggleGroup(section.group)}
-              className="w-full flex items-center justify-between px-3 py-4 hover:bg-accent/60 transition-colors cursor-pointer"
-            >
-              <span className="text-sm font-semibold text-muted-foreground">
-                {section.group}
-              </span>
-              {openGroups[section.group] ? (
-                <ChevronDown size={16} className="text-muted-foreground" />
-              ) : (
-                <ChevronRight size={16} className="text-muted-foreground" />
-              )}
-            </button>
+            {/* Collapsed, a group header labels nothing — a rule keeps the
+                grouping legible without the words. */}
+            {collapsed ? (
+              idx > 0 && <div className="mx-3 my-2 border-t border-border" />
+            ) : (
+              <button
+                {...(idx === 0 ? { "data-tutorial": "sidebar-nav" } : {})}
+                onClick={() => toggleGroup(section.group)}
+                className="w-full flex items-center justify-between px-3 py-4 hover:bg-accent/60 transition-colors cursor-pointer"
+              >
+                <span className="text-sm font-semibold text-muted-foreground">
+                  {section.group}
+                </span>
+                {openGroups[section.group] ? (
+                  <ChevronDown size={16} className="text-muted-foreground" />
+                ) : (
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                )}
+              </button>
+            )}
 
-            {openGroups[section.group] && (
+            {/* Collapsing a group in the rail would strand the user with no way
+                back to those items, so the rail always shows every one. */}
+            {(collapsed || openGroups[section.group]) && (
               <ul className="flex flex-col gap-2 mt-2">
-                {section.items.map((route) => {
-                  const Icon = route.icon;
-                  const active = isActive(route.link);
-                  return (
-                    <li key={route.label}>
-                      <Link
-                        href={route.link}
-                        className={cn(
-                          "flex items-center gap-2.5  px-3 py-4 text-sm transition-colors",
-                          active
-                            ? "bg-[#ff8b2d] text-white border-l-4 border-[#4ED251]"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                        )}
-                      >
-                        {Icon && (
-                          <Icon
-                            size={15}
-                            strokeWidth={1.75}
-                            className="shrink-0"
-                          />
-                        )}
-                        <span className="flex-1 truncate">{route.label}</span>
-                        {route.badge !== undefined && (
-                          <span className="flex items-center justify-center min-w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold px-1">
-                            {route.badge}
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
+                {section.items.map((route) => renderRouteLink(route))}
               </ul>
             )}
           </div>

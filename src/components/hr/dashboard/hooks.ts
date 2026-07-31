@@ -110,7 +110,7 @@ export function useStatCards() {
         up: true,
       },
       {
-        label: "Employee Leavers",
+        label: "Leavers This Month",
         link: "/talent/offboarding",
         icon: UserMinus,
         value: leaversThisMonth,
@@ -120,7 +120,10 @@ export function useStatCards() {
       },
       {
         label: "Employees Working Remotely Today",
-        link: "/time-payroll/attendance",
+        // Lands on the employee directory pre-filtered to remote workers — the
+        // data this card actually counts. Previously pointed at Attendance,
+        // which has no work-mode view (client feedback round 2, §E1).
+        link: "/organization/employees?workMode=remote",
         icon: Home,
         value: remote,
         sub: "Remote today",
@@ -129,7 +132,9 @@ export function useStatCards() {
       },
       {
         label: "Upcoming Birthdays",
-        link: "/hr-action-center/events",
+        // Scoped to birthdays rather than dumping the user on the generic
+        // Calendar page (client feedback round 2, §E2).
+        link: "/hr-action-center/events?type=birthday",
         icon: Cake,
         value: birthdays,
         sub: "Celebrating within the next 7 days",

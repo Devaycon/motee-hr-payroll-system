@@ -17,14 +17,22 @@ import type { LeaveStatus } from "@/src/lib/types/leave";
 import { BalanceCards } from "./components/balance-cards";
 import { RequestCard } from "./components/request-card";
 import { LeaveRequestForm } from "./components/leave-request-form";
+import { LeaveInsights } from "./components/leave-insights";
 import { LeaveDetailModal } from "./components/leave-detail-modal";
 import { LeaveCancelModal } from "./components/leave-cancel-modal";
-import type { LeaveBalance, LeaveRequestEntry } from "./components/types";
+import type {
+  LeaveBalance,
+  LeavePrefill,
+  LeaveRequestEntry,
+} from "./components/types";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 
-const STATUS_ICON = {
+const STATUS_ICON: Record<LeaveStatus, React.ReactNode> = {
   approved: <CheckCircle2 className="w-3.5 h-3.5 text-[#1D9E75]" />,
   pending: <Clock className="w-3.5 h-3.5 text-amber-500" />,
+  // Multi-stage states read as "still in progress" to the employee (§F4).
+  awaiting_manager: <Clock className="w-3.5 h-3.5 text-blue-500" />,
+  awaiting_hr: <Clock className="w-3.5 h-3.5 text-violet-500" />,
   rejected: <XCircle className="w-3.5 h-3.5 text-red-500" />,
   cancelled: <XCircle className="w-3.5 h-3.5 text-muted-foreground" />,
 };
@@ -78,6 +86,14 @@ export function LeaveRequestPanel() {
   const [formOpen, setFormOpen] = useState(false);
   const [detailReq, setDetailReq] = useState<LeaveRequestEntry | null>(null);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  // Dates carried in from a suggested window, so "Book 11–15 August" opens the
+  // form on those dates rather than making the employee retype them.
+  const [prefill, setPrefill] = useState<LeavePrefill | null>(null);
+
+  function openForm(dates?: LeavePrefill) {
+    setPrefill(dates ?? null);
+    setFormOpen(true);
+  }
 
   function handleNewRequest(entry: LeaveRequestEntry) {
     setRequests((prev) => [entry, ...prev]);
@@ -97,19 +113,30 @@ export function LeaveRequestPanel() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          View your leave balances, submit requests and track approval status.
-        </p>
+      {/* The subtitle lives on whichever header hosts this panel — the page
+          heading, or the profile module's Section — so it isn't repeated. */}
+      <div className="flex items-center justify-end gap-3">
         <Button
           className="gap-2 bg-[#4361ee] hover:bg-[#3451d1] text-white shrink-0"
-          onClick={() => setFormOpen(true)}
+          onClick={() => openForm()}
         >
           <Plus className="w-3.5 h-3.5" /> Request Leave
         </Button>
       </div>
 
       <BalanceCards balances={MY_BALANCES} />
+
+      <LeaveInsights
+        annualRemaining={Math.max(
+          0,
+          MY_BALANCES.annual.total -
+            MY_BALANCES.annual.used -
+            MY_BALANCES.annual.pending,
+        )}
+        onPickWindow={(w) =>
+          openForm({ startDate: w.startDate, endDate: w.endDate })
+        }
+      />
 
       {pending.length > 0 && (
         <div>
@@ -199,7 +226,11 @@ export function LeaveRequestPanel() {
       <LeaveRequestForm
         open={formOpen}
         balances={MY_BALANCES}
-        onClose={() => setFormOpen(false)}
+        prefill={prefill}
+        onClose={() => {
+          setFormOpen(false);
+          setPrefill(null);
+        }}
         onSubmit={handleNewRequest}
       />
 

@@ -7,6 +7,7 @@ import {
   FileText,
   FileJson,
   Printer,
+  ImageIcon,
   RotateCcw,
   SlidersHorizontal,
   Columns3,
@@ -44,7 +45,9 @@ import {
   exportCsv,
   exportXlsx,
   exportJson,
+  exportPng,
   printPdf,
+  PNG_MAX_ROWS,
 } from "@/src/lib/reports/export";
 import type {
   ReportColumn,
@@ -53,7 +56,7 @@ import type {
 } from "@/src/lib/reports/types";
 import { cn } from "@/src/lib/utils";
 
-type Format = "csv" | "xlsx" | "json" | "pdf";
+type Format = "csv" | "xlsx" | "json" | "png" | "pdf";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyColumn = ReportColumn<any>;
@@ -64,6 +67,7 @@ const FORMATS: { value: Format; label: string; icon: typeof FileText }[] = [
   { value: "csv", label: "CSV", icon: FileText },
   { value: "xlsx", label: "Excel", icon: FileSpreadsheet },
   { value: "json", label: "JSON", icon: FileJson },
+  { value: "png", label: "Image", icon: ImageIcon },
   { value: "pdf", label: "PDF", icon: Printer },
 ];
 
@@ -156,6 +160,9 @@ export function ExportModal({
   );
   const allChecked = selectedColumns.length === columns.length;
 
+  /** Images are capped — a canvas that tall stops being readable (and encodable). */
+  const pngTruncated = format === "png" && resultRows.length > PNG_MAX_ROWS;
+
   const activeFilterCount = useMemo(
     () => params.filter((p) => enabledParams[p.key]).length,
     [params, enabledParams],
@@ -189,12 +196,22 @@ export function ExportModal({
       case "json":
         exportJson(name, selectedColumns, resultRows);
         break;
+      case "png":
+        exportPng(name, title, selectedColumns, resultRows, stats);
+        break;
       case "pdf":
         printPdf(title, selectedColumns, resultRows, stats);
         break;
     }
     const label = FORMATS.find((f) => f.value === format)?.label ?? format;
-    toast.success(`Exported ${resultRows.length} rows as ${label}`);
+    if (pngTruncated) {
+      toast.warning(
+        `Exported the first ${PNG_MAX_ROWS} of ${resultRows.length} rows as an image`,
+        { description: "Use CSV or Excel to export every row." },
+      );
+    } else {
+      toast.success(`Exported ${resultRows.length} rows as ${label}`);
+    }
     setOpen(false);
   }
 
@@ -250,7 +267,7 @@ export function ExportModal({
             <TabsContent value="general" className="mt-0 space-y-6 pb-4">
               <section className="space-y-2">
                 <Label>Format</Label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                   {FORMATS.map((f) => {
                     const Icon = f.icon;
                     const active = format === f.value;
@@ -272,6 +289,13 @@ export function ExportModal({
                     );
                   })}
                 </div>
+                {pngTruncated && (
+                  <p className="text-xs text-muted-foreground">
+                    Images are capped at {PNG_MAX_ROWS} rows — only the first{" "}
+                    {PNG_MAX_ROWS} of {resultRows.length} will be drawn. Use CSV or
+                    Excel for the full dataset.
+                  </p>
+                )}
               </section>
 
               <section className="space-y-2">

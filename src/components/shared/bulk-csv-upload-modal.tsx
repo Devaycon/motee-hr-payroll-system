@@ -1,7 +1,16 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { AlertCircle, Download, FileText, Upload, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import Papa from "papaparse";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Download,
+  FileText,
+  History,
+  Upload,
+  X,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -32,10 +41,24 @@ interface BulkCsvUploadModalProps<T> {
   /** Map a raw header→value record into the typed row. */
   parseRow: (obj: Record<string, string>) => T;
   isRowValid: (row: T) => boolean;
+  /**
+   * Per-row problems for the validation report. Return an empty array when the
+   * row is fine. Falls back to `isRowValid` when omitted.
+   */
+  validateRow?: (row: T) => string[];
   columns: PreviewColumn<T>[];
   onImport: (rows: T[]) => void;
   /** Singular noun used in the import button, e.g. "leave request". */
   entityNoun: string;
+}
+
+/** One completed import, kept for the session so users can see what they ran. */
+interface UploadHistoryEntry {
+  id: string;
+  fileName: string;
+  at: string;
+  imported: number;
+  skipped: number;
 }
 
 export function BulkCsvUploadModal<T>({
@@ -48,6 +71,7 @@ export function BulkCsvUploadModal<T>({
   sampleRows,
   parseRow,
   isRowValid,
+  validateRow,
   columns,
   onImport,
   entityNoun,
@@ -57,13 +81,37 @@ export function BulkCsvUploadModal<T>({
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
   const [parseError, setParseError] = useState("");
+  const [history, setHistory] = useState<UploadHistoryEntry[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const validRows = rows.filter(isRowValid);
   const invalidCount = rows.length - validRows.length;
 
-  const csvTemplate =
-    headers.join(",") + "\n" + sampleRows.map((r) => r.join(",")).join("\n");
+  /** Row-level problems, used for the validation report and error summary. */
+  const rowIssues = useMemo(
+    () =>
+      rows.map((row) =>
+        validateRow
+          ? validateRow(row)
+          : isRowValid(row)
+            ? []
+            : ["Required fields are missing"],
+      ),
+    [rows, validateRow, isRowValid],
+  );
+
+  /** Distinct problems with counts, so users see the pattern not 200 rows. */
+  const errorSummary = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const issues of rowIssues) {
+      for (const issue of issues) counts.set(issue, (counts.get(issue) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  }, [rowIssues]);
+
+  // Unparsed by papaparse so sample values containing commas are quoted.
+  const csvTemplate = Papa.unparse({ fields: headers, data: sampleRows });
 
   function downloadTemplate() {
     const blob = new Blob([csvTemplate], { type: "text/csv" });
@@ -75,18 +123,19 @@ export function BulkCsvUploadModal<T>({
     URL.revokeObjectURL(url);
   }
 
+  /**
+   * Parsed with papaparse rather than splitting on commas — the naive split
+   * corrupted any quoted field containing a comma (e.g. a reason like
+   * "Wedding, then honeymoon").
+   */
   function parseCSV(text: string): T[] {
-    const lines = text.split(/\r?\n/).filter((l) => l.trim());
-    if (lines.length < 2) return [];
-    const head = lines[0].split(",").map((h) => h.trim());
-    return lines.slice(1).map((line) => {
-      const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-      const obj: Record<string, string> = {};
-      head.forEach((h, i) => {
-        obj[h] = cols[i] ?? "";
-      });
-      return parseRow(obj);
+    const result = Papa.parse<Record<string, string>>(text, {
+      header: true,
+      skipEmptyLines: "greedy",
+      transformHeader: (h) => h.trim(),
+      transform: (v) => v.trim(),
     });
+    return result.data.map((obj) => parseRow(obj));
   }
 
   function handleFileLoad(file: File) {
@@ -220,6 +269,53 @@ export function BulkCsvUploadModal<T>({
                   <p className="text-xs">{parseError}</p>
                 </div>
               )}
+
+              {/* Upload history for this session (§F10). */}
+              {history.length > 0 && (
+                <div className="rounded-xl border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setShowHistory((v) => !v)}
+                    className="flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left"
+                  >
+                    <span className="flex items-center gap-2 text-xs font-medium text-foreground">
+                      <History className="w-3.5 h-3.5 text-muted-foreground" />
+                      Upload history ({history.length})
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {showHistory ? "Hide" : "Show"}
+                    </span>
+                  </button>
+                  {showHistory && (
+                    <ul className="border-t border-border divide-y divide-border">
+                      {history.map((h) => (
+                        <li
+                          key={h.id}
+                          className="flex items-center justify-between gap-3 px-3.5 py-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate">
+                              {h.fileName}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">{h.at}</p>
+                          </div>
+                          <p className="text-[10px] whitespace-nowrap">
+                            <span className="text-emerald-600 font-medium">
+                              {h.imported} imported
+                            </span>
+                            {h.skipped > 0 && (
+                              <span className="text-muted-foreground">
+                                {" "}
+                                · {h.skipped} skipped
+                              </span>
+                            )}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
 
             <DialogFooter className="px-6 py-4 border-t border-border">
@@ -236,6 +332,43 @@ export function BulkCsvUploadModal<T>({
         ) : (
           <>
             <ScrollArea className="max-h-[55vh]">
+              {/* Validation report — what's wrong, and how often (§F10). */}
+              <div className="px-6 pt-4">
+                <div
+                  className={cn(
+                    "flex items-start gap-2 rounded-lg px-3 py-2.5",
+                    invalidCount === 0
+                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                      : "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                  )}
+                >
+                  {invalidCount === 0 ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  )}
+                  <div className="text-xs">
+                    <p className="font-medium">
+                      {invalidCount === 0
+                        ? `All ${rows.length} row${rows.length === 1 ? "" : "s"} passed validation.`
+                        : `${validRows.length} of ${rows.length} rows can be imported — ${invalidCount} will be skipped.`}
+                    </p>
+                    {errorSummary.length > 0 && (
+                      <ul className="mt-1 space-y-0.5">
+                        {errorSummary.map(([issue, count]) => (
+                          <li key={issue}>
+                            • {issue}{" "}
+                            <span className="opacity-70">
+                              ({count} row{count === 1 ? "" : "s"})
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="px-6 py-4 overflow-x-auto">
                 <table className="w-full text-xs min-w-150">
                   <thead>
@@ -251,11 +384,15 @@ export function BulkCsvUploadModal<T>({
                           {c.label}
                         </th>
                       ))}
+                      <th className="text-left py-2 font-medium text-muted-foreground">
+                        Issues
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((row, i) => {
                       const valid = isRowValid(row);
+                      const issues = rowIssues[i] ?? [];
                       return (
                         <tr
                           key={i}
@@ -295,6 +432,15 @@ export function BulkCsvUploadModal<T>({
                               </td>
                             );
                           })}
+                          <td className="py-2.5">
+                            {issues.length === 0 ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <span className="text-destructive">
+                                {issues.join("; ")}
+                              </span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
@@ -326,6 +472,21 @@ export function BulkCsvUploadModal<T>({
                 className="h-8 text-xs"
                 onClick={() => {
                   onImport(validRows);
+                  setHistory((prev) => [
+                    {
+                      id: `UP-${Date.now()}`,
+                      fileName,
+                      at: new Date().toLocaleString(undefined, {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }),
+                      imported: validRows.length,
+                      skipped: invalidCount,
+                    },
+                    ...prev,
+                  ]);
                   handleClose();
                 }}
                 disabled={validRows.length === 0}

@@ -6,6 +6,10 @@ import { useAppSelector } from "@/src/lib/stores/hooks";
 import { applyEmployeeOverrides } from "@/src/lib/profile/overrides";
 import { applyCollection } from "@/src/lib/profile/collection-edits";
 import { ALL_MODULES, MODULE_LABELS } from "@/src/lib/permissions/modules";
+import {
+  activeLeaveFromBundle,
+  type ActiveLeave,
+} from "@/src/lib/utils/active-leave";
 import type { PermissionAction } from "@/src/lib/types/access-levels";
 import type {
   LocaleBundle,
@@ -48,6 +52,7 @@ interface RawLeavePolicy {
   id: string;
   name: string;
   defaultDays?: number;
+  carryOverDays?: number;
 }
 interface RawLeaveBalance {
   employeeId: string;
@@ -93,6 +98,11 @@ export interface RawDocument {
   kyc?: boolean;
   status?: string;
   issuer?: string | null;
+  /** Why HR could not accept it — set when `status` is "rejected". */
+  rejectionReason?: string | null;
+  /** Who made the accept/reject decision, and when. */
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
 }
 export interface RawTask {
   id: string;
@@ -246,6 +256,14 @@ export function useEmployeeRecord(id: string) {
 // ── stats strip ───────────────────────────────────────────────────────────--
 export function useEmployeeStats(id: string) {
   const edits = useAppSelector((s) => s.collectionEdits);
+  // The tile opens the Profile Change Log, so it has to count the same thing
+  // that module shows — it used to count pending *leave* requests instead.
+  const pendingApprovals = useAppSelector(
+    (s) =>
+      s.profileEdits.requests.filter(
+        (r) => r.employeeId === id && r.status === "pending",
+      ).length,
+  );
   const { data: bundle, loading, error } = useLocaleSection<LocaleBundle>((b) => b);
   const data = useMemo<EmployeeStats | null>(() => {
     if (!bundle) return null;
@@ -254,11 +272,6 @@ export function useEmployeeStats(id: string) {
     const tasks = applyCollection((b.tasks as unknown as RawTask[]) ?? [], "tasks", edits);
     const assets = applyCollection((b.assets as unknown as RawAsset[]) ?? [], "assets", edits);
     const kudos = applyCollection((b.kudos as unknown as RawKudos[]) ?? [], "kudos", edits);
-    const requests = applyCollection(
-      (b.leaveRequests as unknown as RawLeaveRequest[]) ?? [],
-      "leaveRequests",
-      edits,
-    );
     return {
       leaveRemaining: balances
         .filter((x) => x.employeeId === id)
@@ -266,13 +279,11 @@ export function useEmployeeStats(id: string) {
       openTasks: tasks.filter(
         (t) => t.assigneeId === id && t.status !== "done",
       ).length,
-      pendingApprovals: requests.filter(
-        (r) => r.employeeId === id && r.status === "pending",
-      ).length,
+      pendingApprovals,
       assignedAssets: assets.filter((a) => a.assignedTo === id).length,
       kudosReceived: kudos.filter((k) => k.toEmployeeId === id).length,
     };
-  }, [bundle, edits, id]);
+  }, [bundle, edits, id, pendingApprovals]);
   return { data, loading, error };
 }
 
@@ -284,6 +295,16 @@ export interface EmployeeLeaveData {
   adjustments: LocaleLeaveAdjustment[];
   usage: LeaveUsageBucket[];
 }
+/**
+ * The leave an employee is on right now, if any — so the profile can say which
+ * kind of leave rather than a bare "On Leave" (client feedback round 2, §C1).
+ */
+export function useActiveLeave(id: string) {
+  return useLocaleSection<ActiveLeave | null>(
+    (b) => activeLeaveFromBundle(b).get(id) ?? null,
+  );
+}
+
 export function useEmployeeLeave(id: string) {
   const edits = useAppSelector((s) => s.collectionEdits);
   const { data: bundle, loading, error } = useLocaleSection<LocaleBundle>((b) => b);
@@ -320,6 +341,7 @@ export function useEmployeeLeave(id: string) {
         .filter((r) => r.leavePolicyId === p.id)
         .reduce((s, r) => s + (r.days ?? 0), 0);
       const allowance = bal?.entitlement ?? p.defaultDays ?? 0;
+      const carryOver = p.carryOverDays ?? 0;
       const entitlement = allowance + adj;
       const remaining = entitlement - takenDays; // excludes booked future leave
       const available = remaining - bookedDays; // still bookable
@@ -328,6 +350,7 @@ export function useEmployeeLeave(id: string) {
         policyName: p.name,
         allowance,
         adjustments: adj,
+        carryOver,
         entitlement,
         booked: bookedDays,
         taken: takenDays,

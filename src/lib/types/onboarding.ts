@@ -90,6 +90,8 @@ export interface NewOnboardingRecord {
 }
 
 export interface ManualOnboardingData {
+  /** Profile photo as a data URL, supplied by the joiner during onboarding. */
+  photoUrl?: string;
   title: string;
   firstName: string;
   middleName: string;

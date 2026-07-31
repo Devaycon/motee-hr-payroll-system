@@ -5,6 +5,12 @@ import {
   MoreHorizontal,
   ClipboardList,
   CheckCircle,
+  XCircle,
+  RotateCcw,
+  ShieldOff,
+  CalendarClock,
+  FileDown,
+  Pencil,
   Trash2,
 } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
@@ -34,6 +40,11 @@ import {
   sortableHeader,
   actionsColumn,
 } from "@/src/components/shared/data-table";
+import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
 import { cn } from "@/src/lib/utils";
 import {
   OFFBOARDING_STATUS_LABELS,
@@ -41,21 +52,40 @@ import {
   EXIT_REASON_LABELS,
   EXIT_REASON_STYLES,
 } from "../data";
+import { isActionEnabled, type OffboardingAction } from "../actions";
 import type { OffboardingRecord } from "../types";
 
-interface PipelineTableProps {
-  records: OffboardingRecord[];
+export interface PipelineHandlers {
   onViewDetails: (record: OffboardingRecord) => void;
-  onComplete: (id: string) => void;
+  onEdit: (record: OffboardingRecord) => void;
+  onApprove: (record: OffboardingRecord) => void;
+  onDisapprove: (record: OffboardingRecord) => void;
+  onReactivate: (record: OffboardingRecord) => void;
+  onRevokeAccess: (record: OffboardingRecord) => void;
+  onScheduleInterview: (record: OffboardingRecord) => void;
+  onGenerateDocuments: (record: OffboardingRecord) => void;
   onDelete: (id: string) => void;
+}
+
+interface PipelineTableProps extends PipelineHandlers {
+  records: OffboardingRecord[];
+  emptyMessage?: string;
 }
 
 export function PipelineTable({
   records,
+  emptyMessage = "No offboarding records found.",
   onViewDetails,
-  onComplete,
+  onEdit,
+  onApprove,
+  onDisapprove,
+  onReactivate,
+  onRevokeAccess,
+  onScheduleInterview,
+  onGenerateDocuments,
   onDelete,
 }: PipelineTableProps) {
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<OffboardingRecord>[]>(
     () => [
       {
@@ -80,6 +110,11 @@ export function PipelineTable({
           </div>
         ),
       },
+      ...employeeIdColumns<OffboardingRecord>({
+        identity,
+        systemId: (r) => r.employeeId,
+        name: (r) => r.employeeName,
+      }),
       {
         accessorKey: "department",
         header: sortableHeader("Department"),
@@ -167,10 +202,7 @@ export function PipelineTable({
         ),
       },
       actionsColumn<OffboardingRecord>((record) => {
-        const clearedCount = record.clearanceItems.filter(
-          (c) => c.completed,
-        ).length;
-        const allClearanceDone = clearedCount === record.clearanceItems.length;
+        const can = (a: OffboardingAction) => isActionEnabled(a, record.status);
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -178,24 +210,80 @@ export function PipelineTable({
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem
                 className="text-xs gap-2"
+                disabled={!can("viewChecklist")}
                 onClick={() => onViewDetails(record)}
               >
                 <ClipboardList className="w-3.5 h-3.5" />
-                View Details
+                View Offboarding Checklist
               </DropdownMenuItem>
-              {record.status !== "completed" && allClearanceDone && (
-                <DropdownMenuItem
-                  className="text-xs gap-2 text-emerald-600 focus:text-emerald-600 dark:text-emerald-400"
-                  onClick={() => onComplete(record.id)}
-                >
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  Mark Complete
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                disabled={!can("edit")}
+                onClick={() => onEdit(record)}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit Offboarding Details
+              </DropdownMenuItem>
+
               <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                className="text-xs gap-2 text-emerald-600 focus:text-emerald-600 dark:text-emerald-400"
+                disabled={!can("approve")}
+                onClick={() => onApprove(record)}
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                Approve Offboarding
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-xs gap-2 text-destructive focus:text-destructive"
+                disabled={!can("disapprove")}
+                onClick={() => onDisapprove(record)}
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                Disapprove Offboarding
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                disabled={!can("reactivate")}
+                onClick={() => onReactivate(record)}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reactivate Employee
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                disabled={!can("revokeAccess")}
+                onClick={() => onRevokeAccess(record)}
+              >
+                <ShieldOff className="w-3.5 h-3.5" />
+                Revoke System Access
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                disabled={!can("scheduleInterview")}
+                onClick={() => onScheduleInterview(record)}
+              >
+                <CalendarClock className="w-3.5 h-3.5" />
+                Schedule Exit Interview
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                disabled={!can("generateDocuments")}
+                onClick={() => onGenerateDocuments(record)}
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                Generate Exit Documents
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem
@@ -235,15 +323,25 @@ export function PipelineTable({
         );
       }),
     ],
-    [onViewDetails, onComplete, onDelete],
+    [onViewDetails,
+      onEdit,
+      onApprove,
+      onDisapprove,
+      onReactivate,
+      onRevokeAccess,
+      onScheduleInterview,
+      onGenerateDocuments,
+      onDelete, identity],
   );
 
   return (
     <DataTable
       columns={columns}
+      initialColumnVisibility={HIDE_SYSTEM_ID}
+      enableColumnVisibility
       data={records}
       getRowId={(r) => r.id}
-      emptyMessage="No offboarding records found."
+      emptyMessage={emptyMessage}
     />
   );
 }

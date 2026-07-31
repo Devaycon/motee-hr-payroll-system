@@ -1,20 +1,44 @@
 import type { ProfileField } from "./fields";
 import { currentCurrencyCode } from "@/src/lib/hooks/use-currency";
+import { SICKNESS_REASON_CATEGORIES } from "@/src/lib/constants/sickness";
+
+/** The sick-leave policy every locale bundle defines. */
+const SICK_LEAVE_POLICY_ID = "LP-02";
 
 export interface CollectionSchema {
   key: string;
   singular: string;
+  /** Plural form, when {@link pluralize} would get it wrong ("feedback"). */
+  plural?: string;
   idPrefix: string;
   idField?: string; // default "id"
   addable?: boolean; // default true
-  /** Owning system module, shown in the override warning. */
-  source?: string;
+  /**
+   * Owning system module, named in full in the override warning — required, so
+   * the warning can never fall back to the singular and say "the booking
+   * module". Use the module's own label, e.g. "Location Bookings".
+   */
+  source: string;
   fields: ProfileField[];
   /** System fields seeded on create (employee linkage, currency, defaults). */
   defaults?: (employeeId: string) => Record<string, unknown>;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * Plural of a collection's `singular`, for copy that talks about the set
+ * ("Leave requests are managed by…"). Only handles the shapes our singulars
+ * actually take; anything irregular sets `plural` on the schema instead.
+ */
+export function pluralize(schema: CollectionSchema): string {
+  if (schema.plural) return schema.plural;
+  const s = schema.singular;
+  if (/s$/i.test(s)) return s; // "kudos", "medical facts" — already plural
+  if (/[^aeiou]y$/i.test(s)) return `${s.slice(0, -1)}ies`; // disciplinary
+  if (/(ch|sh|x|z)$/i.test(s)) return `${s}es`;
+  return `${s}s`;
+}
 
 function f(
   key: string,
@@ -29,6 +53,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   tasks: {
     key: "tasks",
     singular: "task",
+    source: "Tasks",
     idPrefix: "TSK",
     fields: [
       f("title", "Title"),
@@ -44,6 +69,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
     key: "documents",
     singular: "document",
     idPrefix: "DOC",
+    source: "Document Management",
     fields: [
       f("name", "Name"),
       f("category", "Category", "select", [
@@ -54,12 +80,16 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
       f("status", "Status", "select", ["verified", "pending", "rejected", "expired"]),
       f("expiresAt", "Expires", "date"),
       f("fileUrl", "File URL"),
+      // Normally authored through the Review dialog, which enforces that a
+      // rejection carries one — editable here so a wrong reason can be fixed.
+      f("rejectionReason", "Rejection reason", "textarea"),
     ],
     defaults: (employeeId) => ({ employeeId, uploadedAt: new Date().toISOString(), status: "pending", visibility: "hr_and_self" }),
   },
   disciplinaries: {
     key: "disciplinaries",
     singular: "disciplinary",
+    source: "Disciplinaries",
     idPrefix: "DISC",
     fields: [
       f("date", "Date", "date"),
@@ -75,6 +105,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   employeeNotes: {
     key: "employeeNotes",
     singular: "note",
+    source: "Notes & Reminders",
     idPrefix: "NOTE",
     fields: [
       f("type", "Type", "select", ["note", "reminder"]),
@@ -87,6 +118,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   locationBookings: {
     key: "locationBookings",
     singular: "booking",
+    source: "Location Bookings",
     idPrefix: "LB",
     fields: [
       f("locationType", "Type", "select", ["desk", "meeting_room", "parking"]),
@@ -102,6 +134,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   dbsChecks: {
     key: "dbsChecks",
     singular: "check",
+    source: "DBS & Background Checks",
     idPrefix: "DBS",
     fields: [
       f("kind", "Kind", "select", ["dbs", "background_check"]),
@@ -116,6 +149,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   payHistory: {
     key: "payHistory",
     singular: "pay change",
+    source: "Compensation",
     idPrefix: "PAY",
     fields: [
       f("effectiveDate", "Effective date", "date"),
@@ -130,6 +164,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   leaveRequests: {
     key: "leaveRequests",
     singular: "leave request",
+    source: "Leave Management",
     idPrefix: "LR",
     fields: [
       f("leaveType", "Type"),
@@ -141,9 +176,39 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
     ],
     defaults: (employeeId) => ({ employeeId, status: "pending" }),
   },
+  /**
+   * Sickness absences are leave requests against the sick-leave policy — the
+   * Sickness module reads them straight back out of `leaveRequests`, which is
+   * why this schema writes to that key rather than one of its own.
+   *
+   * `reason` is a fixed list rather than free text: the module classifies it
+   * into a clinical category, and typing "off sick" would only ever land in
+   * "Other". The values round-trip through `sicknessReasonCategory` unchanged.
+   */
+  sickness: {
+    key: "leaveRequests",
+    singular: "sickness absence",
+    idPrefix: "SICK",
+    source: "Sickness & Absence",
+    fields: [
+      f("startDate", "First day absent", "date"),
+      f("endDate", "Last day absent", "date"),
+      f("days", "Working days", "number"),
+      f("reason", "Reason", "select", [...SICKNESS_REASON_CATEGORIES]),
+      f("status", "Status", "select", ["approved", "pending", "rejected"]),
+    ],
+    defaults: (employeeId) => ({
+      employeeId,
+      leavePolicyId: SICK_LEAVE_POLICY_ID,
+      leaveType: "Sick Leave",
+      status: "approved",
+      submittedAt: new Date().toISOString(),
+    }),
+  },
   leaveAdjustments: {
     key: "leaveAdjustments",
     singular: "adjustment",
+    source: "Leave Management",
     idPrefix: "ADJ",
     fields: [
       f("policyId", "Policy"),
@@ -156,6 +221,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   "perf.goals": {
     key: "perf.goals",
     singular: "goal",
+    source: "Performance",
     idPrefix: "GOAL",
     fields: [
       f("title", "Title"),
@@ -169,6 +235,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   "perf.reviews": {
     key: "perf.reviews",
     singular: "review",
+    source: "Performance",
     idPrefix: "REV",
     fields: [
       f("cycleId", "Cycle"),
@@ -183,6 +250,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   "perf.oneOnOnes": {
     key: "perf.oneOnOnes",
     singular: "1:1 note",
+    source: "Performance",
     idPrefix: "ONE",
     fields: [
       f("date", "Date", "date"),
@@ -193,6 +261,8 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   "perf.feedback": {
     key: "perf.feedback",
     singular: "feedback",
+    plural: "Feedback entries",
+    source: "Performance",
     idPrefix: "FB",
     fields: [
       f("type", "Type", "select", ["upward", "peer", "downward"]),
@@ -204,6 +274,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   "learning.enrollments": {
     key: "learning.enrollments",
     singular: "enrolment",
+    source: "Learning & Development",
     idPrefix: "ENR",
     fields: [
       f("courseTitle", "Course"),
@@ -217,6 +288,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   "learning.certifications": {
     key: "learning.certifications",
     singular: "certification",
+    source: "Learning & Development",
     idPrefix: "CERT",
     fields: [
       f("title", "Title"),
@@ -229,6 +301,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   kudos: {
     key: "kudos",
     singular: "kudos",
+    source: "Kudos",
     idPrefix: "KUD",
     fields: [
       f("value", "Badge", "select", ["Teamwork", "Excellence", "Ownership", "Innovation"]),
@@ -241,6 +314,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   employmentHistory: {
     key: "employmentHistory",
     singular: "history event",
+    source: "Employment History",
     idPrefix: "EH",
     fields: [
       f("date", "Date", "date"),
@@ -254,6 +328,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   attendance: {
     key: "attendance",
     singular: "time log",
+    source: "Time Logs",
     idPrefix: "ATT",
     fields: [
       f("date", "Date", "date"),
@@ -268,6 +343,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   assets: {
     key: "assets",
     singular: "asset",
+    source: "Assigned Assets",
     idPrefix: "AST",
     fields: [
       f("assetTag", "Asset tag"),
@@ -284,6 +360,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   grievances: {
     key: "grievances",
     singular: "grievance",
+    source: "Grievances",
     idPrefix: "GRV",
     fields: [
       f("category", "Category"),
@@ -300,7 +377,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
     idPrefix: "MED",
     idField: "employeeId",
     addable: false,
-    source: "Medical",
+    source: "Medical Facts",
     fields: [
       f("allergies", "Allergies (comma-separated)"),
       f("conditions", "Conditions (comma-separated)"),

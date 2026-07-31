@@ -17,8 +17,17 @@ export interface CalendarLeave {
   startDate: string; // ISO yyyy-mm-dd, inclusive
   endDate: string; // ISO, inclusive
   status: "approved" | "pending";
+  /**
+   * `"cover"` marks a relief assignment rather than the absence itself
+   * (client feedback §3.2) — rendered dashed so it reads as a duty, not a
+   * day off. Kept separate from `status`, which is a real approval state.
+   */
+  kind?: "leave" | "cover";
   color?: string;
 }
+
+/** Colour used for relief-cover entries across every calendar. */
+export const COVER_COLOR = "#0D9488";
 
 interface LeaveCalendarProps {
   leave: CalendarLeave[];
@@ -27,6 +36,8 @@ interface LeaveCalendarProps {
   initialMonth?: Date;
   /** Show each entry's label (team view) rather than only a status dot. */
   showLabels?: boolean;
+  /** Makes entries clickable — receives the CalendarLeave id. */
+  onSelectEntry?: (id: string) => void;
 }
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -49,10 +60,14 @@ export function LeaveCalendar({
   shutdowns = COMPANY_SHUTDOWNS,
   initialMonth,
   showLabels = false,
+  onSelectEntry,
 }: LeaveCalendarProps) {
-  const [cursor, setCursor] = useState(
-    () => initialMonth ?? new Date(2026, 6, 1),
-  );
+  // Opens on the current month — this was pinned to a hardcoded demo month.
+  const [cursor, setCursor] = useState(() => {
+    if (initialMonth) return initialMonth;
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
 
   const grid = useMemo(() => {
     const year = cursor.getFullYear();
@@ -166,15 +181,40 @@ export function LeaveCalendar({
                   showLabels ? (
                     <span
                       key={e.id}
+                      role={onSelectEntry ? "button" : undefined}
+                      tabIndex={onSelectEntry ? 0 : undefined}
+                      onClick={onSelectEntry ? () => onSelectEntry(e.id) : undefined}
+                      onKeyDown={
+                        onSelectEntry
+                          ? (ev) => {
+                              if (ev.key === "Enter" || ev.key === " ") {
+                                ev.preventDefault();
+                                onSelectEntry(e.id);
+                              }
+                            }
+                          : undefined
+                      }
                       className={cn(
                         "truncate rounded px-1 py-0.5 text-[9px] font-medium",
                         e.status === "pending" ? "opacity-60" : "",
+                        e.kind === "cover" && "border border-dashed",
+                        onSelectEntry &&
+                          "cursor-pointer hover:brightness-95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                       )}
                       style={{
-                        background: `${e.color ?? "#2563EB"}22`,
+                        background:
+                          e.kind === "cover"
+                            ? "transparent"
+                            : `${e.color ?? "#2563EB"}22`,
+                        borderColor:
+                          e.kind === "cover" ? e.color ?? COVER_COLOR : undefined,
                         color: e.color ?? "#2563EB",
                       }}
-                      title={`${e.label} (${e.status})`}
+                      title={
+                        e.kind === "cover"
+                          ? e.label
+                          : `${e.label} (${e.status})`
+                      }
                     >
                       {e.label}
                     </span>
@@ -184,9 +224,14 @@ export function LeaveCalendar({
                       className={cn(
                         "h-1.5 w-full rounded-full",
                         e.status === "pending" && "opacity-50",
+                        e.kind === "cover" && "opacity-70",
                       )}
                       style={{ background: e.color ?? "#2563EB" }}
-                      title={`${e.label} (${e.status})`}
+                      title={
+                        e.kind === "cover"
+                          ? e.label
+                          : `${e.label} (${e.status})`
+                      }
                     />
                   ),
                 )}
@@ -208,6 +253,13 @@ export function LeaveCalendar({
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-[#2563EB] opacity-50" /> Pending leave
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="h-2.5 w-2.5 rounded-full border border-dashed"
+            style={{ borderColor: COVER_COLOR }}
+          />{" "}
+          Covering
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm bg-indigo-500/40" /> Public holiday

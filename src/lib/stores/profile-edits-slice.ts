@@ -44,6 +44,15 @@ interface RequestEditPayload {
   requestedValue: string;
   reason: string;
   requestedBy: string;
+  /** Requester's system id, so the change log can link to their profile. */
+  requestedById?: string;
+}
+
+/** Who decided a request. `actorId` links the log entry to a real profile. */
+interface DecisionPayload {
+  id: string;
+  actorName: string;
+  actorId?: string;
 }
 
 const profileEditsSlice = createSlice({
@@ -66,6 +75,19 @@ const profileEditsSlice = createSlice({
       setOverride(state, employeeId, field, value);
     },
 
+    /**
+     * Adds demo history for an employee who has none. Keyed on the employee
+     * rather than a global flag, so seeding one profile can't suppress another,
+     * and re-seeding an employee who already has entries is a no-op.
+     */
+    seedRequests(state, action: PayloadAction<ChangeRequest[]>) {
+      const incoming = action.payload;
+      if (incoming.length === 0) return;
+      const employeeId = incoming[0].employeeId;
+      if (state.requests.some((r) => r.employeeId === employeeId)) return;
+      state.requests.push(...incoming);
+    },
+
     // Employee-submitted change request — pending HR review.
     requestEdit(state, action: PayloadAction<RequestEditPayload>) {
       state.requests.unshift({
@@ -76,26 +98,25 @@ const profileEditsSlice = createSlice({
       });
     },
 
-    approveRequest(
-      state,
-      action: PayloadAction<{ id: string; actorName: string }>,
-    ) {
+    approveRequest(state, action: PayloadAction<DecisionPayload>) {
       const req = state.requests.find((r) => r.id === action.payload.id);
       if (!req || req.status !== "pending") return;
       req.status = "approved";
       req.decidedBy = action.payload.actorName;
+      req.decidedById = action.payload.actorId;
       req.decidedAt = nowIso();
       setOverride(state, req.employeeId, req.field, req.requestedValue);
     },
 
     rejectRequest(
       state,
-      action: PayloadAction<{ id: string; actorName: string; note?: string }>,
+      action: PayloadAction<DecisionPayload & { note?: string }>,
     ) {
       const req = state.requests.find((r) => r.id === action.payload.id);
       if (!req || req.status !== "pending") return;
       req.status = "rejected";
       req.decidedBy = action.payload.actorName;
+      req.decidedById = action.payload.actorId;
       req.decidedAt = nowIso();
       req.decisionNote = action.payload.note;
     },
@@ -108,6 +129,7 @@ const profileEditsSlice = createSlice({
 
 export const {
   hydrate,
+  seedRequests,
   applyEdit,
   requestEdit,
   approveRequest,

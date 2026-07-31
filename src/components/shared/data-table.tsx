@@ -41,6 +41,7 @@ import {
   type VisibilityState,
   type RowSelectionState,
   type Row,
+  type RowData,
 } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -68,6 +69,14 @@ import {
   TableRow,
 } from "@/src/components/ui/table";
 import { cn } from "@/src/lib/utils";
+
+declare module "@tanstack/react-table" {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    /** Human-readable name for the Columns visibility menu (defaults to the id). */
+    label?: string;
+  }
+}
 
 // ── column helpers ──────────────────────────────────────────────────────────
 
@@ -193,7 +202,11 @@ export interface DataTableProps<T> {
   /** Extra toolbar content on the right (e.g. an Add button or filters). */
   toolbarActions?: React.ReactNode;
   enableColumnVisibility?: boolean;
+  /** Columns hidden (or forced visible) on first render, e.g. `{ "system id": false }`. */
+  initialColumnVisibility?: VisibilityState;
   enableSelection?: boolean;
+  /** Fires with the selected row ids whenever the selection changes. */
+  onSelectionChange?: (ids: string[]) => void;
   enablePagination?: boolean;
   pageSize?: number;
   enableDnd?: boolean;
@@ -217,7 +230,9 @@ export function DataTable<T>({
   enableGlobalFilter,
   toolbarActions,
   enableColumnVisibility,
+  initialColumnVisibility,
   enableSelection,
+  onSelectionChange,
   enablePagination = true,
   pageSize = 10,
   enableDnd,
@@ -236,8 +251,9 @@ export function DataTable<T>({
   }
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(
+    () => initialColumnVisibility ?? {},
+  );
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize });
@@ -305,7 +321,13 @@ export function DataTable<T>({
     },
     getRowId,
     enableRowSelection: !!enableSelection,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: (updater) => {
+      setRowSelection((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        onSelectionChange?.(Object.keys(next).filter((id) => next[id]));
+        return next;
+      });
+    },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
@@ -432,7 +454,7 @@ export function DataTable<T>({
                         checked={column.getIsVisible()}
                         onCheckedChange={(v) => column.toggleVisibility(!!v)}
                       >
-                        {column.id}
+                        {column.columnDef.meta?.label ?? column.id}
                       </DropdownMenuCheckboxItem>
                     ))}
                 </DropdownMenuContent>

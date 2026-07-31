@@ -12,20 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import {
-  DEPARTMENT_OPTIONS,
-  OFFBOARDING_STATUS_LABELS,
-  EXIT_REASON_LABELS,
-} from "../data";
-import type { OffboardingStatus, ExitReason } from "../types";
+import { DEPARTMENT_OPTIONS, EXIT_REASON_LABELS } from "../data";
+import type { ExitReason } from "../types";
 
 interface PipelineToolbarProps {
   search: string;
   onSearchChange: (v: string) => void;
   deptFilter: string;
   onDeptFilterChange: (v: string) => void;
-  statusFilter: string;
-  onStatusFilterChange: (v: string) => void;
   reasonFilter: string;
   onReasonFilterChange: (v: string) => void;
   onInitiate: () => void;
@@ -36,17 +30,14 @@ export function PipelineToolbar({
   onSearchChange,
   deptFilter,
   onDeptFilterChange,
-  statusFilter,
-  onStatusFilterChange,
   reasonFilter,
   onReasonFilterChange,
   onInitiate,
 }: PipelineToolbarProps) {
-  const activeFilters = [
-    deptFilter !== "all",
-    statusFilter !== "all",
-    reasonFilter !== "all",
-  ].filter(Boolean).length;
+  // Status is not a filter here — it is the tab strip below (§2.1).
+  const activeFilters = [deptFilter !== "all", reasonFilter !== "all"].filter(
+    Boolean,
+  ).length;
 
   return (
     <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -106,23 +97,6 @@ export function PipelineToolbar({
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs">Status</DropdownMenuLabel>
-            <DropdownMenuRadioGroup
-              value={statusFilter}
-              onValueChange={onStatusFilterChange}
-            >
-              <DropdownMenuRadioItem value="all" className="text-xs">
-                All Statuses
-              </DropdownMenuRadioItem>
-              {(
-                Object.keys(OFFBOARDING_STATUS_LABELS) as OffboardingStatus[]
-              ).map((s) => (
-                <DropdownMenuRadioItem key={s} value={s} className="text-xs">
-                  {OFFBOARDING_STATUS_LABELS[s]}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
             {activeFilters > 0 && (
               <>
                 <DropdownMenuSeparator />
@@ -133,7 +107,6 @@ export function PipelineToolbar({
                     className="h-7 w-full text-xs text-muted-foreground"
                     onClick={() => {
                       onDeptFilterChange("all");
-                      onStatusFilterChange("all");
                       onReasonFilterChange("all");
                     }}
                   >

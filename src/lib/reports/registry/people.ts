@@ -107,7 +107,7 @@ const employeesReport = defineReport<EmpRow>({
     });
   },
   columns: [
-    { key: "employeeNumber", header: "Emp #", value: (r) => r.employeeNumber },
+    { key: "employeeNumber", header: "Employee ID", value: (r) => r.employeeNumber },
     { key: "fullName", header: "Name", value: (r) => r.fullName },
     { key: "department", header: "Department", value: (r) => r.department },
     { key: "jobTitle", header: "Job Title", value: (r) => r.jobTitle },

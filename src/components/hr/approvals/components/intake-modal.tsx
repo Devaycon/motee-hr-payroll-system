@@ -22,6 +22,7 @@ import {
 } from "@/src/components/ui/select";
 import { SignaturePad } from "@/src/components/shared/signature-pad";
 import { FileDropzone } from "@/src/components/shared/file-dropzone";
+import { formatBytes, readAttachments } from "@/src/lib/utils/file-attachments";
 import {
   categoryLabel,
   type ApprovalAttachment,
@@ -110,23 +111,6 @@ const EXTRA_FIELDS: Record<ApprovalDocumentType, ExtraField[]> = {
     { key: "merchant", label: "Merchant" },
   ],
 };
-
-const MAX_FILE_BYTES = 2 * 1024 * 1024;
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
-
-function formatBytes(b: number): string {
-  if (b < 1024) return `${b} B`;
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
-  return `${(b / (1024 * 1024)).toFixed(2)} MB`;
-}
 
 /**
  * Returns true if the active user is eligible to start a submission using
@@ -233,31 +217,13 @@ export function IntakeModal({
   }
 
   async function handleFiles(list: FileList | null) {
-    if (!list || list.length === 0) return;
     if (!user) return;
-    const added: ApprovalAttachment[] = [];
-    for (const f of Array.from(list)) {
-      if (f.size > MAX_FILE_BYTES) {
-        toast.error(
-          `"${f.name}" is ${formatBytes(f.size)} — files must be ≤ 2 MB.`,
-        );
-        continue;
-      }
-      try {
-        const dataUrl = await readFileAsDataUrl(f);
-        added.push({
-          id: `ATT-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-          name: f.name,
-          mimeType: f.type || "application/octet-stream",
-          sizeBytes: f.size,
-          dataUrl,
-          uploadedAt: new Date().toISOString(),
-          uploadedByEmployeeId: user.employeeId,
-        });
-      } catch {
-        toast.error(`Couldn't read "${f.name}".`);
-      }
-    }
+    const { attachments: read, errors: failed } = await readAttachments(list);
+    failed.forEach((message) => toast.error(message));
+    const added: ApprovalAttachment[] = read.map((a) => ({
+      ...a,
+      uploadedByEmployeeId: user.employeeId,
+    }));
     if (added.length) setAttachments((prev) => [...prev, ...added]);
   }
 

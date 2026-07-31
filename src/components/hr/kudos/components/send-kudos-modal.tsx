@@ -55,11 +55,11 @@ type FormValues = {
   isBroadcast: boolean;
 };
 
-function getDefaults(): FormValues {
+function getDefaults(recipient?: KudosRecipient): FormValues {
   return {
-    recipientName: "",
-    recipientInitials: "",
-    recipientDept: "",
+    recipientName: recipient?.name ?? "",
+    recipientInitials: recipient?.initials ?? "",
+    recipientDept: recipient?.department ?? "",
     kudosType: "",
     customTypeName: "",
     companyValue: "",
@@ -69,21 +69,34 @@ function getDefaults(): FormValues {
   };
 }
 
+/** Pre-selects the recipient, e.g. when opened from an employee row. */
+export interface KudosRecipient {
+  name: string;
+  initials: string;
+  department: string;
+}
+
 interface SendKudosModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (data: NewKudos) => void;
+  recipient?: KudosRecipient;
 }
 
-export function SendKudosModal({ open, onClose, onSave }: SendKudosModalProps) {
+export function SendKudosModal({
+  open,
+  onClose,
+  onSave,
+  recipient,
+}: SendKudosModalProps) {
   const [prevOpen, setPrevOpen] = useState(false);
-  const [form, setForm] = useState<FormValues>(getDefaults);
+  const [form, setForm] = useState<FormValues>(() => getDefaults());
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
 
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
-      setForm(getDefaults());
+      setForm(getDefaults(recipient));
       setErrors({});
     }
   }

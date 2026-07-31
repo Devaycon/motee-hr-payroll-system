@@ -37,6 +37,11 @@ import {
   sortableHeader,
   actionsColumn,
 } from "@/src/components/shared/data-table";
+import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
 import { cn } from "@/src/lib/utils";
 import {
   ONBOARDING_STAGE_LABELS,
@@ -60,6 +65,7 @@ export function PipelineTable({
   onDelete,
 }: PipelineTableProps) {
   const router = useRouter();
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<OnboardingRecord>[]>(
     () => [
       {
@@ -84,6 +90,11 @@ export function PipelineTable({
           </div>
         ),
       },
+      ...employeeIdColumns<OnboardingRecord>({
+        identity,
+        employeeId: (r) => r.referenceId,
+        name: (r) => r.employeeName,
+      }),
       {
         accessorKey: "department",
         header: sortableHeader("Department"),
@@ -229,12 +240,14 @@ export function PipelineTable({
         );
       }),
     ],
-    [onViewTasks, onSendWelcomeEmail, onDelete, router],
+    [onViewTasks, onSendWelcomeEmail, onDelete, router, identity],
   );
 
   return (
     <DataTable
       columns={columns}
+      initialColumnVisibility={HIDE_SYSTEM_ID}
+      enableColumnVisibility
       data={records}
       getRowId={(r) => r.id}
       emptyMessage="No onboarding records found."

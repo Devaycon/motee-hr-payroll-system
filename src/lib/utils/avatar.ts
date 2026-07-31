@@ -33,8 +33,25 @@ function normalizeGender(gender?: string | null): SimpleGender | undefined {
   const g = gender?.trim().toLowerCase();
   if (!g) return undefined;
   if (g.startsWith("f")) return "female";
-  if (g.startsWith("m")) return "male";
+  if (g.startsWith("m") && !g.startsWith("mx")) return "male";
   return undefined; // non_binary / prefer_not_to_say / unknown → resolve below
+}
+
+/**
+ * Genders that are a deliberate statement rather than a gap in the data. The
+ * portrait set only has "men" and "women" buckets, so picking either one would
+ * put a gendered face on someone who has said they don't have one — these fall
+ * back to the initials avatar instead.
+ */
+function isDeclinedGender(gender?: string | null): boolean {
+  const g = gender?.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return (
+    g === "non_binary" ||
+    g === "nonbinary" ||
+    g === "nb" ||
+    g === "prefer_not_to_say" ||
+    g === "prefer_not_to_state"
+  );
 }
 
 /** Resolve a person's gender as accurately and consistently as possible. */
@@ -51,10 +68,18 @@ function resolveGender(name: string, gender?: string | null): SimpleGender {
 
 /**
  * Stable, gender-accurate avatar URL for a person.
+ *
+ * Returns `undefined` when the person has declined to state a gender, so the
+ * caller shows initials rather than an arbitrary man or woman.
+ *
  * @param seed   The person's full name (used as the deterministic key).
  * @param gender "male"/"female" when the call site has it; otherwise resolved.
  */
-export function personPhotoUrl(seed: string, gender?: string | null): string {
+export function personPhotoUrl(
+  seed: string,
+  gender?: string | null,
+): string | undefined {
+  if (isDeclinedGender(gender)) return undefined;
   const name = (seed ?? "").trim();
   const bucket = resolveGender(name, gender) === "female" ? "women" : "men";
   const index = hashString(name.toLowerCase() || "anonymous") % PORTRAIT_COUNT;

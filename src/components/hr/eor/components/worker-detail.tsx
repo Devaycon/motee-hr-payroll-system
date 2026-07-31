@@ -23,7 +23,7 @@ import {
   titleCase,
 } from "@/src/components/hr/employees/employee-detail/ui";
 import { formatMoney } from "@/src/lib/hooks/use-currency";
-import { personPhotoUrl } from "@/src/lib/utils/avatar";
+import { PersonPhoto } from "@/src/components/shared/person-photo";
 import { cn } from "@/src/lib/utils";
 import type { EorWorker, EorProvider } from "../types";
 import {
@@ -91,11 +91,11 @@ export function WorkerDetail({ worker, provider, onBack, onEdit }: WorkerDetailP
         <Card className="lg:h-full">
           <CardContent className="px-5 py-6 flex flex-col items-center gap-4 h-full">
             <div className="w-full aspect-square overflow-hidden rounded-2xl bg-primary/10 shrink-0 flex items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={personPhotoUrl(worker.name, worker.gender)}
-                alt={worker.name}
-                className="h-full w-full object-cover"
+              <PersonPhoto
+                name={worker.name}
+                gender={worker.gender}
+                className="h-full w-full"
+                fallbackClassName="text-4xl"
               />
             </div>
             <h2 className="text-xl font-bold text-foreground text-center break-words">

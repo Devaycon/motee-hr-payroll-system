@@ -10,6 +10,9 @@ import { initWorkforceRequestsPersistence } from "./workforce-requests-persisten
 import { initProfileEditsPersistence } from "./profile-edits-persistence";
 import { initCollectionEditsPersistence } from "./collection-edits-persistence";
 import { initWorkflowsPersistence } from "./workflows-persistence";
+import { initLeavePersistence } from "./leave-persistence";
+import { initEmployeesPersistence } from "./employees-persistence";
+import { initOffboardingPersistence } from "./offboarding-persistence";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -20,6 +23,9 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
     initProfileEditsPersistence();
     initCollectionEditsPersistence();
     initWorkflowsPersistence();
+    initLeavePersistence();
+    initEmployeesPersistence();
+    initOffboardingPersistence();
   }, []);
 
   return <Provider store={store}>{children}</Provider>;

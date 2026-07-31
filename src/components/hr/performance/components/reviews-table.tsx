@@ -27,6 +27,11 @@ import {
   actionsColumn,
 } from "@/src/components/shared/data-table";
 import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
+import {
   REVIEW_TYPE_LABELS,
   REVIEW_TYPE_STYLES,
   REVIEW_STATUS_LABELS,
@@ -86,6 +91,7 @@ export function ReviewsTable({
     return matchSearch && matchDept && matchType && matchStatus;
   });
 
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<PerformanceReview>[]>(
     () => [
       {
@@ -107,6 +113,10 @@ export function ReviewsTable({
           </div>
         ),
       },
+      ...employeeIdColumns<PerformanceReview>({
+        identity,
+        name: (r) => r.employeeName,
+      }),
       {
         accessorKey: "department",
         header: sortableHeader("Department"),
@@ -199,7 +209,7 @@ export function ReviewsTable({
         </DropdownMenu>
       )),
     ],
-    [onView],
+    [onView, identity],
   );
 
   return (
@@ -218,6 +228,8 @@ export function ReviewsTable({
       <div className="mt-4">
         <DataTable
           columns={columns}
+          initialColumnVisibility={HIDE_SYSTEM_ID}
+          enableColumnVisibility
           data={filtered}
           getRowId={(r) => r.id}
           emptyMessage="No reviews found."

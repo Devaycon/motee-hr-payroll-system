@@ -21,3 +21,23 @@ export function landingPathForUser(
   }
   return HR_PORTAL;
 }
+
+/** Landing routes for the two portals, used by the Admin/Self-Service toggle. */
+export const PORTAL_PATHS = {
+  admin: HR_PORTAL,
+  self: EMPLOYEE_PORTAL,
+} as const;
+
+/**
+ * Whether this user may switch into the admin portal (client feedback §4.2).
+ *
+ * Fails open when there is no user, consistent with `useCan`,
+ * `useVisibleRoutes` and `HrAccessGuard` — `auth` is not persisted, so a hard
+ * refresh leaves `s.auth.user` null.
+ */
+export function canAccessAdminPortal(
+  user: Pick<AuthUser, "roleId" | "accessLevelId"> | null | undefined,
+): boolean {
+  if (!user) return true;
+  return landingPathForUser(user) === HR_PORTAL;
+}

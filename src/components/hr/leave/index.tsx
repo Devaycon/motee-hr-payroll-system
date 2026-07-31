@@ -1,14 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { BulkCsvUploadModal } from "@/src/components/shared/bulk-csv-upload-modal";
-import { useLeaveData } from "./hooks";
+import { useLeaveData, useLeaveStages } from "./hooks";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { submitApproval } from "@/src/lib/stores/approvals-slice";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
+import {
+  addRequest,
+  addRequests,
+  updateRequest,
+  advanceRequest,
+  rejectRequest as rejectRequestAction,
+  cancelRequest as cancelRequestAction,
+  addPolicy,
+  updatePolicy,
+  deletePolicy,
+  adjustBalance,
+} from "@/src/lib/stores/leave-slice";
+import { nextStatus, currentStage } from "@/src/lib/leave/stages";
+import {
+  detectConflicts,
+  departmentSizesFrom,
+} from "@/src/lib/leave/conflicts";
+import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
@@ -19,10 +39,13 @@ import { PoliciesTable } from "./components/policies-table";
 import { RequestModal } from "./components/request-modal";
 import { ReviewModal } from "./components/review-modal";
 import { PolicyModal } from "./components/policy-modal";
+import { OnLeavePanel } from "./components/on-leave-panel";
+import { LeaveCalendarTab } from "./components/calendar-tab";
+import { LEAVE_TYPE_LABELS } from "./data";
+import { isOpenLeaveStatus } from "@/src/lib/types/leave";
 import type {
   LeaveRequest,
   NewLeaveRequest,
-  LeaveBalance,
   LeavePolicy,
   NewLeavePolicy,
 } from "./types";
@@ -30,37 +53,113 @@ import type {
 export function LeaveManagementPage() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
+  const actor = user?.name ?? "HR Manager";
   const { data, loading } = useLeaveData();
-  const [requests, setRequests] = useState<LeaveRequest[]>([]);
-  const [balances, setBalances] = useState<LeaveBalance[]>([]);
-  const [policies, setPolicies] = useState<LeavePolicy[]>([]);
-  useEffect(() => {
-    if (data) {
-      setRequests(data.requests);
-      setBalances(data.balances);
-      setPolicies(data.policies);
-    }
-  }, [data]);
+  const stages = useLeaveStages();
+
+  const requests = useMemo(() => data?.requests ?? [], [data]);
+  const balances = useMemo(() => data?.balances ?? [], [data]);
+  const policies = useMemo(() => data?.policies ?? [], [data]);
+
+  // Real department headcount drives the coverage warnings (§F8).
+  const { data: departmentSizes } = useLocaleSection((b) =>
+    departmentSizesFrom(b.employees),
+  );
 
   const [requestModalOpen, setRequestModalOpen] = useState(false);
-  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(
-    null,
-  );
-
+  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [viewingRequest, setViewingRequest] = useState<LeaveRequest | null>(
-    null,
-  );
-
+  const [viewingRequest, setViewingRequest] = useState<LeaveRequest | null>(null);
   const [policyModalOpen, setPolicyModalOpen] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<LeavePolicy | null>(null);
-
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [onLeaveOpen, setOnLeaveOpen] = useState(false);
+
+  // `?request=` opens a specific request straight into review, so the People's
+  // time off page can hand a decision back to the flow that owns it.
+  const requestParam = useSearchParams().get("request");
+  const [openedParam, setOpenedParam] = useState<string | null>(null);
+  if (requestParam && requestParam !== openedParam && requests.length) {
+    const match = requests.find((r) => r.id === requestParam);
+    setOpenedParam(requestParam);
+    if (match) {
+      setViewingRequest(match);
+      setReviewModalOpen(true);
+    }
+  }
+
+  // Keep the open detail panel in sync as the underlying request advances.
+  const viewing = useMemo(
+    () =>
+      viewingRequest
+        ? (requests.find((r) => r.id === viewingRequest.id) ?? viewingRequest)
+        : null,
+    [requests, viewingRequest],
+  );
+
+  const conflicts = useMemo(
+    () =>
+      viewing && departmentSizes
+        ? detectConflicts({
+            request: viewing,
+            allRequests: requests,
+            departmentSizes,
+          })
+        : [],
+    [viewing, requests, departmentSizes],
+  );
+
+  function notify(
+    title: string,
+    description: string,
+    type: "success" | "info" | "warning" = "info",
+  ) {
+    dispatch(pushNotification({ title, description, type }));
+  }
 
   function handleBulkImport(imported: LeaveRequest[]) {
-    setRequests((prev) => [...imported, ...prev]);
+    dispatch(addRequests({ requests: imported, actor, source: "CSV upload" }));
+    // Imported rows must enter the approval hub like any other request —
+    // previously they bypassed it entirely.
+    for (const r of imported) {
+      submitToApprovalHub(r);
+    }
     toast.success(
       `Imported ${imported.length} leave request${imported.length === 1 ? "" : "s"}`,
+    );
+    notify(
+      "Leave requests imported",
+      `${imported.length} request${imported.length === 1 ? "" : "s"} imported and sent for approval.`,
+      "success",
+    );
+  }
+
+  function submitToApprovalHub(req: LeaveRequest) {
+    if (!user) return;
+    void dispatch(
+      submitApproval({
+        documentType: "leave_request",
+        documentId: req.id,
+        documentTitle: `${LEAVE_TYPE_LABELS[req.leaveType] ?? req.leaveType} leave – ${req.totalDays} day${req.totalDays === 1 ? "" : "s"}`,
+        documentSummary: `${req.employeeName} · ${req.startDate} → ${req.endDate}`,
+        payloadSnapshot: {
+          leaveType: req.leaveType,
+          startDate: req.startDate,
+          endDate: req.endDate,
+          totalDays: req.totalDays,
+          department: req.department,
+          jobTitle: req.jobTitle,
+          reason: req.reason ?? "",
+          notes: req.notes ?? "",
+          reliefEmployee: req.reliefEmployeeName ?? "",
+        },
+        submitter: {
+          employeeId: user.employeeId,
+          name: user.name,
+          initials: user.initials,
+          departmentName: user.departmentName,
+        },
+      }),
     );
   }
 
@@ -69,46 +168,30 @@ export function LeaveManagementPage() {
     setRequestModalOpen(true);
   }
 
-  function handleSaveRequest(data: NewLeaveRequest) {
+  function handleSaveRequest(form: NewLeaveRequest) {
     if (editingRequest) {
-      setRequests((prev) =>
-        prev.map((r) => (r.id === editingRequest.id ? { ...r, ...data } : r)),
+      dispatch(
+        updateRequest({ id: editingRequest.id, changes: form, actor }),
       );
-    } else {
-      const newRequest: LeaveRequest = {
-        ...data,
-        id: `LR-${Date.now()}`,
-        status: "pending",
-        submittedAt: new Date().toISOString().slice(0, 10),
-      };
-      setRequests((prev) => [newRequest, ...prev]);
-      if (user) {
-        void dispatch(
-          submitApproval({
-            documentType: "leave_request",
-            documentId: newRequest.id,
-            documentTitle: `${data.leaveType} leave – ${data.totalDays} day${data.totalDays === 1 ? "" : "s"}`,
-            documentSummary: `${data.employeeName} · ${data.startDate} → ${data.endDate}`,
-            payloadSnapshot: {
-              leaveType: data.leaveType,
-              startDate: data.startDate,
-              endDate: data.endDate,
-              totalDays: data.totalDays,
-              department: data.department,
-              jobTitle: data.jobTitle,
-              notes: data.notes ?? "",
-            },
-            submitter: {
-              employeeId: user.employeeId,
-              name: user.name,
-              initials: user.initials,
-              departmentName: user.departmentName,
-            },
-          }),
-        );
-        toast.success("Leave submitted to the central approval hub");
-      }
+      toast.success("Leave request updated");
+      return;
     }
+    // New requests enter at the first stage of the active chain (§F4).
+    const firstStatus = stages[0]?.status ?? "pending";
+    const newRequest: LeaveRequest = {
+      ...form,
+      id: `LR-${Date.now()}`,
+      status: firstStatus,
+      submittedAt: new Date().toISOString().slice(0, 10),
+      submittedBy: actor,
+    };
+    dispatch(addRequest({ request: newRequest, actor }));
+    submitToApprovalHub(newRequest);
+    toast.success("Leave submitted to the central approval hub");
+    notify(
+      "Leave request submitted",
+      `${newRequest.employeeName} requested ${newRequest.totalDays} day${newRequest.totalDays === 1 ? "" : "s"} of ${LEAVE_TYPE_LABELS[newRequest.leaveType]} leave.`,
+    );
   }
 
   function handleViewRequest(request: LeaveRequest) {
@@ -116,39 +199,92 @@ export function LeaveManagementPage() {
     setReviewModalOpen(true);
   }
 
-  function handleApproveRequest(id: string) {
-    const now = new Date().toISOString().slice(0, 10);
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              status: "approved" as const,
-              approvedAt: now,
-              approvedBy: "HR Manager",
-            }
-          : r,
-      ),
+  /** Advances one stage; only the final stage results in "approved". */
+  function handleApproveRequest(id: string, comment?: string) {
+    const req = requests.find((r) => r.id === id);
+    if (!req) return;
+    const stage = currentStage(req.status, stages);
+    const to = nextStatus(req.status, stages);
+    dispatch(
+      advanceRequest({
+        id,
+        toStatus: to,
+        actor,
+        stageLabel: stage?.label,
+        comment,
+      }),
     );
+    if (to === "approved") {
+      toast.success(`${req.employeeName}'s leave approved`);
+      notify(
+        "Leave approved",
+        `${req.employeeName}'s ${LEAVE_TYPE_LABELS[req.leaveType]} leave for ${req.startDate} → ${req.endDate} was approved.`,
+        "success",
+      );
+    } else {
+      const nextStage = currentStage(to, stages);
+      toast.success(
+        `Moved to ${nextStage?.label ?? "the next stage"}${nextStage?.approverLabel ? ` — ${nextStage.approverLabel}` : ""}`,
+      );
+      notify(
+        "Leave request advanced",
+        `${req.employeeName}'s request now awaits ${nextStage?.approverLabel ?? "the next approver"}.`,
+      );
+    }
   }
 
   function handleRejectRequest(id: string, reason: string) {
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              status: "rejected" as const,
-              rejectionReason: reason,
-            }
-          : r,
-      ),
+    const req = requests.find((r) => r.id === id);
+    dispatch(rejectRequestAction({ id, actor, reason }));
+    toast.success("Leave request rejected");
+    if (req) {
+      notify(
+        "Leave rejected",
+        `${req.employeeName}'s ${LEAVE_TYPE_LABELS[req.leaveType]} leave was rejected: ${reason}`,
+        "warning",
+      );
+    }
+  }
+
+  function handleCancelRequest(id: string) {
+    const req = requests.find((r) => r.id === id);
+    dispatch(cancelRequestAction({ id, actor }));
+    toast.success("Leave request cancelled");
+    if (req) {
+      notify(
+        "Leave cancelled",
+        `${req.employeeName}'s ${LEAVE_TYPE_LABELS[req.leaveType]} leave was cancelled.`,
+        "warning",
+      );
+    }
+  }
+
+  function handleBulkApprove(ids: string[]) {
+    for (const id of ids) handleApproveRequestSilently(id);
+    toast.success(`${ids.length} request${ids.length === 1 ? "" : "s"} advanced`);
+  }
+
+  function handleApproveRequestSilently(id: string) {
+    const req = requests.find((r) => r.id === id);
+    if (!req || !isOpenLeaveStatus(req.status)) return;
+    const stage = currentStage(req.status, stages);
+    dispatch(
+      advanceRequest({
+        id,
+        toStatus: nextStatus(req.status, stages),
+        actor,
+        stageLabel: stage?.label,
+      }),
     );
   }
 
-  function handleRejectClick(request: LeaveRequest) {
-    setViewingRequest(request);
-    setReviewModalOpen(true);
+  function handleBulkReject(ids: string[]) {
+    for (const id of ids) {
+      dispatch(
+        rejectRequestAction({ id, actor, reason: "Rejected in bulk review" }),
+      );
+    }
+    toast.success(`${ids.length} request${ids.length === 1 ? "" : "s"} rejected`);
   }
 
   function handleAddPolicy() {
@@ -161,26 +297,28 @@ export function LeaveManagementPage() {
     setPolicyModalOpen(true);
   }
 
-  function handleSavePolicy(data: NewLeavePolicy) {
+  function handleSavePolicy(form: NewLeavePolicy) {
     if (editingPolicy) {
-      setPolicies((prev) =>
-        prev.map((p) => (p.id === editingPolicy.id ? { ...p, ...data } : p)),
-      );
+      dispatch(updatePolicy({ id: editingPolicy.id, changes: form }));
+      toast.success("Policy updated");
     } else {
-      const newPolicy: LeavePolicy = {
-        ...data,
-        id: `LP-${Date.now()}`,
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
-      setPolicies((prev) => [...prev, newPolicy]);
+      dispatch(
+        addPolicy({
+          ...form,
+          id: `LP-${Date.now()}`,
+          createdAt: new Date().toISOString().slice(0, 10),
+        }),
+      );
+      toast.success("Policy created");
     }
   }
 
   function handleDeletePolicy(id: string) {
-    setPolicies((prev) => prev.filter((p) => p.id !== id));
+    dispatch(deletePolicy(id));
+    toast.success("Policy deleted");
   }
 
-  if (loading && !requests.length) {
+  if (loading && requests.length === 0) {
     return (
       <div className="space-y-5">
         <Skeleton className="h-16 w-72" />
@@ -207,12 +345,13 @@ export function LeaveManagementPage() {
         </Button>
       </div>
 
-      <StatCards requests={requests} />
+      <StatCards requests={requests} onShowOnLeave={() => setOnLeaveOpen(true)} />
 
       <Tabs defaultValue="requests">
         <PageTabsList
           tabs={[
             { value: "requests", label: "Requests" },
+            { value: "calendar", label: "Calendar" },
             { value: "balances", label: "Balances" },
             { value: "policies", label: "Policies" },
             { value: "approval_chain", label: "Approval Chain" },
@@ -224,13 +363,32 @@ export function LeaveManagementPage() {
             requests={requests}
             onView={handleViewRequest}
             onApprove={handleApproveRequest}
-            onRejectClick={handleRejectClick}
+            onRejectClick={handleViewRequest}
             onNewRequest={handleNewRequest}
+            onEdit={(r) => {
+              setEditingRequest(r);
+              setRequestModalOpen(true);
+            }}
+            onCancel={(r) => handleCancelRequest(r.id)}
+            onBulkApprove={handleBulkApprove}
+            onBulkReject={handleBulkReject}
           />
         </TabsContent>
 
+        <TabsContent value="calendar" className="mt-4 space-y-4">
+          <LeaveCalendarTab requests={requests} onSelectRequest={handleViewRequest} />
+        </TabsContent>
+
         <TabsContent value="balances" className="mt-4 space-y-4">
-          <BalancesTable balances={balances} />
+          <BalancesTable
+            balances={balances}
+            onAdjust={(id, delta) => {
+              dispatch(adjustBalance({ id, delta }));
+              toast.success(
+                `Entitlement adjusted by ${delta > 0 ? "+" : ""}${delta} day${Math.abs(delta) === 1 ? "" : "s"}`,
+              );
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="policies" className="mt-4 space-y-4">
@@ -257,9 +415,13 @@ export function LeaveManagementPage() {
       <ReviewModal
         open={reviewModalOpen}
         onClose={() => setReviewModalOpen(false)}
-        viewingRequest={viewingRequest}
+        viewingRequest={viewing}
         onApprove={handleApproveRequest}
         onReject={handleRejectRequest}
+        onCancel={handleCancelRequest}
+        stages={stages}
+        conflicts={conflicts}
+        canApprove
       />
 
       <PolicyModal
@@ -267,6 +429,13 @@ export function LeaveManagementPage() {
         onClose={() => setPolicyModalOpen(false)}
         editingPolicy={editingPolicy}
         onSave={handleSavePolicy}
+      />
+
+      <OnLeavePanel
+        open={onLeaveOpen}
+        onClose={() => setOnLeaveOpen(false)}
+        requests={requests}
+        balances={balances}
       />
 
       <BulkCsvUploadModal<LeaveRequest>
@@ -284,7 +453,9 @@ export function LeaveManagementPage() {
           "startDate",
           "endDate",
           "totalDays",
+          "reason",
           "notes",
+          "reliefEmployeeName",
         ]}
         sampleRows={[
           [
@@ -297,6 +468,8 @@ export function LeaveManagementPage() {
             "2026-07-05",
             "5",
             "Family holiday",
+            "Handover to Amara",
+            "Amara Nwosu",
           ],
           [
             "Amara Nwosu",
@@ -307,6 +480,8 @@ export function LeaveManagementPage() {
             "2026-07-10",
             "2026-07-11",
             "2",
+            "Flu",
+            "",
             "",
           ],
         ]}
@@ -330,13 +505,26 @@ export function LeaveManagementPage() {
           endDate: o.endDate ?? "",
           totalDays: Number(o.totalDays) || 0,
           isHalfDay: false,
-          status: "pending",
+          status: stages[0]?.status ?? "pending",
+          reason: o.reason || undefined,
           notes: o.notes || undefined,
+          reliefEmployeeName: o.reliefEmployeeName || undefined,
           submittedAt: new Date().toISOString().slice(0, 10),
+          submittedBy: actor,
         })}
         isRowValid={(r) =>
           !!(r.employeeName && r.startDate && r.endDate && r.totalDays > 0)
         }
+        validateRow={(r) => {
+          const errors: string[] = [];
+          if (!r.employeeName) errors.push("Employee name is required");
+          if (!r.startDate) errors.push("Start date is required");
+          if (!r.endDate) errors.push("End date is required");
+          if (r.startDate && r.endDate && r.endDate < r.startDate)
+            errors.push("End date is before the start date");
+          if (!(r.totalDays > 0)) errors.push("Days must be greater than zero");
+          return errors;
+        }}
         columns={[
           { label: "Employee", get: (r) => r.employeeName, required: true },
           { label: "Type", get: (r) => r.leaveType },

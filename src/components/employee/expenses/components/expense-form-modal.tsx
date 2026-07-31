@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Paperclip, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +28,13 @@ import {
   type ExpenseClaim,
 } from "@/src/data/employee-expenses-demo";
 import { useCurrency } from "@/src/lib/hooks/use-currency";
+import { FileDropzone } from "@/src/components/shared/file-dropzone";
+import {
+  formatBytes,
+  isPreviewable,
+  readAttachments,
+  type FileAttachment,
+} from "@/src/lib/utils/file-attachments";
 
 interface ExpenseFormModalProps {
   open: boolean;
@@ -68,13 +77,22 @@ export function ExpenseFormModal({
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>(
     {},
   );
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
 
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
       setForm(getDefaults(tenantCurrency));
       setErrors({});
+      setAttachments([]);
     }
+  }
+
+  /** Receipts are held as data URLs, so they can be previewed before sending. */
+  async function handleFiles(list: FileList | null) {
+    const { attachments: added, errors: failed } = await readAttachments(list);
+    failed.forEach((message) => toast.error(message));
+    if (added.length) setAttachments((prev) => [...prev, ...added]);
   }
 
   function set<K extends keyof FormValues>(key: K, value: FormValues[K]) {
@@ -106,6 +124,7 @@ export function ExpenseFormModal({
       status: "submitted",
       merchant: form.merchant.trim(),
       notes: form.notes.trim() || undefined,
+      attachments: attachments.length ? attachments : undefined,
     });
   }
 
@@ -226,6 +245,72 @@ export function ExpenseFormModal({
                 value={form.notes}
                 onChange={(e) => set("notes", e.target.value)}
               />
+            </div>
+
+            {/* Receipts travel with the claim, so the approver doesn't have to
+                chase them separately. */}
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <Paperclip className="h-3.5 w-3.5" />
+                Receipts &amp; supporting documents
+              </Label>
+              <FileDropzone
+                multiple
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+                hint="Receipts, invoices or statements — up to 2 MB each"
+                onFiles={handleFiles}
+              />
+              {attachments.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground">
+                  Claims sent without a receipt are usually returned for one.
+                </p>
+              ) : (
+                <ul className="space-y-1.5 pt-0.5">
+                  {attachments.map((a) => (
+                    <li
+                      key={a.id}
+                      className="flex items-center justify-between gap-2 rounded-md border border-border px-2.5 py-1.5 text-xs"
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Paperclip className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-foreground">
+                          {a.name}
+                        </span>
+                        <span className="shrink-0 text-muted-foreground">
+                          · {formatBytes(a.sizeBytes)}
+                        </span>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <a
+                          href={a.dataUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          {...(isPreviewable(a.mimeType)
+                            ? {}
+                            : { download: a.name })}
+                          className="px-1 text-[11px] font-medium text-primary hover:underline"
+                        >
+                          {isPreviewable(a.mimeType) ? "View" : "Download"}
+                        </a>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() =>
+                            setAttachments((prev) =>
+                              prev.filter((x) => x.id !== a.id),
+                            )
+                          }
+                          aria-label={`Remove ${a.name}`}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>

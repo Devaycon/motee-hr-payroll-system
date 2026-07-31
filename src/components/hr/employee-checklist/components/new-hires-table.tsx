@@ -6,6 +6,11 @@ import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Badge } from "@/src/components/ui/badge";
 import { Progress } from "@/src/components/ui/progress";
 import { DataTable, sortableHeader } from "@/src/components/shared/data-table";
+import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
 import { cn } from "@/src/lib/utils";
 import {
   NEW_HIRE_STATUS_LABELS,
@@ -19,6 +24,7 @@ interface NewHiresTableProps {
 }
 
 export function NewHiresTable({ hires }: NewHiresTableProps) {
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<NewHire>[]>(
     () => [
       {
@@ -43,6 +49,10 @@ export function NewHiresTable({ hires }: NewHiresTableProps) {
           </div>
         ),
       },
+      ...employeeIdColumns<NewHire>({
+        identity,
+        name: (r) => r.name,
+      }),
       {
         accessorKey: "jobTitle",
         header: sortableHeader("Job Title"),
@@ -92,12 +102,14 @@ export function NewHiresTable({ hires }: NewHiresTableProps) {
         ),
       },
     ],
-    [],
+    [identity],
   );
 
   return (
     <DataTable
       columns={columns}
+      initialColumnVisibility={HIDE_SYSTEM_ID}
+      enableColumnVisibility
       data={hires}
       getRowId={(h) => h.id}
       emptyMessage="No new hires at the moment."

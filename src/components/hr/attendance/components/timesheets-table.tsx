@@ -28,6 +28,11 @@ import {
   actionsColumn,
 } from "@/src/components/shared/data-table";
 import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
+import {
   TIMESHEET_STATUS_LABELS,
   TIMESHEET_STATUS_STYLES,
   DEPARTMENT_OPTIONS,
@@ -81,6 +86,7 @@ export function TimesheetsTable({
     return `${startStr} – ${endStr}`;
   }
 
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<TimesheetRecord>[]>(
     () => [
       {
@@ -97,6 +103,10 @@ export function TimesheetsTable({
           </div>
         ),
       },
+      ...employeeIdColumns<TimesheetRecord>({
+        identity,
+        name: (r) => r.employeeName,
+      }),
       {
         accessorKey: "department",
         header: sortableHeader("Department"),
@@ -209,7 +219,7 @@ export function TimesheetsTable({
         </DropdownMenu>
       )),
     ],
-    [onView, onApprove, onRejectClick],
+    [onView, onApprove, onRejectClick, identity],
   );
 
   return (
@@ -300,6 +310,8 @@ export function TimesheetsTable({
       <div className="mt-4">
         <DataTable
           columns={columns}
+          initialColumnVisibility={HIDE_SYSTEM_ID}
+          enableColumnVisibility
           data={filtered}
           getRowId={(t) => t.id}
           emptyMessage="No timesheets found."

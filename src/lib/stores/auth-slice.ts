@@ -17,7 +17,11 @@ const initialState: AuthState = {
   error: null,
 };
 
-function buildUser(bundle: LocaleBundle, roleId: string): AuthUser | null {
+/** Resolves a role in the bundle into the signed-in user it represents. */
+export function buildAuthUser(
+  bundle: LocaleBundle,
+  roleId: string,
+): AuthUser | null {
   const role = bundle.roles.find((r) => r.id === roleId);
   if (!role) return null;
   const employee =
@@ -54,7 +58,7 @@ export const loginThunk = createAsyncThunk<
       r.credentials.password === password,
   );
   if (!role) return rejectWithValue("Invalid email or password");
-  const user = buildUser(bundle, role.id);
+  const user = buildAuthUser(bundle, role.id);
   if (!user) return rejectWithValue("Account not provisioned");
   return user;
 });
@@ -66,7 +70,7 @@ export const loginAsRoleThunk = createAsyncThunk<
 >("auth/loginAsRole", async (roleId, { getState, rejectWithValue }) => {
   const bundle = getState().locale.data;
   if (!bundle) return rejectWithValue("Locale data not loaded");
-  const user = buildUser(bundle, roleId);
+  const user = buildAuthUser(bundle, roleId);
   if (!user) return rejectWithValue("Role not found");
   return user;
 });

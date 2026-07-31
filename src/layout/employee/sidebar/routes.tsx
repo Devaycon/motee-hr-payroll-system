@@ -7,7 +7,6 @@ import {
   Megaphone,
   BookOpen,
   UsersRound,
-  Users,
   LifeBuoy,
   CheckSquare,
   Receipt,
@@ -87,12 +86,6 @@ export const routes: Route[] = [
     icon: FolderOpen,
     label: "My Documents",
     link: "/employee/documents",
-  },
-  {
-    group: "Overview",
-    icon: Users,
-    label: "My Team",
-    link: "/employee/team",
   },
 
   {

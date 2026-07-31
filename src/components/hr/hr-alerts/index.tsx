@@ -153,7 +153,7 @@ export function HrAlertsCard() {
       }));
     return {
       key: "self_onboarding",
-      label: "Self-Onboarding",
+      label: "Onboarding",
       icon: UserPlus,
       alerts,
     };

@@ -2,6 +2,7 @@ import { MapPin, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
+import { EmployeeIds } from "@/src/components/shared/employee-id-columns";
 import { EMPLOYMENT_TYPE_LABELS, EMPLOYMENT_TYPE_STYLES } from "./data";
 import type { EmployeeRow } from "./data";
 
@@ -42,6 +43,7 @@ export function EmployeeCard({ emp, onClick }: EmployeeCardProps) {
             <p className="text-xs text-muted-foreground truncate">
               {emp.department}
             </p>
+            <EmployeeIds employeeId={emp.referenceId} systemId={emp.id} />
             <div className="flex items-center gap-1.5 pt-1">
               <Badge
                 className={`text-[10px] border ${EMPLOYMENT_TYPE_STYLES[emp.employmentType]}`}

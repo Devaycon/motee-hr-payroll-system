@@ -82,6 +82,8 @@ interface OffboardingModalProps {
   open: boolean;
   onClose: () => void;
   viewingRecord: OffboardingRecord | null;
+  /** Set to open the form prefilled for "Edit Offboarding Details" (§2.2). */
+  editingRecord?: OffboardingRecord | null;
   onSave: (data: NewOffboardingRecord) => void;
   onToggleClearance: (recordId: string, itemId: string) => void;
   onUpdateExitInterview: (
@@ -95,12 +97,25 @@ export function OffboardingModal({
   open,
   onClose,
   viewingRecord,
+  editingRecord,
   onSave,
   onToggleClearance,
   onUpdateExitInterview,
 }: OffboardingModalProps) {
   const { data: employees } = useEmployees();
-  const allEmployees = useMemo(() => employees ?? [], [employees]);
+  // Only people still on the workforce can be offboarded — leavers, deleted
+  // records and hires mid-onboarding are not candidates.
+  const allEmployees = useMemo(
+    () =>
+      (employees ?? []).filter(
+        (e) =>
+          e.status === "active" ||
+          e.status === "on_leave" ||
+          e.status === "probation" ||
+          e.status === "onboarded",
+      ),
+    [employees],
+  );
 
   const [fields, setFields] = useState<FormFields>(EMPTY);
   const [touched, setTouched] = useState<TouchedFields>({});
@@ -120,6 +135,20 @@ export function OffboardingModal({
       if (viewingRecord) {
         setInterviewNotes(viewingRecord.exitInterviewNotes ?? "");
         setInterviewCompleted(viewingRecord.exitInterviewCompleted);
+      } else if (editingRecord) {
+        setFields({
+          employeeName: editingRecord.employeeName,
+          employeeInitials: editingRecord.employeeInitials,
+          department: editingRecord.department,
+          jobTitle: editingRecord.jobTitle,
+          lastWorkingDate: editingRecord.lastWorkingDate,
+          exitReason: editingRecord.exitReason,
+          exitInterviewNotes: editingRecord.exitInterviewNotes ?? "",
+        });
+        setTouched({});
+        setSearchQuery(editingRecord.employeeName);
+        setSelectedEmployee(null);
+        setDropdownOpen(false);
       } else {
         setFields(EMPTY);
         setTouched({});
@@ -142,12 +171,16 @@ export function OffboardingModal({
 
   const searchResults =
     searchQuery.trim().length > 0
-      ? allEmployees.filter(
-          (e) =>
-            e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            e.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            e.department.toLowerCase().includes(searchQuery.toLowerCase()),
-        ).slice(0, 6)
+      ? allEmployees.filter((e) => {
+          const q = searchQuery.toLowerCase();
+          return (
+            e.name.toLowerCase().includes(q) ||
+            e.jobTitle.toLowerCase().includes(q) ||
+            e.department.toLowerCase().includes(q) ||
+            e.id.toLowerCase().includes(q) ||
+            (e.referenceId?.toLowerCase().includes(q) ?? false)
+          );
+        }).slice(0, 6)
       : [];
 
   function selectEmployee(emp: EmployeeRow) {
@@ -195,7 +228,12 @@ export function OffboardingModal({
     ) as TouchedFields;
     setTouched(allTouched);
     if (!result.success) return;
-    onSave({ ...result.data });
+    // Carry the employee id through so the Employees table can join back to
+    // this record for the "Offboarding Notice" tab (client feedback §2.1).
+    onSave({
+      ...result.data,
+      employeeId: selectedEmployee?.id ?? editingRecord?.employeeId,
+    });
   };
 
   const handleSaveExitInterview = () => {
@@ -212,7 +250,9 @@ export function OffboardingModal({
           <DialogTitle className="text-base font-semibold">
             {isViewing
               ? `${viewingRecord.employeeName} — Offboarding`
-              : "Initiate Offboarding"}
+              : editingRecord
+                ? "Edit Offboarding Details"
+                : "Initiate Offboarding"}
           </DialogTitle>
           {isViewing && (
             <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -415,6 +455,7 @@ export function OffboardingModal({
                               {emp.name}
                             </span>
                             <span className="text-xs text-muted-foreground truncate">
+                              {emp.referenceId ? `${emp.referenceId} · ` : ""}
                               {emp.jobTitle} · {emp.department}
                             </span>
                           </div>
@@ -527,7 +568,7 @@ export function OffboardingModal({
                 Cancel
               </Button>
               <Button size="sm" className="h-8 text-xs" onClick={handleSave}>
-                Initiate Offboarding
+                {editingRecord ? "Save Changes" : "Initiate Offboarding"}
               </Button>
             </DialogFooter>
           </>

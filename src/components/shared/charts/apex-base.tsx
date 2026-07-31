@@ -5,7 +5,10 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import type { ApexOptions } from "apexcharts";
-import { ArrowRight, type LucideIcon } from "lucide-react";
+import { ArrowRight, Download, type LucideIcon } from "lucide-react";
+import { toast } from "sonner";
+
+import { downloadBlob } from "@/src/lib/download";
 
 import {
   Card,
@@ -162,6 +165,12 @@ export function useApexTheme(): ApexOptions {
   };
 }
 
+/**
+ * Chart id minted by the enclosing ChartCard so its header button can reach
+ * the chart instance via `ApexCharts.exec(id, ...)` to export a PNG.
+ */
+const ChartExportContext = React.createContext<string | null>(null);
+
 export function ApexChart({
   type,
   options,
@@ -173,14 +182,101 @@ export function ApexChart({
   series: ApexOptions["series"];
   height?: number;
 }) {
+  const chartId = React.useContext(ChartExportContext);
+  const withId = React.useMemo(
+    () => (chartId ? mergeApex(options, { chart: { id: chartId } }) : options),
+    [options, chartId],
+  );
   return (
     <ReactApexChart
       type={type}
-      options={options}
+      options={withId}
       series={series}
       height={height}
       width="100%"
     />
+  );
+}
+
+function slug(s: string): string {
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "chart"
+  );
+}
+
+/**
+ * Export a rendered chart as a PNG. Apex returns a transparent image (the base
+ * theme sets `background: "transparent"`), so it is repainted onto a canvas
+ * with a solid themed backdrop and the card title above it.
+ */
+async function exportChartPng(chartId: string, title: string, dark: boolean) {
+  const ApexCharts = (await import("apexcharts")).default;
+  const { imgURI } = (await ApexCharts.exec(chartId, "dataURI", {
+    scale: 2,
+  })) as { imgURI: string };
+
+  const img = new Image();
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = imgURI;
+  });
+
+  const pad = 32;
+  const titleH = 56;
+  const canvas = document.createElement("canvas");
+  canvas.width = img.width + pad * 2;
+  canvas.height = img.height + pad * 2 + titleH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas unavailable");
+
+  ctx.fillStyle = dark ? "#0a0a0a" : "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = dark ? "#fafafa" : "#0f172a";
+  ctx.font = `700 28px -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`;
+  ctx.textBaseline = "middle";
+  ctx.fillText(title, pad, pad + titleH / 2 - 8);
+  ctx.drawImage(img, pad, pad + titleH);
+
+  await new Promise<void>((resolve) => {
+    canvas.toBlob((blob) => {
+      if (blob) downloadBlob(`${slug(title)}.png`, blob);
+      resolve();
+    }, "image/png");
+  });
+}
+
+function ChartDownloadButton({ chartId, title }: { chartId: string; title: string }) {
+  const { resolvedTheme } = useTheme();
+  const [busy, setBusy] = React.useState(false);
+
+  async function handleClick() {
+    setBusy(true);
+    try {
+      await exportChartPng(chartId, title, resolvedTheme === "dark");
+      toast.success(`Downloaded "${title}" as PNG`);
+    } catch {
+      toast.error("Could not export this chart as an image.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      disabled={busy}
+      onClick={handleClick}
+      aria-label={`Download ${title} as image`}
+      title="Download as PNG"
+      className="h-7 w-7 shrink-0 text-muted-foreground/60 transition-colors hover:text-foreground"
+    >
+      <Download className="h-3.5 w-3.5" />
+    </Button>
   );
 }
 
@@ -235,6 +331,8 @@ export function ChartCard({
   viewMoreHref,
   children,
 }: ChartCardProps & { children: React.ReactNode }) {
+  // useId() emits colons, which break the DOM lookups ApexCharts does on ids.
+  const chartId = `chart-${React.useId().replace(/:/g, "")}`;
   return (
     <Card className={cn(fullWidth && "lg:col-span-2", className)}>
       <CardHeader className="space-y-1 px-4 pt-4 pb-2">
@@ -247,7 +345,10 @@ export function ChartCard({
             )}
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
           </div>
-          {action}
+          <div className="flex shrink-0 items-center gap-1">
+            {action}
+            <ChartDownloadButton chartId={chartId} title={title} />
+          </div>
         </div>
         {description && (
           <CardDescription className="text-xs leading-snug">
@@ -256,7 +357,9 @@ export function ChartCard({
         )}
       </CardHeader>
       <CardContent className="px-4 pb-3">
-        {children}
+        <ChartExportContext.Provider value={chartId}>
+          {children}
+        </ChartExportContext.Provider>
         {legend ?? (details?.length ? <DetailsLegend details={details} /> : null)}
       </CardContent>
       {(footer || viewMoreHref) && (

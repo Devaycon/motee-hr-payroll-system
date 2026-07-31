@@ -35,6 +35,11 @@ import {
   sortableHeader,
   actionsColumn,
 } from "@/src/components/shared/data-table";
+import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
 import type { ERCase } from "../types";
 import {
   CASE_STAGE_CONFIG,
@@ -76,6 +81,7 @@ export function CasesTable({ cases, onView, onEdit, onDelete }: Props) {
     return matchesSearch && matchesStage && matchesPriority && matchesDept;
   });
 
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<ERCase>[]>(
     () => [
       {
@@ -120,6 +126,10 @@ export function CasesTable({ cases, onView, onEdit, onDelete }: Props) {
           </div>
         ),
       },
+      ...employeeIdColumns<ERCase>({
+        identity,
+        name: (r) => r.employeeName,
+      }),
       {
         accessorKey: "stage",
         header: sortableHeader("Stage"),
@@ -229,7 +239,7 @@ export function CasesTable({ cases, onView, onEdit, onDelete }: Props) {
         </DropdownMenu>
       )),
     ],
-    [onView, onEdit, onDelete],
+    [onView, onEdit, onDelete, identity],
   );
 
   return (
@@ -318,6 +328,8 @@ export function CasesTable({ cases, onView, onEdit, onDelete }: Props) {
 
       <DataTable
         columns={columns}
+        initialColumnVisibility={HIDE_SYSTEM_ID}
+        enableColumnVisibility
         data={filtered}
         getRowId={(c) => c.id}
         onRowClick={(c) => onView(c)}

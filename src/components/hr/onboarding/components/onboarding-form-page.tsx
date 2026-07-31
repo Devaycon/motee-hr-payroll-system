@@ -28,6 +28,7 @@ import {
   buildTasksForSelection,
 } from "../instantiate";
 import { EMPLOYMENT_TYPE_OPTIONS } from "@/src/lib/constants/employment-types";
+import { titlesForGender } from "@/src/lib/constants/titles";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Male" },
@@ -50,7 +51,7 @@ const MARITAL_STATUS_OPTIONS = [
   { value: "widowed", label: "Widowed" },
 ];
 
-const TITLE_OPTIONS = ["Dr", "Mr", "Mrs", "Miss", "Ms"];
+// Titles are offered against the selected gender — see `titlesForGender`.
 
 const ETHNICITY_OPTIONS = [
   "Asian / Asian British",
@@ -384,7 +385,7 @@ export function OnboardingFormPage() {
                     <SelectValue placeholder="Select title" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TITLE_OPTIONS.map((t) => (
+                    {titlesForGender(data.gender, data.maritalStatus).map((t) => (
                       <SelectItem key={t} value={t}>
                         {t}
                       </SelectItem>

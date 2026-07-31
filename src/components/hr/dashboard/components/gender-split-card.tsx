@@ -9,7 +9,7 @@ export function GenderSplitCard() {
   const { data, loading } = useGenderSplit();
 
   if (loading || !data) {
-    return <Skeleton className="h-64 w-full rounded-xl" />;
+    return <Skeleton className="h-72 w-full rounded-xl" />;
   }
 
   return (
@@ -17,17 +17,12 @@ export function GenderSplitCard() {
       title="Gender Split"
       description="Workforce gender breakdown"
       icon={Users}
-      centerLabel="Employees"
+      height={260}
+      centerLabel="Total Employees"
       viewMoreHref="/operations/reports/employees"
       labels={data.series.map((s) => s.label)}
       values={data.series.map((s) => s.value)}
       colors={data.series.map((s) => s.color)}
-      details={data.series.map((s) => ({
-        label: s.label,
-        value: s.value,
-        color: s.color,
-        pct: true,
-      }))}
     />
   );
 }

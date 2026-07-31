@@ -11,6 +11,10 @@ import requisitionsReducer from "./requisitions-slice";
 import profileEditsReducer from "./profile-edits-slice";
 import collectionEditsReducer from "./collection-edits-slice";
 import workflowsReducer from "./workflows-slice";
+import leaveReducer from "./leave-slice";
+import notificationsReducer from "./notifications-slice";
+import employeesReducer from "./employees-slice";
+import offboardingReducer from "./offboarding-slice";
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +30,10 @@ export const store = configureStore({
     profileEdits: profileEditsReducer,
     collectionEdits: collectionEditsReducer,
     workflows: workflowsReducer,
+    leave: leaveReducer,
+    notifications: notificationsReducer,
+    employees: employeesReducer,
+    offboarding: offboardingReducer,
   },
 });
 

@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Wallet, Clock, CircleCheck, Banknote } from "lucide-react";
+import {
+  Plus,
+  Wallet,
+  Clock,
+  CircleCheck,
+  Banknote,
+  Paperclip,
+} from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
@@ -117,6 +124,29 @@ export function ExpensesPage() {
         ),
       },
       {
+        id: "attachments",
+        header: "Receipt",
+        cell: ({ row }) => {
+          const files = row.original.attachments ?? [];
+          if (files.length === 0)
+            return <span className="text-xs text-muted-foreground">—</span>;
+          // Straight to the file for a single receipt; a count when there are
+          // several, since the row has no room to list them.
+          return (
+            <a
+              href={files[0].dataUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              title={files.map((f) => f.name).join(", ")}
+            >
+              <Paperclip className="h-3 w-3" />
+              {files.length === 1 ? "View" : `${files.length} files`}
+            </a>
+          );
+        },
+      },
+      {
         accessorKey: "status",
         header: sortableHeader("Status"),
         cell: ({ row }) => (
@@ -140,7 +170,12 @@ export function ExpensesPage() {
       ...prev,
     ]);
     setModalOpen(false);
-    toast.success("Expense claim submitted.");
+    const count = claim.attachments?.length ?? 0;
+    toast.success(
+      count > 0
+        ? `Expense claim submitted with ${count} attachment${count === 1 ? "" : "s"}.`
+        : "Expense claim submitted.",
+    );
   }
 
   return (

@@ -96,6 +96,8 @@ import { Label } from "@/src/components/ui/label";
 import { useIsMobile } from "@/src/lib/hooks/use-mobile";
 import { cn } from "@/src/lib/utils";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { employeeIdColumns } from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
 import {
   type EmployeeRow,
   type AttendanceRow,
@@ -272,6 +274,7 @@ function DraggableLeaveRow({ row }: { row: Row<LeaveRow> }) {
 
 export function EmployeeTable() {
   const router = useRouter();
+  const identity = useEmployeeIdentity();
   const { data: tableData, loading: tableLoading } = useDashboardTableData();
 
   const [employeeData, setEmployeeData] = useState<EmployeeRow[]>([]);
@@ -424,6 +427,11 @@ export function EmployeeTable() {
         ),
         enableHiding: false,
       },
+      ...employeeIdColumns<EmployeeRow>({
+        identity,
+        systemId: (e) => e.empId,
+        name: (e) => e.name,
+      }),
       {
         accessorKey: "department",
         header: ({ column }) => (
@@ -578,7 +586,7 @@ export function EmployeeTable() {
         ),
       },
     ],
-    [router],
+    [router, identity],
   );
 
   const attendanceColumns = useMemo<ColumnDef<AttendanceRow>[]>(

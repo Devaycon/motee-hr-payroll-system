@@ -2,6 +2,7 @@
 
 import { z } from "zod/v4";
 import { useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +23,11 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group";
+import { EmployeePicker } from "@/src/components/shared/employee-picker";
+import { reliefConflict } from "@/src/lib/leave/conflicts";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
-  DEPARTMENT_OPTIONS,
+  DEPARTMENTS,
   LEAVE_TYPE_LABELS,
   LEAVE_TYPE_OPTIONS,
 } from "../data";
@@ -42,7 +46,11 @@ const schema = z.object({
   leaveType: z.string().min(1, { message: "Leave type is required" }),
   startDate: z.string().min(1, { message: "Start date is required" }),
   endDate: z.string().min(1, { message: "End date is required" }),
+  reason: z.string().min(1, { message: "Reason is required" }),
   notes: z.string().optional(),
+  // Relief cover is optional (client feedback §3.1).
+  reliefEmployeeId: z.string().optional(),
+  reliefEmployeeName: z.string().optional(),
 });
 
 type FormValues = {
@@ -55,7 +63,10 @@ type FormValues = {
   endDate: string;
   isHalfDay: boolean;
   halfDayPeriod: "morning" | "afternoon";
+  reason: string;
   notes: string;
+  reliefEmployeeId: string;
+  reliefEmployeeName: string;
 };
 
 function getDefaults(request: LeaveRequest | null): FormValues {
@@ -70,7 +81,10 @@ function getDefaults(request: LeaveRequest | null): FormValues {
       endDate: "",
       isHalfDay: false,
       halfDayPeriod: "morning",
+      reason: "",
       notes: "",
+      reliefEmployeeId: "",
+      reliefEmployeeName: "",
     };
   }
   return {
@@ -83,7 +97,10 @@ function getDefaults(request: LeaveRequest | null): FormValues {
     endDate: request.endDate,
     isHalfDay: request.isHalfDay,
     halfDayPeriod: request.halfDayPeriod ?? "morning",
+    reason: request.reason ?? "",
     notes: request.notes ?? "",
+    reliefEmployeeId: request.reliefEmployeeId ?? "",
+    reliefEmployeeName: request.reliefEmployeeName ?? "",
   };
 }
 
@@ -114,6 +131,7 @@ export function RequestModal({
   editingRequest,
   onSave,
 }: RequestModalProps) {
+  const allRequests = useAppSelector((s) => s.leave.requests);
   const [prevOpen, setPrevOpen] = useState(false);
   const [prevRequest, setPrevRequest] = useState<LeaveRequest | null>(null);
   const [form, setForm] = useState<FormValues>(() => getDefaults(null));
@@ -164,10 +182,28 @@ export function RequestModal({
       totalDays,
       isHalfDay: form.isHalfDay,
       halfDayPeriod: form.isHalfDay ? form.halfDayPeriod : undefined,
+      reason: result.data.reason,
       notes: result.data.notes || undefined,
+      reliefEmployeeId: form.reliefEmployeeId || undefined,
+      reliefEmployeeName: form.reliefEmployeeName || undefined,
     });
     onClose();
   }
+
+  // Surface the cover clash at request time, not only at HR review (§3.2).
+  const reliefConflictMessage =
+    form.reliefEmployeeId && form.startDate && form.endDate
+      ? (reliefConflict(
+          {
+            id: editingRequest?.id ?? "",
+            startDate: form.startDate,
+            endDate: form.isHalfDay ? form.startDate : form.endDate,
+            reliefEmployeeId: form.reliefEmployeeId,
+            reliefEmployeeName: form.reliefEmployeeName,
+          },
+          allRequests,
+        )?.message ?? null)
+      : null;
 
   const duration = computeDuration(
     form.startDate,
@@ -228,7 +264,9 @@ export function RequestModal({
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
               <SelectContent>
-                {DEPARTMENT_OPTIONS.map((d) => (
+                {/* DEPARTMENTS, not DEPARTMENT_OPTIONS — the latter carries the
+                    "all" filter sentinel, which isn't a real department. */}
+                {DEPARTMENTS.map((d) => (
                   <SelectItem key={d} value={d} className="text-xs">
                     {d}
                   </SelectItem>
@@ -366,13 +404,50 @@ export function RequestModal({
             </div>
           )}
 
+          {/* Reason is the employee's own explanation and shows on the request
+              detail panel; notes are internal context (§F3). */}
           <div className="col-span-2 space-y-1.5">
-            <Label className="text-xs">Notes (optional)</Label>
+            <Label className="text-xs">
+              Reason for leave <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              className="text-xs min-h-16 resize-none"
+              value={form.reason}
+              onChange={(e) => update("reason", e.target.value)}
+              placeholder="Why is this leave being taken?"
+            />
+            {errors.reason && (
+              <p className="text-[10px] text-destructive">{errors.reason}</p>
+            )}
+          </div>
+
+          {/* Optional colleague nominated to cover while they are away (§3.1). */}
+          <div className="col-span-2 space-y-1.5">
+            <Label className="text-xs">Relief employee (optional)</Label>
+            <EmployeePicker
+              value={form.reliefEmployeeId || undefined}
+              preferDepartment={form.department || undefined}
+              placeholder="Who is covering while they are away?"
+              onChange={(picked) => {
+                update("reliefEmployeeId", picked?.id ?? "");
+                update("reliefEmployeeName", picked?.name ?? "");
+              }}
+            />
+            {reliefConflictMessage && (
+              <p className="flex items-start gap-1.5 text-[10px] text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="mt-px size-3 shrink-0" />
+                {reliefConflictMessage}
+              </p>
+            )}
+          </div>
+
+          <div className="col-span-2 space-y-1.5">
+            <Label className="text-xs">Internal notes (optional)</Label>
             <Textarea
               className="text-xs min-h-16 resize-none"
               value={form.notes}
               onChange={(e) => update("notes", e.target.value)}
-              placeholder="Reason or additional context..."
+              placeholder="Handover details, cover arrangements..."
             />
           </div>
         </div>

@@ -83,7 +83,8 @@ export function currencySymbolFor(code: string): string {
 }
 
 // ── Personal field options (mirrors the employee profile) ──
-export const TITLE_OPTIONS = ["Dr", "Mr", "Mrs", "Miss", "Ms"];
+/** @deprecated Use `titlesForGender` from `lib/constants/titles` — titles are gender-aware. */
+export { TITLE_OPTIONS } from "@/src/lib/constants/titles";
 export const GENDER_OPTIONS = ["male", "female", "other", "prefer not to say"];
 export const MARITAL_OPTIONS = [
   "Single",

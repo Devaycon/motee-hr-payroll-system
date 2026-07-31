@@ -55,7 +55,9 @@ export function AddEmployeeModal({
         e.name.toLowerCase().includes(q) ||
         e.jobTitle.toLowerCase().includes(q) ||
         e.department.toLowerCase().includes(q) ||
-        e.email.toLowerCase().includes(q),
+        e.email.toLowerCase().includes(q) ||
+        e.id.toLowerCase().includes(q) ||
+        (e.referenceId?.toLowerCase().includes(q) ?? false),
     );
   }, [available, search]);
 
@@ -108,7 +110,7 @@ export function AddEmployeeModal({
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search by name, title, or department..."
+              placeholder="Search by name, ID, title, or department..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8 text-sm pl-8"
@@ -170,6 +172,7 @@ export function AddEmployeeModal({
                         {emp.name}
                       </p>
                       <p className="text-[11px] text-muted-foreground truncate">
+                        {emp.referenceId ? `${emp.referenceId} · ` : ""}
                         {emp.jobTitle} · {emp.department}
                       </p>
                     </div>

@@ -8,6 +8,7 @@ import { DemoSwitcher } from "@/src/components/shared/demo-switcher";
 import { OnboardingTutorial } from "@/src/components/shared/onboarding-tutorial";
 import { MobileBlock } from "@/src/components/shared/mobile-block";
 import { ReduxProvider } from "@/src/lib/stores/redux-provider";
+import { Toaster } from "@/src/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -48,6 +49,7 @@ export default function RootLayout({
             <OnboardingTutorial />
             <MobileBlock />
             {children}
+            <Toaster position="top-right" richColors closeButton />
           </ReduxProvider>
         </ThemeProvider>
       </body>

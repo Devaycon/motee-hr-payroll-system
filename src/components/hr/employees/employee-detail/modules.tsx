@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Pin, ChevronRight } from "lucide-react";
+import { AlertTriangle, Pin, ChevronRight, Check, TriangleAlert } from "lucide-react";
+import { cn } from "@/src/lib/utils";
 import {
   Tabs,
   TabsContent,
@@ -9,6 +10,13 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { OverflowTabsList } from "@/src/components/shared/overflow-tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -17,22 +25,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
+import { toast } from "sonner";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
-import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { removeRecord } from "@/src/lib/stores/collection-edits-slice";
 import {
   ProfileFieldsEditor,
+  RequestProfileChangeButton,
   ChangeRequestsTable,
+  type ProfileReadOnlyRow,
 } from "@/src/components/shared/profile-fields";
+import { useDemoChangeRequests } from "./use-demo-change-requests";
 import {
   useRecordForm,
   AddButton,
   EditButton,
 } from "@/src/components/shared/profile-fields/record-form";
 import { COLLECTION_SCHEMAS } from "@/src/lib/profile/collections";
-import { regionWordForCountry } from "@/src/lib/profile/fields";
+import { regionWordForCountry, profileFieldGroupOf } from "@/src/lib/profile/fields";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { useProfileVariant } from "./variant";
+import { RowActions } from "./row-actions";
+import { RecordDetailModal } from "./record-detail-modal";
 import { LeaveRequestPanel } from "@/src/components/employee/leave-request/panel";
+import { LeaveInsights } from "@/src/components/employee/leave-request/components/leave-insights";
 import { EmployeeTraining } from "@/src/components/employee/training";
 import { MY_ENROLLMENTS } from "@/src/components/employee/training/components/data";
 import {
@@ -55,7 +71,12 @@ import {
   fmtDate,
   titleCase,
   daysUntil,
+  formatDuration,
 } from "./ui";
+import {
+  ONBOARDING_METHOD_LABELS,
+  ONBOARDING_METHOD_DESCRIPTIONS,
+} from "@/src/lib/constants/onboarding-methods";
 import { employmentTypeLabel } from "@/src/lib/constants/employment-types";
 import { sicknessReasonDisplay } from "@/src/lib/constants/sickness";
 import {
@@ -162,7 +183,6 @@ function AddressTabContent({
             employeeId={employeeId}
             mode={mode}
             groups={["address"]}
-            bulkEditLabel="Address"
           />
         </DialogContent>
       </Dialog>
@@ -170,50 +190,111 @@ function AddressTabContent({
   );
 }
 
+/**
+ * Both identifiers, how the record was created (§D1) and tenure — read-only
+ * system facts, listed alongside the editable Details fields rather than
+ * sitting in their own card.
+ */
+function identityRows(employee: LocaleEmployee): ProfileReadOnlyRow[] {
+  const rows: ProfileReadOnlyRow[] = [
+    { label: "Employee ID", value: employee.employeeNumber, className: "tabular-nums" },
+    { label: "System ID", value: employee.id, className: "font-mono" },
+  ];
+  if (employee.onboardingMethod) {
+    rows.push({
+      label: "Onboarded via",
+      value: ONBOARDING_METHOD_LABELS[employee.onboardingMethod],
+      title: ONBOARDING_METHOD_DESCRIPTIONS[employee.onboardingMethod],
+    });
+  }
+  if (employee.startDate) {
+    rows.push({
+      label: "Employee since",
+      value: `${new Date(employee.startDate).toLocaleDateString("en-GB", {
+        month: "long",
+        year: "numeric",
+      })} · ${formatDuration(employee.startDate)}`,
+    });
+  }
+  return rows;
+}
+
 // ── Profile (sub-tabs) ───────────────────────────────────────────────────────
-export function ProfileModule({ employeeId, employee }: ModuleProps) {
+export function ProfileModule({
+  employeeId,
+  employee,
+  onPhotoRequest,
+}: ModuleProps & { onPhotoRequest?: () => void }) {
   const variant = useProfileVariant();
   const actorName = useAppSelector((s) => s.auth.user?.name) ?? "HR";
-  const requests = useAppSelector((s) =>
+  const allRequests = useAppSelector((s) =>
     s.profileEdits.requests.filter((r) => r.employeeId === employeeId),
   );
-  const pending = requests.filter((r) => r.status === "pending").length;
+  useDemoChangeRequests(employeeId, employee.fullName);
+  const pendingRequests = React.useMemo(
+    () => allRequests.filter((r) => r.status === "pending"),
+    [allRequests],
+  );
+  // Per-tab pending counts so each tab flags its own outstanding changes (§B4).
+  const pendingByGroup = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of pendingRequests) {
+      const group = profileFieldGroupOf(r.field);
+      if (group) counts[group] = (counts[group] ?? 0) + 1;
+    }
+    return counts;
+  }, [pendingRequests]);
+  const tabLabel = (label: string, count?: number) =>
+    count && count > 0 ? `${label} (${count})` : label;
+
   const [tab, setTab] = React.useState("details");
+  const requestChangeButton = (
+    <RequestProfileChangeButton
+      employee={employee}
+      employeeId={employeeId}
+      mode={variant.mode}
+      onPhotoRequest={onPhotoRequest}
+    />
+  );
+  // No per-tab edit button here — the Section header's "Edit Profile Details"
+  // picker already covers every one of these groups.
   const editor = (
     groups: Parameters<typeof ProfileFieldsEditor>[0]["groups"],
-    bulkEditLabel: string,
+    readOnlyRows?: ProfileReadOnlyRow[],
   ) => (
     <ProfileFieldsEditor
       employee={employee}
       employeeId={employeeId}
       mode={variant.mode}
       groups={groups}
-      bulkEditLabel={bulkEditLabel}
+      readOnlyRows={readOnlyRows}
     />
   );
   return (
-    <Section title="Profile">
+    <Section title="Profile" action={requestChangeButton}>
       <Tabs value={tab} onValueChange={setTab}>
         <OverflowTabsList
           value={tab}
           onValueChange={setTab}
           tabs={[
-            { value: "details", label: "Details" },
-            { value: "contact", label: "Contact" },
-            { value: "address", label: "Address" },
-            { value: "bank", label: "Bank" },
+            { value: "details", label: tabLabel("Details", pendingByGroup.personal) },
+            { value: "contact", label: tabLabel("Contact", pendingByGroup.contact) },
+            { value: "address", label: tabLabel("Address", pendingByGroup.address) },
+            { value: "bank", label: tabLabel("Bank", pendingByGroup.bank) },
+            // Where a change went after it was submitted — sits with the fields
+            // it applies to, not only in the standalone Change Log module.
             {
               value: "requests",
-              label: `Profile Change Requests${pending > 0 ? ` (${pending})` : ""}`,
+              label: tabLabel("Profile Change Request Log", pendingRequests.length),
             },
           ]}
         />
 
         <TabsContent value="details" className="mt-4">
-          {editor(["personal"], "Details")}
+          {editor(["personal"], identityRows(employee))}
         </TabsContent>
         <TabsContent value="contact" className="mt-4">
-          {editor(["contact"], "Contact")}
+          {editor(["contact"])}
         </TabsContent>
         <TabsContent value="address" className="mt-4">
           <AddressTabContent
@@ -223,10 +304,15 @@ export function ProfileModule({ employeeId, employee }: ModuleProps) {
           />
         </TabsContent>
         <TabsContent value="bank" className="mt-4">
-          {editor(["bank"], "Bank")}
+          {editor(["bank"])}
         </TabsContent>
         <TabsContent value="requests" className="mt-4">
-          <ChangeRequestsTable requests={requests} audience={variant.audience} actorName={actorName} />
+          <ChangeRequestsTable
+            requests={allRequests}
+            audience={variant.audience}
+            actorName={actorName}
+            onRequestChange={requestChangeButton}
+          />
         </TabsContent>
       </Tabs>
     </Section>
@@ -298,7 +384,10 @@ export function LeaveModule({ employeeId, employee }: ModuleProps) {
   // On the self profile, this is where the employee requests & manages leave.
   if (variant.mode === "request") {
     return (
-      <Section title="Leave">
+      <Section
+        title="Leave Management"
+        description="View your leave balances, submit requests and track approval status."
+      >
         <LeaveRequestPanel />
       </Section>
     );
@@ -306,67 +395,157 @@ export function LeaveModule({ employeeId, employee }: ModuleProps) {
   return <HrLeaveSummary employeeId={employeeId} employee={employee} />;
 }
 
-// HR view: read-only leave balances & history for the viewed employee.
-function HrLeaveSummary({ employeeId }: ModuleProps) {
+/**
+ * HR view: read-only leave balances & history for the viewed employee.
+ *
+ * Terminology follows how people actually reason about leave —
+ * Entitlement → Booked → Taken → Remaining — rather than the five-value model
+ * that produced two cards ("Available (all)" and "Remaining") showing the same
+ * number with no way to tell them apart. "Remaining" is now the single answer
+ * to "how much can still be booked?"; "Taken" is used everywhere the tabs use
+ * it, so a column never disagrees with the tab above it.
+ */
+function HrLeaveSummary({ employeeId, employee }: ModuleProps) {
   const { data, loading } = useEmployeeLeave(employeeId);
   const canEdit = useCan("organization.employees", "edit");
   const rfReq = useRecordForm(COLLECTION_SCHEMAS.leaveRequests, employeeId);
   const rfAdj = useRecordForm(COLLECTION_SCHEMAS.leaveAdjustments, employeeId);
+  const [policyFilter, setPolicyFilter] = React.useState("all");
+  const [statusFilter, setStatusFilter] = React.useState("all");
   if (loading && !data) return <LoadingPanel />;
   if (!data) return <Empty />;
-  const totalAvailable = data.rows.reduce((s, r) => s + r.available, 0);
-  const totalRemaining = data.rows.reduce((s, r) => s + r.remaining, 0);
+
+  const totalEntitlement = data.rows.reduce((s, r) => s + r.entitlement, 0);
   const totalTaken = data.rows.reduce((s, r) => s + r.taken, 0);
   const totalBooked = data.rows.reduce((s, r) => s + r.booked, 0);
+  // What can still be booked — entitlement less what's already spoken for.
+  const totalRemaining = data.rows.reduce((s, r) => s + r.available, 0);
+  // The assistant reasons about annual leave specifically, not the sum of every
+  // policy — carry-over and expiry only apply to that one.
+  const annualAvailable =
+    data.rows.find((r) => /annual/i.test(r.policyName))?.available ?? 0;
+
+  const leaveYear = `1 January ${new Date().getFullYear()} – 31 December ${new Date().getFullYear()}`;
+  const policies = [...new Set(data.rows.map((r) => r.policyName))];
+  const matches = (r: { leaveType: string; status: string }) =>
+    (policyFilter === "all" ||
+      r.leaveType.toLowerCase().includes(policyFilter.toLowerCase())) &&
+    (statusFilter === "all" || r.status === statusFilter);
+  const booked = data.booked.filter(matches);
+  const taken = data.taken.filter(matches);
+  const filtered = policyFilter !== "all" || statusFilter !== "all";
+
   return (
     <Section
-      title="Leave"
+      title="Leave Management"
+      description="Leave balances, booked and taken history, and adjustments."
       action={canEdit ? <AddButton label="Add leave" onClick={rfReq.openCreate} /> : undefined}
     >
       {rfReq.node}
       {rfAdj.node}
+
+      {/* Which year these figures describe — otherwise every number is
+          ambiguous the moment a leave year rolls over. */}
+      <p className="-mt-1 text-xs text-muted-foreground">
+        Leave year <span className="font-medium text-foreground">{leaveYear}</span>
+      </p>
+
+      {/* No accent colour: these are neutral measurements, and green on a
+          summary figure reads as "good" when a high balance may not be. */}
       <StatStrip
         items={[
-          { label: "Available (all)", value: totalAvailable, accent: "text-emerald-600" },
-          { label: "Remaining", value: totalRemaining },
+          { label: "Total Entitlement", value: totalEntitlement },
           { label: "Booked", value: totalBooked },
-          { label: "Used", value: totalTaken },
+          { label: "Taken", value: totalTaken },
+          { label: "Remaining", value: totalRemaining },
         ]}
       />
-      <DataTable columns={["Policy", "Entitlement", "Used", "Remaining", "Booked", "Available"]}>
+
+      <LeaveInsights
+        annualRemaining={annualAvailable}
+        audience="hr"
+        subject={{
+          name: employee.fullName,
+          department: employee.departmentName,
+        }}
+      />
+
+      {/* Allocated → Booked → Taken → Remaining, the order people read it in. */}
+      <DataTable columns={["Policy", "Entitlement", "Booked", "Taken", "Remaining"]}>
         {data.rows.map((r) => (
           <Row key={r.policyId}>
             <Cell>{r.policyName}</Cell>
             <Cell>
-              {r.entitlement}
+              <span className="font-medium">{r.entitlement}</span>
               {r.adjustments ? (
-                <span className="text-muted-foreground">
-                  {" "}
-                  ({r.allowance}
-                  {r.adjustments > 0 ? ` +${r.adjustments}` : ` ${r.adjustments}`})
+                <span className="block text-[11px] text-muted-foreground">
+                  {r.allowance} base{" "}
+                  {r.adjustments > 0
+                    ? `+ ${r.adjustments} adjustment`
+                    : `− ${Math.abs(r.adjustments)} adjustment`}
                 </span>
               ) : null}
             </Cell>
-            <Cell>{r.taken}</Cell>
-            <Cell>{r.remaining}</Cell>
             <Cell>{r.booked}</Cell>
+            <Cell>{r.taken}</Cell>
             <Cell className="font-semibold">{r.available}</Cell>
           </Row>
         ))}
       </DataTable>
+
       <Tabs defaultValue="booked">
-        <TabsList>
-          <TabsTrigger value="booked">Booked</TabsTrigger>
-          <TabsTrigger value="taken">Taken</TabsTrigger>
-          <TabsTrigger value="adjustments">Adjustments</TabsTrigger>
-          <TabsTrigger value="usage">Usage</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <TabsList>
+            <TabsTrigger value="booked">Booked</TabsTrigger>
+            <TabsTrigger value="taken">Taken</TabsTrigger>
+            <TabsTrigger value="adjustments">Adjustments</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
+          {/* Filters apply to the Booked and Taken lists, which are the two
+              that grow unmanageable over a full leave year. */}
+          <div className="flex items-center gap-2">
+            <Select value={policyFilter} onValueChange={setPolicyFilter}>
+              <SelectTrigger className="h-8 w-36 text-xs">
+                <SelectValue placeholder="All policies" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All policies</SelectItem>
+                {policies.map((p) => (
+                  <SelectItem key={p} value={p} className="text-xs">
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-8 w-32 text-xs">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All statuses</SelectItem>
+                {["approved", "pending", "rejected", "cancelled"].map((s) => (
+                  <SelectItem key={s} value={s} className="text-xs capitalize">
+                    {titleCase(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <TabsContent value="booked" className="mt-4">
-          {data.booked.length === 0 ? (
-            <Empty label="No upcoming booked leave." />
+          {booked.length === 0 ? (
+            <Empty
+              label="No booked leave"
+              description={
+                filtered
+                  ? "No bookings match the current filters."
+                  : "This employee has no upcoming leave bookings."
+              }
+            />
           ) : (
             <DataTable columns={["Type", "From", "To", "Days", "Status"]}>
-              {data.booked.map((r) => (
+              {booked.map((r) => (
                 <Row key={r.id}>
                   <Cell>{r.leaveType}</Cell>
                   <Cell>{fmtDate(r.startDate)}</Cell>
@@ -379,11 +558,18 @@ function HrLeaveSummary({ employeeId }: ModuleProps) {
           )}
         </TabsContent>
         <TabsContent value="taken" className="mt-4">
-          {data.taken.length === 0 ? (
-            <Empty label="No leave taken yet." />
+          {taken.length === 0 ? (
+            <Empty
+              label="No leave taken"
+              description={
+                filtered
+                  ? "No records match the current filters."
+                  : "This employee hasn't taken any leave in this leave year."
+              }
+            />
           ) : (
             <DataTable columns={["Type", "From", "To", "Days", "Status"]}>
-              {data.taken.map((r) => (
+              {taken.map((r) => (
                 <Row key={r.id}>
                   <Cell>{r.leaveType}</Cell>
                   <Cell>{fmtDate(r.startDate)}</Cell>
@@ -402,7 +588,10 @@ function HrLeaveSummary({ employeeId }: ModuleProps) {
             </div>
           )}
           {data.adjustments.length === 0 ? (
-            <Empty label="No manual adjustments." />
+            <Empty
+              label="No adjustments"
+              description="Nobody has manually added to or deducted from this employee's entitlement."
+            />
           ) : (
             <DataTable columns={["Date", "Policy", "Delta", "Reason", "Added by", ...(canEdit ? [""] : [])]}>
               {data.adjustments.map((a) => (
@@ -420,9 +609,14 @@ function HrLeaveSummary({ employeeId }: ModuleProps) {
             </DataTable>
           )}
         </TabsContent>
-        <TabsContent value="usage" className="mt-4">
+        {/* "Usage" said nothing about what was inside — this is the month-by-
+            month record of leave taken. */}
+        <TabsContent value="history" className="mt-4">
           {data.usage.length === 0 ? (
-            <Empty label="No usage recorded." />
+            <Empty
+              label="No leave history"
+              description="Leave taken will appear here, broken down by month."
+            />
           ) : (
             <DataTable columns={["Month", "Breakdown", "Total days"]}>
               {data.usage.map((u) => (
@@ -448,24 +642,87 @@ function HrLeaveSummary({ employeeId }: ModuleProps) {
 /**
  * Bradford Factor banding (§17.5). Colour-codes the score so managers grasp
  * severity without knowing the formula. Higher = greater absence disruption.
+ *
+ * The client rated the score highly but noted "most employees won't know what
+ * the number means" — and this module is on the employee's own profile too, so
+ * each band carries a plain-language reading rather than a bare integer.
  */
-function bradfordBand(score: number): { label: string; text: string; pill: string } {
+function bradfordBand(score: number): {
+  label: string;
+  text: string;
+  pill: string;
+  meaning: string;
+} {
   if (score >= 400)
-    return { label: "Very High", text: "text-rose-600", pill: "bg-rose-500/10 text-rose-600" };
+    return {
+      label: "Very High",
+      text: "text-rose-600",
+      pill: "bg-rose-500/10 text-rose-600",
+      meaning: "Frequent short absences — expect a formal absence review.",
+    };
   if (score >= 100)
-    return { label: "High", text: "text-orange-600", pill: "bg-orange-500/10 text-orange-600" };
+    return {
+      label: "High",
+      text: "text-orange-600",
+      pill: "bg-orange-500/10 text-orange-600",
+      meaning: "Above the usual pattern — a manager conversation is likely.",
+    };
   if (score >= 50)
-    return { label: "Moderate", text: "text-amber-600", pill: "bg-amber-500/10 text-amber-600" };
-  return { label: "Low", text: "text-emerald-600", pill: "bg-emerald-500/10 text-emerald-600" };
+    return {
+      label: "Moderate",
+      text: "text-amber-600",
+      pill: "bg-amber-500/10 text-amber-600",
+      meaning: "Slightly above typical, but not a concern on its own.",
+    };
+  return {
+    label: "Low",
+    text: "text-emerald-600",
+    pill: "bg-emerald-500/10 text-emerald-600",
+    meaning: "Within the normal range — no action needed.",
+  };
 }
+
+/**
+ * What the score is, spelled out. It weights *frequency* over duration —
+ * episodes² × days — which is unintuitive enough that showing the number
+ * without this reads as an unexplained judgement.
+ */
+const BRADFORD_EXPLAINER =
+  "The Bradford Factor scores absence as episodes × episodes × total days, so several " +
+  "short absences count for far more than one long one — it measures disruption, not illness.";
 
 // Absences of this length or more trigger a formal return-to-work interview.
 const RTW_THRESHOLD_DAYS = 5;
 
 export function SicknessModule({ employeeId }: ModuleProps) {
   const { data, loading } = useEmployeeSickness(employeeId);
-  // HR (edit rights) sees the clinical category; other viewers see a redaction.
-  const canViewMedical = useCan("organization.employees", "edit");
+  const variant = useProfileVariant();
+  const isSelf = variant.audience === "employee";
+  const canEdit = useCan("organization.employees", "edit");
+  // The redaction exists to keep clinical detail from line managers — not from
+  // the person it describes. On My Profile you always see your own reasons.
+  const canViewMedical = canEdit || isSelf;
+
+  /**
+   * An employee reporting their own absence files it as `pending` for HR to
+   * confirm; HR recording one is already the confirmation.
+   */
+  const schema = React.useMemo(
+    () =>
+      isSelf
+        ? {
+            ...COLLECTION_SCHEMAS.sickness,
+            defaults: (id: string) => ({
+              ...COLLECTION_SCHEMAS.sickness.defaults!(id),
+              status: "pending",
+            }),
+          }
+        : COLLECTION_SCHEMAS.sickness,
+    [isSelf],
+  );
+  const rf = useRecordForm(schema, employeeId);
+  const dispatch = useAppDispatch();
+  const [detail, setDetail] = React.useState<SicknessRecord | null>(null);
   if (loading && !data) return <LoadingPanel />;
   if (!data) return <Empty />;
   const band = bradfordBand(data.summary.bradfordFactor);
@@ -478,16 +735,37 @@ export function SicknessModule({ employeeId }: ModuleProps) {
   return (
     <Section
       title="Sickness & Absence"
-      description="View sickness history, absence trends and Bradford Factor."
+      description="View sickness history, absence trends, Bradford Factor and return-to-work records."
+      action={
+        canEdit || isSelf ? (
+          <AddButton
+            label={isSelf ? "Report absence" : "Record absence"}
+            onClick={rf.openCreate}
+          />
+        ) : undefined
+      }
     >
+      {rf.node}
+      {/* Units belong on the figure, not left implied by the label (§17.3). */}
       <StatStrip
         items={[
-          { label: "Sick days (yr)", value: data.summary.totalDaysThisYear },
-          { label: "Episodes", value: data.summary.episodes },
-          { label: "Longest absence", value: `${data.summary.longestAbsenceDays}` },
+          {
+            label: "Sick Days This Year",
+            value: `${data.summary.totalDaysThisYear} ${
+              data.summary.totalDaysThisYear === 1 ? "Day" : "Days"
+            }`,
+          },
+          { label: "Sickness Episodes", value: data.summary.episodes },
+          {
+            label: "Longest Absence",
+            value: `${data.summary.longestAbsenceDays} ${
+              data.summary.longestAbsenceDays === 1 ? "Day" : "Days"
+            }`,
+          },
           {
             label: "Bradford Factor",
             accent: band.text,
+            ariaLabel: `Bradford Factor ${data.summary.bradfordFactor}, ${band.label}. ${band.meaning}`,
             value: (
               <span className="inline-flex items-center gap-2">
                 {data.summary.bradfordFactor}
@@ -495,6 +773,7 @@ export function SicknessModule({ employeeId }: ModuleProps) {
                   className={
                     "rounded-full px-2 py-0.5 text-[10px] font-semibold " + band.pill
                   }
+                  title={BRADFORD_EXPLAINER}
                 >
                   {band.label}
                 </span>
@@ -503,12 +782,20 @@ export function SicknessModule({ employeeId }: ModuleProps) {
           },
         ]}
       />
+
+      {/* The score is meaningless without this, and employees see it too. */}
+      <p className="-mt-2 text-xs text-muted-foreground">
+        <span className={cn("font-medium", band.text)}>
+          {band.label} ({data.summary.bradfordFactor}) — {band.meaning}
+        </span>{" "}
+        {BRADFORD_EXPLAINER}
+      </p>
       {data.records.length === 0 ? (
         <Empty label="No sickness records." />
       ) : (
         <>
           <DataTable
-            columns={["From", "To", "Days", "Reason", "Certification", "Return to Work", "Status"]}
+            columns={["From", "To", "Days", "Reason", "Certification", "Return to Work", "Status", ""]}
           >
             {data.records.map((r, i) => {
               const needsRtw = r.days >= RTW_THRESHOLD_DAYS;
@@ -532,6 +819,24 @@ export function SicknessModule({ employeeId }: ModuleProps) {
                     )}
                   </Cell>
                   <Cell><StatusBadge status={r.status} /></Cell>
+                  <Cell>
+                    <RowActions
+                      onView={() =>
+                        setDetail({ ...r, needsRtw, rtwDone, canViewMedical })
+                      }
+                      onEdit={canEdit ? () => rf.openEdit(r) : undefined}
+                      onDelete={
+                        canEdit
+                          ? () => {
+                              dispatch(
+                                removeRecord({ key: "leaveRequests", id: r.id }),
+                              );
+                              toast.success("Absence removed");
+                            }
+                          : undefined
+                      }
+                    />
+                  </Cell>
                 </Row>
               );
             })}
@@ -542,9 +847,74 @@ export function SicknessModule({ employeeId }: ModuleProps) {
           </p>
         </>
       )}
+
+      {detail && (
+        <RecordDetailModal
+          open
+          onClose={() => setDetail(null)}
+          title={`${sicknessReasonDisplay(detail.reason, detail.canViewMedical)} absence`}
+          subtitle={`${fmtDate(detail.startDate)} – ${fmtDate(detail.endDate)}`}
+          status={detail.status}
+          about={{
+            what: `A recorded sickness absence of ${detail.days} working day${
+              detail.days === 1 ? "" : "s"
+            }.`,
+            why:
+              detail.days > 7
+                ? "Absences over 7 days need a fit note from a doctor — self-certification only covers the first week."
+                : "Absences of a week or less are self-certified: no medical evidence is required.",
+            consequence: detail.needsRtw
+              ? detail.rtwDone
+                ? `A return-to-work interview was required (${RTW_THRESHOLD_DAYS}+ days) and has been completed.`
+                : `A return-to-work interview is required for absences of ${RTW_THRESHOLD_DAYS}+ days and is still outstanding.`
+              : `No return-to-work interview is triggered — those start at ${RTW_THRESHOLD_DAYS} days.`,
+          }}
+          outcome={
+            detail.needsRtw
+              ? {
+                  tone: detail.rtwDone ? "positive" : "pending",
+                  heading: detail.rtwDone
+                    ? "Return-to-work interview completed"
+                    : "Return-to-work interview pending",
+                  body: detail.rtwDone
+                    ? "The conversation has taken place and the absence is closed out."
+                    : "Book the conversation before this absence can be closed out. It covers fitness to return and any adjustments needed.",
+                }
+              : null
+          }
+          fields={[
+            { label: "First day absent", value: fmtDate(detail.startDate) },
+            { label: "Last day absent", value: fmtDate(detail.endDate) },
+            { label: "Working days lost", value: detail.days },
+            {
+              label: "Reason",
+              value: sicknessReasonDisplay(detail.reason, detail.canViewMedical),
+            },
+            {
+              label: "Certification",
+              value: detail.days > 7 ? "Fit note required" : "Self-certified",
+            },
+            { label: "Recorded", value: fmtDate(detail.submittedAt) },
+          ]}
+        />
+      )}
     </Section>
   );
 }
+
+/** A sickness row plus the derived flags the detail view explains. */
+type SicknessRecord = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason?: string;
+  status: string;
+  submittedAt?: string;
+  needsRtw: boolean;
+  rtwDone: boolean;
+  canViewMedical: boolean;
+};
 
 // ── Learn ─────────────────────────────────────────────────────────────────--
 export function LearnModule({ employeeId }: ModuleProps) {
@@ -1492,44 +1862,242 @@ const WORK_PATTERN_DAYS: ReadonlyArray<readonly [string, string]> = [
   ["sun", "Sunday"],
 ];
 
-function scheduleHours(slot?: { start: string; end: string } | null): number | null {
+const toMinutes = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + (m || 0);
+};
+
+/**
+ * Paid hours for one day: the start→end span minus the unpaid break (§A1).
+ * A 09:00–17:30 day with a 60-minute lunch is 7.5 paid hours, not 8.5 — the
+ * break has its own column, so Hours reads as the figure that reconciles.
+ */
+function scheduleHours(
+  slot?: { start: string; end: string } | null,
+  breakMinutes = 0,
+): number | null {
   if (!slot?.start || !slot?.end) return null;
-  const toMin = (t: string) => {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + (m || 0);
-  };
-  const mins = toMin(slot.end) - toMin(slot.start);
+  const mins = toMinutes(slot.end) - toMinutes(slot.start) - breakMinutes;
   return mins > 0 ? Math.round((mins / 60) * 10) / 10 : null;
 }
 
-/** Weekly schedule as a Day / Start / End / Hours table (§13.3). */
+/** "1 hour" / "30 minutes" / "1 hour 30 minutes" — for the break note (§A2). */
+function formatBreak(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  const parts: string[] = [];
+  if (h) parts.push(`${h} hour${h === 1 ? "" : "s"}`);
+  if (m) parts.push(`${m} minutes`);
+  return parts.join(" ");
+}
+
+const DAY_KEY_BY_INDEX = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+/**
+ * Weekly schedule (§13.3, reworked for §A1–A3/A7/A8).
+ *
+ * Day / Start / End / Unpaid Lunch / Hours — the break gets a column of its own
+ * rather than a parenthetical hanging off the times, and Hours is the paid
+ * figure after it. Non-working days show dashes and "Off", today's row is
+ * marked, and the footer asserts the total against the contracted weekly figure
+ * so the two can never silently disagree. Below `sm` it becomes a card stack.
+ */
 function WorkScheduleTable({
   schedule,
+  breakMinutes = 0,
+  weeklyHours,
 }: {
   schedule: Record<string, { start: string; end: string } | null>;
+  breakMinutes?: number;
+  weeklyHours?: number;
 }) {
+  const todayKey = DAY_KEY_BY_INDEX[new Date().getDay()];
+
+  // The break reads as a column of its own; only a worked day loses one.
+  const breakText = breakMinutes > 0 ? formatBreak(breakMinutes) : null;
+
+  const days = WORK_PATTERN_DAYS.map(([key, label]) => {
+    const slot = schedule[key];
+    const hrs = scheduleHours(slot, breakMinutes);
+    const off = !slot || hrs == null;
+    return { key, label, slot, hrs, off, isToday: key === todayKey };
+  });
+
+  const total = Math.round(days.reduce((s, d) => s + (d.hrs ?? 0), 0) * 10) / 10;
+  const contracted = weeklyHours;
+  const reconciles = contracted == null || Math.abs(total - contracted) < 0.05;
+
   return (
-    <DataTable columns={["Day", "Start", "End", "Hours"]}>
-      {WORK_PATTERN_DAYS.map(([key, label]) => {
-        const slot = schedule[key];
-        const hrs = scheduleHours(slot);
-        const off = !slot || hrs == null;
-        return (
-          <Row key={key}>
-            <Cell className="font-medium">{label}</Cell>
-            <Cell className={off ? "text-muted-foreground" : undefined}>
-              {off ? "—" : slot!.start}
-            </Cell>
-            <Cell className={off ? "text-muted-foreground" : undefined}>
-              {off ? "—" : slot!.end}
-            </Cell>
-            <Cell className={off ? "text-muted-foreground" : "font-medium"}>
-              {off ? "Off" : hrs}
-            </Cell>
-          </Row>
-        );
-      })}
-    </DataTable>
+    <div className="flex flex-col gap-2">
+      {/* Table — sm and up */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-sm">
+          <caption className="sr-only">
+            Weekly working pattern: start time, end time, unpaid break and paid hours
+            for each day of the week. Paid hours are the figure after the break has
+            been deducted.
+          </caption>
+          <thead>
+            <tr className="border-b border-border bg-muted/40">
+              {["Day", "Start", "End", "Break", "Paid Hours"].map((c, i) => (
+                <th
+                  key={c}
+                  scope="col"
+                  className={cn(
+                    "px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground",
+                    i === 0 ? "text-left" : "text-right",
+                  )}
+                >
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {days.map((d) => (
+              <tr
+                key={d.key}
+                className={cn(
+                  "border-b border-border/50 last:border-0",
+                  d.isToday && "bg-primary/5",
+                )}
+              >
+                <th
+                  scope="row"
+                  className="px-3 py-2 text-left align-top text-sm font-medium text-foreground"
+                >
+                  <span className="flex items-center gap-2">
+                    {d.label}
+                    {d.isToday && (
+                      <Pill className="border-primary/30 bg-primary/10 text-primary">Today</Pill>
+                    )}
+                  </span>
+                </th>
+                <Cell
+                  className={cn(
+                    "text-right tabular-nums",
+                    d.off && "text-muted-foreground/50",
+                  )}
+                >
+                  {d.off ? "—" : d.slot!.start}
+                </Cell>
+                <Cell
+                  className={cn(
+                    "text-right tabular-nums",
+                    d.off && "text-muted-foreground/50",
+                  )}
+                >
+                  {d.off ? "—" : d.slot!.end}
+                </Cell>
+                <Cell
+                  className={cn(
+                    "text-right",
+                    d.off || !breakText ? "text-muted-foreground/50" : "text-muted-foreground",
+                  )}
+                >
+                  {d.off || !breakText ? "—" : breakText}
+                </Cell>
+                <Cell
+                  className={cn(
+                    "text-right",
+                    d.off ? "text-muted-foreground" : "font-medium tabular-nums",
+                  )}
+                >
+                  {d.off ? "Off" : d.hrs}
+                </Cell>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t border-border bg-muted/30">
+              <th scope="row" className="px-3 py-2 text-left text-sm font-semibold text-foreground">
+                Total contracted
+              </th>
+              <Cell className="text-xs text-muted-foreground" colSpan={3}>
+                {contracted != null &&
+                  (reconciles
+                    ? `Matches the ${contracted}-hour weekly contract`
+                    : `Does not match the ${contracted}-hour weekly contract`)}
+              </Cell>
+              <Cell className="font-semibold tabular-nums">
+                <span className="flex items-center justify-end gap-1.5">
+                  {total}
+                  {contracted != null &&
+                    (reconciles ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" aria-label="Reconciled" />
+                    ) : (
+                      <TriangleAlert className="w-3.5 h-3.5 text-amber-600" aria-hidden />
+                    ))}
+                </span>
+              </Cell>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* Card stack — below sm (§A8) */}
+      <ul className="sm:hidden flex flex-col gap-2">
+        {days.map((d) => (
+          <li
+            key={d.key}
+            className={cn(
+              "rounded-xl border border-border px-3 py-2.5",
+              d.isToday && "border-primary/40 bg-primary/5",
+            )}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                {d.label}
+                {d.isToday && (
+                  <Pill className="border-primary/30 bg-primary/10 text-primary">Today</Pill>
+                )}
+              </span>
+              <span
+                className={cn(
+                  "text-sm tabular-nums",
+                  d.off ? "text-muted-foreground" : "font-semibold text-foreground",
+                )}
+              >
+                {d.off ? "Off" : `${d.hrs} hrs`}
+              </span>
+            </div>
+            {!d.off && (
+              <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+                {d.slot!.start}–{d.slot!.end}
+              </p>
+            )}
+            {!d.off && breakText && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Break: {breakText}
+              </p>
+            )}
+          </li>
+        ))}
+        <li className="rounded-xl border border-border bg-muted/30 px-3 py-2.5 flex items-center justify-between gap-2">
+          <span className="text-sm font-semibold text-foreground">Total contracted</span>
+          <span className="flex items-center gap-1.5 text-sm font-semibold tabular-nums text-foreground">
+            {total} hrs
+            {contracted != null &&
+              (reconciles ? (
+                <Check className="w-3.5 h-3.5 text-emerald-600" aria-label="Reconciled" />
+              ) : (
+                <TriangleAlert className="w-3.5 h-3.5 text-amber-600" aria-hidden />
+              ))}
+          </span>
+        </li>
+      </ul>
+
+      {contracted != null && !reconciles && (
+        <p className="flex items-start gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+          <TriangleAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <span>
+            The daily schedule totals <strong>{total} hours</strong> but the contract records{" "}
+            <strong>{contracted} hours</strong> a week. Check the start/end times and the unpaid
+            break before relying on either figure.
+          </span>
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -1540,7 +2108,10 @@ export function WorkPatternModule({ employeeId, employee }: ModuleProps) {
   const annualRow = leave?.rows.find((r) => /annual|holiday/i.test(r.policyName));
   const holidayEntitlement = annualRow?.entitlement ?? wp?.holidayEntitlementDays ?? 0;
   const holidayTaken = annualRow?.taken ?? 0;
+  const holidayBooked = annualRow?.booked ?? 0;
+  const holidayCarryOver = annualRow?.carryOver ?? 0;
   const holidayRemaining = annualRow?.remaining ?? holidayEntitlement - holidayTaken;
+  const holidayAvailable = annualRow?.available ?? holidayRemaining - holidayBooked;
   const treatment = wp?.publicHolidayTreatment ?? "in_addition";
   const treatmentNote =
     treatment === "included"
@@ -1554,21 +2125,33 @@ export function WorkPatternModule({ employeeId, employee }: ModuleProps) {
       {wp && (
         <StatStrip
           items={[
-            { label: "Weekly hours", value: wp.weeklyHours },
-            { label: "Days/week", value: wp.daysPerWeek },
-            { label: "Contract", value: employmentTypeLabel(wp.contractType) },
+            { label: "Weekly Hours", value: wp.weeklyHours },
+            { label: "Working Days per Week", value: wp.daysPerWeek },
+            { label: "Contract Type", value: employmentTypeLabel(wp.contractType) },
           ]}
         />
       )}
-      {wp?.schedule && <WorkScheduleTable schedule={wp.schedule} />}
+      {wp?.schedule && (
+        <WorkScheduleTable
+          schedule={wp.schedule}
+          breakMinutes={wp.breakMinutes ?? 0}
+          weeklyHours={wp.weeklyHours}
+        />
+      )}
       {wp && (
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-sm font-semibold text-foreground">Holiday Allowance</p>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {[
               { label: "Annual Entitlement", value: `${holidayEntitlement} Days` },
-              { label: "Taken", value: `${holidayTaken}` },
-              { label: "Remaining", value: `${holidayRemaining}` },
+              { label: "Carried Over", value: `${holidayCarryOver} Days` },
+              { label: "Booked", value: `${holidayBooked} Days` },
+              { label: "Taken", value: `${holidayTaken} Days` },
+              {
+                label: "Remaining",
+                value: `${holidayRemaining} Days`,
+                note: `${holidayAvailable} still bookable`,
+              },
               {
                 label: "Public Holidays",
                 value: `${wp.publicHolidayDays} Days`,

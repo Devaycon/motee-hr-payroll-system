@@ -9,10 +9,24 @@ interface StatCardsProps {
 }
 
 export function StatCards({ employees }: StatCardsProps) {
-  const total = employees.length;
+  // Soft-deleted rows still render on their own tab but must not inflate
+  // headcount (client feedback §1.1).
+  const total = employees.filter((e) => e.status !== "deleted").length;
   const active = employees.filter((e) => e.status === "active").length;
-  const onLeave = employees.filter((e) => e.status === "on_leave").length;
+  const onLeaveRows = employees.filter((e) => e.status === "on_leave");
+  const onLeave = onLeaveRows.length;
   const probation = employees.filter((e) => e.status === "probation").length;
+
+  // Break the count down by leave type so the card says what kind (§C1).
+  const byType = new Map<string, number>();
+  for (const e of onLeaveRows) {
+    const label = e.leaveTypeLabel ?? "Unspecified";
+    byType.set(label, (byType.get(label) ?? 0) + 1);
+  }
+  const leaveBreakdown = [...byType.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, n]) => `${n} ${label.replace(/ Leave$/, "").toLowerCase()}`)
+    .join(" · ");
 
   const cards = [
     {
@@ -34,7 +48,9 @@ export function StatCards({ employees }: StatCardsProps) {
     {
       label: "On Leave",
       value: onLeave,
-      sub: onLeave === 1 ? "1 employee away" : `${onLeave} employees away`,
+      sub:
+        leaveBreakdown ||
+        (onLeave === 1 ? "1 employee away" : `${onLeave} employees away`),
       icon: Umbrella,
       color: "text-amber-500",
       bg: "bg-amber-500/10",

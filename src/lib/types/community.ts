@@ -64,6 +64,8 @@ export interface CelebrationEntry {
 
 export interface DirectoryEmployee {
   id: string;
+  /** HR-facing staff number ("Employee ID"); `id` is the System ID. */
+  employeeNumber?: string;
   name: string;
   initials: string;
   jobTitle: string;

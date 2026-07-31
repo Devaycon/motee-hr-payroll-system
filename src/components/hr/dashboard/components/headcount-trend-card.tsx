@@ -9,7 +9,7 @@ export function HeadcountTrendCard() {
   const { data, loading } = useHeadcountTrend();
 
   if (loading || !data) {
-    return <Skeleton className="h-64 w-full rounded-xl" />;
+    return <Skeleton className="h-72 w-full rounded-xl" />;
   }
 
   const counts = data.map((d) => d.headcount);
@@ -20,6 +20,7 @@ export function HeadcountTrendCard() {
       title="Headcount Trend"
       description="Monthly employee headcount"
       icon={TrendingUp}
+      height={260}
       footer={`Latest ${latest} · Peak ${peak} over ${data.length} months`}
       viewMoreHref="/operations/reports/employees"
       categories={data.map((d) => d.month)}

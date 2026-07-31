@@ -51,8 +51,8 @@ export function EmploymentOverview({ employee }: { employee: LocaleEmployee }) {
     <div className="flex flex-col gap-4">
       <InfoGrid
         rows={[
-          { label: "Employee ID", value: employee.id },
-          { label: "System ID", value: employee.employeeNumber },
+          { label: "Employee ID", value: employee.employeeNumber },
+          { label: "System ID", value: employee.id },
           { label: "Age", value: formatDuration(employee.dateOfBirth) },
           { label: "Length of service", value: formatDuration(employee.startDate) },
         ]}

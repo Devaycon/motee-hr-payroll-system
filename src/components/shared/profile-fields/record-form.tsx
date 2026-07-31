@@ -34,7 +34,7 @@ import {
 import { useAppDispatch } from "@/src/lib/stores/hooks";
 import { addRecord, updateRecord } from "@/src/lib/stores/collection-edits-slice";
 import { getFieldString } from "@/src/lib/profile/fields";
-import type { CollectionSchema } from "@/src/lib/profile/collections";
+import { pluralize, type CollectionSchema } from "@/src/lib/profile/collections";
 
 function uid(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
@@ -105,7 +105,9 @@ export function useRecordForm(schema: CollectionSchema, employeeId: string) {
     close();
   };
 
-  const source = schema.source ?? schema.singular;
+  const source = schema.source;
+  // Client's preferred wording: name the set, state the consequence, then ask.
+  const plural = pluralize(schema);
   const node = (
     <>
       <AlertDialog open={!!warn} onOpenChange={(o) => !o && setWarn(null)}>
@@ -113,18 +115,27 @@ export function useRecordForm(schema: CollectionSchema, employeeId: string) {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-amber-600" />
-              Override system-driven data?
+              Override system-managed data?
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              <span className="capitalize">{schema.singular}</span> records are managed by the{" "}
-              <span className="font-medium text-foreground">{source}</span> module.{" "}
-              {warn?.mode === "edit" ? "Editing" : "Adding"} one here overrides system-driven data
-              for this employee and may diverge from the source until reconciled. Continue?
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  <span className="capitalize">{plural}</span> are managed by the{" "}
+                  <span className="font-medium text-foreground">{source}</span> module.
+                </p>
+                <p>
+                  {warn?.mode === "edit" ? "Editing" : "Adding"} a {schema.singular}{" "}
+                  here will override the system-managed record for this employee and
+                  may cause it to differ from the original data until the records are
+                  reconciled.
+                </p>
+                <p>Are you sure you want to continue?</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={proceed}>I understand, continue</AlertDialogAction>
+            <AlertDialogAction onClick={proceed}>Override &amp; Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

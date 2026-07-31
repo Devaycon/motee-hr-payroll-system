@@ -17,6 +17,8 @@ import {
   sortableHeader,
   actionsColumn,
 } from "@/src/components/shared/data-table";
+import { employeeIdColumns } from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
 import { cn } from "@/src/lib/utils";
 import { STATUS_STYLES, STATUS_LABELS } from "../data";
 import type { HierarchyNode } from "../types";
@@ -27,6 +29,7 @@ interface ReportingTableProps {
 }
 
 export function ReportingTable({ nodes, onEdit }: ReportingTableProps) {
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<HierarchyNode>[]>(
     () => [
       {
@@ -47,6 +50,12 @@ export function ReportingTable({ nodes, onEdit }: ReportingTableProps) {
           </div>
         ),
       },
+      ...employeeIdColumns<HierarchyNode>({
+        identity,
+        systemId: (n) => n.id,
+        employeeId: (n) => n.employeeNumber,
+        name: (n) => n.name,
+      }),
       {
         accessorKey: "department",
         header: sortableHeader("Department"),
@@ -130,7 +139,7 @@ export function ReportingTable({ nodes, onEdit }: ReportingTableProps) {
         </DropdownMenu>
       )),
     ],
-    [onEdit],
+    [onEdit, identity],
   );
 
   return (
@@ -138,6 +147,7 @@ export function ReportingTable({ nodes, onEdit }: ReportingTableProps) {
       columns={columns}
       data={nodes}
       getRowId={(n) => n.id}
+      enableColumnVisibility
       emptyMessage="No employees found."
     />
   );

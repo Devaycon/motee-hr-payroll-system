@@ -5,78 +5,72 @@ import { Sparkles, Check, AlertTriangle, Users, CalendarClock } from "lucide-rea
 import { Card, CardContent } from "@/src/components/ui/card";
 import { LEAVE_REQUESTS, LEAVE_POLICIES } from "@/src/data/leave-demo";
 import { PUBLIC_HOLIDAYS_2026 } from "@/src/data/leave-calendar-demo";
+import {
+  suggestLeaveWindows,
+  staffingImpact,
+  leaveExpiryAlert,
+  yearEndRecommendation,
+} from "@/src/lib/leave/planning";
 import { MY_BALANCES, daysRemaining } from "./data";
 
 // The Smart Leave Assistant (§16) combines four ideas into one panel:
 //   1. Suggested leave windows (staffing-aware)
 //   2. Overlapping-leave / coverage awareness
 //   3. Leave expiry alerts (carry-forward)
-// The HR-side "Employees At Risk" (§16.4) lives on the HR dashboard.
+//   4. Year-end pacing for unbooked annual leave
+// The rules themselves live in `lib/leave/planning` so the request form warns
+// on exactly the same basis. The HR-side "Employees At Risk" (§16.4) lives on
+// the HR dashboard.
 
-const REF_TODAY = new Date(2026, 6, 22); // 22 Jul 2026 (demo "today")
+const REF_TODAY = "2026-07-22"; // demo "today", keeps the fixtures meaningful
+const DEMO_DEPARTMENT = "Engineering";
 const TEAM_SIZE = 10;
-const MIN_STAFFING = 7;
-
-function iso(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
-}
-function nextMonday(d: Date): Date {
-  const r = new Date(d);
-  r.setDate(r.getDate() + ((8 - r.getDay()) % 7 || 7));
-  return r;
-}
-function fmtRange(a: Date, b: Date): string {
-  const day = (d: Date) => d.getDate();
-  const mon = (d: Date) => d.toLocaleDateString("en-GB", { month: "long" });
-  return a.getMonth() === b.getMonth()
-    ? `${day(a)}–${day(b)} ${mon(a)}`
-    : `${day(a)} ${mon(a)} – ${day(b)} ${mon(b)}`;
-}
 
 export function SmartLeaveAssistant() {
-  const team = useMemo(
+  // 1. Suggested windows — staffing-aware, with a bonus for weeks next to a
+  // public holiday.
+  const suggestions = useMemo(
     () =>
-      LEAVE_REQUESTS.filter(
-        (r) => r.status === "approved" || r.status === "pending",
-      ),
+      suggestLeaveWindows({
+        today: REF_TODAY,
+        department: DEMO_DEPARTMENT,
+        allRequests: LEAVE_REQUESTS,
+        teamSize: TEAM_SIZE,
+        holidays: PUBLIC_HOLIDAYS_2026,
+      }),
     [],
   );
 
-  // 1. Suggested windows — score upcoming Mon–Fri weeks by team overlap, with a
-  // bonus for weeks adjacent to a public holiday.
-  const suggestions = useMemo(() => {
-    const start = nextMonday(REF_TODAY);
-    const weeks = Array.from({ length: 14 }, (_, w) => {
-      const wkStart = addDays(start, w * 7);
-      const wkEnd = addDays(wkStart, 4);
-      const s = iso(wkStart);
-      const e = iso(wkEnd);
-      const overlap = team.filter((r) => r.startDate <= e && r.endDate >= s).length;
-      const nearHoliday = PUBLIC_HOLIDAYS_2026.some(
-        (h) => h.date >= iso(addDays(wkStart, -3)) && h.date <= iso(addDays(wkEnd, 3)),
-      );
-      return { wkStart, wkEnd, overlap, nearHoliday, score: overlap - (nearHoliday ? 1 : 0) };
-    });
-    return weeks.sort((a, b) => a.score - b.score).slice(0, 3);
-  }, [team]);
-
   // 2. Coverage right now.
-  const onLeaveNow = team.filter(
-    (r) => r.startDate <= iso(REF_TODAY) && r.endDate >= iso(REF_TODAY),
-  ).length;
-  const availableNow = Math.max(0, TEAM_SIZE - onLeaveNow);
+  const coverage = useMemo(
+    () =>
+      staffingImpact({
+        startDate: REF_TODAY,
+        endDate: REF_TODAY,
+        department: DEMO_DEPARTMENT,
+        allRequests: LEAVE_REQUESTS,
+        teamSize: TEAM_SIZE,
+      }),
+    [],
+  );
+  const availableNow = Math.max(0, TEAM_SIZE - coverage.awayCount);
+  const minStaffing = coverage.minStaffing;
 
-  // 3. Expiry — annual remaining vs carry-forward cap.
+  // 3 + 4. Expiry against the carry-forward cap, and how to pace what's left.
   const annual = MY_BALANCES.find((b) => b.type === "annual");
   const annualRemaining = annual ? daysRemaining(annual) : 0;
   const carryCap =
     LEAVE_POLICIES.find((p) => p.leaveType === "annual")?.maxCarryOverDays ?? 0;
-  const willExpire = Math.max(0, annualRemaining - carryCap);
+  const expiry = leaveExpiryAlert({
+    today: REF_TODAY,
+    remaining: annualRemaining,
+    carryCap,
+  });
+  const pacing = yearEndRecommendation({
+    today: REF_TODAY,
+    remaining: annualRemaining,
+  });
+  const willExpire = expiry.daysAtRisk;
 
   return (
     <Card className="border-primary/30">
@@ -103,17 +97,15 @@ export function SmartLeaveAssistant() {
             <ul className="flex flex-col gap-1.5">
               {suggestions.map((s) => (
                 <li
-                  key={iso(s.wkStart)}
-                  className="flex items-center gap-1.5 text-[11px] text-foreground"
+                  key={s.startDate}
+                  className="flex items-start gap-1.5 text-[11px] text-foreground"
                 >
-                  <Check className="size-3 shrink-0 text-emerald-600" />
-                  <span className="font-medium">{fmtRange(s.wkStart, s.wkEnd)}</span>
-                  <span className="text-muted-foreground">
-                    {s.nearHoliday
-                      ? "· near a bank holiday"
-                      : s.overlap === 0
-                        ? "· team fully available"
-                        : "· low team absence"}
+                  <Check className="mt-0.5 size-3 shrink-0 text-emerald-600" />
+                  <span className="min-w-0">
+                    <span className="font-medium">{s.label}</span>{" "}
+                    <span className="text-muted-foreground">
+                      · {s.reason.toLowerCase()}
+                    </span>
                   </span>
                 </li>
               ))}
@@ -134,9 +126,9 @@ export function SmartLeaveAssistant() {
               </span>
             </p>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {onLeaveNow} away today. Minimum staffing is {MIN_STAFFING}.
+              {coverage.awayCount} away today. Minimum staffing is {minStaffing}.
             </p>
-            {availableNow <= MIN_STAFFING && (
+            {availableNow <= minStaffing && (
               <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600">
                 <AlertTriangle className="size-3" /> Coverage is tight — approvals may be limited.
               </p>
@@ -158,17 +150,17 @@ export function SmartLeaveAssistant() {
               />
               <p className="text-xs font-semibold text-foreground">Leave expiry</p>
             </div>
-            {willExpire > 0 ? (
-              <p className="text-[11px] text-foreground">
-                You have <span className="font-semibold">{annualRemaining} days</span> remaining.
-                Only <span className="font-semibold">{carryCap}</span> can be carried forward —
-                book <span className="font-semibold text-amber-600">{willExpire} days</span> before
-                31 December or you&apos;ll lose them.
-              </p>
-            ) : (
-              <p className="text-[11px] text-muted-foreground">
-                You have {annualRemaining} days remaining, all within the {carryCap}-day
-                carry-forward cap. Nothing at risk.
+            <p
+              className={
+                "text-[11px] " +
+                (willExpire > 0 ? "text-foreground" : "text-muted-foreground")
+              }
+            >
+              {expiry.message}
+            </p>
+            {annualRemaining > 0 && (
+              <p className="mt-1.5 border-t border-border/50 pt-1.5 text-[11px] text-muted-foreground">
+                {pacing.message}
               </p>
             )}
           </div>

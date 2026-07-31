@@ -21,6 +21,11 @@ import {
   actionsColumn,
 } from "@/src/components/shared/data-table";
 import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
+import {
   ATTENDANCE_STATUS_LABELS,
   ATTENDANCE_STATUS_STYLES,
   DEPARTMENT_OPTIONS,
@@ -68,6 +73,7 @@ export function OverviewTable({
     Boolean,
   ).length;
 
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<AttendanceRecord>[]>(
     () => [
       {
@@ -89,6 +95,10 @@ export function OverviewTable({
           </div>
         ),
       },
+      ...employeeIdColumns<AttendanceRecord>({
+        identity,
+        name: (r) => r.employeeName,
+      }),
       {
         accessorKey: "department",
         header: sortableHeader("Department"),
@@ -183,7 +193,7 @@ export function OverviewTable({
         </DropdownMenu>
       )),
     ],
-    [onEdit],
+    [onEdit, identity],
   );
 
   const summaryBadges = [
@@ -314,6 +324,8 @@ export function OverviewTable({
       <div className="mt-4">
         <DataTable
           columns={columns}
+          initialColumnVisibility={HIDE_SYSTEM_ID}
+          enableColumnVisibility
           data={filtered}
           getRowId={(r) => r.id}
           emptyMessage="No records found."

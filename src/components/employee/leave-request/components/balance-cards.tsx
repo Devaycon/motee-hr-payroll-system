@@ -35,8 +35,10 @@ export function BalanceCards({ balances }: BalanceCardsProps) {
                       / {b.total} days
                     </span>
                   </p>
+                  {/* "Annual Leave Remaining", not "Annual Remaining" — the
+                      shared labels are the bare type name (§14.4). */}
                   <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                    {LEAVE_TYPE_LABELS[t]} Remaining
+                    {LEAVE_TYPE_LABELS[t]} Leave Remaining
                   </p>
                 </div>
               </CardContent>

@@ -575,6 +575,9 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                         Name
                       </th>
                       <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">
+                        Employee ID
+                      </th>
+                      <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">
                         Role
                       </th>
                       <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">
@@ -619,6 +622,14 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                               </p>
                             </div>
                           </div>
+                        </td>
+                        <td className="px-5 py-3">
+                          <p className="font-mono text-xs text-foreground">
+                            {m.referenceId ?? "—"}
+                          </p>
+                          <p className="font-mono text-[10px] text-muted-foreground">
+                            {m.id}
+                          </p>
                         </td>
                         <td className="px-5 py-3">
                           <p className="text-xs text-foreground">

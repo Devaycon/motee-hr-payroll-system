@@ -5,19 +5,24 @@ import Navbar from "./navbar";
 import Sidebar from "./sidebar/sidebar";
 import { LogoPatternBackground } from "@/src/components/shared/logo-pattern-background";
 import { MoteeFollowingPointer } from "@/src/components/shared/motee-following-pointer";
+import { SidebarInset } from "@/src/layout/shared/sidebar-collapse";
+import { useCurrentUser } from "@/src/lib/auth/demo-identity";
 
 const EmployeeLayout = ({ children }: { children: ReactNode }) => {
+  // Resolves (and seeds) the signed-in user so self-service and the admin
+  // portal are the same person even on a cold load.
+  useCurrentUser();
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <div className="ml-[20%] flex flex-1 flex-col min-w-0">
+      <SidebarInset>
         <Navbar />
         <main className="relative flex-1 overflow-hidden p-6">
           <LogoPatternBackground />
           {/* <MoteeFollowingPointer logoSrc="/single-logo.png" /> */}
           <div className="relative z-10">{children}</div>
         </main>
-      </div>
+      </SidebarInset>
     </div>
   );
 };

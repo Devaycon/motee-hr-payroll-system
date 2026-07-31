@@ -130,7 +130,7 @@ export const HR_ALERT_CATEGORIES: HrAlertCategory[] = [
   },
   {
     key: "performance",
-    label: "Performance Management",
+    label: "Performance",
     icon: TrendingUp,
     alerts: [
       { id: "perf-1", title: "Probation review due", description: "Emeka Nwosu · Engineering", severity: "warning", href: "/talent/performance" },
@@ -175,7 +175,7 @@ export const HR_ALERT_CATEGORIES: HrAlertCategory[] = [
   },
   {
     key: "management",
-    label: "Management Action Items",
+    label: "Management Action",
     icon: UserCog,
     alerts: [
       { id: "mg-1", title: "Pending approvals (manager level)", description: "4 requests awaiting your decision", severity: "warning", href: "/hr-action-center/submissions" },
@@ -186,7 +186,7 @@ export const HR_ALERT_CATEGORIES: HrAlertCategory[] = [
   },
   {
     key: "executive",
-    label: "Executive / HR Risk",
+    label: "HR Risk",
     icon: AlertTriangle,
     alerts: [
       { id: "ex-1", title: "Headcount exceeding budget", description: "Engineering · +3 over plan", severity: "critical", href: "/organization/headcount" },

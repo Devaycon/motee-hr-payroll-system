@@ -23,12 +23,15 @@ export function EmployeeOrgChart() {
 
   const filtered = useMemo(() => {
     return allEmployees.filter((e) => {
+      const q = search.toLowerCase();
       const matchSearch =
         search === "" ||
-        e.name.toLowerCase().includes(search.toLowerCase()) ||
-        e.jobTitle.toLowerCase().includes(search.toLowerCase()) ||
-        e.email.toLowerCase().includes(search.toLowerCase()) ||
-        e.department.toLowerCase().includes(search.toLowerCase());
+        e.name.toLowerCase().includes(q) ||
+        e.jobTitle.toLowerCase().includes(q) ||
+        e.email.toLowerCase().includes(q) ||
+        e.department.toLowerCase().includes(q) ||
+        e.id.toLowerCase().includes(q) ||
+        (e.referenceId?.toLowerCase().includes(q) ?? false);
       const matchDept = deptFilter === "all" || e.department === deptFilter;
       return matchSearch && matchDept;
     });

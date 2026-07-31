@@ -126,6 +126,7 @@ function buildCommunity(bundle: LocaleBundle): CommunityData {
 
   const directory: DirectoryEmployee[] = bundle.employees.map((e) => ({
     id: e.id,
+    employeeNumber: e.employeeNumber,
     name: e.fullName,
     initials: e.initials,
     jobTitle: e.jobTitle,

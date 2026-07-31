@@ -60,7 +60,8 @@ export function StatCards({
       label: "Pending Expenses",
       value: PENDING_EXPENSES.length,
       sub: "to reimburse",
-      link: "/time-payroll/payroll",
+      // Expenses live in the self-service portal (client feedback §4.3).
+      link: "/employee/expenses",
     },
     {
       icon: CalendarClock,

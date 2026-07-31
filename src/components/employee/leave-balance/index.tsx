@@ -12,7 +12,11 @@ import { EntitlementCard } from "./components/entitlement-card";
 import { HistoryRow } from "./components/history-row";
 import { PolicyModal } from "./components/policy-modal";
 import { SmartLeaveAssistant } from "./components/smart-leave-assistant";
-import { LeaveCalendar, type CalendarLeave } from "@/src/components/shared/leave-calendar";
+import {
+  LeaveCalendar,
+  COVER_COLOR,
+  type CalendarLeave,
+} from "@/src/components/shared/leave-calendar";
 import type { LeaveTypeName } from "@/src/lib/types/leave";
 
 export function MyLeaveBalancePage() {
@@ -34,16 +38,32 @@ export function MyLeaveBalancePage() {
     color: TYPE_COLORS[h.leaveType]?.bar,
   }));
 
-  const teamCalendarLeave: CalendarLeave[] = LEAVE_REQUESTS.filter(
+  const visibleTeamLeave = LEAVE_REQUESTS.filter(
     (r) => r.status === "approved" || r.status === "pending",
-  ).map((r) => ({
-    id: r.id,
-    label: r.employeeName.split(" ")[0],
-    startDate: r.startDate,
-    endDate: r.endDate,
-    status: r.status as "approved" | "pending",
-    color: TYPE_COLORS[r.leaveType as LeaveTypeName]?.bar,
-  }));
+  );
+
+  const teamCalendarLeave: CalendarLeave[] = [
+    ...visibleTeamLeave.map((r) => ({
+      id: r.id,
+      label: r.employeeName.split(" ")[0],
+      startDate: r.startDate,
+      endDate: r.endDate,
+      status: r.status as "approved" | "pending",
+      color: TYPE_COLORS[r.leaveType as LeaveTypeName]?.bar,
+    })),
+    // Relief assignments show alongside the absence they cover (§3.2).
+    ...visibleTeamLeave
+      .filter((r) => r.reliefEmployeeName)
+      .map((r) => ({
+        id: `cover-${r.id}`,
+        label: `${r.reliefEmployeeName!.split(" ")[0]} covering ${r.employeeName.split(" ")[0]}`,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        status: r.status as "approved" | "pending",
+        kind: "cover" as const,
+        color: COVER_COLOR,
+      })),
+  ];
 
   return (
     <div className="flex flex-col gap-5 pb-10">

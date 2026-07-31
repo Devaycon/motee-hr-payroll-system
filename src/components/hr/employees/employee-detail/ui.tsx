@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
 import { store } from "@/src/lib/stores/store";
@@ -79,37 +80,111 @@ export function Section({
   );
 }
 
-export function StatStrip({
-  items,
-}: {
-  items: { label: string; value: React.ReactNode; accent?: string }[];
-}) {
+export interface StatStripItem {
+  label: string;
+  value: React.ReactNode;
+  accent?: string;
+  /** Navigates on activation. Takes precedence over `onClick`. */
+  href?: string;
+  /** Activates in place — e.g. switching to a module in the same workspace. */
+  onClick?: () => void;
+  /** Overrides the accessible name, which otherwise reads "<value> <label>". */
+  ariaLabel?: string;
+}
+
+/**
+ * Stat tiles. Items with `href`/`onClick` render as real controls with hover
+ * and keyboard focus states — the client asked for these to be CTAs rather
+ * than dead numbers (client feedback round 2, §B1).
+ */
+export function StatStrip({ items }: { items: StatStripItem[] }) {
   return (
     <div className="flex flex-wrap gap-3">
-      {items.map((s) => (
-        <div
-          key={s.label}
-          className="flex-1 min-w-fit rounded-xl bg-card px-4 py-3 shadow-xs ring-1 ring-foreground/10"
-        >
-          <p
-            className={cn(
-              "text-xl font-bold leading-none text-foreground whitespace-nowrap tabular-nums",
-              s.accent,
-            )}
-          >
-            {s.value}
-          </p>
-          <p className="text-[11px] text-muted-foreground mt-1 whitespace-nowrap">{s.label}</p>
-        </div>
-      ))}
+      {items.map((s) => {
+        const interactive = !!(s.href || s.onClick);
+        // Hover marks the tile with a blue outline only — tinting the fill made
+        // the card read as transparent against the page background.
+        const className = cn(
+          "flex-1 min-w-fit rounded-xl bg-card px-4 py-3 text-left shadow-xs ring-1 ring-foreground/10 transition-colors",
+          interactive &&
+            "cursor-pointer hover:ring-2 hover:ring-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        );
+        const body = (
+          <>
+            <p
+              className={cn(
+                "text-xl font-bold leading-none text-foreground whitespace-nowrap tabular-nums",
+                s.accent,
+              )}
+            >
+              {s.value}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1 whitespace-nowrap">
+              {s.label}
+            </p>
+          </>
+        );
+
+        if (s.href) {
+          return (
+            <Link
+              key={s.label}
+              href={s.href}
+              className={className}
+              aria-label={s.ariaLabel ?? `${s.label}: ${String(s.value)}`}
+            >
+              {body}
+            </Link>
+          );
+        }
+        if (s.onClick) {
+          return (
+            <button
+              key={s.label}
+              type="button"
+              onClick={s.onClick}
+              className={className}
+              aria-label={s.ariaLabel ?? `${s.label}: ${String(s.value)}`}
+            >
+              {body}
+            </button>
+          );
+        }
+        return (
+          <div key={s.label} className={className}>
+            {body}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-export function Empty({ label = "Nothing to show yet." }: { label?: string }) {
+/**
+ * An empty state reads better as a statement plus an explanation than as one
+ * flat sentence — `label` names what's missing, `description` says why that's
+ * fine or what would fill it.
+ */
+export function Empty({
+  label = "Nothing to show yet.",
+  description,
+}: {
+  label?: string;
+  description?: string;
+}) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12 text-center">
-      <p className="text-sm text-muted-foreground">{label}</p>
+    <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border py-12 text-center">
+      <p
+        className={cn(
+          "text-sm",
+          description ? "font-medium text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+      </p>
+      {description && (
+        <p className="text-xs text-muted-foreground">{description}</p>
+      )}
     </div>
   );
 }
@@ -205,11 +280,17 @@ export function Row({ children }: { children: React.ReactNode }) {
 export function Cell({
   children,
   className,
+  colSpan,
 }: {
   children: React.ReactNode;
   className?: string;
+  colSpan?: number;
 }) {
-  return <td className={cn("px-3 py-2 align-top text-foreground", className)}>{children}</td>;
+  return (
+    <td colSpan={colSpan} className={cn("px-3 py-2 align-top text-foreground", className)}>
+      {children}
+    </td>
+  );
 }
 
 export function InfoGrid({

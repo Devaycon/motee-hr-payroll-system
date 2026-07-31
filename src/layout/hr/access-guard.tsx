@@ -7,14 +7,11 @@ import { ShieldOff } from "lucide-react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { ALL_MODULES } from "@/src/lib/permissions/modules";
 
-const PERSONAL_PREFIXES = [
-  "/welcome",
-  "/hr",
-  "/hr-action-center",
-  "/my-profile",
-  "/my-time-off",
-  "/my-growth",
-];
+/**
+ * Always-allowed admin paths. The `/my-*` self-service prefixes were removed
+ * along with their routes when self-service moved out of the admin shell (§4.3).
+ */
+const PERSONAL_PREFIXES = ["/welcome", "/hr", "/hr-action-center"];
 
 function resolveModuleId(pathname: string): string | null {
   // Sort by descending link length so deeper prefixes win

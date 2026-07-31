@@ -1,4 +1,5 @@
 import type { LocaleEmployee } from "@/src/lib/types/locale";
+import { TITLE_OPTIONS, titlesForGender } from "@/src/lib/constants/titles";
 import {
   DEPARTMENTS,
   COUNTRY_NAMES,
@@ -35,6 +36,11 @@ export interface ProfileField {
   group: ProfileFieldGroup;
   type: ProfileFieldType;
   options?: string[];
+  /**
+   * Display labels for `options`, where the generic humaniser gets it wrong —
+   * e.g. "full_time" is "Full-time", not "Full Time".
+   */
+  optionLabels?: Record<string, string>;
   /** True for values owned/derived by a system module — editing warns first. */
   system?: boolean;
   /** The system module that owns this value (shown in the warning). */
@@ -91,7 +97,6 @@ export const ID_LABELS: Record<string, string> = {
 };
 
 const GENDER_OPTIONS = ["Male", "Female", "Other", "Prefer not to say"];
-const TITLE_OPTIONS = ["Dr", "Mr", "Mrs", "Miss", "Ms"];
 const MARITAL_OPTIONS = ["Divorced", "Married", "Separated", "Single", "Widowed"];
 const ETHNICITY_OPTIONS = [
   "Asian / Asian British",
@@ -154,7 +159,9 @@ const SCHEDULE_FIELDS: ProfileField[] = SCHEDULE_DAYS.flatMap((d) => [
 ]);
 
 const STATIC_FIELDS: ProfileField[] = [
-  { key: "title", label: "Title", group: "personal", type: "select", options: TITLE_OPTIONS },
+  // Options are narrowed to the employee's gender in getEmployeeProfileFields —
+  // this list is the superset, for anything reading fields without a person.
+  { key: "title", label: "Title", group: "personal", type: "select", options: [...TITLE_OPTIONS] },
   { key: "firstName", label: "Legal First Name", group: "personal", type: "text" },
   { key: "middleName", label: "Middle Name", group: "personal", type: "text" },
   { key: "lastName", label: "Legal Last Name", group: "personal", type: "text" },
@@ -179,14 +186,15 @@ const STATIC_FIELDS: ProfileField[] = [
   { key: "bankDetails.sortCode", label: "Sort code", group: "bank", type: "text" },
 
   { key: "workPattern.weeklyHours", label: "Weekly hours", group: "work", type: "number" },
-  { key: "workPattern.daysPerWeek", label: "Days per week", group: "work", type: "number" },
+  { key: "workPattern.daysPerWeek", label: "Working days per week", group: "work", type: "number" },
+  { key: "workPattern.breakMinutes", label: "Unpaid break (minutes/day)", group: "work", type: "number" },
   { key: "workPattern.holidayEntitlementDays", label: "Holiday days", group: "work", type: "number" },
   { key: "workPattern.publicHolidayDays", label: "Public holidays", group: "work", type: "number" },
-  { key: "workPattern.contractType", label: "Contract type", group: "work", type: "select", options: ["full_time", "part_time", "zero_hours"] },
+  { key: "workPattern.contractType", label: "Contract type", group: "work", type: "select", options: ["full_time", "part_time", "zero_hours"], optionLabels: { full_time: "Full-time", part_time: "Part-time", zero_hours: "Zero-hours" } },
   ...SCHEDULE_FIELDS,
 
   // Employment — system-driven (owned by org module) — editing warns first.
-  { key: "employeeNumber", label: "System ID", group: "employment", type: "text", system: true, source: "Organization" },
+  { key: "employeeNumber", label: "Employee ID", group: "employment", type: "text", system: true, source: "Organization" },
   { key: "jobTitle", label: "Job title", group: "employment", type: "text", system: true, source: "Organization" },
   { key: "departmentName", label: "Department", group: "employment", type: "select", options: DEPARTMENTS, system: true, source: "Organization" },
   { key: "grade", label: "Grade", group: "employment", type: "text", system: true, source: "Organization" },
@@ -287,7 +295,31 @@ export function getEmployeeProfileFields(emp: LocaleEmployee): ProfileField[] {
       { key: `addresses.${slug}.country`, label: `${label} country`, group: "address", type: "select", options: COUNTRY_NAMES },
     ];
   });
-  return [...STATIC_FIELDS, ...addressFields, ...emergencyFields, ...idFields];
+  // The Title dropdown only offers what this person's gender and marital status
+  // allow (plus the honorifics, which anyone can hold) — so "Mr" can't be picked
+  // for a woman, nor "Miss" for a married one.
+  const fields = STATIC_FIELDS.map((f) =>
+    f.key === "title"
+      ? { ...f, options: titlesForGender(emp.gender, emp.maritalStatus) }
+      : f,
+  );
+
+  return [...fields, ...addressFields, ...emergencyFields, ...idFields];
+}
+
+/**
+ * The field group a stored change-request key belongs to, derived from its dot
+ * path. Used to badge tabs with their own pending-change counts without
+ * rebuilding the full field list for an employee.
+ */
+export function profileFieldGroupOf(key: string): ProfileFieldGroup | null {
+  if (key === "photoUrl") return null;
+  if (key.startsWith("addresses.") || key.startsWith("address.")) return "address";
+  if (key.startsWith("emergencyContacts.")) return "emergency";
+  if (key.startsWith("identifiers.")) return "identity";
+  if (key.startsWith("bankDetails.")) return "bank";
+  if (key.startsWith("workPattern.")) return "work";
+  return STATIC_FIELDS.find((f) => f.key === key)?.group ?? null;
 }
 
 // ── nested get / set by dot path (supports numeric array index) ─────────────

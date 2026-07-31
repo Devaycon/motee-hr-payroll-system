@@ -5,8 +5,12 @@ export type EventType =
   | "holiday"
   | "leave"
   | "leave_request"
+  /** Someone standing in for a colleague on leave (client feedback §3.2). */
+  | "cover"
   | "training"
-  | "one_to_one";
+  | "one_to_one"
+  | "birthday"
+  | "anniversary";
 
 export type CalEvent = {
   id: string;

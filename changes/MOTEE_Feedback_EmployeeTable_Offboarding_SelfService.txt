@@ -1,0 +1,185 @@
+MOTEE HR PLATFORM - FEATURE FEEDBACK
+Employee Table, Offboarding Table, Leave Relief Assignee, Self-Service/Admin Separation
+=======================================================================
+
+1. EMPLOYEE TABLE MODULE
+-------------------------------------------------------------------
+
+1.1 Tabs (new)
+
+    - Active Employees
+    - On Leave
+    - On Probation
+    - Offboarding Notice
+    - Pending
+    - Onboarded
+    - Inactive
+    - Deleted
+    - All (lists every employee across every category/tab above, in one list)
+
+    Note: project uses "offboarding" as the standard term (not "notice of exit").
+
+1.2 Action Dropdown (upgrade to existing dropdown)
+
+    - Edit Employee
+    - Send Login Credentials
+    - Send Kudos
+    - Deactivate Employee
+    - Exit Employee (initiates offboarding)
+    - [UNRESOLVED] a provisioning-related action - deferred for now, to be
+      defined later
+
+1.3 Dynamic Behavior
+
+    Rule: which actions are enabled in the dropdown depends on the employee's
+    current tab/status.
+
+    Confirmed examples:
+    - Inactive employee -> "Send Kudos" disabled
+    - Exited / Inactive employee -> "Send Login Credentials" disabled
+
+    A full tab-by-action matrix is still pending - only the two rules above
+    are confirmed. Needs the full action list finalized (including the
+    deferred provisioning action) before the matrix can be completed.
+
+
+2. OFFBOARDING TABLE MODULE (new)
+-------------------------------------------------------------------
+
+2.1 Tabs
+
+    - Pending Offboarding
+    - Approved Offboarding
+    - Disapproved Offboarding
+    - Reactivated
+    - All
+
+    [TO CONFIRM] one tab name was unclear in dictation ("approved or budget
+    disapproved") - read as "Approved" and "Disapproved" as two separate
+    tabs. Confirm this is correct.
+
+    [TO CONFIRM] relationship between this new Offboarding Table and the
+    existing "Offboarding Notice" tab on the Employee Table (section 1.1) -
+    are these the same underlying data, or two separate views?
+
+2.2 Action Dropdown - PROPOSED (not yet confirmed by client)
+
+    - View Offboarding Checklist
+    - Approve Offboarding
+    - Disapprove Offboarding
+    - Reactivate Employee (reverses offboarding, returns employee to Active)
+    - Revoke System Access
+    - Schedule Exit Interview
+    - Generate Exit Documents (clearance letter, final statement, etc.)
+    - Edit Offboarding Details
+
+2.3 Dynamic Behavior - PROPOSED (not yet confirmed)
+
+    Pending Offboarding tab:
+        Enabled  - Approve, Disapprove, Edit, View Checklist
+        Disabled - Reactivate, Revoke Access
+
+    Approved Offboarding tab:
+        Enabled  - Revoke Access, Generate Exit Docs, Schedule Exit
+                   Interview, Reactivate
+        Disabled - Approve, Disapprove
+
+    Disapproved Offboarding tab:
+        Enabled  - Reactivate, Edit
+        Disabled - Revoke Access, Generate Exit Docs
+
+    Reactivated tab:
+        Enabled  - View, Edit only
+        Disabled - Approve, Disapprove, Revoke Access
+
+    All tab:
+        Enabled/disabled per that row's actual current status
+
+
+3. LEAVE MODULE - RELIEF ASSIGNEE (new feature)
+-------------------------------------------------------------------
+
+3.1 Feature
+
+    When an employee applies for leave, add an optional field letting them
+    assign a colleague to relieve/cover for them while they are away.
+
+    Field name   : Relief Employee (or Covering Colleague)
+    Required     : Optional
+    Input type   : Employee picker (search/select)
+    Scope        : Likely same team/department only - to confirm
+
+3.2 Open Questions
+
+    - Does the assigned relief employee need to accept the assignment, or
+      is it purely informational for the manager/HR?
+    - Should the relief assignee show in the manager's approval/request
+      detail view?
+    - Should the system check whether the relief assignee is ALSO on leave
+      during the same period and raise a conflict warning (same engine as
+      the overlapping-leave / coverage warnings already specified
+      elsewhere)?
+    - Should the relief assignment appear on the Team Calendar (e.g.
+      "Sarah Brown covering for William, 4-8 Aug")?
+
+3.3 Note
+
+    Client is separately checking whether the Leave module already has
+    leave policy support built in - no action needed here until confirmed.
+
+
+4. SELF-SERVICE / ADMIN DASHBOARD SEPARATION
+-------------------------------------------------------------------
+
+4.1 Problem
+
+    The HR/admin dashboard currently mixes HR-admin features with employee
+    self-service features. This duplicates a separate, dedicated
+    self-service dashboard that already exists.
+
+4.2 Required Fix
+
+    Add a two-way mode toggle: "Admin Service" / "Self-Service"
+
+    - Clicking "Admin Service"  -> switches the current user into admin mode
+    - Clicking "Self-Service"   -> switches the current user into
+                                    self-service mode
+    - Behavior is symmetric / reversible both ways
+
+4.3 Scope of Cleanup
+
+    Once the toggle exists:
+    - Remove every self-service feature currently duplicated on the
+      admin/HR dashboard
+    - Admin/HR dashboard shows ONLY admin-related features going forward
+    - The existing self-service portal is untouched and continues to own
+      employee profile management and all employee-facing features
+
+4.4 Stated Rationale
+
+    Keeps the admin codebase and the self-service codebase cleanly
+    separated.
+
+4.5 Open Question
+
+    Is the toggle a global navigation element (visible everywhere, switches
+    the whole app's context), or is it scoped to the HR module page only?
+    This determines whether it's a layout-level or page-level component.
+
+
+5. CONSOLIDATED OPEN QUESTIONS
+-------------------------------------------------------------------
+
+    1. Employee Table dropdown - define the deferred "provisioning" action
+    2. Offboarding Table - confirm "Approved" / "Disapproved" as two
+       separate tabs
+    3. Offboarding Table - confirm relationship to Employee Table's
+       "Offboarding Notice" tab
+    4. Offboarding action dropdown - confirm the proposed action list and
+       dynamic matrix in section 2.2 / 2.3
+    5. Leave Relief Assignee - answer the four open questions in section 3.2
+    6. Self-Service/Admin toggle - confirm placement (global nav vs
+       HR-module-scoped)
+
+=======================================================================
+End of feedback

@@ -1,9 +1,18 @@
-﻿import type { LeaveRequest, LeaveBalance, LeavePolicy } from "@/src/lib/types/leave";
+﻿import type {
+  LeaveRequest,
+  LeaveBalance,
+  LeavePolicy,
+  LeaveStatus,
+} from "@/src/lib/types/leave";
 
-export const DEPARTMENT_OPTIONS = [
-  "all","Engineering","HR","Finance","Marketing","Sales",
+/** Selectable departments. "all" is a filter sentinel, so it is NOT a member. */
+export const DEPARTMENTS = [
+  "Engineering","HR","Finance","Marketing","Sales",
   "Operations","Design","Product","Legal","Customer Success",
 ];
+
+/** Filter options — includes the "all" sentinel. */
+export const DEPARTMENT_OPTIONS = ["all", ...DEPARTMENTS];
 
 export const LEAVE_TYPE_LABELS: Record<string, string> = {
   annual: "Annual",
@@ -27,19 +36,28 @@ export const LEAVE_TYPE_STYLES: Record<string, string> = {
 
 export const LEAVE_TYPE_OPTIONS = ["annual","sick","maternity","paternity","unpaid","compassionate","study"] as const;
 
-export const LEAVE_STATUS_LABELS: Record<string, string> = {
+export const LEAVE_STATUS_LABELS: Record<LeaveStatus, string> = {
   pending: "Pending",
+  awaiting_manager: "Awaiting Manager",
+  awaiting_hr: "Awaiting HR",
   approved: "Approved",
   rejected: "Rejected",
   cancelled: "Cancelled",
 };
 
-export const LEAVE_STATUS_STYLES: Record<string, string> = {
+export const LEAVE_STATUS_STYLES: Record<LeaveStatus, string> = {
   pending: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  awaiting_manager: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  awaiting_hr: "bg-violet-500/10 text-violet-600 border-violet-500/20",
   approved: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   rejected: "bg-red-500/10 text-red-600 border-red-500/20",
   cancelled: "bg-slate-500/10 text-slate-500 border-slate-500/20",
 };
+
+/** Status filter options, derived so new statuses can never be missed. */
+export const LEAVE_STATUS_OPTIONS = Object.keys(
+  LEAVE_STATUS_LABELS,
+) as LeaveStatus[];
 
 export const LEAVE_REQUESTS: LeaveRequest[] = [
   { id: "lr-ao-001", employeeName: "Adaeze Okonkwo", employeeInitials: "AO", department: "Engineering", jobTitle: "Senior Software Engineer", leaveType: "annual", startDate: "2026-01-06", endDate: "2026-01-08", totalDays: 3, isHalfDay: false, status: "approved", submittedAt: "2025-12-27", approvedAt: "2025-12-28", approvedBy: "Chidinma Okeke", notes: "New Year break" },

@@ -6,7 +6,6 @@ import { SatisfactionCard } from "./components/satisfaction-card";
 import { SalaryDistributionCard } from "./components/salary-distribution-card";
 import { HeadcountTrendCard } from "./components/headcount-trend-card";
 import { GenderSplitCard } from "./components/gender-split-card";
-import { MyProfileStats } from "./components/my-profile-stats";
 import { UpcomingEventsCard } from "./components/upcoming-events-card";
 import { HrAlertsCard } from "@/src/components/hr/hr-alerts";
 import { EmployeesAtRiskCard } from "./components/employees-at-risk";
@@ -53,16 +52,12 @@ const HrDashboard = () => {
         </div>
         <EmployeesAtRiskCard />
       </div>
+      {/* Self-service widgets ("My Profile Stats") used to sit here. They now
+          live only in the employee portal, reachable via the Self-Service
+          toggle in the navbar (client feedback §4.3). */}
       <div className="">
         <UpcomingEventsCard />
       </div>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-foreground">
-          My Profile Stats
-        </h2>
-        <MyProfileStats />
-      </section>
     </div>
   );
 };

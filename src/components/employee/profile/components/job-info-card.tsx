@@ -43,7 +43,7 @@ export function JobInfoCard() {
       <Separator />
       <CardContent className="px-5 pb-4 pt-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-          <InfoRow label="Employee ID" value={p.id} />
+          <InfoRow label="System ID" value={p.id} />
           <InfoRow label="Job title" value={p.jobTitle} />
           <InfoRow label="Department" value={p.department} />
           <InfoRow

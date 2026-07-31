@@ -44,7 +44,12 @@ function EmployeeSearch({
     const q = value.trim().toLowerCase();
     if (!q) return [];
     return (employees ?? [])
-      .filter((e) => e.fullName.toLowerCase().includes(q))
+      .filter(
+        (e) =>
+          e.fullName.toLowerCase().includes(q) ||
+          e.employeeNumber.toLowerCase().includes(q) ||
+          e.id.toLowerCase().includes(q),
+      )
       .slice(0, 8);
   }, [employees, value]);
 
@@ -52,7 +57,7 @@ function EmployeeSearch({
     <div className="relative">
       <Input
         id="empName"
-        placeholder="Search employee by name…"
+        placeholder="Search employee by name or ID…"
         autoComplete="off"
         value={value}
         onChange={(e) => {
@@ -76,6 +81,9 @@ function EmployeeSearch({
               className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent"
             >
               <span className="truncate">{e.fullName}</span>
+              <span className="ml-2 shrink-0 font-mono text-xs text-muted-foreground">
+                {e.employeeNumber}
+              </span>
               <span className="ml-2 shrink-0 text-xs text-muted-foreground">
                 {e.departmentName}
               </span>

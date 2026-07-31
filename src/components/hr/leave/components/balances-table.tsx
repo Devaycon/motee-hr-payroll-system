@@ -15,9 +15,25 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import { Label } from "@/src/components/ui/label";
+import { cn } from "@/src/lib/utils";
+import {
   DataTable,
   sortableHeader,
+  actionsColumn,
 } from "@/src/components/shared/data-table";
+import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
 import {
   LEAVE_TYPE_LABELS,
   LEAVE_TYPE_STYLES,
@@ -28,10 +44,23 @@ import type { LeaveBalance, LeaveTypeName } from "../types";
 
 interface BalancesTableProps {
   balances: LeaveBalance[];
+  /** Applies a manual entitlement adjustment, positive or negative (§F12). */
+  onAdjust?: (id: string, delta: number) => void;
 }
 
-export function BalancesTable({ balances }: BalancesTableProps) {
+/**
+ * Pro-rata entitlement earned by today, for policies that accrue monthly.
+ * Used when the source data doesn't carry an explicit figure.
+ */
+function accruedToDate(b: LeaveBalance): number {
+  const monthsElapsed = new Date().getMonth() + 1;
+  return Math.round((b.totalEntitlement * monthsElapsed) / 12);
+}
+
+export function BalancesTable({ balances, onAdjust }: BalancesTableProps) {
   const [search, setSearch] = useState("");
+  const [adjusting, setAdjusting] = useState<LeaveBalance | null>(null);
+  const [adjustDelta, setAdjustDelta] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
 
@@ -76,6 +105,7 @@ export function BalancesTable({ balances }: BalancesTableProps) {
     return "text-emerald-600 dark:text-emerald-400";
   }
 
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<LeaveBalance>[]>(
     () => [
       {
@@ -97,6 +127,11 @@ export function BalancesTable({ balances }: BalancesTableProps) {
           </div>
         ),
       },
+      ...employeeIdColumns<LeaveBalance>({
+        identity,
+        systemId: (r) => r.employeeId,
+        name: (r) => r.employeeName,
+      }),
       {
         accessorKey: "leaveType",
         header: sortableHeader("Leave Type"),
@@ -112,8 +147,57 @@ export function BalancesTable({ balances }: BalancesTableProps) {
         accessorKey: "totalEntitlement",
         header: sortableHeader("Entitlement"),
         cell: ({ row }) => (
-          <span className="text-xs font-medium">
-            {row.original.totalEntitlement}d
+          <div>
+            <span className="text-xs font-medium">
+              {row.original.totalEntitlement}d
+            </span>
+            {!!row.original.adjustments && (
+              <p className="text-[10px] text-muted-foreground">
+                incl. {row.original.adjustments > 0 ? "+" : ""}
+                {row.original.adjustments}d adjustment
+              </p>
+            )}
+          </div>
+        ),
+      },
+      {
+        // Days brought forward from last year (§F12).
+        id: "carriedOver",
+        accessorFn: (b) => b.carriedOver ?? 0,
+        header: sortableHeader("Carried Over"),
+        cell: ({ row }) => {
+          const c = row.original.carriedOver ?? 0;
+          return (
+            <div>
+              <span
+                className={cn(
+                  "text-xs",
+                  c > 0 ? "font-medium text-foreground" : "text-muted-foreground",
+                )}
+              >
+                {c > 0 ? `${c}d` : "—"}
+              </span>
+              {c > 0 && row.original.carryOverExpiresAt && (
+                <p className="text-[10px] text-muted-foreground">
+                  expires{" "}
+                  {new Date(row.original.carryOverExpiresAt).toLocaleDateString(
+                    "en-GB",
+                    { day: "numeric", month: "short" },
+                  )}
+                </p>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        // Entitlement earned so far this year, for accrual-based policies.
+        id: "accrued",
+        accessorFn: (b) => b.accruedToDate ?? accruedToDate(b),
+        header: sortableHeader("Accrued to Date"),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {row.original.accruedToDate ?? accruedToDate(row.original)}d
           </span>
         ),
       },
@@ -170,9 +254,26 @@ export function BalancesTable({ balances }: BalancesTableProps) {
           );
         },
       },
+      ...(onAdjust
+        ? [
+            actionsColumn<LeaveBalance>((b) => (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs gap-1"
+                onClick={() => {
+                  setAdjustDelta("");
+                  setAdjusting(b);
+                }}
+              >
+                <SlidersHorizontal className="w-3 h-3" /> Adjust
+              </Button>
+            )),
+          ]
+        : []),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [onAdjust, identity],
   );
 
   return (
@@ -258,11 +359,56 @@ export function BalancesTable({ balances }: BalancesTableProps) {
       <div className="mt-4">
         <DataTable
           columns={columns}
+          initialColumnVisibility={HIDE_SYSTEM_ID}
+          enableColumnVisibility
           data={filtered}
           getRowId={(b) => b.id}
           emptyMessage="No balances found."
         />
       </div>
+
+      <Dialog open={!!adjusting} onOpenChange={(o) => !o && setAdjusting(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-semibold">
+              Adjust entitlement
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {adjusting &&
+                `${adjusting.employeeName} · ${LEAVE_TYPE_LABELS[adjusting.leaveType]} · currently ${adjusting.totalEntitlement} days`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Adjustment in days</Label>
+            <Input
+              type="number"
+              step="0.5"
+              value={adjustDelta}
+              onChange={(e) => setAdjustDelta(e.target.value)}
+              placeholder="e.g. 2 to add, -1 to deduct"
+              className="h-9 text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Use a negative number to deduct days.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdjusting(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const delta = Number(adjustDelta);
+                if (!adjusting || !Number.isFinite(delta) || delta === 0) return;
+                onAdjust?.(adjusting.id, delta);
+                setAdjusting(null);
+              }}
+            >
+              Apply adjustment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

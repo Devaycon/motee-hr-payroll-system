@@ -15,7 +15,11 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import type { Notification, NotifType } from "@/src/data/notifications-demo";
-import { DEMO_NOTIFICATIONS } from "@/src/data/notifications-demo";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import {
+  markAllRead as markAllReadAction,
+  markRead as markReadAction,
+} from "@/src/lib/stores/notifications-slice";
 
 const typeConfig: Record<
   NotifType,
@@ -50,7 +54,9 @@ export function NotificationsPanel({
   isOpen,
   onClose,
 }: NotificationsPanelProps) {
-  const [notifications, setNotifications] = useState(DEMO_NOTIFICATIONS);
+  // Backed by the store so features can raise notifications (§F11, §B7).
+  const dispatch = useAppDispatch();
+  const notifications = useAppSelector((s) => s.notifications.items);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [view, setView] = useState<"list" | "detail">("list");
   const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
@@ -59,13 +65,10 @@ export function NotificationsPanel({
   const filtered =
     filter === "unread" ? notifications.filter((n) => !n.read) : notifications;
 
-  const markAllRead = () =>
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markAllRead = () => dispatch(markAllReadAction());
 
   const openDetail = (notif: Notification) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)),
-    );
+    dispatch(markReadAction(notif.id));
     setSelectedNotif({ ...notif, read: true });
     setView("detail");
   };

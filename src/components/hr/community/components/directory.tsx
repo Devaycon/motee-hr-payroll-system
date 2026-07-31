@@ -43,7 +43,9 @@ export function Directory({ employees }: DirectoryProps) {
       e.name.toLowerCase().includes(q) ||
       e.jobTitle.toLowerCase().includes(q) ||
       e.skills.some((s) => s.toLowerCase().includes(q)) ||
-      e.location.toLowerCase().includes(q);
+      e.location.toLowerCase().includes(q) ||
+      e.id.toLowerCase().includes(q) ||
+      (e.employeeNumber?.toLowerCase().includes(q) ?? false);
     const matchDept = deptFilter === "all" || e.department === deptFilter;
     const matchType = typeFilter === "all" || e.employmentType === typeFilter;
     return matchSearch && matchDept && matchType;
@@ -69,7 +71,7 @@ export function Directory({ employees }: DirectoryProps) {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name, title, skill, or location..."
+            placeholder="Search by name, ID, title, skill, or location..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -227,6 +229,9 @@ function EmployeeCard({ employee, onMessage }: EmployeeCardProps) {
           </p>
           <p className="truncate text-xs text-muted-foreground">
             {employee.jobTitle}
+          </p>
+          <p className="truncate font-mono text-[10px] text-muted-foreground">
+            {employee.employeeNumber ?? "—"} · {employee.id}
           </p>
           {employee.isOnLeave && (
             <span className="mt-0.5 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-1.5 py-px text-[10px] font-medium text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">

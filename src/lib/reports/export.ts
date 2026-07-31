@@ -1,8 +1,10 @@
 import * as XLSX from "xlsx";
 import Papa from "papaparse";
-import { downloadFile } from "@/src/components/hr/recruitment/components/calendar-links";
+import { downloadFile } from "@/src/lib/download";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import type { ReportColumn, ReportStat } from "./types";
+
+export { exportPng, PNG_MAX_ROWS } from "./png";
 
 function headers<T>(columns: ReportColumn<T>[]): string[] {
   return columns.map((c) => c.header);

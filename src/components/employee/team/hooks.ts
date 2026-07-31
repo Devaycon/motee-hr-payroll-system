@@ -28,7 +28,16 @@ export function useDirectReports() {
  * demo data when the session has no linked employee record.
  */
 export function useMyTeam() {
-  const employeeId = useAppSelector((s) => s.auth.user?.employeeId);
+  const sessionEmployeeId = useAppSelector((s) => s.auth.user?.employeeId);
+  return useTeamFor(sessionEmployeeId);
+}
+
+/**
+ * Team context for a specific employee — manager, peers and direct reports.
+ * `useMyTeam` is this for the logged-in user; the employee profile's Team
+ * module uses it for whichever employee is being viewed (§G2).
+ */
+export function useTeamFor(employeeId: string | undefined) {
   const { data, loading } = useEmployees();
   return useMemo(() => {
     if (!data || data.length === 0) {
@@ -61,6 +70,7 @@ export function useMyTeam() {
     return { me, manager, peers, reports, loading };
   }, [data, employeeId, loading]);
 }
+
 
 /** Whether the logged-in user manages anyone (has at least one direct report). */
 export function useHasDirectReports(): boolean {

@@ -29,6 +29,11 @@ import {
   actionsColumn,
 } from "@/src/components/shared/data-table";
 import {
+  employeeIdColumns,
+  HIDE_SYSTEM_ID,
+} from "@/src/components/shared/employee-id-columns";
+import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -104,6 +109,7 @@ export function ContractsTable({
     return `${currency} ${amount.toLocaleString()}`;
   }
 
+  const identity = useEmployeeIdentity();
   const columns = useMemo<ColumnDef<Contract>[]>(
     () => [
       {
@@ -144,6 +150,10 @@ export function ContractsTable({
           </div>
         ),
       },
+      ...employeeIdColumns<Contract>({
+        identity,
+        name: (r) => r.employeeName,
+      }),
       {
         accessorKey: "contractType",
         header: sortableHeader("Type"),
@@ -250,7 +260,7 @@ export function ContractsTable({
         </DropdownMenu>
       )),
     ],
-    [onView, onEdit, onSign, onDelete, onPreview, onMoveToDocuments],
+    [onView, onEdit, onSign, onDelete, onPreview, onMoveToDocuments, identity],
   );
 
   return (
@@ -320,6 +330,8 @@ export function ContractsTable({
 
       <DataTable
         columns={columns}
+        initialColumnVisibility={HIDE_SYSTEM_ID}
+        enableColumnVisibility
         data={filtered}
         getRowId={(c) => c.id}
         onRowClick={(c) => onView(c)}

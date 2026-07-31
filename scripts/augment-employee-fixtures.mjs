@@ -188,22 +188,44 @@ function augment(tenantData) {
       });
     }
 
-    // workPattern
+    // workPattern — weeklyHours/daysPerWeek are DERIVED from the schedule minus
+    // the unpaid break so the figures on screen can never contradict each other
+    // (client feedback round 2, §A1).
     const partTime = chance(0.12);
+    // UK contracts carry an unpaid hour for lunch; the NG 09:00–17:00 day does not.
+    const breakMinutes = isUK ? 60 : 0;
+    const dayEnd = isUK ? "17:30" : "17:00";
+    const schedule = {
+      mon: partTime ? { start: "09:00", end: "15:30" } : { start: "09:00", end: dayEnd },
+      tue: { start: "09:00", end: dayEnd },
+      wed: { start: "09:00", end: dayEnd },
+      thu: partTime ? null : { start: "09:00", end: dayEnd },
+      fri: partTime ? null : { start: "09:00", end: dayEnd },
+      sat: null,
+      sun: null,
+    };
+    const toMin = (t) => {
+      const [h, m] = t.split(":").map(Number);
+      return h * 60 + (m || 0);
+    };
+    const workedDays = Object.values(schedule).filter(Boolean);
+    const weeklyHours =
+      Math.round(
+        (workedDays.reduce(
+          (sum, s) => sum + Math.max(0, toMin(s.end) - toMin(s.start) - breakMinutes),
+          0,
+        ) /
+          60) *
+          10,
+      ) / 10;
     emp.workPattern = {
-      weeklyHours: partTime ? (isUK ? 22.5 : 24) : isUK ? 37.5 : 40,
-      daysPerWeek: partTime ? 3 : 5,
-      schedule: {
-        mon: partTime ? { start: "09:00", end: "15:30" } : { start: "09:00", end: isUK ? "17:30" : "17:00" },
-        tue: { start: "09:00", end: isUK ? "17:30" : "17:00" },
-        wed: { start: "09:00", end: isUK ? "17:30" : "17:00" },
-        thu: partTime ? null : { start: "09:00", end: isUK ? "17:30" : "17:00" },
-        fri: partTime ? null : { start: "09:00", end: isUK ? "17:30" : "17:00" },
-        sat: null,
-        sun: null,
-      },
+      weeklyHours,
+      daysPerWeek: workedDays.length,
+      schedule,
+      breakMinutes,
       holidayEntitlementDays: isUK ? 25 : 20,
       publicHolidayDays: 8,
+      publicHolidayTreatment: "in_addition",
       contractType: partTime ? "part_time" : "full_time",
     };
 

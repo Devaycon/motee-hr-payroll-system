@@ -14,6 +14,8 @@ export interface LeaveSummaryRow {
   policyName: string;
   allowance: number;
   adjustments: number;
+  /** Days carried over from the previous holiday year under the policy. */
+  carryOver: number;
   /** allowance + adjustments — total leave the employee is entitled to. */
   entitlement: number;
   booked: number;

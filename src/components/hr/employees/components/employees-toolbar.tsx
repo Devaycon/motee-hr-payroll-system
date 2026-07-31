@@ -1,30 +1,22 @@
 "use client";
 
-import {
-  Search,
-  SlidersHorizontal,
-  Download,
-  FileSpreadsheet,
-  FileText,
-  Printer,
-} from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import { ExportMenu } from "@/src/components/shared/export-menu";
 import { EMPLOYMENT_TYPE_LABELS } from "../data";
 import { useDepartmentOptions } from "../hooks";
 import type { EmployeeRow } from "../types";
 import type { ReportColumn } from "@/src/lib/reports/types";
-import { exportCsv, exportXlsx, printPdf } from "@/src/lib/reports/export";
 
 const EXPORT_COLUMNS: ReportColumn<EmployeeRow>[] = [
   { key: "name", header: "Name", value: (r) => r.name },
@@ -50,11 +42,18 @@ interface EmployeesToolbarProps {
   onDeptFilterChange: (v: string) => void;
   typeFilter: string;
   onTypeFilterChange: (v: string) => void;
-  statusFilter: string;
-  onStatusFilterChange: (v: string) => void;
+  workModeFilter: string;
+  onWorkModeFilterChange: (v: string) => void;
   /** Rows to export — the currently filtered employee list. */
   exportRows: EmployeeRow[];
 }
+
+/** Matches the display values produced by `toEmployeeRow` in ../hooks.ts. */
+const WORK_MODE_LABELS: Record<string, string> = {
+  Remotely: "Remote",
+  Hybrid: "Hybrid",
+  "At Office": "At Office",
+};
 
 export function EmployeesToolbar({
   search,
@@ -63,15 +62,21 @@ export function EmployeesToolbar({
   onDeptFilterChange,
   typeFilter,
   onTypeFilterChange,
-  statusFilter,
-  onStatusFilterChange,
+  workModeFilter,
+  onWorkModeFilterChange,
   exportRows,
 }: EmployeesToolbarProps) {
   const { data: deptOptions } = useDepartmentOptions();
   const depts = deptOptions ?? ["all"];
 
-  const hasActiveFilter =
-    deptFilter !== "all" || typeFilter !== "all" || statusFilter !== "all";
+  // Status is not a filter here — it is the tab strip above the table
+  // (client feedback §1.1); a second status control fought with it.
+  const activeFilters = [
+    deptFilter !== "all",
+    typeFilter !== "all",
+    workModeFilter !== "all",
+  ].filter(Boolean).length;
+  const hasActiveFilter = activeFilters > 0;
 
   return (
     <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -98,13 +103,7 @@ export function EmployeesToolbar({
               Filters
               {hasActiveFilter && (
                 <span className="flex items-center justify-center min-w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-semibold">
-                  {
-                    [
-                      deptFilter !== "all",
-                      typeFilter !== "all",
-                      statusFilter !== "all",
-                    ].filter(Boolean).length
-                  }
+                  {activeFilters}
                 </span>
               )}
             </Button>
@@ -145,66 +144,32 @@ export function EmployeesToolbar({
             </DropdownMenuRadioGroup>
 
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs">Status</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs">Work Mode</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
-              value={statusFilter}
-              onValueChange={onStatusFilterChange}
+              value={workModeFilter}
+              onValueChange={onWorkModeFilterChange}
             >
               <DropdownMenuRadioItem value="all" className="text-xs">
-                All Statuses
+                All Work Modes
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="active" className="text-xs">
-                Active
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="on_leave" className="text-xs">
-                On Leave
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="probation" className="text-xs">
-                Probation
-              </DropdownMenuRadioItem>
+              {Object.entries(WORK_MODE_LABELS).map(([value, label]) => (
+                <DropdownMenuRadioItem key={value} value={value} className="text-xs">
+                  {label}
+                </DropdownMenuRadioItem>
+              ))}
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="lg"
-              className="h-10 text-xs gap-1.5 bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuLabel className="text-xs">
-              Export {exportRows.length} employees
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-xs gap-2"
-              onClick={() => exportCsv("employees", EXPORT_COLUMNS, exportRows)}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              CSV
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-xs gap-2"
-              onClick={() => exportXlsx("employees", EXPORT_COLUMNS, exportRows)}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              Excel
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-xs gap-2"
-              onClick={() => printPdf("Employees", EXPORT_COLUMNS, exportRows)}
-            >
-              <Printer className="w-3.5 h-3.5" />
-              Print / PDF
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ExportMenu
+          name="employees"
+          title="Employees"
+          columns={EXPORT_COLUMNS}
+          rows={exportRows}
+          label={`Export ${exportRows.length} employees`}
+          buttonClassName="h-10 text-xs gap-1.5 bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
+        />
       </div>
     </div>
   );

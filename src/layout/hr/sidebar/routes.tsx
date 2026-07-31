@@ -35,13 +35,9 @@ import {
   Settings,
   LucideIcon,
   Hand,
-  UserCircle,
   CheckSquare,
   Workflow,
-  Receipt,
   Stethoscope,
-  Plane,
-  CalendarPlus,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -59,15 +55,17 @@ export interface Route {
   children?: RouteChild[];
 }
 
+/**
+ * HR/admin navigation.
+ *
+ * Self-service entries (My Profile, My Expenses, My Leave, Request Leave) used
+ * to live here and duplicated the employee portal. They were removed in favour
+ * of the Admin Service / Self-Service toggle in the navbar — the admin sidebar
+ * now carries admin features only (client feedback §4.3).
+ */
 export const routes: Route[] = [
   { group: "Overview", icon: Hand, label: "Welcome", link: "/welcome" },
   { group: "Overview", icon: LayoutDashboard, label: "Dashboard", link: "/hr" },
-  {
-    group: "Overview",
-    icon: UserCircle,
-    label: "My Profile",
-    link: "/my-profile/profile",
-  },
   {
     group: "Overview",
     icon: CheckSquare,
@@ -78,7 +76,7 @@ export const routes: Route[] = [
   },
 
   {
-    group: "My Workspace",
+    group: "Workspace",
     icon: BriefcaseBusiness,
     label: "HR Action Center",
     link: "/hr-action-center",
@@ -86,48 +84,23 @@ export const routes: Route[] = [
     exact: true,
   },
   {
-    group: "My Workspace",
+    group: "Workspace",
     icon: ClipboardList,
     label: "My Tasks",
     link: "/hr-action-center/tasks",
   },
   {
-    group: "My Workspace",
+    group: "Workspace",
     icon: CalendarDays,
     label: "Calendar",
     link: "/hr-action-center/events",
   },
   {
-    group: "My Workspace",
-    icon: Receipt,
-    label: "My Expenses",
-    link: "/my-profile/expenses",
-  },
-  {
-    group: "My Workspace",
-    icon: Plane,
-    label: "My Leave",
-    link: "/my-time-off/balance",
-  },
-  {
-    group: "My Workspace",
-    icon: CalendarPlus,
-    label: "Request Leave",
-    link: "/my-time-off/request",
-  },
-  {
-    group: "My Workspace",
+    group: "Workspace",
     icon: Workflow,
     label: "Workflows",
     link: "/hr-action-center/workflows",
   },
-  {
-    group: "My Workspace",
-    icon: UsersRound,
-    label: "My Team",
-    link: "/hr-action-center/team",
-  },
-
   {
     group: "Employee Management",
     icon: Users,

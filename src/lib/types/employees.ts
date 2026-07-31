@@ -1,6 +1,23 @@
 ﻿import type { EmploymentType } from "@/src/lib/constants/employment-types";
 export type { EmploymentType };
-export type EmployeeStatus = "active" | "on_leave" | "probation";
+/**
+ * Lifecycle state of an employee record. Drives both the Employees table tabs
+ * and which row actions are enabled (client feedback §1.1/§1.3).
+ */
+export type EmployeeStatus =
+  | "active"
+  | "on_leave"
+  | "probation"
+  /** Has an open offboarding record but has not yet left. */
+  | "offboarding"
+  /** Onboarding started but not yet completed. */
+  | "pending"
+  /** Onboarding completed — a recent joiner. */
+  | "onboarded"
+  /** Deactivated or exited. */
+  | "inactive"
+  /** Soft-deleted; recoverable from the Deleted tab. */
+  | "deleted";
 
 export interface EmployeeRow {
   id: string;
@@ -14,6 +31,12 @@ export interface EmployeeRow {
   jobTitle: string;
   employmentType: EmploymentType;
   status: EmployeeStatus;
+  /** Leave type the employee is currently on, when `status` is `on_leave`. */
+  leaveType?: string;
+  /** Human-readable form of `leaveType`, e.g. "Annual Leave". */
+  leaveTypeLabel?: string;
+  /** Date the employee is next expected back. */
+  leaveReturnDate?: string;
   startDate: string;
   salary: number;
   managerId: string | null;

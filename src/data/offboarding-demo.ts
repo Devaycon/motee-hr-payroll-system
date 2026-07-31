@@ -25,15 +25,21 @@ export const EXIT_REASON_STYLES: Record<ExitReason, string> = {
 
 export const OFFBOARDING_STATUS_LABELS: Record<OffboardingStatus, string> = {
   pending: "Pending",
+  approved: "Approved",
+  disapproved: "Disapproved",
   in_progress: "In Progress",
   completed: "Completed",
+  reactivated: "Reactivated",
   cancelled: "Cancelled",
 };
 
 export const OFFBOARDING_STATUS_STYLES: Record<OffboardingStatus, string> = {
   pending: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+  approved: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400",
+  disapproved: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
   in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
   completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
+  reactivated: "bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400",
   cancelled: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
 };
 

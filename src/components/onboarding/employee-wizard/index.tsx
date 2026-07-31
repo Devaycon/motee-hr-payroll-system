@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { Check, ChevronLeft, ChevronRight, PartyPopper } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  PartyPopper,
+  ImageUp,
+  UserRound,
+} from "lucide-react";
+import { PhotoChangeDialog } from "@/src/components/shared/profile-fields/photo-change-dialog";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -21,6 +29,10 @@ import { cn } from "@/src/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { completeSelfOnboarding } from "@/src/lib/stores/onboarding-records-slice";
+import {
+  titlesForGender,
+  isTitleValidForGender,
+} from "@/src/lib/constants/titles";
 import type { ManualOnboardingData } from "@/src/lib/types/onboarding";
 import {
   TaxStep,
@@ -43,7 +55,8 @@ const MARITAL_STATUS_OPTIONS = [
   { value: "Divorced", label: "Divorced" },
   { value: "Widowed", label: "Widowed" },
 ];
-const TITLE_OPTIONS = ["Dr", "Mr", "Mrs", "Miss", "Ms"];
+// Titles are offered against the selected gender (see `titlesForGender`), so a
+// mismatch can't be recorded at the point of hire.
 const ETHNICITY_OPTIONS = [
   "Asian / Asian British",
   "Black / African / Caribbean / Black British",
@@ -58,6 +71,7 @@ type StepKey = "personal" | "financial" | "emergency" | "tax" | "review";
 /** Fields the joiner enters themselves (HR-only fields are excluded). */
 type JoinerForm = Pick<
   ManualOnboardingData,
+  | "photoUrl"
   | "title"
   | "firstName"
   | "middleName"
@@ -99,6 +113,7 @@ type JoinerForm = Pick<
 >;
 
 const EMPTY_FORM: JoinerForm = {
+  photoUrl: "",
   title: "",
   firstName: "",
   middleName: "",
@@ -213,6 +228,7 @@ export function EmployeeOnboardingWizard({
   }));
   const [tax, setTax] = useState<TaxFormState>(EMPTY_TAX);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const currentKey = stepKeys[step];
@@ -227,7 +243,19 @@ export function EmployeeOnboardingWizard({
   );
 
   const set = (field: keyof JoinerForm, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      // Changing gender or marital status after picking a title would otherwise
+      // leave them contradicting each other — a married "Miss", say. Drop a
+      // title the new combination can't support.
+      if (
+        (field === "gender" || field === "maritalStatus") &&
+        !isTitleValidForGender(next.title, next.gender, next.maritalStatus)
+      ) {
+        next.title = "";
+      }
+      return next;
+    });
     setErrors((prev) => {
       const next = { ...prev };
       delete next[field];
@@ -377,6 +405,60 @@ export function EmployeeOnboardingWizard({
                 Personal &amp; contact details
               </h2>
               <Separator />
+
+              {/* Joiners supply their own photo here rather than waiting for HR
+                  to chase one after they've started. Optional — nobody should
+                  be blocked from onboarding over a picture. */}
+              <div className="flex items-center gap-4">
+                <div className="size-20 shrink-0 overflow-hidden rounded-2xl bg-primary/10 flex items-center justify-center">
+                  {form.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={form.photoUrl}
+                      alt="Your profile photo"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <UserRound className="size-8 text-primary/60" />
+                  )}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-sm">
+                    Profile photo{" "}
+                    <span className="font-normal text-muted-foreground">
+                      (optional)
+                    </span>
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    A clear head-and-shoulders photo. JPG, PNG or WebP, up to 5&nbsp;MB.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setPhotoDialogOpen(true)}
+                    >
+                      <ImageUp className="size-4" />
+                      {form.photoUrl ? "Change photo" : "Upload photo"}
+                    </Button>
+                    {form.photoUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground"
+                        onClick={() => set("photoUrl", "")}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Separator />
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-sm">Title</Label>
@@ -385,7 +467,7 @@ export function EmployeeOnboardingWizard({
                       <SelectValue placeholder="Select title" />
                     </SelectTrigger>
                     <SelectContent>
-                      {TITLE_OPTIONS.map((t) => (
+                      {titlesForGender(form.gender, form.maritalStatus).map((t) => (
                         <SelectItem key={t} value={t}>{t}</SelectItem>
                       ))}
                     </SelectContent>
@@ -884,6 +966,21 @@ export function EmployeeOnboardingWizard({
                 Review &amp; submit
               </h2>
               <Separator />
+              {/* Show the photo back before submitting — it's the one answer
+                  they can't verify from a text row. */}
+              {form.photoUrl && (
+                <div className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={form.photoUrl}
+                    alt="Your profile photo"
+                    className="size-16 rounded-2xl object-cover"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This is the photo that will appear on your profile.
+                  </p>
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
@@ -959,6 +1056,21 @@ export function EmployeeOnboardingWizard({
           )}
         </div>
       </div>
+
+      {/* Reuses the profile-photo dialog so onboarding enforces exactly the
+          same crop, format and size rules as a later photo change. "edit" mode
+          because the joiner is filling in their own record, not requesting a
+          change to one — so no reason is asked for. */}
+      <PhotoChangeDialog
+        open={photoDialogOpen}
+        onOpenChange={setPhotoDialogOpen}
+        mode="edit"
+        onSubmit={(dataUrl) => {
+          set("photoUrl", dataUrl);
+          setPhotoDialogOpen(false);
+          toast.success("Profile photo added");
+        }}
+      />
     </div>
   );
 }

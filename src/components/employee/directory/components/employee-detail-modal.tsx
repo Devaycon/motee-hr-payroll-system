@@ -70,6 +70,18 @@ export function EmployeeDetailModal({
 
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
+                <p className="text-xs text-muted-foreground">Employee ID</p>
+                <p className="font-mono text-xs text-foreground">
+                  {employee.referenceId ?? "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">System ID</p>
+                <p className="font-mono text-xs text-muted-foreground">
+                  {employee.id}
+                </p>
+              </div>
+              <div>
                 <p className="text-xs text-muted-foreground">Department</p>
                 <p className="font-medium text-foreground">
                   {employee.department}

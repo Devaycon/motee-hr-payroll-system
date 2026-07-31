@@ -34,12 +34,18 @@ import {
   Lock,
   ScrollText,
   Receipt,
+  Network,
+  FileClock,
+  Milestone,
 } from "lucide-react";
 import { useCan } from "@/src/lib/permissions/use-can";
 import * as Mod from "./modules";
 import type { ModuleProps } from "./modules";
 import { EmployeeDocumentsModule } from "./employee-documents";
 import { ContractsModule } from "./contracts-module";
+import { TeamModule } from "./team-module";
+import { ChangeLogModule } from "./change-log-module";
+import { TimelineModule } from "./timeline-module";
 
 export interface ModuleEntry {
   key: string;
@@ -61,6 +67,9 @@ export const MODULE_GROUP_ORDER = [
 
 export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "profile", label: "Profile", group: "Profile", icon: User, Component: Mod.ProfileModule },
+  // First in the nav, so the file opens on the journey overview rather than a
+  // single record — it is the only view that spans every other module.
+  { key: "timeline", label: "Timeline", group: "Profile", icon: Milestone, Component: TimelineModule },
   { key: "job", label: "Job", group: "Profile", icon: BriefcaseBusiness, Component: Mod.JobModule },
   { key: "compensation", label: "Compensation", group: "Profile", icon: Coins, Component: Mod.CompensationModule },
   { key: "payslips", label: "Payslips", group: "Profile", icon: Banknote, Component: Mod.PayslipsModule },
@@ -68,6 +77,7 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "documents", label: "Employee Documents", group: "Profile", icon: FileText, Component: EmployeeDocumentsModule },
   { key: "contracts", label: "Contracts", group: "Profile", icon: ScrollText, Component: ContractsModule },
   { key: "emergency", label: "Emergency Contact", group: "Profile", icon: Phone, Component: Mod.EmergencyContactModule },
+  { key: "team", label: "Team & Structure", group: "Profile", icon: Network, Component: TeamModule },
 
   { key: "work-pattern", label: "Work Pattern", group: "Time & Attendance", icon: CalendarClock, Component: Mod.WorkPatternModule },
   { key: "leave", label: "Leave", group: "Time & Attendance", icon: Plane, Component: Mod.LeaveModule },
@@ -88,6 +98,7 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
 
   { key: "dbs", label: "DBS / Background", group: "Compliance", icon: ShieldCheck, Component: Mod.DbsModule },
 
+  { key: "change-log", label: "Profile Change Request Log", group: "HR Admin", icon: FileClock, Component: ChangeLogModule },
   { key: "tasks", label: "Tasks", group: "HR Admin", icon: ClipboardList, Component: Mod.TasksModule },
   { key: "offboarding", label: "Offboarding", group: "HR Admin", icon: DoorOpen, Component: Mod.OffboardingModule },
   { key: "access", label: "Access", group: "HR Admin", icon: Lock, Component: Mod.AccessModule },
@@ -106,11 +117,13 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
  * notes). `profile` is rendered at the top of the page, not in the nav.
  */
 export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
+  "timeline",
   "job",
   "preferences",
   "documents",
   "contracts",
   "emergency",
+  "team",
   "work-pattern",
   "leave",
   "sickness",
@@ -129,6 +142,8 @@ export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
   "assets",
   "dbs",
   "tasks",
+  // Employees can follow their own change requests through to a decision.
+  "change-log",
 ]);
 
 /** Modules the current viewer is allowed to see (sensitive ones gated). */

@@ -8,8 +8,11 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   { value: "holiday", label: "Holiday" },
   { value: "leave", label: "On Leave" },
   { value: "leave_request", label: "Leave Request" },
+  { value: "cover", label: "Covering" },
   { value: "training", label: "Training Due" },
   { value: "one_to_one", label: "One-to-One" },
+  { value: "birthday", label: "Birthday" },
+  { value: "anniversary", label: "Work Anniversary" },
 ];
 
 export const EVENT_TYPE_COLORS: Record<EventType, string> = {
@@ -19,8 +22,11 @@ export const EVENT_TYPE_COLORS: Record<EventType, string> = {
   holiday:  "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   leave:    "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400",
   leave_request: "border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400",
+  cover: "border-teal-600/40 border-dashed bg-teal-500/10 text-teal-700 dark:text-teal-300",
   training: "border-teal-500/30 bg-teal-500/10 text-teal-600 dark:text-teal-400",
   one_to_one: "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  birthday: "border-pink-500/30 bg-pink-500/10 text-pink-600 dark:text-pink-400",
+  anniversary: "border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400",
 };
 
 /** Reusable event templates, cycled across the year to fill the calendar. */
