@@ -61,8 +61,8 @@ const NAV_ITEMS = [
     label: "Dashboard",
     icon: LayoutDashboard,
     accent: "#4ED251",
-    href: "/motee",
-    prefixes: ["/motee"],
+    href: "/hr",
+    prefixes: ["/hr"],
   },
 ] as const;
 
