@@ -119,7 +119,12 @@ export const routes: Route[] = [
     label: "Employment Types",
     link: "/organization/employment-types",
   },
-
+    {
+    group: "Employee Management",
+    icon: Scale,
+    label: "Employee Relations Cases",
+    link: "/admin/grievance",
+  },
   {
     group: "Employee Management",
     icon: BarChart3,
@@ -162,7 +167,6 @@ export const routes: Route[] = [
     label: "Offboarding",
     link: "/talent/offboarding",
   },
-
   {
     group: "Organization",
     icon: Building2,
@@ -308,12 +312,6 @@ export const routes: Route[] = [
     icon: ClipboardList,
     label: "Audit Trail",
     link: "/admin/audit-trail",
-  },
-  {
-    group: "Admin",
-    icon: Scale,
-    label: "Employee Relations Cases",
-    link: "/admin/grievance",
   },
   {
     group: "Admin",

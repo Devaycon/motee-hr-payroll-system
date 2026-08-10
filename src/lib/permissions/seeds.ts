@@ -17,6 +17,13 @@ type RoleSlug =
   | "AUDITOR"
   | "READ-ONLY";
 
+/**
+ * Author stamp carried by a default level nobody has edited yet. Such a level
+ * holds no human intent, so its permissions can always be re-derived from the
+ * seed — see `mergeWithSeed` in the access-levels slice.
+ */
+export const SYSTEM_AUTHOR = "System";
+
 // Module-id → roles that get sidebar access (mirrors the prior sidebar matrix)
 const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   // Submissions & Approvals — queue is broadly visible (hub auto-filters
@@ -138,7 +145,7 @@ function makeLevel(
     description,
     kind: "default",
     employeeCount,
-    lastModifiedBy: "System",
+    lastModifiedBy: SYSTEM_AUTHOR,
     lastModifiedAt: "2026-01-01",
     permissions: buildPermissionsFor(slug),
   };

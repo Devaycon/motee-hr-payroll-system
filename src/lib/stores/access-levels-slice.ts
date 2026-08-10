@@ -4,7 +4,11 @@ import type {
   ModulePermission,
   NewAccessLevel,
 } from "@/src/lib/types/access-levels";
-import { DEFAULT_ACCESS_LEVELS } from "@/src/lib/permissions/seeds";
+import { DEFAULT_ACCESS_LEVELS, SYSTEM_AUTHOR } from "@/src/lib/permissions/seeds";
+
+function clonePermissions(perms: ModulePermission[]): ModulePermission[] {
+  return perms.map((p) => ({ ...p, actions: [...p.actions] }));
+}
 
 /**
  * Merge a cached access level with the latest seed default so newly-added
@@ -16,11 +20,23 @@ function mergeWithSeed(cached: AccessLevel): AccessLevel {
   const seed = DEFAULT_ACCESS_LEVELS.find((d) => d.id === cached.id);
   const cachedMap = new Map(cached.permissions.map((p) => [p.module, p]));
   if (seed) {
+    // A default level still stamped "System" has never been edited by a human,
+    // so the cached copy holds no intent worth preserving — only whatever the
+    // seed happened to say the day the snapshot was taken. Keeping it would
+    // pin the level to that stale answer forever: a module the seed grants
+    // today stays `access:false` because a (correct-at-the-time) `false` is
+    // already on record, and the fill-in-missing pass below never touches it.
+    // That is exactly how Employer of Record and Workflows vanished from the
+    // sidebar. Re-derive from the seed instead; a real edit sets
+    // `lastModifiedBy` to "You" and takes the preserving path.
+    if (cached.lastModifiedBy === SYSTEM_AUTHOR) {
+      return { ...cached, permissions: clonePermissions(seed.permissions) };
+    }
     const merged: ModulePermission[] = seed.permissions.map((seedPerm) => {
       const existing = cachedMap.get(seedPerm.module);
       return existing ?? seedPerm;
     });
-    return { ...cached, permissions: merged };
+    return { ...cached, permissions: clonePermissions(merged) };
   }
   // Custom level: preserve everything the user chose, add empty entries for
   // any modules they don't have yet (seeded from the first default level

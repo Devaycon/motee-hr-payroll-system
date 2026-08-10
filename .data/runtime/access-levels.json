@@ -10,8 +10,15 @@
     "permissions": [
       {
         "module": "workspace.workflows",
-        "access": false,
-        "actions": []
+        "access": true,
+        "actions": [
+          "view",
+          "create",
+          "edit",
+          "delete",
+          "export",
+          "approve"
+        ]
       },
       {
         "module": "submissions.queue",
@@ -123,8 +130,15 @@
       },
       {
         "module": "organization.eor",
-        "access": false,
-        "actions": []
+        "access": true,
+        "actions": [
+          "view",
+          "create",
+          "edit",
+          "delete",
+          "export",
+          "approve"
+        ]
       },
       {
         "module": "organization.employee-checklist",
@@ -487,8 +501,15 @@
     "permissions": [
       {
         "module": "workspace.workflows",
-        "access": false,
-        "actions": []
+        "access": true,
+        "actions": [
+          "view",
+          "create",
+          "edit",
+          "delete",
+          "export",
+          "approve"
+        ]
       },
       {
         "module": "submissions.queue",
@@ -600,8 +621,15 @@
       },
       {
         "module": "organization.eor",
-        "access": false,
-        "actions": []
+        "access": true,
+        "actions": [
+          "view",
+          "create",
+          "edit",
+          "delete",
+          "export",
+          "approve"
+        ]
       },
       {
         "module": "organization.employee-checklist",
@@ -1049,8 +1077,13 @@
       },
       {
         "module": "organization.eor",
-        "access": false,
-        "actions": []
+        "access": true,
+        "actions": [
+          "view",
+          "create",
+          "edit",
+          "approve"
+        ]
       },
       {
         "module": "organization.employee-checklist",
@@ -1365,8 +1398,13 @@
       },
       {
         "module": "organization.eor",
-        "access": false,
-        "actions": []
+        "access": true,
+        "actions": [
+          "view",
+          "create",
+          "edit",
+          "approve"
+        ]
       },
       {
         "module": "organization.employee-checklist",
@@ -2396,8 +2434,11 @@
       },
       {
         "module": "organization.eor",
-        "access": false,
-        "actions": []
+        "access": true,
+        "actions": [
+          "view",
+          "export"
+        ]
       },
       {
         "module": "organization.employee-checklist",
@@ -2695,8 +2736,10 @@
       },
       {
         "module": "organization.eor",
-        "access": false,
-        "actions": []
+        "access": true,
+        "actions": [
+          "view"
+        ]
       },
       {
         "module": "organization.employee-checklist",
