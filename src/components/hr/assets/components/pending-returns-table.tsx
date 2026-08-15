@@ -207,6 +207,7 @@ export function PendingReturnsTable({
       </div>
 
       <DataTable
+        exportTitle="Pending Asset Returns"
         columns={columns}
         data={pending}
         getRowId={(a) => a.id}

@@ -8,7 +8,11 @@ import { MY_GOALS_INITIAL, MY_NAME, SELF_ASSESSMENT_DRAFT, MY_REVIEW } from "./c
 import { useMyGoals } from "./hooks";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { daysUntil } from "./components/helpers";
-import { PerformanceStatCards } from "./components/stat-cards";
+import {
+  PerformanceStatCards,
+  GOAL_CARD_FILTER_LABELS,
+  type GoalCardFilter,
+} from "./components/stat-cards";
 import { ReviewBanner } from "./components/review-banner";
 import { OverviewTab } from "./components/overview-tab";
 import { GoalsTab } from "./components/goals-tab";
@@ -25,6 +29,8 @@ export function MyPerformancePage() {
   const currentUser = useAppSelector((s) => s.auth.user);
   const myName = currentUser?.name ?? MY_NAME;
   const [tab, setTab] = useState("overview");
+  /** Drill-down set by the KPI cards; "all" shows every goal. */
+  const [goalFilter, setGoalFilter] = useState<GoalCardFilter>("all");
   const [goals, setGoals] = useState<PerformanceGoal[]>(
     localeGoals && localeGoals.length ? localeGoals : MY_GOALS_INITIAL,
   );
@@ -47,6 +53,16 @@ export function MyPerformancePage() {
     ? Math.round(activeGoals.reduce((s, g) => s + g.progress, 0) / activeGoals.length)
     : 0;
   const reviewDueIn = daysUntil(MY_REVIEW.dueDate);
+
+  // The KPI cards drill into My Goals, narrowing it to the slice they count.
+  const shownActiveGoals =
+    goalFilter === "completed"
+      ? []
+      : goalFilter === "at_risk"
+        ? atRiskGoals
+        : activeGoals;
+  const shownCompletedGoals =
+    goalFilter === "all" || goalFilter === "completed" ? completedGoals : [];
 
   function handleProgressSave() {
     if (!progressGoal) return;
@@ -111,6 +127,11 @@ export function MyPerformancePage() {
         completedGoals={completedGoals.length}
         avgProgress={avgProgress}
         atRiskGoals={atRiskGoals.length}
+        goalFilter={goalFilter}
+        onDrillDown={(filter) => {
+          setGoalFilter(filter);
+          setTab("goals");
+        }}
       />
 
       <Tabs value={tab} onValueChange={setTab}>
@@ -135,8 +156,14 @@ export function MyPerformancePage() {
         <TabsContent value="goals" className="mt-5">
           <GoalsTab
             goals={goals}
-            activeGoals={activeGoals}
-            completedGoals={completedGoals}
+            activeGoals={shownActiveGoals}
+            completedGoals={shownCompletedGoals}
+            filterLabel={
+              goalFilter === "all"
+                ? undefined
+                : GOAL_CARD_FILTER_LABELS[goalFilter]
+            }
+            onClearFilter={() => setGoalFilter("all")}
             onView={setGoalDetail}
             onUpdateProgress={(g) => {
               setProgressGoal(g);

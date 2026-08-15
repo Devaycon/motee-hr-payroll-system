@@ -16,7 +16,8 @@ import { EMPLOYEE_PENDING_ITEMS } from "@/src/data/employee-dashboard-demo";
 
 export function PendingItems() {
   return (
-    <Card className="col-span-2">
+    // The "Pending Actions" KPI card links to #pending — this is its target.
+    <Card id="pending" className="col-span-2 scroll-mt-20">
       <CardHeader className="flex flex-row items-center justify-between px-4 pt-4 pb-3">
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted">

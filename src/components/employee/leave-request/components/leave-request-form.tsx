@@ -76,8 +76,9 @@ export function LeaveRequestForm({
   const [seededFor, setSeededFor] = useState<LeavePrefill | null>(null);
   if (open && prefill && prefill !== seededFor) {
     setSeededFor(prefill);
-    setFStart(prefill.startDate);
-    setFEnd(prefill.endDate);
+    if (prefill.startDate !== undefined) setFStart(prefill.startDate);
+    if (prefill.endDate !== undefined) setFEnd(prefill.endDate);
+    if (prefill.leaveType !== undefined) setFType(prefill.leaveType);
     setFHalf(false);
   }
   if (!open && seededFor) setSeededFor(null);
@@ -396,8 +397,11 @@ export function LeaveRequestForm({
                 balanceRemaining={balanceRemaining}
                 policy={selectedPolicy}
                 onPickWindow={(w) => {
-                  setFStart(w.startDate);
-                  setFEnd(w.endDate);
+                  // A suggested window always carries both dates; the prefill
+                  // type allows partials because a balance card sets only the
+                  // leave type.
+                  setFStart(w.startDate ?? "");
+                  setFEnd(w.endDate ?? "");
                   setFHalf(false);
                 }}
               />

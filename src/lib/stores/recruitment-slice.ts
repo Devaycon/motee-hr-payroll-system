@@ -307,7 +307,13 @@ function syntheticForRequisition(
   const enabled = new Set(
     (req.flow?.stages ?? []).filter((s) => s.enabled).map((s) => s.type),
   );
-  const base = { applicants: 5, shortlisted: 3, interview: 2, hired: 1 };
+  const base = {
+    applicants: 5,
+    shortlisted: 3,
+    interview: 2,
+    offer: 1,
+    hired: 1,
+  };
   let applicants = base.applicants;
   if (!enabled.has("shortlisted")) applicants += base.shortlisted;
   if (!enabled.has("interview")) applicants += base.interview;
@@ -315,13 +321,22 @@ function syntheticForRequisition(
     applicants,
     shortlisted: enabled.has("shortlisted") ? base.shortlisted : 0,
     interview: enabled.has("interview") ? base.interview : 0,
+    // §7.18 — a flow stored before the offer stage existed has no entry for
+    // it, so treat a missing entry as enabled rather than as switched off.
+    offer: enabled.has("offer") || !enabled.size ? base.offer : 0,
     hired: base.hired,
   };
 
   const out: Candidate[] = [];
   let n = 1;
   (
-    ["applicants", "shortlisted", "interview", "hired"] as RecruitmentStageType[]
+    [
+      "applicants",
+      "shortlisted",
+      "interview",
+      "offer",
+      "hired",
+    ] as RecruitmentStageType[]
   ).forEach((st) => {
     for (let k = 0; k < counts[st]; k++) {
       out.push(makeSyntheticCandidate(req, n++, st, "active", createdAt));
@@ -682,6 +697,83 @@ const recruitmentSlice = createSlice({
         }
       }
     },
+    /**
+     * §7.18 — record an offer against a candidate. `Candidate.offers` already
+     * existed but nothing ever wrote to it, so the offer/accept/decline round
+     * trip happened entirely outside the system.
+     */
+    sendOffer(
+      state,
+      action: PayloadAction<{
+        country: string;
+        candidateId: string;
+        salary?: number;
+        startDate?: string;
+        notes?: string;
+      }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      const c = b.candidates.find((x) => x.id === action.payload.candidateId);
+      if (!c) return;
+      const at = new Date().toISOString().slice(0, 10);
+      c.offers.push({
+        id: `OF-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        at,
+        status: "sent",
+        salary: action.payload.salary,
+        startDate: action.payload.startDate,
+        notes: action.payload.notes,
+      });
+      c.updatedAt = at;
+    },
+
+    /**
+     * §7.18 — the candidate's answer. Declining rejects them outright: an
+     * offer turned down is the end of that pipeline, not a state to sit in.
+     */
+    respondToOffer(
+      state,
+      action: PayloadAction<{
+        country: string;
+        candidateId: string;
+        accepted: boolean;
+      }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      const c = b.candidates.find((x) => x.id === action.payload.candidateId);
+      if (!c) return;
+      const latest = c.offers.at(-1);
+      if (!latest) return;
+      const at = new Date().toISOString().slice(0, 10);
+      latest.status = action.payload.accepted ? "accepted" : "rejected";
+      latest.at = at;
+      if (!action.payload.accepted) c.status = "rejected";
+      c.updatedAt = at;
+    },
+
+    /**
+     * §7.18 — links the candidate to the employee record created from them,
+     * so the Applicant → Offer → Hired → Onboarding → Employee chain can be
+     * followed in either direction.
+     */
+    linkEmployeeRecord(
+      state,
+      action: PayloadAction<{
+        country: string;
+        candidateId: string;
+        employeeId: string;
+      }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      const c = b.candidates.find((x) => x.id === action.payload.candidateId);
+      if (!c) return;
+      c.createdEmployeeId = action.payload.employeeId;
+      c.updatedAt = new Date().toISOString().slice(0, 10);
+    },
+
     setGateProgress(
       state,
       action: PayloadAction<{
@@ -857,6 +949,9 @@ export const {
   updateCandidate,
   moveStage,
   setCandidateStatus,
+  sendOffer,
+  respondToOffer,
+  linkEmployeeRecord,
   setGateProgress,
   addScorecard,
   addCommunication,

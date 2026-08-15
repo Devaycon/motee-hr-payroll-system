@@ -1,80 +1,99 @@
 "use client";
 
 import { Lightbulb, CheckCircle2, Clock, TrendingUp } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import { computeSuggestionStats } from "../data";
 import type { Suggestion } from "../types";
 
-interface StatCardsProps {
-  suggestions: Suggestion[];
+/** The slice a KPI card drills the submissions table down to. */
+export type SuggestionCardFilter = "all" | "implemented" | "under_review";
+
+export const SUGGESTION_CARD_FILTER_LABELS: Record<
+  Exclude<SuggestionCardFilter, "all">,
+  string
+> = {
+  implemented: "Implemented",
+  under_review: "Under review",
+};
+
+/** Single source of truth for what each card counts and the table then shows. */
+export function matchesSuggestionCardFilter(
+  suggestion: Suggestion,
+  filter: SuggestionCardFilter,
+): boolean {
+  switch (filter) {
+    case "implemented":
+      return suggestion.status === "implemented";
+    case "under_review":
+      return (
+        suggestion.status === "under_review" || suggestion.status === "accepted"
+      );
+    default:
+      return true;
+  }
 }
 
-export function StatCards({ suggestions }: StatCardsProps) {
+interface StatCardsProps {
+  suggestions: Suggestion[];
+  /** The tab currently open. */
+  activeTab: string;
+  /** The card drill-down currently applied. */
+  cardFilter: SuggestionCardFilter;
+  /** Drill-down: opens the tab holding these rows and filters to them. */
+  onDrillDown: (tab: string, filter: SuggestionCardFilter) => void;
+}
+
+export function StatCards({
+  suggestions,
+  activeTab,
+  cardFilter,
+  onDrillDown,
+}: StatCardsProps) {
   const { total, implemented, underReview, avgUpvotes } =
     computeSuggestionStats(suggestions);
 
-  const cards = [
+  const cards: HrStatCardItem[] = [
     {
       label: "Total Submissions",
       value: total,
-      suffix: "",
+      sub: "Everything submitted",
       icon: Lightbulb,
-      iconColor: "text-violet-500",
-      iconBg: "bg-violet-500/10",
-      valueColor: "text-violet-600 dark:text-violet-400",
+      tone: "violet",
+      active: activeTab === "submissions" && cardFilter === "all",
+      onClick: () => onDrillDown("submissions", "all"),
     },
     {
       label: "Implemented",
       value: implemented,
-      suffix: "",
+      sub: "Shipped and closed",
       icon: CheckCircle2,
-      iconColor: "text-emerald-500",
-      iconBg: "bg-emerald-500/10",
-      valueColor: "text-emerald-600 dark:text-emerald-400",
+      tone: "emerald",
+      active: cardFilter === "implemented",
+      onClick: () => onDrillDown("submissions", "implemented"),
     },
     {
       label: "Under Review",
       value: underReview,
-      suffix: "",
+      sub: "Being considered",
       icon: Clock,
-      iconColor: "text-amber-500",
-      iconBg: "bg-amber-500/10",
-      valueColor: "text-amber-600 dark:text-amber-400",
+      tone: "amber",
+      active: cardFilter === "under_review",
+      onClick: () => onDrillDown("submissions", "under_review"),
     },
     {
+      // An average, not a list — the community board is where upvoting happens.
       label: "Avg Upvotes",
       value: avgUpvotes,
-      suffix: "",
+      sub: "See the community board",
       icon: TrendingUp,
-      iconColor: "text-blue-500",
-      iconBg: "bg-blue-500/10",
-      valueColor: "text-blue-600 dark:text-blue-400",
+      tone: "blue",
+      active: activeTab === "board",
+      onClick: () => onDrillDown("board", "all"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      {cards.map((c) => {
-        const Icon = c.icon;
-        return (
-          <Card key={c.label} className="border-border/60">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className={`${c.iconBg} rounded-xl p-2.5 shrink-0`}>
-                <Icon className={`w-5 h-5 ${c.iconColor}`} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground truncate">
-                  {c.label}
-                </p>
-                <p className={`text-2xl font-bold mt-0.5 ${c.valueColor}`}>
-                  {c.value}
-                  {c.suffix}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

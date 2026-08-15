@@ -118,7 +118,7 @@ export function EmployeeKnowledgeBase() {
                 className="text-xs"
                 onClick={() => setCategoryFilter("all")}
               >
-                ? All categories
+                ← All categories
               </Button>
             )}
           </div>
@@ -134,6 +134,7 @@ export function EmployeeKnowledgeBase() {
         <>
           <CategoryStatCards
             publishedArticles={publishedArticles}
+            selected={categoryFilter}
             onSelect={setCategoryFilter}
           />
 

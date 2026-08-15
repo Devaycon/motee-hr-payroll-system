@@ -3,7 +3,10 @@
 import { useMemo, useState } from "react";
 import { Plus, Inbox, Send, FileCheck2, Clock } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import {
@@ -27,6 +30,36 @@ import { IntakeModal } from "./components/intake-modal";
 import { isCurrentApprover, isSubmitter } from "./utils";
 import { useDemoApprovalSeed } from "./use-demo-seed";
 import { useCan } from "@/src/lib/permissions/use-can";
+
+/** The slice a KPI card drills the submission queues down to. */
+type ApprovalCardFilter = "all" | "in_progress" | "approved_week";
+
+const APPROVAL_CARD_FILTER_LABELS: Record<
+  Exclude<ApprovalCardFilter, "all">,
+  string
+> = {
+  in_progress: "In flight",
+  approved_week: "Approved this week",
+};
+
+/** Single source of truth for what each card counts and the queue then shows. */
+function matchesApprovalCardFilter(
+  request: { status: ApprovalStatus; submittedAt: string },
+  filter: ApprovalCardFilter,
+  weekAgoMs: number,
+): boolean {
+  switch (filter) {
+    case "in_progress":
+      return request.status === "in_progress";
+    case "approved_week":
+      return (
+        request.status === "approved" &&
+        new Date(request.submittedAt).getTime() > weekAgoMs
+      );
+    default:
+      return true;
+  }
+}
 
 interface ApprovalsPageProps {
   /**
@@ -56,9 +89,19 @@ export function ApprovalsPage({
     "all",
   );
   const [intakeOpen, setIntakeOpen] = useState(false);
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState(
+    variant === "employee" ? "mine" : "inbox",
+  );
+  /** Drill-down set by the KPI cards; "all" shows every submission. */
+  const [cardFilter, setCardFilter] = useState<ApprovalCardFilter>("all");
 
   const myEmployeeId = user?.employeeId;
   const myRoleId = user?.roleId;
+
+  // Captured once on mount so the memos stay pure across re-renders.
+  const [nowMs] = useState(() => Date.now());
+  const weekAgoMs = nowMs - 7 * 24 * 60 * 60 * 1000;
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -73,9 +116,11 @@ export function ApprovalsPage({
       }
       if (typeFilter !== "all" && r.documentType !== typeFilter) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      // The card drill-down composes with search and the dropdowns.
+      if (!matchesApprovalCardFilter(r, cardFilter, weekAgoMs)) return false;
       return true;
     });
-  }, [requests, search, typeFilter, statusFilter]);
+  }, [requests, search, typeFilter, statusFilter, cardFilter, weekAgoMs]);
 
   const inbox = useMemo(
     () => filtered.filter((r) => isCurrentApprover(r, myEmployeeId, myRoleId)),
@@ -86,24 +131,72 @@ export function ApprovalsPage({
     [filtered, myEmployeeId],
   );
 
-  // Captured once on mount so the memo stays pure across re-renders.
-  const [nowMs] = useState(() => Date.now());
-
   const stats = useMemo(() => {
     const waitingOnMe = requests.filter((r) =>
       isCurrentApprover(r, myEmployeeId, myRoleId),
     ).length;
     const mine = requests.filter((r) => isSubmitter(r, myEmployeeId)).length;
-    const inProgress = requests.filter((r) => r.status === "in_progress")
-      .length;
-    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-    const since = nowMs - oneWeekMs;
-    const approvedThisWeek = requests.filter(
-      (r) =>
-        r.status === "approved" && new Date(r.submittedAt).getTime() > since,
+    const inProgress = requests.filter(
+      (r) => r.status === "in_progress",
+    ).length;
+    const approvedThisWeek = requests.filter((r) =>
+      matchesApprovalCardFilter(r, "approved_week", weekAgoMs),
     ).length;
     return { waitingOnMe, mine, inProgress, approvedThisWeek };
-  }, [requests, myEmployeeId, myRoleId, nowMs]);
+  }, [requests, myEmployeeId, myRoleId, weekAgoMs]);
+
+  /** Drill-down: opens the queue holding these requests and filters to them. */
+  function drillDown(tab: string, filter: ApprovalCardFilter) {
+    setActiveTab(tab);
+    setCardFilter(filter);
+  }
+
+  // The org-wide queue only exists on the HR variant; employees drill into
+  // their own submissions instead.
+  const orgTab = variant === "hr" ? "all" : "mine";
+
+  const statCards: HrStatCardItem[] = [
+    {
+      icon: Inbox,
+      label: "Waiting on my desk",
+      value: stats.waitingOnMe,
+      sub: "Awaiting your decision",
+      tone: "amber",
+      active: activeTab === "inbox" && cardFilter === "all",
+      onClick: () => drillDown("inbox", "all"),
+    },
+    {
+      icon: Send,
+      label: "My submissions",
+      value: stats.mine,
+      sub: "Everything you've sent",
+      tone: "blue",
+      active: activeTab === "mine" && cardFilter === "all",
+      onClick: () => drillDown("mine", "all"),
+    },
+    ...(variant === "hr"
+      ? [
+          {
+            icon: Clock,
+            label: "In flight (org)",
+            value: stats.inProgress,
+            sub: "Moving through approval",
+            tone: "violet" as const,
+            active: cardFilter === "in_progress",
+            onClick: () => drillDown("all", "in_progress"),
+          },
+        ]
+      : []),
+    {
+      icon: FileCheck2,
+      label: "Approved this week",
+      value: stats.approvedThisWeek,
+      sub: "Cleared in the last 7 days",
+      tone: "emerald",
+      active: cardFilter === "approved_week",
+      onClick: () => drillDown(orgTab, "approved_week"),
+    },
+  ];
 
   const headerTitle =
     variant === "employee"
@@ -129,30 +222,24 @@ export function ApprovalsPage({
         )}
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard
-          icon={<Inbox className="w-3.5 h-3.5" />}
-          label="Waiting on my desk"
-          value={stats.waitingOnMe}
-        />
-        <StatCard
-          icon={<Send className="w-3.5 h-3.5" />}
-          label="My submissions"
-          value={stats.mine}
-        />
-        {variant === "hr" && (
-          <StatCard
-            icon={<Clock className="w-3.5 h-3.5" />}
-            label="In flight (org)"
-            value={stats.inProgress}
-          />
-        )}
-        <StatCard
-          icon={<FileCheck2 className="w-3.5 h-3.5" />}
-          label="Approved this week"
-          value={stats.approvedThisWeek}
-        />
-      </div>
+      <HrStatCardsGrid stats={statCards} columns={4} />
+
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {APPROVAL_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">({filtered.length})</span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All submissions
+          </Button>
+        </div>
+      )}
 
       <div className="flex items-center gap-3 flex-wrap">
         <Input
@@ -197,7 +284,7 @@ export function ApprovalsPage({
         </Select>
       </div>
 
-      <Tabs defaultValue={variant === "employee" ? "mine" : "inbox"}>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={
             variant === "hr"
@@ -261,29 +348,5 @@ export function ApprovalsPage({
 
       <IntakeModal open={intakeOpen} onOpenChange={setIntakeOpen} />
     </div>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
-  return (
-    <Card>
-      <CardContent className="px-4 py-4 flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary/10 text-primary">
-            {icon}
-          </div>
-          <span className="text-sm text-muted-foreground">{label}</span>
-        </div>
-        <p className="text-3xl font-bold text-foreground">{value}</p>
-      </CardContent>
-    </Card>
   );
 }

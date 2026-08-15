@@ -18,7 +18,12 @@ import {
   CardDescription,
 } from "@/src/components/ui/card";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesSuggestionCardFilter,
+  SUGGESTION_CARD_FILTER_LABELS,
+  type SuggestionCardFilter,
+} from "./components/stat-cards";
 import { SuggestionsBoard } from "./components/suggestions-board";
 import { SuggestionsTable } from "./components/suggestions-table";
 import { SuggestionDetailModal } from "./components/suggestion-detail-modal";
@@ -45,6 +50,14 @@ export function SuggestionsPage() {
   useEffect(() => {
     if (data) setSuggestions(data);
   }, [data]);
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("board");
+  /** Drill-down set by the KPI cards; "all" shows every submission. */
+  const [cardFilter, setCardFilter] = useState<SuggestionCardFilter>("all");
+  /** The submissions rows, narrowed to whichever KPI card is selected. */
+  const visibleSuggestions = suggestions.filter((s) =>
+    matchesSuggestionCardFilter(s, cardFilter),
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [detailSuggestion, setDetailSuggestion] = useState<Suggestion | null>(
     null,
@@ -235,13 +248,43 @@ export function SuggestionsPage() {
         </Button>
       </div>
 
-      <StatCards suggestions={suggestions} />
+      <StatCards
+        suggestions={suggestions}
+        activeTab={activeTab}
+        cardFilter={cardFilter}
+        onDrillDown={(tab, filter) => {
+          setActiveTab(tab);
+          setCardFilter(filter);
+        }}
+      />
 
-      <Tabs defaultValue="board">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {SUGGESTION_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({visibleSuggestions.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All submissions
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
             { value: "board", label: "Community Board" },
-            { value: "submissions", label: "All Submissions" },
+            {
+              value: "submissions",
+              label: `All Submissions (${visibleSuggestions.length})`,
+            },
             { value: "analytics", label: "Analytics" },
           ]}
         />
@@ -256,7 +299,7 @@ export function SuggestionsPage() {
 
         <TabsContent value="submissions" className="mt-4">
           <SuggestionsTable
-            suggestions={suggestions}
+            suggestions={visibleSuggestions}
             onView={openDetail}
             onUpdateStatus={handleUpdateStatus}
             onToggleFeatured={handleToggleFeatured}

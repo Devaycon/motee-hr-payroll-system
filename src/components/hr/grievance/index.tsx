@@ -1,9 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useCasesData } from "./hooks";
 import { toast } from "sonner";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
+import {
+  caseAssigned,
+  caseOutcomeIssued,
+  caseOverdue,
+  caseRaised,
+  caseStageChanged,
+} from "@/src/lib/notifications/er-cases";
+import { slaState } from "@/src/lib/types/grievance";
 import { Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
@@ -15,6 +25,7 @@ import { CaseDetailModal } from "./components/case-detail-modal";
 import type { ERCase, CaseNote, NewERCase } from "./types";
 
 export function GrievancePage() {
+  const dispatch = useAppDispatch();
   const { data, loading } = useCasesData();
   const [cases, setCases] = useState<ERCase[]>([]);
   // Seed (and re-seed on country switch) from locale data without an effect,
@@ -25,10 +36,29 @@ export function GrievancePage() {
     setCases(data);
   }
 
+  // Controlled so the KPI cards can drill into a tab (client feedback §5.x).
+  const [activeTab, setActiveTab] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editingCase, setEditingCase] = useState<ERCase | null>(null);
   const [detailCase, setDetailCase] = useState<ERCase | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  /**
+   * §5.9 — cases already notified as overdue. Without this the SLA sweep below
+   * would re-raise the same warning on every render, which trains people to
+   * ignore the notification centre entirely.
+   */
+  const overdueNotified = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    for (const c of cases) {
+      if (c.stage === "closed") continue;
+      if (slaState(c) !== "overdue") continue;
+      if (overdueNotified.current.has(c.id)) continue;
+      overdueNotified.current.add(c.id);
+      dispatch(pushNotification(caseOverdue(c)));
+    }
+  }, [cases, dispatch]);
 
   function generateCaseNumber() {
     return `ERC-${String(cases.length + 1).padStart(3, "0")}`;
@@ -76,10 +106,18 @@ export function GrievancePage() {
       updatedAt: today,
     };
     setCases((prev) => [newCase, ...prev]);
+
+    // §5.9 — a case that nobody is told about sits untouched until its SLA
+    // expires, which is the exact failure the client described.
+    dispatch(pushNotification(caseRaised(newCase)));
+    if (newCase.assignedTo) {
+      dispatch(pushNotification(caseAssigned(newCase, newCase.assignedTo)));
+    }
   }
 
   function handleUpdateCase(id: string, patch: Partial<ERCase>) {
     const today = new Date().toISOString().split("T")[0];
+    const before = cases.find((c) => c.id === id);
     setCases((prev) =>
       prev.map((c) =>
         c.id === id ? ({ ...c, ...patch, updatedAt: today } as ERCase) : c,
@@ -90,6 +128,24 @@ export function GrievancePage() {
         ? ({ ...prev, ...patch, updatedAt: today } as ERCase)
         : prev,
     );
+
+    // §5.9 — notify on the three transitions people actually need to know
+    // about, comparing against the pre-update case so an unchanged field
+    // doesn't fire.
+    if (!before) return;
+    const after = { ...before, ...patch, updatedAt: today } as ERCase;
+
+    if (patch.assignedTo && patch.assignedTo !== before.assignedTo) {
+      dispatch(pushNotification(caseAssigned(after, patch.assignedTo)));
+    }
+    if (patch.stage && patch.stage !== before.stage) {
+      dispatch(pushNotification(caseStageChanged(after, before.stage)));
+      // Reopening a case clears its overdue flag so a later breach is heard.
+      if (patch.stage !== "closed") overdueNotified.current.delete(id);
+    }
+    if (patch.outcome && patch.outcome !== before.outcome) {
+      dispatch(pushNotification(caseOutcomeIssued(after)));
+    }
   }
 
   function handleDelete(id: string) {
@@ -133,6 +189,10 @@ export function GrievancePage() {
   );
   const openCases = sorted.filter((c) => c.stage !== "closed");
   const closedCases = sorted.filter((c) => c.stage === "closed");
+  // Own tabs so the "Under Investigation" and "Hearings" KPI cards have
+  // somewhere to drill into.
+  const investigationCases = sorted.filter((c) => c.stage === "investigation");
+  const hearingCases = sorted.filter((c) => c.stage === "hearing");
 
   if (loading && cases.length === 0) {
     return (
@@ -170,13 +230,22 @@ export function GrievancePage() {
         </Button>
       </div>
 
-      <GrievanceStatCards cases={cases} />
+      <GrievanceStatCards
+        cases={cases}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
-      <Tabs defaultValue="all">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
             { value: "all", label: `All Cases (${sorted.length})` },
             { value: "open", label: `Open (${openCases.length})` },
+            {
+              value: "investigation",
+              label: `Under Investigation (${investigationCases.length})`,
+            },
+            { value: "hearing", label: `Hearings (${hearingCases.length})` },
             { value: "closed", label: `Closed (${closedCases.length})` },
           ]}
         />
@@ -192,6 +261,22 @@ export function GrievancePage() {
         <TabsContent value="open" className="mt-4">
           <CasesTable
             cases={openCases}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </TabsContent>
+        <TabsContent value="investigation" className="mt-4">
+          <CasesTable
+            cases={investigationCases}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </TabsContent>
+        <TabsContent value="hearing" className="mt-4">
+          <CasesTable
+            cases={hearingCases}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}

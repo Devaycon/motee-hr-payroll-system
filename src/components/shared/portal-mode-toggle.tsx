@@ -39,13 +39,13 @@ export function PortalModeToggle({ className }: { className?: string }) {
 
   // The button always offers the *other* mode.
   const target = inSelfService ? "admin" : "self";
-  const label = inSelfService ? "Admin Service" : "Self-Service";
+  const label = inSelfService ? "Switch to Admin Service" : "Switch to Self-Service";
   const Icon = inSelfService ? ShieldCheck : UserCircle;
 
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="default"
       onClick={() => router.push(PORTAL_PATHS[target])}
       title={`Switch to ${label}`}
       className={cn("h-11 gap-1.5 px-3 text-xs font-medium", className)}

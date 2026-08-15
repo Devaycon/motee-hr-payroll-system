@@ -5,7 +5,14 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { usePerformance } from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesReviewCardFilter,
+  matchesGoalCardFilter,
+  PERFORMANCE_CARD_FILTER_LABELS,
+  type PerformanceCardFilter,
+} from "./components/stat-cards";
+import { Button } from "@/src/components/ui/button";
 import { ReviewsTable } from "./components/reviews-table";
 import { GoalsTable } from "./components/goals-table";
 import { ReviewModal } from "./components/review-modal";
@@ -29,6 +36,18 @@ export function PerformancePage() {
       setGoals(data.goals);
     }
   }, [data]);
+
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("reviews");
+  /** Drill-down set by the KPI cards; "all" shows every row. */
+  const [cardFilter, setCardFilter] = useState<PerformanceCardFilter>("all");
+
+  const visibleReviews = reviews.filter((r) =>
+    matchesReviewCardFilter(r, cardFilter),
+  );
+  const visibleGoals = goals.filter((g) =>
+    matchesGoalCardFilter(g, cardFilter),
+  );
 
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [viewingReview, setViewingReview] = useState<PerformanceReview | null>(
@@ -141,19 +160,50 @@ export function PerformancePage() {
         </p>
       </div>
 
-      <StatCards reviews={reviews} goals={goals} />
+      <StatCards
+        reviews={reviews}
+        goals={goals}
+        cardFilter={cardFilter}
+        onDrillDown={(tab, filter) => {
+          setActiveTab(tab);
+          setCardFilter(filter);
+        }}
+      />
 
-      <Tabs defaultValue="reviews">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {PERFORMANCE_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              (
+              {cardFilter === "goals_on_track"
+                ? visibleGoals.length
+                : visibleReviews.length}
+              )
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← Show all
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
-            { value: "reviews", label: `Reviews (${reviews.length})` },
-            { value: "goals", label: `Goals (${goals.length})` },
+            { value: "reviews", label: `Reviews (${visibleReviews.length})` },
+            { value: "goals", label: `Goals (${visibleGoals.length})` },
           ]}
         />
 
         <TabsContent value="reviews" className="mt-4">
           <ReviewsTable
-            reviews={reviews}
+            reviews={visibleReviews}
             onView={handleViewReview}
             onDelete={handleDeleteReview}
             onAddReview={handleAddReview}
@@ -162,7 +212,7 @@ export function PerformancePage() {
 
         <TabsContent value="goals" className="mt-4">
           <GoalsTable
-            goals={goals}
+            goals={visibleGoals}
             onEdit={handleEditGoal}
             onDelete={handleDeleteGoal}
             onAddGoal={handleAddGoal}

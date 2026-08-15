@@ -15,6 +15,7 @@ import {
   addRecords,
   removeRecord,
   sendWelcomeEmail,
+  resendInvitation,
 } from "@/src/lib/stores/onboarding-records-slice";
 import { consumePendingRecords } from "@/src/lib/demo/pending-onboarding";
 import { buildTasksForSelection } from "./instantiate";
@@ -62,7 +63,10 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
   );
 
   const filtered = useMemo(() => {
-    return active.filter((r) => {
+    // Completed records stay out of the default pipeline view, but the
+    // Completed KPI card can pull them back up on demand (feedback §2.20).
+    const source = statusFilter === "completed" ? records : active;
+    return source.filter((r) => {
       const matchSearch =
         !search ||
         r.employeeName.toLowerCase().includes(search.toLowerCase()) ||
@@ -73,7 +77,7 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
       const matchStatus = statusFilter === "all" || r.status === statusFilter;
       return matchSearch && matchDept && matchStage && matchStatus;
     });
-  }, [active, search, deptFilter, stageFilter, statusFilter]);
+  }, [records, active, search, deptFilter, stageFilter, statusFilter]);
 
   const handleViewTasks = (record: OnboardingRecord) => {
     router.push(`/talent/onboarding/${record.id}`);
@@ -175,6 +179,13 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
     toast.success("Welcome email sent");
   };
 
+  const handleResendInvitation = (id: string) => {
+    dispatch(resendInvitation(id));
+    toast.success("Invitation resent", {
+      description: "The link is valid for another 14 days.",
+    });
+  };
+
   const handleDelete = (id: string) => {
     dispatch(removeRecord(id));
     toast.success("Onboarding record removed");
@@ -186,14 +197,18 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         <div>
           <h1 className="text-4xl font-semibold text-foreground">Onboarding</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Pick a workflow when initiating a hire — its tasks &amp; reviewers
-            drive each stage, and once every task is approved the hire is cleared
-            into Employees.
+            Select an onboarding workflow when initiating a new hire. Tasks and
+            approvals will guide each stage until onboarding is complete and the
+            employee is added to the employee directory.
           </p>
         </div>
       )}
 
-      <StatCards records={active} />
+      <StatCards
+        records={records}
+        statusFilter={statusFilter}
+        onFilterChange={setStatusFilter}
+      />
 
       <PipelineToolbar
         search={search}
@@ -211,6 +226,7 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         records={filtered}
         onViewTasks={handleViewTasks}
         onSendWelcomeEmail={handleSendWelcomeEmail}
+        onResendInvitation={handleResendInvitation}
         onDelete={handleDelete}
       />
 

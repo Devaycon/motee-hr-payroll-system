@@ -4,8 +4,45 @@ import { useLocaleSection } from "./use-locale-data";
 import { store } from "@/src/lib/stores/store";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 
-/** Format an amount with a currency symbol and grouped thousands. */
-export function formatMoney(amount: number, symbol: string): string {
+export interface MoneyFormatOptions {
+  /** Keep minor units (pence/kobo) instead of rounding to whole units. */
+  decimals?: boolean;
+  /** Abbreviate large values — £767,900 renders as £767.9k. */
+  compact?: boolean;
+}
+
+/** Values at or above this are abbreviated when `compact` is set. */
+const COMPACT_THRESHOLD = 10_000;
+
+/**
+ * Format an amount with a currency symbol and grouped thousands.
+ *
+ * The default rounds to whole units, which is what salary bands and budgets
+ * across the app expect. Expense claims are entered to two decimal places, so
+ * they opt into `decimals` (client feedback §8.1); their KPI totals opt into
+ * `compact` to keep six-figure sums readable in a small card.
+ */
+export function formatMoney(
+  amount: number,
+  symbol: string,
+  opts: MoneyFormatOptions = {},
+): string {
+  if (opts.compact && Math.abs(amount) >= COMPACT_THRESHOLD) {
+    // Intl yields an uppercase suffix ("767.9K"); the client's spec is "767.9k".
+    const compact = new Intl.NumberFormat("en", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    })
+      .format(amount)
+      .replace(/[KMBT]$/, (s) => s.toLowerCase());
+    return `${symbol}${compact}`;
+  }
+  if (opts.decimals) {
+    return `${symbol}${amount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
   return `${symbol}${Math.round(amount).toLocaleString()}`;
 }
 
@@ -20,8 +57,11 @@ export function currentCurrencySymbol(): string {
 }
 
 /** Like {@link formatMoney} but pulls the symbol from the active locale. */
-export function formatMoneyLocale(amount: number): string {
-  return formatMoney(amount, currentCurrencySymbol());
+export function formatMoneyLocale(
+  amount: number,
+  opts?: MoneyFormatOptions,
+): string {
+  return formatMoney(amount, currentCurrencySymbol(), opts);
 }
 
 /** The active locale's ISO currency code (e.g. "NGN", "GBP"). */
@@ -45,6 +85,7 @@ export function useCurrency() {
   return {
     symbol,
     code,
-    format: (amount: number) => formatMoney(amount, symbol),
+    format: (amount: number, opts?: MoneyFormatOptions) =>
+      formatMoney(amount, symbol, opts),
   };
 }

@@ -15,12 +15,27 @@ export interface Requisition {
   numberOfPositions: number;
   salaryMin: number;
   salaryMax: number;
+  /**
+   * §7.10 — the published band name and currency. Min/max stay as the numbers
+   * behind it; what candidates and approvers see is the band.
+   */
+  salaryBandName?: string;
+  salaryCurrency?: string;
   qualifications: string;
   startDate: string;
   /** Duration in months for contract roles (optional). */
   durationMonths?: number;
   reportingManager: string;
   budgetAllocation: number;
+  // §7.9 — a requisition needs a hiring team, not just a reporting line.
+  hiringManager?: string;
+  recruiter?: string;
+  hrBusinessPartner?: string;
+  interviewPanel?: string[];
+  /** §7.11 — reuse an existing JD instead of retyping one. */
+  jobDescriptionSource?: "written" | "template" | "upload";
+  jobDescriptionTemplateId?: string;
+  jobDescriptionFileName?: string;
   /** Base record status; pending/approved/rejected are derived from the approval request. */
   status: "draft" | "converted";
   /** Post-approval lifecycle shown on the Approved tab. */

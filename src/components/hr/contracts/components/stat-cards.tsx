@@ -1,12 +1,23 @@
 import { FileText, AlertTriangle, XCircle, FilePen } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import type { Contract } from "../types";
 
 interface StatCardsProps {
   contracts: Contract[];
+  /** The tab currently open, so the matching card reads as selected. */
+  activeTab: string;
+  /** Drill-down: opens the tab listing the contracts behind the number. */
+  onTabChange: (tab: string) => void;
 }
 
-export function StatCards({ contracts }: StatCardsProps) {
+export function StatCards({
+  contracts,
+  activeTab,
+  onTabChange,
+}: StatCardsProps) {
   const active = contracts.filter(
     (c) => c.status === "active" && !c.isArchived,
   ).length;
@@ -20,63 +31,44 @@ export function StatCards({ contracts }: StatCardsProps) {
     (c) => c.status === "draft" && !c.isArchived,
   ).length;
 
-  const cards = [
+  const cards: HrStatCardItem[] = [
     {
       label: "Active Contracts",
       value: active,
       sub: "Currently in force",
       icon: FileText,
-      iconClass: "text-emerald-500 dark:text-emerald-400",
-      iconBg: "bg-emerald-500/10",
+      tone: "emerald",
+      active: activeTab === "active",
+      onClick: () => onTabChange("active"),
     },
     {
       label: "Expiring Soon",
       value: expiringSoon,
       sub: "Within 30 days",
       icon: AlertTriangle,
-      iconClass: "text-amber-500 dark:text-amber-400",
-      iconBg: "bg-amber-500/10",
+      tone: "amber",
+      active: activeTab === "expiring",
+      onClick: () => onTabChange("expiring"),
     },
     {
       label: "Expired",
       value: expired,
       sub: "Past end date",
       icon: XCircle,
-      iconClass: "text-red-500 dark:text-red-400",
-      iconBg: "bg-red-500/10",
+      tone: "red",
+      active: activeTab === "expired",
+      onClick: () => onTabChange("expired"),
     },
     {
       label: "Drafts",
       value: drafts,
       sub: "Awaiting review",
       icon: FilePen,
-      iconClass: "text-slate-500 dark:text-slate-400",
-      iconBg: "bg-slate-500/10",
+      tone: "violet",
+      active: activeTab === "drafts",
+      onClick: () => onTabChange("drafts"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {cards.map((card) => (
-        <Card key={card.label} className="border-border/60">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {card.label}
-                </p>
-                <p className="text-2xl font-bold tracking-tight">
-                  {card.value}
-                </p>
-                <p className="text-xs text-muted-foreground">{card.sub}</p>
-              </div>
-              <div className={`rounded-lg p-2.5 ${card.iconBg}`}>
-                <card.icon className={`size-5 ${card.iconClass}`} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

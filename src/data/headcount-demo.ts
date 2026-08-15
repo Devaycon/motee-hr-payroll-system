@@ -37,6 +37,41 @@ export const GAP_STATUS_STYLES: Record<GapStatus, string> = {
 	over: "bg-blue-500/10 text-blue-600 border-blue-500/20",
 };
 
+/**
+ * Presentation-only grading of a headcount gap (client feedback §6.7, §6.33).
+ *
+ * The client wants four badges where `GapStatus` only stores three states, so
+ * severity is derived from the gap magnitude at render time — no stored data
+ * or type changes, and "under" keeps splitting into critical vs slight.
+ */
+export type GapSeverity =
+	| "critical"
+	| "slightly_under"
+	| "on_target"
+	| "over_capacity";
+
+export const GAP_SEVERITY_LABELS: Record<GapSeverity, string> = {
+	critical: "Critical Gap",
+	slightly_under: "Slightly Under",
+	on_target: "On Target",
+	over_capacity: "Over Capacity",
+};
+
+export const GAP_SEVERITY_STYLES: Record<GapSeverity, string> = {
+	critical: "bg-red-500/10 text-red-600 border-red-500/20",
+	slightly_under: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+	on_target: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+	over_capacity: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+};
+
+/** Grade a plan by how far actual headcount sits from target. */
+export function gapSeverity(actual: number, target: number): GapSeverity {
+	const gap = actual - target;
+	if (gap > 0) return "over_capacity";
+	if (gap === 0) return "on_target";
+	return gap <= -3 ? "critical" : "slightly_under";
+}
+
 export const RISK_LABELS: Record<AttritionRiskLevel, string> = {
 	low: "Low",
 	medium: "Medium",
@@ -71,7 +106,14 @@ export const ATTRITION_RISKS: AttritionRisk[] = [
 		department: "Engineering",
 		tenureYears: 2,
 		riskLevel: "high",
+		riskScore: 78,
+		factorBreakdown: [
+			{ label: "No promotion in 24 months", weight: 35 },
+			{ label: "High workload", weight: 25 },
+			{ label: "Manager change", weight: 18 },
+		],
 		riskFactors: ["No promotion in 24 months", "High workload", "Manager change"],
+		recommendedAction: "Career development discussion",
 	},
 	{
 		id: "ar-002",
@@ -81,7 +123,13 @@ export const ATTRITION_RISKS: AttritionRisk[] = [
 		department: "Marketing",
 		tenureYears: 3,
 		riskLevel: "medium",
+		riskScore: 52,
+		factorBreakdown: [
+			{ label: "Market salary variance", weight: 32 },
+			{ label: "Recent absenteeism", weight: 20 },
+		],
 		riskFactors: ["Market salary variance", "Recent absenteeism"],
+		recommendedAction: "Salary benchmarking review",
 	},
 	{
 		id: "ar-003",
@@ -91,7 +139,10 @@ export const ATTRITION_RISKS: AttritionRisk[] = [
 		department: "HR",
 		tenureYears: 1,
 		riskLevel: "low",
+		riskScore: 18,
+		factorBreakdown: [{ label: "New manager transition", weight: 18 }],
 		riskFactors: ["New manager transition"],
+		recommendedAction: "No action needed",
 	},
 ];
 

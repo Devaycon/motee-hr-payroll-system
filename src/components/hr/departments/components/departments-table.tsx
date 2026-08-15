@@ -217,6 +217,7 @@ export function DepartmentsTable({
   return (
     <>
       <DataTable
+        exportTitle="Departments"
         columns={columns}
         data={departments}
         getRowId={(d) => d.id}

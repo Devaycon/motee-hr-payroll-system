@@ -26,10 +26,21 @@ export function buildAuthUser(
   if (!role) return null;
   const employee =
     bundle.employees.find((e) => e.id === role.linkedEmployeeId) ?? null;
+  // §1.13 — the primary role plus any extras, de-duplicated. A single-role
+  // user gets a one-element array, so callers never need to special-case it.
+  const accessLevelIds = [
+    ...new Set(
+      [role.linkedAccessLevelId, ...(role.additionalAccessLevelIds ?? [])].filter(
+        Boolean,
+      ),
+    ),
+  ];
+
   return {
     roleId: role.id,
     roleName: role.name,
     accessLevelId: role.linkedAccessLevelId,
+    accessLevelIds,
     name: employee?.fullName ?? role.name,
     email: role.credentials.email,
     employeeId: role.linkedEmployeeId,
@@ -92,6 +103,20 @@ const authSlice = createSlice({
       state.status = "authenticated";
       state.error = null;
     },
+
+    /**
+     * §1.13 — change which access levels the signed-in user holds. Used by the
+     * User Management module when it reassigns roles to the current account;
+     * other accounts are handled by the users slice.
+     */
+    setUserAccessLevels(state, action: PayloadAction<string[]>) {
+      if (!state.user) return;
+      const ids = [...new Set(action.payload.filter(Boolean))];
+      if (ids.length === 0) return;
+      state.user.accessLevelIds = ids;
+      // The primary is whichever is listed first, so the two never drift apart.
+      state.user.accessLevelId = ids[0];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -119,5 +144,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearAuthError, setUser } = authSlice.actions;
+export const { logout, clearAuthError, setUser, setUserAccessLevels } =
+  authSlice.actions;
 export default authSlice.reducer;

@@ -16,9 +16,24 @@ import {
 
 // ── Flow accessors ───────────────────────────────────────────────────────────
 
-/** A requisition's saved flow, or the default all-stages-manual flow. */
+/**
+ * A requisition's saved flow, or the default all-stages-manual flow.
+ *
+ * §7.18 — a flow saved before the `offer` stage existed has no entry for it,
+ * which would silently drop the stage from that requisition's pipeline
+ * forever. Any stage missing from a stored flow is filled in from the default,
+ * so old requisitions gain new stages instead of quietly losing them.
+ */
 export function getFlow(req: JobRequisition): RequisitionFlow {
-  return req.flow ?? defaultFlow();
+  const fallback = defaultFlow();
+  if (!req.flow) return fallback;
+
+  const saved = new Map(req.flow.stages.map((s) => [s.type, s]));
+  return {
+    stages: fallback.stages.map(
+      (defaultStage) => saved.get(defaultStage.type) ?? defaultStage,
+    ),
+  };
 }
 
 function stageOrder(t: RecruitmentStageType): number {

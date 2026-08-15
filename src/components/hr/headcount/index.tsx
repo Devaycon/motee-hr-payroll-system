@@ -14,6 +14,10 @@ import {
 } from "@/src/components/ui/select";
 import { PLAN_PERIODS } from "./data";
 import { useHeadcount } from "./hooks";
+import { useDiversityReport } from "./use-diversity";
+
+/** Stable identity so the diversity memo doesn't re-run while data loads. */
+const EMPTY_IDS: string[] = [];
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useEffect } from "react";
 import type {
@@ -28,6 +32,8 @@ import { GapReport } from "./components/gap-report";
 import { AttritionRiskTable } from "./components/attrition-risk";
 import { PlanModal } from "./components/plan-modal";
 import { Demographics } from "./components/demographics";
+import { Trends } from "./components/trends";
+import { Scenarios } from "./components/scenarios";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 
 function deriveGap(target: number, actual: number): GapStatus {
@@ -43,9 +49,25 @@ export function HeadcountPage() {
   }, [data]);
   const attritionRisks = data?.attritionRisks ?? [];
   const demographics = data?.demographics;
+  // §6.23 — aggregated and suppressed before it reaches the component; the
+  // page never sees who declared what.
+  const diversityReport = useDiversityReport(
+    data?.employeeIds ?? EMPTY_IDS,
+    data?.eligibleForDeclaration ?? 0,
+  );
   const [activePeriod, setActivePeriod] = useState<PlanPeriod>("Q1 2026");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<HeadcountPlan | null>(null);
+  // Tabs are controlled so the KPI cards can drill into them (feedback §6.1).
+  const [activeTab, setActiveTab] = useState("plan");
+  const [gapStatusFilter, setGapStatusFilter] = useState<GapStatus | "all">(
+    "all",
+  );
+
+  function handleDrillDown(tab: string, gapStatus?: GapStatus) {
+    setActiveTab(tab);
+    setGapStatusFilter(gapStatus ?? "all");
+  }
 
   const periodPlans = useMemo(
     () => plans.filter((p) => p.period === activePeriod),
@@ -108,9 +130,13 @@ export function HeadcountPage() {
         </p>
       </div>
 
-      <StatCards plans={periodPlans} attritionRisks={attritionRisks} />
+      <StatCards
+        plans={periodPlans}
+        attritionRisks={attritionRisks}
+        onDrillDown={handleDrillDown}
+      />
 
-      <Tabs defaultValue="plan">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           className="h-11"
           tabs={[
@@ -118,6 +144,8 @@ export function HeadcountPage() {
             { value: "gap", label: "Gap Report" },
             { value: "attrition", label: "Attrition Risk" },
             { value: "demographics", label: "Demographics" },
+            { value: "trends", label: "Trends" },
+            { value: "scenarios", label: "Scenarios" },
           ]}
         />
 
@@ -159,7 +187,11 @@ export function HeadcountPage() {
           <p className="text-xs text-muted-foreground mb-4">
             Departments grouped by headcount status vs target for {activePeriod}
           </p>
-          <GapReport plans={periodPlans} />
+          <GapReport
+            plans={periodPlans}
+            statusFilter={gapStatusFilter}
+            onStatusFilterChange={setGapStatusFilter}
+          />
         </TabsContent>
 
         <TabsContent value="attrition" className="mt-6">
@@ -179,7 +211,29 @@ export function HeadcountPage() {
             employmentType={demographics?.employmentType ?? []}
             tenure={demographics?.tenure ?? []}
             department={demographics?.department ?? []}
+            status={demographics?.status ?? []}
+            age={demographics?.age ?? []}
+            gender={demographics?.gender ?? []}
+            grade={demographics?.grade ?? []}
+            location={demographics?.location ?? []}
+            diversity={diversityReport}
           />
+        </TabsContent>
+
+        <TabsContent value="trends" className="mt-6">
+          <p className="text-xs text-muted-foreground mb-4">
+            Quarter-on-quarter and year-on-year headcount movement for{" "}
+            {activePeriod}
+          </p>
+          {/* Trends need every period, not just the active one. */}
+          <Trends plans={plans} activePeriod={activePeriod} />
+        </TabsContent>
+
+        <TabsContent value="scenarios" className="mt-6">
+          <p className="text-xs text-muted-foreground mb-4">
+            Model changes against {activePeriod} without altering the live plan
+          </p>
+          <Scenarios plans={plans} activePeriod={activePeriod} />
         </TabsContent>
       </Tabs>
 

@@ -323,6 +323,7 @@ export function OverviewTable({
 
       <div className="mt-4">
         <DataTable
+          exportTitle="Attendance"
           columns={columns}
           initialColumnVisibility={HIDE_SYSTEM_ID}
           enableColumnVisibility

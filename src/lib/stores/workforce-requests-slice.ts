@@ -2,6 +2,38 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export type WorkforceUrgency = "low" | "medium" | "high" | "critical";
 
+/** §7.2 — why the headcount is needed, which drives approval scrutiny. */
+export type HiringReasonKind =
+  | "new_position"
+  | "replacement"
+  | "internal_transfer"
+  | "seasonal";
+
+export const HIRING_REASON_LABELS: Record<HiringReasonKind, string> = {
+  new_position: "New Position",
+  replacement: "Replacement",
+  internal_transfer: "Internal Transfer",
+  seasonal: "Seasonal",
+};
+
+/** §7.5 — the contract shape being recruited for. */
+export type VacancyType =
+  | "permanent"
+  | "fixed_term"
+  | "contract"
+  | "temporary"
+  | "apprentice"
+  | "graduate";
+
+export const VACANCY_TYPE_LABELS: Record<VacancyType, string> = {
+  permanent: "Permanent",
+  fixed_term: "Fixed Term",
+  contract: "Contract",
+  temporary: "Temporary",
+  apprentice: "Apprentice",
+  graduate: "Graduate",
+};
+
 export interface WorkforceRequest {
   id: string;
   department: string;
@@ -17,6 +49,16 @@ export interface WorkforceRequest {
   createdById: string;
   createdByName: string;
   createdAt: string;
+  // §7.2 — "how many people" alone told approvers nothing about what the
+  // money is being spent on.
+  position?: string;
+  grade?: string;
+  hiringReason?: HiringReasonKind;
+  /** §7.5 — permanent vs fixed term vs contract, etc. */
+  vacancyType?: VacancyType;
+  /** §7.3 — mandatory on new requests; Finance books the spend against it. */
+  costCentreCode?: string;
+  businessUnit?: string;
 }
 
 interface WorkforceRequestsState {

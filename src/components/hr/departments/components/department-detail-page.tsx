@@ -41,6 +41,23 @@ import { useEmployees } from "@/src/components/hr/employees/hooks";
 import { AddEmployeeModal } from "./add-employee-modal";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import type { EmployeeRow } from "@/src/lib/types/employees";
+import { ExportMenu } from "@/src/components/shared/export-menu";
+import type { ReportColumn } from "@/src/lib/reports/types";
+
+/** Mirrors the columns on screen, so an export reads the same as the table. */
+const MEMBER_EXPORT_COLUMNS: ReportColumn<EmployeeRow>[] = [
+  { key: "name", header: "Name", value: (m) => m.name },
+  {
+    key: "referenceId",
+    header: "Employee ID",
+    value: (m) => m.referenceId ?? m.id,
+  },
+  { key: "jobTitle", header: "Role", value: (m) => m.jobTitle },
+  { key: "employmentType", header: "Type", value: (m) => m.employmentType },
+  { key: "status", header: "Status", value: (m) => m.status },
+  { key: "workMode", header: "Work Mode", value: (m) => m.workMode ?? "—" },
+  { key: "startDate", header: "Since", value: (m) => m.startDate ?? "—" },
+];
 
 const STATUS_ICONS = {
   active: CheckCircle2,
@@ -557,9 +574,19 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                   Team Members
                 </CardTitle>
               </div>
-              <span className="text-xs text-muted-foreground">
-                {members.length} members
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">
+                  {members.length} members
+                </span>
+                <ExportMenu
+                  name={`${dept.code.toLowerCase()}-team-members`}
+                  title={`${dept.name} — Team Members`}
+                  columns={MEMBER_EXPORT_COLUMNS}
+                  rows={members}
+                  variant="outline"
+                  buttonClassName="h-8 text-xs"
+                />
+              </div>
             </CardHeader>
             <Separator />
             <CardContent className="p-0">

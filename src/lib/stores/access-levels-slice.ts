@@ -3,11 +3,30 @@ import type {
   AccessLevel,
   ModulePermission,
   NewAccessLevel,
+  RoleAssignmentEvent,
 } from "@/src/lib/types/access-levels";
-import { DEFAULT_ACCESS_LEVELS, SYSTEM_AUTHOR } from "@/src/lib/permissions/seeds";
+import {
+  DEFAULT_ACCESS_LEVELS,
+  DEFAULT_ACCESS_LEVEL_IDS,
+  SYSTEM_AUTHOR,
+} from "@/src/lib/permissions/seeds";
 
 function clonePermissions(perms: ModulePermission[]): ModulePermission[] {
   return perms.map((p) => ({ ...p, actions: [...p.actions] }));
+}
+
+/**
+ * Fill in fields added after a snapshot was taken (§1.4, §1.7, §1.8), so a
+ * cached level from an older build doesn't render with holes in it.
+ */
+function withDefaults(level: AccessLevel): AccessLevel {
+  return {
+    ...level,
+    status: level.status ?? "active",
+    dataScope: level.dataScope ?? { kind: "all" },
+    createdBy: level.createdBy ?? level.lastModifiedBy ?? SYSTEM_AUTHOR,
+    createdAt: level.createdAt ?? level.lastModifiedAt ?? "2026-01-01",
+  };
 }
 
 /**
@@ -51,11 +70,22 @@ function mergeWithSeed(cached: AccessLevel): AccessLevel {
 
 interface AccessLevelsState {
   levels: AccessLevel[];
+  /** §1.6 — role assignment audit trail, newest first. */
+  assignments: RoleAssignmentEvent[];
+  /**
+   * §1.10 — the role currently being previewed via "Test as Role", or null.
+   * Deliberately absent from the persistence layer: a preview that survived a
+   * refresh would leave an admin quietly locked out of their own app with no
+   * memory of why.
+   */
+  previewLevelId: string | null;
   status: "idle" | "ready";
 }
 
 const initialState: AccessLevelsState = {
   levels: DEFAULT_ACCESS_LEVELS,
+  assignments: [],
+  previewLevelId: null,
   status: "ready",
 };
 
@@ -70,7 +100,7 @@ const accessLevelsSlice = createSlice({
     hydrate(state, action: PayloadAction<AccessLevel[]>) {
       const incoming = action.payload;
       if (!Array.isArray(incoming) || incoming.length === 0) return;
-      const migrated = incoming.map(mergeWithSeed);
+      const migrated = incoming.map((l) => withDefaults(mergeWithSeed(l)));
       const incomingIds = new Set(migrated.map((l) => l.id));
       const seedExtras = DEFAULT_ACCESS_LEVELS.filter(
         (d) => !incomingIds.has(d.id),
@@ -86,6 +116,8 @@ const accessLevelsSlice = createSlice({
         id,
         kind: "custom",
         employeeCount: 0,
+        createdBy: "You",
+        createdAt: now(),
         lastModifiedBy: "You",
         lastModifiedAt: now(),
       };
@@ -95,16 +127,36 @@ const accessLevelsSlice = createSlice({
       const incoming = action.payload;
       const idx = state.levels.findIndex((l) => l.id === incoming.id);
       if (idx === -1) return;
+      const existing = state.levels[idx];
       state.levels[idx] = {
         ...incoming,
+        // Provenance is never rewritten by an edit (§1.8).
+        createdBy: existing.createdBy,
+        createdAt: existing.createdAt,
+        lastUsedAt: existing.lastUsedAt,
         lastModifiedBy: "You",
         lastModifiedAt: now(),
       };
     },
+    /** §1.7 — retire a role without deleting it, keeping its audit history. */
+    setLevelStatus(
+      state,
+      action: PayloadAction<{ id: string; status: AccessLevel["status"] }>,
+    ) {
+      const level = state.levels.find((l) => l.id === action.payload.id);
+      if (!level) return;
+      level.status = action.payload.status;
+      level.lastModifiedBy = "You";
+      level.lastModifiedAt = now();
+    },
     deleteLevel(state, action: PayloadAction<string>) {
       const id = action.payload;
+      // §1.9 — system roles are locked. Guarded here as well as in the UI so
+      // no other caller can delete one by mistake.
+      if (DEFAULT_ACCESS_LEVEL_IDS.has(id)) return;
       state.levels = state.levels.filter((l) => l.id !== id);
     },
+    /** §1.1 — clone any role, including a locked system one, as a new custom role. */
     duplicateLevel(state, action: PayloadAction<string>) {
       const sourceId = action.payload;
       const source = state.levels.find((l) => l.id === sourceId);
@@ -114,15 +166,60 @@ const accessLevelsSlice = createSlice({
         id: `AL-CUSTOM-${Date.now()}`,
         name: `${source.name} (Copy)`,
         kind: "custom",
+        // A clone starts as a draft so it can be tuned before anyone holds it.
+        status: "draft",
         employeeCount: 0,
+        createdBy: "You",
+        createdAt: now(),
+        lastUsedAt: undefined,
         lastModifiedBy: "You",
         lastModifiedAt: now(),
-        permissions: source.permissions.map((p) => ({
-          ...p,
-          actions: [...p.actions],
-        })),
+        dataScope: {
+          ...source.dataScope,
+          departmentIds: source.dataScope.departmentIds
+            ? [...source.dataScope.departmentIds]
+            : undefined,
+          businessUnits: source.dataScope.businessUnits
+            ? [...source.dataScope.businessUnits]
+            : undefined,
+        },
+        permissions: clonePermissions(source.permissions),
       };
       state.levels.push(copy);
+    },
+    /** §1.6 — record a role change against the audit trail. */
+    recordRoleAssignment(
+      state,
+      action: PayloadAction<Omit<RoleAssignmentEvent, "id" | "changedAt">>,
+    ) {
+      const event: RoleAssignmentEvent = {
+        ...action.payload,
+        id: `RA-${Date.now()}`,
+        changedAt: new Date().toISOString(),
+      };
+      state.assignments.unshift(event);
+
+      // Keep the headline counts and "last used" honest (§1.8).
+      const from = state.levels.find((l) => l.id === event.previousRoleId);
+      if (from) from.employeeCount = Math.max(0, from.employeeCount - 1);
+      const to = state.levels.find((l) => l.id === event.newRoleId);
+      if (to) {
+        to.employeeCount += 1;
+        to.lastUsedAt = now();
+      }
+    },
+    hydrateAssignments(state, action: PayloadAction<RoleAssignmentEvent[]>) {
+      if (!Array.isArray(action.payload)) return;
+      state.assignments = action.payload;
+    },
+
+    /** §1.10 — view the app as this role sees it. */
+    startPreview(state, action: PayloadAction<string>) {
+      if (!state.levels.some((l) => l.id === action.payload)) return;
+      state.previewLevelId = action.payload;
+    },
+    exitPreview(state) {
+      state.previewLevelId = null;
     },
   },
 });
@@ -131,7 +228,12 @@ export const {
   hydrate,
   createLevel,
   updateLevel,
+  setLevelStatus,
   deleteLevel,
   duplicateLevel,
+  recordRoleAssignment,
+  hydrateAssignments,
+  startPreview,
+  exitPreview,
 } = accessLevelsSlice.actions;
 export default accessLevelsSlice.reducer;

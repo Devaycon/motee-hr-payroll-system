@@ -13,6 +13,10 @@ import { initWorkflowsPersistence } from "./workflows-persistence";
 import { initLeavePersistence } from "./leave-persistence";
 import { initEmployeesPersistence } from "./employees-persistence";
 import { initOffboardingPersistence } from "./offboarding-persistence";
+import { initScenariosPersistence } from "./scenarios-persistence";
+import { initUsersPersistence } from "./users-persistence";
+import { initDiversityPersistence } from "./diversity-persistence";
+import { initProjectsPersistence } from "./projects-persistence";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -26,6 +30,10 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
     initLeavePersistence();
     initEmployeesPersistence();
     initOffboardingPersistence();
+    initScenariosPersistence();
+    initUsersPersistence();
+    initDiversityPersistence();
+    initProjectsPersistence();
   }, []);
 
   return <Provider store={store}>{children}</Provider>;

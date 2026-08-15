@@ -17,7 +17,12 @@ import {
   CardDescription,
 } from "@/src/components/ui/card";
 import { Progress } from "@/src/components/ui/progress";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesSurveyCardFilter,
+  SURVEY_CARD_FILTER_LABELS,
+  type SurveyCardFilter,
+} from "./components/stat-cards";
 import { SurveysTable } from "./components/surveys-table";
 import { EngagementTrend } from "./components/engagement-trend";
 import { SurveyResultsModal } from "./components/survey-results-modal";
@@ -35,6 +40,10 @@ export function SurveysPage() {
   useEffect(() => {
     if (data) setSurveys(data);
   }, [data]);
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("surveys");
+  /** Drill-down set by the KPI cards; "all" shows every survey. */
+  const [cardFilter, setCardFilter] = useState<SurveyCardFilter>("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editSurvey, setEditSurvey] = useState<Survey | null>(null);
   const [resultsSurvey, setResultsSurvey] = useState<Survey | null>(null);
@@ -144,6 +153,10 @@ export function SurveysPage() {
   const pulseSurveys = surveys.filter(
     (s) => s.type === "pulse" && !s.isArchived,
   );
+  /** The "All Surveys" rows, narrowed to whichever KPI card is selected. */
+  const visibleSurveys = surveys.filter(
+    (s) => !s.isArchived && matchesSurveyCardFilter(s, cardFilter),
+  );
 
   if (loading && !surveys.length) {
     return (
@@ -177,20 +190,53 @@ export function SurveysPage() {
         </Button>
       </div>
 
-      <StatCards surveys={surveys} />
+      <StatCards
+        surveys={surveys}
+        activeTab={activeTab}
+        cardFilter={cardFilter}
+        onDrillDown={(tab, filter) => {
+          setActiveTab(tab);
+          setCardFilter(filter);
+        }}
+      />
 
-      <Tabs defaultValue="surveys">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {SURVEY_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({visibleSurveys.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All surveys
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
-            { value: "surveys", label: "All Surveys" },
+            {
+              value: "surveys",
+              label: `All Surveys (${visibleSurveys.length})`,
+            },
             { value: "engagement", label: "Engagement Analytics" },
-            { value: "pulse", label: "Pulse Surveys" },
+            {
+              value: "pulse",
+              label: `Pulse Surveys (${pulseSurveys.length})`,
+            },
           ]}
         />
 
         <TabsContent value="surveys" className="mt-4">
           <SurveysTable
-            surveys={surveys.filter((s) => !s.isArchived)}
+            surveys={visibleSurveys}
             onViewResults={handleViewResults}
             onEdit={openEdit}
             onClose={handleCloseSurvey}

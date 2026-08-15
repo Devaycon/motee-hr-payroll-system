@@ -91,6 +91,7 @@ export function InvoicesTable({ invoices }: InvoicesTableProps) {
 
   return (
     <DataTable
+      exportTitle="EOR Invoices"
       columns={columns}
       data={invoices}
       getRowId={(i) => i.id}

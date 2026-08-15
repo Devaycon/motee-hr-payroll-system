@@ -10,6 +10,13 @@ import {
   Trash2,
   ShieldCheck,
   Layers,
+  Lock,
+  Power,
+  PowerOff,
+  Database,
+  History,
+  UserPlus,
+  ScanEye,
 } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -31,7 +38,13 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useState } from "react";
-import type { AccessLevel } from "../types";
+import {
+  ACCESS_LEVEL_STATUS_LABELS,
+  ACCESS_LEVEL_STATUS_STYLES,
+  DATA_SCOPE_LABELS,
+  type AccessLevel,
+  type AccessLevelStatus,
+} from "../types";
 
 interface AccessLevelsListProps {
   levels: AccessLevel[];
@@ -39,6 +52,9 @@ interface AccessLevelsListProps {
   onEdit: (level: AccessLevel) => void;
   onDuplicate: (level: AccessLevel) => void;
   onDelete: (id: string) => void;
+  onSetStatus: (id: string, status: AccessLevelStatus) => void;
+  /** §1.10 — start previewing the app as this role. */
+  onPreview: (level: AccessLevel) => void;
 }
 
 export function AccessLevelsList({
@@ -47,6 +63,8 @@ export function AccessLevelsList({
   onEdit,
   onDuplicate,
   onDelete,
+  onSetStatus,
+  onPreview,
 }: AccessLevelsListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -73,6 +91,8 @@ export function AccessLevelsList({
             onEdit={onEdit}
             onDuplicate={onDuplicate}
             onDelete={(id) => setDeleteId(id)}
+            onSetStatus={onSetStatus}
+            onPreview={onPreview}
           />
         ))}
       </div>
@@ -113,6 +133,8 @@ interface AccessLevelCardProps {
   onEdit: (level: AccessLevel) => void;
   onDuplicate: (level: AccessLevel) => void;
   onDelete: (id: string) => void;
+  onSetStatus: (id: string, status: AccessLevelStatus) => void;
+  onPreview: (level: AccessLevel) => void;
 }
 
 function AccessLevelCard({
@@ -121,6 +143,8 @@ function AccessLevelCard({
   onEdit,
   onDuplicate,
   onDelete,
+  onSetStatus,
+  onPreview,
 }: AccessLevelCardProps) {
   const totalModules = level.permissions.filter(
     (p) => p.actions.length > 0,
@@ -157,16 +181,36 @@ function AccessLevelCard({
             <p className="truncate text-sm font-semibold text-foreground">
               {level.name}
             </p>
-            <Badge
-              variant="secondary"
-              className={`mt-0.5 px-1.5 py-px text-[10px] ${
-                level.kind === "default"
-                  ? "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400"
-                  : "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-400"
-              }`}
-            >
-              {level.kind === "default" ? "Default" : "Custom"}
-            </Badge>
+            <div className="mt-0.5 flex flex-wrap items-center gap-1">
+              <Badge
+                variant="secondary"
+                className={`px-1.5 py-px text-[10px] ${
+                  level.kind === "default"
+                    ? "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400"
+                    : "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-400"
+                }`}
+              >
+                {level.kind === "default" ? "System" : "Custom"}
+              </Badge>
+              {/* §1.7 — status sits next to the kind, since both govern
+                  whether the role can be handed to anyone. */}
+              <Badge
+                variant="outline"
+                className={`px-1.5 py-px text-[10px] ${ACCESS_LEVEL_STATUS_STYLES[level.status]}`}
+              >
+                {ACCESS_LEVEL_STATUS_LABELS[level.status]}
+              </Badge>
+              {/* §1.9 — locked roles are protected from deletion. */}
+              {level.kind === "default" && (
+                <span
+                  className="flex items-center gap-0.5 text-[10px] text-muted-foreground"
+                  title="System role — can be cloned and edited, but not deleted"
+                >
+                  <Lock className="h-2.5 w-2.5" />
+                  Locked
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <DropdownMenu>
@@ -184,14 +228,56 @@ function AccessLevelCard({
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
+            {/* §1.1 — cloning is the sanctioned way to start from a system
+                role rather than building one from scratch. */}
             <DropdownMenuItem onClick={() => onDuplicate(level)}>
               <Copy className="mr-2 h-4 w-4" />
-              Duplicate
+              Clone Role
+            </DropdownMenuItem>
+            {/* §1.10 — reading a permissions matrix tells you what was ticked;
+                previewing tells you what the person actually ends up seeing. */}
+            <DropdownMenuItem
+              disabled={level.status !== "active"}
+              title={
+                level.status !== "active"
+                  ? "Only active roles can be previewed — an inactive role grants nothing"
+                  : undefined
+              }
+              onClick={() => onPreview(level)}
+            >
+              <ScanEye className="mr-2 h-4 w-4" />
+              Test as This Role
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() =>
+                onSetStatus(
+                  level.id,
+                  level.status === "active" ? "inactive" : "active",
+                )
+              }
+            >
+              {level.status === "active" ? (
+                <>
+                  <PowerOff className="mr-2 h-4 w-4" />
+                  Deactivate Role
+                </>
+              ) : (
+                <>
+                  <Power className="mr-2 h-4 w-4" />
+                  Activate Role
+                </>
+              )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive"
               disabled={level.kind === "default"}
+              title={
+                level.kind === "default"
+                  ? "System roles can't be deleted — clone or deactivate instead"
+                  : undefined
+              }
               onClick={() => onDelete(level.id)}
             >
               <Trash2 className="mr-2 h-4 w-4" />
@@ -214,10 +300,35 @@ function AccessLevelCard({
         <span>{totalActions} permissions</span>
       </div>
 
-      <div className="mt-3 border-t border-border/40 pt-3 text-[10px] text-muted-foreground">
+      {/* §1.4 — the record-level restriction, which module counts don't convey. */}
+      <div className="mt-3 flex items-center gap-1 text-[11px] text-muted-foreground">
+        <Database className="h-3 w-3" />
+        Data access: {DATA_SCOPE_LABELS[level.dataScope.kind]}
+      </div>
+
+      {/* §1.8 — usage signals that make an obsolete role obvious. */}
+      <div className="mt-3 space-y-1 border-t border-border/40 pt-3 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
           Modified {level.lastModifiedAt} by {level.lastModifiedBy}
+        </span>
+        <span className="flex items-center gap-1">
+          <UserPlus className="h-3 w-3" />
+          Created {level.createdAt} by {level.createdBy}
+        </span>
+        <span
+          className={`flex items-center gap-1 ${
+            !level.lastUsedAt && level.employeeCount === 0
+              ? "text-amber-600 dark:text-amber-400"
+              : ""
+          }`}
+        >
+          <History className="h-3 w-3" />
+          {level.lastUsedAt
+            ? `Last assigned ${level.lastUsedAt}`
+            : level.employeeCount === 0
+              ? "Never assigned — possibly obsolete"
+              : "No assignment recorded"}
         </span>
       </div>
 

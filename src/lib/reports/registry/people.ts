@@ -9,6 +9,7 @@ import {
   CalendarCheck,
   CalendarClock,
   CheckCircle2,
+  Scale,
 } from "lucide-react";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import { defineReport, type AnyReportDef } from "../types";
@@ -18,11 +19,26 @@ import {
   avgBy,
   byMonth,
   monthLabel,
+  paletteColor,
   barSpec,
   pieSpec,
   lineSpec,
   radialSpec,
 } from "../charts";
+import { buildCases } from "@/src/components/hr/grievance/build-cases";
+import {
+  SLA_LABELS,
+  daysOpen,
+  slaState,
+  type CaseOutcome,
+} from "@/src/lib/types/grievance";
+import {
+  CASE_OUTCOME_CONFIG,
+  CASE_STAGE_CONFIG,
+  CASE_TYPE_CONFIG,
+  CONFIDENTIALITY_CONFIG,
+  PRIORITY_CONFIG,
+} from "@/src/data/grievance-demo";
 
 function empLookup(b: LocaleBundle) {
   return new Map(b.employees.map((e) => [e.id, e]));
@@ -531,8 +547,238 @@ const leaveReport = defineReport<LeaveRow>({
   },
 });
 
+// ── Employee Relations Cases (§5.10) ────────────────────────────────────────
+/**
+ * The client asked to report on cases by type, department, outcome, resolution
+ * time and overdue count. Every one of those is already on the `ERCase` model
+ * after the §5.1/§5.3/§5.6 schema work, so this is a report definition rather
+ * than a new screen — filtering, search, CSV/PNG export and permission gating
+ * all come from the registry.
+ */
+interface CaseRow {
+  caseNumber: string;
+  type: string;
+  employee: string;
+  department: string;
+  stage: string;
+  priority: string;
+  confidentiality: string;
+  assignedTo: string;
+  dateRaised: string;
+  targetDate: string;
+  daysOpen: number;
+  sla: string;
+  outcome: string;
+  closureDate: string;
+  isOpen: boolean;
+  isOverdue: boolean;
+  hasAppeal: boolean;
+}
+
+const erCasesReport = defineReport<CaseRow>({
+  id: "er-cases",
+  label: "Employee Relations Cases",
+  description:
+    "Grievance and disciplinary caseload by type, department, outcome and SLA.",
+  icon: Scale,
+  group: "People",
+  permission: "admin.grievance",
+  select: (b) =>
+    buildCases(b).map((c) => {
+      const state = slaState(c);
+      return {
+        caseNumber: c.caseNumber,
+        type: CASE_TYPE_CONFIG[c.complaintType]?.label ?? c.complaintType,
+        employee: c.employeeName,
+        department: c.employeeDept,
+        stage: CASE_STAGE_CONFIG[c.stage]?.label ?? c.stage,
+        priority: PRIORITY_CONFIG[c.priority]?.label ?? c.priority,
+        confidentiality:
+          CONFIDENTIALITY_CONFIG[c.confidentialityLevel]?.label ??
+          c.confidentialityLevel,
+        assignedTo: c.assignedTo ?? "Unassigned",
+        dateRaised: c.dateRaised,
+        targetDate: c.targetResolutionDate ?? "—",
+        daysOpen: daysOpen(c),
+        sla: SLA_LABELS[state],
+        outcome: c.outcome
+          ? (CASE_OUTCOME_CONFIG[c.outcome as CaseOutcome]?.label ?? c.outcome)
+          : "—",
+        closureDate: c.closureDate ?? "—",
+        isOpen: c.stage !== "closed",
+        isOverdue: state === "overdue",
+        hasAppeal: c.hasAppeal || c.stage === "appeal",
+      };
+    }),
+  columns: [
+    { key: "caseNumber", header: "Case No.", value: (r) => r.caseNumber },
+    { key: "type", header: "Type", value: (r) => r.type },
+    { key: "employee", header: "Employee", value: (r) => r.employee },
+    { key: "department", header: "Department", value: (r) => r.department },
+    { key: "stage", header: "Stage", value: (r) => r.stage },
+    { key: "priority", header: "Priority", value: (r) => r.priority },
+    {
+      key: "confidentiality",
+      header: "Confidentiality",
+      value: (r) => r.confidentiality,
+    },
+    { key: "assignedTo", header: "Assigned To", value: (r) => r.assignedTo },
+    { key: "dateRaised", header: "Date Raised", value: (r) => r.dateRaised },
+    { key: "targetDate", header: "Target Date", value: (r) => r.targetDate },
+    { key: "daysOpen", header: "Days Open", value: (r) => r.daysOpen },
+    { key: "sla", header: "SLA", value: (r) => r.sla },
+    { key: "outcome", header: "Outcome", value: (r) => r.outcome },
+    { key: "closureDate", header: "Closed", value: (r) => r.closureDate },
+  ],
+  filters: [
+    {
+      key: "type",
+      label: "Case type",
+      options: (rows) => [...new Set(rows.map((r) => r.type))],
+      match: (r, v) => r.type === v,
+    },
+    {
+      key: "department",
+      label: "Department",
+      options: (rows) => [...new Set(rows.map((r) => r.department))],
+      match: (r, v) => r.department === v,
+    },
+    {
+      key: "stage",
+      label: "Stage",
+      options: (rows) => [...new Set(rows.map((r) => r.stage))],
+      match: (r, v) => r.stage === v,
+    },
+    {
+      key: "outcome",
+      label: "Outcome",
+      options: (rows) => [...new Set(rows.map((r) => r.outcome))],
+      match: (r, v) => r.outcome === v,
+    },
+  ],
+  exportParams: [
+    {
+      key: "openOnly",
+      label: "Open cases only",
+      description: "Exclude cases that have been closed.",
+      predicate: (r) => r.isOpen,
+    },
+    {
+      key: "overdueOnly",
+      label: "Overdue only",
+      description: "Cases past their target resolution date.",
+      predicate: (r) => r.isOverdue,
+    },
+    {
+      key: "appeals",
+      label: "Appeals only",
+      description: "Cases that went to appeal.",
+      predicate: (r) => r.hasAppeal,
+    },
+  ],
+  searchText: (r) =>
+    `${r.caseNumber} ${r.employee} ${r.department} ${r.type} ${r.assignedTo}`,
+  analytics: (rows) => {
+    const open = rows.filter((r) => r.isOpen);
+    const overdue = rows.filter((r) => r.isOverdue);
+    const closed = rows.filter((r) => !r.isOpen);
+    // Resolution time only means anything for cases that actually closed —
+    // averaging in the open ones would report the backlog, not the throughput.
+    const avgResolution = closed.length
+      ? Math.round(
+          closed.reduce((s, r) => s + r.daysOpen, 0) / closed.length,
+        )
+      : 0;
+    const appeals = rows.filter((r) => r.hasAppeal).length;
+    const appealRate = rows.length
+      ? Math.round((appeals / rows.length) * 100)
+      : 0;
+    const raised = byMonth(rows, (r) => r.dateRaised).slice(-12);
+
+    return {
+      stats: [
+        {
+          label: "Open Cases",
+          value: open.length,
+          sub: `${rows.length} raised in total`,
+          icon: Scale,
+        },
+        {
+          label: "Overdue",
+          value: overdue.length,
+          sub: overdue.length
+            ? "Past target resolution date"
+            : "All open cases on track",
+          icon: Timer,
+          trend: `${overdue.length}`,
+          up: overdue.length === 0,
+        },
+        {
+          label: "Avg Resolution",
+          value: `${avgResolution} days`,
+          sub: `Across ${closed.length} closed case(s)`,
+          icon: CalendarCheck,
+        },
+        {
+          label: "Appeal Rate",
+          value: `${appealRate}%`,
+          sub: `${appeals} case(s) appealed`,
+          icon: CheckCircle2,
+        },
+      ],
+      charts: [
+        barSpec("Cases by Type", countBy(rows, (r) => r.type), {
+          valueLabel: "Cases",
+          description: "Which issues are actually coming through.",
+        }),
+        barSpec("Cases by Department", countBy(rows, (r) => r.department), {
+          valueLabel: "Cases",
+          description:
+            "Concentration by department — a cluster is worth investigating.",
+        }),
+        pieSpec(
+          "case-outcome",
+          "Outcomes",
+          countBy(
+            rows.filter((r) => r.outcome !== "—"),
+            (r) => r.outcome,
+          ),
+          {
+            centerLabel: "Decided",
+            description: "How concluded cases were resolved.",
+          },
+        ),
+        pieSpec("case-stage", "Current Stage", countBy(rows, (r) => r.stage), {
+          centerLabel: "Cases",
+          description: "Where the caseload is sitting right now.",
+        }),
+        lineSpec(
+          "Cases Raised by Month",
+          raised.map((t) => ({ month: monthLabel(t.label), cases: t.value })),
+          [{ key: "cases", label: "Cases raised", color: paletteColor(0) }],
+          "month",
+          "area",
+          {
+            fullWidth: true,
+            description: "Volume trend over the last 12 months.",
+          },
+        ),
+        barSpec(
+          "Avg Days Open by Type",
+          avgBy(rows, (r) => r.type, (r) => r.daysOpen),
+          {
+            valueLabel: "Days",
+            description: "Which case types take longest to resolve.",
+          },
+        ),
+      ],
+    };
+  },
+});
+
 export const PEOPLE_REPORTS: AnyReportDef[] = [
   employeesReport,
   attendanceReport,
   leaveReport,
+  erCasesReport,
 ];

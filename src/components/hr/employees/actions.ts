@@ -21,6 +21,10 @@ export type EmployeeAction =
   | "view"
   | "edit"
   | "credentials"
+  /** §3.1 — reissue an onboarding link that lapsed or was ignored. */
+  | "resend_invite"
+  /** §3.1 — everything that has happened to this employee record. */
+  | "activity_log"
   | "kudos"
   | "deactivate"
   | "reactivate"
@@ -30,19 +34,26 @@ export type EmployeeAction =
 
 type Matrix = Record<EmployeeStatus, readonly EmployeeAction[]>;
 
-/** Actions enabled per status. Anything absent renders disabled. */
+/**
+ * Actions enabled per status. Anything absent renders disabled.
+ *
+ * "activity_log" is available on every live status — the audit trail is the
+ * one thing you always want to be able to read, including for a leaver.
+ * "resend_invite" only makes sense while onboarding is still in flight.
+ */
 const ENABLED: Matrix = {
-  active: ["view", "edit", "credentials", "kudos", "deactivate", "exit", "delete"],
-  on_leave: ["view", "edit", "credentials", "kudos", "deactivate", "exit", "delete"],
-  probation: ["view", "edit", "credentials", "kudos", "deactivate", "exit", "delete"],
-  onboarded: ["view", "edit", "credentials", "kudos", "deactivate", "exit", "delete"],
+  active: ["view", "edit", "credentials", "activity_log", "kudos", "deactivate", "exit", "delete"],
+  on_leave: ["view", "edit", "credentials", "activity_log", "kudos", "deactivate", "exit", "delete"],
+  probation: ["view", "edit", "credentials", "activity_log", "kudos", "deactivate", "exit", "delete"],
+  onboarded: ["view", "edit", "credentials", "activity_log", "kudos", "deactivate", "exit", "delete"],
   // Notice already served — no second exit, and kudos would be tone-deaf.
-  offboarding: ["view", "edit", "credentials", "deactivate", "delete"],
-  // Onboarding still in flight — they are not yet a live employee.
-  pending: ["view", "edit", "credentials", "delete"],
+  offboarding: ["view", "edit", "credentials", "activity_log", "deactivate", "delete"],
+  // Onboarding still in flight — they are not yet a live employee, and this
+  // is the only status where resending the onboarding invite is meaningful.
+  pending: ["view", "edit", "credentials", "resend_invite", "activity_log", "delete"],
   // Confirmed: no credentials, no kudos for a leaver.
-  inactive: ["view", "edit", "reactivate", "delete"],
-  deleted: ["view", "restore"],
+  inactive: ["view", "edit", "activity_log", "reactivate", "delete"],
+  deleted: ["view", "activity_log", "restore"],
 };
 
 export function isActionEnabled(

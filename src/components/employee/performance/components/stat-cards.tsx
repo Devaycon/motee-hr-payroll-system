@@ -1,11 +1,30 @@
 import { Target, CheckCircle2, TrendingUp, AlertCircle } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
+
+/** The slice a KPI card drills the My Goals tab down to. */
+export type GoalCardFilter = "all" | "active" | "completed" | "at_risk";
+
+export const GOAL_CARD_FILTER_LABELS: Record<
+  Exclude<GoalCardFilter, "all">,
+  string
+> = {
+  active: "Active goals",
+  completed: "Completed goals",
+  at_risk: "At risk / overdue",
+};
 
 interface PerformanceStatCardsProps {
   activeGoals: number;
   completedGoals: number;
   avgProgress: number;
   atRiskGoals: number;
+  /** The card drill-down currently applied. */
+  goalFilter: GoalCardFilter;
+  /** Drill-down: opens My Goals showing the goals behind the number. */
+  onDrillDown: (filter: GoalCardFilter) => void;
 }
 
 export function PerformanceStatCards({
@@ -13,55 +32,48 @@ export function PerformanceStatCards({
   completedGoals,
   avgProgress,
   atRiskGoals,
+  goalFilter,
+  onDrillDown,
 }: PerformanceStatCardsProps) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      {[
-        {
-          label: "Active Goals",
-          value: activeGoals,
-          icon: Target,
-          color: "#4361ee",
-        },
-        {
-          label: "Goals Completed",
-          value: completedGoals,
-          icon: CheckCircle2,
-          color: "#1D9E75",
-        },
-        {
-          label: "Avg. Goal Progress",
-          value: `${avgProgress}%`,
-          icon: TrendingUp,
-          color: "#2563EB",
-        },
-        {
-          label: "At Risk / Overdue",
-          value: atRiskGoals,
-          icon: AlertCircle,
-          color: "#EF4444",
-        },
-      ].map((s) => (
-        <Card key={s.label}>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: `${s.color}18` }}
-            >
-              <s.icon className="w-4 h-4" style={{ color: s.color }} />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-foreground leading-none">
-                {s.value}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {s.label}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
+  const card = (key: GoalCardFilter) => ({
+    active: goalFilter === key,
+    onClick: () => onDrillDown(key),
+  });
 
+  const stats: HrStatCardItem[] = [
+    {
+      label: "Active Goals",
+      value: activeGoals,
+      sub: "In flight right now",
+      icon: Target,
+      tone: "blue",
+      ...card("active"),
+    },
+    {
+      label: "Goals Completed",
+      value: completedGoals,
+      sub: "Signed off",
+      icon: CheckCircle2,
+      tone: "emerald",
+      ...card("completed"),
+    },
+    {
+      label: "Avg. Goal Progress",
+      value: `${avgProgress}%`,
+      sub: "Across every goal",
+      icon: TrendingUp,
+      tone: "violet",
+      ...card("all"),
+    },
+    {
+      label: "At Risk / Overdue",
+      value: atRiskGoals,
+      sub: "Need attention",
+      icon: AlertCircle,
+      tone: "red",
+      ...card("at_risk"),
+    },
+  ];
+
+  return <HrStatCardsGrid stats={stats} columns={4} />;
+}

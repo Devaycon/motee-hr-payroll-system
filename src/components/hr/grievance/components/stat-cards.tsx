@@ -1,79 +1,63 @@
 "use client";
 
 import { FolderOpen, Search, Gavel, CheckCircle2 } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import type { ERCase } from "../types";
 import { computeCaseStats } from "../data";
 
 interface Props {
   cases: ERCase[];
+  /** The tab currently open, so the matching card reads as selected. */
+  activeTab: string;
+  /** Drill-down: opens the tab listing the cases behind the number. */
+  onTabChange: (tab: string) => void;
 }
 
-export function GrievanceStatCards({ cases }: Props) {
+export function GrievanceStatCards({ cases, activeTab, onTabChange }: Props) {
   const stats = computeCaseStats(cases);
 
-  const cards = [
+  const card = (tab: string) => ({
+    active: activeTab === tab,
+    onClick: () => onTabChange(tab),
+  });
+
+  const cards: HrStatCardItem[] = [
     {
       label: "Open Cases",
       value: stats.open,
+      sub: "Not yet closed",
       icon: FolderOpen,
-      color: "text-amber-600 dark:text-amber-400",
-      bg: "bg-amber-50 dark:bg-amber-950/40",
-      ring: "ring-amber-200 dark:ring-amber-800",
+      tone: "amber",
+      ...card("open"),
     },
     {
       label: "Under Investigation",
       value: stats.investigations,
+      sub: "Being looked into",
       icon: Search,
-      color: "text-orange-600 dark:text-orange-400",
-      bg: "bg-orange-50 dark:bg-orange-950/40",
-      ring: "ring-orange-200 dark:ring-orange-800",
+      tone: "red",
+      ...card("investigation"),
     },
     {
       label: "Hearings",
       value: stats.hearings,
+      sub: "Scheduled or in hearing",
       icon: Gavel,
-      color: "text-violet-600 dark:text-violet-400",
-      bg: "bg-violet-50 dark:bg-violet-950/40",
-      ring: "ring-violet-200 dark:ring-violet-800",
+      tone: "violet",
+      ...card("hearing"),
     },
     {
       label: "Closed",
       value: stats.closed,
+      sub: "Resolved and filed",
       icon: CheckCircle2,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-50 dark:bg-emerald-950/40",
-      ring: "ring-emerald-200 dark:ring-emerald-800",
+      tone: "emerald",
+      ...card("closed"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {cards.map((card) => {
-        const Icon = card.icon;
-        return (
-          <Card
-            key={card.label}
-            className="border-0 shadow-sm ring-1 ring-border"
-          >
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">{card.label}</p>
-                  <p className="mt-1 text-3xl font-bold text-foreground">
-                    {card.value}
-                  </p>
-                </div>
-                <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${card.bg} ${card.ring}`}
-                >
-                  <Icon className={`h-5 w-5 ${card.color}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

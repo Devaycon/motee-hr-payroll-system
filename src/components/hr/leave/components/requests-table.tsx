@@ -648,6 +648,7 @@ export function RequestsTable({
 
       <div className="mt-4">
         <DataTable
+          exportTitle="Leave Requests"
           columns={columns}
           initialColumnVisibility={HIDE_SYSTEM_ID}
           enableColumnVisibility

@@ -124,7 +124,10 @@ export function LeaveRequestPanel() {
         </Button>
       </div>
 
-      <BalanceCards balances={MY_BALANCES} />
+      <BalanceCards
+        balances={MY_BALANCES}
+        onRequestType={(leaveType) => openForm({ leaveType })}
+      />
 
       <LeaveInsights
         annualRemaining={Math.max(

@@ -3,10 +3,16 @@
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { useOffboardingRecords } from "./hooks";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesOffboardingCardFilter,
+  OFFBOARDING_CARD_FILTER_LABELS,
+  type OffboardingCardFilter,
+} from "./components/stat-cards";
 import { PipelineToolbar } from "./components/pipeline-toolbar";
 import { PipelineTable } from "./components/pipeline-table";
 import { OffboardingModal } from "./components/offboarding-modal";
@@ -40,6 +46,8 @@ export function OffboardingPage() {
   const records = useMemo(() => data ?? [], [data]);
 
   const [activeTab, setActiveTab] = useState("pending");
+  /** Drill-down set by the KPI cards; "all" shows every record. */
+  const [cardFilter, setCardFilter] = useState<OffboardingCardFilter>("all");
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [reasonFilter, setReasonFilter] = useState("all");
@@ -66,9 +74,18 @@ export function OffboardingPage() {
       const matchDept = deptFilter === "all" || r.department === deptFilter;
       const matchReason =
         reasonFilter === "all" || r.exitReason === reasonFilter;
-      return matchSearch && matchDept && matchReason;
+      // The card drill-down composes with the toolbar filters, so searching
+      // inside "Clearance pending" stays inside clearance pending.
+      const matchCard = matchesOffboardingCardFilter(r, cardFilter);
+      return matchSearch && matchDept && matchReason && matchCard;
     });
-  }, [records, search, deptFilter, reasonFilter]);
+  }, [records, search, deptFilter, reasonFilter, cardFilter]);
+
+  /** Drill-down: opens the tab holding these records and filters to them. */
+  function drillDown(tab: string, filter: OffboardingCardFilter) {
+    setActiveTab(tab);
+    setCardFilter(filter);
+  }
 
   const rowsByTab = useMemo(
     () =>
@@ -266,7 +283,28 @@ export function OffboardingPage() {
         </p>
       </div>
 
-      <StatCards records={records} />
+      <StatCards
+        records={records}
+        cardFilter={cardFilter}
+        onDrillDown={drillDown}
+      />
+
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {OFFBOARDING_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">({filtered.length})</span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All records
+          </Button>
+        </div>
+      )}
 
       <PipelineToolbar
         search={search}

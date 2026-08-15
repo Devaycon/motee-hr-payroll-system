@@ -199,6 +199,7 @@ export function ChecklistTable({
 
   return (
     <DataTable
+      exportTitle="Employee Checklist"
       columns={columns}
       data={items}
       getRowId={(i) => i.id}

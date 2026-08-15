@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { NetworkIcon } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
@@ -30,6 +31,8 @@ export function WorkforcePage() {
   const criticalSkills = SKILLS_GAPS.filter(
     (s) => s.severity === "critical",
   ).length;
+  // Controlled so the overview cards can open the section behind each number.
+  const [activeTab, setActiveTab] = useState("headcount");
 
   return (
     <div className="space-y-6">
@@ -51,9 +54,11 @@ export function WorkforcePage() {
         currentTurnoverRate={currentTurnoverRate}
         attritionRisks={ATTRITION_RISKS}
         avgTenureYears={avgTenureYears}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
-      <Tabs defaultValue="headcount">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
             { value: "headcount", label: "Headcount Plan" },

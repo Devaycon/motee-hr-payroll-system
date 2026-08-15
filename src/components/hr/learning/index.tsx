@@ -6,7 +6,14 @@ import { useLearning } from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { useAppSelector } from "@/src/lib/stores/hooks";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesCourseCardFilter,
+  matchesEnrollmentCardFilter,
+  LEARNING_CARD_FILTER_LABELS,
+  type LearningCardFilter,
+} from "./components/stat-cards";
+import { Button } from "@/src/components/ui/button";
 import { CoursesTable } from "./components/courses-table";
 import { EnrollmentsTable } from "./components/enrollments-table";
 import { ResultsTable } from "./components/results-table";
@@ -32,6 +39,18 @@ export function LearningPage() {
     setCourses(data.courses);
     setEnrollments(data.enrollments);
   }
+
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("courses");
+  /** Drill-down set by the KPI cards; "all" shows every row. */
+  const [cardFilter, setCardFilter] = useState<LearningCardFilter>("all");
+
+  const visibleCourses = courses.filter((c) =>
+    matchesCourseCardFilter(c, cardFilter),
+  );
+  const visibleEnrollments = enrollments.filter((e) =>
+    matchesEnrollmentCardFilter(e, cardFilter),
+  );
 
   const [courseModalOpen, setCourseModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -135,15 +154,46 @@ export function LearningPage() {
         </p>
       </div>
 
-      <StatCards courses={courses} enrollments={enrollments} />
+      <StatCards
+        courses={courses}
+        enrollments={enrollments}
+        cardFilter={cardFilter}
+        onDrillDown={(tab, filter) => {
+          setActiveTab(tab);
+          setCardFilter(filter);
+        }}
+      />
 
-      <Tabs defaultValue="courses">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {LEARNING_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              (
+              {cardFilter === "active_courses"
+                ? visibleCourses.length
+                : visibleEnrollments.length}
+              )
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← Show all
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
-            { value: "courses", label: `Courses (${courses.length})` },
+            { value: "courses", label: `Courses (${visibleCourses.length})` },
             {
               value: "enrollments",
-              label: `Enrollments (${enrollments.length})`,
+              label: `Enrollments (${visibleEnrollments.length})`,
             },
             { value: "results", label: "Results" },
           ]}
@@ -151,7 +201,7 @@ export function LearningPage() {
 
         <TabsContent value="courses" className="mt-4">
           <CoursesTable
-            courses={courses}
+            courses={visibleCourses}
             onEdit={handleEditCourse}
             onDelete={handleDeleteCourse}
             onAddCourse={handleAddCourse}
@@ -161,7 +211,7 @@ export function LearningPage() {
 
         <TabsContent value="enrollments" className="mt-4">
           <EnrollmentsTable
-            enrollments={enrollments}
+            enrollments={visibleEnrollments}
             courses={courses}
             onDelete={handleDeleteEnrollment}
             onEnroll={() => setEnrollModalOpen(true)}

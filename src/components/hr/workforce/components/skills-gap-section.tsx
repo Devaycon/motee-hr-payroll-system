@@ -25,6 +25,19 @@ import {
 } from "../data";
 import type { SkillCategory, SkillsGap } from "../types";
 import { SkillsGapDetailModal } from "./detail-modals";
+import { ExportMenu } from "@/src/components/shared/export-menu";
+import type { ReportColumn } from "@/src/lib/reports/types";
+
+/** Mirrors the columns on screen, so an export reads the same as the table. */
+const EXPORT_COLUMNS: ReportColumn<SkillsGap>[] = [
+  { key: "skill", header: "Skill", value: (s) => s.skill },
+  { key: "category", header: "Category", value: (s) => s.category },
+  { key: "requiredCount", header: "Required", value: (s) => s.requiredCount },
+  { key: "availableCount", header: "Available", value: (s) => s.availableCount },
+  { key: "gapCount", header: "Gap", value: (s) => s.gapCount },
+  { key: "coveragePct", header: "Coverage %", value: (s) => s.coveragePct },
+  { key: "severity", header: "Status", value: (s) => s.severity },
+];
 
 const CATEGORY_FILTER_OPTIONS: {
   value: SkillCategory | "all";
@@ -110,6 +123,14 @@ export function SkillsGapSection() {
             ))}
           </SelectContent>
         </Select>
+        <ExportMenu
+          name="skills-gap-analysis"
+          title="Skills Gap Analysis"
+          columns={EXPORT_COLUMNS}
+          rows={filtered}
+          variant="outline"
+          buttonClassName="h-8 text-xs"
+        />
       </div>
 
       <Card className="border-border/60">

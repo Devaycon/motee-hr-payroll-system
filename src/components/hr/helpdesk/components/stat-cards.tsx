@@ -6,71 +6,96 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import { computeHelpdeskStats } from "../data";
 import type { HelpDeskTicket } from "../types";
 
-interface StatCardsProps {
-  tickets: HelpDeskTicket[];
+/** The slice a KPI card drills the All Cases table down to. */
+export type HelpdeskCardFilter = "all" | "resolved_today" | "overdue";
+
+export const HELPDESK_CARD_FILTER_LABELS: Record<
+  Exclude<HelpdeskCardFilter, "all">,
+  string
+> = {
+  resolved_today: "Resolved today",
+  overdue: "Overdue (SLA)",
+};
+
+/** Single source of truth for what each card counts and the table then shows. */
+export function matchesHelpdeskCardFilter(
+  ticket: HelpDeskTicket,
+  filter: HelpdeskCardFilter,
+  today: string,
+): boolean {
+  switch (filter) {
+    case "resolved_today":
+      return ticket.resolvedAt?.startsWith(today) ?? false;
+    case "overdue":
+      return ticket.isOverdue === true;
+    default:
+      return true;
+  }
 }
 
-export function StatCards({ tickets }: StatCardsProps) {
+interface StatCardsProps {
+  tickets: HelpDeskTicket[];
+  /** The tab currently open. */
+  activeTab: string;
+  /** The card drill-down currently applied. */
+  cardFilter: HelpdeskCardFilter;
+  /** Drill-down: opens the tab holding these cases and filters to them. */
+  onDrillDown: (tab: string, filter: HelpdeskCardFilter) => void;
+}
+
+export function StatCards({
+  tickets,
+  activeTab,
+  cardFilter,
+  onDrillDown,
+}: StatCardsProps) {
   const { total, open, resolvedToday, overdue } = computeHelpdeskStats(tickets);
 
-  const cards = [
+  const cards: HrStatCardItem[] = [
     {
       label: "Total Cases",
       value: total,
+      sub: "Every case raised",
       icon: HeadphonesIcon,
-      iconColor: "text-blue-500",
-      iconBg: "bg-blue-500/10",
-      valueColor: "text-blue-600 dark:text-blue-400",
+      tone: "blue",
+      active: activeTab === "all" && cardFilter === "all",
+      onClick: () => onDrillDown("all", "all"),
     },
     {
       label: "Open / Active",
       value: open,
+      sub: "Still being worked",
       icon: Inbox,
-      iconColor: "text-amber-500",
-      iconBg: "bg-amber-500/10",
-      valueColor: "text-amber-600 dark:text-amber-400",
+      tone: "amber",
+      active: activeTab === "open" && cardFilter === "all",
+      onClick: () => onDrillDown("open", "all"),
     },
     {
       label: "Resolved Today",
       value: resolvedToday,
+      sub: "Closed out today",
       icon: CheckCircle2,
-      iconColor: "text-emerald-500",
-      iconBg: "bg-emerald-500/10",
-      valueColor: "text-emerald-600 dark:text-emerald-400",
+      tone: "emerald",
+      active: cardFilter === "resolved_today",
+      onClick: () => onDrillDown("all", "resolved_today"),
     },
     {
       label: "Overdue (SLA)",
       value: overdue,
+      sub: "Past their SLA",
       icon: AlertTriangle,
-      iconColor: "text-red-500",
-      iconBg: "bg-red-500/10",
-      valueColor: "text-red-600 dark:text-red-400",
+      tone: "red",
+      active: cardFilter === "overdue",
+      onClick: () => onDrillDown("all", "overdue"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((c) => (
-        <Card key={c.label}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">{c.label}</p>
-                <p className={`text-2xl font-bold mt-0.5 ${c.valueColor}`}>
-                  {c.value}
-                </p>
-              </div>
-              <div className={`${c.iconBg} rounded-xl p-2.5`}>
-                <c.icon className={`w-5 h-5 ${c.iconColor}`} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

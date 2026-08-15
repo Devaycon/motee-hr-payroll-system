@@ -13,7 +13,10 @@ import type {
   TicketStatus,
   TicketMessage,
 } from "./components/data";
-import { HelpdeskStatCards } from "./components/stat-cards";
+import {
+  HelpdeskStatCards,
+  type HelpdeskCardFilter,
+} from "./components/stat-cards";
 import { FaqPanel } from "./components/faq-panel";
 import { TicketList } from "./components/ticket-list";
 import { TicketDetailModal } from "./components/ticket-detail-modal";
@@ -34,6 +37,8 @@ export function EmployeeHelpdeskPage() {
   );
   const [showNewCaseModal, setShowNewCaseModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | "all">("all");
+  /** Drill-down set by the KPI cards; "all" shows every case. */
+  const [cardFilter, setCardFilter] = useState<HelpdeskCardFilter>("all");
 
   const myTickets = tickets.filter((t) => t.submitterInitials === myInitials);
   const stats = computeHelpdeskStats(myTickets);
@@ -124,6 +129,13 @@ export function EmployeeHelpdeskPage() {
         open={stats.open}
         resolved={stats.resolved}
         overdue={stats.overdue}
+        cardFilter={cardFilter}
+        onDrillDown={(filter) => {
+          setCardFilter(filter);
+          // The numbers are all about cases, so drilling always lands there.
+          setActiveTab("my-cases");
+          setStatusFilter("all");
+        }}
       />
 
       <Tabs
@@ -144,6 +156,8 @@ export function EmployeeHelpdeskPage() {
             tickets={myTickets}
             statusFilter={statusFilter}
             onStatusFilter={setStatusFilter}
+            cardFilter={cardFilter}
+            onClearCardFilter={() => setCardFilter("all")}
             onSelectTicket={(ticket) => setSelectedTicket(ticket)}
           />
         </TabsContent>

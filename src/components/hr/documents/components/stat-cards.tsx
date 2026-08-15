@@ -1,10 +1,21 @@
 import { FileText, Clock, AlertCircle, Archive } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import type { HRDocument } from "../types";
 
-interface StatCardsProps {
-  documents: HRDocument[];
-}
+/** The slice a KPI card drills the document grid down to. */
+export type DocumentCardFilter = "all" | "expiring" | "expired" | "archived";
+
+export const DOCUMENT_CARD_FILTER_LABELS: Record<
+  Exclude<DocumentCardFilter, "all">,
+  string
+> = {
+  expiring: "Expiring soon",
+  expired: "Expired",
+  archived: "Archived",
+};
 
 function getExpiryStatus(expiryDate?: string) {
   if (!expiryDate) return null;
@@ -18,74 +29,81 @@ function getExpiryStatus(expiryDate?: string) {
   return "valid";
 }
 
-export function StatCards({ documents }: StatCardsProps) {
-  const nonArchived = documents.filter((d) => !d.isArchived);
-  const total = nonArchived.length;
-  const expiringSoon = nonArchived.filter(
-    (d) => getExpiryStatus(d.expiryDate) === "expiring",
-  ).length;
-  const expired = nonArchived.filter(
-    (d) => getExpiryStatus(d.expiryDate) === "expired",
-  ).length;
-  const archived = documents.filter((d) => d.isArchived).length;
+/** Single source of truth for what each card counts and the grid then shows. */
+export function matchesDocumentCardFilter(
+  document: HRDocument,
+  filter: DocumentCardFilter,
+): boolean {
+  switch (filter) {
+    case "expiring":
+      return !document.isArchived && getExpiryStatus(document.expiryDate) === "expiring";
+    case "expired":
+      return !document.isArchived && getExpiryStatus(document.expiryDate) === "expired";
+    case "archived":
+      return document.isArchived === true;
+    default:
+      return true;
+  }
+}
 
-  const cards = [
+interface StatCardsProps {
+  documents: HRDocument[];
+  /** The card drill-down currently applied. */
+  cardFilter: DocumentCardFilter;
+  /** Drill-down: shows the documents behind the number, across all folders. */
+  onDrillDown: (filter: DocumentCardFilter) => void;
+}
+
+export function StatCards({
+  documents,
+  cardFilter,
+  onDrillDown,
+}: StatCardsProps) {
+  const count = (filter: DocumentCardFilter) =>
+    documents.filter((d) => matchesDocumentCardFilter(d, filter)).length;
+  const total = documents.filter((d) => !d.isArchived).length;
+
+  const card = (key: DocumentCardFilter) => ({
+    active: cardFilter === key,
+    // Re-clicking the selected card clears back to every document.
+    onClick: () => onDrillDown(cardFilter === key ? "all" : key),
+  });
+
+  const cards: HrStatCardItem[] = [
     {
       label: "Total Documents",
       value: total,
       sub: `${documents.length} including archived`,
       icon: FileText,
-      iconClass: "text-slate-500 dark:text-slate-400",
-      iconBg: "bg-slate-500/10",
+      tone: "blue",
+      active: cardFilter === "all",
+      onClick: () => onDrillDown("all"),
     },
     {
       label: "Expiring Soon",
-      value: expiringSoon,
+      value: count("expiring"),
       sub: "Within 30 days",
       icon: Clock,
-      iconClass: "text-amber-500",
-      iconBg: "bg-amber-500/10",
+      tone: "amber",
+      ...card("expiring"),
     },
     {
       label: "Expired",
-      value: expired,
+      value: count("expired"),
       sub: "Renewal required",
       icon: AlertCircle,
-      iconClass: "text-red-500",
-      iconBg: "bg-red-500/10",
+      tone: "red",
+      ...card("expired"),
     },
     {
       label: "Archived",
-      value: archived,
+      value: count("archived"),
       sub: "Stored securely",
       icon: Archive,
-      iconClass: "text-muted-foreground",
-      iconBg: "bg-muted",
+      tone: "violet",
+      ...card("archived"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {cards.map((card) => (
-        <Card key={card.label} className="border-border/60">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {card.label}
-                </p>
-                <p className="text-2xl font-bold tracking-tight">
-                  {card.value}
-                </p>
-                <p className="text-xs text-muted-foreground">{card.sub}</p>
-              </div>
-              <div className={`rounded-lg p-2.5 ${card.iconBg}`}>
-                <card.icon className={`size-5 ${card.iconClass}`} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

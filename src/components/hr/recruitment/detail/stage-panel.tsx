@@ -12,6 +12,9 @@ import {
   UserCheck,
   CalendarPlus,
   X,
+  FileSignature,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/src/components/ui/badge";
@@ -64,9 +67,18 @@ import {
   setCandidateStatus,
   scheduleInterview,
   completeInterviews,
+  sendOffer,
+  respondToOffer,
   uid,
 } from "@/src/lib/stores/recruitment-slice";
 import { addPendingRecord } from "@/src/lib/demo/pending-onboarding";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
+import { onboardingStarted } from "@/src/lib/notifications/onboarding";
+import {
+  offerAccepted,
+  offerDeclined,
+  offerSent,
+} from "@/src/lib/notifications/recruitment";
 import { STAGE_TYPE_LABELS } from "@/src/data/recruitment-demo";
 import type {
   Candidate,
@@ -74,6 +86,10 @@ import type {
   InterviewMode,
   JobRequisition,
   RecruitmentStageType,
+} from "@/src/lib/types/recruitment";
+import {
+  hasAcceptedOffer,
+  latestOffer,
 } from "@/src/lib/types/recruitment";
 import { getFlow, nextEnabledStage, matchesConstraint } from "../flow";
 import { candidateToOnboardingRecord } from "../to-onboarding";
@@ -91,7 +107,17 @@ interface StagePanelProps {
   interviews: Interview[];
 }
 
-type StatusTone = "new" | "scheduled" | "completed" | "invited" | "pending" | "rejected";
+type StatusTone =
+  | "new"
+  | "scheduled"
+  | "completed"
+  | "invited"
+  | "pending"
+  | "rejected"
+  // §7.18 — where an offer has got to, which "pending" couldn't express.
+  | "offer_sent"
+  | "offer_accepted"
+  | "offer_declined";
 
 const STATUS_STYLES: Record<StatusTone, string> = {
   new: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400",
@@ -100,6 +126,11 @@ const STATUS_STYLES: Record<StatusTone, string> = {
   invited: "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-400",
   pending: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
   rejected: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
+  offer_sent:
+    "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+  offer_accepted:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
+  offer_declined: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
 };
 
 const STATUS_LABELS: Record<StatusTone, string> = {
@@ -109,6 +140,9 @@ const STATUS_LABELS: Record<StatusTone, string> = {
   invited: "Invited",
   pending: "Pending",
   rejected: "Rejected",
+  offer_sent: "Offer Sent",
+  offer_accepted: "Offer Accepted",
+  offer_declined: "Offer Declined",
 };
 
 export function StagePanel({
@@ -178,6 +212,15 @@ export function StagePanel({
     if (stage === "interview") {
       return interviewStatusByCandidate.get(c.id) ?? "pending";
     }
+    // §7.18 — on the offer tab, "pending" and "offer sent" are very different
+    // things to a recruiter chasing responses.
+    if (stage === "offer") {
+      const offer = latestOffer(c);
+      if (!offer) return "pending";
+      if (offer.status === "accepted") return "offer_accepted";
+      if (offer.status === "rejected") return "offer_declined";
+      return "offer_sent";
+    }
     if (stage === "hired") {
       return invited.has(c.id) ? "invited" : "pending";
     }
@@ -213,8 +256,13 @@ export function StagePanel({
   // ── Onboarding invites (hired) ──
   function invite(c: Candidate) {
     if (!invited.has(c.id)) {
-      addPendingRecord(
-        candidateToOnboardingRecord(c, requisition, templates, roles),
+      const record = candidateToOnboardingRecord(c, requisition, templates, roles);
+      addPendingRecord(record);
+      // §2.10 — HR sees that onboarding has begun without watching the pipeline.
+      dispatch(
+        pushNotification(
+          onboardingStarted(c.name, record.jobTitle, record.startDate),
+        ),
       );
       setInvited((prev) => new Set(prev).add(c.id));
     }
@@ -232,8 +280,17 @@ export function StagePanel({
     }
     pending.forEach((c) => {
       if (!invited.has(c.id)) {
-        addPendingRecord(
-          candidateToOnboardingRecord(c, requisition, templates, roles),
+        const record = candidateToOnboardingRecord(
+          c,
+          requisition,
+          templates,
+          roles,
+        );
+        addPendingRecord(record);
+        dispatch(
+          pushNotification(
+            onboardingStarted(c.name, record.jobTitle, record.startDate),
+          ),
         );
       }
     });
@@ -334,11 +391,85 @@ export function StagePanel({
     setScoreOpen(false);
   }
 
-  // ── Advance a single interview-stage candidate → hired ──
+  // ── Advance a single interview-stage candidate → next stage ──
   function advanceToHired(c: Candidate) {
     if (!nextStage) return;
+    // §7.18 — nobody becomes "hired" without having accepted an offer. When
+    // the offer stage is enabled this is enforced by the stage order; when it
+    // has been switched off, the check below still holds the line.
+    if (nextStage === "hired" && !hasAcceptedOffer(c)) {
+      toast.error(`${c.name} hasn't accepted an offer yet.`, {
+        description: "Send an offer and record their acceptance first.",
+      });
+      return;
+    }
     dispatch(moveStage({ country, ids: [c.id], stage: nextStage }));
     toast.success(`${c.name} moved to ${nextLabel}`);
+  }
+
+  // ── §7.18 Offers ──
+  const [offerFor, setOfferFor] = useState<Candidate | null>(null);
+  const [offerSalary, setOfferSalary] = useState("");
+  const [offerStartDate, setOfferStartDate] = useState("");
+  const [offerNotes, setOfferNotes] = useState("");
+
+  function openOffer(c: Candidate) {
+    setOfferFor(c);
+    // Seed from the requisition so the recruiter isn't retyping the band.
+    setOfferSalary(requisition.salaryMax ? String(requisition.salaryMax) : "");
+    setOfferStartDate(requisition.targetStartDate ?? "");
+    setOfferNotes("");
+  }
+
+  function confirmOffer() {
+    if (!offerFor) return;
+    const salary = Number(offerSalary.replace(/,/g, ""));
+    dispatch(
+      sendOffer({
+        country,
+        candidateId: offerFor.id,
+        salary: Number.isFinite(salary) && salary > 0 ? salary : undefined,
+        startDate: offerStartDate || undefined,
+        notes: offerNotes.trim() || undefined,
+      }),
+    );
+    openMailto({
+      to: [offerFor.email],
+      subject: `Offer — ${requisition.positionTitle}`,
+      body: `Hi ${offerFor.name},\n\nWe're delighted to offer you the ${requisition.positionTitle} role.${
+        salary ? `\n\nSalary: ${salary.toLocaleString()}` : ""
+      }${offerStartDate ? `\nStart date: ${offerStartDate}` : ""}\n\nPlease reply to confirm whether you accept.`,
+    });
+    dispatch(
+      pushNotification(
+        offerSent(
+          offerFor.name,
+          requisition.positionTitle,
+          Number.isFinite(salary) && salary > 0 ? salary : undefined,
+          offerStartDate || undefined,
+        ),
+      ),
+    );
+    toast.success(`Offer sent to ${offerFor.name}`);
+    setOfferFor(null);
+  }
+
+  /** Record the candidate's answer, and move accepted hires forward. */
+  function recordOfferResponse(c: Candidate, accepted: boolean) {
+    dispatch(respondToOffer({ country, candidateId: c.id, accepted }));
+    if (accepted) {
+      const hiredStage = nextEnabledStage(flow, "offer") ?? "hired";
+      dispatch(moveStage({ country, ids: [c.id], stage: hiredStage }));
+      dispatch(
+        pushNotification(offerAccepted(c.name, requisition.positionTitle)),
+      );
+      toast.success(`${c.name} accepted — moved to ${STAGE_TYPE_LABELS[hiredStage]}`);
+    } else {
+      dispatch(
+        pushNotification(offerDeclined(c.name, requisition.positionTitle)),
+      );
+      toast.info(`${c.name} declined the offer`);
+    }
   }
 
   const columns = useMemo<ColumnDef<Candidate>[]>(() => {
@@ -416,6 +547,34 @@ export function StagePanel({
               >
                 <ArrowRight className="w-3.5 h-3.5" /> Advance applicant
               </DropdownMenuItem>
+            )}
+            {/* §7.18 — send the offer, then record what they said. */}
+            {stage === "offer" && c.status === "active" && (
+              <>
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => openOffer(c)}
+                >
+                  <FileSignature className="w-3.5 h-3.5" />
+                  {latestOffer(c) ? "Resend offer" : "Send offer"}
+                </DropdownMenuItem>
+                {latestOffer(c)?.status === "sent" && (
+                  <>
+                    <DropdownMenuItem
+                      className="gap-2"
+                      onClick={() => recordOfferResponse(c, true)}
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5" /> Mark accepted
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="gap-2"
+                      onClick={() => recordOfferResponse(c, false)}
+                    >
+                      <ThumbsDown className="w-3.5 h-3.5" /> Mark declined
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </>
             )}
             {stage === "hired" && c.status === "active" && (
               <DropdownMenuItem className="gap-2" onClick={() => invite(c)}>
@@ -544,6 +703,7 @@ export function StagePanel({
       </div>
 
       <DataTable
+        exportTitle="Candidates"
         columns={columns}
         data={rows}
         getRowId={(r) => r.id}
@@ -674,6 +834,72 @@ export function StagePanel({
             <Button className="gap-1.5" onClick={confirmAdvance}>
               <CalendarPlus className="w-4 h-4" />
               Schedule &amp; advance
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* §7.18 — offer modal */}
+      <Dialog
+        open={Boolean(offerFor)}
+        onOpenChange={(o) => !o && setOfferFor(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Send offer to {offerFor?.name ?? "candidate"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Salary</Label>
+              <Input
+                type="number"
+                min={0}
+                placeholder={
+                  requisition.salaryMin
+                    ? `Band: ${requisition.salaryMin} – ${requisition.salaryMax}`
+                    : "Annual salary"
+                }
+                value={offerSalary}
+                onChange={(e) => setOfferSalary(e.target.value)}
+              />
+              {requisition.salaryMax > 0 &&
+                Number(offerSalary) > requisition.salaryMax && (
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                    Above the approved band of {requisition.salaryMax}.
+                  </p>
+                )}
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Start date</Label>
+              <Input
+                type="date"
+                value={offerStartDate}
+                onChange={(e) => setOfferStartDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Notes</Label>
+              <Textarea
+                rows={3}
+                placeholder="Anything the candidate should know — probation, benefits, conditions."
+                value={offerNotes}
+                onChange={(e) => setOfferNotes(e.target.value)}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              This records the offer and opens your mail client. Come back and
+              mark the response once they reply.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOfferFor(null)}>
+              Cancel
+            </Button>
+            <Button className="gap-1.5" onClick={confirmOffer}>
+              <FileSignature className="w-4 h-4" />
+              Send offer
             </Button>
           </DialogFooter>
         </DialogContent>
