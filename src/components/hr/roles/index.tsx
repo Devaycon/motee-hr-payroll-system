@@ -14,12 +14,24 @@ import { PositionsToolbar } from "./components/positions-toolbar";
 import { PositionsTable } from "./components/positions-table";
 import { PositionModal } from "./components/position-modal";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { ExportMenu } from "@/src/components/shared/export-menu";
+import type { ReportColumn } from "@/src/lib/reports/types";
+
+/** Mirrors the vacancy report columns, minus the per-row action button. */
+const VACANCY_EXPORT_COLUMNS: ReportColumn<Position>[] = [
+  { key: "title", header: "Position Title", value: (p) => p.title },
+  { key: "department", header: "Department", value: (p) => p.department },
+  { key: "grade", header: "Grade / Level", value: (p) => p.grade },
+  { key: "status", header: "Status", value: (p) => STATUS_LABELS[p.status] },
+];
 
 export function RolesPage() {
   const [positions, setPositions] = useState<Position[]>(POSITIONS);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("positions");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
 
@@ -94,13 +106,24 @@ export function RolesPage() {
         </p>
       </div>
 
-      <StatCards positions={positions} />
+      <StatCards
+        positions={positions}
+        activeTab={activeTab}
+        statusFilter={statusFilter}
+        onDrillDown={(tab, status) => {
+          setActiveTab(tab);
+          setStatusFilter(status);
+        }}
+      />
 
-      <Tabs defaultValue="positions">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
-            { value: "positions", label: "All Positions" },
-            { value: "vacancies", label: "Vacancy Report" },
+            { value: "positions", label: `All Positions (${filtered.length})` },
+            {
+              value: "vacancies",
+              label: `Vacancy Report (${vacantPositions.length})`,
+            },
           ]}
         />
 
@@ -129,11 +152,21 @@ export function RolesPage() {
               Vacancy Report
             </p>
           </div>
-          <p className="text-xs text-muted-foreground mb-4">
-            {vacantPositions.length} open position
-            {vacantPositions.length !== 1 ? "s" : ""} currently requiring
-            attention
-          </p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              {vacantPositions.length} open position
+              {vacantPositions.length !== 1 ? "s" : ""} currently requiring
+              attention
+            </p>
+            <ExportMenu
+              name="vacancy-report"
+              title="Vacancy Report"
+              columns={VACANCY_EXPORT_COLUMNS}
+              rows={vacantPositions}
+              variant="outline"
+              buttonClassName="h-8 text-xs"
+            />
+          </div>
 
           {vacantPositions.length === 0 ? (
             <Card>

@@ -11,6 +11,8 @@ import {
   DoorOpen,
   Trash2,
   RotateCcw,
+  Send,
+  ScrollText,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -38,6 +40,8 @@ export interface EmployeeRowHandlers {
   onView: (employee: EmployeeRow) => void;
   onEdit: (employee: EmployeeRow) => void;
   onSendCredentials: (employee: EmployeeRow) => void;
+  onResendInvite: (employee: EmployeeRow) => void;
+  onViewActivityLog: (employee: EmployeeRow) => void;
   onSendKudos: (employee: EmployeeRow) => void;
   onDeactivate: (employee: EmployeeRow) => void;
   onReactivate: (employee: EmployeeRow) => void;
@@ -61,6 +65,8 @@ export function EmployeeRowActions({
   onView,
   onEdit,
   onSendCredentials,
+  onResendInvite,
+  onViewActivityLog,
   onSendKudos,
   onDeactivate,
   onReactivate,
@@ -101,16 +107,34 @@ export function EmployeeRowActions({
           Edit Employee
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator />
-
         <DropdownMenuItem
           className="text-xs gap-2 cursor-pointer"
           disabled={!can("credentials")}
           onClick={() => onSendCredentials(employee)}
         >
           <KeyRound className="w-3.5 h-3.5" />
-          Send Login Credentials
+          Send/Resend Login Credentials
         </DropdownMenuItem>
+        {/* §3.1 — only live while onboarding is still in flight. */}
+        <DropdownMenuItem
+          className="text-xs gap-2 cursor-pointer"
+          disabled={!can("resend_invite")}
+          onClick={() => onResendInvite(employee)}
+        >
+          <Send className="w-3.5 h-3.5" />
+          Resend Onboarding Invitation
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="text-xs gap-2 cursor-pointer"
+          disabled={!can("activity_log")}
+          onClick={() => onViewActivityLog(employee)}
+        >
+          <ScrollText className="w-3.5 h-3.5" />
+          View Activity Log
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
         <DropdownMenuItem
           className="text-xs gap-2 cursor-pointer"
           disabled={!can("kudos")}
@@ -138,11 +162,13 @@ export function EmployeeRowActions({
             title="Deactivate Employee"
             description={
               <>
+                This only suspends system access —{" "}
                 <span className="font-semibold text-foreground">
                   {employee.name}
                 </span>{" "}
-                will be moved to the Inactive tab and will no longer be able to
-                sign in. You can reactivate them at any time.
+                remains employed. They move to the Inactive tab and can no longer
+                sign in, and you can reactivate them at any time. To record that
+                they are leaving the organisation, use Start Offboarding instead.
               </>
             }
             confirmLabel="Deactivate"
@@ -153,19 +179,21 @@ export function EmployeeRowActions({
         <ConfirmItem
           disabled={!can("exit")}
           icon={<DoorOpen className="w-3.5 h-3.5" />}
-          label="Exit Employee"
-          title="Initiate Offboarding"
+          label="Start Offboarding"
+          title="Start Offboarding"
           description={
             <>
-              This starts the offboarding process for{" "}
+              This records that{" "}
               <span className="font-semibold text-foreground">
                 {employee.name}
-              </span>
-              . They move to the Offboarding Notice tab and a pending record is
-              created on the Offboarding pipeline for approval.
+              </span>{" "}
+              is leaving the organisation and starts the offboarding process.
+              They move to the Offboarding Notice tab and a pending record is
+              created on the Offboarding pipeline for approval. To suspend access
+              without ending employment, use Deactivate Employee instead.
             </>
           }
-          confirmLabel="Initiate Offboarding"
+          confirmLabel="Start Offboarding"
           onConfirm={() => onExit(employee)}
         />
 

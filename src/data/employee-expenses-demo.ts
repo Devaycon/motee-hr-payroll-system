@@ -1,3 +1,13 @@
+import {
+  Plane,
+  Utensils,
+  Hotel,
+  Laptop,
+  AppWindow,
+  GraduationCap,
+  Receipt,
+  type LucideIcon,
+} from "lucide-react";
 import type { FileAttachment } from "@/src/lib/utils/file-attachments";
 
 export type ExpenseStatus =
@@ -58,6 +68,17 @@ export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> =
   Object.fromEntries(
     EXPENSE_CATEGORY_OPTIONS.map((o) => [o.value, o.label]),
   ) as Record<ExpenseCategory, string>;
+
+/** Category icons — scannable at a glance in the list (client feedback §8.3). */
+export const EXPENSE_CATEGORY_ICONS: Record<ExpenseCategory, LucideIcon> = {
+  travel: Plane,
+  meals: Utensils,
+  accommodation: Hotel,
+  equipment: Laptop,
+  software: AppWindow,
+  training: GraduationCap,
+  other: Receipt,
+};
 
 export const EXPENSE_STATUS_LABELS: Record<ExpenseStatus, string> = {
   draft: "Draft",

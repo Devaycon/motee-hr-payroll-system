@@ -8,6 +8,22 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 
+/** Icon-chip accent. Defaults to the house violet. */
+export type HrStatCardTone =
+  | "violet"
+  | "blue"
+  | "amber"
+  | "emerald"
+  | "red";
+
+const TONE_STYLES: Record<HrStatCardTone, { chip: string; icon: string }> = {
+  violet: { chip: "bg-[#7F77DD]/10", icon: "text-[#7F77DD]" },
+  blue: { chip: "bg-blue-500/10", icon: "text-blue-500" },
+  amber: { chip: "bg-amber-500/10", icon: "text-amber-500" },
+  emerald: { chip: "bg-emerald-500/10", icon: "text-emerald-500" },
+  red: { chip: "bg-red-500/10", icon: "text-red-500" },
+};
+
 export interface HrStatCardItem {
   label: string;
   value: string | number;
@@ -17,6 +33,14 @@ export interface HrStatCardItem {
   icon: LucideIcon;
   trend?: string;
   up?: boolean;
+  /**
+   * Makes the whole card a drill-down control (client feedback §2.20, §6.1,
+   * §6.17, §7.1). Pair with `active` so the card reflects the filter it set.
+   */
+  onClick?: () => void;
+  /** This card's filter is the one currently applied. */
+  active?: boolean;
+  tone?: HrStatCardTone;
 }
 
 interface HrStatCardProps {
@@ -24,12 +48,44 @@ interface HrStatCardProps {
 }
 
 export function HrStatCard({ stat }: HrStatCardProps) {
+  const tone = TONE_STYLES[stat.tone ?? "violet"];
+  const clickable = Boolean(stat.onClick);
+
+  // A card can carry both a drill-down and a "View" link, so the clickable
+  // surface stays a div with button semantics — a real <button> here would
+  // nest the link inside it, which is invalid.
   return (
-    <Card className="transition-shadow gap-0 py-0">
+    <Card
+      className={cn(
+        "transition-shadow gap-0 py-0",
+        clickable &&
+          "cursor-pointer hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        stat.active && "ring-2 ring-primary border-primary",
+      )}
+      {...(clickable
+        ? {
+            role: "button",
+            tabIndex: 0,
+            "aria-pressed": Boolean(stat.active),
+            onClick: stat.onClick,
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                stat.onClick?.();
+              }
+            },
+          }
+        : {})}
+    >
       <CardHeader className="flex flex-row items-center justify-between px-3 pt-3">
         <div className="flex items-center gap-1.5">
-          <div className="flex items-center justify-center w-5 h-5 rounded-md bg-[#7F77DD]/10">
-            <stat.icon className="w-3 h-3 text-[#7F77DD]" />
+          <div
+            className={cn(
+              "flex items-center justify-center w-5 h-5 rounded-md",
+              tone.chip,
+            )}
+          >
+            <stat.icon className={cn("w-3 h-3", tone.icon)} />
           </div>
           <span className="text-xs font-medium text-muted-foreground">
             {stat.label}
@@ -42,7 +98,7 @@ export function HrStatCard({ stat }: HrStatCardProps) {
             asChild
             className="h-5 text-[11px] px-1.5 text-muted-foreground hover:text-foreground gap-0.5"
           >
-            <Link href={stat.link}>
+            <Link href={stat.link} onClick={(e) => e.stopPropagation()}>
               View
               <ArrowRight className="h-3 w-3" />
             </Link>

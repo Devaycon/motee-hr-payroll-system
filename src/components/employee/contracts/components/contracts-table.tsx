@@ -157,6 +157,7 @@ export function ContractsTable({
 
   return (
     <DataTable
+      exportTitle="My Contracts"
       columns={columns}
       data={contracts}
       getRowId={(c) => c.id}

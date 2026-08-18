@@ -23,8 +23,13 @@ export type LeaveBalance = Record<
   { total: number; used: number; pending: number }
 >;
 
-/** Dates handed to the request form from a suggested window. */
+/**
+ * What the request form opens on. Dates come from a suggested window; the
+ * leave type comes from clicking a balance card, so "Sick Leave Remaining"
+ * starts a sick-leave request rather than a blank one.
+ */
 export interface LeavePrefill {
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
+  leaveType?: LeaveTypeName;
 }

@@ -18,11 +18,12 @@ import { useRecruitment } from "../hooks";
 import { getFlow, enabledStages } from "../flow";
 import { StagePanel } from "./stage-panel";
 
-/** Tab labels for the live three-stage pipeline. */
+/** Tab labels for the live pipeline. */
 const TAB_LABELS: Record<RecruitmentStageType, string> = {
   applicants: "Applicant",
   shortlisted: "Shortlisted",
   interview: "Scheduled for Interview",
+  offer: "Offer",
   hired: "Hired",
 };
 

@@ -1,8 +1,7 @@
 "use client";
 
-import { Search, SlidersHorizontal, Download } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
-import { Button } from "@/src/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -25,7 +24,8 @@ interface AuditToolbarProps {
   onModuleFilterChange: (v: string) => void;
   statusFilter: string;
   onStatusFilterChange: (v: string) => void;
-  onExport: () => void;
+  /** The Export menu, supplied by the page so it can own the columns. */
+  exportMenu: React.ReactNode;
   totalFiltered: number;
   totalAll: number;
 }
@@ -39,7 +39,7 @@ export function AuditToolbar({
   onModuleFilterChange,
   statusFilter,
   onStatusFilterChange,
-  onExport,
+  exportMenu,
   totalFiltered,
   totalAll,
 }: AuditToolbarProps) {
@@ -55,15 +55,7 @@ export function AuditToolbar({
             className="pl-9"
           />
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onExport}
-          className="shrink-0"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Export
-        </Button>
+        <div className="shrink-0">{exportMenu}</div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Select value={actionFilter} onValueChange={onActionFilterChange}>

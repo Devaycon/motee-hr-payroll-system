@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { z } from "zod/v4";
 import { toast } from "sonner";
-import { Check, ChevronDown, ChevronRight } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,13 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import {
   ALL_MODULES,
   ALL_ACTIONS,
   MODULE_LABELS,
@@ -24,11 +31,19 @@ import {
   ACTION_LABELS,
   buildEmptyPermissions,
 } from "../data";
-import type {
-  AccessLevel,
-  NewAccessLevel,
-  ModulePermission,
-  PermissionAction,
+import {
+  ACTION_DEPENDENCIES,
+  withDependencies,
+  DATA_SCOPE_LABELS,
+  DATA_SCOPE_DESCRIPTIONS,
+  ACCESS_LEVEL_STATUS_LABELS,
+  type AccessLevel,
+  type AccessLevelStatus,
+  type DataScope,
+  type DataScopeKind,
+  type NewAccessLevel,
+  type ModulePermission,
+  type PermissionAction,
 } from "../types";
 import { cn } from "@/src/lib/utils";
 
@@ -63,6 +78,9 @@ export function AccessLevelFormModal({
     buildEmptyPermissions(),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [moduleSearch, setModuleSearch] = useState("");
+  const [status, setStatus] = useState<AccessLevelStatus>("active");
+  const [dataScope, setDataScope] = useState<DataScope>({ kind: "all" });
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
     Object.fromEntries(MODULE_GROUPS.map((g) => [g, true])),
   );
@@ -70,9 +88,12 @@ export function AccessLevelFormModal({
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
+      setModuleSearch("");
       if (editingLevel) {
         setName(editingLevel.name);
         setDescription(editingLevel.description);
+        setStatus(editingLevel.status ?? "active");
+        setDataScope(editingLevel.dataScope ?? { kind: "all" });
         const filled = ALL_MODULES.map((module) => {
           const existing = editingLevel.permissions.find(
             (p) => p.module === module,
@@ -87,6 +108,10 @@ export function AccessLevelFormModal({
       } else {
         setName("");
         setDescription("");
+        // A brand-new role starts as a draft so it isn't assignable until
+        // someone has actually reviewed what it grants (§1.7).
+        setStatus("draft");
+        setDataScope({ kind: "all" });
         setPermissions(buildEmptyPermissions());
       }
       setErrors({});
@@ -94,6 +119,31 @@ export function AccessLevelFormModal({
   }
 
   const grouped = useMemo(() => modulesByGroup(), []);
+
+  /**
+   * Matrix search (client feedback §1.12). This filters only what is rendered —
+   * `permissions` always holds every module, so a hidden row keeps whatever was
+   * ticked rather than being cleared when the search narrows.
+   */
+  const visibleByGroup = useMemo(() => {
+    const q = moduleSearch.trim().toLowerCase();
+    if (!q) return grouped;
+    const out = {} as typeof grouped;
+    for (const g of MODULE_GROUPS) {
+      out[g] = grouped[g].filter(
+        (m) =>
+          MODULE_LABELS[m.id].toLowerCase().includes(q) ||
+          m.id.toLowerCase().includes(q),
+      );
+    }
+    return out;
+  }, [grouped, moduleSearch]);
+
+  const searching = moduleSearch.trim().length > 0;
+  const matchCount = MODULE_GROUPS.reduce(
+    (n, g) => n + visibleByGroup[g].length,
+    0,
+  );
 
   function setRow(
     module: string,
@@ -112,16 +162,34 @@ export function AccessLevelFormModal({
     }));
   }
 
+  /**
+   * §1.11 — permissions carry dependencies. Ticking "Approve" pulls in "View",
+   * because an approver who can't open the queue can't approve anything; and
+   * un-ticking "View" drops everything that relied on it rather than leaving a
+   * grant that silently does nothing.
+   */
   function toggleAction(module: string, action: PermissionAction) {
     setRow(module, (row) => {
       if (!row.access) return row;
       const has = row.actions.includes(action);
-      return {
-        ...row,
-        actions: has
-          ? row.actions.filter((a) => a !== action)
-          : [...row.actions, action],
-      };
+      if (!has) {
+        return { ...row, actions: withDependencies([...row.actions, action]) };
+      }
+      const dropped = new Set<PermissionAction>([action]);
+      // Cascade: anything depending on this action goes too.
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const a of row.actions) {
+          if (dropped.has(a)) continue;
+          const deps = ACTION_DEPENDENCIES[a] ?? [];
+          if (deps.some((d) => dropped.has(d))) {
+            dropped.add(a);
+            changed = true;
+          }
+        }
+      }
+      return { ...row, actions: row.actions.filter((a) => !dropped.has(a)) };
     });
   }
 
@@ -136,7 +204,9 @@ export function AccessLevelFormModal({
   function setGroupAccess(group: string, checked: boolean) {
     setPermissions((prev) =>
       prev.map((p) => {
-        const inGroup = grouped[group as keyof typeof grouped]?.some(
+        // While searching, "Select group" applies to the rows on screen only —
+        // silently toggling modules the user can't see would be a trap.
+        const inGroup = visibleByGroup[group as keyof typeof grouped]?.some(
           (m) => m.id === p.module,
         );
         if (!inGroup) return p;
@@ -164,12 +234,20 @@ export function AccessLevelFormModal({
       return;
     }
 
-    const data: NewAccessLevel = { name, description, permissions };
+    const data: NewAccessLevel = {
+      name,
+      description,
+      status,
+      dataScope,
+      permissions,
+    };
     if (editingLevel) {
       onSave({
         ...editingLevel,
         name,
         description,
+        status,
+        dataScope,
         permissions,
       } as AccessLevel);
       toast.success("Access level updated");
@@ -220,17 +298,95 @@ export function AccessLevelFormModal({
                 <p className="text-xs text-destructive">{errors.description}</p>
               )}
             </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* §1.7 — only Active roles can be assigned to anyone. */}
+              <div className="space-y-1.5">
+                <Label htmlFor="role-status">Role Status</Label>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setStatus(v as AccessLevelStatus)}
+                >
+                  <SelectTrigger id="role-status" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(
+                      Object.keys(
+                        ACCESS_LEVEL_STATUS_LABELS,
+                      ) as AccessLevelStatus[]
+                    ).map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {ACCESS_LEVEL_STATUS_LABELS[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Only Active roles can be assigned to employees.
+                </p>
+              </div>
+
+              {/* §1.4 — which records, as opposed to which modules. */}
+              <div className="space-y-1.5">
+                <Label htmlFor="role-scope">Data Access</Label>
+                <Select
+                  value={dataScope.kind}
+                  onValueChange={(v) =>
+                    setDataScope({ kind: v as DataScopeKind })
+                  }
+                >
+                  <SelectTrigger id="role-scope" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(DATA_SCOPE_LABELS) as DataScopeKind[]).map(
+                      (k) => (
+                        <SelectItem key={k} value={k}>
+                          {DATA_SCOPE_LABELS[k]}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  {DATA_SCOPE_DESCRIPTIONS[dataScope.kind]}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Permissions Matrix</Label>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Label htmlFor="permission-search">Permissions Matrix</Label>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="permission-search"
+                  value={moduleSearch}
+                  onChange={(e) => setModuleSearch(e.target.value)}
+                  placeholder="Search modules…"
+                  className="h-8 pl-8 text-xs"
+                />
+              </div>
+            </div>
+            {searching && (
+              <p className="text-[11px] text-muted-foreground">
+                {matchCount} module{matchCount === 1 ? "" : "s"} match “
+                {moduleSearch.trim()}”. Permissions on hidden modules are kept.
+              </p>
+            )}
             <div className="space-y-3">
               {MODULE_GROUPS.map((group) => {
-                const modulesInGroup = grouped[group];
+                const modulesInGroup = visibleByGroup[group];
+                // A group with no matches has nothing to show while searching.
+                if (searching && modulesInGroup.length === 0) return null;
                 const enabledInGroup = modulesInGroup.filter((m) =>
                   permissions.find((p) => p.module === m.id)?.access,
                 ).length;
                 const allOn = enabledInGroup === modulesInGroup.length;
+                // A search result the user has to expand to see isn't a result.
+                const expanded = searching || openGroups[group];
                 return (
                   <div
                     key={group}
@@ -244,7 +400,7 @@ export function AccessLevelFormModal({
                       className="w-full flex items-center justify-between bg-muted/40 px-4 py-2.5 hover:bg-muted/70 transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        {openGroups[group] ? (
+                        {expanded ? (
                           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                         ) : (
                           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
@@ -272,7 +428,7 @@ export function AccessLevelFormModal({
                       </div>
                     </button>
 
-                    {openGroups[group] && (
+                    {expanded && (
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs">
                           <thead>

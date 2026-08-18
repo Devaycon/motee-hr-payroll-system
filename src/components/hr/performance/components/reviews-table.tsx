@@ -227,6 +227,7 @@ export function ReviewsTable({
       />
       <div className="mt-4">
         <DataTable
+          exportTitle="Performance Reviews"
           columns={columns}
           initialColumnVisibility={HIDE_SYSTEM_ID}
           enableColumnVisibility

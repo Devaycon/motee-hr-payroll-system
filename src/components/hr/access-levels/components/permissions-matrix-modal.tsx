@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
-import { Check, Minus, Shield, ShieldOff } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, Minus, Shield, ShieldOff, Search } from "lucide-react";
+import { Input } from "@/src/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +32,26 @@ export function PermissionsMatrixModal({
   onClose,
 }: PermissionsMatrixModalProps) {
   const grouped = useMemo(() => modulesByGroup(), []);
+  // Matrix search (client feedback §1.12) — the matrix runs to ~40 modules.
+  const [search, setSearch] = useState("");
+
+  const visibleByGroup = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return grouped;
+    const out = {} as typeof grouped;
+    for (const g of MODULE_GROUPS) {
+      out[g] = grouped[g].filter(
+        (m) =>
+          MODULE_LABELS[m.id].toLowerCase().includes(q) ||
+          m.id.toLowerCase().includes(q),
+      );
+    }
+    return out;
+  }, [grouped, search]);
+
   if (!level) return null;
+
+  const searching = search.trim().length > 0;
 
   function permFor(moduleId: string) {
     return (
@@ -64,8 +84,19 @@ export function PermissionsMatrixModal({
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search modules…"
+              className="h-8 pl-8 text-xs"
+              aria-label="Search permission matrix"
+            />
+          </div>
           {MODULE_GROUPS.map((group) => {
-            const modulesInGroup = grouped[group];
+            const modulesInGroup = visibleByGroup[group];
+            if (searching && modulesInGroup.length === 0) return null;
             const enabled = modulesInGroup.filter(
               (m) => permFor(m.id).access,
             ).length;

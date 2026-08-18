@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import type {
   AuditActionType,
   AuditEntry,
@@ -92,6 +94,23 @@ function buildAuditEntries(bundle: LocaleBundle): AuditEntry[] {
   });
 }
 
+/**
+ * The fixture trail from the bundle, plus anything the running app has
+ * recorded this session (account locks, role changes). Newest first, so a
+ * just-performed action is at the top where the user expects it.
+ */
 export function useAuditEntries() {
-  return useLocaleSection<AuditEntry[]>(buildAuditEntries);
+  const { data, loading, error } = useLocaleSection<AuditEntry[]>(
+    buildAuditEntries,
+  );
+  const live = useAppSelector((s) => s.audit.entries);
+
+  const merged = useMemo(() => {
+    if (!data) return data;
+    return [...live, ...data].sort((a, b) =>
+      b.timestamp.localeCompare(a.timestamp),
+    );
+  }, [data, live]);
+
+  return { data: merged, loading, error };
 }

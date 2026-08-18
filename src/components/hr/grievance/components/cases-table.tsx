@@ -40,6 +40,13 @@ import {
   HIDE_SYSTEM_ID,
 } from "@/src/components/shared/employee-id-columns";
 import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
+import { EmployeeLink } from "@/src/components/shared/employee-link";
+import {
+  SLA_LABELS,
+  SLA_STYLES,
+  daysOpen,
+  slaState,
+} from "@/src/lib/types/grievance";
 import type { ERCase } from "../types";
 import {
   CASE_STAGE_CONFIG,
@@ -110,21 +117,43 @@ export function CasesTable({ cases, onView, onEdit, onDelete }: Props) {
       {
         accessorKey: "employeeName",
         header: sortableHeader("Employee"),
+        // §5.7 — the name opens their HR profile, where previous cases,
+        // absence and performance history all live.
         cell: ({ row }) => (
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-              {row.original.employeeInitials}
-            </div>
-            <div>
-              <p className="font-medium text-foreground leading-tight">
-                {row.original.employeeName}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {row.original.employeeDept}
-              </p>
-            </div>
+          <div>
+            <EmployeeLink
+              name={row.original.employeeName}
+              employeeId={row.original.employeeId}
+              initials={row.original.employeeInitials}
+              avatarClassName="h-7 w-7"
+              nameClassName="text-sm"
+            />
+            <p className="pl-7.5 text-xs text-muted-foreground">
+              {row.original.employeeDept}
+            </p>
           </div>
         ),
+      },
+      {
+        // §5.3 — overdue cases are the ones that cause grief, so surface the
+        // SLA state rather than making people open each case to work it out.
+        id: "sla",
+        header: "SLA",
+        cell: ({ row }) => {
+          const state = slaState(row.original);
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span
+                className={`inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${SLA_STYLES[state]}`}
+              >
+                {SLA_LABELS[state]}
+              </span>
+              <span className="text-[10px] text-muted-foreground tabular-nums">
+                {daysOpen(row.original)} days open
+              </span>
+            </div>
+          );
+        },
       },
       ...employeeIdColumns<ERCase>({
         identity,
@@ -327,6 +356,7 @@ export function CasesTable({ cases, onView, onEdit, onDelete }: Props) {
       </div>
 
       <DataTable
+        exportTitle="Grievance Cases"
         columns={columns}
         initialColumnVisibility={HIDE_SYSTEM_ID}
         enableColumnVisibility

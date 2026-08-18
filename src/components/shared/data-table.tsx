@@ -40,9 +40,12 @@ import {
   type SortingState,
   type VisibilityState,
   type RowSelectionState,
+  type Column,
   type Row,
   type RowData,
 } from "@tanstack/react-table";
+import { ExportMenu } from "@/src/components/shared/export-menu";
+import type { ReportColumn } from "@/src/lib/reports/types";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -75,6 +78,15 @@ declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
     /** Human-readable name for the Columns visibility menu (defaults to the id). */
     label?: string;
+    /** Header text for exports, when the header is a custom node. */
+    exportHeader?: string;
+    /**
+     * Cell value for exports. Needed when the cell is a custom renderer with
+     * no accessor behind it — otherwise the column exports blank and is dropped.
+     */
+    exportValue?: (row: TData) => string | number | null | undefined;
+    /** Keep this column out of exports even though it holds data. */
+    exportSkip?: boolean;
   }
 }
 
@@ -94,6 +106,8 @@ export function sortableHeader(label: string) {
     </Button>
   );
   SortableHeader.displayName = "SortableHeader";
+  // Carried so exports can label the column without re-rendering the header.
+  SortableHeader.exportLabel = label;
   return SortableHeader;
 }
 
@@ -116,6 +130,71 @@ export function actionsColumn<T>(
     enableSorting: false,
     enableHiding: false,
   };
+}
+
+// ── export derivation ───────────────────────────────────────────────────────
+
+/** Columns that carry controls rather than data — never exported. */
+const NON_DATA_COLUMN_IDS = new Set(["drag", "select", "actions"]);
+
+/** Flattens whatever a cell holds into something a spreadsheet can take. */
+function toCellValue(raw: unknown): string | number {
+  if (raw == null) return "";
+  if (typeof raw === "number" || typeof raw === "string") return raw;
+  if (typeof raw === "boolean") return raw ? "Yes" : "No";
+  if (raw instanceof Date) return raw.toISOString().slice(0, 10);
+  if (Array.isArray(raw)) return raw.map(toCellValue).filter(Boolean).join(", ");
+  return "";
+}
+
+/** The label to print for a column, given whatever its header is. */
+function headerLabel<T>(column: Column<T, unknown>): string {
+  const meta = column.columnDef.meta;
+  if (meta?.exportHeader) return meta.exportHeader;
+  const header = column.columnDef.header;
+  if (typeof header === "string") return header;
+  // `sortableHeader` stashes its plain-text label on the component.
+  const label = (header as { exportLabel?: string } | undefined)?.exportLabel;
+  if (label) return label;
+  return meta?.label ?? column.id;
+}
+
+/**
+ * Turns the live table into report columns, so an export matches what's on
+ * screen: current filters and sort order, visible columns only, every page.
+ *
+ * A value comes from `meta.exportValue`, else the column's accessor, else the
+ * row field named after the column id — which covers the many columns here
+ * that are a custom cell renderer over a plainly-named field. Columns that
+ * still yield nothing for every row are dropped rather than exported blank.
+ */
+function toReportColumns<T>(
+  columns: Column<T, unknown>[],
+  rows: T[],
+): ReportColumn<T>[] {
+  const derived: ReportColumn<T>[] = [];
+
+  for (const column of columns) {
+    if (NON_DATA_COLUMN_IDS.has(column.id)) continue;
+    const meta = column.columnDef.meta;
+    if (meta?.exportSkip) continue;
+
+    const custom = meta?.exportValue;
+    const accessor = column.accessorFn;
+    const value = custom
+      ? (row: T) => toCellValue(custom(row))
+      : accessor
+        ? (row: T) => toCellValue(accessor(row, 0))
+        : (row: T) =>
+            toCellValue((row as Record<string, unknown>)?.[column.id]);
+
+    // A column nobody can read anything out of is noise in a spreadsheet.
+    if (!custom && !accessor && !rows.some((r) => value(r) !== "")) continue;
+
+    derived.push({ key: column.id, header: headerLabel(column), value });
+  }
+
+  return derived;
 }
 
 // ── drag + selection internals ───────────────────────────────────────────---
@@ -215,6 +294,22 @@ export interface DataTableProps<T> {
   emptyMessage?: string;
   loading?: boolean;
   className?: string;
+  /** Show the Export menu (CSV / Excel / PNG / print). On by default. */
+  enableExport?: boolean;
+  /** File name for exports, without extension. Defaults to the title slug. */
+  exportName?: string;
+  /** Heading on the printed page and the PNG. Defaults to "Export". */
+  exportTitle?: string;
+}
+
+/** Turns a title into a safe, readable file name stem. */
+function slugify(title: string): string {
+  return (
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "export"
+  );
 }
 
 function defaultRowId<T>(row: T, index: number): string {
@@ -241,6 +336,9 @@ export function DataTable<T>({
   emptyMessage = "No results.",
   loading,
   className,
+  enableExport = true,
+  exportName,
+  exportTitle = "Export",
 }: DataTableProps<T>) {
   // Internal copy so drag-reorder works; re-synced when `data` changes (no effect).
   const [rows, setRows] = React.useState<T[]>(data);
@@ -356,8 +454,21 @@ export function DataTable<T>({
   }
 
   const showSearch = enableGlobalFilter ?? !!searchPlaceholder;
-  const showToolbar = showSearch || enableColumnVisibility || !!toolbarActions;
+  const showToolbar =
+    showSearch || enableColumnVisibility || !!toolbarActions || enableExport;
   const colCount = allColumns.length;
+
+  // Export what's on screen: filtered and sorted, visible columns, every page.
+  const exportRows = React.useMemo(
+    () => table.getSortedRowModel().rows.map((r) => r.original),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [table, rows, sorting, globalFilter],
+  );
+  const exportColumns = React.useMemo(
+    () => toReportColumns(table.getVisibleLeafColumns(), exportRows),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [table, exportRows, columnVisibility],
+  );
 
   const body = (
     <Table>
@@ -431,6 +542,16 @@ export function DataTable<T>({
           </div>
           <div className="flex items-center gap-1.5">
             {toolbarActions}
+            {enableExport && (
+              <ExportMenu
+                name={exportName ?? slugify(exportTitle)}
+                title={exportTitle}
+                columns={exportColumns}
+                rows={exportRows}
+                variant="outline"
+                buttonClassName="h-9 text-xs"
+              />
+            )}
             {enableColumnVisibility && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

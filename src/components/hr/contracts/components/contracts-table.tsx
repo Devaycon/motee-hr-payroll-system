@@ -329,6 +329,7 @@ export function ContractsTable({
       </div>
 
       <DataTable
+        exportTitle="Contracts"
         columns={columns}
         initialColumnVisibility={HIDE_SYSTEM_ID}
         enableColumnVisibility

@@ -8,7 +8,11 @@ import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { BulkCsvUploadModal } from "@/src/components/shared/bulk-csv-upload-modal";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  ASSET_CARD_FILTER_LABELS,
+  type AssetCardFilter,
+} from "./components/stat-cards";
 import { AssetsTable } from "./components/assets-table";
 import { PendingReturnsTable } from "./components/pending-returns-table";
 import { DetailModal } from "./components/detail-modal";
@@ -28,6 +32,8 @@ export function AssetsPage() {
     setAssets(data);
   }
   const [activeTab, setActiveTab] = useState("all");
+  /** Drill-down set by the KPI cards; "all" shows every asset. */
+  const [statusFilter, setStatusFilter] = useState<AssetCardFilter>("all");
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [viewingAsset, setViewingAsset] = useState<Asset | null>(null);
@@ -45,6 +51,11 @@ export function AssetsPage() {
   const unassignedAssets = assets.filter(
     (a) => a.status === "available" && !a.assignedTo,
   );
+  /** The "All Assets" rows, narrowed to whichever KPI card is selected. */
+  const visibleAssets =
+    statusFilter === "all"
+      ? assets
+      : assets.filter((a) => a.status === statusFilter);
 
   function handleAssignNew() {
     setAssigningAsset(null);
@@ -335,7 +346,7 @@ export function AssetsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-4xl font-semibold">Assets</h1>
+          <h1 className="text-4xl font-semibold">Asset Management</h1>
           <p className="text-sm text-muted-foreground">
             Track and manage all company assets and equipment.
           </p>
@@ -356,12 +367,39 @@ export function AssetsPage() {
         </div>
       </div>
 
-      <StatCards assets={assets} />
+      <StatCards
+        assets={assets}
+        activeTab={activeTab}
+        statusFilter={statusFilter}
+        onDrillDown={(tab, status) => {
+          setActiveTab(tab);
+          setStatusFilter(status);
+        }}
+      />
+
+      {statusFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {ASSET_CARD_FILTER_LABELS[statusFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({visibleAssets.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setStatusFilter("all")}
+          >
+            ← All assets
+          </Button>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
-            { value: "all", label: "All Assets" },
+            { value: "all", label: `All Assets (${visibleAssets.length})` },
             {
               value: "unassigned",
               label:
@@ -382,7 +420,7 @@ export function AssetsPage() {
 
         <TabsContent value="all" className="mt-5">
           <AssetsTable
-            assets={assets}
+            assets={visibleAssets}
             onView={handleViewAsset}
             onEdit={handleEditAsset}
             onAssign={handleAssign}

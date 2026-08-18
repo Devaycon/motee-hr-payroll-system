@@ -2,7 +2,13 @@
 
 import { useEffect, useState, useMemo } from "react";
 import type { Department } from "./types";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesDepartmentCardFilter,
+  DEPARTMENT_CARD_FILTER_LABELS,
+  type DepartmentCardFilter,
+} from "./components/stat-cards";
+import { Button } from "@/src/components/ui/button";
 import { DepartmentsToolbar } from "./components/departments-toolbar";
 import { DepartmentsTable } from "./components/departments-table";
 import { DepartmentCreateModal } from "./components/department-create-modal";
@@ -18,6 +24,8 @@ export function DepartmentsPage() {
   }, [data]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  /** Drill-down set by the KPI cards; "all" shows every department. */
+  const [cardFilter, setCardFilter] = useState<DepartmentCardFilter>("all");
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
@@ -29,9 +37,11 @@ export function DepartmentsPage() {
         d.code.toLowerCase().includes(search.toLowerCase()) ||
         (d.head ?? "").toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === "all" || d.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      // The card drill-down composes with search and the status dropdown.
+      const matchesCard = matchesDepartmentCardFilter(d, cardFilter);
+      return matchesSearch && matchesStatus && matchesCard;
     });
-  }, [departments, search, statusFilter]);
+  }, [departments, search, statusFilter, cardFilter]);
 
   function handleAdd() {
     setAddModalOpen(true);
@@ -76,7 +86,28 @@ export function DepartmentsPage() {
         </p>
       </div>
 
-      <StatCards departments={departments} />
+      <StatCards
+        departments={departments}
+        cardFilter={cardFilter}
+        onFilterChange={setCardFilter}
+      />
+
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {DEPARTMENT_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">({filtered.length})</span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All departments
+          </Button>
+        </div>
+      )}
 
       <DepartmentsToolbar
         search={search}

@@ -45,6 +45,7 @@ export const ACTION_LABELS: Record<PermissionAction, string> = {
   delete: "Delete",
   export: "Export",
   approve: "Approve",
+  administer: "Administer",
 };
 
 export function buildEmptyPermissions(): ModulePermission[] {
@@ -91,7 +92,11 @@ function makeLevel(
     name,
     description,
     kind,
+    status: "active",
     employeeCount,
+    dataScope: { kind: "all" },
+    createdBy: "System",
+    createdAt: "2026-01-01",
     lastModifiedBy: "System",
     lastModifiedAt: "2026-01-01",
     permissions,

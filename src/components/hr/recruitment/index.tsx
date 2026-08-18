@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Briefcase,
@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { HrStatCardsGrid } from "@/src/components/shared/hr-stat-card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -38,6 +38,26 @@ import {
 import type { JobRequisition } from "@/src/lib/types/recruitment";
 import { useRecruitment } from "./hooks";
 
+/**
+ * The slice a KPI card drills the recruitment tabs down to. Applicants and
+ * hires live on candidates, so those cards narrow to the *openings* that have
+ * them — the card value stays the headline number, the sub says what opens.
+ */
+type RecruitmentCardFilter =
+  | "all"
+  | "open_roles"
+  | "with_applicants"
+  | "with_hires";
+
+const RECRUITMENT_CARD_FILTER_LABELS: Record<
+  Exclude<RecruitmentCardFilter, "all">,
+  string
+> = {
+  open_roles: "Open roles",
+  with_applicants: "Openings with applicants",
+  with_hires: "Openings with hires",
+};
+
 export function RecruitmentPage() {
   const router = useRouter();
   const { loading, bucket } = useRecruitment();
@@ -51,14 +71,49 @@ export function RecruitmentPage() {
     return m;
   }, [bucket.candidates]);
 
+  /** Requisitions with at least one hire, for the "Hired" card drill-down. */
+  const hiredCountByReq = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of bucket.candidates) {
+      if (c.stage !== "hired" || c.status === "rejected") continue;
+      m.set(c.requisitionId, (m.get(c.requisitionId) ?? 0) + 1);
+    }
+    return m;
+  }, [bucket.candidates]);
+
+  /** Drill-down set by the KPI cards; "all" shows every recruitment. */
+  const [cardFilter, setCardFilter] = useState<RecruitmentCardFilter>("all");
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("approved");
+
+  const matchesCard = useCallback(
+    (r: JobRequisition) => {
+      switch (cardFilter) {
+        case "open_roles":
+          return ["approved", "open", "interviewing", "offer_stage"].includes(
+            r.status,
+          );
+        case "with_applicants":
+          return (activeCountByReq.get(r.id) ?? 0) > 0;
+        case "with_hires":
+          return (hiredCountByReq.get(r.id) ?? 0) > 0;
+        default:
+          return true;
+      }
+    },
+    [cardFilter, activeCountByReq, hiredCountByReq],
+  );
+
   // Requested = drafts being built; Approved = published/active recruitments.
   const requestedList = useMemo(
-    () => bucket.requisitions.filter((r) => r.status === "draft"),
-    [bucket.requisitions],
+    () =>
+      bucket.requisitions.filter((r) => r.status === "draft" && matchesCard(r)),
+    [bucket.requisitions, matchesCard],
   );
   const approvedList = useMemo(
-    () => bucket.requisitions.filter((r) => r.status !== "draft"),
-    [bucket.requisitions],
+    () =>
+      bucket.requisitions.filter((r) => r.status !== "draft" && matchesCard(r)),
+    [bucket.requisitions, matchesCard],
   );
 
   const stats = useMemo(() => {
@@ -76,8 +131,18 @@ export function RecruitmentPage() {
       openRoles,
       applicants: activeApplicants,
       hired,
+      // How many openings each candidate-level number spreads across, so the
+      // card can say what the drill-down will actually list.
+      reqsWithApplicants: activeCountByReq.size,
+      reqsWithHires: hiredCountByReq.size,
     };
-  }, [bucket]);
+  }, [bucket, activeCountByReq, hiredCountByReq]);
+
+  /** Drill-down: opens the tab holding these rows and filters to them. */
+  function drillDown(tab: string, filter: RecruitmentCardFilter) {
+    setActiveTab(tab);
+    setCardFilter(filter);
+  }
 
   const columns = useMemo<ColumnDef<JobRequisition>[]>(
     () => [
@@ -207,28 +272,68 @@ export function RecruitmentPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {[
-          { label: "Requisitions", value: stats.reqs, icon: Briefcase },
-          { label: "Open Roles", value: stats.openRoles, icon: DoorOpen },
-          { label: "Applicants", value: stats.applicants, icon: Users },
-          { label: "Hired", value: stats.hired, icon: CheckCircle2 },
-        ].map((s) => (
-          <Card key={s.label} className="border-border/60">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-                <s.icon className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-                <p className="text-2xl font-bold text-foreground">{s.value}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <HrStatCardsGrid
+        columns={4}
+        stats={[
+          {
+            label: "Requisitions",
+            value: stats.reqs,
+            sub: "Every recruitment raised",
+            icon: Briefcase,
+            tone: "blue",
+            active: cardFilter === "all",
+            onClick: () => drillDown("approved", "all"),
+          },
+          {
+            label: "Open Roles",
+            value: stats.openRoles,
+            sub: "Actively recruiting",
+            icon: DoorOpen,
+            tone: "emerald",
+            active: cardFilter === "open_roles",
+            onClick: () => drillDown("approved", "open_roles"),
+          },
+          {
+            label: "Applicants",
+            value: stats.applicants,
+            sub: `across ${stats.reqsWithApplicants} openings`,
+            icon: Users,
+            tone: "violet",
+            active: cardFilter === "with_applicants",
+            onClick: () => drillDown("approved", "with_applicants"),
+          },
+          {
+            label: "Hired",
+            value: stats.hired,
+            sub: `across ${stats.reqsWithHires} openings`,
+            icon: CheckCircle2,
+            tone: "amber",
+            active: cardFilter === "with_hires",
+            onClick: () => drillDown("approved", "with_hires"),
+          },
+        ]}
+      />
 
-      <Tabs defaultValue="approved">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {RECRUITMENT_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({requestedList.length + approvedList.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All recruitments
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
             { value: "requested", label: `Requested Recruitment (${requestedList.length})` },
@@ -238,6 +343,7 @@ export function RecruitmentPage() {
 
         <TabsContent value="requested" className="mt-5">
           <DataTable
+            exportTitle="Recruitments"
             columns={columns}
             data={requestedList}
             getRowId={(r) => r.id}
@@ -249,6 +355,7 @@ export function RecruitmentPage() {
 
         <TabsContent value="approved" className="mt-5">
           <DataTable
+            exportTitle="Recruitments"
             columns={columns}
             data={approvedList}
             getRowId={(r) => r.id}

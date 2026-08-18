@@ -29,7 +29,11 @@ import {
   actionsColumn,
 } from "@/src/components/shared/data-table";
 import { cn } from "@/src/lib/utils";
-import { GAP_STATUS_LABELS, GAP_STATUS_STYLES } from "../data";
+import {
+  GAP_SEVERITY_LABELS,
+  GAP_SEVERITY_STYLES,
+  gapSeverity,
+} from "../data";
 import { PlanDetailModal } from "./plan-detail-modal";
 import type { HeadcountPlan } from "../types";
 
@@ -116,16 +120,20 @@ export function PlanTable({ plans, onEdit, onDelete, readOnly }: PlanTableProps)
       {
         accessorKey: "gapStatus",
         header: sortableHeader("Status"),
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-              GAP_STATUS_STYLES[row.original.gapStatus],
-            )}
-          >
-            {GAP_STATUS_LABELS[row.original.gapStatus]}
-          </span>
-        ),
+        // §6.7 — four colour-coded bands derived from the gap magnitude.
+        cell: ({ row }) => {
+          const severity = gapSeverity(row.original.actual, row.original.target);
+          return (
+            <span
+              className={cn(
+                "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border",
+                GAP_SEVERITY_STYLES[severity],
+              )}
+            >
+              {GAP_SEVERITY_LABELS[severity]}
+            </span>
+          );
+        },
       },
       actionsColumn<HeadcountPlan>((plan) => (
         <DropdownMenu>
@@ -197,6 +205,7 @@ export function PlanTable({ plans, onEdit, onDelete, readOnly }: PlanTableProps)
   return (
     <>
       <DataTable
+        exportTitle="Headcount Plan"
         columns={columns}
         data={plans}
         getRowId={(p) => p.id}

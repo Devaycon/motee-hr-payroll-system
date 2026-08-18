@@ -1,20 +1,73 @@
 "use client";
 
 import { ClipboardList, CheckCircle, Clock, Star } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import type { PerformanceReview, PerformanceGoal } from "../types";
+
+/** The slice a KPI card drills into. */
+export type PerformanceCardFilter =
+  | "all"
+  | "in_progress"
+  | "rated"
+  | "goals_on_track";
+
+export const PERFORMANCE_CARD_FILTER_LABELS: Record<
+  Exclude<PerformanceCardFilter, "all">,
+  string
+> = {
+  in_progress: "Reviews in progress",
+  rated: "Completed & rated",
+  goals_on_track: "Goals on track",
+};
+
+export function matchesReviewCardFilter(
+  review: PerformanceReview,
+  filter: PerformanceCardFilter,
+): boolean {
+  switch (filter) {
+    case "in_progress":
+      return review.status === "in_progress";
+    case "rated":
+      return review.status === "completed" && Boolean(review.rating);
+    default:
+      return true;
+  }
+}
+
+export function matchesGoalCardFilter(
+  goal: PerformanceGoal,
+  filter: PerformanceCardFilter,
+): boolean {
+  return filter === "goals_on_track"
+    ? goal.status === "on_track" || goal.status === "completed"
+    : true;
+}
 
 interface StatCardsProps {
   reviews: PerformanceReview[];
   goals: PerformanceGoal[];
+  /** The card drill-down currently applied. */
+  cardFilter: PerformanceCardFilter;
+  /** Drill-down: opens the tab holding these rows and filters to them. */
+  onDrillDown: (tab: string, filter: PerformanceCardFilter) => void;
 }
 
-export function StatCards({ reviews, goals }: StatCardsProps) {
+export function StatCards({
+  reviews,
+  goals,
+  cardFilter,
+  onDrillDown,
+}: StatCardsProps) {
   const completed = reviews.filter((r) => r.status === "completed").length;
-  const inProgress = reviews.filter((r) => r.status === "in_progress").length;
+  const inProgress = reviews.filter((r) =>
+    matchesReviewCardFilter(r, "in_progress"),
+  ).length;
   const overdue = reviews.filter((r) => r.status === "overdue").length;
-  const completedWithRating = reviews.filter(
-    (r) => r.status === "completed" && r.rating,
+  const completedWithRating = reviews.filter((r) =>
+    matchesReviewCardFilter(r, "rated"),
   );
   const avgRating =
     completedWithRating.length > 0
@@ -24,70 +77,51 @@ export function StatCards({ reviews, goals }: StatCardsProps) {
         ).toFixed(1)
       : "—";
 
-  const goalsOnTrack = goals.filter(
-    (g) => g.status === "on_track" || g.status === "completed",
+  const goalsOnTrack = goals.filter((g) =>
+    matchesGoalCardFilter(g, "goals_on_track"),
   ).length;
 
-  const cards = [
+  const card = (key: PerformanceCardFilter, tab: string) => ({
+    active: cardFilter === key,
+    // Re-clicking the selected card clears back to the full list.
+    onClick: () => onDrillDown(tab, cardFilter === key ? "all" : key),
+  });
+
+  const cards: HrStatCardItem[] = [
     {
       label: "Total Reviews",
       value: reviews.length,
       sub: `${completed} completed`,
       icon: ClipboardList,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
+      tone: "blue",
+      active: cardFilter === "all",
+      onClick: () => onDrillDown("reviews", "all"),
     },
     {
       label: "In Progress",
       value: inProgress,
       sub: `${overdue} overdue`,
       icon: Clock,
-      color: "text-amber-500",
-      bg: "bg-amber-500/10",
+      tone: "amber",
+      ...card("in_progress", "reviews"),
     },
     {
       label: "Avg. Rating",
       value: avgRating,
-      sub: "Across completed reviews",
+      sub: `Across ${completedWithRating.length} rated reviews`,
       icon: Star,
-      color: "text-yellow-500",
-      bg: "bg-yellow-500/10",
+      tone: "violet",
+      ...card("rated", "reviews"),
     },
     {
       label: "Goals On Track",
       value: goalsOnTrack,
       sub: `of ${goals.length} total goals`,
       icon: CheckCircle,
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10",
+      tone: "emerald",
+      ...card("goals_on_track", "goals"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      {cards.map((c) => {
-        const Icon = c.icon;
-        return (
-          <Card key={c.label}>
-            <CardContent className="flex items-start gap-4 py-5">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${c.bg}`}
-              >
-                <Icon className={`w-5 h-5 ${c.color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground leading-none">
-                  {c.value}
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {c.label}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

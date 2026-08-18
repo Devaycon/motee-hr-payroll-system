@@ -19,6 +19,8 @@ import { Progress } from "@/src/components/ui/progress";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { approveTask } from "@/src/lib/stores/onboarding-records-slice";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
+import { employeeRecordCreated } from "@/src/lib/notifications/recruitment";
 import { cn } from "@/src/lib/utils";
 import {
   ONBOARDING_STAGE_LABELS,
@@ -26,6 +28,7 @@ import {
   ONBOARDING_STATUS_LABELS,
   ONBOARDING_STATUS_STYLES,
 } from "../data";
+import { ReviewPanel } from "../components/review-panel";
 import type { OnboardingTask } from "../types";
 
 const TASK_ICON = {
@@ -90,6 +93,14 @@ export function OnboardingDetailPage({ recordId }: { recordId: string }) {
     dispatch(approveTask({ recordId: record.id, taskId: task.id, actorName }));
 
     if (willComplete) {
+      // §7.18 — the final link in the Applicant → Offer → Hired → Onboarding →
+      // Employee chain. The record is created by the reducer; this is the
+      // signal that it happened, which the chain previously lacked.
+      dispatch(
+        pushNotification(
+          employeeRecordCreated(record.employeeName, record.jobTitle),
+        ),
+      );
       toast.success(`${record.employeeName} cleared — added to Employees`);
       router.push("/talent/onboarding");
     } else {
@@ -165,6 +176,10 @@ export function OnboardingDetailPage({ recordId }: { recordId: string }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* §2.8 / §2.14 — HR reviews what the joiner submitted, and works
+          through the post-submission checklist. */}
+      <ReviewPanel record={record} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
         {/* Workflow tasks */}

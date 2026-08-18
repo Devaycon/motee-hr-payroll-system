@@ -56,6 +56,18 @@ interface ReqForm {
   durationMonths: string;
   reportingManager: string;
   budgetAllocation: number;
+  // §7.10 — the band candidates and approvers actually see.
+  salaryBandName: string;
+  salaryCurrency: string;
+  // §7.9 — the hiring team, beyond the reporting line.
+  hiringManager: string;
+  recruiter: string;
+  hrBusinessPartner: string;
+  interviewPanel: string;
+  // §7.11 — write it, reuse a template, or attach a document.
+  jobDescriptionSource: "written" | "template" | "upload";
+  jobDescriptionTemplateId: string;
+  jobDescriptionFileName: string;
 }
 
 const EMPTY: ReqForm = {
@@ -73,7 +85,43 @@ const EMPTY: ReqForm = {
   durationMonths: "",
   reportingManager: "",
   budgetAllocation: 0,
+  salaryBandName: "",
+  salaryCurrency: "",
+  hiringManager: "",
+  recruiter: "",
+  hrBusinessPartner: "",
+  interviewPanel: "",
+  jobDescriptionSource: "written",
+  jobDescriptionTemplateId: "",
+  jobDescriptionFileName: "",
 };
+
+/**
+ * §7.11 — reusable job descriptions. Most roles are re-advertised with the
+ * same wording, so retyping it invites drift between postings.
+ */
+export const JD_TEMPLATES: { id: string; name: string; body: string }[] = [
+  {
+    id: "jd-generic-manager",
+    name: "People Manager",
+    body: "Lead and develop a team, set objectives, run performance reviews, and own delivery for your area.",
+  },
+  {
+    id: "jd-generic-specialist",
+    name: "Specialist / Individual Contributor",
+    body: "Own a specialist area end to end, advise stakeholders, and deliver work to agreed standards and deadlines.",
+  },
+  {
+    id: "jd-generic-analyst",
+    name: "Analyst",
+    body: "Gather and analyse data, produce reporting and insight, and support decision-making across the business.",
+  },
+  {
+    id: "jd-generic-admin",
+    name: "Administrator",
+    body: "Provide day-to-day administrative support, maintain records, and coordinate scheduling and correspondence.",
+  },
+];
 
 interface Props {
   open: boolean;
@@ -134,6 +182,15 @@ export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) 
           durationMonths: editing.durationMonths ? String(editing.durationMonths) : "",
           reportingManager: editing.reportingManager,
           budgetAllocation: editing.budgetAllocation,
+          salaryBandName: editing.salaryBandName ?? "",
+          salaryCurrency: editing.salaryCurrency ?? "",
+          hiringManager: editing.hiringManager ?? "",
+          recruiter: editing.recruiter ?? "",
+          hrBusinessPartner: editing.hrBusinessPartner ?? "",
+          interviewPanel: (editing.interviewPanel ?? []).join(", "),
+          jobDescriptionSource: editing.jobDescriptionSource ?? "written",
+          jobDescriptionTemplateId: editing.jobDescriptionTemplateId ?? "",
+          jobDescriptionFileName: editing.jobDescriptionFileName ?? "",
         });
         setStep(1);
       } else {
@@ -168,6 +225,18 @@ export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) 
       workforceLabel: form.workforceLabel,
       title: form.title.trim(),
       jobDescription: form.jobDescription.trim(),
+      salaryBandName: form.salaryBandName.trim() || undefined,
+      salaryCurrency: form.salaryCurrency.trim() || undefined,
+      hiringManager: form.hiringManager.trim() || undefined,
+      recruiter: form.recruiter.trim() || undefined,
+      hrBusinessPartner: form.hrBusinessPartner.trim() || undefined,
+      interviewPanel: form.interviewPanel
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      jobDescriptionSource: form.jobDescriptionSource,
+      jobDescriptionTemplateId: form.jobDescriptionTemplateId || undefined,
+      jobDescriptionFileName: form.jobDescriptionFileName || undefined,
       department: form.department,
       location: form.location.trim(),
       numberOfPositions: Math.max(1, form.numberOfPositions),
@@ -367,13 +436,41 @@ export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) 
               <Label>Reporting manager</Label>
               <Input value={form.reportingManager} onChange={(e) => set("reportingManager", e.target.value)} placeholder="Manager name" />
             </div>
+            {/* §7.9 — the hiring team. Without it nobody knows who screens,
+                who interviews, or who owns the offer. */}
             <div className="space-y-1.5">
-              <Label>Salary min</Label>
+              <Label>Hiring manager</Label>
+              <Input value={form.hiringManager} onChange={(e) => set("hiringManager", e.target.value)} placeholder="Owns the hire" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Recruiter</Label>
+              <Input value={form.recruiter} onChange={(e) => set("recruiter", e.target.value)} placeholder="Runs the pipeline" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>HR Business Partner</Label>
+              <Input value={form.hrBusinessPartner} onChange={(e) => set("hrBusinessPartner", e.target.value)} placeholder="HRBP name" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Interview panel</Label>
+              <Input value={form.interviewPanel} onChange={(e) => set("interviewPanel", e.target.value)} placeholder="Comma-separated names" />
+            </div>
+
+            {/* §7.10 — a named band, with the numbers behind it. */}
+            <div className="col-span-2 space-y-1.5">
+              <Label>Salary band</Label>
+              <Input value={form.salaryBandName} onChange={(e) => set("salaryBandName", e.target.value)} placeholder="e.g. Band 5 / Senior Advisor" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Band minimum</Label>
               <Input type="number" min={0} value={form.salaryMin} onChange={(e) => set("salaryMin", Number(e.target.value) || 0)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Salary max</Label>
+              <Label>Band maximum</Label>
               <Input type="number" min={0} value={form.salaryMax} onChange={(e) => set("salaryMax", Number(e.target.value) || 0)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Currency</Label>
+              <Input value={form.salaryCurrency} onChange={(e) => set("salaryCurrency", e.target.value.toUpperCase())} placeholder="e.g. GBP" maxLength={3} />
             </div>
             <div className="space-y-1.5">
               <Label>Start date</Label>
@@ -387,9 +484,83 @@ export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) 
               <Label>Budget allocation</Label>
               <Input type="number" min={0} value={form.budgetAllocation} onChange={(e) => set("budgetAllocation", Number(e.target.value) || 0)} />
             </div>
+            {/* §7.11 — most roles are re-advertised with the same wording, so
+                offer a template or an upload rather than retyping it. */}
             <div className="col-span-2 space-y-1.5">
               <Label>Job description</Label>
-              <Textarea rows={3} value={form.jobDescription} onChange={(e) => set("jobDescription", e.target.value)} placeholder="Summary of the role and responsibilities…" />
+              <div className="flex flex-wrap items-center gap-2">
+                {(
+                  [
+                    ["written", "Write it"],
+                    ["template", "Use a template"],
+                    ["upload", "Upload a document"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    size="sm"
+                    variant={
+                      form.jobDescriptionSource === value ? "default" : "outline"
+                    }
+                    className="h-7 text-xs"
+                    onClick={() => set("jobDescriptionSource", value)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+
+              {form.jobDescriptionSource === "template" && (
+                <Select
+                  value={form.jobDescriptionTemplateId}
+                  onValueChange={(v) => {
+                    const tpl = JD_TEMPLATES.find((t) => t.id === v);
+                    set("jobDescriptionTemplateId", v);
+                    if (tpl) set("jobDescription", tpl.body);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick a job description template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {JD_TEMPLATES.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {form.jobDescriptionSource === "upload" && (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-border p-3">
+                  <span className="text-xs text-muted-foreground">
+                    {form.jobDescriptionFileName || "No document attached"}
+                  </span>
+                  <label className="cursor-pointer text-xs font-medium text-primary">
+                    Choose file
+                    <input
+                      type="file"
+                      accept="application/pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={(e) =>
+                        set(
+                          "jobDescriptionFileName",
+                          e.target.files?.[0]?.name ?? "",
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+              )}
+
+              <Textarea
+                rows={3}
+                value={form.jobDescription}
+                onChange={(e) => set("jobDescription", e.target.value)}
+                placeholder="Summary of the role and responsibilities…"
+              />
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Required qualifications</Label>

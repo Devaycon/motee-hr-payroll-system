@@ -12,7 +12,6 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Label } from "@/src/components/ui/label";
-import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -32,8 +31,19 @@ import {
 } from "lucide-react";
 import type { ERCase, CaseNote, CaseStage } from "../types";
 import {
+  NOTE_VISIBILITY_LABELS,
+  SLA_LABELS,
+  SLA_STYLES,
+  daysOpen,
+  slaState,
+  type NoteVisibility,
+} from "@/src/lib/types/grievance";
+import {
+  canAdvanceTo,
+  stagesForCase,
+} from "@/src/lib/types/case-workflow";
+import {
   CASE_STAGE_CONFIG,
-  CASE_STAGE_ORDER,
   CASE_TYPE_CONFIG,
   CONFIDENTIALITY_CONFIG,
   CASE_OUTCOME_CONFIG,
@@ -69,7 +79,9 @@ export function CaseDetailModal({
 }: Props) {
   const [prevOpen, setPrevOpen] = useState(false);
   const [noteContent, setNoteContent] = useState("");
-  const [isInternal, setIsInternal] = useState(true);
+  // §5.12 — three-way visibility replaces the single "internal" flag.
+  const [noteVisibility, setNoteVisibility] =
+    useState<NoteVisibility>("hr_only");
   const [savingNote, setSavingNote] = useState(false);
 
   // Per-stage capture fields
@@ -86,7 +98,7 @@ export function CaseDetailModal({
     setPrevOpen(open);
     if (open && caseData) {
       setNoteContent("");
-      setIsInternal(true);
+      setNoteVisibility("hr_only");
       setHearingDate(caseData.hearingDate ?? "");
       setHearingPanel((caseData.hearingPanel ?? []).join(", "));
       setOutcome(typeof caseData.outcome === "string" ? caseData.outcome : "");
@@ -105,10 +117,40 @@ export function CaseDetailModal({
   const priCfg = PRIORITY_CONFIG[caseData.priority];
   const confCfg = CONFIDENTIALITY_CONFIG[caseData.confidentialityLevel];
   const currentStep = stageCfg.step;
+  const sla = slaState(caseData);
+  // §5.2 — only the stages this case type actually uses.
+  const flowStages = stagesForCase(caseData.complaintType);
 
+  /**
+   * §5.12 — a case can no longer jump straight from Raised to Closed. Moving
+   * forward requires every intervening stage to have its mandatory
+   * information recorded; moving back is always allowed so a mis-click can be
+   * corrected.
+   */
   function setStage(stage: CaseStage) {
     if (!caseData) return;
-    onUpdateCase(caseData.id, { stage });
+    const { allowed, blockers } = canAdvanceTo(caseData, stage);
+    if (!allowed) {
+      toast.error(`Can't move to ${CASE_STAGE_CONFIG[stage].label} yet`, {
+        description: blockers.join(" · "),
+      });
+      return;
+    }
+    const at = new Date().toISOString();
+    onUpdateCase(caseData.id, {
+      stage,
+      // §5.5 — every stage change is recorded.
+      activity: [
+        ...(caseData.activity ?? []),
+        {
+          id: `act-${at}`,
+          at,
+          actorName: "You",
+          action: "Stage changed",
+          detail: `${CASE_STAGE_CONFIG[caseData.stage].label} → ${CASE_STAGE_CONFIG[stage].label}`,
+        },
+      ],
+    });
     toast.success(`Moved to ${CASE_STAGE_CONFIG[stage].label}.`);
   }
 
@@ -125,11 +167,15 @@ export function CaseDetailModal({
         authorInitials: "YO",
         content: noteContent.trim(),
         createdAt: new Date().toISOString().split("T")[0],
-        isInternal,
+        visibility: noteVisibility,
+        // Kept in step for anything still reading the older flag.
+        isInternal: noteVisibility !== "employee_visible",
       });
       setNoteContent("");
       setSavingNote(false);
-      toast.success("Note added.");
+      toast.success(
+        `Note added — visible to ${NOTE_VISIBILITY_LABELS[noteVisibility]}.`,
+      );
     }, 200);
   }
 
@@ -255,6 +301,45 @@ export function CaseDetailModal({
               >
                 {confCfg.label}
               </span>
+              {/* §5.3 / §5.12 — how the case is tracking against its target. */}
+              <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${SLA_STYLES[sla]}`}
+              >
+                {SLA_LABELS[sla]}
+              </span>
+            </div>
+
+            {/* §5.12 — owner, target date and days open, which the case
+                header previously left the reader to work out. */}
+            <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-4">
+              <div>
+                <p className="text-[11px] text-muted-foreground">Case Owner</p>
+                <p className="text-sm font-medium text-foreground">
+                  {caseData.caseOwner ?? caseData.assignedTo ?? "Unassigned"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground">
+                  Target Resolution
+                </p>
+                <p className="text-sm font-medium text-foreground">
+                  {fmt(caseData.targetResolutionDate)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground">Days Open</p>
+                <p className="text-sm font-medium text-foreground tabular-nums">
+                  {daysOpen(caseData)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground">
+                  Confidentiality
+                </p>
+                <p className="text-sm font-medium text-foreground">
+                  {confCfg.label}
+                </p>
+              </div>
             </div>
 
             <div>
@@ -389,29 +474,42 @@ export function CaseDetailModal({
 
             <Separator />
 
-            {/* 8-stage workflow stepper */}
+            {/* §5.2 — the stages this case type actually uses, not all eight. */}
             <div className="space-y-3">
               <p className="text-sm font-semibold">Workflow</p>
               <div className="flex flex-wrap gap-1.5">
-                {CASE_STAGE_ORDER.map((stage) => {
+                {flowStages.map((stage) => {
                   const cfg = CASE_STAGE_CONFIG[stage];
                   const done = cfg.step < currentStep;
                   const current = cfg.step === currentStep;
+                  // §5.12 — a gated stage is visibly unreachable rather than
+                  // silently failing when clicked.
+                  const { allowed, blockers } = canAdvanceTo(caseData!, stage);
                   return (
                     <button
                       key={stage}
                       type="button"
                       onClick={() => setStage(stage)}
+                      disabled={!allowed}
+                      title={
+                        allowed
+                          ? undefined
+                          : `Blocked: ${blockers.join(" · ")}`
+                      }
                       className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-all ${
                         current
                           ? `${cfg.color} ${cfg.bg} ${cfg.border} ring-1 ring-offset-1 ring-primary`
                           : done
                             ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
-                            : "border-border bg-transparent text-muted-foreground hover:bg-muted/50"
+                            : allowed
+                              ? "border-border bg-transparent text-muted-foreground hover:bg-muted/50"
+                              : "border-border bg-transparent text-muted-foreground/40 cursor-not-allowed"
                       }`}
                     >
                       {done ? (
                         <Check className="h-3 w-3" />
+                      ) : !allowed ? (
+                        <Lock className="h-3 w-3" />
                       ) : (
                         <span className="font-mono">{cfg.step}</span>
                       )}
@@ -421,7 +519,8 @@ export function CaseDetailModal({
                 })}
               </div>
               <p className="text-xs text-muted-foreground">
-                Click a stage to move the case. Capture stage data below.
+                Stages unlock once the information they depend on is recorded.
+                Hover a locked stage to see what&apos;s missing.
               </p>
             </div>
 
@@ -588,12 +687,20 @@ export function CaseDetailModal({
                       <p className="text-xs font-medium">{note.authorName}</p>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      {note.isInternal && (
-                        <span className="flex items-center gap-0.5">
-                          <Lock className="h-3 w-3" />
-                          Internal
-                        </span>
-                      )}
+                      {/* §5.12 — fall back to the older flag for notes
+                          written before visibility existed. */}
+                      {(() => {
+                        const vis: NoteVisibility =
+                          note.visibility ??
+                          (note.isInternal ? "hr_only" : "employee_visible");
+                        if (vis === "employee_visible") return null;
+                        return (
+                          <span className="flex items-center gap-0.5">
+                            <Lock className="h-3 w-3" />
+                            {NOTE_VISIBILITY_LABELS[vis]}
+                          </span>
+                        );
+                      })()}
                       <span>{formatDate(note.createdAt)}</span>
                     </div>
                   </div>
@@ -616,18 +723,31 @@ export function CaseDetailModal({
             rows={2}
           />
           <div className="flex items-center justify-between">
+            {/* §5.12 — HR Only / Case Team / Employee Visible. */}
             <div className="flex items-center gap-2">
-              <Checkbox
-                id="internal-note-footer"
-                checked={isInternal}
-                onCheckedChange={(v: boolean) => setIsInternal(v)}
-              />
-              <label
-                htmlFor="internal-note-footer"
-                className="text-xs text-muted-foreground cursor-pointer select-none"
+              <Label
+                htmlFor="note-visibility"
+                className="text-xs text-muted-foreground"
               >
-                Internal note (HR only)
-              </label>
+                Visible to
+              </Label>
+              <Select
+                value={noteVisibility}
+                onValueChange={(v) => setNoteVisibility(v as NoteVisibility)}
+              >
+                <SelectTrigger id="note-visibility" className="h-8 w-40 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(
+                    Object.keys(NOTE_VISIBILITY_LABELS) as NoteVisibility[]
+                  ).map((v) => (
+                    <SelectItem key={v} value={v} className="text-xs">
+                      {NOTE_VISIBILITY_LABELS[v]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button
               size="sm"

@@ -6,7 +6,13 @@ import { PageTabsList } from "@/src/components/shared/page-tabs";
 import type { Course } from "@/src/lib/types/learning";
 import { MY_ENROLLMENTS, COURSES } from "./components/data";
 import type { MyEnrollment } from "./components/data";
-import { TrainingStatCards } from "./components/stat-cards";
+import {
+  TrainingStatCards,
+  matchesTrainingCardFilter,
+  TRAINING_CARD_FILTER_LABELS,
+  type TrainingCardFilter,
+} from "./components/stat-cards";
+import { Button } from "@/src/components/ui/button";
 import { MyLearningTab } from "./components/my-learning-tab";
 import { LibraryTab } from "./components/library-tab";
 import { HistoryTab } from "./components/history-tab";
@@ -18,6 +24,12 @@ import { CourseDetailModal } from "./components/course-detail-modal";
 
 export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
   const [enrollments, setEnrollments] = useState<MyEnrollment[]>(MY_ENROLLMENTS);
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("my-learning");
+  /** Drill-down set by the KPI cards; "all" shows everything assigned. */
+  const [cardFilter, setCardFilter] = useState<TrainingCardFilter>("all");
+  // Captured once on mount so "overdue" stays stable across re-renders.
+  const [now] = useState(() => new Date());
   const [librarySearch, setLibrarySearch] = useState("");
   const [libraryCategoryFilter, setLibraryCategoryFilter] = useState<string>("all");
 
@@ -35,6 +47,11 @@ export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
   const [assessmentScore, setAssessmentScore] = useState<number | null>(null);
   const [assessmentPassed, setAssessmentPassed] = useState(false);
   const [enrolledCourseId, setEnrolledCourseId] = useState<string | null>(null);
+
+  /** The My Learning rows, narrowed to whichever KPI card is selected. */
+  const visibleEnrollments = enrollments.filter((e) =>
+    matchesTrainingCardFilter(e, cardFilter, now),
+  );
 
   const quizForCourse = (courseId?: string) =>
     COURSES.find((c) => c.id === courseId)?.quiz ?? null;
@@ -163,19 +180,52 @@ export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
         </div>
       )}
 
-      <TrainingStatCards enrollments={enrollments} />
+      <TrainingStatCards
+        enrollments={enrollments}
+        activeTab={activeTab}
+        cardFilter={cardFilter}
+        onDrillDown={(tab, filter) => {
+          setActiveTab(tab);
+          setCardFilter(filter);
+        }}
+      />
 
-      <Tabs defaultValue="my-learning">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {TRAINING_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({visibleEnrollments.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← Everything assigned
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
-            { value: "my-learning", label: "My Learning" },
+            {
+              value: "my-learning",
+              label: `My Learning (${visibleEnrollments.length})`,
+            },
             { value: "library", label: "Course Library" },
             { value: "history", label: "Learning History" },
           ]}
         />
 
         <TabsContent value="my-learning" className="mt-5">
-          <MyLearningTab enrollments={enrollments} onOpenPlayer={openPlayer} />
+          <MyLearningTab
+            enrollments={visibleEnrollments}
+            onOpenPlayer={openPlayer}
+          />
         </TabsContent>
 
         <TabsContent value="library" className="mt-5">

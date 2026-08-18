@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
+import { HrStatCardsGrid } from "@/src/components/shared/hr-stat-card";
 import { Input } from "@/src/components/ui/input";
 import {
   Select,
@@ -71,12 +72,40 @@ import {
 } from "./components/doc-modals";
 import { useRouter } from "next/navigation";
 
+/** The slice a KPI card drills the document library down to. */
+type DocCardFilter = "all" | "pending_ack" | "expiring";
+
+const DOC_CARD_FILTER_LABELS: Record<Exclude<DocCardFilter, "all">, string> = {
+  pending_ack: "Pending acknowledgement",
+  expiring: "Expiring soon",
+};
+
+/** Single source of truth for what each card counts and the grid then shows. */
+function matchesDocCardFilter(
+  doc: EmployeeDocument,
+  filter: DocCardFilter,
+): boolean {
+  switch (filter) {
+    case "pending_ack":
+      return Boolean(doc.requiresAck) && !doc.acknowledged;
+    case "expiring": {
+      if (!doc.expiryDate) return false;
+      const days = daysUntilExpiry(doc.expiryDate);
+      return days >= 0 && days <= 90;
+    }
+    default:
+      return true;
+  }
+}
+
 export function MyDocumentsPage() {
   const router = useRouter();
   const [docs, setDocs] = useState<EmployeeDocument[]>(DEMO_DOCUMENTS);
   const [folders, setFolders] = useState<DocFolder[]>(DEMO_FOLDERS);
 
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  /** Drill-down set by the KPI cards; "all" shows the folder as-is. */
+  const [cardFilter, setCardFilter] = useState<DocCardFilter>("all");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All Types");
 
@@ -118,7 +147,11 @@ export function MyDocumentsPage() {
   const isTrashView = currentFolderId === "trash";
   const isSharedView = currentFolderId === "shared";
 
-  const visibleDocs = isTrashView
+  // The KPI cards count across every folder, so drilling in shows the whole
+  // library narrowed to that slice rather than the folder currently open.
+  const visibleDocs = cardFilter !== "all"
+    ? docs.filter((d) => !d.isTrashed && matchesDocCardFilter(d, cardFilter))
+    : isTrashView
     ? docs.filter((d) => d.isTrashed)
     : isSharedView
       ? SHARED_WITH_ME.filter(
@@ -146,6 +179,12 @@ export function MyDocumentsPage() {
     return days >= 0 && days <= 90;
   }).length;
   const trashCount = docs.filter((d) => d.isTrashed).length;
+
+  /** Drill-down: these slices span folders, so clear the folder selection. */
+  function drillDown(filter: DocCardFilter) {
+    setCardFilter(cardFilter === filter ? "all" : filter);
+    setCurrentFolderId(null);
+  }
 
   function handleAcknowledgeShared(id: string) {
     setSharedAckedIds((prev) => [...prev, id]);
@@ -284,63 +323,73 @@ export function MyDocumentsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {[
+      <HrStatCardsGrid
+        columns={4}
+        stats={[
           {
             label: "Total Documents",
             value: activeDocs.length,
             sub: `${docs.length} including trashed`,
             icon: FileText,
-            iconClass: "text-slate-500 dark:text-slate-400",
-            iconBg: "bg-slate-500/10",
+            tone: "blue",
+            active: cardFilter === "all" && currentFolderId === null,
+            onClick: () => {
+              setCardFilter("all");
+              setCurrentFolderId(null);
+            },
           },
           {
             label: "Pending Acknowledgement",
             value: pendingAck,
             sub: "Requires your action",
             icon: Clock,
-            iconClass: "text-amber-500",
-            iconBg: "bg-amber-500/10",
+            tone: "amber",
+            active: cardFilter === "pending_ack",
+            onClick: () => drillDown("pending_ack"),
           },
           {
             label: "Expiring Soon",
             value: expiringSoon,
             sub: "Within 90 days",
             icon: AlertTriangle,
-            iconClass: "text-red-500",
-            iconBg: "bg-red-500/10",
+            tone: "red",
+            active: cardFilter === "expiring",
+            onClick: () => drillDown("expiring"),
           },
           {
+            // The folder grid only shows at the root, so this returns there.
             label: "My Folders",
             value: rootFolders.length,
             sub: "Active folders",
             icon: Folder,
-            iconClass: "text-primary",
-            iconBg: "bg-primary/10",
+            tone: "violet",
+            onClick: () => {
+              setCardFilter("all");
+              setCurrentFolderId(null);
+              setSearch("");
+            },
           },
-        ].map((card) => (
-          <Card key={card.label} className="border-border/60">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {card.label}
-                  </p>
-                  <p className="text-2xl font-bold tracking-tight">
-                    {card.value}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{card.sub}</p>
-                </div>
-                <div
-                  className={`flex size-9 items-center justify-center rounded-lg ${card.iconBg}`}
-                >
-                  <card.icon className={`size-4 ${card.iconClass}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        ]}
+      />
+
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {DOC_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({visibleDocs.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All documents
+          </Button>
+        </div>
+      )}
 
       {pendingAck > 0 && (
         <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-background px-4 py-3">
@@ -462,7 +511,7 @@ export function MyDocumentsPage() {
               </p>
             )}
 
-            {!currentFolderId && !search && (
+            {!currentFolderId && !search && cardFilter === "all" && (
               <div>
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Folders
@@ -571,7 +620,7 @@ export function MyDocumentsPage() {
               </div>
             )}
 
-            {(currentFolderId !== null || search) && (
+            {(currentFolderId !== null || search || cardFilter !== "all") && (
               <>
                 {visibleDocs.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 py-20 text-center">

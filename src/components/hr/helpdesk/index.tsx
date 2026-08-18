@@ -17,7 +17,12 @@ import {
   CardTitle,
   CardDescription,
 } from "@/src/components/ui/card";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesHelpdeskCardFilter,
+  HELPDESK_CARD_FILTER_LABELS,
+  type HelpdeskCardFilter,
+} from "./components/stat-cards";
 import { CasesTable } from "./components/cases-table";
 import { CaseDetailModal } from "./components/case-detail-modal";
 import { NewCaseModal } from "./components/new-case-modal";
@@ -48,6 +53,12 @@ export function HelpdeskPage() {
     if (data) setTickets(data);
   }, [data]);
   const [faqArticles, setFaqArticles] = useState<FAQArticle[]>(FAQ_ARTICLES);
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("open");
+  /** Drill-down set by the KPI cards; "all" shows every case. */
+  const [cardFilter, setCardFilter] = useState<HelpdeskCardFilter>("all");
+  // Captured once on mount so "resolved today" stays stable across renders.
+  const [today] = useState(() => new Date().toISOString().slice(0, 10));
   const [newCaseOpen, setNewCaseOpen] = useState(false);
   const [detailTicket, setDetailTicket] = useState<HelpDeskTicket | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -193,6 +204,16 @@ export function HelpdeskPage() {
       t.status === "in_progress" ||
       t.status === "pending_response",
   );
+  /** The "All Cases" rows, narrowed to whichever KPI card is selected. */
+  const visibleTickets = tickets.filter((t) =>
+    matchesHelpdeskCardFilter(t, cardFilter, today),
+  );
+
+  /** Drill-down: opens the tab holding these cases and filters to them. */
+  function drillDown(tab: string, filter: HelpdeskCardFilter) {
+    setActiveTab(tab);
+    setCardFilter(filter);
+  }
 
   const stats = computeHelpdeskStats(tickets);
   const categoryBreakdown = getCategoryBreakdown(tickets);
@@ -232,9 +253,33 @@ export function HelpdeskPage() {
         </Button>
       </div>
 
-      <StatCards tickets={tickets} />
+      <StatCards
+        tickets={tickets}
+        activeTab={activeTab}
+        cardFilter={cardFilter}
+        onDrillDown={drillDown}
+      />
 
-      <Tabs defaultValue="open">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {HELPDESK_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({visibleTickets.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All cases
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
             {
@@ -244,7 +289,7 @@ export function HelpdeskPage() {
                   ? `Open Cases (${openTickets.length})`
                   : "Open Cases",
             },
-            { value: "all", label: "All Cases" },
+            { value: "all", label: `All Cases (${visibleTickets.length})` },
             { value: "faq", label: "FAQ Library" },
             { value: "analytics", label: "Analytics" },
           ]}
@@ -262,7 +307,7 @@ export function HelpdeskPage() {
 
         <TabsContent value="all" className="mt-4">
           <CasesTable
-            tickets={tickets}
+            tickets={visibleTickets}
             onView={openDetail}
             onUpdateStatus={handleUpdateStatus}
             onAssign={handleAssign}

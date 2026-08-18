@@ -336,6 +336,7 @@ export function ArticlesTable({
         </div>
 
         <DataTable
+          exportTitle="Knowledge Articles"
           columns={columns}
           data={filtered}
           getRowId={(a) => a.id}

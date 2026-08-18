@@ -107,6 +107,7 @@ export function NewHiresTable({ hires }: NewHiresTableProps) {
 
   return (
     <DataTable
+      exportTitle="New Hires"
       columns={columns}
       initialColumnVisibility={HIDE_SYSTEM_ID}
       enableColumnVisibility

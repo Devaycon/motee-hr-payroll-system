@@ -7,6 +7,9 @@ interface GoalsTabProps {
   goals: PerformanceGoal[];
   activeGoals: PerformanceGoal[];
   completedGoals: PerformanceGoal[];
+  /** Set when a KPI card has drilled in — names the slice on show. */
+  filterLabel?: string;
+  onClearFilter?: () => void;
   onView: (g: PerformanceGoal) => void;
   onUpdateProgress: (g: PerformanceGoal) => void;
   onNewGoal: () => void;
@@ -16,16 +19,36 @@ export function GoalsTab({
   goals,
   activeGoals,
   completedGoals,
+  filterLabel,
+  onClearFilter,
   onView,
   onUpdateProgress,
   onNewGoal,
 }: GoalsTabProps) {
+  const shown = activeGoals.length + completedGoals.length;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          My Goals ({goals.length})
-        </p>
+        {filterLabel ? (
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wide">
+              {filterLabel} ({shown})
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-muted-foreground"
+              onClick={onClearFilter}
+            >
+              ← All goals
+            </Button>
+          </div>
+        ) : (
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            My Goals ({goals.length})
+          </p>
+        )}
         <Button
           size="sm"
           className="h-8 text-xs gap-1.5 bg-[#4361ee] hover:bg-[#3451d1] text-white"
@@ -34,6 +57,14 @@ export function GoalsTab({
           <Plus className="w-3.5 h-3.5" /> Add Goal
         </Button>
       </div>
+
+      {shown === 0 && (
+        <p className="text-sm text-muted-foreground py-6 text-center">
+          {filterLabel
+            ? `No goals in ${filterLabel.toLowerCase()}.`
+            : "No goals yet. Click “Add Goal” to set your first one."}
+        </p>
+      )}
 
       {activeGoals.length > 0 && (
         <div className="flex flex-col gap-3">

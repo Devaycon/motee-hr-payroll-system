@@ -1,7 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { Upload, Info, IdCard, Check, FileText, ClipboardList } from "lucide-react";
+import {
+  Upload,
+  Info,
+  IdCard,
+  Check,
+  FileText,
+  ClipboardList,
+  ChevronDown,
+} from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Separator } from "@/src/components/ui/separator";
@@ -70,7 +78,9 @@ export interface TaxFormState {
 }
 
 export const EMPTY_TAX: TaxFormState = {
-  hasP45: "yes",
+  // §2.18 — no default. The joiner answers "Do you have a P45?" first, and
+  // that answer decides whether they upload or fill in the checklist.
+  hasP45: "",
   documentRef: "",
   payeOfficeNumber: "",
   payeReferenceNumber: "",
@@ -127,7 +137,11 @@ export function buildStarterTaxRecord(
   };
 
   if (tax.hasP45 === "yes") {
-    if (!tax.leavingDate || !tax.taxCodeAtLeaving) return null;
+    // §2.18 — an uploaded P45 is enough on its own; the boxes are optional
+    // extras for anyone who wants to key them, not a precondition.
+    if (!tax.documentRef && (!tax.leavingDate || !tax.taxCodeAtLeaving)) {
+      return null;
+    }
     const payeRef = [tax.payeOfficeNumber, tax.payeReferenceNumber]
       .filter(Boolean)
       .join("/");
@@ -334,7 +348,10 @@ export function TaxStep({ value: tax, onChange, meta, recap }: TaxStepProps) {
       ? STARTER_DECLARATION_STATEMENTS[resolveStarterDeclaration(toAnswers(tax))]
       : null;
 
-  const activeTab = tax.hasP45 === "no" ? "checklist" : "p45";
+  // §2.18 — the joiner answers the P45 question first; until they do, neither
+  // branch is shown, so nobody fills in a checklist they didn't need.
+  const activeTab =
+    tax.hasP45 === "no" ? "checklist" : tax.hasP45 === "yes" ? "p45" : "";
 
   return (
     <>
@@ -362,10 +379,16 @@ export function TaxStep({ value: tax, onChange, meta, recap }: TaxStepProps) {
         </div>
       </div>
 
+      <p className="text-sm font-medium text-foreground">
+        Do you have a P45 from your previous employer?
+      </p>
+
       {/* Tabbed P45 / Checklist selector, content in a wrapper card */}
       <Tabs
         value={activeTab}
-        onValueChange={(v) => onChange({ hasP45: v === "checklist" ? "no" : "yes" })}
+        onValueChange={(v) =>
+          onChange({ hasP45: v === "checklist" ? "no" : "yes" })
+        }
         className="w-full"
       >
         <TabsList className="h-16 w-full">
@@ -380,18 +403,38 @@ export function TaxStep({ value: tax, onChange, meta, recap }: TaxStepProps) {
         <div className="rounded-xl border border-border bg-card p-5 mt-3">
           {/* P45 branch */}
           <TabsContent value="p45" className="mt-0 flex flex-col gap-4">
+            {/* §2.18 — upload rather than re-key. Payroll can read the figures
+                off the document, so asking the joiner to transcribe twelve
+                boxes only adds transcription errors. */}
             <p className="text-sm text-muted-foreground">
-              Copy these from Parts 2 and 3 of your P45.
+              Upload your P45 and you&apos;re done — there&apos;s no need to
+              copy the figures across.
             </p>
-            <div className="rounded-lg border border-dashed border-border p-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Upload className="h-4 w-4" />
-                {tax.documentRef
-                  ? tax.documentRef
-                  : "Upload your P45 (optional) — you can still continue without it."}
+            <div
+              className={cn(
+                "rounded-lg border border-dashed p-4 flex items-center justify-between gap-3",
+                tax.documentRef
+                  ? "border-emerald-500/40 bg-emerald-500/5"
+                  : "border-border",
+              )}
+            >
+              <div className="flex items-center gap-2 text-sm">
+                {tax.documentRef ? (
+                  <>
+                    <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-foreground">{tax.documentRef}</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      Upload your P45 (PDF or photo)
+                    </span>
+                  </>
+                )}
               </div>
               <label className="text-sm font-medium text-primary cursor-pointer">
-                Choose file
+                {tax.documentRef ? "Replace" : "Choose file"}
                 <input
                   type="file"
                   accept="application/pdf,image/*"
@@ -402,6 +445,19 @@ export function TaxStep({ value: tax, onChange, meta, recap }: TaxStepProps) {
                 />
               </label>
             </div>
+
+            <details className="group rounded-lg border border-border">
+              <summary className="cursor-pointer list-none px-4 py-2.5 text-sm font-medium text-foreground marker:hidden">
+                <span className="flex items-center justify-between">
+                  Enter the figures manually instead (optional)
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                </span>
+              </summary>
+              <div className="border-t border-border p-4">
+                <p className="mb-4 text-xs text-muted-foreground">
+                  Copy these from Parts 2 and 3 of your P45. Only needed if you
+                  can&apos;t upload the document.
+                </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
@@ -549,6 +605,8 @@ export function TaxStep({ value: tax, onChange, meta, recap }: TaxStepProps) {
                 </div>
               </div>
             )}
+              </div>
+            </details>
           </TabsContent>
 
           {/* Starter Checklist branch — guided flow */}

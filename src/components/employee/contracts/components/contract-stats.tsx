@@ -1,12 +1,20 @@
 "use client";
 
-import { Card, CardContent } from "@/src/components/ui/card";
+import { FileText, FileCheck2, AlertTriangle, PenLine } from "lucide-react";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 
 interface ContractStatsProps {
   total: number;
   active: number;
   expiring: number;
   pending: number;
+  /** The tab currently open, so the matching card reads as selected. */
+  activeTab: string;
+  /** Drill-down: opens the tab listing the contracts behind the number. */
+  onTabChange: (tab: string) => void;
 }
 
 export function ContractStats({
@@ -14,28 +22,48 @@ export function ContractStats({
   active,
   expiring,
   pending,
+  activeTab,
+  onTabChange,
 }: ContractStatsProps) {
-  const cards = [
-    { label: "Total Contracts", value: total },
-    { label: "Active", value: active },
-    { label: "Expiring Soon", value: expiring },
-    { label: "Pending Signature", value: pending },
+  const card = (tab: string) => ({
+    active: activeTab === tab,
+    onClick: () => onTabChange(tab),
+  });
+
+  const cards: HrStatCardItem[] = [
+    {
+      label: "Total Contracts",
+      value: total,
+      sub: "Everything on file",
+      icon: FileText,
+      tone: "blue",
+      ...card("all"),
+    },
+    {
+      label: "Active",
+      value: active,
+      sub: "Currently in force",
+      icon: FileCheck2,
+      tone: "emerald",
+      ...card("active"),
+    },
+    {
+      label: "Expiring Soon",
+      value: expiring,
+      sub: "Within 30 days",
+      icon: AlertTriangle,
+      tone: "amber",
+      ...card("expiring"),
+    },
+    {
+      label: "Pending Signature",
+      value: pending,
+      sub: "Waiting on you",
+      icon: PenLine,
+      tone: "red",
+      ...card("unsigned"),
+    },
   ];
 
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      {cards.map((card) => (
-        <Card key={card.label} className="py-4">
-          <CardContent className="px-4">
-            <p className="text-xl font-bold text-foreground leading-none">
-              {card.value}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-1.5">
-              {card.label}
-            </p>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

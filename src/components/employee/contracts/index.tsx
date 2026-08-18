@@ -45,9 +45,6 @@ export default function MyContractsPage() {
   const active = myContracts.filter((c) => c.status === "active");
   const expiring = myContracts.filter((c) => c.status === "expiring_soon");
   const unsigned = myContracts.filter((c) => c.signatureStatus === "unsigned");
-  const pending = myContracts.filter(
-    (c) => c.signatureStatus !== "fully_signed",
-  );
 
   function handleView(contract: Contract) {
     setViewingContract(contract);
@@ -106,7 +103,11 @@ export default function MyContractsPage() {
         total={myContracts.length}
         active={active.length}
         expiring={expiring.length}
-        pending={pending.length}
+        // Counts the unsigned set, not every not-yet-fully-signed contract,
+        // so the card matches the Unsigned tab it drills into.
+        pending={unsigned.length}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

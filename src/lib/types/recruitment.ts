@@ -50,11 +50,20 @@ export interface ApplicationFormField {
 }
 
 // ── Recruitment flow (per-requisition pipeline config) ───────────────────────
-/** Closed set of pipeline stages. `applicants` is the entry, `hired` the terminal. */
+/**
+ * Closed set of pipeline stages. `applicants` is the entry, `hired` the
+ * terminal.
+ *
+ * §7.18 — `offer` sits between interview and hired. Offers were already on the
+ * candidate record but had no stage of their own, so the pipeline jumped
+ * straight from "interviewed" to "hired" with the offer/accept/decline round
+ * trip happening entirely off-system.
+ */
 export type RecruitmentStageType =
   | "applicants"
   | "shortlisted"
   | "interview"
+  | "offer"
   | "hired";
 
 /** What happens to an applicant who fails a stage's entry gate. */
@@ -161,6 +170,78 @@ export interface JobRequisition {
   requisitionNumber?: string;
   /** This requisition's configured stage pipeline. */
   flow?: RequisitionFlow;
+  // §7.15 — scheduling controls, so a vacancy can go live on a chosen date
+  // and close itself rather than being left open indefinitely.
+  /** ISO date to publish on; absent means "publish immediately". */
+  scheduledPublishAt?: string;
+  /** ISO date after which the vacancy stops accepting applications. */
+  expiryDate?: string;
+  /** Close the vacancy automatically once the expiry date passes. */
+  autoCloseOnExpiry?: boolean;
+}
+
+/** §7.17 — one thing that should be sorted out before a vacancy goes live. */
+export interface PublishWarning {
+  field: string;
+  message: string;
+  /** Blocking issues can't be published past; advisory ones can. */
+  severity: "blocking" | "advisory";
+}
+
+/**
+ * §7.17 — validate a recruitment before publishing. A vacancy with no job
+ * description or no hiring manager wastes every applicant's time, so it is
+ * worth catching before it reaches a job board.
+ */
+export function validateBeforePublish(
+  req: Partial<JobRequisition>,
+): PublishWarning[] {
+  const warnings: PublishWarning[] = [];
+
+  if (!req.jobDescription?.trim()) {
+    warnings.push({
+      field: "Job description",
+      message: "Applicants have nothing to read without one.",
+      severity: "blocking",
+    });
+  }
+  if (!req.hiringManager?.trim()) {
+    warnings.push({
+      field: "Hiring manager",
+      message: "Nobody is assigned to own this hire.",
+      severity: "blocking",
+    });
+  }
+  if ((req.applicationForm?.length ?? 0) === 0) {
+    warnings.push({
+      field: "Application questions",
+      message: "The form collects nothing beyond the defaults.",
+      severity: "advisory",
+    });
+  }
+  if (!req.salaryMin && !req.salaryMax) {
+    warnings.push({
+      field: "Salary",
+      message: "No salary range set — expect more unsuitable applicants.",
+      severity: "advisory",
+    });
+  }
+  if ((req.postingPlatforms?.length ?? 0) === 0) {
+    warnings.push({
+      field: "Posting platforms",
+      message: "Not selected for any channel, so nobody will see it.",
+      severity: "blocking",
+    });
+  }
+  if (!req.flow) {
+    warnings.push({
+      field: "Interview workflow",
+      message: "No stage pipeline configured for this role.",
+      severity: "advisory",
+    });
+  }
+
+  return warnings;
 }
 
 export interface NewJobRequisition {
@@ -279,6 +360,26 @@ export interface Candidate {
   score: number | null;
   /** Gate progress keyed by the stage the gate guards entry to. */
   gateProgress?: Partial<Record<RecruitmentStageType, CandidateGateProgress>>;
+  /**
+   * §7.18 — the employee record created from this hire, once onboarding
+   * completes. Closes the Applicant → Offer → Hired → Onboarding → Employee
+   * chain the client flagged as the biggest gap.
+   */
+  createdEmployeeId?: string;
+}
+
+/** §7.18 — the candidate's most recent offer, or null if none has been sent. */
+export function latestOffer(candidate: Candidate): CandidateOffer | null {
+  return candidate.offers.at(-1) ?? null;
+}
+
+/**
+ * §7.18 — a candidate may only be marked hired once they have actually
+ * accepted. Advancing on a "sent" offer is how someone ends up onboarded
+ * before they have said yes.
+ */
+export function hasAcceptedOffer(candidate: Candidate): boolean {
+  return candidate.offers.some((o) => o.status === "accepted");
 }
 
 // ── Interviews ────────────────────────────────────────────────────────────--

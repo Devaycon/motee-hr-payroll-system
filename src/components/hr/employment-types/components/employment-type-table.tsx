@@ -214,6 +214,7 @@ export function EmploymentTypeTable({
   return (
     <>
       <DataTable
+        exportTitle="Employment Types"
         columns={columns}
         data={types}
         getRowId={(t) => t.id}

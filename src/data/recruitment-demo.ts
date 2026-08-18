@@ -60,6 +60,7 @@ export const RECRUITMENT_STAGE_TYPES: RecruitmentStageType[] = [
   "applicants",
   "shortlisted",
   "interview",
+  "offer",
   "hired",
 ];
 
@@ -67,12 +68,14 @@ export const RECRUITMENT_STAGE_TYPES: RecruitmentStageType[] = [
 export const OPTIONAL_STAGES: RecruitmentStageType[] = [
   "shortlisted",
   "interview",
+  "offer",
 ];
 
 export const STAGE_TYPE_LABELS: Record<RecruitmentStageType, string> = {
   applicants: "Applicants",
   shortlisted: "Shortlisted",
   interview: "Interview",
+  offer: "Offer",
   hired: "Hired",
 };
 
@@ -83,6 +86,8 @@ export const STAGE_TYPE_STYLES: Record<RecruitmentStageType, string> = {
     "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-400",
   interview:
     "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+  offer:
+    "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
   hired:
     "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
 };
@@ -98,6 +103,7 @@ export function defaultFlow(): RequisitionFlow {
       { type: "applicants", enabled: true },
       { type: "shortlisted", enabled: false, gate: { manual: true } },
       { type: "interview", enabled: true, gate: { manual: true } },
+      { type: "offer", enabled: true, gate: { manual: true } },
       { type: "hired", enabled: true, gate: { manual: true } },
     ],
   };

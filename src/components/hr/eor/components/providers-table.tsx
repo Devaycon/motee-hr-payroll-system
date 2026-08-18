@@ -153,6 +153,7 @@ export function ProvidersTable({
   return (
     <>
       <DataTable
+        exportTitle="EOR Providers"
         columns={columns}
         data={providers}
         getRowId={(p) => p.id}

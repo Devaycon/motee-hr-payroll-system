@@ -53,7 +53,7 @@ export function FilterConstraintsEditor({
         <div>
           <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <Filter className="w-3.5 h-3.5" />
-            Filter constraints
+            Applicant filters
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             Build named filters off the fields above (e.g. “Graduates”, “Has

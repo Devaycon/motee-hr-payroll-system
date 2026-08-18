@@ -1,61 +1,92 @@
 "use client";
 
 import { CalendarDays, Clock, CheckCircle2, TrendingUp } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import { MY_BALANCES, MY_HISTORY, daysRemaining } from "./data";
+import type { LeaveTypeName } from "@/src/lib/types/leave";
 
-export function LeaveStatCards() {
+/** The slice a KPI card drills the leave history down to. */
+export type LeaveHistoryFilter = "all" | "pending" | "approved";
+
+export const LEAVE_HISTORY_FILTER_LABELS: Record<
+  Exclude<LeaveHistoryFilter, "all">,
+  string
+> = {
+  pending: "Pending requests",
+  approved: "Approved leave",
+};
+
+interface LeaveStatCardsProps {
+  /** The tab currently open. */
+  activeTab: string;
+  /** The entitlement card currently expanded, if any. */
+  expandedType: LeaveTypeName | null;
+  /** The history drill-down currently applied. */
+  historyFilter: LeaveHistoryFilter;
+  /** Drill-down: opens the entitlement behind a balance card. */
+  onShowEntitlement: (type: LeaveTypeName) => void;
+  /** Drill-down: opens the history filtered to the requests counted here. */
+  onShowHistory: (filter: LeaveHistoryFilter) => void;
+}
+
+export function LeaveStatCards({
+  activeTab,
+  expandedType,
+  historyFilter,
+  onShowEntitlement,
+  onShowHistory,
+}: LeaveStatCardsProps) {
   const pendingCount = MY_HISTORY.filter((h) => h.status === "pending").length;
+  const annual = MY_BALANCES[0];
+  const sick = MY_BALANCES[1];
 
-  const stats = [
+  /** Re-clicking the open entitlement collapses it again. */
+  const balanceCard = (balance: (typeof MY_BALANCES)[number]) => ({
+    active: activeTab === "entitlements" && expandedType === balance.type,
+    onClick: () => onShowEntitlement(balance.type),
+  });
+
+  const stats: HrStatCardItem[] = [
     {
       label: "Annual Leave Remaining",
-      value: `${daysRemaining(MY_BALANCES[0])} days`,
+      value: `${daysRemaining(annual)} days`,
+      sub: "See the full entitlement",
       icon: CalendarDays,
-      color: "#2563EB",
+      tone: "blue",
+      ...balanceCard(annual),
     },
     {
       label: "Sick Leave Remaining",
-      value: `${daysRemaining(MY_BALANCES[1])} days`,
+      value: `${daysRemaining(sick)} days`,
+      sub: "See the full entitlement",
       icon: TrendingUp,
-      color: "#EF4444",
+      tone: "red",
+      ...balanceCard(sick),
     },
     {
       label: "Pending Requests",
       value: pendingCount,
+      sub: "Awaiting a decision",
       icon: Clock,
-      color: "#F59E0B",
+      tone: "amber",
+      active: historyFilter === "pending",
+      onClick: () =>
+        onShowHistory(historyFilter === "pending" ? "all" : "pending"),
     },
     {
       label: "Total Leave Taken",
       value: `${MY_HISTORY.filter((h) => h.status === "approved").reduce((s, h) => s + h.totalDays, 0)} days`,
+      sub: "Approved and taken",
       icon: CheckCircle2,
-      color: "#1D9E75",
+      tone: "emerald",
+      active: historyFilter === "approved",
+      onClick: () =>
+        onShowHistory(historyFilter === "approved" ? "all" : "approved"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      {stats.map((s) => (
-        <Card key={s.label}>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: `${s.color}18` }}
-            >
-              <s.icon className="w-4 h-4" style={{ color: s.color }} />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-foreground leading-none">
-                {s.value}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {s.label}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  return <HrStatCardsGrid stats={stats} columns={4} />;
 }

@@ -1,29 +1,47 @@
 "use client";
 
 import { Users, Briefcase, Target, AlertTriangle } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
-import type { HeadcountPlan, AttritionRisk } from "../types";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
+import type { HeadcountPlan, AttritionRisk, GapStatus } from "../types";
 
 interface StatCardsProps {
   plans: HeadcountPlan[];
   attritionRisks: AttritionRisk[];
+  /**
+   * Drill-down: jumps to a tab, optionally pre-filtering the Gap Report to a
+   * single status (client feedback §6.1 — flagged as highest priority).
+   */
+  onDrillDown: (tab: string, gapStatus?: GapStatus) => void;
 }
 
-export function StatCards({ plans, attritionRisks }: StatCardsProps) {
+export function StatCards({
+  plans,
+  attritionRisks,
+  onDrillDown,
+}: StatCardsProps) {
   const totalActual = plans.reduce((sum, p) => sum + p.actual, 0);
   const totalTarget = plans.reduce((sum, p) => sum + p.target, 0);
+  const variance = totalActual - totalTarget;
   const openVacancies = Math.max(0, totalTarget - totalActual);
   const deptsOnTarget = plans.filter((p) => p.gapStatus === "on_target").length;
   const highRisk = attritionRisks.filter((r) => r.riskLevel === "high").length;
+  // "At risk" excludes the low band, which is carried only for the summary
+  // cards on the Attrition Risk tab.
+  const atRisk = attritionRisks.filter((r) => r.riskLevel !== "low").length;
 
-  const cards = [
+  const cards: HrStatCardItem[] = [
     {
-      label: "Total Headcount",
+      // §6.2 — "20 / 22 planned" read ambiguously; spell out target and gap.
+      label: "Current Headcount",
       value: totalActual,
-      sub: `${totalTarget} planned`,
+      sub: `Target ${totalTarget} · Gap ${variance > 0 ? `+${variance}` : variance}`,
       icon: Users,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
+      tone: "blue",
+      link: "/organization/employees",
+      onClick: () => onDrillDown("plan"),
     },
     {
       label: "Open Vacancies",
@@ -33,52 +51,27 @@ export function StatCards({ plans, attritionRisks }: StatCardsProps) {
           ? "1 position unfilled"
           : `${openVacancies} positions unfilled`,
       icon: Briefcase,
-      color: "text-amber-500",
-      bg: "bg-amber-500/10",
+      tone: "amber",
+      onClick: () => onDrillDown("gap", "under"),
     },
     {
-      label: "Depts On Target",
+      // §6.5 — client's preferred wording.
+      label: "Departments at Target",
       value: deptsOnTarget,
       sub: `out of ${plans.length} departments`,
       icon: Target,
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10",
+      tone: "emerald",
+      onClick: () => onDrillDown("gap", "on_target"),
     },
     {
       label: "Attrition Risk",
-      value: attritionRisks.length,
+      value: atRisk,
       sub: `${highRisk} high-risk employee${highRisk !== 1 ? "s" : ""}`,
       icon: AlertTriangle,
-      color: "text-red-500",
-      bg: "bg-red-500/10",
+      tone: "red",
+      onClick: () => onDrillDown("attrition"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      {cards.map((c) => {
-        const Icon = c.icon;
-        return (
-          <Card key={c.label}>
-            <CardContent className="flex items-start gap-4 py-5">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${c.bg}`}
-              >
-                <Icon className={`w-5 h-5 ${c.color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground leading-none">
-                  {c.value}
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {c.label}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

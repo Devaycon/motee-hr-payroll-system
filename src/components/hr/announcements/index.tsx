@@ -8,7 +8,12 @@ import { toast } from "sonner";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesAnnouncementCardFilter,
+  ANNOUNCEMENT_CARD_FILTER_LABELS,
+  type AnnouncementCardFilter,
+} from "./components/stat-cards";
 import { AnnouncementsFeed } from "./components/announcements-feed";
 import { AnnouncementDetailModal } from "./components/announcement-detail-modal";
 import { AnnouncementFormModal } from "./components/announcement-form-modal";
@@ -27,9 +32,18 @@ export function AnnouncementsPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [viewing, setViewing] = useState<Announcement | null>(null);
 
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("all");
+  /** Drill-down set by the KPI cards; "all" shows every announcement. */
+  const [cardFilter, setCardFilter] = useState<AnnouncementCardFilter>("all");
+
   const active = announcements.filter((a) => !a.isArchived);
   const pinned = active.filter((a) => a.isPinned);
   const archived = announcements.filter((a) => a.isArchived);
+  /** The "All" feed, narrowed to whichever KPI card is selected. */
+  const visible = active.filter((a) =>
+    matchesAnnouncementCardFilter(a, cardFilter),
+  );
 
   function handleNew() {
     setEditing(null);
@@ -125,12 +139,38 @@ export function AnnouncementsPage() {
         </Button>
       </div>
 
-      <StatCards announcements={announcements} />
+      <StatCards
+        announcements={announcements}
+        cardFilter={cardFilter}
+        onDrillDown={(filter) => {
+          setCardFilter(filter);
+          // Every card counts non-archived announcements, so drilling always
+          // lands on the "All" feed.
+          setActiveTab("all");
+        }}
+      />
 
-      <Tabs defaultValue="all">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {ANNOUNCEMENT_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">({visible.length})</span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All announcements
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
-            { value: "all", label: "All" },
+            { value: "all", label: `All (${visible.length})` },
             {
               value: "pinned",
               label: pinned.length > 0 ? `Pinned (${pinned.length})` : "Pinned",
@@ -147,7 +187,7 @@ export function AnnouncementsPage() {
 
         <TabsContent value="all" className="mt-4">
           <AnnouncementsFeed
-            announcements={active}
+            announcements={visible}
             onView={handleView}
             onEdit={handleEdit}
             onPin={handlePin}

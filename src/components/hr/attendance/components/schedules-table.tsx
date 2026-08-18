@@ -161,6 +161,7 @@ export function SchedulesTable({
 
       <div className="mt-4">
         <DataTable
+          exportTitle="Work Schedules"
           columns={columns}
           data={schedules}
           getRowId={(s) => s.id}

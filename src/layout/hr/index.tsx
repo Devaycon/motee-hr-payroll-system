@@ -7,6 +7,7 @@ import { LogoPatternBackground } from "@/src/components/shared/logo-pattern-back
 import { MoteeFollowingPointer } from "@/src/components/shared/motee-following-pointer";
 import { SidebarInset } from "@/src/layout/shared/sidebar-collapse";
 import { useCurrentUser } from "@/src/lib/auth/demo-identity";
+import { RolePreviewBanner } from "@/src/components/hr/access-levels/components/preview-banner";
 
 const HrLayout = ({ children }: { children: ReactNode }) => {
   // Resolves (and seeds) the signed-in user so the admin portal and
@@ -17,6 +18,9 @@ const HrLayout = ({ children }: { children: ReactNode }) => {
       <Sidebar />
       <SidebarInset>
         <Navbar />
+        {/* §1.10 — sits under the navbar so it is visible on every admin page
+            for as long as the preview is on, not just where it was started. */}
+        <RolePreviewBanner />
         <main className="relative flex-1 overflow-clip p-6">
           <LogoPatternBackground />
           {/* <MoteeFollowingPointer logoSrc="/single-logo.png" /> */}

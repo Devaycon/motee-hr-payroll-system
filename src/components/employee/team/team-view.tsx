@@ -375,6 +375,7 @@ export function TeamView({
 
           <TabsContent value="list" className="mt-5">
             <DataTable
+              exportTitle="My Team"
               columns={columns}
               data={teamRows}
               getRowId={(e) => e.id}

@@ -26,6 +26,28 @@ import {
 } from "../data";
 import type { TurnoverPeriod, TurnoverRecord } from "../types";
 import { TurnoverDetailModal } from "./detail-modals";
+import { ExportMenu } from "@/src/components/shared/export-menu";
+import type { ReportColumn } from "@/src/lib/reports/types";
+
+/** Total exits and rate are derived on screen — the export recomputes them. */
+function exits(r: TurnoverRecord): number {
+  return r.voluntary + r.involuntary;
+}
+function exitRate(r: TurnoverRecord): number {
+  return r.totalHeadcount > 0
+    ? Math.round((exits(r) / r.totalHeadcount) * 100 * 10) / 10
+    : 0;
+}
+
+/** Mirrors the columns on screen, so an export reads the same as the table. */
+const EXPORT_COLUMNS: ReportColumn<TurnoverRecord>[] = [
+  { key: "department", header: "Department", value: (r) => r.department },
+  { key: "totalHeadcount", header: "Headcount", value: (r) => r.totalHeadcount },
+  { key: "voluntary", header: "Voluntary", value: (r) => r.voluntary },
+  { key: "involuntary", header: "Involuntary", value: (r) => r.involuntary },
+  { key: "totalExits", header: "Total Exits", value: exits },
+  { key: "rate", header: "Rate %", value: exitRate },
+];
 
 export function TurnoverSection() {
   const [activePeriod, setActivePeriod] = useState<TurnoverPeriod>("Q1 2026");
@@ -116,6 +138,14 @@ export function TurnoverSection() {
               ))}
             </SelectContent>
           </Select>
+          <ExportMenu
+            name={`turnover-${activePeriod.toLowerCase().replace(/\s+/g, "-")}`}
+            title={`Turnover — ${activePeriod}`}
+            columns={EXPORT_COLUMNS}
+            rows={deptRecords}
+            variant="outline"
+            buttonClassName="h-8 text-xs"
+          />
         </div>
         <Card className="border-border/60">
           <CardContent className="p-0">

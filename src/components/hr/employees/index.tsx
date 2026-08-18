@@ -15,7 +15,8 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { OverflowTabsList } from "@/src/components/shared/overflow-tabs";
 import { useEmployees } from "./hooks";
 import { PermissionGate } from "@/src/components/shared/permission-gate";
-import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { resendInvitation } from "@/src/lib/stores/onboarding-records-slice";
 import {
   markCredentialsSent,
   restoreEmployee,
@@ -56,11 +57,27 @@ export function EmployeesPage() {
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   const { data, loading } = useEmployees();
+  // Needed to find the onboarding record behind a pending employee (§3.1).
+  const onboardingRecords = useAppSelector((s) => s.onboardingRecords.records);
 
-  const [activeTab, setActiveTab] = useState("active");
+  // Deep-linkable filters so the Headcount demographics breakdowns can land
+  // here pre-filtered (client feedback §6.25). A department/type deep link
+  // spans every lifecycle status, so it opens on the "All" tab.
+  const [activeTab, setActiveTab] = useState(() => {
+    const status = searchParams.get("status");
+    if (status && TABS.some((t) => t.value === status)) return status;
+    if (searchParams.get("department") || searchParams.get("employmentType")) {
+      return "all";
+    }
+    return "active";
+  });
   const [search, setSearch] = useState("");
-  const [deptFilter, setDeptFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [deptFilter, setDeptFilter] = useState(
+    () => searchParams.get("department") ?? "all",
+  );
+  const [typeFilter, setTypeFilter] = useState(
+    () => searchParams.get("employmentType") ?? "all",
+  );
   const [kudosFor, setKudosFor] = useState<EmployeeRow | null>(null);
   // Deep-linkable so dashboard cards can land here pre-filtered
   // (e.g. "Employees Working Remotely Today" → ?workMode=remote).
@@ -131,6 +148,39 @@ export function EmployeesPage() {
       toast.success(`Login credentials sent to ${e.email || e.name}`);
     },
     [dispatch],
+  );
+
+  /**
+   * §3.1 — the employee's own history. The detail page already carries a
+   * Timeline module, so this deep-links to it rather than building a second
+   * view of the same events.
+   */
+  const handleViewActivityLog = useCallback(
+    (e: EmployeeRow) =>
+      router.push(`/organization/employees/${e.id}?module=timeline`),
+    [router],
+  );
+
+  /** §3.1 — reissue the onboarding link for a hire still in the pipeline. */
+  const handleResendInvite = useCallback(
+    (e: EmployeeRow) => {
+      const record = onboardingRecords.find(
+        (r) =>
+          (e.email && r.email === e.email) ||
+          (e.referenceId && r.referenceId === e.referenceId),
+      );
+      if (!record) {
+        toast.error("No onboarding record found for this employee", {
+          description: "They may have been added manually rather than invited.",
+        });
+        return;
+      }
+      dispatch(resendInvitation(record.id));
+      toast.success(`Onboarding invitation resent to ${e.name}`, {
+        description: "The link is valid for another 14 days.",
+      });
+    },
+    [dispatch, onboardingRecords],
   );
 
   const handleSendKudos = useCallback((e: EmployeeRow) => setKudosFor(e), []);
@@ -242,7 +292,11 @@ export function EmployeesPage() {
         </PermissionGate>
       </div>
 
-      <StatCards employees={employees} />
+      <StatCards
+        employees={employees}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
       <EmployeesToolbar
         search={search}
@@ -270,6 +324,8 @@ export function EmployeesPage() {
               onView={handleView}
               onEdit={handleEdit}
               onSendCredentials={handleSendCredentials}
+              onResendInvite={handleResendInvite}
+              onViewActivityLog={handleViewActivityLog}
               onSendKudos={handleSendKudos}
               onDeactivate={handleDeactivate}
               onReactivate={handleReactivate}

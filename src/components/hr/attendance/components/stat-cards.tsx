@@ -1,20 +1,71 @@
 "use client";
 
 import { UserCheck, UserX, Clock, FileText } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import type { AttendanceRecord, TimesheetRecord } from "../types";
+
+/** The slice a KPI card drills into. */
+export type AttendanceCardFilter =
+  | "all"
+  | "present"
+  | "absent"
+  | "late"
+  | "pending_timesheets";
+
+export const ATTENDANCE_CARD_FILTER_LABELS: Record<
+  Exclude<AttendanceCardFilter, "all">,
+  string
+> = {
+  present: "Present today",
+  absent: "Absent today",
+  late: "Late arrivals",
+  pending_timesheets: "Timesheets awaiting review",
+};
+
+/** Single source of truth for what the attendance cards count and show. */
+export function matchesAttendanceCardFilter(
+  record: AttendanceRecord,
+  filter: AttendanceCardFilter,
+): boolean {
+  switch (filter) {
+    case "present":
+      return ["present", "late", "early_departure"].includes(record.status);
+    case "absent":
+      return record.status === "absent";
+    case "late":
+      return record.status === "late";
+    default:
+      return true;
+  }
+}
 
 interface StatCardsProps {
   records: AttendanceRecord[];
   timesheets: TimesheetRecord[];
+  /** The card drill-down currently applied. */
+  cardFilter: AttendanceCardFilter;
+  /** Drill-down: opens the tab holding these rows and filters to them. */
+  onDrillDown: (tab: string, filter: AttendanceCardFilter) => void;
 }
 
-export function StatCards({ records, timesheets }: StatCardsProps) {
+export function StatCards({
+  records,
+  timesheets,
+  cardFilter,
+  onDrillDown,
+}: StatCardsProps) {
   const presentCount = records.filter((r) =>
-    ["present", "late", "early_departure"].includes(r.status),
+    matchesAttendanceCardFilter(r, "present"),
   ).length;
-  const absentCount = records.filter((r) => r.status === "absent").length;
-  const lateCount = records.filter((r) => r.status === "late").length;
+  const absentCount = records.filter((r) =>
+    matchesAttendanceCardFilter(r, "absent"),
+  ).length;
+  const lateCount = records.filter((r) =>
+    matchesAttendanceCardFilter(r, "late"),
+  ).length;
   const pendingApprovals = timesheets.filter(
     (t) => t.status === "submitted",
   ).length;
@@ -23,65 +74,46 @@ export function StatCards({ records, timesheets }: StatCardsProps) {
   const attendanceRate =
     total > 0 ? Math.round((presentCount / total) * 100) : 0;
 
-  const cards = [
+  const card = (key: AttendanceCardFilter, tab: string) => ({
+    active: cardFilter === key,
+    // Re-clicking the selected card clears back to the full list.
+    onClick: () => onDrillDown(tab, cardFilter === key ? "all" : key),
+  });
+
+  const cards: HrStatCardItem[] = [
     {
       label: "Present Today",
       value: presentCount,
       sub: `${attendanceRate}% attendance rate`,
       icon: UserCheck,
-      iconClass: "text-emerald-500",
-      bgClass: "bg-emerald-500/10",
+      tone: "emerald",
+      ...card("present", "today"),
     },
     {
       label: "Absent Today",
       value: absentCount,
       sub: `Out of ${total} tracked employees`,
       icon: UserX,
-      iconClass: "text-red-500",
-      bgClass: "bg-red-500/10",
+      tone: "red",
+      ...card("absent", "today"),
     },
     {
       label: "Late Arrivals",
       value: lateCount,
       sub: "Clocked in after schedule today",
       icon: Clock,
-      iconClass: "text-amber-500",
-      bgClass: "bg-amber-500/10",
+      tone: "amber",
+      ...card("late", "today"),
     },
     {
       label: "Pending Approvals",
       value: pendingApprovals,
       sub: "Timesheets awaiting review",
       icon: FileText,
-      iconClass: "text-blue-500",
-      bgClass: "bg-blue-500/10",
+      tone: "blue",
+      ...card("pending_timesheets", "timesheets"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((card) => (
-        <Card key={card.label}>
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground truncate">
-                  {card.label}
-                </p>
-                <p className="text-2xl font-bold mt-1">{card.value}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                  {card.sub}
-                </p>
-              </div>
-              <div
-                className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 ${card.bgClass}`}
-              >
-                <card.icon className={`w-4.5 h-4.5 ${card.iconClass}`} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

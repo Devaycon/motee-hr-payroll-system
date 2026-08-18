@@ -204,6 +204,7 @@ export function GoalsTable({
       />
       <div className="mt-4">
         <DataTable
+          exportTitle="Performance Goals"
           columns={columns}
           initialColumnVisibility={HIDE_SYSTEM_ID}
           enableColumnVisibility

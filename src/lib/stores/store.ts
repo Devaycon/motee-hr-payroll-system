@@ -11,6 +11,11 @@ import requisitionsReducer from "./requisitions-slice";
 import profileEditsReducer from "./profile-edits-slice";
 import collectionEditsReducer from "./collection-edits-slice";
 import workflowsReducer from "./workflows-slice";
+import scenariosReducer from "./scenarios-slice";
+import usersReducer from "./users-slice";
+import auditReducer from "./audit-slice";
+import diversityReducer from "./diversity-slice";
+import projectsReducer from "./projects-slice";
 import leaveReducer from "./leave-slice";
 import notificationsReducer from "./notifications-slice";
 import employeesReducer from "./employees-slice";
@@ -30,6 +35,11 @@ export const store = configureStore({
     profileEdits: profileEditsReducer,
     collectionEdits: collectionEditsReducer,
     workflows: workflowsReducer,
+    scenarios: scenariosReducer,
+    users: usersReducer,
+    audit: auditReducer,
+    diversity: diversityReducer,
+    projects: projectsReducer,
     leave: leaveReducer,
     notifications: notificationsReducer,
     employees: employeesReducer,

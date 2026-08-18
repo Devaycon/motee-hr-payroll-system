@@ -136,6 +136,7 @@ export function QueueTable({
 
   return (
     <DataTable
+      exportTitle="Submissions"
       columns={columns}
       data={requests}
       getRowId={(r) => r.id}

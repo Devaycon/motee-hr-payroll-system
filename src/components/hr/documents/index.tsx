@@ -6,7 +6,12 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { useDocuments } from "./hooks";
 import { FolderOpen, Upload, FolderPlus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesDocumentCardFilter,
+  DOCUMENT_CARD_FILTER_LABELS,
+  type DocumentCardFilter,
+} from "./components/stat-cards";
 import { FolderSidebar } from "./components/folder-sidebar";
 import { DocumentGrid } from "./components/document-grid";
 import { UploadModal } from "./components/upload-modal";
@@ -99,11 +104,15 @@ export function DocumentsPage() {
     router.push(`/sign?${params.toString()}`);
   }
 
-  const filteredDocuments = getDocumentsForFolder(
-    selectedFolderId,
-    documents,
-    folders,
-  );
+  /** Drill-down set by the KPI cards; "all" shows the folder as-is. */
+  const [cardFilter, setCardFilter] = useState<DocumentCardFilter>("all");
+
+  // The KPI cards count across every folder, so drilling in shows the whole
+  // library narrowed to that slice rather than the folder currently open.
+  const filteredDocuments =
+    cardFilter === "all"
+      ? getDocumentsForFolder(selectedFolderId, documents, folders)
+      : documents.filter((d) => matchesDocumentCardFilter(d, cardFilter));
 
   function handleUploadSave(data: NewDocument) {
     const id = `DOC-${String(documents.length + 1).padStart(3, "0")}`;
@@ -285,7 +294,34 @@ export function DocumentsPage() {
         </div>
       </div>
 
-      <StatCards documents={documents} />
+      <StatCards
+        documents={documents}
+        cardFilter={cardFilter}
+        onDrillDown={(filter) => {
+          setCardFilter(filter);
+          // These slices span folders, so clear the folder selection too.
+          if (filter !== "all") setSelectedFolderId(null);
+        }}
+      />
+
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {DOCUMENT_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({filteredDocuments.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All documents
+          </Button>
+        </div>
+      )}
 
       <div
         className="flex overflow-hidden rounded-xl border border-border/60 bg-background"

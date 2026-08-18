@@ -4,7 +4,14 @@ import { useState } from "react";
 import { Globe2 } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesWorkerCardFilter,
+  matchesProviderCardFilter,
+  EOR_CARD_FILTER_LABELS,
+  type EorCardFilter,
+} from "./components/stat-cards";
+import { Button } from "@/src/components/ui/button";
 import { WorkersTable } from "./components/workers-table";
 import { ProvidersTable } from "./components/providers-table";
 import { ComplianceTable } from "./components/compliance-table";
@@ -18,6 +25,18 @@ import type { EorWorker, EorProvider } from "./types";
 export function EorPage() {
   const [workers, setWorkers] = useState<EorWorker[]>(EOR_WORKERS);
   const [providers, setProviders] = useState<EorProvider[]>(EOR_PROVIDERS);
+
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("workers");
+  /** Drill-down set by the KPI cards; "all" shows every row. */
+  const [cardFilter, setCardFilter] = useState<EorCardFilter>("all");
+
+  const visibleWorkers = workers.filter((w) =>
+    matchesWorkerCardFilter(w, cardFilter),
+  );
+  const visibleProviders = providers.filter((p) =>
+    matchesProviderCardFilter(p, cardFilter),
+  );
 
   const [workerModalOpen, setWorkerModalOpen] = useState(false);
   const [editingWorker, setEditingWorker] = useState<EorWorker | null>(null);
@@ -107,13 +126,48 @@ export function EorPage() {
         </div>
       </div>
 
-      <StatCards workers={workers} providers={providers} />
+      <StatCards
+        workers={workers}
+        providers={providers}
+        activeTab={activeTab}
+        cardFilter={cardFilter}
+        onDrillDown={(tab, filter) => {
+          setActiveTab(tab);
+          setCardFilter(filter);
+        }}
+      />
 
-      <Tabs defaultValue="workers">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {EOR_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              (
+              {cardFilter === "active_providers"
+                ? visibleProviders.length
+                : visibleWorkers.length}
+              )
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← Show all
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
-            { value: "workers", label: `Workers (${workers.length})` },
-            { value: "providers", label: `Providers (${providers.length})` },
+            { value: "workers", label: `Workers (${visibleWorkers.length})` },
+            {
+              value: "providers",
+              label: `Providers (${visibleProviders.length})`,
+            },
             { value: "compliance", label: "Compliance" },
             { value: "billing", label: `Billing (${EOR_INVOICES.length})` },
           ]}
@@ -121,7 +175,7 @@ export function EorPage() {
 
         <TabsContent value="workers" className="mt-4">
           <WorkersTable
-            workers={workers}
+            workers={visibleWorkers}
             onView={(w) => setDetailId(w.id)}
             onEdit={openEditWorker}
             onDelete={deleteWorker}
@@ -131,7 +185,7 @@ export function EorPage() {
 
         <TabsContent value="providers" className="mt-4">
           <ProvidersTable
-            providers={providers}
+            providers={visibleProviders}
             onEdit={openEditProvider}
             onDelete={deleteProvider}
             onAdd={openAddProvider}

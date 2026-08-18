@@ -206,6 +206,7 @@ export function AdvancedEmployeesTable({
   return (
     <Card className="flex flex-col p-4">
       <DataTable
+        exportTitle="Employees"
         columns={columns}
         data={employees}
         getRowId={(e) => e.id}

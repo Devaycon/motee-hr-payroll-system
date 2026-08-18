@@ -358,6 +358,7 @@ export function BalancesTable({ balances, onAdjust }: BalancesTableProps) {
 
       <div className="mt-4">
         <DataTable
+          exportTitle="Leave Balances"
           columns={columns}
           initialColumnVisibility={HIDE_SYSTEM_ID}
           enableColumnVisibility

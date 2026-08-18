@@ -34,12 +34,13 @@ import type { Requisition } from "@/src/lib/stores/requisitions-slice";
 import { upsertRequests } from "@/src/lib/stores/approvals-slice";
 import { buildRequisitionDemo } from "@/src/data/requisitions-demo";
 import { POSTING_PLATFORMS, defaultFlow } from "@/src/data/recruitment-demo";
-import type {
-  FilterConstraint,
-  InterviewPlanRound,
-  InterviewMode,
-  JobRequisition,
-  RequisitionEmploymentType,
+import {
+  validateBeforePublish,
+  type FilterConstraint,
+  type InterviewPlanRound,
+  type InterviewMode,
+  type JobRequisition,
+  type RequisitionEmploymentType,
 } from "@/src/lib/types/recruitment";
 import { cn } from "@/src/lib/utils";
 import {
@@ -147,6 +148,17 @@ export function RequisitionBuilder({
   const [platforms, setPlatforms] = useState<string[]>(
     editing?.postingPlatforms ?? ["careers_page"],
   );
+  // §7.15 — publication scheduling.
+  const [publishMode, setPublishMode] = useState<"now" | "schedule">(
+    editing?.scheduledPublishAt ? "schedule" : "now",
+  );
+  const [scheduledAt, setScheduledAt] = useState(
+    editing?.scheduledPublishAt ?? "",
+  );
+  const [expiryDate, setExpiryDate] = useState(editing?.expiryDate ?? "");
+  const [autoClose, setAutoClose] = useState(
+    editing?.autoCloseOnExpiry ?? false,
+  );
   const [hiringManagerId, setHiringManagerId] = useState<string>(
     editing?.hiringManagerId ?? "",
   );
@@ -229,6 +241,29 @@ export function RequisitionBuilder({
     const cleanConstraints = constraints.filter((c) => c.name.trim());
     const mgr = employees.find((e) => e.id === hiringManagerId);
 
+    // §7.17 — catch the obvious problems before a vacancy reaches a job board.
+    // Drafts are exempt: a draft is by definition unfinished.
+    if (status === "open") {
+      const warnings = validateBeforePublish({
+        jobDescription: role.jobDescription,
+        hiringManager: mgr?.fullName ?? editing?.hiringManager,
+        applicationForm: cleanFields,
+        salaryMin: role.salaryMin,
+        salaryMax: role.salaryMax,
+        postingPlatforms: platforms,
+        flow: editing?.flow ?? defaultFlow(),
+      });
+      const blocking = warnings.filter((w) => w.severity === "blocking");
+      if (blocking.length > 0) {
+        toast.error("Can't publish yet", {
+          description: blocking
+            .map((w) => `${w.field}: ${w.message}`)
+            .join(" · "),
+        });
+        return;
+      }
+    }
+
     if (editing) {
       dispatch(
         updateRequisition({
@@ -274,6 +309,10 @@ export function RequisitionBuilder({
       applicationForm: cleanFields,
       filterConstraints: cleanConstraints,
       postingPlatforms: platforms,
+      // §7.15 — scheduling controls.
+      scheduledPublishAt: publishMode === "schedule" ? scheduledAt : undefined,
+      expiryDate: expiryDate || undefined,
+      autoCloseOnExpiry: autoClose,
       flow: defaultFlow(),
     };
     dispatch(addRequisition({ country, requisition }));
@@ -484,6 +523,63 @@ export function RequisitionBuilder({
           {/* Step 4 — Publish & review */}
           {step === 4 && (
             <div className="space-y-5">
+              {/* §7.15 — publish now or on a date, and close the vacancy
+                  automatically so stale adverts don't linger. */}
+              <div className="rounded-lg border border-border p-4 space-y-3">
+                <h2 className="text-sm font-semibold text-foreground">
+                  Publication schedule
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      ["now", "Publish now"],
+                      ["schedule", "Schedule publication"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      size="sm"
+                      variant={publishMode === value ? "default" : "outline"}
+                      className="h-7 text-xs"
+                      onClick={() => setPublishMode(value)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {publishMode === "schedule" && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Publish on</Label>
+                      <Input
+                        type="date"
+                        value={scheduledAt}
+                        onChange={(e) => setScheduledAt(e.target.value)}
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Expiry date</Label>
+                    <Input
+                      type="date"
+                      value={expiryDate}
+                      onChange={(e) => setExpiryDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={autoClose}
+                    onCheckedChange={(v) => setAutoClose(v === true)}
+                    disabled={!expiryDate}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Automatically close the vacancy on the expiry date
+                  </span>
+                </label>
+              </div>
+
               <div>
                 <h2 className="text-sm font-semibold text-foreground">Posting platforms</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">

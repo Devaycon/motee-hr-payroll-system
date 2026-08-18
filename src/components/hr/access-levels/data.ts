@@ -12,22 +12,36 @@ import {
 
 export const ALL_MODULES: string[] = MODULE_ENTRIES.map((m) => m.id);
 
+/** Ordered least- to most-privileged, which is how the matrix reads (§1.3). */
 export const ALL_ACTIONS: PermissionAction[] = [
   "view",
   "create",
   "edit",
+  "approve",
   "delete",
   "export",
-  "approve",
+  "administer",
 ];
 
 export const ACTION_LABELS: Record<PermissionAction, string> = {
   view: "View",
   create: "Create",
   edit: "Edit",
+  approve: "Approve",
   delete: "Delete",
   export: "Export",
-  approve: "Approve",
+  administer: "Administer",
+};
+
+/** Tooltip copy for the matrix header, taken from the client's §1.3 list. */
+export const ACTION_DESCRIPTIONS: Record<PermissionAction, string> = {
+  view: "Read only",
+  create: "Add new records",
+  edit: "Update existing records",
+  approve: "Approve workflows",
+  delete: "Remove records",
+  export: "Export data",
+  administer: "Configure settings",
 };
 
 export { MODULE_GROUPS, MODULE_LABELS, modulesByGroup };

@@ -1,12 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesAuditCardFilter,
+  AUDIT_CARD_FILTER_LABELS,
+  type AuditCardFilter,
+} from "./components/stat-cards";
 import { AuditToolbar } from "./components/audit-toolbar";
 import { AuditLog } from "./components/audit-log";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { Button } from "@/src/components/ui/button";
+import { computeAuditStats } from "./data";
 import { useAuditEntries } from "./hooks";
+import { ExportMenu } from "@/src/components/shared/export-menu";
+import type { ReportColumn } from "@/src/lib/reports/types";
+import type { AuditEntry } from "./types";
 
 export function AuditTrailPage() {
   const { data, loading } = useAuditEntries();
@@ -15,6 +24,15 @@ export function AuditTrailPage() {
   const [actionFilter, setActionFilter] = useState("all");
   const [moduleFilter, setModuleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  /** Drill-down set by the KPI cards; "all" shows every entry. */
+  const [cardFilter, setCardFilter] = useState<AuditCardFilter>("all");
+
+  // "Slower than average" is relative to the whole log, not the current view,
+  // so the threshold comes from the unfiltered set.
+  const { avgResponseTime } = useMemo(
+    () => computeAuditStats(allEntries),
+    [allEntries],
+  );
 
   const filteredEntries = useMemo(() => {
     const q = search.toLowerCase();
@@ -33,15 +51,45 @@ export function AuditTrailPage() {
         (statusFilter === "2xx" && e.httpStatus >= 200 && e.httpStatus < 300) ||
         (statusFilter === "4xx" && e.httpStatus >= 400 && e.httpStatus < 500) ||
         (statusFilter === "5xx" && e.httpStatus >= 500);
-      return matchSearch && matchAction && matchModule && matchStatus;
+      // The card drill-down composes with search and the dropdowns.
+      const matchCard = matchesAuditCardFilter(e, cardFilter, avgResponseTime);
+      return (
+        matchSearch && matchAction && matchModule && matchStatus && matchCard
+      );
     });
-  }, [allEntries, search, actionFilter, moduleFilter, statusFilter]);
+  }, [
+    allEntries,
+    search,
+    actionFilter,
+    moduleFilter,
+    statusFilter,
+    cardFilter,
+    avgResponseTime,
+  ]);
 
-  function handleExport() {
-    toast.success("Audit log exported", {
-      description: `${filteredEntries.length} entries exported as CSV`,
-    });
-  }
+  /** Columns for the Export menu — mirrors what the log shows on screen. */
+  const exportColumns: ReportColumn<AuditEntry>[] = [
+    { key: "timestamp", header: "Timestamp", value: (e) => e.timestamp },
+    { key: "userName", header: "User", value: (e) => e.userName },
+    { key: "userRole", header: "Role", value: (e) => e.userRole },
+    { key: "actionType", header: "Action", value: (e) => e.actionType },
+    { key: "module", header: "Module", value: (e) => e.module },
+    { key: "description", header: "Description", value: (e) => e.description },
+    { key: "httpMethod", header: "Method", value: (e) => e.httpMethod },
+    { key: "endpoint", header: "Endpoint", value: (e) => e.endpoint },
+    { key: "httpStatus", header: "Status", value: (e) => e.httpStatus },
+    {
+      key: "responseTimeMs",
+      header: "Response (ms)",
+      value: (e) => e.responseTimeMs,
+    },
+    { key: "ipAddress", header: "IP address", value: (e) => e.ipAddress },
+    {
+      key: "isSuspicious",
+      header: "Suspicious",
+      value: (e) => (e.isSuspicious ? "Yes" : "No"),
+    },
+  ];
 
   if (loading && !allEntries.length) {
     return (
@@ -63,7 +111,30 @@ export function AuditTrailPage() {
         </div>
       </div>
 
-      <StatCards entries={allEntries} />
+      <StatCards
+        entries={allEntries}
+        cardFilter={cardFilter}
+        onFilterChange={setCardFilter}
+      />
+
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {AUDIT_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({filteredEntries.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All entries
+          </Button>
+        </div>
+      )}
 
       <AuditToolbar
         search={search}
@@ -74,7 +145,16 @@ export function AuditTrailPage() {
         onModuleFilterChange={setModuleFilter}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
-        onExport={handleExport}
+        exportMenu={
+          <ExportMenu
+            name="audit-trail"
+            title="Audit Trail"
+            columns={exportColumns}
+            rows={filteredEntries}
+            variant="outline"
+            buttonClassName="h-9 text-xs"
+          />
+        }
         totalFiltered={filteredEntries.length}
         totalAll={allEntries.length}
       />

@@ -260,6 +260,7 @@ export function PoliciesTable({
 
       <div className="mt-4">
         <DataTable
+          exportTitle="Leave Policies"
           columns={columns}
           data={filtered}
           getRowId={(p) => p.id}

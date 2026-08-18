@@ -144,6 +144,7 @@ export function ReportingTable({ nodes, onEdit }: ReportingTableProps) {
 
   return (
     <DataTable
+      exportTitle="Reporting Lines"
       columns={columns}
       data={nodes}
       getRowId={(n) => n.id}

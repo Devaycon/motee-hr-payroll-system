@@ -3,9 +3,18 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Label } from "@/src/components/ui/label";
@@ -27,16 +36,22 @@ import {
 import type {
   Workflow,
   WorkflowAssignee,
+  WorkflowConditionKey,
   WorkflowReviewer,
   WorkflowSchedule,
   WorkflowScheduleOffsetUnit,
   WorkflowScope,
+  WorkflowStatus,
+  WorkflowTaskPriority,
   WorkflowTriggerEvent,
   WorkflowTriggerMode,
 } from "@/src/lib/types/workflows";
 import {
   SCHEDULE_OFFSET_UNIT_LABELS,
+  TASK_PRIORITY_LABELS,
   TRIGGER_EVENT_LABELS,
+  WORKFLOW_CONDITION_LABELS,
+  WORKFLOW_STATUS_LABELS,
 } from "@/src/lib/types/workflows";
 import { employeesForScope } from "./helpers";
 
@@ -48,6 +63,21 @@ interface TaskDraft {
   assigneeEmployeeId: string;
   hasReviewer: boolean;
   reviewerRoleId: string;
+  // §11.9 — timing, effort and urgency. Empty string means "not set", so a
+  // blank field stays undefined rather than becoming 0.
+  dueDayOffset: string;
+  expectedDurationDays: string;
+  escalateAfterDays: string;
+  priority: WorkflowTaskPriority | "";
+  /**
+   * §11.6 — positions of earlier tasks this one waits on. Positions rather
+   * than ids because the store re-mints task ids on every save.
+   */
+  dependsOnIndexes: number[];
+  /** §11.8 — tasks sharing a group name run together instead of queueing. */
+  parallelGroup: string;
+  /** §11.11 — the task only applies when this condition holds. */
+  condition: WorkflowConditionKey | "";
 }
 
 function emptyTask(defaultRoleId: string): TaskDraft {
@@ -59,12 +89,21 @@ function emptyTask(defaultRoleId: string): TaskDraft {
     assigneeEmployeeId: "",
     hasReviewer: false,
     reviewerRoleId: defaultRoleId,
+    dueDayOffset: "",
+    expectedDurationDays: "",
+    escalateAfterDays: "",
+    priority: "",
+    dependsOnIndexes: [],
+    parallelGroup: "",
+    condition: "",
   };
 }
 
 function taskFromWorkflow(
   task: Workflow["tasks"][number],
   defaultRoleId: string,
+  /** Stored task id → position, so dependencies survive the round-trip. */
+  indexById: Map<string, number>,
 ): TaskDraft {
   return {
     title: task.title,
@@ -76,7 +115,44 @@ function taskFromWorkflow(
       task.assignee.kind === "employee" ? task.assignee.employeeId : "",
     hasReviewer: task.reviewer !== null,
     reviewerRoleId: task.reviewer?.roleId ?? defaultRoleId,
+    dueDayOffset: task.dueDayOffset != null ? String(task.dueDayOffset) : "",
+    expectedDurationDays:
+      task.expectedDurationDays != null
+        ? String(task.expectedDurationDays)
+        : "",
+    escalateAfterDays:
+      task.escalateAfterDays != null ? String(task.escalateAfterDays) : "",
+    priority: task.priority ?? "",
+    dependsOnIndexes: (task.dependsOn ?? [])
+      .map((id) => indexById.get(id))
+      .filter((i): i is number => i != null),
+    parallelGroup: task.parallelGroup ?? "",
+    condition: task.condition ?? "",
   };
+}
+
+/** "" → undefined; otherwise a finite number. Blank must not become 0. */
+function optionalNumber(raw: string): number | undefined {
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * How many advanced settings a task has, shown on the collapsed toggle so
+ * configuration isn't invisible once the panel is closed.
+ */
+function advancedCount(task: TaskDraft): number {
+  return [
+    task.dueDayOffset.trim(),
+    task.expectedDurationDays.trim(),
+    task.escalateAfterDays.trim(),
+    task.priority,
+    task.parallelGroup.trim(),
+    task.condition,
+    task.dependsOnIndexes.length > 0 ? "y" : "",
+  ].filter(Boolean).length;
 }
 
 interface WorkflowBuilderProps {
@@ -95,6 +171,9 @@ export function WorkflowBuilder({
   const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
   const departments = useAppSelector((s) => s.locale.data?.departments ?? []);
+  const employmentTypes = useAppSelector(
+    (s) => s.locale.data?.employmentTypes ?? [],
+  );
   const actorName = useAppSelector((s) => s.auth.user?.name) ?? "HR Admin";
 
   const defaultRoleId = roles[0]?.id ?? "";
@@ -139,11 +218,39 @@ export function WorkflowBuilder({
       ? workflow.scope.departmentId
       : (departments[0]?.id ?? ""),
   );
-  const [tasks, setTasks] = useState<TaskDraft[]>(
-    workflow && workflow.tasks.length > 0
-      ? workflow.tasks.map((t) => taskFromWorkflow(t, defaultRoleId))
-      : [emptyTask(defaultRoleId)],
+  const [tasks, setTasks] = useState<TaskDraft[]>(() => {
+    if (!workflow || workflow.tasks.length === 0) {
+      return [emptyTask(defaultRoleId)];
+    }
+    const indexById = new Map(workflow.tasks.map((t, i) => [t.id, i]));
+    return workflow.tasks.map((t) =>
+      taskFromWorkflow(t, defaultRoleId, indexById),
+    );
+  });
+
+  // §11.13 — workflow-level configuration, so different groups can run
+  // different versions of the same process.
+  const [status, setStatus] = useState<WorkflowStatus>(
+    workflow?.status ?? "draft",
   );
+  const [owner, setOwner] = useState(workflow?.owner ?? "");
+  const [effectiveDate, setEffectiveDate] = useState(
+    workflow?.effectiveDate ?? "",
+  );
+  const [employmentType, setEmploymentType] = useState(
+    workflow?.employmentType ?? "",
+  );
+
+  /** Which task cards have their advanced section open. */
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  function toggleExpanded(i: number) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  }
 
   const scope: WorkflowScope = useMemo(
     () => (scopeKind === "all" ? { kind: "all" } : { kind: "department", departmentId }),
@@ -163,18 +270,63 @@ export function WorkflowBuilder({
     );
   }
 
+  /**
+   * Rewrite every task's `dependsOnIndexes` after the list has been reordered
+   * or shortened. `oldToNew` maps a task's previous position to its new one;
+   * `null` means it was deleted. Dependencies that would end up pointing at a
+   * later task are dropped — after a move, "wait for step 4" from step 2 is no
+   * longer a thing the workflow can express.
+   */
+  function remapDependencies(
+    list: TaskDraft[],
+    oldToNew: (old: number) => number | null,
+  ): TaskDraft[] {
+    return list.map((task, newIndex) => ({
+      ...task,
+      dependsOnIndexes: task.dependsOnIndexes
+        .map(oldToNew)
+        .filter((i): i is number => i != null && i < newIndex),
+    }));
+  }
+
   function moveTask(index: number, dir: -1 | 1) {
     setTasks((prev) => {
-      const next = [...prev];
       const target = index + dir;
-      if (target < 0 || target >= next.length) return prev;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
       [next[index], next[target]] = [next[target], next[index]];
-      return next;
+      return remapDependencies(next, (old) => {
+        if (old === index) return target;
+        if (old === target) return index;
+        return old;
+      });
     });
   }
 
   function removeTask(index: number) {
-    setTasks((prev) => prev.filter((_, i) => i !== index));
+    setTasks((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      return remapDependencies(next, (old) => {
+        if (old === index) return null;
+        return old > index ? old - 1 : old;
+      });
+    });
+  }
+
+  /** §11.6 — toggle a dependency on the task at `depIndex`. */
+  function toggleDependency(taskIndex: number, depIndex: number) {
+    setTasks((prev) =>
+      prev.map((t, i) => {
+        if (i !== taskIndex) return t;
+        const has = t.dependsOnIndexes.includes(depIndex);
+        return {
+          ...t,
+          dependsOnIndexes: has
+            ? t.dependsOnIndexes.filter((d) => d !== depIndex)
+            : [...t.dependsOnIndexes, depIndex].sort((a, b) => a - b),
+        };
+      }),
+    );
   }
 
   function handleSave() {
@@ -235,6 +387,35 @@ export function WorkflowBuilder({
       }
     }
 
+    // §11.6 — a task can only wait on one that runs before it. The dependency
+    // picker only offers earlier tasks, but a reorder can invalidate a choice
+    // that was legal when it was made, so it is re-checked here.
+    for (let i = 0; i < tasks.length; i++) {
+      const bad = tasks[i].dependsOnIndexes.find((d) => d >= i);
+      if (bad !== undefined) {
+        toast.error(`"${tasks[i].title.trim()}" depends on a later task.`, {
+          description: "Move it earlier in the list, or drop the dependency.",
+        });
+        return;
+      }
+    }
+
+    // §11.8 — a parallel group whose members depend on each other isn't
+    // parallel. Worth a warning rather than a block: the run still works, it
+    // just queues, and the author may be mid-edit.
+    for (let i = 0; i < tasks.length; i++) {
+      const group = tasks[i].parallelGroup.trim();
+      if (!group) continue;
+      const clash = tasks[i].dependsOnIndexes.some(
+        (d) => tasks[d]?.parallelGroup.trim() === group,
+      );
+      if (clash) {
+        toast.warning(`"${tasks[i].title.trim()}" won't run in parallel.`, {
+          description: `It depends on another task in the "${group}" group, so it will wait for it.`,
+        });
+      }
+    }
+
     const cleanedTasks = tasks.map((t) => {
       const assignee: WorkflowAssignee =
         t.assigneeKind === "role"
@@ -248,6 +429,16 @@ export function WorkflowBuilder({
         description: t.description.trim() || undefined,
         assignee,
         reviewer,
+        // §11.9 / §11.6 / §11.8 / §11.11 — these used to be dropped here, which
+        // is why the builder could never set them.
+        dueDayOffset: optionalNumber(t.dueDayOffset),
+        expectedDurationDays: optionalNumber(t.expectedDurationDays),
+        escalateAfterDays: optionalNumber(t.escalateAfterDays),
+        priority: t.priority || undefined,
+        dependsOnIndexes:
+          t.dependsOnIndexes.length > 0 ? t.dependsOnIndexes : undefined,
+        parallelGroup: t.parallelGroup.trim() || undefined,
+        condition: t.condition || undefined,
       };
     });
 
@@ -259,6 +450,11 @@ export function WorkflowBuilder({
       scope,
       tasks: cleanedTasks,
       actorName,
+      // §11.13
+      status,
+      owner: owner.trim() || undefined,
+      effectiveDate: effectiveDate || undefined,
+      employmentType: employmentType || undefined,
     };
 
     if (workflow) {
@@ -476,6 +672,80 @@ export function WorkflowBuilder({
             )}
           </div>
         )}
+
+        {/* §11.13 — a workflow's own lifecycle and applicability. Without
+            these, every group runs the same version and a half-built draft is
+            indistinguishable from a live process. */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>Status</Label>
+            <Select
+              value={status}
+              disabled={readOnly}
+              onValueChange={(v) => setStatus(v as WorkflowStatus)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(
+                  Object.keys(WORKFLOW_STATUS_LABELS) as WorkflowStatus[]
+                ).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {WORKFLOW_STATUS_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              Only active workflows can be run.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Owner</Label>
+            <Input
+              value={owner}
+              disabled={readOnly}
+              placeholder={actorName}
+              onChange={(e) => setOwner(e.target.value)}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Who is accountable for this process. Defaults to you.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Effective from</Label>
+            <Input
+              type="date"
+              value={effectiveDate}
+              disabled={readOnly}
+              onChange={(e) => setEffectiveDate(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Applies to</Label>
+            <Select
+              value={employmentType || "all"}
+              disabled={readOnly}
+              onValueChange={(v) => setEmploymentType(v === "all" ? "" : v)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All employment types</SelectItem>
+                {employmentTypes.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
       <Separator />
@@ -638,6 +908,216 @@ export function WorkflowBuilder({
                     </Select>
                   )}
                 </div>
+
+                {/* §11.6 / §11.8 / §11.9 / §11.11 — collapsed by default so a
+                    simple linear workflow stays simple to build. */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 px-1 text-[11px] text-muted-foreground"
+                  onClick={() => toggleExpanded(i)}
+                >
+                  {expanded.has(i) ? (
+                    <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronRight className="w-3 h-3" />
+                  )}
+                  Timing, dependencies &amp; conditions
+                  {advancedCount(task) > 0 && (
+                    <span className="rounded bg-primary/10 px-1 text-[10px] font-medium text-primary">
+                      {advancedCount(task)}
+                    </span>
+                  )}
+                </Button>
+
+                {expanded.has(i) && (
+                  <div className="space-y-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+                    {/* §11.9 — timing and urgency. */}
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Due (days from start)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8"
+                          placeholder="No due date"
+                          value={task.dueDayOffset}
+                          disabled={readOnly}
+                          onChange={(e) =>
+                            updateTask(i, { dueDayOffset: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Priority</Label>
+                        <Select
+                          value={task.priority || "none"}
+                          disabled={readOnly}
+                          onValueChange={(v) =>
+                            updateTask(i, {
+                              priority:
+                                v === "none"
+                                  ? ""
+                                  : (v as WorkflowTaskPriority),
+                            })
+                          }
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Not set</SelectItem>
+                            {(
+                              Object.keys(
+                                TASK_PRIORITY_LABELS,
+                              ) as WorkflowTaskPriority[]
+                            ).map((p) => (
+                              <SelectItem key={p} value={p}>
+                                {TASK_PRIORITY_LABELS[p]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">
+                          Expected effort (days)
+                        </Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8"
+                          placeholder="—"
+                          value={task.expectedDurationDays}
+                          disabled={readOnly}
+                          onChange={(e) =>
+                            updateTask(i, {
+                              expectedDurationDays: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">
+                          Escalate after (days overdue)
+                        </Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8"
+                          placeholder="Never"
+                          value={task.escalateAfterDays}
+                          disabled={readOnly}
+                          onChange={(e) =>
+                            updateTask(i, {
+                              escalateAfterDays: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* §11.6 — only earlier tasks are offered, so a cycle
+                        can't be built in the first place. */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Waits for</Label>
+                      {i === 0 ? (
+                        <p className="text-[11px] text-muted-foreground">
+                          The first task has nothing to wait for.
+                        </p>
+                      ) : (
+                        <div className="space-y-1">
+                          {tasks.slice(0, i).map((dep, depIndex) => (
+                            <label
+                              key={depIndex}
+                              className="flex items-center gap-2 text-[11px] text-foreground"
+                            >
+                              <Checkbox
+                                checked={task.dependsOnIndexes.includes(
+                                  depIndex,
+                                )}
+                                disabled={readOnly}
+                                onCheckedChange={() =>
+                                  toggleDependency(i, depIndex)
+                                }
+                              />
+                              <span className="text-muted-foreground">
+                                {depIndex + 1}.
+                              </span>
+                              {dep.title.trim() || (
+                                <span className="italic text-muted-foreground">
+                                  Untitled task
+                                </span>
+                              )}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {/* §11.8 — same group name = runs at the same time. */}
+                      <div className="space-y-1">
+                        <Label className="text-xs">Parallel group</Label>
+                        <Input
+                          className="h-8"
+                          placeholder="e.g. Day one setup"
+                          value={task.parallelGroup}
+                          disabled={readOnly}
+                          onChange={(e) =>
+                            updateTask(i, { parallelGroup: e.target.value })
+                          }
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                          Tasks sharing a group name start together.
+                        </p>
+                      </div>
+
+                      {/* §11.11 — conditional tasks. */}
+                      <div className="space-y-1">
+                        <Label className="text-xs">Only applies when</Label>
+                        <Select
+                          value={task.condition || "always"}
+                          disabled={readOnly}
+                          onValueChange={(v) =>
+                            updateTask(i, {
+                              condition:
+                                v === "always"
+                                  ? ""
+                                  : (v as WorkflowConditionKey),
+                            })
+                          }
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="always">
+                              Always applies
+                            </SelectItem>
+                            {(
+                              Object.keys(
+                                WORKFLOW_CONDITION_LABELS,
+                              ) as WorkflowConditionKey[]
+                            ).map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {WORKFLOW_CONDITION_LABELS[c]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[10px] text-muted-foreground">
+                          Skipped entirely when the condition doesn&apos;t hold.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {!readOnly && (
