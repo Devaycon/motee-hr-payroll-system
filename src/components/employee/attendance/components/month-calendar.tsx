@@ -1,262 +1,219 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/src/components/ui/dialog";
 import { cn } from "@/src/lib/utils";
 import type { AttendanceStatus } from "@/src/lib/types/attendance";
-import {
-  MONTH_DEMO,
-  MONTH_DETAILS,
-  STATUS_DOT,
-  STATUS_LABEL,
-  STATUS_BADGE,
-} from "./constants";
+import { isoDateOf, scheduleForDay } from "@/src/lib/types/attendance";
+import type { LocaleWorkPattern } from "@/src/lib/types/locale";
+import { STATUS_DOT, STATUS_LABEL } from "./constants";
+import { toHHMM, type TimeLogRow } from "../hooks";
 
-export function MonthCalendar() {
-  const [month, setMonth] = useState(new Date(2026, 3, 1));
-  const [selectedDay, setSelectedDay] = useState<{
-    iso: string;
-    status: AttendanceStatus;
-  } | null>(null);
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-  const year = month.getFullYear();
-  const mon = month.getMonth();
-  const first = new Date(year, mon, 1).getDay();
-  const days = new Date(year, mon + 1, 0).getDate();
-  const startOffset = first === 0 ? 6 : first - 1;
-  const today = "2026-04-23";
+interface MonthCalendarProps {
+  logs: TimeLogRow[];
+  workPattern: LocaleWorkPattern | undefined;
+  todayIso: string;
+}
 
-  const detail = selectedDay ? MONTH_DETAILS[selectedDay.iso] : undefined;
+/** Locale rows say "remote"; the calendar's vocabulary calls that present. */
+function normalise(status: string): AttendanceStatus {
+  if (status === "remote") return "present";
+  return status as AttendanceStatus;
+}
+
+export function MonthCalendar({
+  logs,
+  workPattern,
+  todayIso,
+}: MonthCalendarProps) {
+  // Anchor on the most recent month that actually has data, so the calendar
+  // does not open on an empty month when the fixtures lag the real date.
+  const initialAnchor = useMemo(() => {
+    const latest = logs[0]?.date ?? todayIso;
+    const d = new Date(latest);
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  }, [logs, todayIso]);
+
+  const [anchor, setAnchor] = useState(initialAnchor);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const byDate = useMemo(
+    () => new Map(logs.map((l) => [l.date, l])),
+    [logs],
+  );
+
+  const { cells, monthLabel } = useMemo(() => {
+    const year = anchor.getFullYear();
+    const month = anchor.getMonth();
+    const first = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    // Monday-based leading blanks.
+    const lead = (first.getDay() + 6) % 7;
+
+    const out: (string | null)[] = Array.from({ length: lead }, () => null);
+    for (let d = 1; d <= daysInMonth; d++) {
+      out.push(isoDateOf(new Date(year, month, d)));
+    }
+    return {
+      cells: out,
+      monthLabel: first.toLocaleDateString("en-GB", {
+        month: "long",
+        year: "numeric",
+      }),
+    };
+  }, [anchor]);
+
+  const detail = selected ? byDate.get(selected) : undefined;
+
+  function shiftMonth(by: number) {
+    setAnchor((a) => new Date(a.getFullYear(), a.getMonth() + by, 1));
+    setSelected(null);
+  }
 
   return (
-    <>
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Monthly Overview
-          </p>
-          <div className="flex items-center gap-1.5">
-            <Button
-              size="icon"
-              variant="outline"
-              className="h-7 w-7"
-              onClick={() =>
-                setMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))
-              }
+    <Card>
+      <CardContent className="p-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={() => shiftMonth(-1)}
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </Button>
+          <p className="text-xs font-semibold text-foreground">{monthLabel}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={() => shiftMonth(1)}
+            aria-label="Next month"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {WEEKDAYS.map((d) => (
+            <div
+              key={d}
+              className="text-center text-[9px] font-semibold text-muted-foreground uppercase tracking-wide py-1"
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </Button>
-            <span className="text-[11px] text-muted-foreground min-w-24 text-center font-medium">
-              {month.toLocaleDateString("en-GB", {
+              {d}
+            </div>
+          ))}
+
+          {cells.map((iso, i) => {
+            if (!iso) return <div key={`pad-${i}`} />;
+            const log = byDate.get(iso);
+            const status = log ? normalise(log.status) : null;
+            const working = Boolean(scheduleForDay(workPattern, iso));
+            const isToday = iso === todayIso;
+            const isSelected = iso === selected;
+            return (
+              <button
+                key={iso}
+                type="button"
+                onClick={() => setSelected(isSelected ? null : iso)}
+                className={cn(
+                  "aspect-square rounded-lg flex flex-col items-center justify-center gap-1 text-[11px] transition-all border",
+                  isSelected
+                    ? "border-[#7F77DD] bg-[#7F77DD]/10"
+                    : "border-transparent hover:border-border",
+                  !working && "opacity-45",
+                  isToday && !isSelected && "ring-1 ring-[#7F77DD]/50",
+                )}
+              >
+                <span
+                  className={cn(
+                    "tabular-nums",
+                    isToday
+                      ? "font-bold text-[#7F77DD]"
+                      : "text-foreground",
+                  )}
+                >
+                  {Number(iso.slice(8, 10))}
+                </span>
+                <span
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    status ? STATUS_DOT[status] : "bg-transparent",
+                  )}
+                />
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap pt-1">
+          {(
+            ["present", "late", "absent", "on_leave"] as AttendanceStatus[]
+          ).map((s) => (
+            <span
+              key={s}
+              className="flex items-center gap-1.5 text-[10px] text-muted-foreground"
+            >
+              <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_DOT[s])} />
+              {STATUS_LABEL[s]}
+            </span>
+          ))}
+        </div>
+
+        {selected && (
+          <div className="rounded-lg border border-border bg-muted/30 p-3 flex flex-col gap-2">
+            <p className="text-[11px] font-semibold text-foreground">
+              {new Date(selected).toLocaleDateString("en-GB", {
+                weekday: "long",
+                day: "numeric",
                 month: "long",
                 year: "numeric",
               })}
-            </span>
-            <Button
-              size="icon"
-              variant="outline"
-              className="h-7 w-7"
-              onClick={() =>
-                setMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))
-              }
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        </div>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                <div
-                  key={d}
-                  className="text-[10px] font-semibold text-muted-foreground text-center py-1"
-                >
-                  {d}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: startOffset }).map((_, i) => (
-                <div key={`pad-${i}`} />
-              ))}
-              {Array.from({ length: days }, (_, i) => {
-                const d = i + 1;
-                const iso = `${year}-${String(mon + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-                const status = MONTH_DEMO[iso];
-                const dotColor = status ? STATUS_DOT[status] : null;
-                const isToday = iso === today;
-                const dayOfWeek = new Date(iso).getDay();
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                const isFuture = iso > today;
-                const isClickable = !!status && !isFuture;
-                return (
-                  <div
-                    key={d}
-                    onClick={() =>
-                      isClickable ? setSelectedDay({ iso, status }) : undefined
-                    }
-                    className={cn(
-                      "aspect-square flex flex-col items-center justify-center rounded-lg text-xs font-medium relative transition-colors",
-                      isClickable && "cursor-pointer",
-                      isToday
-                        ? "bg-[#7F77DD] text-white"
-                        : isWeekend
-                          ? "text-muted-foreground/40"
-                          : isFuture
-                            ? "text-muted-foreground/60"
-                            : isClickable
-                              ? "text-foreground hover:bg-muted/60"
-                              : "text-foreground",
-                    )}
-                  >
-                    {d}
-                    {dotColor && !isToday && (
-                      <div
-                        className={cn(
-                          "w-1 h-1 rounded-full absolute bottom-1",
-                          dotColor,
-                        )}
-                      />
-                    )}
+            </p>
+            {detail ? (
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  {
+                    label: "Clock in",
+                    value: detail.clockIn ? toHHMM(detail.clockIn) : "—",
+                  },
+                  {
+                    label: "Clock out",
+                    value: detail.clockOut ? toHHMM(detail.clockOut) : "—",
+                  },
+                  {
+                    label: "Hours",
+                    value:
+                      detail.hoursWorked != null
+                        ? `${detail.hoursWorked}h`
+                        : "—",
+                  },
+                ].map((r) => (
+                  <div key={r.label} className="flex flex-col gap-0.5">
+                    <p className="text-[10px] text-muted-foreground">
+                      {r.label}
+                    </p>
+                    <p className="text-xs font-semibold text-foreground tabular-nums">
+                      {r.value}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center flex-wrap gap-3 mt-4 pt-3 border-t border-border/50">
-              {[
-                { label: "Present", color: "bg-[#1D9E75]" },
-                { label: "Late", color: "bg-amber-500" },
-                { label: "On Leave", color: "bg-violet-500" },
-                { label: "Absent", color: "bg-red-500" },
-              ].map((l) => (
-                <div
-                  key={l.label}
-                  className="flex items-center gap-1.5 text-[10px] text-muted-foreground"
-                >
-                  <div className={cn("w-2 h-2 rounded-full", l.color)} />{" "}
-                  {l.label}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Dialog
-        open={!!selectedDay}
-        onOpenChange={(o) => !o && setSelectedDay(null)}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base">
-              {selectedDay
-                ? new Date(selectedDay.iso).toLocaleDateString("en-GB", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })
-                : ""}
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedDay && (
-            <div className="flex flex-col gap-4 pt-1">
-              <div className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    "text-[11px] font-semibold px-2.5 py-1 rounded-full",
-                    STATUS_BADGE[selectedDay.status],
-                  )}
-                >
-                  {STATUS_LABEL[selectedDay.status]}
-                </span>
+                ))}
               </div>
-
-              {selectedDay.status !== "on_leave" &&
-              selectedDay.status !== "absent" ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-muted/40 rounded-lg p-3 flex flex-col gap-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">
-                      Clock In
-                    </p>
-                    <p className="text-sm font-bold text-foreground">
-                      {detail?.clockIn ?? "—"}
-                    </p>
-                  </div>
-                  <div className="bg-muted/40 rounded-lg p-3 flex flex-col gap-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">
-                      Clock Out
-                    </p>
-                    <p className="text-sm font-bold text-foreground">
-                      {detail?.clockOut ?? "—"}
-                    </p>
-                  </div>
-                  <div className="bg-muted/40 rounded-lg p-3 flex flex-col gap-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">
-                      Break
-                    </p>
-                    <p className="text-sm font-bold text-foreground">
-                      {detail?.breakMinutes != null
-                        ? `${detail.breakMinutes} min`
-                        : "—"}
-                    </p>
-                  </div>
-                  <div className="bg-muted/40 rounded-lg p-3 flex flex-col gap-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">
-                      Hours Worked
-                    </p>
-                    <p className="text-sm font-bold text-foreground">
-                      {detail?.totalHours != null
-                        ? `${detail.totalHours}h`
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-muted/40 rounded-lg p-3">
-                  <p className="text-[11px] text-muted-foreground">
-                    {detail?.note ??
-                      (selectedDay.status === "on_leave"
-                        ? "On approved leave"
-                        : "No attendance recorded")}
-                  </p>
-                </div>
-              )}
-
-              {detail?.note &&
-                selectedDay.status !== "on_leave" &&
-                selectedDay.status !== "absent" && (
-                  <div className="bg-amber-500/8 border border-amber-500/20 rounded-lg px-3 py-2">
-                    <p className="text-[11px] text-amber-700">{detail.note}</p>
-                  </div>
-                )}
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedDay(null)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                {scheduleForDay(workPattern, selected)
+                  ? "No attendance recorded for this day."
+                  : "Not a scheduled working day."}
+              </p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

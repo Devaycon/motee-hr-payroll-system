@@ -26,6 +26,193 @@ interface SeedTask {
 }
 
 /**
+ * From an approved requisition to a signed acceptance — the hiring process
+ * itself, which until now had no workflow of its own even though preboarding,
+ * onboarding and offboarding all did. Step 16 is the seam: it hands over to
+ * Standard Preboarding, whose `preboarding_initiated` trigger already fires
+ * from Recruitment when a candidate is hired.
+ */
+const RECRUITMENT_TASKS: SeedTask[] = [
+  {
+    title: "Confirm budget & headcount approval",
+    description:
+      "Verify the role is funded and the headcount signed off before anything is advertised.",
+    assigneeRoleId: "ROLE-FIN",
+    reviewerRoleId: "ROLE-HRMGR",
+    dueDayOffset: 1,
+    expectedDurationDays: 1,
+    priority: "critical",
+    escalateAfterDays: 2,
+  },
+  {
+    title: "Finalise job description & scorecard criteria",
+    description:
+      "Agree the JD, must-have skills and the criteria interviewers will score against.",
+    assigneeRoleId: "ROLE-MGR",
+    reviewerRoleId: "ROLE-RECRUIT",
+    dueDayOffset: 2,
+    expectedDurationDays: 1,
+    priority: "high",
+    dependsOnSteps: [1],
+  },
+  {
+    title: "Publish to selected channels",
+    description:
+      "Post the opening to the job boards and internal channels chosen on the requisition.",
+    assigneeRoleId: "ROLE-RECRUIT",
+    dueDayOffset: 3,
+    expectedDurationDays: 1,
+    priority: "high",
+    dependsOnSteps: [2],
+    parallelGroup: "sourcing",
+  },
+  {
+    title: "Brief agency / referral push",
+    description:
+      "Brief external agencies and open the internal referral window alongside the public posting.",
+    assigneeRoleId: "ROLE-RECRUIT",
+    dueDayOffset: 3,
+    expectedDurationDays: 1,
+    dependsOnSteps: [2],
+    parallelGroup: "sourcing",
+  },
+  {
+    title: "Screen incoming applications",
+    description:
+      "Work the applicant list against the requisition's filters and reject out of scope early.",
+    assigneeRoleId: "ROLE-RECRUIT",
+    dueDayOffset: 10,
+    expectedDurationDays: 7,
+    priority: "high",
+    escalateAfterDays: 3,
+    dependsOnSteps: [3],
+  },
+  {
+    title: "Shortlist for interview",
+    description:
+      "Hiring manager picks the shortlist from the screened applicants.",
+    assigneeRoleId: "ROLE-MGR",
+    reviewerRoleId: "ROLE-RECRUIT",
+    dueDayOffset: 12,
+    expectedDurationDays: 2,
+    priority: "high",
+    escalateAfterDays: 2,
+    dependsOnSteps: [5],
+  },
+  {
+    title: "Schedule interview panel",
+    description:
+      "Book the panel and send invites with joining details to each shortlisted candidate.",
+    assigneeRoleId: "ROLE-RECRUIT",
+    dueDayOffset: 14,
+    expectedDurationDays: 2,
+    priority: "high",
+    dependsOnSteps: [6],
+  },
+  {
+    title: "Conduct interviews",
+    description: "Run the scheduled rounds with the agreed panel.",
+    assigneeRoleId: "ROLE-MGR",
+    dueDayOffset: 20,
+    expectedDurationDays: 6,
+    priority: "critical",
+    escalateAfterDays: 3,
+    dependsOnSteps: [7],
+  },
+  {
+    // Decisions made from memory a week later are how good candidates get lost.
+    title: "Submit scorecards",
+    description:
+      "Every panellist records their scores and recommendation while the interview is fresh.",
+    assigneeRoleId: "ROLE-MGR",
+    reviewerRoleId: "ROLE-RECRUIT",
+    dueDayOffset: 21,
+    expectedDurationDays: 1,
+    priority: "high",
+    escalateAfterDays: 2,
+    dependsOnSteps: [8],
+  },
+  {
+    title: "Reference & background checks",
+    description:
+      "Collect and verify references and run the agreed background checks.",
+    assigneeRoleId: "ROLE-HRADMIN",
+    reviewerRoleId: "ROLE-HRMGR",
+    dueDayOffset: 23,
+    expectedDurationDays: 3,
+    priority: "high",
+    dependsOnSteps: [9],
+    parallelGroup: "pre-offer",
+  },
+  {
+    title: "Right-to-work pre-check",
+    description:
+      "Confirm the candidate's right to work before an offer is extended, not after.",
+    assigneeRoleId: "ROLE-HRADMIN",
+    reviewerRoleId: "ROLE-HRMGR",
+    dueDayOffset: 23,
+    expectedDurationDays: 2,
+    priority: "critical",
+    dependsOnSteps: [9],
+    parallelGroup: "pre-offer",
+    condition: "visa_holder",
+  },
+  {
+    title: "Approve offer & compensation",
+    description:
+      "Sign off the package against the salary band before it reaches the candidate.",
+    assigneeRoleId: "ROLE-EXEC",
+    reviewerRoleId: "ROLE-FIN",
+    dueDayOffset: 24,
+    expectedDurationDays: 2,
+    priority: "critical",
+    escalateAfterDays: 2,
+    dependsOnSteps: [9],
+  },
+  {
+    title: "Extend offer to candidate",
+    description:
+      "Issue the approved offer once checks and sign-off are complete.",
+    assigneeRoleId: "ROLE-RECRUIT",
+    reviewerRoleId: "ROLE-HRMGR",
+    dueDayOffset: 25,
+    expectedDurationDays: 1,
+    priority: "critical",
+    escalateAfterDays: 2,
+    dependsOnSteps: [10, 11, 12],
+  },
+  {
+    title: "Candidate accepts offer",
+    description:
+      "Record the acceptance. Closing the requisition and preboarding both wait on this.",
+    assigneeRoleId: "ROLE-RECRUIT",
+    dueDayOffset: 30,
+    priority: "critical",
+    escalateAfterDays: 3,
+    dependsOnSteps: [13],
+  },
+  {
+    title: "Close requisition & notify unsuccessful candidates",
+    description:
+      "Close the opening and send outcomes to everyone still in the pipeline.",
+    assigneeRoleId: "ROLE-RECRUIT",
+    dueDayOffset: 31,
+    expectedDurationDays: 1,
+    dependsOnSteps: [14],
+  },
+  {
+    title: "Hand over to preboarding",
+    description:
+      "Pass the hire to Standard Preboarding with the offer terms and start date.",
+    assigneeRoleId: "ROLE-HRMGR",
+    dueDayOffset: 31,
+    expectedDurationDays: 1,
+    priority: "critical",
+    dependsOnSteps: [14],
+  },
+];
+
+/**
  * Before day one — compliance, logistics and data collection.
  *
  * Reordered per client feedback §11.1–§11.4: offer acceptance is now an
@@ -419,6 +606,28 @@ function buildTasks(prefix: string, seeds: SeedTask[]): WorkflowTask[] {
 }
 
 export const DEFAULT_WORKFLOWS: Workflow[] = [
+  {
+    id: "WF-DEFAULT-RECRUITMENT",
+    title: "Standard Recruitment",
+    description:
+      "From approved requisition to accepted offer — sourcing, screening, interviews, checks and sign-off. Hands over to Preboarding once the candidate accepts.",
+    triggerMode: "automatic",
+    schedule: {
+      kind: "relative",
+      event: "recruitment_initiated",
+      offsetValue: 0,
+      offsetUnit: "days",
+    },
+    scope: { kind: "all" },
+    kind: "system",
+    status: "active",
+    version: 1,
+    effectiveDate: "2026-08-15",
+    owner: "Talent Acquisition",
+    tasks: buildTasks("WF-RECRUITMENT", RECRUITMENT_TASKS),
+    lastModifiedBy: "System",
+    lastModifiedAt: "2026-08-15",
+  },
   {
     id: "WF-DEFAULT-PREBOARDING",
     title: "Standard Preboarding",

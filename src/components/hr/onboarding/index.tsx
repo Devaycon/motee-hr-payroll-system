@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { StatCards } from "./components/stat-cards";
@@ -17,7 +17,6 @@ import {
   sendWelcomeEmail,
   resendInvitation,
 } from "@/src/lib/stores/onboarding-records-slice";
-import { consumePendingRecords } from "@/src/lib/demo/pending-onboarding";
 import { buildTasksForSelection } from "./instantiate";
 import type {
   OnboardingRecord,
@@ -41,20 +40,9 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
-  // Consume any records handed over from the recruitment "send to onboarding"
-  // bridge (runs once on mount).
-  const consumedRef = useRef(false);
-  useEffect(() => {
-    if (consumedRef.current) return;
-    consumedRef.current = true;
-    const pending = consumePendingRecords();
-    if (pending.length > 0) {
-      dispatch(addRecords(pending));
-      toast.success(
-        `${pending.length} employee${pending.length !== 1 ? "s" : ""} added to onboarding`,
-      );
-    }
-  }, [dispatch]);
+  // Records handed over by the recruitment "send to onboarding" action are
+  // dispatched straight into this slice at invite time, so there is nothing to
+  // drain here — they are already in the store (and persisted) on arrival.
 
   // Completed records have moved on to Employees — keep them out of the pipeline.
   const active = useMemo(

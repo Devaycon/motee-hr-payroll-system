@@ -55,12 +55,24 @@ export function getStageConfig(
   return flow.stages.find((s) => s.type === type);
 }
 
+/**
+ * The enabled stages forming the linear applicants → hired progression.
+ *
+ * Every enabled stage is now part of that line — the pipeline has no sidings
+ * left, so this is just the enabled set in order.
+ */
+export function progressionStages(
+  flow: RequisitionFlow,
+): RecruitmentStageType[] {
+  return enabledStages(flow);
+}
+
 /** The next enabled stage after `type`, or null if `type` is terminal. */
 export function nextEnabledStage(
   flow: RequisitionFlow,
   type: RecruitmentStageType,
 ): RecruitmentStageType | null {
-  const order = enabledStages(flow);
+  const order = progressionStages(flow);
   const i = order.indexOf(type);
   return i >= 0 && i < order.length - 1 ? order[i + 1] : null;
 }
@@ -70,7 +82,7 @@ export function prevEnabledStage(
   flow: RequisitionFlow,
   type: RecruitmentStageType,
 ): RecruitmentStageType | null {
-  const order = enabledStages(flow);
+  const order = progressionStages(flow);
   const i = order.indexOf(type);
   return i > 0 ? order[i - 1] : null;
 }

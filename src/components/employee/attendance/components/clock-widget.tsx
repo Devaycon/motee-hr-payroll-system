@@ -1,55 +1,71 @@
 "use client";
 
 import {
-  Coffee,
-  LogOut,
-  LogIn,
-  CheckCircle2,
   AlertCircle,
+  CheckCircle2,
+  Coffee,
+  LogIn,
+  LogOut,
+  MapPin,
   Timer,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import { cn } from "@/src/lib/utils";
-import {
-  ATTENDANCE_STATUS_LABELS,
-  ATTENDANCE_STATUS_STYLES,
-} from "@/src/data/attendance-demo";
-import type { AttendanceStatus } from "@/src/lib/types/attendance";
-import type { ClockState, WorkLocation } from "./types";
-import { LOCATION_CONFIG, MY_SCHEDULE, SCHEDULED_HOURS } from "./constants";
-import { secondsToHHMMSS } from "./helpers";
+import type {
+  AttendanceStatus,
+  ClockState,
+  DaySchedule,
+} from "@/src/lib/types/attendance";
+import type { LocaleLocationBooking } from "@/src/lib/types/locale";
+import { secondsToHHMMSS } from "@/src/lib/utils/format-duration";
+import { LOCATION_CONFIG, STATUS_BADGE, STATUS_LABEL } from "./constants";
+import { LocationPicker, type LocationChoice } from "./location-picker";
 
 interface ClockWidgetProps {
   now: Date;
   clockState: ClockState;
-  location: WorkLocation;
+  schedule: DaySchedule | null;
+  scheduledHours: number;
+  choice: LocationChoice;
+  bookings: LocaleLocationBooking[];
   workedSeconds: number;
   progressPct: number;
   currentBreakSeconds: number;
   todayStatus: AttendanceStatus;
+  isLateNow: boolean;
   onClockIn: () => void;
   onBreakStart: () => void;
   onBreakEnd: () => void;
   onClockOutOpen: () => void;
-  onLocationChange: (loc: WorkLocation) => void;
+  onLocationChange: (choice: LocationChoice) => void;
+  onBookDesk: (name: string) => string;
 }
 
 export function ClockWidget({
   now,
   clockState,
-  location,
+  schedule,
+  scheduledHours,
+  choice,
+  bookings,
   workedSeconds,
   progressPct,
   currentBreakSeconds,
   todayStatus,
+  isLateNow,
   onClockIn,
   onBreakStart,
   onBreakEnd,
   onClockOutOpen,
   onLocationChange,
+  onBookDesk,
 }: ClockWidgetProps) {
+  const locationCfg = LOCATION_CONFIG[choice.location];
+  const LocationIcon = choice.bookingId ? MapPin : locationCfg.icon;
+  const locationLabel = choice.locationName ?? locationCfg.label;
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-6 flex flex-col gap-5">
@@ -69,20 +85,20 @@ export function ClockWidget({
           </div>
           <span
             className={cn(
-              "text-[10px] px-2.5 py-1 rounded-full border font-bold",
-              ATTENDANCE_STATUS_STYLES[todayStatus],
+              "text-[10px] px-2.5 py-1 rounded-full font-bold",
+              STATUS_BADGE[todayStatus],
             )}
           >
-            {ATTENDANCE_STATUS_LABELS[todayStatus]}
+            {STATUS_LABEL[todayStatus]}
           </span>
         </div>
 
         <div className="flex flex-col items-center gap-1 py-2">
           <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-medium">
-            Current Time
+            Current time
           </p>
           <p className="text-5xl font-bold tabular-nums text-foreground tracking-tight">
-            {now.toLocaleTimeString("en-US", {
+            {now.toLocaleTimeString("en-GB", {
               hour: "2-digit",
               minute: "2-digit",
               second: "2-digit",
@@ -90,13 +106,9 @@ export function ClockWidget({
             })}
           </p>
           <p className="text-xs text-muted-foreground">
-            {now
-              .toLocaleTimeString("en-US", { hour12: true })
-              .split(":")
-              .slice(0, 2)
-              .join(":")}{" "}
-            {now.getHours() >= 12 ? "PM" : "AM"} · Scheduled{" "}
-            {MY_SCHEDULE.startTime} – {MY_SCHEDULE.endTime}
+            {schedule
+              ? `Scheduled ${schedule.start} – ${schedule.end}`
+              : "Not a scheduled working day"}
           </p>
         </div>
 
@@ -106,9 +118,11 @@ export function ClockWidget({
               <span className="flex items-center gap-1">
                 <Timer className="w-3 h-3" /> Time worked
               </span>
-              <span>
-                {Math.round(progressPct)}% of {SCHEDULED_HOURS}h shift
-              </span>
+              {scheduledHours > 0 && (
+                <span className="tabular-nums">
+                  {Math.round(progressPct)}% of {scheduledHours}h day
+                </span>
+              )}
             </div>
             <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
               <div
@@ -123,18 +137,16 @@ export function ClockWidget({
               <div
                 className={cn(
                   "px-4 py-2 rounded-xl tabular-nums text-3xl font-bold tracking-tight",
-                  clockState === "on_break"
-                    ? "text-amber-500"
-                    : "text-[#7F77DD]",
+                  clockState === "on_break" ? "text-amber-500" : "text-[#7F77DD]",
                 )}
               >
-                {secondsToHHMMSS(clockState === "on_break" ? 0 : workedSeconds)}
+                {secondsToHHMMSS(workedSeconds)}
               </div>
             </div>
             {clockState === "on_break" && (
               <div className="flex items-center justify-center gap-2 text-amber-600">
                 <Coffee className="w-3.5 h-3.5" />
-                <span className="text-xs font-medium">
+                <span className="text-xs font-medium tabular-nums">
                   On break · {secondsToHHMMSS(currentBreakSeconds)}
                 </span>
               </div>
@@ -144,50 +156,23 @@ export function ClockWidget({
 
         <Separator />
 
-        {clockState === "idle" && (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-xs font-medium text-foreground">Work location</p>
-            <div className="flex gap-2">
-              {(Object.keys(LOCATION_CONFIG) as WorkLocation[]).map((loc) => {
-                const cfg = LOCATION_CONFIG[loc];
-                const Icon = cfg.icon;
-                return (
-                  <button
-                    key={loc}
-                    onClick={() => onLocationChange(loc)}
-                    className={cn(
-                      "flex-1 flex flex-col items-center gap-1.5 py-2.5 rounded-xl border text-[10px] font-semibold transition-all",
-                      location === loc
-                        ? "border-[#7F77DD] bg-[#7F77DD]/10 text-[#7F77DD]"
-                        : "border-border text-muted-foreground hover:border-[#7F77DD]/40",
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {cfg.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {clockState !== "idle" && clockState !== "clocked_out" && (
+        {clockState === "idle" ? (
+          <LocationPicker
+            choice={choice}
+            bookings={bookings}
+            onChange={onLocationChange}
+            onBookDesk={onBookDesk}
+          />
+        ) : (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {(() => {
-              const cfg = LOCATION_CONFIG[location];
-              const Icon = cfg.icon;
-              return (
-                <>
-                  <Icon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
-                  <span>
-                    Working from{" "}
-                    <span className="font-medium text-foreground">
-                      {cfg.label}
-                    </span>
-                  </span>
-                </>
-              );
-            })()}
+            <LocationIcon
+              className="w-3.5 h-3.5"
+              style={{ color: locationCfg.color }}
+            />
+            <span>
+              {clockState === "clocked_out" ? "Worked from " : "Working from "}
+              <span className="font-medium text-foreground">{locationLabel}</span>
+            </span>
           </div>
         )}
 
@@ -235,19 +220,21 @@ export function ClockWidget({
           )}
         </div>
 
-        {clockState === "idle" &&
-          (() => {
-            const [sh, sm] = MY_SCHEDULE.startTime.split(":").map(Number);
-            const sched = new Date();
-            sched.setHours(sh, sm, 0, 0);
-            return now > sched;
-          })() && (
-            <div className="flex items-center gap-2 text-[11px] text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              Scheduled start was {MY_SCHEDULE.startTime}. Clocking in now will
-              be marked as late.
-            </div>
-          )}
+        {clockState === "idle" && isLateNow && schedule && (
+          <div className="flex items-center gap-2 text-[11px] text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            Scheduled start was {schedule.start}. Clocking in now will be marked
+            as late.
+          </div>
+        )}
+
+        {clockState === "idle" && !schedule && (
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground bg-muted/50 border border-border rounded-lg px-3 py-2">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            You&apos;re not scheduled to work today. Any time you record will
+            count as additional hours.
+          </div>
+        )}
       </CardContent>
     </Card>
   );

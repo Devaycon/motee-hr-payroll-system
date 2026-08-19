@@ -17,6 +17,9 @@ import { initScenariosPersistence } from "./scenarios-persistence";
 import { initUsersPersistence } from "./users-persistence";
 import { initDiversityPersistence } from "./diversity-persistence";
 import { initProjectsPersistence } from "./projects-persistence";
+import { initAttendancePersistence } from "./attendance-persistence";
+import { initExpensesPersistence } from "./expenses-persistence";
+import { initDashboardLayoutPersistence } from "./dashboard-layout-persistence";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -34,6 +37,9 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
     initUsersPersistence();
     initDiversityPersistence();
     initProjectsPersistence();
+    initAttendancePersistence();
+    initExpensesPersistence();
+    initDashboardLayoutPersistence();
   }, []);
 
   return <Provider store={store}>{children}</Provider>;

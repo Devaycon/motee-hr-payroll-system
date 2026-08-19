@@ -38,7 +38,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from "@/src/components/ui/dropdown-menu";
-import { ExportMenu } from "@/src/components/shared/export-menu";
 import { useCan } from "@/src/lib/permissions/use-can";
 import {
   DataTable,
@@ -51,7 +50,6 @@ import {
 } from "@/src/components/shared/employee-id-columns";
 import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
 import { cn } from "@/src/lib/utils";
-import type { ReportColumn } from "@/src/lib/reports/types";
 import { isOpenLeaveStatus } from "@/src/lib/types/leave";
 import {
   LEAVE_STATUS_LABELS,
@@ -65,35 +63,6 @@ import {
 import type { LeaveRequest, LeaveTypeName } from "../types";
 
 const ALL = "all";
-
-const EXPORT_COLUMNS: ReportColumn<LeaveRequest>[] = [
-  { key: "employeeName", header: "Employee", value: (r) => r.employeeName },
-  { key: "employeeId", header: "System ID", value: (r) => r.employeeId ?? "" },
-  { key: "department", header: "Department", value: (r) => r.department },
-  { key: "jobTitle", header: "Job Title", value: (r) => r.jobTitle },
-  { key: "managerName", header: "Manager", value: (r) => r.managerName ?? "" },
-  {
-    key: "leaveType",
-    header: "Leave Type",
-    value: (r) => LEAVE_TYPE_LABELS[r.leaveType] ?? r.leaveType,
-  },
-  { key: "startDate", header: "Start Date", value: (r) => r.startDate },
-  { key: "endDate", header: "End Date", value: (r) => r.endDate },
-  { key: "totalDays", header: "Days", value: (r) => r.totalDays },
-  {
-    key: "status",
-    header: "Status",
-    value: (r) => LEAVE_STATUS_LABELS[r.status] ?? r.status,
-  },
-  { key: "submittedAt", header: "Submitted", value: (r) => r.submittedAt },
-  { key: "approvedBy", header: "Decided By", value: (r) => r.approvedBy ?? "" },
-  { key: "reason", header: "Reason", value: (r) => r.reason ?? "" },
-  {
-    key: "reliefEmployeeName",
-    header: "Relief Employee",
-    value: (r) => r.reliefEmployeeName ?? "",
-  },
-];
 
 interface Filters {
   department: string;
@@ -566,14 +535,8 @@ export function RequestsTable({
             </PopoverContent>
           </Popover>
 
-          <ExportMenu
-            name="leave-requests"
-            title="Leave Requests"
-            columns={EXPORT_COLUMNS}
-            rows={filtered}
-            label={`Export ${filtered.length} request${filtered.length === 1 ? "" : "s"}`}
-            variant="outline"
-          />
+          {/* Export lives on the DataTable below — a second button here put
+              two Export menus on the page over the same filtered rows. */}
 
           {canCreate && (
             <Button size="lg" onClick={onNewRequest}>

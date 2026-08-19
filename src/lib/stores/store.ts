@@ -20,6 +20,9 @@ import leaveReducer from "./leave-slice";
 import notificationsReducer from "./notifications-slice";
 import employeesReducer from "./employees-slice";
 import offboardingReducer from "./offboarding-slice";
+import attendanceReducer from "./attendance-slice";
+import expensesReducer from "./expenses-slice";
+import dashboardLayoutReducer from "./dashboard-layout-slice";
 
 export const store = configureStore({
   reducer: {
@@ -44,6 +47,9 @@ export const store = configureStore({
     notifications: notificationsReducer,
     employees: employeesReducer,
     offboarding: offboardingReducer,
+    attendance: attendanceReducer,
+    expenses: expensesReducer,
+    dashboardLayout: dashboardLayoutReducer,
   },
 });
 

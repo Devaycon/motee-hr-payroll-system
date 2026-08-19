@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Plus,
   Wallet,
@@ -23,10 +24,21 @@ import {
 } from "@/src/components/shared/hr-stat-card";
 import { useCurrency } from "@/src/lib/hooks/use-currency";
 import { formatDate } from "@/src/lib/utils/format-date";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { addClaim, updateClaim } from "@/src/lib/stores/expenses-slice";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import {
-  EMPLOYEE_EXPENSES,
+  useExpenseStages,
+  useExpenseTemplate,
+} from "@/src/lib/expenses/use-expense-stages";
+import { useExpenseAttribution } from "@/src/lib/expenses/use-expense-attribution";
+import { resolveDeskFrom } from "@/src/lib/expenses/desk";
+import { statusForStageIndex } from "@/src/lib/expenses/stages";
+import {
+  buildExpenseReference,
   EXPENSE_CATEGORY_ICONS,
   EXPENSE_CATEGORY_LABELS,
+  newExpenseClaimId,
   type ExpenseClaim,
 } from "@/src/data/employee-expenses-demo";
 import { ExpenseFormModal } from "./components/expense-form-modal";
@@ -59,15 +71,31 @@ interface SubmittedClaim {
   attachmentCount: number;
 }
 
-/** Human-facing claim reference, e.g. EXP-2026-00124. */
-function buildReference(dateSubmitted: string, sequence: number): string {
-  const year = dateSubmitted.slice(0, 4) || String(new Date().getFullYear());
-  return `EXP-${year}-${String(sequence).padStart(5, "0")}`;
-}
-
 export function ExpensesPage() {
   const { format, code } = useCurrency();
-  const [claims, setClaims] = useState<ExpenseClaim[]>(EMPLOYEE_EXPENSES);
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  // Claims live in the store rather than local state so a claim survives the
+  // trip to its detail page (and a refresh, and a deep link).
+  const allClaims = useAppSelector((s) => s.expenses.claims);
+  const user = useAppSelector((s) => s.auth.user);
+  const bundle = useAppSelector((s) => s.locale.data);
+  const actor = user?.name ?? "You";
+  const stages = useExpenseStages();
+  const template = useExpenseTemplate();
+  useExpenseAttribution();
+
+  // The store holds every employee's claims now that HR reviews them here —
+  // this page is "mine". Claims filed before attribution have no owner yet, so
+  // they stay visible rather than vanishing mid-migration.
+  const claims = useMemo(
+    () =>
+      allClaims.filter(
+        (c) => !c.employeeId || c.employeeId === user?.employeeId,
+      ),
+    [allClaims, user?.employeeId],
+  );
+
   const [modalOpen, setModalOpen] = useState(false);
   /** Drill-down set by the KPI cards; "all" shows every claim. */
   const [cardFilter, setCardFilter] = useState<CardFilter>("all");
@@ -77,6 +105,19 @@ export function ExpensesPage() {
   /** §9.15 — the draft being reopened, if any. */
   const [editingDraft, setEditingDraft] = useState<ExpenseClaim | null>(null);
 
+  // `?draft=` reopens a specific draft in the form — the detail page's
+  // "Continue editing" hands the claim back to the modal that owns it.
+  const draftParam = useSearchParams().get("draft");
+  const [openedParam, setOpenedParam] = useState<string | null>(null);
+  if (draftParam && draftParam !== openedParam && claims.length) {
+    const match = claims.find((c) => c.id === draftParam);
+    setOpenedParam(draftParam);
+    if (match) {
+      setEditingDraft(match);
+      setModalOpen(true);
+    }
+  }
+
   /** Merchants already claimed against, offered as autocomplete (§9.4). */
   const knownMerchants = useMemo(
     () => Array.from(new Set(claims.map((c) => c.merchant).filter(Boolean))).sort(),
@@ -84,14 +125,16 @@ export function ExpensesPage() {
   );
 
   /**
-   * §8.7 — claims the employee has to do something about: rejected ones, and
-   * anything submitted without a receipt (which gets returned for one).
+   * §8.7 — claims the employee has to do something about: rejected ones, ones
+   * an approver sent back, and anything submitted without a receipt (which
+   * gets returned for one).
    */
   const needsAction = useMemo(
     () =>
       claims.filter(
         (c) =>
           c.status === "rejected" ||
+          (c.status === "draft" && c.returned) ||
           (c.status !== "draft" && (c.attachments?.length ?? 0) === 0),
       ),
     [claims],
@@ -149,7 +192,7 @@ export function ExpensesPage() {
         icon: BellRing,
         label: "Needs Your Action",
         value: needsAction.length,
-        sub: "Rejected or missing a receipt",
+        sub: "Rejected, returned or missing a receipt",
         tone: "red",
         ...card("needs_action"),
       },
@@ -205,7 +248,11 @@ export function ExpensesPage() {
               {/* §9.15 — drafts are only useful if it's obvious you can pick
                   one back up, so say so rather than relying on a row click. */}
               {row.original.status === "draft"
-                ? `${row.original.merchant || "No merchant yet"} · Click to continue`
+                ? `${row.original.merchant || "No merchant yet"} · ${
+                    row.original.returned
+                      ? "Returned — open to fix"
+                      : "Open to continue"
+                  }`
                 : row.original.merchant}
             </p>
           </div>
@@ -279,22 +326,90 @@ export function ExpensesPage() {
       {
         accessorKey: "status",
         header: sortableHeader("Status"),
-        cell: ({ row }) => <ClaimProgress status={row.original.status} />,
+        cell: ({ row }) => <ClaimProgress claim={row.original} stages={stages} />,
       },
     ],
-    [format, code],
+    [format, code, stages],
   );
 
   function handleSave(claim: Omit<ExpenseClaim, "id">) {
     // §9.15 — reopening a draft replaces it rather than filing a second copy.
-    const id = editingDraft?.id ?? `exp-${Date.now()}`;
-    setClaims((prev) =>
-      editingDraft
-        ? prev.map((c) => (c.id === id ? { ...claim, id } : c))
-        : [{ ...claim, id }, ...prev],
-    );
+    const id = editingDraft?.id ?? newExpenseClaimId();
+    // A reference is only issued on submission — a draft has nothing to quote
+    // yet — and once issued it stays with the claim. References are drawn from
+    // every claim, not just this employee's, so they stay unique.
+    const reference =
+      claim.status === "draft"
+        ? editingDraft?.reference
+        : (editingDraft?.reference ??
+          buildExpenseReference(allClaims, claim.dateSubmitted));
+
+    // Who filed it, so HR can attribute the claim and the chain can resolve a
+    // line manager from it.
+    const identity = {
+      employeeId: user?.employeeId,
+      employeeName: user?.name,
+      employeeInitials: user?.initials,
+      department: user?.departmentName,
+    };
+
+    // Submitting hands the claim to the first stage of the active chain.
+    const submitting = claim.status !== "draft";
+    const desk =
+      submitting && user
+        ? resolveDeskFrom(
+            0,
+            stages,
+            template?.steps ?? [],
+            {
+              employeeId: user.employeeId,
+              name: user.name,
+              initials: user.initials,
+              departmentName: user.departmentName,
+            },
+            bundle,
+          )
+        : null;
+
+    const chainFields = submitting
+      ? {
+          chainTemplateId: template?.id,
+          stageIndex: desk?.stageIndex ?? 0,
+          currentApproverEmployeeId: desk?.approverEmployeeId ?? null,
+          currentApproverName: desk?.approverName ?? null,
+          reviewer: desk?.approverName ?? stages[0]?.approverLabel,
+          // The resolver can walk past stages nobody can action, so the status
+          // follows the stage actually landed on rather than assuming stage 0.
+          status: desk
+            ? statusForStageIndex(desk.stageIndex, stages.length)
+            : claim.status,
+        }
+      : { stageIndex: -1 };
+
+    if (editingDraft) {
+      dispatch(
+        updateClaim({
+          id,
+          changes: { ...claim, ...identity, ...chainFields, reference },
+          actor,
+          stageIndex: desk?.stageIndex ?? 0,
+          approver: desk
+            ? { employeeId: desk.approverEmployeeId, name: desk.approverName }
+            : null,
+        }),
+      );
+    } else {
+      dispatch(
+        addClaim({
+          claim: { ...claim, ...identity, ...chainFields, id, reference },
+          actor,
+        }),
+      );
+    }
+
     setModalOpen(false);
     setEditingDraft(null);
+    clearDraftParam();
 
     // A draft isn't a submission, so it gets a quiet confirmation rather than
     // the §9.17 "what happens next" dialog.
@@ -305,23 +420,33 @@ export function ExpensesPage() {
       return;
     }
 
+    // The approver's queue is a different screen, so tell them it landed.
+    dispatch(
+      pushNotification({
+        title: "Expense claim submitted",
+        description: `${reference ?? claim.title} is with ${
+          desk?.approverName ?? stages[0]?.approverLabel ?? "your approver"
+        } for review.`,
+      }),
+    );
+
     // §9.17 — a dialog with the reference and next steps replaces the toast.
     setSubmitted({
       id,
-      reference: buildReference(claim.dateSubmitted, claims.length + 1),
+      reference: reference ?? "",
       attachmentCount: claim.attachments?.length ?? 0,
     });
-  }
-
-  /** §9.15 — pick a draft back up where it was left. */
-  function handleOpenDraft(claim: ExpenseClaim) {
-    setEditingDraft(claim);
-    setModalOpen(true);
   }
 
   function handleCloseModal() {
     setModalOpen(false);
     setEditingDraft(null);
+    clearDraftParam();
+  }
+
+  /** Drops `?draft=` once the form is done with it, so a refresh doesn't reopen it. */
+  function clearDraftParam() {
+    if (draftParam) router.replace("/employee/expenses");
   }
 
   return (
@@ -378,7 +503,9 @@ export function ExpensesPage() {
         getRowId={(c) => c.id}
         // The §8.8 smart search above replaces the table's plain substring box.
         enableGlobalFilter={false}
-        onRowClick={(c) => c.status === "draft" && handleOpenDraft(c)}
+        // Every claim opens its own page — the six columns here can't carry the
+        // receipt, the notes or the audit trail.
+        onRowClick={(c) => router.push(`/employee/expenses/${c.id}`)}
         emptyMessage={
           query.trim()
             ? "No claims match that search."
@@ -405,9 +532,9 @@ export function ExpensesPage() {
           setModalOpen(true);
         }}
         onViewClaim={() => {
-          // No per-claim page yet, so surface the new row where it landed.
+          const id = submitted?.id;
           setSubmitted(null);
-          setCardFilter("pending");
+          if (id) router.push(`/employee/expenses/${id}`);
         }}
       />
     </div>

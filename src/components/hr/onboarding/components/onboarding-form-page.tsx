@@ -20,7 +20,7 @@ import { Separator } from "@/src/components/ui/separator";
 import { cn } from "@/src/lib/utils";
 import { DEPARTMENT_OPTIONS } from "../data";
 import type { ManualOnboardingData } from "../types";
-import { addPendingRecord } from "@/src/lib/demo/pending-onboarding";
+import { addRecord } from "@/src/lib/stores/onboarding-records-slice";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { onboardingStarted } from "@/src/lib/notifications/onboarding";
@@ -93,6 +93,7 @@ const step1Schema = z.object({
   maritalStatus: z.string().optional(),
   address: z.string().min(5, "At least 5 characters"),
   state: z.string().optional(),
+  postalCode: z.string().min(1, "Required"),
   country: z.string().min(1, "Required"),
 });
 
@@ -177,6 +178,7 @@ const EMPTY_DATA: ManualOnboardingData = {
   maritalStatus: "",
   address: "",
   state: "",
+  postalCode: "",
   country: "",
   employeeId: "",
   jobTitle: "",
@@ -307,26 +309,28 @@ export function OnboardingFormPage() {
       selectedWorkflowId,
     );
 
-    addPendingRecord({
-      id,
-      referenceId: data.employeeId || undefined,
-      employeeName: fullName,
-      employeeInitials: initials,
-      email: data.email,
-      jobTitle: data.jobTitle,
-      department: data.department,
-      startDate: data.startDate,
-      stage: "pre_boarding",
-      status: "not_started",
-      workflowTemplateId: template?.id,
-      workflowName: template?.name,
-      tasks,
-      completedTasks: 0,
-      totalTasks: tasks.length,
-      welcomeEmailSent: false,
-      initiatedAt: new Date().toISOString().slice(0, 10),
-      mode: "manual",
-    });
+    dispatch(
+      addRecord({
+        id,
+        referenceId: data.employeeId || undefined,
+        employeeName: fullName,
+        employeeInitials: initials,
+        email: data.email,
+        jobTitle: data.jobTitle,
+        department: data.department,
+        startDate: data.startDate,
+        stage: "pre_boarding",
+        status: "not_started",
+        workflowTemplateId: template?.id,
+        workflowName: template?.name,
+        tasks,
+        completedTasks: 0,
+        totalTasks: tasks.length,
+        welcomeEmailSent: false,
+        initiatedAt: new Date().toISOString().slice(0, 10),
+        mode: "manual",
+      }),
+    );
 
     // §2.10 — the employer-side record of the process starting.
     dispatch(
@@ -627,6 +631,22 @@ export function OnboardingFormPage() {
                   className="h-9 text-sm"
                   placeholder="e.g. Lagos"
                 />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">
+                  Postcode <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  value={data.postalCode}
+                  onChange={(e) =>
+                    update("postalCode", e.target.value.toUpperCase())
+                  }
+                  className="h-9 text-sm"
+                  placeholder="e.g. SW1A 1AA"
+                />
+                {err("postalCode") && (
+                  <p className="text-xs text-destructive">{err("postalCode")}</p>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">

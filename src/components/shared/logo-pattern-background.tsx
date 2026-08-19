@@ -64,9 +64,13 @@ export function LogoPatternBackground({
       {/* 2. Faint logo silhouettes — the watermark. `brightness-0` flattens the
             logo to black (light theme); `dark:invert` then flips it to white so it
             reads on the dark surface. Using filter utilities (not an inline
-            `filter`) lets the two compose instead of the inline style winning. */}
+            `filter`) lets the two compose instead of the inline style winning.
+
+            Dialled back ~35% from 0.035/0.06 — spanning the full page, it was
+            competing with the cards and tables that should hold the eye
+            (client feedback — background pattern). */}
       <div
-        className="absolute inset-0 opacity-[0.035] brightness-0 dark:opacity-[0.06] dark:invert"
+        className="absolute inset-0 opacity-[0.022] brightness-0 dark:opacity-[0.04] dark:invert"
         style={tiled}
       />
 

@@ -34,6 +34,17 @@ export interface HrStatCardItem {
   trend?: string;
   up?: boolean;
   /**
+   * What the trend is measured against. A bare "12%" doesn't say 12% of what,
+   * over what period (client feedback — KPI cards), so the badge always names
+   * the comparison.
+   */
+  trendPeriod?: string;
+  /**
+   * Stands in for `sub` when the value is zero. "0 / Employees hired this month"
+   * reads as a broken card; "0 / No new hires this month" reads as an answer.
+   */
+  zeroSub?: string;
+  /**
    * Makes the whole card a drill-down control (client feedback §2.20, §6.1,
    * §6.17, §7.1). Pair with `active` so the card reflects the filter it set.
    */
@@ -47,9 +58,14 @@ interface HrStatCardProps {
   stat: HrStatCardItem;
 }
 
+const DEFAULT_TREND_PERIOD = "vs last month";
+
 export function HrStatCard({ stat }: HrStatCardProps) {
   const tone = TONE_STYLES[stat.tone ?? "violet"];
   const clickable = Boolean(stat.onClick);
+  const isZero = stat.value === 0 || stat.value === "0";
+  const sub = isZero && stat.zeroSub ? stat.zeroSub : stat.sub;
+  const trendPeriod = stat.trendPeriod ?? DEFAULT_TREND_PERIOD;
 
   // A card can carry both a drill-down and a "View" link, so the clickable
   // surface stays a div with button semantics — a real <button> here would
@@ -106,28 +122,31 @@ export function HrStatCard({ stat }: HrStatCardProps) {
         )}
       </CardHeader>
       <CardContent className="px-3 pb-3 pt-1.5">
-        <div className="flex items-end justify-between">
-          <div>
+        <div className="flex items-end justify-between gap-2">
+          <div className="min-w-0">
             <p className="text-xl font-bold text-foreground leading-none">
               {stat.value}
             </p>
-            <p className="text-[11px] text-muted-foreground mt-1">{stat.sub}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>
           </div>
           {stat.trend !== undefined && (
             <Badge
               variant="outline"
               className={cn(
-                "text-[10px] px-1.5 py-0 font-medium gap-0.5",
+                "shrink-0 text-[10px] px-1.5 py-0 font-medium gap-0.5",
                 stat.up
                   ? "border-[#4ED251]/40 bg-[#4ED251]/10 text-[#4ED251]"
                   : "border-orange-600/50 bg-orange-600/5 text-red-600",
               )}
             >
-              {stat.trend}
               {stat.up ? (
                 <ArrowUp className="h-3 w-3" />
               ) : (
-                <ArrowDown className="h-3 w-3 " />
+                <ArrowDown className="h-3 w-3" />
+              )}
+              {stat.trend}
+              {trendPeriod && (
+                <span className="font-normal opacity-80">{trendPeriod}</span>
               )}
             </Badge>
           )}
@@ -145,12 +164,14 @@ interface HrStatCardsGridProps {
 export function HrStatCardsGrid({ stats, columns = 4 }: HrStatCardsGridProps) {
   return (
     <div
+      // Stacked two-up on a phone rather than squeezed to four across
+      // (client feedback — mobile considerations).
       className={cn("grid gap-3", {
         "grid-cols-2": columns === 2,
-        "grid-cols-3": columns === 3,
-        "grid-cols-4": columns === 4,
+        "grid-cols-2 sm:grid-cols-3": columns === 3,
+        "grid-cols-2 lg:grid-cols-4": columns === 4,
         "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5": columns === 5,
-        "grid-cols-4 xl:grid-cols-8": columns === 8,
+        "grid-cols-2 sm:grid-cols-4 xl:grid-cols-8": columns === 8,
       })}
     >
       {stats.map((stat) => (

@@ -16,6 +16,7 @@ import {
   GraduationCap,
   Clock,
   CalendarDays,
+  Receipt,
   Package,
   Library,
   FileText,
@@ -241,6 +242,12 @@ export const routes: Route[] = [
     label: "Leave Management",
     link: "/time-payroll/leave",
     badge: 3,
+  },
+  {
+    group: "Employee Services",
+    icon: Receipt,
+    label: "Expense Claims",
+    link: "/time-payroll/expenses",
   },
 
   // §4.16 — Occupational Health was buried under "Time & Payroll", which is

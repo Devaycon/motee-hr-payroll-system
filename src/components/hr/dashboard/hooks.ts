@@ -31,10 +31,14 @@ interface StatCard {
   label: string;
   value: string | number;
   sub: string;
+  /** Replaces `sub` when the value is zero, so "0" still reads as a sentence. */
+  zeroSub?: string;
   link: string;
   icon: LucideIcon;
   trend: string;
   up: boolean;
+  /** What `trend` is measured against; defaults to "vs last month". */
+  trendPeriod?: string;
 }
 
 function isUpcomingWithinDays(dateStr: string | undefined, days: number) {
@@ -106,6 +110,7 @@ export function useStatCards() {
         icon: UserRoundPlus,
         value: newHires,
         sub: "Employees hired this month",
+        zeroSub: "No new hires this month",
         trend: "12%",
         up: true,
       },
@@ -115,6 +120,7 @@ export function useStatCards() {
         icon: UserMinus,
         value: leaversThisMonth,
         sub: "Employees who left this month",
+        zeroSub: "No leavers this month",
         trend: "2.1%",
         up: false,
       },
@@ -127,7 +133,9 @@ export function useStatCards() {
         icon: Home,
         value: remote,
         sub: "Remote today",
+        zeroSub: "Nobody is working remotely today",
         trend: "6.5%",
+        trendPeriod: "vs last week",
         up: true,
       },
       {
@@ -138,7 +146,9 @@ export function useStatCards() {
         icon: Cake,
         value: birthdays,
         sub: "Celebrating within the next 7 days",
+        zeroSub: "No birthdays in the next 7 days",
         trend: "1.0%",
+        trendPeriod: "vs last week",
         up: true,
       },
       {
@@ -147,6 +157,7 @@ export function useStatCards() {
         icon: CalendarCheck,
         value: annual,
         sub: "Active annual leave requests",
+        zeroSub: "No active annual leave requests",
         trend: "3.4%",
         up: true,
       },
@@ -156,6 +167,7 @@ export function useStatCards() {
         icon: HeartPulse,
         value: sick,
         sub: "Current sick leave requests",
+        zeroSub: "No current sick leave requests",
         trend: "1.8%",
         up: false,
       },
@@ -165,6 +177,7 @@ export function useStatCards() {
         icon: CalendarDays,
         value: Math.max(0, other),
         sub: "Other leave requests",
+        zeroSub: "No other leave requests",
         trend: "0.9%",
         up: true,
       },
@@ -173,8 +186,11 @@ export function useStatCards() {
         link: "/operations/workforce",
         icon: TrendingDown,
         value: `${turnoverRate}%`,
-        sub: `${Math.abs(turnoverDelta)}% ${turnoverDelta <= 0 ? "lower" : "higher"} than last quarter`,
+        // The badge carries the comparison, so the sub says what the number is
+        // rather than repeating the delta in different words.
+        sub: "Latest quarter, org-wide",
         trend: `${Math.abs(turnoverDelta)}%`,
+        trendPeriod: "vs last quarter",
         up: turnoverDelta > 0,
       },
     ];
@@ -225,6 +241,10 @@ export function useAttendanceSeries() {
 interface HeadcountPoint {
   month: string;
   headcount: number;
+  joiners: number;
+  leavers: number;
+  /** joiners − leavers for the month. */
+  net: number;
 }
 
 export const HEADCOUNT_CONFIG: ChartConfig = {
@@ -233,13 +253,39 @@ export const HEADCOUNT_CONFIG: ChartConfig = {
 
 export function useHeadcountTrend() {
   return useLocaleSection<HeadcountPoint[]>((bundle) =>
-    bundle.headcountSnapshots.map((s) => ({
-      month: new Date(`${s.month}-01`).toLocaleDateString("en-US", {
-        month: "short",
-      }),
-      headcount: s.total,
-    })),
+    bundle.headcountSnapshots.map((s) => {
+      const month = s.date.slice(0, 7);
+      // Counted off the roster rather than read from the snapshot: the
+      // snapshots carry joiners/leavers of 0 for every month even though the
+      // employee records show people starting and leaving, and the roster is
+      // what the Employees module and the New Hires / Leavers KPI cards count.
+      const joiners = bundle.employees.filter((e) =>
+        e.startDate?.startsWith(month),
+      ).length;
+      const leavers = bundle.employees.filter((e) =>
+        e.dateOfLeaving?.startsWith(month),
+      ).length;
+      return {
+        month: new Date(`${s.date}T00:00:00`).toLocaleDateString("en-GB", {
+          month: "short",
+        }),
+        headcount: s.total,
+        joiners,
+        leavers,
+        net: joiners - leavers,
+      };
+    }),
   );
+}
+
+/**
+ * When the underlying data was generated, so the dashboard can say how fresh
+ * it is rather than leaving the user to guess (client feedback — data freshness).
+ */
+export function useLocaleFreshness() {
+  return useLocaleSection<{ generatedAt: string }>((bundle) => ({
+    generatedAt: bundle._meta.generatedAt,
+  }));
 }
 
 interface GenderSplitData {

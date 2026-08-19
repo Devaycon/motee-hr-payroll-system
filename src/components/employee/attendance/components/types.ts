@@ -1,40 +1,33 @@
-import type { AttendanceStatus, TimesheetRecord } from "@/src/lib/types/attendance";
+/**
+ * View-local shapes for the attendance screen.
+ *
+ * The domain types (`ClockState`, `ClockSession`, `DailyEntry`, …) live in
+ * `lib/types/attendance` because the slice and the HR side share them; only
+ * things that exist purely to render live here.
+ */
 
-export type ClockState = "idle" | "clocked_in" | "on_break" | "clocked_out";
-export type WorkLocation = "office" | "remote" | "client_site";
+export type {
+  ClockState,
+  ClockSession,
+  WorkLocation,
+  BreakInterval,
+  DaySchedule,
+  CorrectionRequest,
+} from "@/src/lib/types/attendance";
 
-export interface BreakEntry {
-  start: Date;
-  end?: Date;
-}
-
+/** One line in the activity feed, derived from the session rather than stored. */
 export interface ActivityEvent {
-  time: string;
+  /** ISO instant — used as the key and formatted at render time. */
+  at: string;
   label: string;
   type: "clock_in" | "clock_out" | "break_start" | "break_end";
 }
 
+/** A day cell in the month calendar. */
 export interface DayDetail {
   clockIn?: string;
   clockOut?: string;
   breakMinutes?: number;
   totalHours?: number;
   note?: string;
-}
-
-export interface WeekEntry {
-  date: string;
-  day: string;
-  clockIn?: string;
-  clockOut?: string;
-  breakMinutes: number;
-  totalHours?: number;
-  status: AttendanceStatus;
-}
-
-export interface WeekItem {
-  offset: number;
-  label: string;
-  entries: WeekEntry[];
-  ts?: TimesheetRecord;
 }

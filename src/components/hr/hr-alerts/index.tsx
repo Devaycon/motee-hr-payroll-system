@@ -33,12 +33,16 @@ import { OverflowTabsList } from "@/src/components/shared/overflow-tabs";
 import { cn } from "@/src/lib/utils";
 import {
   HR_ALERT_CATEGORIES,
+  HR_ALERT_SEVERITIES,
+  HR_ALERT_SEVERITY_DOTS,
   HR_ALERT_SEVERITY_LABELS,
   HR_ALERT_SEVERITY_STYLES,
   HR_ALERT_DEFAULT_DUE_DAYS,
   HR_ALERT_TOTAL,
+  countBySeverity,
   type HrAlert,
   type HrAlertCategory,
+  type HrAlertSeverity,
 } from "@/src/data/hr-alerts-demo";
 
 /** Pick a distinct icon per issue type so categories read faster at a glance. */
@@ -129,8 +133,66 @@ function AlertRow({ alert, Icon }: { alert: HrAlert; Icon: LucideIcon }) {
   );
 }
 
+/**
+ * The severity breakdown the client asked for in place of a bare open-items
+ * count, doubling as a filter so "12 Critical" is a way in, not just a number.
+ */
+function SeverityChips({
+  counts,
+  total,
+  active,
+  onSelect,
+}: {
+  counts: Record<HrAlertSeverity, number>;
+  total: number;
+  active: HrAlertSeverity | "all";
+  onSelect: (severity: HrAlertSeverity | "all") => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => onSelect("all")}
+        aria-pressed={active === "all"}
+        className={cn(
+          "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
+          active === "all"
+            ? "border-foreground/20 bg-foreground/10 text-foreground"
+            : "border-border text-muted-foreground hover:bg-accent",
+        )}
+      >
+        {total} open
+      </button>
+      {HR_ALERT_SEVERITIES.map((severity) => (
+        <button
+          key={severity}
+          type="button"
+          onClick={() => onSelect(severity)}
+          aria-pressed={active === severity}
+          className={cn(
+            "flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
+            HR_ALERT_SEVERITY_STYLES[severity],
+            active === severity
+              ? "ring-2 ring-offset-1 ring-current"
+              : "opacity-90 hover:opacity-100",
+          )}
+        >
+          <span
+            className={cn(
+              "size-2 shrink-0 rounded-full",
+              HR_ALERT_SEVERITY_DOTS[severity],
+            )}
+          />
+          {HR_ALERT_SEVERITY_LABELS[severity]} ({counts[severity]})
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function HrAlertsCard() {
   const [tab, setTab] = useState(HR_ALERT_CATEGORIES[0]?.key ?? "");
+  const [severity, setSeverity] = useState<HrAlertSeverity | "all">("all");
   const onboardingRecords = useAppSelector((s) => s.onboardingRecords.records);
 
   // Surface self-onboarding invites that the new hire hasn't started or finished.
@@ -164,54 +226,79 @@ export function HrAlertsCard() {
     [onboardingCategory],
   );
   const openTotal = HR_ALERT_TOTAL + onboardingCategory.alerts.length;
+  const severityCounts = useMemo(
+    () => countBySeverity(categories),
+    [categories],
+  );
+
+  /** The severity filter applies within whichever category tab is open. */
+  const visibleAlerts = (category: HrAlertCategory) =>
+    severity === "all"
+      ? category.alerts
+      : category.alerts.filter((a) => a.severity === severity);
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
+      <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <BellRing className="w-4 h-4 text-[#ff8b2d]" />
           <CardTitle className="text-base">HR Action Centre</CardTitle>
         </div>
-        <Badge variant="outline" className="text-xs border-rose-500/30 bg-rose-500/10 text-rose-600">
-          {openTotal} Open Items
-        </Badge>
+        <SeverityChips
+          counts={severityCounts}
+          total={openTotal}
+          active={severity}
+          onSelect={setSeverity}
+        />
       </CardHeader>
       <CardContent>
         <Tabs value={tab} onValueChange={setTab}>
           <OverflowTabsList
             value={tab}
             onValueChange={setTab}
-            tabs={categories.map((c) => ({
-              value: c.key,
-              badgeCount: c.alerts.length,
-              label: (
-                <span className="flex items-center gap-1.5">
-                  {c.label}
-                  <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
-                    {c.alerts.length}
+            // Counts follow the severity filter, so a tab never promises rows
+            // the filtered list won't show.
+            tabs={categories.map((c) => {
+              const count = visibleAlerts(c).length;
+              return {
+                value: c.key,
+                badgeCount: count,
+                label: (
+                  <span className="flex items-center gap-1.5">
+                    {c.label}
+                    <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
+                      {count}
+                    </span>
                   </span>
-                </span>
-              ),
-            }))}
+                ),
+              };
+            })}
           />
 
-          {categories.map((c) => (
+          {categories.map((c) => {
+            const rows = visibleAlerts(c);
+            return (
             <TabsContent key={c.key} value={c.key} className="mt-4">
-              {c.alerts.length === 0 ? (
+              {rows.length === 0 ? (
                 <div className="py-10 text-center text-sm text-muted-foreground">
-                  No alerts in this category.
+                  {c.alerts.length === 0
+                    ? "No alerts in this category."
+                    : `No ${HR_ALERT_SEVERITY_LABELS[
+                        severity as HrAlertSeverity
+                      ].toLowerCase()} alerts in this category.`}
                 </div>
               ) : (
                 <ScrollArea className="max-h-80 pr-2 *:data-radix-scroll-area-viewport:max-h-80">
                   <div className="flex flex-col gap-2">
-                    {c.alerts.map((a) => (
+                    {rows.map((a) => (
                       <AlertRow key={a.id} alert={a} Icon={iconForAlert(a, c.icon)} />
                     ))}
                   </div>
                 </ScrollArea>
               )}
             </TabsContent>
-          ))}
+            );
+          })}
         </Tabs>
       </CardContent>
     </Card>

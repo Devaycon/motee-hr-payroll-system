@@ -30,12 +30,25 @@ import {
 } from "@/src/components/shared/data-table";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { useCan } from "@/src/lib/permissions/use-can";
 import { cn } from "@/src/lib/utils";
 import {
+  HIRING_PRIORITY_LABELS,
+  HIRING_PRIORITY_STYLES,
   REQUISITION_DISPLAY_STATUS,
   REQUISITION_DISPLAY_TONE_STYLES,
 } from "@/src/data/recruitment-demo";
-import type { JobRequisition } from "@/src/lib/types/recruitment";
+import type {
+  HiringPriority,
+  JobRequisition,
+} from "@/src/lib/types/recruitment";
 import { useRecruitment } from "./hooks";
 
 /**
@@ -61,6 +74,8 @@ const RECRUITMENT_CARD_FILTER_LABELS: Record<
 export function RecruitmentPage() {
   const router = useRouter();
   const { loading, bucket } = useRecruitment();
+  const canCreate = useCan("talent.recruitment", "create");
+  const canEdit = useCan("talent.recruitment", "edit");
 
   const activeCountByReq = useMemo(() => {
     const m = new Map<string, number>();
@@ -86,8 +101,34 @@ export function RecruitmentPage() {
   // Controlled so the KPI cards can drill into a tab, not just a filter.
   const [activeTab, setActiveTab] = useState("approved");
 
-  const matchesCard = useCallback(
+  // Toolbar filters. These compose with the KPI drill-down rather than
+  // replacing it — the cards narrow to a slice, these narrow within it.
+  const [deptFilter, setDeptFilter] = useState("all");
+  const [managerFilter, setManagerFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+
+  const departments = useMemo(
+    () =>
+      [...new Set(bucket.requisitions.map((r) => r.department))]
+        .filter(Boolean)
+        .sort(),
+    [bucket.requisitions],
+  );
+  const managers = useMemo(
+    () =>
+      [...new Set(bucket.requisitions.map((r) => r.hiringManager))]
+        .filter((m) => m && m !== "—")
+        .sort(),
+    [bucket.requisitions],
+  );
+
+  const matches = useCallback(
     (r: JobRequisition) => {
+      if (deptFilter !== "all" && r.department !== deptFilter) return false;
+      if (managerFilter !== "all" && r.hiringManager !== managerFilter)
+        return false;
+      if (priorityFilter !== "all" && r.hiringPriority !== priorityFilter)
+        return false;
       switch (cardFilter) {
         case "open_roles":
           return ["approved", "open", "interviewing", "offer_stage"].includes(
@@ -101,19 +142,89 @@ export function RecruitmentPage() {
           return true;
       }
     },
-    [cardFilter, activeCountByReq, hiredCountByReq],
+    [
+      cardFilter,
+      activeCountByReq,
+      hiredCountByReq,
+      deptFilter,
+      managerFilter,
+      priorityFilter,
+    ],
   );
+
+  const filtersActive =
+    deptFilter !== "all" || managerFilter !== "all" || priorityFilter !== "all";
+
+  function clearFilters() {
+    setDeptFilter("all");
+    setManagerFilter("all");
+    setPriorityFilter("all");
+  }
 
   // Requested = drafts being built; Approved = published/active recruitments.
   const requestedList = useMemo(
     () =>
-      bucket.requisitions.filter((r) => r.status === "draft" && matchesCard(r)),
-    [bucket.requisitions, matchesCard],
+      bucket.requisitions.filter((r) => r.status === "draft" && matches(r)),
+    [bucket.requisitions, matches],
   );
   const approvedList = useMemo(
     () =>
-      bucket.requisitions.filter((r) => r.status !== "draft" && matchesCard(r)),
-    [bucket.requisitions, matchesCard],
+      bucket.requisitions.filter((r) => r.status !== "draft" && matches(r)),
+    [bucket.requisitions, matches],
+  );
+
+  const toolbar = (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <Select value={deptFilter} onValueChange={setDeptFilter}>
+        <SelectTrigger className="h-9 w-44">
+          <SelectValue placeholder="Department" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All departments</SelectItem>
+          {departments.map((d) => (
+            <SelectItem key={d} value={d}>
+              {d}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={managerFilter} onValueChange={setManagerFilter}>
+        <SelectTrigger className="h-9 w-48">
+          <SelectValue placeholder="Hiring manager" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All hiring managers</SelectItem>
+          {managers.map((m) => (
+            <SelectItem key={m} value={m}>
+              {m}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+        <SelectTrigger className="h-9 w-36">
+          <SelectValue placeholder="Priority" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Any priority</SelectItem>
+          {(Object.keys(HIRING_PRIORITY_LABELS) as HiringPriority[]).map((p) => (
+            <SelectItem key={p} value={p}>
+              {HIRING_PRIORITY_LABELS[p]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {filtersActive && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 text-xs text-muted-foreground"
+          onClick={clearFilters}
+        >
+          Clear
+        </Button>
+      )}
+    </div>
   );
 
   const stats = useMemo(() => {
@@ -198,8 +309,26 @@ export function RecruitmentPage() {
         ),
       },
       {
+        id: "priority",
+        header: sortableHeader("Priority"),
+        accessorFn: (r) => r.hiringPriority,
+        cell: ({ row }) => (
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-[10px]",
+              HIRING_PRIORITY_STYLES[row.original.hiringPriority],
+            )}
+          >
+            {HIRING_PRIORITY_LABELS[row.original.hiringPriority]}
+          </Badge>
+        ),
+      },
+      {
         id: "status",
-        header: "Status",
+        // Named for what it reports, not the generic word — this table also
+        // carries candidate counts, so "Status" alone is ambiguous.
+        header: "Vacancy status",
         cell: ({ row }) => {
           const d = REQUISITION_DISPLAY_STATUS[row.original.status];
           return (
@@ -229,19 +358,21 @@ export function RecruitmentPage() {
               <Eye className="w-3.5 h-3.5 mr-2" />
               View details
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() =>
-                router.push(`/talent/recruitment/new?req=${req.id}`)
-              }
-            >
-              <Pencil className="w-3.5 h-3.5 mr-2" />
-              Edit recruitment
-            </DropdownMenuItem>
+            {canEdit && (
+              <DropdownMenuItem
+                onClick={() =>
+                  router.push(`/talent/recruitment/new?req=${req.id}`)
+                }
+              >
+                <Pencil className="w-3.5 h-3.5 mr-2" />
+                Edit recruitment
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )),
     ],
-    [activeCountByReq, router],
+    [activeCountByReq, router, canEdit],
   );
 
   if (loading) {
@@ -263,13 +394,15 @@ export function RecruitmentPage() {
             applicants, interviews and hires.
           </p>
         </div>
-        <Button
-          className="gap-1.5"
-          onClick={() => router.push("/talent/recruitment/new")}
-        >
-          <Plus className="w-4 h-4" />
-          Create Recruitment
-        </Button>
+        {canCreate && (
+          <Button
+            className="gap-1.5"
+            onClick={() => router.push("/talent/recruitment/new")}
+          >
+            <Plus className="w-4 h-4" />
+            Create Recruitment
+          </Button>
+        )}
       </div>
 
       <HrStatCardsGrid
@@ -348,6 +481,7 @@ export function RecruitmentPage() {
             data={requestedList}
             getRowId={(r) => r.id}
             onRowClick={(r) => router.push(`/talent/recruitment/${r.id}`)}
+            toolbarActions={toolbar}
             searchPlaceholder="Search recruitments…"
             emptyMessage="No draft recruitments. Create one from an approved requisition."
           />
@@ -360,6 +494,7 @@ export function RecruitmentPage() {
             data={approvedList}
             getRowId={(r) => r.id}
             onRowClick={(r) => router.push(`/talent/recruitment/${r.id}`)}
+            toolbarActions={toolbar}
             searchPlaceholder="Search recruitments…"
             emptyMessage="No published recruitments yet."
           />

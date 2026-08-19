@@ -86,12 +86,12 @@ const Navbar = () => {
                 {formatDate(now)}
               </span>
             </span>
-            <span className="h-3.5 w-px bg-border" />
+            {/* <span className="h-3.5 w-px bg-border" />
             <span className="flex items-center gap-2">
               <span className="text-xs font-medium text-foreground">
                 {formatTime(now)}
               </span>
-            </span>
+            </span> */}
           </div>
 
           <span data-tutorial="theme">

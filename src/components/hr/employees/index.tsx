@@ -128,9 +128,6 @@ export function EmployeesPage() {
     [rowsByTab],
   );
 
-  const activeRows =
-    rowsByTab.find((t) => t.value === activeTab)?.rows ?? filtered;
-
   const handleView = useCallback(
     (e: EmployeeRow) => router.push(`/organization/employees/${e.id}`),
     [router],
@@ -307,7 +304,6 @@ export function EmployeesPage() {
         onTypeFilterChange={setTypeFilter}
         workModeFilter={workModeFilter}
         onWorkModeFilterChange={setWorkModeFilter}
-        exportRows={activeRows}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

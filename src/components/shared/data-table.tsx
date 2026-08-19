@@ -485,7 +485,9 @@ export function DataTable<T>({
           </TableRow>
         ))}
       </TableHeader>
-      <TableBody className="bg-background">
+      {/* `bg-card`, matching the wrapper — `bg-background` is a different
+          colour in dark mode (0.13 vs 0.17), which split the panel in two. */}
+      <TableBody className="bg-card">
         {loading ? (
           <TableRow>
             <TableCell
@@ -585,7 +587,11 @@ export function DataTable<T>({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-border">
+      {/* Needs its own solid background. The header and body paint their own,
+          but the rounded corners, the empty state and any area the rows don't
+          cover fell through to the page — which paints the logo watermark,
+          so tables looked semi-transparent. */}
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
         {enableDnd ? (
           <DndContext
             collisionDetection={closestCenter}

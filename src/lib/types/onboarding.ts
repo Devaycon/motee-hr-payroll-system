@@ -307,6 +307,12 @@ export interface ManualOnboardingData {
   maritalStatus: string;
   address: string;
   state: string;
+  /**
+   * Postcode / ZIP. The joiner form collected address, state and country but
+   * skipped this, leaving `EmployeeAddress.postalCode` permanently blank on
+   * every self-onboarded record (client feedback — missing post code).
+   */
+  postalCode: string;
   country: string;
   employeeId: string;
   jobTitle: string;
