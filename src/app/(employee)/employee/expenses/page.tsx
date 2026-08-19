@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import dynamic from "next/dynamic";
 
 const ExpensesPage = dynamic(() =>
@@ -5,5 +6,12 @@ const ExpensesPage = dynamic(() =>
 );
 
 export default function EmployeeExpensesPage() {
-  return <ExpensesPage />;
+  // ExpensesPage reads the `?draft=` param via useSearchParams, which opts the
+  // route into client-side rendering and needs a boundary to prerender — same
+  // pattern as /sign and /talent/workforce-requests.
+  return (
+    <Suspense>
+      <ExpensesPage />
+    </Suspense>
+  );
 }

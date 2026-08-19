@@ -12,7 +12,7 @@ export function AttendanceChart() {
   const { data, loading } = useAttendanceSeries();
 
   if (loading || !data) {
-    return <Skeleton className="col-span-3 h-72 w-full rounded-xl" />;
+    return <Skeleton className="h-72 w-full rounded-xl" />;
   }
 
   // A fixed window with no in-card controls or average pills — the range
@@ -24,7 +24,6 @@ export function AttendanceChart() {
       title="Attendance Trends"
       description={`Daily present, late and absent counts · last ${WINDOW_DAYS} days`}
       icon={BarChart2}
-      className="col-span-3"
       height={260}
       viewMoreHref="/operations/reports/attendance"
       // Thin a crowded date axis to roughly every 3rd label.

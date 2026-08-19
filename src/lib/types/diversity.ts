@@ -37,7 +37,6 @@ export type DiversityFieldKey =
   | "ethnicity"
   | "disability"
   | "religion"
-  | "sexualOrientation"
   | "veteranStatus"
   | "caringResponsibilities";
 
@@ -79,14 +78,6 @@ const NG_RELIGION = [
   PREFER_NOT_TO_SAY,
 ];
 
-const SEXUAL_ORIENTATION = [
-  "Heterosexual or straight",
-  "Gay or lesbian",
-  "Bisexual",
-  "Other",
-  PREFER_NOT_TO_SAY,
-];
-
 const CARING = [
   "No",
   "Yes — children",
@@ -96,8 +87,8 @@ const CARING = [
 ];
 
 /**
- * UK categories. Sexual orientation and religion are Equality Act protected
- * characteristics that larger UK employers commonly monitor.
+ * UK categories. Religion or belief is an Equality Act protected characteristic
+ * that larger UK employers commonly monitor.
  */
 const UK_CATEGORIES: DiversityCategory[] = [
   {
@@ -121,12 +112,6 @@ const UK_CATEGORIES: DiversityCategory[] = [
     options: UK_RELIGION,
   },
   {
-    key: "sexualOrientation",
-    label: "Sexual orientation",
-    purpose: "Aggregate monitoring under the Equality Act 2010.",
-    options: SEXUAL_ORIENTATION,
-  },
-  {
     key: "veteranStatus",
     label: "Have you served in the UK Armed Forces?",
     purpose:
@@ -147,9 +132,9 @@ const UK_CATEGORIES: DiversityCategory[] = [
 ];
 
 /**
- * Nigeria categories. Ethnicity-by-tribe and sexual orientation are
- * deliberately absent: neither is a lawful or safe thing for an employer to
- * hold there, and collecting data you cannot protect is worse than not asking.
+ * Nigeria categories. Ethnicity-by-tribe is deliberately absent: it is not a
+ * safe thing for an employer to hold there, and collecting data you cannot
+ * protect is worse than not asking.
  */
 const NG_CATEGORIES: DiversityCategory[] = [
   {

@@ -2,10 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Star } from "lucide-react";
 import { routes } from "./routes";
 import type { Route } from "./routes";
 import { cn } from "@/src/lib/utils";
+import { useNavFavourites } from "@/src/lib/hooks/use-nav-favourites";
 import { useHasDirectReports } from "@/src/components/employee/team/hooks";
 import {
   useSidebarCollapse,
@@ -23,6 +24,8 @@ const Sidebar = () => {
   const pathname = usePathname();
   const hasReports = useHasDirectReports();
   const { collapsed, toggle, width } = useSidebarCollapse();
+  const { favourites, toggle: toggleFavourite, isFavourite } =
+    useNavFavourites("employee");
 
   // Manager-only items (e.g. My Team) are hidden unless the user has reports.
   const visibleRoutes = routes.filter((r) => !r.managerOnly || hasReports);
@@ -55,9 +58,9 @@ const Sidebar = () => {
       ? pathname === "/"
       : pathname === link || pathname.startsWith(`${link}/`);
 
-  const renderRouteLink = (route: Route) => (
+  const renderRouteLink = (route: Route, keyPrefix = "") => (
     <SidebarNavLink
-      key={route.label}
+      key={`${keyPrefix}${route.label}`}
       href={route.link}
       label={route.label}
       icon={route.icon}
@@ -67,8 +70,16 @@ const Sidebar = () => {
       activeClassName={ACTIVE}
       activeCollapsedClassName={ACTIVE_COLLAPSED}
       badgeClassName={BADGE}
+      favourite={isFavourite(route.link)}
+      onToggleFavourite={() => toggleFavourite(route.link)}
     />
   );
+
+  // Resolved against the visible routes, so a pinned manager-only page drops
+  // out for someone who no longer has reports.
+  const favouriteRoutes = favourites
+    .map((link) => visibleRoutes.find((r) => r.link === link))
+    .filter((r): r is Route => Boolean(r));
 
   return (
     <aside
@@ -93,6 +104,23 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-2 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/60">
+        {favouriteRoutes.length > 0 && (
+          <div className="mb-4">
+            {collapsed ? (
+              <div className="mx-3 mb-2 border-t border-border" />
+            ) : (
+              <p className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-muted-foreground">
+                <Star size={13} className="fill-amber-500 text-amber-500" />
+                Favourites
+              </p>
+            )}
+            <ul className="flex flex-col gap-2">
+              {favouriteRoutes.map((route) => renderRouteLink(route, "fav-"))}
+            </ul>
+            <div className="mx-3 mt-3 border-t border-border" />
+          </div>
+        )}
+
         <ul
           data-tutorial="sidebar-overview"
           className="flex flex-col gap-2 mb-4"

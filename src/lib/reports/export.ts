@@ -45,7 +45,8 @@ export function exportXlsx<T>(
   XLSX.writeFile(wb, `${name}.xlsx`);
 }
 
-function esc(v: unknown): string {
+/** Escape a value for interpolation into a print-window document. */
+export function esc(v: unknown): string {
   return String(v ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

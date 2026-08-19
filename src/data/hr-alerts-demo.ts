@@ -62,6 +62,20 @@ export const HR_ALERT_SEVERITY_LABELS: Record<HrAlertSeverity, string> = {
   info: "Info",
 };
 
+/** Solid dot colour per severity, for the breakdown chips. */
+export const HR_ALERT_SEVERITY_DOTS: Record<HrAlertSeverity, string> = {
+  critical: "bg-rose-500",
+  warning: "bg-amber-500",
+  info: "bg-blue-500",
+};
+
+/** Most urgent first — the order the breakdown reads in. */
+export const HR_ALERT_SEVERITIES: HrAlertSeverity[] = [
+  "critical",
+  "warning",
+  "info",
+];
+
 export const HR_ALERT_CATEGORIES: HrAlertCategory[] = [
   {
     key: "right_to_work",
@@ -201,3 +215,34 @@ export const HR_ALERT_TOTAL = HR_ALERT_CATEGORIES.reduce(
   (sum, c) => sum + c.alerts.length,
   0,
 );
+
+/**
+ * Alert counts per severity. A single "56 Open Items" figure tells HR how much
+ * is outstanding but not what to do first (client feedback), so callers break
+ * the total down before showing it.
+ *
+ * Takes the categories as an argument rather than reading the constant, because
+ * the Action Centre appends a live self-onboarding category at render time and
+ * the breakdown has to agree with the total shown beside it.
+ */
+export function countBySeverity(
+  categories: HrAlertCategory[],
+): Record<HrAlertSeverity, number> {
+  const counts: Record<HrAlertSeverity, number> = {
+    critical: 0,
+    warning: 0,
+    info: 0,
+  };
+  for (const category of categories) {
+    for (const alert of category.alerts) counts[alert.severity] += 1;
+  }
+  return counts;
+}
+
+/** "12 critical · 26 warning · 18 info" — a one-line summary for a stat card. */
+export function severitySummary(categories: HrAlertCategory[]): string {
+  const counts = countBySeverity(categories);
+  return HR_ALERT_SEVERITIES.filter((s) => counts[s] > 0)
+    .map((s) => `${counts[s]} ${s}`)
+    .join(" · ");
+}

@@ -233,12 +233,14 @@ export interface LocalePayChange {
 }
 
 export interface LocaleHeadcountSnapshot {
-  month: string;
+  /** ISO date the snapshot was taken ("2025-06-18"), one per month. */
+  date: string;
   total: number;
   joiners?: number;
   leavers?: number;
-  attrition?: number;
+  attritionPct?: number;
   byDepartment?: Record<string, number>;
+  byEmploymentType?: Record<string, number>;
 }
 
 export interface LocaleAttendanceEntry {

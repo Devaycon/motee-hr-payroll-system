@@ -60,10 +60,16 @@ const onboardingRecordsSlice = createSlice({
   initialState,
   reducers: {
     addRecord(state, action: PayloadAction<OnboardingRecord>) {
+      // Ids from the recruitment bridge are derived from the candidate, so a
+      // repeated invite lands here with an id that already exists. Ignore it
+      // rather than onboarding the same person twice.
+      if (state.records.some((r) => r.id === action.payload.id)) return;
       state.records.unshift(recompute(action.payload));
     },
     addRecords(state, action: PayloadAction<OnboardingRecord[]>) {
-      state.records.unshift(...action.payload.map(recompute));
+      const known = new Set(state.records.map((r) => r.id));
+      const fresh = action.payload.filter((r) => !known.has(r.id));
+      state.records.unshift(...fresh.map(recompute));
     },
     removeRecord(state, action: PayloadAction<string>) {
       state.records = state.records.filter((r) => r.id !== action.payload);

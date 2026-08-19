@@ -16,8 +16,11 @@ const RISK_THRESHOLD = 10;
 /**
  * HR-side half of the Smart Leave Assistant (§16.4). Surfaces employees with a
  * large untaken balance so HR can proactively remind them before year-end.
+ *
+ * Was titled "Employees At Risk", which the client read as *performance* risk.
+ * The card is about leave that is about to expire, so the title now says so.
  */
-export function EmployeesAtRiskCard() {
+export function UntakenLeaveCard() {
   const atRisk = LEAVE_BALANCES.filter((b) => b.leaveType === "annual")
     .map((b) => ({ ...b, remaining: b.totalEntitlement - b.daysUsed }))
     .filter((b) => b.remaining > RISK_THRESHOLD)
@@ -28,10 +31,14 @@ export function EmployeesAtRiskCard() {
       <CardHeader className="flex flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <CalendarClock className="w-4 h-4 text-amber-600" />
-          <CardTitle className="text-base">Employees At Risk</CardTitle>
+          <CardTitle className="text-base">
+            Untaken Leave — Action Needed
+          </CardTitle>
         </div>
         <span className="text-xs text-muted-foreground">
-          {atRisk.length} employees · over {RISK_THRESHOLD} days remaining
+          {atRisk.length}{" "}
+          {atRisk.length === 1 ? "employee" : "employees"} at risk of losing
+          leave
         </span>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">

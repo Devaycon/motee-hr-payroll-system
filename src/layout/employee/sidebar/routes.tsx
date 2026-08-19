@@ -13,6 +13,7 @@ import {
   FolderOpen,
   Plane,
   CalendarPlus,
+  Clock,
   HeartHandshake,
   LucideIcon,
 } from "lucide-react";
@@ -71,6 +72,12 @@ export const routes: Route[] = [
     icon: CheckSquare,
     label: "My Submissions",
     link: "/employee/submissions",
+  },
+  {
+    group: "Overview",
+    icon: Clock,
+    label: "Time & Attendance",
+    link: "/time-off/attendance",
   },
   {
     group: "Overview",

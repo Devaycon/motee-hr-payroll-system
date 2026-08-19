@@ -20,6 +20,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
+import { ApprovalChainProgress } from "./components/chain-progress";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
@@ -290,6 +291,12 @@ export function ApprovalDetailPage({
       </div>
 
       <CurrentlyWithBanner request={request} />
+
+      {/* The whole route at a glance, above the step-by-step detail below. */}
+      <ApprovalChainProgress
+        request={request}
+        className="rounded-lg border border-border bg-card px-5 py-4"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 flex flex-col gap-4">

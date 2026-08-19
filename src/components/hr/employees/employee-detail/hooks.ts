@@ -663,7 +663,13 @@ export function useEmployeeTimeLogs(id: string) {
   const { data: bundle, loading, error } = useLocaleSection<LocaleBundle>((b) => b);
   const data = useMemo<EmployeeTimeLogsData | null>(() => {
     if (!bundle) return null;
-    const cutoff = new Date();
+    // Anchor the window on the bundle's reference date, not on wall-clock today:
+    // the demo fixtures stop months before the real date, so a real-today window
+    // showed an empty tab. Rows clocked today are later than this cutoff, so a
+    // live punch still appears alongside the history.
+    const cutoff = new Date(
+      bundle._meta?.referenceDate ?? new Date().toISOString().slice(0, 10),
+    );
     cutoff.setDate(cutoff.getDate() - 30);
     const cut = cutoff.toISOString().slice(0, 10);
     const records = applyCollection(

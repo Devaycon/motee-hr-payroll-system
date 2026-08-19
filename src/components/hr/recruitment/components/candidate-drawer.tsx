@@ -57,22 +57,26 @@ import {
 } from "@/src/components/ui/select";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
-import { addPendingRecord } from "@/src/lib/demo/pending-onboarding";
-import { buildTasksForSelection } from "@/src/components/hr/onboarding/instantiate";
-import type { OnboardingRecord } from "@/src/components/hr/onboarding/types";
 import {
   addScorecard,
   addCommunication,
-  addOffer,
-  setOfferStatus,
+  sendOffer,
+  respondToOffer,
   scheduleInterview,
   cancelInterview,
   markReminder,
   moveStage,
+  updateCandidate,
   setCandidateStatus,
   uid,
 } from "@/src/lib/stores/recruitment-slice";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import {
+  offerAccepted,
+  offerDeclined,
+} from "@/src/lib/notifications/recruitment";
+import {
+  REJECTION_REASONS,
   STAGE_TYPE_LABELS,
   STAGE_TYPE_STYLES,
   SOURCE_LABELS,
@@ -81,6 +85,7 @@ import type {
   ApplicationFormField,
   RecruitmentStageType,
   Candidate,
+  CandidateOffer,
   Interview,
   InterviewMode,
   JobRequisition,
@@ -94,6 +99,8 @@ import {
   interviewTitle,
 } from "./calendar-links";
 import { getFlow, enabledStages, synthResponse } from "../flow";
+import { canMoveTo } from "../detail/advance";
+import { useOnboardingInvite } from "../use-invite";
 import { cn } from "@/src/lib/utils";
 import { openMailto } from "./mailto";
 
@@ -147,17 +154,50 @@ export function CandidateDrawer({
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
-  const templates = useAppSelector((s) => s.approvals.templates);
-  const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
 
+  // The onboarding templates/roles this used to read are now the invite hook's
+  // problem, along with the record construction they fed.
+  const invite = useOnboardingInvite(country);
   const myInterviews = interviews.filter((i) => i.candidateId === candidate.id);
 
+  const flow = requisition ? getFlow(requisition) : null;
   // Stage options are the requisition's enabled stages (fallback to all types).
-  const stageOptions: RecruitmentStageType[] = requisition
-    ? enabledStages(getFlow(requisition))
+  const stageOptions: RecruitmentStageType[] = flow
+    ? enabledStages(flow)
     : (Object.keys(STAGE_TYPE_LABELS) as RecruitmentStageType[]);
 
   const [tab, setTab] = useState("profile");
+  const [rejectReason, setRejectReason] = useState(REJECTION_REASONS[0]);
+
+  /** Same guard the stage table and the board use, so all three agree. */
+  function changeStage(next: RecruitmentStageType) {
+    if (flow) {
+      const verdict = canMoveTo(candidate, next, flow);
+      if (!verdict.ok) {
+        toast.error(verdict.reason ?? "Can't move this candidate.");
+        return;
+      }
+    }
+    dispatch(moveStage({ country, ids: [candidate.id], stage: next }));
+    toast.success(`${candidate.name} moved to ${STAGE_TYPE_LABELS[next]}`);
+  }
+
+  function rejectCandidate() {
+    dispatch(
+      setCandidateStatus({ country, ids: [candidate.id], status: "rejected" }),
+    );
+    dispatch(
+      updateCandidate({
+        country,
+        id: candidate.id,
+        patch: {
+          rejectionReason: rejectReason,
+          rejectedAt: new Date().toISOString().slice(0, 10),
+        },
+      }),
+    );
+    toast.success(`${candidate.name} rejected`);
+  }
 
   const applicationForm = requisition?.applicationForm ?? [];
 
@@ -215,15 +255,7 @@ export function CandidateDrawer({
             )}
             <Select
               value={candidate.stage}
-              onValueChange={(v) =>
-                dispatch(
-                  moveStage({
-                    country,
-                    ids: [candidate.id],
-                    stage: v as RecruitmentStageType,
-                  }),
-                )
-              }
+              onValueChange={(v) => changeStage(v as RecruitmentStageType)}
             >
               <SelectTrigger className="h-7 w-36 text-xs">
                 <SelectValue />
@@ -241,15 +273,25 @@ export function CandidateDrawer({
                 variant="outline"
                 size="sm"
                 className="h-7 gap-1 text-[11px]"
-                onClick={() =>
+                onClick={() => {
                   dispatch(
                     setCandidateStatus({
                       country,
                       ids: [candidate.id],
                       status: "active",
                     }),
-                  )
-                }
+                  );
+                  dispatch(
+                    updateCandidate({
+                      country,
+                      id: candidate.id,
+                      patch: {
+                        rejectionReason: undefined,
+                        rejectedAt: undefined,
+                      },
+                    }),
+                  );
+                }}
               >
                 <X className="w-3 h-3" />
                 Restore
@@ -275,19 +317,28 @@ export function CandidateDrawer({
                       them later from this panel.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
+                  {/* §7.19 — capture why, so the pipeline can be reported on
+                      and the candidate can be told something specific. */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Reason</Label>
+                    <Select value={rejectReason} onValueChange={setRejectReason}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REJECTION_REASONS.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {r}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       className="bg-red-600 text-white hover:bg-red-700"
-                      onClick={() =>
-                        dispatch(
-                          setCandidateStatus({
-                            country,
-                            ids: [candidate.id],
-                            status: "rejected",
-                          }),
-                        )
-                      }
+                      onClick={rejectCandidate}
                     >
                       Reject
                     </AlertDialogAction>
@@ -299,39 +350,18 @@ export function CandidateDrawer({
               <Button
                 size="sm"
                 className="h-7 gap-1 text-[11px]"
+                disabled={Boolean(candidate.onboardingInvitedAt)}
                 onClick={() => {
-                  const id = `onb-${Date.now()}`;
-                  const { tasks, template } = buildTasksForSelection(
-                    id,
-                    templates,
-                    roles,
-                  );
-                  const rec: OnboardingRecord = {
-                    id,
-                    employeeName: candidate.name,
-                    employeeInitials: candidate.initials,
-                    email: candidate.email,
-                    jobTitle: requisition?.positionTitle ?? "New hire",
-                    department: requisition?.department ?? "—",
-                    startDate:
-                      requisition?.targetStartDate ??
-                      new Date().toISOString().slice(0, 10),
-                    stage: "pre_boarding",
-                    status: "not_started",
-                    workflowTemplateId: template?.id,
-                    workflowName: template?.name,
-                    tasks,
-                    completedTasks: 0,
-                    totalTasks: tasks.length,
-                    welcomeEmailSent: false,
-                    initiatedAt: new Date().toISOString().slice(0, 10),
-                    mode: "invited",
-                  };
-                  addPendingRecord(rec);
+                  // One shared path with the stage table — this used to
+                  // rebuild the record inline and skip the notification.
+                  invite(candidate, requisition);
                   toast.success("Sent to onboarding");
                 }}
               >
-                <UserCheck className="w-3 h-3" /> Send to onboarding
+                <UserCheck className="w-3 h-3" />
+                {candidate.onboardingInvitedAt
+                  ? `Onboarding started ${candidate.onboardingInvitedAt}`
+                  : "Send to onboarding"}
               </Button>
             )}
           </div>
@@ -409,7 +439,11 @@ export function CandidateDrawer({
             />
           </TabsContent>
           <TabsContent value="offers" className="mt-5">
-            <OffersTab country={country} candidate={candidate} />
+            <OffersTab
+              country={country}
+              candidate={candidate}
+              requisition={requisition}
+            />
           </TabsContent>
           <TabsContent value="files" className="mt-5">
             <FilesTab candidate={candidate} />
@@ -917,107 +951,223 @@ function CommsTab({
 function OffersTab({
   country,
   candidate,
+  requisition,
 }: {
   country: string;
   candidate: Candidate;
+  requisition?: JobRequisition;
 }) {
   const dispatch = useAppDispatch();
+  const user = useAppSelector((s) => s.auth.user);
   const [salary, setSalary] = useState(0);
   const [startDate, setStartDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [responding, setResponding] = useState<boolean | null>(null);
+  const [responseNote, setResponseNote] = useState("");
 
   function make() {
     dispatch(
-      addOffer({
+      sendOffer({
         country,
         candidateId: candidate.id,
-        offer: {
-          id: uid("OF"),
-          at: new Date().toISOString().slice(0, 10),
-          status: "sent",
-          salary: salary || undefined,
-          startDate: startDate || undefined,
-        },
+        salary: salary || undefined,
+        startDate: startDate || undefined,
+        notes: notes.trim() || undefined,
       }),
     );
-    toast.success("Offer sent");
+    toast.success("Offer recorded", {
+      description: "Send the letter by email, then record their answer here.",
+    });
     setSalary(0);
     setStartDate("");
+    setNotes("");
   }
+
+  /**
+   * Answering here does exactly what answering on the stage table does —
+   * advance an acceptance to hired, close out a decline. This tab used to
+   * write the offer status and stop, stranding accepted candidates at `offer`.
+   */
+  function respond() {
+    if (responding === null) return;
+    const accepted = responding;
+    dispatch(
+      respondToOffer({
+        country,
+        candidateId: candidate.id,
+        accepted,
+        by: user?.name ?? "Recruiter",
+        note: responseNote,
+      }),
+    );
+    const title = requisition?.positionTitle ?? candidate.requisitionTitle;
+    if (accepted) {
+      dispatch(moveStage({ country, ids: [candidate.id], stage: "hired" }));
+      dispatch(pushNotification(offerAccepted(candidate.name, title)));
+      toast.success(`${candidate.name} accepted — moved to Hired`);
+    } else {
+      dispatch(pushNotification(offerDeclined(candidate.name, title)));
+      toast.info(`${candidate.name} declined the offer`);
+    }
+    setResponding(null);
+    setResponseNote("");
+  }
+
+  // Only the most recent offer is answerable; older ones are history.
+  const latestId = candidate.offers.at(-1)?.id;
+  const outstanding = candidate.offers.at(-1)?.status === "sent";
+
+  const STATUS_TONE: Record<CandidateOffer["status"], string> = {
+    sent: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    accepted:
+      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    rejected: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+  };
+  const STATUS_COPY: Record<CandidateOffer["status"], string> = {
+    sent: "Awaiting response",
+    accepted: "Accepted",
+    rejected: "Declined",
+  };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-md border border-border p-3 space-y-2.5">
-        <p className="text-xs font-semibold text-foreground">Make offer</p>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            type="number"
-            placeholder="Salary"
-            value={salary || ""}
-            onChange={(e) => setSalary(Number(e.target.value) || 0)}
-            className="h-8 text-sm"
+      {/* Only offer to send a new one when nothing is outstanding — two live
+          offers to the same person is a mistake, not a feature. */}
+      {!outstanding && (
+        <div className="rounded-md border border-border p-3 space-y-2.5">
+          <p className="text-xs font-semibold text-foreground">
+            {candidate.offers.length ? "Send a revised offer" : "Make offer"}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              type="number"
+              placeholder="Salary"
+              value={salary || ""}
+              onChange={(e) => setSalary(Number(e.target.value) || 0)}
+              className="h-8 text-sm"
+            />
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="h-8 text-sm"
+            />
+          </div>
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Terms worth recording — signing bonus, notice period, anything agreed on the call."
+            className="min-h-16 resize-none text-xs"
           />
-          <Input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="h-8 text-sm"
-          />
+          <Button size="sm" className="h-8" onClick={make}>
+            Record offer
+          </Button>
         </div>
-        <Button size="sm" className="h-8" onClick={make}>
-          Send offer
-        </Button>
-      </div>
-      {candidate.offers.map((o) => (
+      )}
+
+      {candidate.offers.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          No offer has been made yet.
+        </p>
+      )}
+
+      {[...candidate.offers].reverse().map((o) => (
         <div
           key={o.id}
-          className="rounded-md border border-border p-3 space-y-1.5"
+          className="rounded-md border border-border p-3 space-y-2"
         >
-          <div className="flex items-center justify-between">
-            <Badge variant="outline" className="text-[10px] capitalize">
-              {o.status}
+          <div className="flex items-center justify-between gap-2">
+            <Badge
+              variant="outline"
+              className={`text-[10px] ${STATUS_TONE[o.status]}`}
+            >
+              {STATUS_COPY[o.status]}
             </Badge>
-            <span className="text-[10px] text-muted-foreground">{o.at}</span>
+            <span className="text-[10px] text-muted-foreground">
+              Sent {o.at}
+            </span>
           </div>
+
           <p className="text-xs text-muted-foreground">
             {o.salary ? formatMoneyLocale(o.salary) : "—"}
             {o.startDate ? ` · starts ${o.startDate}` : ""}
           </p>
-          {o.status === "sent" && (
-            <div className="flex items-center gap-1.5">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-[11px]"
-                onClick={() =>
-                  dispatch(
-                    setOfferStatus({
-                      country,
-                      candidateId: candidate.id,
-                      offerId: o.id,
-                      status: "accepted",
-                    }),
-                  )
-                }
-              >
-                Mark accepted
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 text-[11px] text-destructive"
-                onClick={() =>
-                  dispatch(
-                    setOfferStatus({
-                      country,
-                      candidateId: candidate.id,
-                      offerId: o.id,
-                      status: "rejected",
-                    }),
-                  )
-                }
-              >
-                Mark rejected
-              </Button>
+          {o.notes && (
+            <p className="text-[11px] text-muted-foreground border-l-2 border-border pl-2">
+              {o.notes}
+            </p>
+          )}
+
+          {/* The outcome — the part of the conversation the system owns. */}
+          {o.status !== "sent" && (
+            <div className="rounded-md bg-muted/40 p-2 space-y-1">
+              <p className="text-[10px] text-muted-foreground">
+                {STATUS_COPY[o.status]}
+                {o.respondedAt ? ` on ${o.respondedAt}` : ""}
+                {o.respondedBy ? ` · recorded by ${o.respondedBy}` : ""}
+              </p>
+              {o.responseNote && (
+                <p className="text-[11px] text-foreground">{o.responseNote}</p>
+              )}
+            </div>
+          )}
+
+          {o.status === "sent" && o.id === latestId && (
+            <div className="space-y-2">
+              <p className="text-[10px] text-muted-foreground">
+                The offer goes out by email. Record what came back so the hire
+                can be completed.
+              </p>
+              {responding === null ? (
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[11px]"
+                    onClick={() => setResponding(true)}
+                  >
+                    Record acceptance
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-[11px] text-destructive"
+                    onClick={() => setResponding(false)}
+                  >
+                    Record decline
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Textarea
+                    value={responseNote}
+                    onChange={(e) => setResponseNote(e.target.value)}
+                    placeholder={
+                      responding
+                        ? "e.g. Accepted on the call, happy with the start date."
+                        : "e.g. Took a counter-offer from their current employer."
+                    }
+                    className="min-h-16 resize-none text-xs"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      className={`h-7 text-[11px] ${responding ? "" : "bg-destructive text-white hover:bg-destructive/90"}`}
+                      onClick={respond}
+                    >
+                      {responding ? "Confirm acceptance" : "Confirm decline"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-[11px]"
+                      onClick={() => setResponding(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

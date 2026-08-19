@@ -4,6 +4,7 @@ import type {
   LocaleRole,
 } from "@/src/lib/types/locale";
 import type {
+  Workflow,
   WorkflowAssignee,
   WorkflowReviewer,
   WorkflowSchedule,
@@ -68,6 +69,51 @@ export function scheduleLabel(
   const event = TRIGGER_EVENT_LABELS[schedule.event];
   if (schedule.offsetValue <= 0) return `As soon as ${event}`;
   return `${schedule.offsetValue} ${schedule.offsetUnit} after ${event}`;
+}
+
+export interface WorkflowSummary {
+  stepCount: number;
+  criticalCount: number;
+  parallelGroups: number;
+  /** Latest `dueDayOffset` across the tasks, i.e. when the workflow lands. */
+  lastDueDay: number | null;
+}
+
+/**
+ * The shape of a workflow at a glance. Collapsed cards hide the task list, so
+ * the header has to say enough for someone to decide whether to open it.
+ */
+export function workflowSummary(wf: Workflow): WorkflowSummary {
+  const groups = new Set<string>();
+  let criticalCount = 0;
+  let lastDueDay: number | null = null;
+  for (const t of wf.tasks) {
+    if (t.priority === "critical") criticalCount++;
+    if (t.parallelGroup) groups.add(t.parallelGroup);
+    if (t.dueDayOffset !== undefined) {
+      lastDueDay = lastDueDay === null ? t.dueDayOffset : Math.max(lastDueDay, t.dueDayOffset);
+    }
+  }
+  return {
+    stepCount: wf.tasks.length,
+    criticalCount,
+    parallelGroups: groups.size,
+    lastDueDay,
+  };
+}
+
+/** `workflowSummary` rendered as the one-line label on a collapsed card. */
+export function summaryLabel(wf: Workflow): string {
+  const s = workflowSummary(wf);
+  const parts = [`${s.stepCount} ${s.stepCount === 1 ? "step" : "steps"}`];
+  if (s.criticalCount > 0) parts.push(`${s.criticalCount} critical`);
+  if (s.parallelGroups > 0) {
+    parts.push(
+      `${s.parallelGroups} parallel ${s.parallelGroups === 1 ? "group" : "groups"}`,
+    );
+  }
+  if (s.lastDueDay !== null) parts.push(`ends day ${s.lastDueDay}`);
+  return parts.join(" · ");
 }
 
 /** Employees available for the given workflow scope. */

@@ -55,6 +55,7 @@ export const ALL_MODULES: ModuleEntry[] = [
   // Time & Payroll
   { id: "time-payroll.attendance",   label: "Attendance",     group: "Time & Payroll", link: "/time-payroll/attendance" },
   { id: "time-payroll.leave",        label: "Leave Management", group: "Time & Payroll", link: "/time-payroll/leave" },
+  { id: "time-payroll.expenses",     label: "Expense Claims",   group: "Time & Payroll", link: "/time-payroll/expenses" },
 
   // Operations
   { id: "operations.assets",     label: "Asset Management",       group: "Operations", link: "/operations/assets" },

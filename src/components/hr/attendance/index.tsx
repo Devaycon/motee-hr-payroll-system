@@ -18,7 +18,12 @@ import { SchedulesTable } from "./components/schedules-table";
 import { LogModal } from "./components/log-modal";
 import { TimesheetModal } from "./components/timesheet-modal";
 import { ScheduleModal } from "./components/schedule-modal";
-import { TIMESHEETS, WORK_SCHEDULES } from "./data";
+import { WORK_SCHEDULES } from "./data";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import {
+  approveTimesheet as approveTimesheetAction,
+  rejectTimesheet as rejectTimesheetAction,
+} from "@/src/lib/stores/attendance-slice";
 import type {
   AttendanceRecord,
   NewAttendanceRecord,
@@ -33,7 +38,11 @@ export function AttendancePage() {
   useEffect(() => {
     if (data) setRecords(data);
   }, [data]);
-  const [timesheets, setTimesheets] = useState<TimesheetRecord[]>(TIMESHEETS);
+  // Timesheets live in the shared attendance slice so a self-service submission
+  // lands in this queue, and an approval here is visible back on the employee's
+  // own timesheet. Schedules are still local — nothing submits them.
+  const dispatch = useAppDispatch();
+  const timesheets = useAppSelector((s) => s.attendance.timesheets);
   const [schedules, setSchedules] = useState<WorkSchedule[]>(WORK_SCHEDULES);
 
   // Controlled so the KPI cards can drill into a tab, not just a filter.
@@ -110,33 +119,17 @@ export function AttendancePage() {
   }
 
   function handleApproveTimesheet(id: string) {
-    const now = new Date().toISOString();
-    setTimesheets((prev) =>
-      prev.map((ts) =>
-        ts.id === id
-          ? {
-              ...ts,
-              status: "approved" as const,
-              approvedAt: now,
-              approvedBy: "HR Manager",
-            }
-          : ts,
-      ),
+    dispatch(
+      approveTimesheetAction({
+        id,
+        approvedBy: "HR Manager",
+        at: new Date().toISOString(),
+      }),
     );
   }
 
   function handleRejectTimesheet(id: string, reason: string) {
-    setTimesheets((prev) =>
-      prev.map((ts) =>
-        ts.id === id
-          ? {
-              ...ts,
-              status: "rejected" as const,
-              rejectionReason: reason,
-            }
-          : ts,
-      ),
-    );
+    dispatch(rejectTimesheetAction({ id, reason }));
   }
 
   function handleRejectClick(ts: TimesheetRecord) {

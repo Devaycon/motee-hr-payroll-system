@@ -73,6 +73,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   // Time & Payroll
   "time-payroll.attendance":         ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
   "time-payroll.leave":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
+  // Finance sits on the expense chain's final (reimbursement) step, and the
+  // executive is the resolved line manager for much of the org.
+  "time-payroll.expenses":           ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","EXECUTIVE","AUDITOR","READ-ONLY"],
   // Operations
   "operations.assets":               ["SUPER-ADMIN","HR-ADMIN","IT-ADMIN","AUDITOR","READ-ONLY"],
   "operations.documents":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
@@ -111,6 +114,7 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
     "organization.eor",
     "time-payroll.attendance",
     "time-payroll.leave",
+    "time-payroll.expenses",
     "operations.reports",
     "operations.documents",
     "workspace.announcements",

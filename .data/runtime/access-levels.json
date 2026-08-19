@@ -335,6 +335,19 @@
           ]
         },
         {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": true,
           "actions": [
@@ -898,6 +911,19 @@
           ]
         },
         {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": true,
           "actions": [
@@ -1346,6 +1372,16 @@
           ]
         },
         {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -1658,6 +1694,16 @@
           "actions": []
         },
         {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -1942,6 +1988,15 @@
           ]
         },
         {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -2209,6 +2264,11 @@
           "actions": []
         },
         {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -2456,6 +2516,11 @@
         },
         {
           "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
           "access": false,
           "actions": []
         },
@@ -2784,6 +2849,14 @@
           ]
         },
         {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": true,
           "actions": [
@@ -3097,6 +3170,13 @@
           ]
         },
         {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": true,
           "actions": [
@@ -3362,6 +3442,15 @@
           "module": "time-payroll.leave",
           "access": false,
           "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
         },
         {
           "module": "operations.assets",
@@ -3635,6 +3724,16 @@
           ]
         },
         {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -3898,6 +3997,11 @@
           "actions": []
         },
         {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -4149,6 +4253,11 @@
         },
         {
           "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
           "access": false,
           "actions": []
         },
@@ -4412,6 +4521,11 @@
           "actions": []
         },
         {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -4669,6 +4783,11 @@
           "actions": []
         },
         {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": true,
           "actions": [
@@ -4911,6 +5030,11 @@
         },
         {
           "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
           "access": false,
           "actions": []
         },
@@ -5162,6 +5286,11 @@
           "actions": []
         },
         {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -5401,6 +5530,11 @@
         },
         {
           "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
           "access": false,
           "actions": []
         },
