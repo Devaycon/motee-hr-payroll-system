@@ -337,6 +337,7 @@ export function SuggestionsTable({
       </div>
 
       <DataTable
+        exportTitle="Suggestions"
         columns={columns}
         data={filtered}
         getRowId={(s) => s.id}

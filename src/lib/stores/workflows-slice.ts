@@ -20,16 +20,56 @@ function uid(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
+/**
+ * A task as the builder submits it. Dependencies (§11.6) are carried as
+ * *positions* in the draft list rather than ids, because `buildTasks` mints
+ * fresh ids on every save — an id-based `dependsOn` would dangle the moment
+ * anyone edited the workflow.
+ */
+export type WorkflowTaskDraft = Omit<WorkflowTask, "id" | "order" | "dependsOn"> & {
+  /** Indexes of earlier tasks in the same draft list. */
+  dependsOnIndexes?: number[];
+};
+
 /** Re-id and re-order a draft task list into stored tasks. */
 function buildTasks(
   workflowId: string,
-  tasks: Omit<WorkflowTask, "id" | "order">[],
+  tasks: WorkflowTaskDraft[],
 ): WorkflowTask[] {
-  return tasks.map((t, i) => ({
-    ...t,
-    id: uid(`${workflowId}-T${i + 1}`),
-    order: i + 1,
-  }));
+  // Ids first, so dependencies can be resolved against the final list.
+  const ids = tasks.map((_, i) => uid(`${workflowId}-T${i + 1}`));
+  return tasks.map((t, i) => {
+    const { dependsOnIndexes, ...rest } = t;
+    const dependsOn = (dependsOnIndexes ?? [])
+      // A dependency on a later task (or on itself) would deadlock the run, so
+      // it is dropped here as well as being blocked in the builder's validation.
+      .filter((idx) => idx >= 0 && idx < i)
+      .map((idx) => ids[idx]);
+    return {
+      ...rest,
+      id: ids[i],
+      order: i + 1,
+      dependsOn: dependsOn.length > 0 ? dependsOn : undefined,
+    };
+  });
+}
+
+/** True when the task list changed in a way that warrants a version bump (§11.13). */
+function tasksDifferMaterially(a: WorkflowTask[], b: WorkflowTask[]): boolean {
+  if (a.length !== b.length) return true;
+  const signature = (t: WorkflowTask) =>
+    [
+      t.title,
+      t.description ?? "",
+      JSON.stringify(t.assignee),
+      JSON.stringify(t.reviewer),
+      t.dueDayOffset ?? "",
+      t.priority ?? "",
+      t.condition ?? "",
+      t.parallelGroup ?? "",
+      (t.dependsOn ?? []).length,
+    ].join("|");
+  return a.some((t, i) => signature(t) !== signature(b[i]));
 }
 
 type WorkflowDraft = {
@@ -38,8 +78,13 @@ type WorkflowDraft = {
   triggerMode: Workflow["triggerMode"];
   schedule: Workflow["schedule"];
   scope: Workflow["scope"];
-  tasks: Omit<WorkflowTask, "id" | "order">[];
+  tasks: WorkflowTaskDraft[];
   actorName: string;
+  // §11.13 — configuration that lets different groups have different workflows.
+  status?: Workflow["status"];
+  effectiveDate?: string;
+  owner?: string;
+  employmentType?: string;
 };
 
 const workflowsSlice = createSlice({
@@ -60,8 +105,19 @@ const workflowsSlice = createSlice({
     },
 
     createWorkflow(state, action: PayloadAction<WorkflowDraft>) {
-      const { title, description, triggerMode, schedule, scope, tasks, actorName } =
-        action.payload;
+      const {
+        title,
+        description,
+        triggerMode,
+        schedule,
+        scope,
+        tasks,
+        actorName,
+        status,
+        effectiveDate,
+        owner,
+        employmentType,
+      } = action.payload;
       const id = uid("WF");
       state.workflows.push({
         id,
@@ -74,6 +130,13 @@ const workflowsSlice = createSlice({
         tasks: buildTasks(id, tasks),
         lastModifiedBy: actorName,
         lastModifiedAt: nowIso().slice(0, 10),
+        // A new workflow starts as a draft unless it was explicitly activated,
+        // so nothing goes live the moment it is saved (§11.13).
+        status: status ?? "draft",
+        version: 1,
+        effectiveDate,
+        owner: owner || actorName,
+        employmentType,
       });
     },
 
@@ -81,17 +144,50 @@ const workflowsSlice = createSlice({
       state,
       action: PayloadAction<{ id: string } & WorkflowDraft>,
     ) {
-      const { id, title, description, triggerMode, schedule, scope, tasks, actorName } =
-        action.payload;
+      const {
+        id,
+        title,
+        description,
+        triggerMode,
+        schedule,
+        scope,
+        tasks,
+        actorName,
+        status,
+        effectiveDate,
+        owner,
+        employmentType,
+      } = action.payload;
       const wf = state.workflows.find((w) => w.id === id);
       if (!wf || wf.kind === "system") return;
+      const nextTasks = buildTasks(id, tasks);
+      // §11.13 — the version tracks what the workflow *does*, so retitling it
+      // or fixing a typo in the description shouldn't invalidate a live run.
+      if (tasksDifferMaterially(wf.tasks, nextTasks)) {
+        wf.version = (wf.version ?? 1) + 1;
+      }
       wf.title = title;
       wf.description = description;
       wf.triggerMode = triggerMode;
       wf.schedule = schedule;
       wf.scope = scope;
-      wf.tasks = buildTasks(id, tasks);
+      wf.tasks = nextTasks;
       wf.lastModifiedBy = actorName;
+      wf.lastModifiedAt = nowIso().slice(0, 10);
+      if (status) wf.status = status;
+      wf.effectiveDate = effectiveDate;
+      wf.owner = owner;
+      wf.employmentType = employmentType;
+    },
+
+    /** §11.13 — activate/archive without going through the full builder. */
+    setWorkflowStatus(
+      state,
+      action: PayloadAction<{ id: string; status: Workflow["status"] }>,
+    ) {
+      const wf = state.workflows.find((w) => w.id === action.payload.id);
+      if (!wf) return;
+      wf.status = action.payload.status;
       wf.lastModifiedAt = nowIso().slice(0, 10);
     },
 
@@ -103,6 +199,11 @@ const workflowsSlice = createSlice({
   },
 });
 
-export const { hydrate, createWorkflow, updateWorkflow, deleteWorkflow } =
-  workflowsSlice.actions;
+export const {
+  hydrate,
+  createWorkflow,
+  updateWorkflow,
+  setWorkflowStatus,
+  deleteWorkflow,
+} = workflowsSlice.actions;
 export default workflowsSlice.reducer;

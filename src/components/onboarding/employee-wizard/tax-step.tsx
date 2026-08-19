@@ -1,7 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
-import { Upload, Info, IdCard, Check, FileText, ClipboardList } from "lucide-react";
+import {
+  Upload,
+  Info,
+  IdCard,
+  Check,
+  FileText,
+  ClipboardList,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Separator } from "@/src/components/ui/separator";
@@ -70,7 +79,9 @@ export interface TaxFormState {
 }
 
 export const EMPTY_TAX: TaxFormState = {
-  hasP45: "yes",
+  // §2.18 — no default. The joiner answers "Do you have a P45?" first, and
+  // that answer decides whether they upload or fill in the checklist.
+  hasP45: "",
   documentRef: "",
   payeOfficeNumber: "",
   payeReferenceNumber: "",
@@ -127,7 +138,11 @@ export function buildStarterTaxRecord(
   };
 
   if (tax.hasP45 === "yes") {
-    if (!tax.leavingDate || !tax.taxCodeAtLeaving) return null;
+    // §2.18 — an uploaded P45 is enough on its own; the boxes are optional
+    // extras for anyone who wants to key them, not a precondition.
+    if (!tax.documentRef && (!tax.leavingDate || !tax.taxCodeAtLeaving)) {
+      return null;
+    }
     const payeRef = [tax.payeOfficeNumber, tax.payeReferenceNumber]
       .filter(Boolean)
       .join("/");
@@ -182,14 +197,50 @@ export function buildStarterTaxRecord(
   return null;
 }
 
+/**
+ * Why the employee ended up on the code they did, in plain English. These read
+ * as HMRC guidance pasted into the interface before (client feedback) — accurate
+ * but not something a new starter can act on. Each one now says what the joiner
+ * told us, and what their employer will do as a result.
+ */
 const DERIVATION_EXPLANATIONS: Record<string, string> = {
-  starter_declaration_A: "Statement A — first job this tax year, standard cumulative code.",
-  starter_declaration_B: "Statement B — only job now but had income since 6 April, taxed on a Week 1 / Month 1 basis.",
-  starter_declaration_C: "Statement C — you have another job or a pension, taxed at the basic rate (BR).",
-  p45_current_year: "Carried forward from your current-tax-year P45.",
-  p45_stale_ignored: "Your P45 is from a previous tax year, so it can't be used — defaulted from your checklist.",
-  no_form_default_0T: "No declaration yet — an emergency code applies until corrected.",
+  starter_declaration_A:
+    "Statement A applies because you've indicated this is your first job since 6 April. Your employer will apply the standard tax-free allowance on a cumulative basis.",
+  starter_declaration_B:
+    "Statement B applies because you've indicated this is now your only job, but you've had taxable income since 6 April. Your employer will initially apply tax using a Week 1 / Month 1 basis.",
+  starter_declaration_C:
+    "Statement C applies because you've indicated you have another job or receive a pension. Your employer will tax this income at the basic rate, as your tax-free allowance is being used elsewhere.",
+  p45_current_year:
+    "These figures come from the P45 you provided, which is from the current tax year, so your new employer can carry on where your last one left off.",
+  p45_stale_ignored:
+    "Your P45 is from an earlier tax year, so HMRC rules mean it can't be used. Your starting position has been worked out from your Starter Checklist answers instead.",
+  no_form_default_0T:
+    "You haven't completed a Starter Checklist or provided a P45 yet, so a temporary emergency code applies. This is corrected once HMRC confirms your details — you won't lose any tax you've overpaid.",
 };
+
+/** Plain-English glossary for the terms on the summary (client feedback). */
+const TAX_GLOSSARY: { term: string; definition: string }[] = [
+  {
+    term: "Tax code",
+    definition:
+      "The code your employer uses to work out how much tax-free income you get. 1257L is the standard code for most people with one job.",
+  },
+  {
+    term: "Tax basis",
+    definition:
+      "Whether your allowance builds up across the year (cumulative) or resets each pay period (Week 1 / Month 1). Cumulative is the usual arrangement.",
+  },
+  {
+    term: "Week 1 / Month 1",
+    definition:
+      "A temporary basis where each payslip is taxed on its own, without looking back at what you earned earlier in the year. It stops a large one-off deduction while HMRC catches up, and is normally corrected within a few pay periods.",
+  },
+  {
+    term: "Statement A, B or C",
+    definition:
+      "The three options on HMRC's Starter Checklist. They describe whether this is your first job of the tax year (A), your only job but not your first (B), or an additional job or pension (C).",
+  },
+];
 
 function fieldCls() {
   return "h-10 text-base";
@@ -261,6 +312,22 @@ function YesNoRow({
 export function DerivedSummary({ record }: { record: StarterTaxRecord | null }) {
   if (!record) return null;
   const d = record.derived;
+
+  // A Field/Value table rather than four narrow columns: at a third of the
+  // card's width "Week 1 / Month 1" wrapped onto two lines and read as two
+  // separate values (client feedback — tax basis value).
+  const rows: { label: string; value: string }[] = [
+    { label: "Tax Code", value: d.taxCode },
+    { label: "Tax Basis", value: d.basis ? TAX_BASIS_LABELS[d.basis] : "—" },
+    {
+      label: "Student Loan",
+      value: d.studentLoanDeduction
+        ? `Yes${d.studentLoanPlan ? ` · ${d.studentLoanPlan.replace("PLAN_", "Plan ")}` : ""}`
+        : "No",
+    },
+    { label: "Postgraduate Loan", value: d.postgraduateLoan ? "Yes" : "No" },
+  ];
+
   return (
     <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 flex flex-col gap-3">
       <div className="flex items-center gap-2">
@@ -269,33 +336,54 @@ export function DerivedSummary({ record }: { record: StarterTaxRecord | null }) 
           Your starting tax position
         </h3>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Tax code</p>
-          <p className="text-lg font-semibold text-foreground">{d.taxCode}</p>
+
+      {/* Solid `bg-card`: this sits on a page that paints the logo watermark
+          behind everything, so a translucent surface shows the pattern through
+          the table instead of reading as a panel. */}
+      <dl className="flex flex-col divide-y divide-border overflow-hidden rounded-md border border-border bg-card">
+        <div className="flex items-center justify-between gap-4 px-3 py-1.5">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Field
+          </dt>
+          <dd className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Value
+          </dd>
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Basis</p>
-          <p className="text-base text-foreground">
-            {d.basis ? TAX_BASIS_LABELS[d.basis] : "—"}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Student loan</p>
-          <p className="text-base text-foreground">
-            {d.studentLoanDeduction
-              ? `Yes${d.studentLoanPlan ? ` · ${d.studentLoanPlan.replace("PLAN_", "Plan ")}` : ""}`
-              : "No"}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Postgraduate loan</p>
-          <p className="text-base text-foreground">{d.postgraduateLoan ? "Yes" : "No"}</p>
-        </div>
-      </div>
-      <p className="text-sm text-muted-foreground">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className="flex items-center justify-between gap-4 px-3 py-2"
+          >
+            <dt className="text-sm text-muted-foreground">{row.label}</dt>
+            <dd className="whitespace-nowrap text-sm font-medium text-foreground">
+              {row.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <p className="text-sm text-foreground">
         {DERIVATION_EXPLANATIONS[d.derivationSource] ?? d.derivationSource}
       </p>
+
+      {/* Most people won't know what a tax code or Week 1 / Month 1 is, and
+          right now their only option is to ask HR (client feedback). */}
+      <details className="group rounded-md border border-border bg-card">
+        <summary className="flex cursor-pointer items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary marker:content-['']">
+          <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
+          Learn more about your starting tax position
+        </summary>
+        <div className="flex flex-col gap-2.5 border-t border-border px-3 py-3">
+          {TAX_GLOSSARY.map((entry) => (
+            <div key={entry.term}>
+              <p className="text-sm font-semibold text-foreground">
+                {entry.term}
+              </p>
+              <p className="text-sm text-muted-foreground">{entry.definition}</p>
+            </div>
+          ))}
+        </div>
+      </details>
     </div>
   );
 }
@@ -334,7 +422,10 @@ export function TaxStep({ value: tax, onChange, meta, recap }: TaxStepProps) {
       ? STARTER_DECLARATION_STATEMENTS[resolveStarterDeclaration(toAnswers(tax))]
       : null;
 
-  const activeTab = tax.hasP45 === "no" ? "checklist" : "p45";
+  // §2.18 — the joiner answers the P45 question first; until they do, neither
+  // branch is shown, so nobody fills in a checklist they didn't need.
+  const activeTab =
+    tax.hasP45 === "no" ? "checklist" : tax.hasP45 === "yes" ? "p45" : "";
 
   return (
     <>
@@ -362,10 +453,16 @@ export function TaxStep({ value: tax, onChange, meta, recap }: TaxStepProps) {
         </div>
       </div>
 
+      <p className="text-sm font-medium text-foreground">
+        Do you have a P45 from your previous employer?
+      </p>
+
       {/* Tabbed P45 / Checklist selector, content in a wrapper card */}
       <Tabs
         value={activeTab}
-        onValueChange={(v) => onChange({ hasP45: v === "checklist" ? "no" : "yes" })}
+        onValueChange={(v) =>
+          onChange({ hasP45: v === "checklist" ? "no" : "yes" })
+        }
         className="w-full"
       >
         <TabsList className="h-16 w-full">
@@ -380,18 +477,38 @@ export function TaxStep({ value: tax, onChange, meta, recap }: TaxStepProps) {
         <div className="rounded-xl border border-border bg-card p-5 mt-3">
           {/* P45 branch */}
           <TabsContent value="p45" className="mt-0 flex flex-col gap-4">
+            {/* §2.18 — upload rather than re-key. Payroll can read the figures
+                off the document, so asking the joiner to transcribe twelve
+                boxes only adds transcription errors. */}
             <p className="text-sm text-muted-foreground">
-              Copy these from Parts 2 and 3 of your P45.
+              Upload your P45 and you&apos;re done — there&apos;s no need to
+              copy the figures across.
             </p>
-            <div className="rounded-lg border border-dashed border-border p-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Upload className="h-4 w-4" />
-                {tax.documentRef
-                  ? tax.documentRef
-                  : "Upload your P45 (optional) — you can still continue without it."}
+            <div
+              className={cn(
+                "rounded-lg border border-dashed p-4 flex items-center justify-between gap-3",
+                tax.documentRef
+                  ? "border-emerald-500/40 bg-emerald-500/5"
+                  : "border-border",
+              )}
+            >
+              <div className="flex items-center gap-2 text-sm">
+                {tax.documentRef ? (
+                  <>
+                    <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-foreground">{tax.documentRef}</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      Upload your P45 (PDF or photo)
+                    </span>
+                  </>
+                )}
               </div>
               <label className="text-sm font-medium text-primary cursor-pointer">
-                Choose file
+                {tax.documentRef ? "Replace" : "Choose file"}
                 <input
                   type="file"
                   accept="application/pdf,image/*"
@@ -402,6 +519,19 @@ export function TaxStep({ value: tax, onChange, meta, recap }: TaxStepProps) {
                 />
               </label>
             </div>
+
+            <details className="group rounded-lg border border-border">
+              <summary className="cursor-pointer list-none px-4 py-2.5 text-sm font-medium text-foreground marker:hidden">
+                <span className="flex items-center justify-between">
+                  Enter the figures manually instead (optional)
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                </span>
+              </summary>
+              <div className="border-t border-border p-4">
+                <p className="mb-4 text-xs text-muted-foreground">
+                  Copy these from Parts 2 and 3 of your P45. Only needed if you
+                  can&apos;t upload the document.
+                </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
@@ -549,6 +679,8 @@ export function TaxStep({ value: tax, onChange, meta, recap }: TaxStepProps) {
                 </div>
               </div>
             )}
+              </div>
+            </details>
           </TabsContent>
 
           {/* Starter Checklist branch — guided flow */}

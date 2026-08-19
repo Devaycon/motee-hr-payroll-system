@@ -1,12 +1,39 @@
 import { Package2, UserCheck, CheckCircle2, Wrench } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
-import type { Asset } from "../types";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
+import type { Asset, AssetStatus } from "../types";
+
+/** The status a KPI card drills the "All Assets" table down to. */
+export type AssetCardFilter = AssetStatus | "all";
+
+export const ASSET_CARD_FILTER_LABELS: Record<
+  Exclude<AssetCardFilter, "all">,
+  string
+> = {
+  assigned: "Assigned",
+  available: "Available",
+  under_maintenance: "Under maintenance",
+  decommissioned: "Decommissioned",
+};
 
 interface StatCardsProps {
   assets: Asset[];
+  /** The tab currently open — cards only read as selected on "All Assets". */
+  activeTab: string;
+  /** The status filter applied to the assets table, or "all". */
+  statusFilter: AssetCardFilter;
+  /** Drill-down: opens the assets tab filtered to the status counted here. */
+  onDrillDown: (tab: string, status: AssetCardFilter) => void;
 }
 
-export function StatCards({ assets }: StatCardsProps) {
+export function StatCards({
+  assets,
+  activeTab,
+  statusFilter,
+  onDrillDown,
+}: StatCardsProps) {
   const total = assets.length;
   const assigned = assets.filter((a) => a.status === "assigned").length;
   const available = assets.filter((a) => a.status === "available").length;
@@ -17,63 +44,47 @@ export function StatCards({ assets }: StatCardsProps) {
     (a) => a.status === "decommissioned",
   ).length;
 
-  const cards = [
+  /** The status cards all drill into the "All Assets" tab. */
+  const onAll = activeTab === "all";
+  const card = (status: AssetCardFilter) => ({
+    active: onAll && statusFilter === status,
+    onClick: () => onDrillDown("all", status),
+  });
+
+  const cards: HrStatCardItem[] = [
     {
       label: "Total Assets",
       value: total,
       sub: `${decommissioned} decommissioned`,
       icon: Package2,
-      iconClass: "text-slate-500 dark:text-slate-400",
-      iconBg: "bg-slate-500/10",
+      tone: "violet",
+      ...card("all"),
     },
     {
       label: "Assigned",
       value: assigned,
       sub: "Currently in use",
       icon: UserCheck,
-      iconClass: "text-blue-500 dark:text-blue-400",
-      iconBg: "bg-blue-500/10",
+      tone: "blue",
+      ...card("assigned"),
     },
     {
       label: "Available",
       value: available,
       sub: "Ready for assignment",
       icon: CheckCircle2,
-      iconClass: "text-emerald-500 dark:text-emerald-400",
-      iconBg: "bg-emerald-500/10",
+      tone: "emerald",
+      ...card("available"),
     },
     {
       label: "Under Maintenance",
       value: underMaintenance,
       sub: "Awaiting servicing",
       icon: Wrench,
-      iconClass: "text-amber-500 dark:text-amber-400",
-      iconBg: "bg-amber-500/10",
+      tone: "amber",
+      ...card("under_maintenance"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {cards.map((card) => (
-        <Card key={card.label} className="border-border/60">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {card.label}
-                </p>
-                <p className="text-2xl font-bold tracking-tight">
-                  {card.value}
-                </p>
-                <p className="text-xs text-muted-foreground">{card.sub}</p>
-              </div>
-              <div className={`rounded-lg p-2.5 ${card.iconBg}`}>
-                <card.icon className={`size-5 ${card.iconClass}`} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

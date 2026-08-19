@@ -5,6 +5,11 @@ import type {
   FormFieldType,
   RequisitionFlow,
   CriteriaCondition,
+  WorkMode,
+  PayPeriod,
+  ExperienceLevel,
+  EducationLevel,
+  ApplyMethod,
 } from "@/src/lib/types/recruitment";
 
 export const REQUISITION_STATUS_LABELS: Record<RequisitionStatus, string> = {
@@ -54,50 +59,124 @@ export const HIRING_PRIORITY_STYLES: Record<HiringPriority, string> = {
   urgent: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
 };
 
+// ── Job advert (§7.19) ───────────────────────────────────────────────────────
+export const WORK_MODE_LABELS: Record<WorkMode, string> = {
+  on_site: "On-site",
+  hybrid: "Hybrid",
+  remote: "Remote",
+};
+
+export const WORK_MODE_STYLES: Record<WorkMode, string> = {
+  on_site: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+  hybrid: "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-400",
+  remote: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400",
+};
+
+export const PAY_PERIOD_LABELS: Record<PayPeriod, string> = {
+  hour: "Per hour",
+  day: "Per day",
+  week: "Per week",
+  month: "Per month",
+  year: "Per year",
+};
+
+export const EXPERIENCE_LEVEL_LABELS: Record<ExperienceLevel, string> = {
+  internship: "Internship",
+  entry: "Entry level",
+  associate: "Associate",
+  mid_senior: "Mid–Senior level",
+  director: "Director",
+  executive: "Executive",
+};
+
+export const EDUCATION_LEVEL_LABELS: Record<EducationLevel, string> = {
+  none: "No formal requirement",
+  secondary: "Secondary school",
+  diploma: "Diploma / OND / HND",
+  bachelor: "Bachelor's degree",
+  master: "Master's degree",
+  doctorate: "Doctorate",
+};
+
+export const APPLY_MODE_LABELS: Record<ApplyMethod["mode"], string> = {
+  internal: "Our careers page",
+  external_url: "External link",
+  email: "Email application",
+};
+
 // ── Recruitment stage types (per-requisition pipeline) ───────────────────────
 /** All stage types in pipeline order. */
 export const RECRUITMENT_STAGE_TYPES: RecruitmentStageType[] = [
   "applicants",
-  "shortlisted",
   "interview",
+  "interviewed",
+  "offer",
   "hired",
 ];
 
 /** Stages that can be toggled on/off (applicants & hired are always present). */
 export const OPTIONAL_STAGES: RecruitmentStageType[] = [
-  "shortlisted",
   "interview",
+  "interviewed",
+  "offer",
 ];
 
+/** Nothing follows `hired`; it is the end of the pipeline. */
+export const TERMINAL_STAGES: RecruitmentStageType[] = ["hired"];
+
 export const STAGE_TYPE_LABELS: Record<RecruitmentStageType, string> = {
-  applicants: "Applicants",
-  shortlisted: "Shortlisted",
-  interview: "Interview",
+  applicants: "Applicant",
+  interview: "Scheduled for Interview",
+  interviewed: "Interviewed",
+  offer: "Offer",
   hired: "Hired",
 };
 
 export const STAGE_TYPE_STYLES: Record<RecruitmentStageType, string> = {
   applicants:
     "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-  shortlisted:
-    "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-400",
   interview:
     "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+  interviewed:
+    "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-400",
+  offer:
+    "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
   hired:
     "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
 };
 
 /**
- * Default pipeline: a fixed three-tab pipeline — Applicants → Interview → Hired,
- * each advanced manually by a recruiter. Shortlisted is disabled (removed from
- * the product); applicants advance straight to the interview stage.
+ * §7.19 — why a candidate was turned down. Rejecting without a reason leaves
+ * nothing to report on and nothing to tell the candidate.
+ */
+export const REJECTION_REASONS: string[] = [
+  "Not enough experience",
+  "Skills mismatch",
+  "Failed assessment",
+  "Salary expectations",
+  "Location / relocation",
+  "Withdrew application",
+  "Position filled",
+  "Failed background check",
+  "Other",
+];
+
+/**
+ * Default pipeline: Applicant → Scheduled for Interview → Interviewed → Offer
+ * → Hired, each advanced manually by a recruiter.
+ *
+ * All five are on by default because each one now guards something: the
+ * interview stage holds people you have booked but not yet met, `interviewed`
+ * only admits people carrying a score, and `offer` only releases people whose
+ * offer came back accepted.
  */
 export function defaultFlow(): RequisitionFlow {
   return {
     stages: [
       { type: "applicants", enabled: true },
-      { type: "shortlisted", enabled: false, gate: { manual: true } },
       { type: "interview", enabled: true, gate: { manual: true } },
+      { type: "interviewed", enabled: true, gate: { manual: true } },
+      { type: "offer", enabled: true, gate: { manual: true } },
       { type: "hired", enabled: true, gate: { manual: true } },
     ],
   };
@@ -173,20 +252,40 @@ export const CHOICE_FIELD_TYPES: FormFieldType[] = [
 // ── Requisition display status (Requisition tab) ─────────────────────────────
 export type RequisitionDisplayTone = "ongoing" | "completed" | "inactive";
 
+/**
+ * How a requisition's status reads to a human.
+ *
+ * `label` is the full form used in tables, where a column header already says
+ * what is being described. `short` is for the detail page header, where the
+ * badge sits beside a job title and is qualified with "Vacancy" instead — a
+ * bare "Open" next to a role name never says open for *what*.
+ */
 export const REQUISITION_DISPLAY_STATUS: Record<
   RequisitionStatus,
-  { label: string; tone: RequisitionDisplayTone }
+  { label: string; short: string; tone: RequisitionDisplayTone }
 > = {
-  draft: { label: "Draft", tone: "inactive" },
-  pending_approval: { label: "Pending Approval", tone: "ongoing" },
-  approved: { label: "Approved", tone: "ongoing" },
-  open: { label: "Ongoing — Open", tone: "ongoing" },
-  interviewing: { label: "Ongoing — Interviewing", tone: "ongoing" },
-  offer_stage: { label: "Ongoing — Offer", tone: "ongoing" },
-  filled: { label: "Completed — Filled", tone: "completed" },
-  closed: { label: "Completed — Closed", tone: "completed" },
-  cancelled: { label: "Cancelled", tone: "inactive" },
-  on_hold: { label: "On Hold", tone: "inactive" },
+  draft: { label: "Draft", short: "Draft", tone: "inactive" },
+  pending_approval: {
+    label: "Pending Approval",
+    short: "Awaiting approval",
+    tone: "ongoing",
+  },
+  approved: { label: "Approved", short: "Approved", tone: "ongoing" },
+  open: { label: "Ongoing — Open", short: "Open for applications", tone: "ongoing" },
+  interviewing: {
+    label: "Ongoing — Interviewing",
+    short: "Interviewing",
+    tone: "ongoing",
+  },
+  offer_stage: {
+    label: "Ongoing — Offer",
+    short: "Offer out",
+    tone: "ongoing",
+  },
+  filled: { label: "Completed — Filled", short: "Filled", tone: "completed" },
+  closed: { label: "Completed — Closed", short: "Closed", tone: "completed" },
+  cancelled: { label: "Cancelled", short: "Cancelled", tone: "inactive" },
+  on_hold: { label: "On Hold", short: "On hold", tone: "inactive" },
 };
 
 export const REQUISITION_DISPLAY_TONE_STYLES: Record<

@@ -20,7 +20,10 @@ export function candidateToOnboardingRecord(
   templates: ApprovalChainTemplate[],
   roles: RoleLite[],
 ): OnboardingRecord {
-  const id = `onb-${candidate.id}-${Date.now()}`;
+  // Derived from the candidate alone (no timestamp), so inviting the same hire
+  // twice — from the table and from the drawer, say — collides on one id and
+  // is dropped by `addRecord` rather than creating a second onboarding.
+  const id = `onb-${candidate.id}`;
   const { tasks, template } = buildTasksForSelection(id, templates, roles);
   const today = new Date().toISOString().slice(0, 10);
   return {

@@ -7,14 +7,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { Button } from "@/src/components/ui/button";
 import { TICKET_STATUS_CONFIG, TICKET_STATUS_OPTIONS } from "./data";
 import type { HelpDeskTicket, TicketStatus } from "./data";
 import { TicketCard } from "./ticket-card";
+import {
+  matchesHelpdeskCardFilter,
+  HELPDESK_CARD_FILTER_LABELS,
+  type HelpdeskCardFilter,
+} from "./stat-cards";
 
 interface Props {
   tickets: HelpDeskTicket[];
   statusFilter: TicketStatus | "all";
   onStatusFilter: (v: TicketStatus | "all") => void;
+  /** Drill-down set by the KPI cards; composes with the status dropdown. */
+  cardFilter: HelpdeskCardFilter;
+  onClearCardFilter: () => void;
   onSelectTicket: (ticket: HelpDeskTicket) => void;
 }
 
@@ -22,14 +31,35 @@ export function TicketList({
   tickets,
   statusFilter,
   onStatusFilter,
+  cardFilter,
+  onClearCardFilter,
   onSelectTicket,
 }: Props) {
   const filtered = tickets.filter(
-    (t) => statusFilter === "all" || t.status === statusFilter,
+    (t) =>
+      (statusFilter === "all" || t.status === statusFilter) &&
+      matchesHelpdeskCardFilter(t, cardFilter),
   );
 
   return (
     <div className="space-y-4">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {HELPDESK_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">({filtered.length})</span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={onClearCardFilter}
+          >
+            ← All cases
+          </Button>
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <Select
           value={statusFilter}

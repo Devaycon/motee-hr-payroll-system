@@ -18,7 +18,12 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesKudosCardFilter,
+  kudosCardFilterLabel,
+  type KudosCardFilter,
+} from "./components/stat-cards";
 import { KudosFeed } from "./components/kudos-feed";
 import { Leaderboard } from "./components/leaderboard";
 import { SendKudosModal } from "./components/send-kudos-modal";
@@ -32,6 +37,13 @@ export function KudosPage() {
     if (data) setPosts(data.posts);
   }, [data]);
   const [sendOpen, setSendOpen] = useState(false);
+  /** Drill-down set by the KPI cards; "all" shows the whole feed. */
+  const [cardFilter, setCardFilter] = useState<KudosCardFilter>({
+    kind: "all",
+  });
+  const visiblePosts = posts.filter((p) =>
+    matchesKudosCardFilter(p, cardFilter),
+  );
   const [myReactions, setMyReactions] = useState<
     Record<string, ReactionType | null>
   >({});
@@ -171,11 +183,34 @@ export function KudosPage() {
         </Button>
       </div>
 
-      <StatCards posts={posts} />
+      <StatCards
+        posts={posts}
+        cardFilter={cardFilter}
+        onDrillDown={setCardFilter}
+      />
+
+      {cardFilter.kind !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {kudosCardFilterLabel(cardFilter)}{" "}
+            <span className="text-muted-foreground">
+              ({visiblePosts.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter({ kind: "all" })}
+          >
+            ← Whole feed
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start">
         <KudosFeed
-          posts={posts}
+          posts={visiblePosts}
           onReact={handleReact}
           myReactions={myReactions}
           onAddComment={handleAddComment}

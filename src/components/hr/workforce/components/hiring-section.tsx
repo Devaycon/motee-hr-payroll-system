@@ -19,6 +19,34 @@ import {
 import { HIRING_METRICS } from "../data";
 import type { HiringMetric } from "../types";
 import { HiringDetailModal } from "./detail-modals";
+import { ExportMenu } from "@/src/components/shared/export-menu";
+import type { ReportColumn } from "@/src/lib/reports/types";
+
+/** Mirrors the columns on screen, so an export reads the same as the table. */
+const EXPORT_COLUMNS: ReportColumn<HiringMetric>[] = [
+  { key: "department", header: "Department", value: (m) => m.department },
+  {
+    key: "openRequisitions",
+    header: "Open Reqs",
+    value: (m) => m.openRequisitions,
+  },
+  {
+    key: "avgDaysToFill",
+    header: "Avg Days to Fill",
+    value: (m) => m.avgDaysToFill,
+  },
+  {
+    key: "costPerHire",
+    header: "Cost per Hire",
+    value: (m) => m.costPerHire ?? 0,
+    money: true,
+  },
+  {
+    key: "filledThisQuarter",
+    header: "Filled (Q)",
+    value: (m) => m.filledThisQuarter ?? 0,
+  },
+];
 
 export function HiringSection() {
   const [selectedMetric, setSelectedMetric] = useState<HiringMetric | null>(
@@ -95,6 +123,17 @@ export function HiringSection() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="flex justify-end">
+        <ExportMenu
+          name="hiring-velocity"
+          title="Hiring Velocity"
+          columns={EXPORT_COLUMNS}
+          rows={HIRING_METRICS}
+          variant="outline"
+          buttonClassName="h-8 text-xs"
+        />
       </div>
 
       <Card className="border-border/60">

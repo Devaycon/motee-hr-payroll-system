@@ -1,18 +1,64 @@
 "use client";
 
 import { BarChart3, Users, TrendingUp, ClipboardList } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import { SURVEYS, getResponseRate, getEngagementScore } from "../data";
 import type { Survey } from "../types";
 
-interface StatCardsProps {
-  surveys: Survey[];
+/** The slice a KPI card drills the surveys table down to. */
+export type SurveyCardFilter = "all" | "active" | "responded";
+
+export const SURVEY_CARD_FILTER_LABELS: Record<
+  Exclude<SurveyCardFilter, "all">,
+  string
+> = {
+  active: "Active surveys",
+  responded: "Surveys with responses",
+};
+
+/** Single source of truth for what each card counts and the table then shows. */
+export function matchesSurveyCardFilter(
+  survey: Survey,
+  filter: SurveyCardFilter,
+): boolean {
+  switch (filter) {
+    case "active":
+      return survey.status === "active";
+    case "responded":
+      return survey.responses.length > 0;
+    default:
+      return true;
+  }
 }
 
-export function StatCards({ surveys }: StatCardsProps) {
-  const activeSurveys = surveys.filter((s) => s.status === "active").length;
+interface StatCardsProps {
+  surveys: Survey[];
+  /** The tab currently open. */
+  activeTab: string;
+  /** The card drill-down currently applied. */
+  cardFilter: SurveyCardFilter;
+  /** Drill-down: opens the tab holding these rows and filters to them. */
+  onDrillDown: (tab: string, filter: SurveyCardFilter) => void;
+}
 
-  const respondedSurveys = surveys.filter((s) => s.responses.length > 0);
+export function StatCards({
+  surveys,
+  activeTab,
+  cardFilter,
+  onDrillDown,
+}: StatCardsProps) {
+  // Archived surveys live outside every tab and never count here.
+  const live = surveys.filter((s) => !s.isArchived);
+  const activeSurveys = live.filter((s) =>
+    matchesSurveyCardFilter(s, "active"),
+  ).length;
+
+  const respondedSurveys = live.filter((s) =>
+    matchesSurveyCardFilter(s, "responded"),
+  );
   const avgResponseRate =
     respondedSurveys.length > 0
       ? Math.round(
@@ -23,70 +69,45 @@ export function StatCards({ surveys }: StatCardsProps) {
 
   const engagementScore = getEngagementScore(SURVEYS);
 
-  const totalSurveys = surveys.filter((s) => !s.isArchived).length;
-
-  const cards = [
+  const cards: HrStatCardItem[] = [
     {
       label: "Active Surveys",
       value: activeSurveys,
-      suffix: "",
+      sub: "Currently collecting",
       icon: BarChart3,
-      iconColor: "text-emerald-500",
-      iconBg: "bg-emerald-500/10",
-      valueColor: "text-emerald-600 dark:text-emerald-400",
+      tone: "emerald",
+      active: cardFilter === "active",
+      onClick: () => onDrillDown("surveys", "active"),
     },
     {
       label: "Avg Response Rate",
-      value: avgResponseRate,
-      suffix: "%",
+      value: `${avgResponseRate}%`,
+      sub: `Across ${respondedSurveys.length} surveys`,
       icon: Users,
-      iconColor: "text-blue-500",
-      iconBg: "bg-blue-500/10",
-      valueColor: "text-blue-600 dark:text-blue-400",
+      tone: "blue",
+      active: cardFilter === "responded",
+      onClick: () => onDrillDown("surveys", "responded"),
     },
     {
+      // A single score, not a list — the analytics tab is what sits behind it.
       label: "Engagement Score",
-      value: engagementScore,
-      suffix: "%",
+      value: `${engagementScore}%`,
+      sub: "See engagement analytics",
       icon: TrendingUp,
-      iconColor: "text-amber-500",
-      iconBg: "bg-amber-500/10",
-      valueColor: "text-amber-600 dark:text-amber-400",
+      tone: "amber",
+      active: activeTab === "engagement",
+      onClick: () => onDrillDown("engagement", "all"),
     },
     {
       label: "Total Surveys",
-      value: totalSurveys,
-      suffix: "",
+      value: live.length,
+      sub: "Excluding archived",
       icon: ClipboardList,
-      iconColor: "text-slate-500",
-      iconBg: "bg-slate-500/10",
-      valueColor: "text-slate-600 dark:text-slate-400",
+      tone: "violet",
+      active: activeTab === "surveys" && cardFilter === "all",
+      onClick: () => onDrillDown("surveys", "all"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      {cards.map((c) => {
-        const Icon = c.icon;
-        return (
-          <Card key={c.label} className="border-border bg-card">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className={`${c.iconBg} rounded-xl p-2.5 shrink-0`}>
-                <Icon className={`w-5 h-5 ${c.iconColor}`} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground truncate">
-                  {c.label}
-                </p>
-                <p className={`text-2xl font-bold mt-0.5 ${c.valueColor}`}>
-                  {c.value}
-                  {c.suffix}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

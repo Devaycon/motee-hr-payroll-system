@@ -1,51 +1,51 @@
 "use client";
 
 import { CalendarDays } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+  type HrStatCardTone,
+} from "@/src/components/shared/hr-stat-card";
 import { LEAVE_TYPE_LABELS } from "@/src/data/leave-demo";
 import type { LeaveTypeName } from "@/src/lib/types/leave";
-import { LEAVE_TYPE_COLORS } from "./leave-colors";
 import type { LeaveBalance } from "./types";
+
+const SHOWN_TYPES: LeaveTypeName[] = [
+  "annual",
+  "sick",
+  "compassionate",
+  "study",
+];
+
+/** Keeps each card's accent recognisable per leave type. */
+const TYPE_TONES: Partial<Record<LeaveTypeName, HrStatCardTone>> = {
+  annual: "blue",
+  sick: "red",
+  compassionate: "violet",
+  study: "emerald",
+};
 
 interface BalanceCardsProps {
   balances: LeaveBalance;
+  /** Starts a request for this leave type — the action behind the number. */
+  onRequestType: (type: LeaveTypeName) => void;
 }
 
-export function BalanceCards({ balances }: BalanceCardsProps) {
-  return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      {(["annual", "sick", "compassionate", "study"] as LeaveTypeName[]).map(
-        (t) => {
-          const b = balances[t];
-          const rem = b.total - b.used - b.pending;
-          const c = LEAVE_TYPE_COLORS[t];
-          return (
-            <Card key={t} className="border-border/60">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: c.bg }}
-                >
-                  <CalendarDays className="w-4 h-4" style={{ color: c.bar }} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xl font-bold text-foreground leading-none">
-                    {rem}
-                    <span className="text-xs font-normal text-muted-foreground ml-1">
-                      / {b.total} days
-                    </span>
-                  </p>
-                  {/* "Annual Leave Remaining", not "Annual Remaining" — the
-                      shared labels are the bare type name (§14.4). */}
-                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                    {LEAVE_TYPE_LABELS[t]} Leave Remaining
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        },
-      )}
-    </div>
-  );
+export function BalanceCards({ balances, onRequestType }: BalanceCardsProps) {
+  const cards: HrStatCardItem[] = SHOWN_TYPES.map((t) => {
+    const b = balances[t];
+    const rem = b.total - b.used - b.pending;
+    return {
+      // "Annual Leave Remaining", not "Annual Remaining" — the shared labels
+      // are the bare type name (§14.4).
+      label: `${LEAVE_TYPE_LABELS[t]} Leave Remaining`,
+      value: `${rem} / ${b.total} days`,
+      sub: b.pending > 0 ? `${b.pending} days pending` : "Request this leave",
+      icon: CalendarDays,
+      tone: TYPE_TONES[t] ?? "violet",
+      onClick: () => onRequestType(t),
+    };
+  });
+
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

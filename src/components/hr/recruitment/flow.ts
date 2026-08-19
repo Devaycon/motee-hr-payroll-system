@@ -16,9 +16,24 @@ import {
 
 // ── Flow accessors ───────────────────────────────────────────────────────────
 
-/** A requisition's saved flow, or the default all-stages-manual flow. */
+/**
+ * A requisition's saved flow, or the default all-stages-manual flow.
+ *
+ * §7.18 — a flow saved before the `offer` stage existed has no entry for it,
+ * which would silently drop the stage from that requisition's pipeline
+ * forever. Any stage missing from a stored flow is filled in from the default,
+ * so old requisitions gain new stages instead of quietly losing them.
+ */
 export function getFlow(req: JobRequisition): RequisitionFlow {
-  return req.flow ?? defaultFlow();
+  const fallback = defaultFlow();
+  if (!req.flow) return fallback;
+
+  const saved = new Map(req.flow.stages.map((s) => [s.type, s]));
+  return {
+    stages: fallback.stages.map(
+      (defaultStage) => saved.get(defaultStage.type) ?? defaultStage,
+    ),
+  };
 }
 
 function stageOrder(t: RecruitmentStageType): number {
@@ -40,12 +55,24 @@ export function getStageConfig(
   return flow.stages.find((s) => s.type === type);
 }
 
+/**
+ * The enabled stages forming the linear applicants → hired progression.
+ *
+ * Every enabled stage is now part of that line — the pipeline has no sidings
+ * left, so this is just the enabled set in order.
+ */
+export function progressionStages(
+  flow: RequisitionFlow,
+): RecruitmentStageType[] {
+  return enabledStages(flow);
+}
+
 /** The next enabled stage after `type`, or null if `type` is terminal. */
 export function nextEnabledStage(
   flow: RequisitionFlow,
   type: RecruitmentStageType,
 ): RecruitmentStageType | null {
-  const order = enabledStages(flow);
+  const order = progressionStages(flow);
   const i = order.indexOf(type);
   return i >= 0 && i < order.length - 1 ? order[i + 1] : null;
 }
@@ -55,7 +82,7 @@ export function prevEnabledStage(
   flow: RequisitionFlow,
   type: RecruitmentStageType,
 ): RecruitmentStageType | null {
-  const order = enabledStages(flow);
+  const order = progressionStages(flow);
   const i = order.indexOf(type);
   return i > 0 ? order[i - 1] : null;
 }

@@ -5,14 +5,25 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { useAttendanceRecords } from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  matchesAttendanceCardFilter,
+  ATTENDANCE_CARD_FILTER_LABELS,
+  type AttendanceCardFilter,
+} from "./components/stat-cards";
+import { Button } from "@/src/components/ui/button";
 import { OverviewTable } from "./components/overview-table";
 import { TimesheetsTable } from "./components/timesheets-table";
 import { SchedulesTable } from "./components/schedules-table";
 import { LogModal } from "./components/log-modal";
 import { TimesheetModal } from "./components/timesheet-modal";
 import { ScheduleModal } from "./components/schedule-modal";
-import { TIMESHEETS, WORK_SCHEDULES } from "./data";
+import { WORK_SCHEDULES } from "./data";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import {
+  approveTimesheet as approveTimesheetAction,
+  rejectTimesheet as rejectTimesheetAction,
+} from "@/src/lib/stores/attendance-slice";
 import type {
   AttendanceRecord,
   NewAttendanceRecord,
@@ -27,8 +38,27 @@ export function AttendancePage() {
   useEffect(() => {
     if (data) setRecords(data);
   }, [data]);
-  const [timesheets, setTimesheets] = useState<TimesheetRecord[]>(TIMESHEETS);
+  // Timesheets live in the shared attendance slice so a self-service submission
+  // lands in this queue, and an approval here is visible back on the employee's
+  // own timesheet. Schedules are still local — nothing submits them.
+  const dispatch = useAppDispatch();
+  const timesheets = useAppSelector((s) => s.attendance.timesheets);
   const [schedules, setSchedules] = useState<WorkSchedule[]>(WORK_SCHEDULES);
+
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("today");
+  /** Drill-down set by the KPI cards; "all" shows every row. */
+  const [cardFilter, setCardFilter] = useState<AttendanceCardFilter>("all");
+
+  /** The Today rows, narrowed to whichever KPI card is selected. */
+  const visibleRecords = records.filter((r) =>
+    matchesAttendanceCardFilter(r, cardFilter),
+  );
+  /** The Timesheets rows — only the Pending Approvals card narrows these. */
+  const visibleTimesheets =
+    cardFilter === "pending_timesheets"
+      ? timesheets.filter((t) => t.status === "submitted")
+      : timesheets;
 
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(
@@ -89,33 +119,17 @@ export function AttendancePage() {
   }
 
   function handleApproveTimesheet(id: string) {
-    const now = new Date().toISOString();
-    setTimesheets((prev) =>
-      prev.map((ts) =>
-        ts.id === id
-          ? {
-              ...ts,
-              status: "approved" as const,
-              approvedAt: now,
-              approvedBy: "HR Manager",
-            }
-          : ts,
-      ),
+    dispatch(
+      approveTimesheetAction({
+        id,
+        approvedBy: "HR Manager",
+        at: new Date().toISOString(),
+      }),
     );
   }
 
   function handleRejectTimesheet(id: string, reason: string) {
-    setTimesheets((prev) =>
-      prev.map((ts) =>
-        ts.id === id
-          ? {
-              ...ts,
-              status: "rejected" as const,
-              rejectionReason: reason,
-            }
-          : ts,
-      ),
-    );
+    dispatch(rejectTimesheetAction({ id, reason }));
   }
 
   function handleRejectClick(ts: TimesheetRecord) {
@@ -171,20 +185,54 @@ export function AttendancePage() {
         </p>
       </div>
 
-      <StatCards records={records} timesheets={timesheets} />
+      <StatCards
+        records={records}
+        timesheets={timesheets}
+        cardFilter={cardFilter}
+        onDrillDown={(tab, filter) => {
+          setActiveTab(tab);
+          setCardFilter(filter);
+        }}
+      />
 
-      <Tabs defaultValue="today">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {ATTENDANCE_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              (
+              {cardFilter === "pending_timesheets"
+                ? visibleTimesheets.length
+                : visibleRecords.length}
+              )
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All records
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
-            { value: "today", label: "Today" },
-            { value: "timesheets", label: "Timesheets" },
+            { value: "today", label: `Today (${visibleRecords.length})` },
+            {
+              value: "timesheets",
+              label: `Timesheets (${visibleTimesheets.length})`,
+            },
             { value: "schedules", label: "Schedules" },
           ]}
         />
 
         <TabsContent value="today" className="mt-4 space-y-4">
           <OverviewTable
-            records={records}
+            records={visibleRecords}
             onEdit={handleEditRecord}
             onLogAttendance={handleLogAttendance}
           />
@@ -192,7 +240,7 @@ export function AttendancePage() {
 
         <TabsContent value="timesheets" className="mt-4 space-y-4">
           <TimesheetsTable
-            timesheets={timesheets}
+            timesheets={visibleTimesheets}
             onView={handleViewTimesheet}
             onApprove={handleApproveTimesheet}
             onRejectClick={handleRejectClick}

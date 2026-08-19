@@ -41,7 +41,6 @@ export function ContractsModule({ employee }: ModuleProps) {
   const active = source.filter((c) => c.status === "active");
   const expiring = source.filter((c) => c.status === "expiring_soon");
   const unsigned = source.filter((c) => c.signatureStatus === "unsigned");
-  const pending = source.filter((c) => c.signatureStatus !== "fully_signed");
 
   function handleView(contract: Contract) {
     setViewingContract(contract);
@@ -82,7 +81,10 @@ export function ContractsModule({ employee }: ModuleProps) {
             total={source.length}
             active={active.length}
             expiring={expiring.length}
-            pending={pending.length}
+            // Counts the unsigned set so the card matches the tab it opens.
+            pending={unsigned.length}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
           />
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>

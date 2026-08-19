@@ -336,6 +336,7 @@ export function PipelineTable({
 
   return (
     <DataTable
+      exportTitle="Offboarding Pipeline"
       columns={columns}
       initialColumnVisibility={HIDE_SYSTEM_ID}
       enableColumnVisibility

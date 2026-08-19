@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Workflow, Zap, Hand, Clock } from "lucide-react";
+import {
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Plus,
+  Workflow,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Badge } from "@/src/components/ui/badge";
-import { Card, CardContent } from "@/src/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,15 +21,15 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { deleteWorkflow } from "@/src/lib/stores/workflows-slice";
-import { TRIGGER_MODE_LABELS } from "@/src/lib/types/workflows";
-import type { Workflow as WorkflowType } from "@/src/lib/types/workflows";
 import {
-  assigneeLabel,
-  reviewerLabel,
-  scheduleLabel,
-  scopeLabel,
-} from "./helpers";
+  deleteWorkflow,
+  setWorkflowStatus,
+} from "@/src/lib/stores/workflows-slice";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
+import { workflowStatusChanged } from "@/src/lib/notifications/workflows";
+import { RunWorkflowDialog } from "./run-workflow-dialog";
+import { WorkflowCard } from "./components/workflow-card";
+import type { Workflow as WorkflowType } from "@/src/lib/types/workflows";
 
 export function WorkflowsHub() {
   const router = useRouter();
@@ -37,6 +40,26 @@ export function WorkflowsHub() {
   const departments = useAppSelector((s) => s.locale.data?.departments ?? []);
 
   const [pendingDelete, setPendingDelete] = useState<WorkflowType | null>(null);
+  const [running, setRunning] = useState<WorkflowType | null>(null);
+  /**
+   * Which cards are expanded. Cards start collapsed — the hub is for choosing
+   * a workflow, not for reading every step of all of them at once.
+   */
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+  const allOpen = workflows.length > 0 && openIds.size === workflows.length;
+
+  function toggleOpen(id: string, open: boolean) {
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (open) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setOpenIds(allOpen ? new Set() : new Set(workflows.map((w) => w.id)));
+  }
 
   function confirmDelete() {
     if (!pendingDelete) return;
@@ -45,9 +68,41 @@ export function WorkflowsHub() {
     setPendingDelete(null);
   }
 
+  /** §11.13 — activate/archive in place, and tell the owner it moved. */
+  function handleStatusChange(
+    wf: WorkflowType,
+    next: NonNullable<WorkflowType["status"]>,
+  ) {
+    const from = wf.status ?? "draft";
+    if (from === next) return;
+    dispatch(setWorkflowStatus({ id: wf.id, status: next }));
+    dispatch(pushNotification(workflowStatusChanged(wf, from, next)));
+    toast.success(
+      next === "active"
+        ? `"${wf.title}" is now active`
+        : next === "archived"
+          ? `"${wf.title}" archived`
+          : `"${wf.title}" moved back to draft`,
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-end gap-4">
+      <div className="flex items-start justify-end gap-2">
+        {workflows.length > 0 && (
+          <Button
+            variant="ghost"
+            className="gap-1.5 shrink-0 text-muted-foreground"
+            onClick={toggleAll}
+          >
+            {allOpen ? (
+              <ChevronsDownUp className="w-4 h-4" />
+            ) : (
+              <ChevronsUpDown className="w-4 h-4" />
+            )}
+            {allOpen ? "Collapse all" : "Expand all"}
+          </Button>
+        )}
         <Button
           className="gap-1.5 shrink-0"
           onClick={() => router.push("/hr-action-center/workflows/new")}
@@ -74,100 +129,26 @@ export function WorkflowsHub() {
       ) : (
         <div className="space-y-3">
           {workflows.map((wf) => (
-            <Card key={wf.id} className="border-border/60">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-foreground">
-                        {wf.title}
-                      </h3>
-                      <Badge variant="outline" className="capitalize">
-                        {wf.kind}
-                      </Badge>
-                      <Badge variant="outline" className="gap-1">
-                        {wf.triggerMode === "automatic" ? (
-                          <Zap className="w-3 h-3" />
-                        ) : (
-                          <Hand className="w-3 h-3" />
-                        )}
-                        {TRIGGER_MODE_LABELS[wf.triggerMode]}
-                      </Badge>
-                      <Badge variant="outline">
-                        {scopeLabel(wf.scope, departments)}
-                      </Badge>
-                      {wf.triggerMode === "automatic" &&
-                        scheduleLabel(wf.schedule) && (
-                          <Badge variant="outline" className="gap-1">
-                            <Clock className="w-3 h-3" />
-                            {scheduleLabel(wf.schedule)}
-                          </Badge>
-                        )}
-                    </div>
-                    {wf.description && (
-                      <p className="text-xs text-muted-foreground">
-                        {wf.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1 text-[11px]"
-                      onClick={() =>
-                        router.push(`/hr-action-center/workflows/${wf.id}`)
-                      }
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      {wf.kind === "system" ? "View" : "Edit"}
-                    </Button>
-                    {wf.kind === "custom" && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => setPendingDelete(wf)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                <ol className="mt-3 space-y-1.5">
-                  {wf.tasks.map((task) => {
-                    const reviewer = reviewerLabel(task.reviewer, roles);
-                    return (
-                      <li
-                        key={task.id}
-                        className="flex items-center gap-2.5 text-sm"
-                      >
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
-                          {task.order}
-                        </span>
-                        <span className="text-foreground">{task.title}</span>
-                        <span className="text-muted-foreground">—</span>
-                        <span className="text-muted-foreground">
-                          {assigneeLabel(task.assignee, roles, employees)}
-                        </span>
-                        {reviewer && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] text-muted-foreground"
-                          >
-                            Reviewer: {reviewer}
-                          </Badge>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ol>
-              </CardContent>
-            </Card>
+            <WorkflowCard
+              key={wf.id}
+              workflow={wf}
+              roles={roles}
+              employees={employees}
+              departments={departments}
+              open={openIds.has(wf.id)}
+              onOpenChange={(open) => toggleOpen(wf.id, open)}
+              onRun={() => setRunning(wf)}
+              onStatusChange={(next) => handleStatusChange(wf, next)}
+              onEdit={() =>
+                router.push(`/hr-action-center/workflows/${wf.id}`)
+              }
+              onDelete={() => setPendingDelete(wf)}
+            />
           ))}
         </div>
       )}
+
+      <RunWorkflowDialog workflow={running} onClose={() => setRunning(null)} />
 
       <AlertDialog
         open={Boolean(pendingDelete)}

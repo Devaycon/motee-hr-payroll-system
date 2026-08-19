@@ -379,6 +379,7 @@ export function CasesTable({
       </div>
 
       <DataTable
+        exportTitle="Helpdesk Cases"
         columns={columns}
         data={filtered}
         getRowId={(t) => t.id}

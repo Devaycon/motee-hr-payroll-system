@@ -21,6 +21,7 @@ export type ModuleGroup = (typeof MODULE_GROUPS)[number];
 export const ALL_MODULES: ModuleEntry[] = [
   // Workflows
   { id: "workspace.workflows", label: "Workflows", group: "Workflows", link: "/hr-action-center/workflows" },
+  { id: "workspace.projects",  label: "Projects", group: "Workflows", link: "/workspace/projects" },
   { id: "submissions.queue",     label: "Submissions & Approvals", group: "Workflows", link: "/hr-action-center/submissions" },
   { id: "submissions.workflows", label: "Approval Workflows", group: "Workflows", link: "/hr-action-center/workflows" },
 
@@ -54,9 +55,10 @@ export const ALL_MODULES: ModuleEntry[] = [
   // Time & Payroll
   { id: "time-payroll.attendance",   label: "Attendance",     group: "Time & Payroll", link: "/time-payroll/attendance" },
   { id: "time-payroll.leave",        label: "Leave Management", group: "Time & Payroll", link: "/time-payroll/leave" },
+  { id: "time-payroll.expenses",     label: "Expense Claims",   group: "Time & Payroll", link: "/time-payroll/expenses" },
 
   // Operations
-  { id: "operations.assets",     label: "Assets",                 group: "Operations", link: "/operations/assets" },
+  { id: "operations.assets",     label: "Asset Management",       group: "Operations", link: "/operations/assets" },
   { id: "operations.documents",  label: "Documents & Compliance", group: "Operations", link: "/operations/documents" },
   { id: "operations.contracts",  label: "Contracts",              group: "Operations", link: "/operations/contracts" },
   { id: "operations.reports",    label: "Reports & Analytics",    group: "Operations", link: "/operations/reports" },
@@ -72,7 +74,11 @@ export const ALL_MODULES: ModuleEntry[] = [
   { id: "workspace.community",     label: "Community",             group: "Engagement", link: "/workspace/community" },
 
   // Admin
-  { id: "admin.access-levels", label: "Access Levels",            group: "Admin", link: "/admin/access-levels" },
+  // NOTE: ids are persisted inside every saved access level (localStorage
+  // `motee:accessLevels` and .data/runtime/access-levels.json). Labels can be
+  // renamed freely; ids must not change or existing roles lose those grants.
+  { id: "admin.access-levels", label: "Roles & Permissions",      group: "Admin", link: "/admin/access-levels" },
+  { id: "admin.users",         label: "User Management",          group: "Admin", link: "/admin/users" },
   { id: "admin.audit-trail",   label: "Audit Trail",              group: "Admin", link: "/admin/audit-trail" },
   { id: "admin.grievance",     label: "Grievance & Disciplinary", group: "Admin", link: "/admin/grievance" },
   { id: "admin.settings",      label: "Settings & Permissions",   group: "Admin", link: "/admin/settings" },

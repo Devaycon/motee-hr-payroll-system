@@ -1,5 +1,6 @@
 import type {
   AccessLevel,
+  DataScope,
   ModulePermission,
   PermissionAction,
 } from "@/src/lib/types/access-levels";
@@ -15,7 +16,16 @@ type RoleSlug =
   | "RECRUITER"
   | "IT-ADMIN"
   | "AUDITOR"
-  | "READ-ONLY";
+  | "READ-ONLY"
+  // Function-specific roles requested in client feedback §1.14
+  | "PAYROLL-ADMIN"
+  | "LD-ADMIN"
+  | "HS-OFFICER"
+  | "COMPLIANCE-OFFICER"
+  | "FACILITIES-MANAGER"
+  | "SELF-SERVICE"
+  | "CONTRACTOR"
+  | "EXTERNAL-AUDITOR";
 
 /**
  * Author stamp carried by a default level nobody has edited yet. Such a level
@@ -33,6 +43,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
 
   // Workflows — consolidated onboarding/offboarding workflow module
   "workspace.workflows": ["SUPER-ADMIN","HR-ADMIN"],
+  // §10 — line managers need Projects to resource their own teams, which is a
+  // wider audience than the workflow builder next to it.
+  "workspace.projects":  ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
 
   // Organization
   "organization.company":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
@@ -60,6 +73,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   // Time & Payroll
   "time-payroll.attendance":         ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
   "time-payroll.leave":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
+  // Finance sits on the expense chain's final (reimbursement) step, and the
+  // executive is the resolved line manager for much of the org.
+  "time-payroll.expenses":           ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","EXECUTIVE","AUDITOR","READ-ONLY"],
   // Operations
   "operations.assets":               ["SUPER-ADMIN","HR-ADMIN","IT-ADMIN","AUDITOR","READ-ONLY"],
   "operations.documents":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
@@ -76,9 +92,101 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   "workspace.community":             ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FINANCE","LINE-MANAGER","RECRUITER","IT-ADMIN","AUDITOR","READ-ONLY"],
   // Admin
   "admin.access-levels":             ["SUPER-ADMIN","HR-ADMIN","IT-ADMIN","AUDITOR","READ-ONLY"],
+  // §4.14 — locking and revoking accounts is an IT/admin function, deliberately
+  // narrower than who may read the role definitions.
+  "admin.users":                     ["SUPER-ADMIN","HR-ADMIN","IT-ADMIN","AUDITOR"],
   "admin.audit-trail":               ["SUPER-ADMIN","HR-ADMIN","IT-ADMIN","AUDITOR"],
   "admin.grievance":                 ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "admin.settings":                  ["SUPER-ADMIN","HR-ADMIN","IT-ADMIN"],
+};
+
+/**
+ * The §1.14 roles are each scoped to a handful of modules, so they are listed
+ * by role rather than threaded through every row of MODULE_ACCESS above —
+ * eight more slugs across ~40 arrays would obscure the original matrix.
+ * A role present here is resolved from this map only; MODULE_ACCESS is ignored.
+ */
+const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
+  "PAYROLL-ADMIN": [
+    "submissions.queue",
+    "organization.employees",
+    "organization.employment-types",
+    "organization.eor",
+    "time-payroll.attendance",
+    "time-payroll.leave",
+    "time-payroll.expenses",
+    "operations.reports",
+    "operations.documents",
+    "workspace.announcements",
+    "workspace.knowledge",
+  ],
+  "LD-ADMIN": [
+    "submissions.queue",
+    "organization.employees",
+    "talent.training",
+    "talent.performance",
+    "workspace.knowledge",
+    "workspace.surveys",
+    "operations.reports",
+    "workspace.announcements",
+  ],
+  "HS-OFFICER": [
+    "submissions.queue",
+    "organization.employees",
+    "employee.medical",
+    "operations.documents",
+    "operations.reports",
+    "workspace.announcements",
+    "workspace.helpdesk",
+    "workspace.knowledge",
+  ],
+  "COMPLIANCE-OFFICER": [
+    "submissions.queue",
+    "organization.employees",
+    "employee.disciplinary",
+    "employee.grievances",
+    "admin.grievance",
+    "admin.audit-trail",
+    "operations.documents",
+    "operations.contracts",
+    "operations.reports",
+    "workspace.knowledge",
+  ],
+  "FACILITIES-MANAGER": [
+    "submissions.queue",
+    "organization.employees",
+    "organization.departments",
+    "operations.assets",
+    "workspace.helpdesk",
+    "workspace.announcements",
+    "workspace.knowledge",
+  ],
+  "SELF-SERVICE": [
+    "submissions.queue",
+    "workspace.announcements",
+    "workspace.kudos",
+    "workspace.knowledge",
+    "workspace.community",
+    "workspace.helpdesk",
+    "workspace.suggestions",
+  ],
+  // Deliberately narrower than Self-Service: no kudos, suggestions or helpdesk.
+  "CONTRACTOR": [
+    "submissions.queue",
+    "workspace.announcements",
+    "workspace.knowledge",
+  ],
+  // Like Auditor, but without the sensitive employee-detail sections.
+  "EXTERNAL-AUDITOR": [
+    "organization.company",
+    "organization.departments",
+    "organization.employees",
+    "organization.structure",
+    "operations.documents",
+    "operations.contracts",
+    "operations.reports",
+    "admin.audit-trail",
+  ],
 };
 
 const FULL_ACTIONS: PermissionAction[] = [
@@ -88,6 +196,7 @@ const FULL_ACTIONS: PermissionAction[] = [
   "delete",
   "export",
   "approve",
+  "administer",
 ];
 
 const MGMT_ACTIONS: PermissionAction[] = ["view", "create", "edit", "approve"];
@@ -116,15 +225,30 @@ function actionsFor(slug: RoleSlug): PermissionAction[] {
       return VIEW_EXPORT;
     case "READ-ONLY":
       return VIEW_ONLY;
+    case "PAYROLL-ADMIN":
+      return MGMT_ACTIONS;
+    case "LD-ADMIN":
+    case "HS-OFFICER":
+    case "FACILITIES-MANAGER":
+      return STAFF_ACTIONS;
+    case "COMPLIANCE-OFFICER":
+    case "EXTERNAL-AUDITOR":
+      return VIEW_EXPORT;
+    case "SELF-SERVICE":
+      return ["view", "create"];
+    case "CONTRACTOR":
+      return VIEW_ONLY;
   }
 }
 
 function buildPermissionsFor(slug: RoleSlug): ModulePermission[] {
   const role = slug;
   const actions = actionsFor(role);
+  const scoped = ROLE_MODULES[role];
   return ALL_MODULES.map((m) => {
-    const allowed = MODULE_ACCESS[m.id] ?? [];
-    const access = allowed.includes(role);
+    const access = scoped
+      ? scoped.includes(m.id)
+      : (MODULE_ACCESS[m.id] ?? []).includes(role);
     return {
       module: m.id,
       access,
@@ -132,6 +256,19 @@ function buildPermissionsFor(slug: RoleSlug): ModulePermission[] {
     };
   });
 }
+
+/**
+ * Default record-level scope per role (client feedback §1.4). A Line Manager
+ * seeing every employee, or a contractor seeing anyone but themselves, is the
+ * exact leak this closes.
+ */
+const DEFAULT_SCOPES: Partial<Record<RoleSlug, DataScope>> = {
+  "LINE-MANAGER": { kind: "direct_reports" },
+  "SELF-SERVICE": { kind: "self" },
+  CONTRACTOR: { kind: "self" },
+  "HR-MANAGER": { kind: "business_unit" },
+  "FACILITIES-MANAGER": { kind: "business_unit" },
+};
 
 function makeLevel(
   slug: RoleSlug,
@@ -144,7 +281,11 @@ function makeLevel(
     name,
     description,
     kind: "default",
+    status: "active",
     employeeCount,
+    dataScope: DEFAULT_SCOPES[slug] ?? { kind: "all" },
+    createdBy: SYSTEM_AUTHOR,
+    createdAt: "2026-01-01",
     lastModifiedBy: SYSTEM_AUTHOR,
     lastModifiedAt: "2026-01-01",
     permissions: buildPermissionsFor(slug),
@@ -162,6 +303,15 @@ export const DEFAULT_ACCESS_LEVELS: AccessLevel[] = [
   makeLevel("IT-ADMIN", "IT Admin", "Manage assets, helpdesk, access levels and platform settings", 2),
   makeLevel("AUDITOR", "Auditor", "Read-only access across HR plus full audit trail visibility", 1),
   makeLevel("READ-ONLY", "Read-only", "View-only access across the system, no Audit Trail or Settings", 2),
+  // Client feedback §1.14 — function-specific roles.
+  makeLevel("PAYROLL-ADMIN", "Payroll Administrator", "Run payroll: attendance, leave, employment types and payroll reporting", 0),
+  makeLevel("LD-ADMIN", "Learning & Development Administrator", "Own training, performance development, knowledge base and surveys", 0),
+  makeLevel("HS-OFFICER", "Health & Safety Officer", "Occupational health, medical records, safety documents and incident reporting", 0),
+  makeLevel("COMPLIANCE-OFFICER", "Compliance Officer", "Audit trail, ER cases, contracts and document compliance oversight", 0),
+  makeLevel("FACILITIES-MANAGER", "Facilities Manager", "Manage assets, equipment assignments and facilities helpdesk requests", 0),
+  makeLevel("SELF-SERVICE", "Employee Self-Service", "Standard employee access: own submissions, announcements, knowledge and community", 0),
+  makeLevel("CONTRACTOR", "Contractor", "Minimal access for non-employees: own submissions, announcements and knowledge base", 0),
+  makeLevel("EXTERNAL-AUDITOR", "External Auditor", "Read and export access for external audit, excluding sensitive employee records", 0),
 ];
 
 export const DEFAULT_ACCESS_LEVEL_IDS = new Set(

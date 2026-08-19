@@ -1,81 +1,107 @@
 "use client";
 
 import { UserMinus, Clock, CheckCircle, ClipboardList } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import type { OffboardingRecord } from "../types";
 
-interface StatCardsProps {
-  records: OffboardingRecord[];
+/**
+ * The slice a KPI card drills into. The lifecycle tabs group several statuses
+ * together, so the cards need their own filter on top of the tab (§2.1).
+ */
+export type OffboardingCardFilter =
+  | "all"
+  | "in_progress"
+  | "completed"
+  | "clearance_pending";
+
+export const OFFBOARDING_CARD_FILTER_LABELS: Record<
+  Exclude<OffboardingCardFilter, "all">,
+  string
+> = {
+  in_progress: "In progress",
+  completed: "Completed",
+  clearance_pending: "Clearance pending",
+};
+
+/** Single source of truth for what each card counts and the table then shows. */
+export function matchesOffboardingCardFilter(
+  record: OffboardingRecord,
+  filter: OffboardingCardFilter,
+): boolean {
+  switch (filter) {
+    case "in_progress":
+      return record.status === "in_progress";
+    case "completed":
+      return record.status === "completed";
+    case "clearance_pending":
+      return (
+        record.status !== "completed" &&
+        record.clearanceItems.some((c) => !c.completed)
+      );
+    default:
+      return true;
+  }
 }
 
-export function StatCards({ records }: StatCardsProps) {
-  const inProgress = records.filter((r) => r.status === "in_progress").length;
-  const completed = records.filter((r) => r.status === "completed").length;
-  const clearancePending = records.filter(
-    (r) =>
-      r.status !== "completed" && r.clearanceItems.some((c) => !c.completed),
-  ).length;
+interface StatCardsProps {
+  /** Every record, unfiltered — each card counts its own slice. */
+  records: OffboardingRecord[];
+  /** The card drill-down currently applied. */
+  cardFilter: OffboardingCardFilter;
+  /** Drill-down: opens the tab holding these records and filters to them. */
+  onDrillDown: (tab: string, filter: OffboardingCardFilter) => void;
+}
 
-  const cards = [
+export function StatCards({
+  records,
+  cardFilter,
+  onDrillDown,
+}: StatCardsProps) {
+  const count = (filter: OffboardingCardFilter) =>
+    records.filter((r) => matchesOffboardingCardFilter(r, filter)).length;
+
+  const cards: HrStatCardItem[] = [
     {
       label: "Total Offboarding",
       value: records.length,
       sub: "All initiated pipelines",
       icon: UserMinus,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
+      tone: "blue",
+      active: cardFilter === "all",
+      onClick: () => onDrillDown("all", "all"),
     },
     {
       label: "In Progress",
-      value: inProgress,
+      value: count("in_progress"),
       sub: "Active offboarding",
       icon: Clock,
-      color: "text-amber-500",
-      bg: "bg-amber-500/10",
+      tone: "amber",
+      active: cardFilter === "in_progress",
+      onClick: () => onDrillDown("approved", "in_progress"),
     },
     {
       label: "Completed",
-      value: completed,
+      value: count("completed"),
       sub: "Fully offboarded",
       icon: CheckCircle,
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10",
+      tone: "emerald",
+      active: cardFilter === "completed",
+      onClick: () => onDrillDown("approved", "completed"),
     },
     {
       label: "Clearance Pending",
-      value: clearancePending,
+      value: count("clearance_pending"),
       sub: "Outstanding items",
       icon: ClipboardList,
-      color: "text-red-500",
-      bg: "bg-red-500/10",
+      tone: "red",
+      // Outstanding clearance spans several statuses, so it lands on "All".
+      active: cardFilter === "clearance_pending",
+      onClick: () => onDrillDown("all", "clearance_pending"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      {cards.map((c) => {
-        const Icon = c.icon;
-        return (
-          <Card key={c.label}>
-            <CardContent className="flex items-start gap-4 py-5">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${c.bg}`}
-              >
-                <Icon className={`w-5 h-5 ${c.color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground leading-none">
-                  {c.value}
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {c.label}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

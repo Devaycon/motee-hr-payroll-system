@@ -7,7 +7,12 @@ import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { LEAVE_POLICIES, LEAVE_REQUESTS, LEAVE_TYPE_LABELS } from "@/src/data/leave-demo";
 import { MY_BALANCES as SEED_BALANCES, MY_HISTORY as SEED_HISTORY, TYPE_COLORS } from "./components/data";
 import { useMyLeaveBalances, useMyLeaveHistory } from "./hooks";
-import { LeaveStatCards } from "./components/stat-cards";
+import {
+  LeaveStatCards,
+  LEAVE_HISTORY_FILTER_LABELS,
+  type LeaveHistoryFilter,
+} from "./components/stat-cards";
+import { Button } from "@/src/components/ui/button";
 import { EntitlementCard } from "./components/entitlement-card";
 import { HistoryRow } from "./components/history-row";
 import { PolicyModal } from "./components/policy-modal";
@@ -26,6 +31,16 @@ export function MyLeaveBalancePage() {
   const MY_HISTORY = SEED_HISTORY;
   const [policyPlan, setPolicyPlan] = useState<(typeof LEAVE_POLICIES)[0] | null>(null);
   const [expandedType, setExpandedType] = useState<LeaveTypeName | null>(null);
+  // Controlled so the balance cards can open the entitlement or history.
+  const [activeTab, setActiveTab] = useState("entitlements");
+  /** Drill-down set by the KPI cards; "all" shows the whole history. */
+  const [historyFilter, setHistoryFilter] = useState<LeaveHistoryFilter>("all");
+
+  /** The history rows, narrowed to whichever KPI card is selected. */
+  const visibleHistory =
+    historyFilter === "all"
+      ? MY_HISTORY
+      : MY_HISTORY.filter((h) => h.status === historyFilter);
 
   const myCalendarLeave: CalendarLeave[] = MY_HISTORY.filter(
     (h) => h.status === "approved" || h.status === "pending",
@@ -74,15 +89,47 @@ export function MyLeaveBalancePage() {
         </p>
       </div>
 
-      <LeaveStatCards />
+      <LeaveStatCards
+        activeTab={activeTab}
+        expandedType={expandedType}
+        historyFilter={historyFilter}
+        onShowEntitlement={(type) => {
+          setActiveTab("entitlements");
+          setHistoryFilter("all");
+          setExpandedType(expandedType === type ? null : type);
+        }}
+        onShowHistory={(filter) => {
+          setActiveTab("history");
+          setHistoryFilter(filter);
+        }}
+      />
+
+      {historyFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {LEAVE_HISTORY_FILTER_LABELS[historyFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({visibleHistory.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setHistoryFilter("all")}
+          >
+            ← Full history
+          </Button>
+        </div>
+      )}
 
       <SmartLeaveAssistant />
 
-      <Tabs defaultValue="entitlements">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
             { value: "entitlements", label: "Leave Entitlements" },
-            { value: "history", label: "Leave History" },
+            { value: "history", label: `Leave History (${visibleHistory.length})` },
             { value: "calendar", label: "Calendar" },
             { value: "team-calendar", label: "Team Calendar" },
           ]}
@@ -108,7 +155,7 @@ export function MyLeaveBalancePage() {
           <Card>
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
-                {MY_HISTORY.map((h) => (
+                {visibleHistory.map((h) => (
                   <HistoryRow key={h.id} request={h} />
                 ))}
               </div>

@@ -2,10 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Zap, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Zap, Search, Star, X } from "lucide-react";
 import { routes } from "./routes";
 import type { Route } from "./routes";
 import { useVisibleRoutes } from "./permissions";
+import { useNavFavourites } from "@/src/lib/hooks/use-nav-favourites";
 import { cn } from "@/src/lib/utils";
 import {
   useSidebarCollapse,
@@ -19,6 +20,8 @@ const Sidebar = () => {
   const visibleRoutes = useVisibleRoutes(routes);
   const [query, setQuery] = useState("");
   const { collapsed, toggle, width } = useSidebarCollapse();
+  const { favourites, toggle: toggleFavourite, isFavourite } =
+    useNavFavourites("hr");
 
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
@@ -56,9 +59,9 @@ const Sidebar = () => {
     return pathname === link || pathname.startsWith(`${link}/`);
   };
 
-  const renderRouteLink = (route: Route) => (
+  const renderRouteLink = (route: Route, keyPrefix = route.group) => (
     <SidebarNavLink
-      key={`${route.group}-${route.label}`}
+      key={`${keyPrefix}-${route.label}`}
       href={route.link}
       label={route.label}
       icon={route.icon}
@@ -66,8 +69,17 @@ const Sidebar = () => {
       active={isActive(route.link, route.exact)}
       collapsed={collapsed}
       onClick={() => setQuery("")}
+      favourite={isFavourite(route.link)}
+      onToggleFavourite={() => toggleFavourite(route.link)}
     />
   );
+
+  // Pinned modules, in the order the user starred them. Resolved against the
+  // visible routes so a favourite the user has since lost permission for
+  // disappears rather than 403-ing (client feedback — favourite modules).
+  const favouriteRoutes = favourites
+    .map((link) => visibleRoutes.find((r) => r.link === link))
+    .filter((r): r is Route => Boolean(r));
 
   return (
     <aside
@@ -146,6 +158,23 @@ const Sidebar = () => {
           </ul>
         ) : (
           <>
+        {favouriteRoutes.length > 0 && (
+          <div className="mb-4">
+            {collapsed ? (
+              <div className="mx-3 mb-2 border-t border-border" />
+            ) : (
+              <p className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-muted-foreground">
+                <Star size={13} className="fill-amber-500 text-amber-500" />
+                Favourites
+              </p>
+            )}
+            <ul className="flex flex-col gap-2">
+              {favouriteRoutes.map((route) => renderRouteLink(route, "fav"))}
+            </ul>
+            <div className="mx-3 mt-3 border-t border-border" />
+          </div>
+        )}
+
         <ul
           data-tutorial="sidebar-overview"
           className="flex flex-col gap-2 mb-4"

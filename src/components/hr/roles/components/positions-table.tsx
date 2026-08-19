@@ -183,6 +183,7 @@ export function PositionsTable({
   return (
     <>
       <DataTable
+        exportTitle="Positions"
         columns={columns}
         data={positions}
         getRowId={(p) => p.id}

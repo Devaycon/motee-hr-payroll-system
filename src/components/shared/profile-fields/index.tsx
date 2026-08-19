@@ -984,7 +984,7 @@ export function ChangeRequestsTable({
       {/* A scannable log, not a dossier: what changed, when, and where it got
           to. The reason, the people and the decision note all live one click
           away in the detail modal (§B6). */}
-      <div className="overflow-x-auto rounded-xl border border-border">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
           <caption className="sr-only">
             Profile change log — every requested change, when it was submitted, and

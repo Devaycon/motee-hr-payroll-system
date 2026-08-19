@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { StatCards } from "./components/stat-cards";
@@ -15,8 +15,8 @@ import {
   addRecords,
   removeRecord,
   sendWelcomeEmail,
+  resendInvitation,
 } from "@/src/lib/stores/onboarding-records-slice";
-import { consumePendingRecords } from "@/src/lib/demo/pending-onboarding";
 import { buildTasksForSelection } from "./instantiate";
 import type {
   OnboardingRecord,
@@ -40,20 +40,9 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
-  // Consume any records handed over from the recruitment "send to onboarding"
-  // bridge (runs once on mount).
-  const consumedRef = useRef(false);
-  useEffect(() => {
-    if (consumedRef.current) return;
-    consumedRef.current = true;
-    const pending = consumePendingRecords();
-    if (pending.length > 0) {
-      dispatch(addRecords(pending));
-      toast.success(
-        `${pending.length} employee${pending.length !== 1 ? "s" : ""} added to onboarding`,
-      );
-    }
-  }, [dispatch]);
+  // Records handed over by the recruitment "send to onboarding" action are
+  // dispatched straight into this slice at invite time, so there is nothing to
+  // drain here — they are already in the store (and persisted) on arrival.
 
   // Completed records have moved on to Employees — keep them out of the pipeline.
   const active = useMemo(
@@ -62,7 +51,10 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
   );
 
   const filtered = useMemo(() => {
-    return active.filter((r) => {
+    // Completed records stay out of the default pipeline view, but the
+    // Completed KPI card can pull them back up on demand (feedback §2.20).
+    const source = statusFilter === "completed" ? records : active;
+    return source.filter((r) => {
       const matchSearch =
         !search ||
         r.employeeName.toLowerCase().includes(search.toLowerCase()) ||
@@ -73,7 +65,7 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
       const matchStatus = statusFilter === "all" || r.status === statusFilter;
       return matchSearch && matchDept && matchStage && matchStatus;
     });
-  }, [active, search, deptFilter, stageFilter, statusFilter]);
+  }, [records, active, search, deptFilter, stageFilter, statusFilter]);
 
   const handleViewTasks = (record: OnboardingRecord) => {
     router.push(`/talent/onboarding/${record.id}`);
@@ -175,6 +167,13 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
     toast.success("Welcome email sent");
   };
 
+  const handleResendInvitation = (id: string) => {
+    dispatch(resendInvitation(id));
+    toast.success("Invitation resent", {
+      description: "The link is valid for another 14 days.",
+    });
+  };
+
   const handleDelete = (id: string) => {
     dispatch(removeRecord(id));
     toast.success("Onboarding record removed");
@@ -186,14 +185,18 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         <div>
           <h1 className="text-4xl font-semibold text-foreground">Onboarding</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Pick a workflow when initiating a hire — its tasks &amp; reviewers
-            drive each stage, and once every task is approved the hire is cleared
-            into Employees.
+            Select an onboarding workflow when initiating a new hire. Tasks and
+            approvals will guide each stage until onboarding is complete and the
+            employee is added to the employee directory.
           </p>
         </div>
       )}
 
-      <StatCards records={active} />
+      <StatCards
+        records={records}
+        statusFilter={statusFilter}
+        onFilterChange={setStatusFilter}
+      />
 
       <PipelineToolbar
         search={search}
@@ -211,6 +214,7 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         records={filtered}
         onViewTasks={handleViewTasks}
         onSendWelcomeEmail={handleSendWelcomeEmail}
+        onResendInvitation={handleResendInvitation}
         onDelete={handleDelete}
       />
 

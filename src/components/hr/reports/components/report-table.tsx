@@ -20,6 +20,9 @@ export function ReportTable({
       columns.map((c) => ({
         id: c.key,
         header: c.header,
+        // The report def already knows how to read this column — hand it to
+        // the exporter rather than letting it guess from the rendered cell.
+        meta: { exportValue: c.value },
         cell: ({ row }) => {
           const raw = c.value(row.original);
           return (
@@ -39,6 +42,9 @@ export function ReportTable({
       getRowId={(_row, index) => String(index)}
       pageSize={12}
       emptyMessage="No records match the current filters."
+      // The report page has its own Export dialog with the filters and
+      // per-report options — a second button here would compete with it.
+      enableExport={false}
     />
   );
 }

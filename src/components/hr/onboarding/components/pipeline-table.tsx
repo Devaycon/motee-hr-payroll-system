@@ -49,12 +49,18 @@ import {
   ONBOARDING_STATUS_LABELS,
   ONBOARDING_STATUS_STYLES,
 } from "../data";
+import {
+  INVITATION_STATUS_LABELS,
+  INVITATION_STATUS_STYLES,
+} from "@/src/lib/types/onboarding";
 import type { OnboardingRecord } from "../types";
 
 interface PipelineTableProps {
   records: OnboardingRecord[];
   onViewTasks: (record: OnboardingRecord) => void;
   onSendWelcomeEmail: (id: string) => void;
+  /** §2.1 — reissue an invitation whose link has lapsed or been ignored. */
+  onResendInvitation: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
@@ -62,6 +68,7 @@ export function PipelineTable({
   records,
   onViewTasks,
   onSendWelcomeEmail,
+  onResendInvitation,
   onDelete,
 }: PipelineTableProps) {
   const router = useRouter();
@@ -153,6 +160,41 @@ export function PipelineTable({
         },
       },
       {
+        // §2.1 — "invitation sent" alone couldn't distinguish an ignored
+        // invite from one mid-flight, so HR chased the wrong people.
+        id: "invitation",
+        header: "Invitation",
+        cell: ({ row }) => {
+          const invite = row.original.invitation;
+          if (row.original.mode !== "invited" || !invite) {
+            return <span className="text-xs text-muted-foreground">—</span>;
+          }
+          const expired =
+            invite.expiresAt &&
+            new Date(invite.expiresAt) < new Date() &&
+            invite.status !== "submitted";
+          const status = expired ? "expired" : invite.status;
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span
+                className={cn(
+                  "inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                  INVITATION_STATUS_STYLES[status],
+                )}
+              >
+                {INVITATION_STATUS_LABELS[status]}
+              </span>
+              {(invite.remindersSent ?? 0) > 0 && (
+                <span className="text-[10px] text-muted-foreground">
+                  {invite.remindersSent} reminder
+                  {invite.remindersSent === 1 ? "" : "s"} sent
+                </span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
         accessorKey: "status",
         header: sortableHeader("Status"),
         cell: ({ row }) => (
@@ -182,15 +224,20 @@ export function PipelineTable({
                 <ListChecks className="w-3.5 h-3.5" />
                 View Tasks
               </DropdownMenuItem>
-              {!record.welcomeEmailSent && (
-                <DropdownMenuItem
-                  className="text-xs gap-2"
-                  onClick={() => onSendWelcomeEmail(record.id)}
-                >
-                  <Mail className="w-3.5 h-3.5" />
-                  Send Welcome Email
-                </DropdownMenuItem>
-              )}
+              {/* §2.1 — a sent invite can now be reissued, not just sent once. */}
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                onClick={() =>
+                  record.welcomeEmailSent
+                    ? onResendInvitation(record.id)
+                    : onSendWelcomeEmail(record.id)
+                }
+              >
+                <Mail className="w-3.5 h-3.5" />
+                {record.welcomeEmailSent
+                  ? "Resend Invitation"
+                  : "Send Welcome Email"}
+              </DropdownMenuItem>
               {record.mode === "invited" && (
                 <DropdownMenuItem
                   className="text-xs gap-2"
@@ -240,11 +287,19 @@ export function PipelineTable({
         );
       }),
     ],
-    [onViewTasks, onSendWelcomeEmail, onDelete, router, identity],
+    [
+      onViewTasks,
+      onSendWelcomeEmail,
+      onResendInvitation,
+      onDelete,
+      router,
+      identity,
+    ],
   );
 
   return (
     <DataTable
+      exportTitle="Onboarding Pipeline"
       columns={columns}
       initialColumnVisibility={HIDE_SYSTEM_ID}
       enableColumnVisibility

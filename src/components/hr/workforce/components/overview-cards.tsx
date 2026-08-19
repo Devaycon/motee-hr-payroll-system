@@ -6,7 +6,10 @@ import {
   AlertTriangle,
   Timer,
 } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import type { HiringMetric } from "../types";
 import type { AttritionRisk } from "@/src/components/hr/headcount/types";
 
@@ -16,6 +19,10 @@ interface OverviewCardsProps {
   currentTurnoverRate: number;
   attritionRisks: AttritionRisk[];
   avgTenureYears: number;
+  /** The analytics section currently open. */
+  activeTab: string;
+  /** Drill-down: opens the section that breaks this number down. */
+  onTabChange: (tab: string) => void;
 }
 
 export function OverviewCards({
@@ -24,6 +31,8 @@ export function OverviewCards({
   currentTurnoverRate,
   attritionRisks,
   avgTenureYears,
+  activeTab,
+  onTabChange,
 }: OverviewCardsProps) {
   const openPositions = hiringMetrics.reduce(
     (s, m) => s + m.openRequisitions,
@@ -38,109 +47,71 @@ export function OverviewCards({
       : 0;
   const highRisk = attritionRisks.filter((r) => r.riskLevel === "high").length;
 
-  const cards = [
+  // Every card is a roll-up of one analytics section, so each opens the
+  // section that breaks its number down.
+  const card = (tab: string) => ({
+    active: activeTab === tab,
+    onClick: () => onTabChange(tab),
+  });
+
+  const headline: HrStatCardItem[] = [
     {
       label: "Total Workforce",
       value: totalHeadcount,
       sub: "Active employees",
       icon: Users,
-      iconClass: "text-slate-500 dark:text-slate-400",
-      iconBg: "bg-slate-500/10",
+      tone: "violet",
+      ...card("headcount"),
     },
     {
       label: "Open Positions",
       value: openPositions,
       sub: "Active requisitions",
       icon: Briefcase,
-      iconClass: "text-blue-500 dark:text-blue-400",
-      iconBg: "bg-blue-500/10",
+      tone: "blue",
+      ...card("hiring"),
     },
+  ];
+
+  const secondary: HrStatCardItem[] = [
     {
       label: "Turnover Rate",
       value: `${currentTurnoverRate}%`,
       sub: "Current quarter",
       icon: TrendingDown,
-      iconClass:
-        currentTurnoverRate > 10
-          ? "text-red-500 dark:text-red-400"
-          : "text-emerald-500 dark:text-emerald-400",
-      iconBg: currentTurnoverRate > 10 ? "bg-red-500/10" : "bg-emerald-500/10",
+      tone: currentTurnoverRate > 10 ? "red" : "emerald",
+      ...card("turnover"),
     },
     {
       label: "Avg Days to Fill",
       value: `${avgDaysToFill}d`,
       sub: "Across all departments",
       icon: Clock,
-      iconClass: "text-amber-500 dark:text-amber-400",
-      iconBg: "bg-amber-500/10",
+      tone: "amber",
+      ...card("hiring"),
     },
     {
       label: "High Attrition Risk",
       value: highRisk,
       sub: "Employees flagged",
       icon: AlertTriangle,
-      iconClass:
-        highRisk > 0
-          ? "text-red-500 dark:text-red-400"
-          : "text-emerald-500 dark:text-emerald-400",
-      iconBg: highRisk > 0 ? "bg-red-500/10" : "bg-emerald-500/10",
+      tone: highRisk > 0 ? "red" : "emerald",
+      ...card("turnover"),
     },
     {
       label: "Avg Tenure",
       value: `${avgTenureYears}y`,
       sub: "Company-wide",
       icon: Timer,
-      iconClass: "text-violet-500 dark:text-violet-400",
-      iconBg: "bg-violet-500/10",
+      tone: "violet",
+      ...card("demographics"),
     },
   ];
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        {cards.slice(0, 2).map((card) => (
-          <Card key={card.label} className="border-border/60">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {card.label}
-                  </p>
-                  <p className="text-2xl font-bold tracking-tight">
-                    {card.value}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{card.sub}</p>
-                </div>
-                <div className={`shrink-0 rounded-lg p-2.5 ${card.iconBg}`}>
-                  <card.icon className={`size-5 ${card.iconClass}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {cards.slice(2).map((card) => (
-          <Card key={card.label} className="border-border/60">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {card.label}
-                  </p>
-                  <p className="text-2xl font-bold tracking-tight">
-                    {card.value}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{card.sub}</p>
-                </div>
-                <div className={`shrink-0 rounded-lg p-2.5 ${card.iconBg}`}>
-                  <card.icon className={`size-5 ${card.iconClass}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <HrStatCardsGrid stats={headline} columns={2} />
+      <HrStatCardsGrid stats={secondary} columns={4} />
     </div>
   );
 }

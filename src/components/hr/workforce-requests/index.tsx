@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Send, ArrowRightLeft, Pencil, Eye } from "lucide-react";
+import {
+  Plus,
+  Send,
+  ArrowRightLeft,
+  Pencil,
+  Eye,
+  ClipboardList,
+  Hourglass,
+  CircleCheck,
+} from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -32,6 +40,7 @@ import {
 } from "@/src/components/shared/data-table";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { HrStatCardsGrid } from "@/src/components/shared/hr-stat-card";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { store } from "@/src/lib/stores/store";
@@ -48,9 +57,18 @@ import {
   updateRequest,
   setApproval,
   uid,
+  HIRING_REASON_LABELS,
+  VACANCY_TYPE_LABELS,
   type WorkforceRequest,
   type WorkforceUrgency,
+  type HiringReasonKind,
+  type VacancyType,
 } from "@/src/lib/stores/workforce-requests-slice";
+import { useCostCentres } from "@/src/lib/hooks/use-cost-centres";
+import {
+  costCentreLabel,
+  selectableCostCentres,
+} from "@/src/lib/types/cost-centres";
 import { buildWorkforceDemo } from "@/src/data/workforce-requests-demo";
 import { cn } from "@/src/lib/utils";
 import { RequestDetailModal } from "./components/request-detail-modal";
@@ -91,6 +109,13 @@ interface DraftForm {
   budgetEstimate: number;
   urgency: WorkforceUrgency;
   expectedStartDate: string;
+  // §7.2 / §7.3 / §7.5
+  position: string;
+  grade: string;
+  hiringReason: HiringReasonKind;
+  vacancyType: VacancyType;
+  costCentreCode: string;
+  businessUnit: string;
 }
 
 const EMPTY_FORM: DraftForm = {
@@ -100,11 +125,19 @@ const EMPTY_FORM: DraftForm = {
   budgetEstimate: 0,
   urgency: "medium",
   expectedStartDate: "",
+  position: "",
+  grade: "",
+  hiringReason: "new_position",
+  vacancyType: "permanent",
+  costCentreCode: "",
+  businessUnit: "",
 };
 
 export function WorkforceRequestsPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const costCentres = useCostCentres();
   const country = useAppSelector((s) => s.locale.country);
   const user = useAppSelector((s) => s.auth.user);
   const requests = useAppSelector(
@@ -152,27 +185,37 @@ export function WorkforceRequestsPage() {
 
   // Request tab = still moving through the chain (or pre-chain drafts).
   // Approved tab = fully approved (and already converted) requests.
+  // Tab + status filter are driven by the KPI cards (client feedback §7.1).
+  const [activeTab, setActiveTab] = useState("request");
+  const [statusFilter, setStatusFilter] = useState<DisplayStatus | "all">("all");
+
   const requestList = useMemo(
     () =>
       list.filter((r) => {
         const s = displayStatus(r);
-        return (
+        const inTab =
           s === "Draft" ||
           s === "Pending Approval" ||
           s === "Returned" ||
-          s === "Rejected"
-        );
+          s === "Rejected";
+        return inTab && (statusFilter === "all" || s === statusFilter);
       }),
-    [list, displayStatus],
+    [list, displayStatus, statusFilter],
   );
   const approvedList = useMemo(
     () =>
       list.filter((r) => {
         const s = displayStatus(r);
-        return s === "Approved" || s === "Converted to Requisition";
+        const inTab = s === "Approved" || s === "Converted to Requisition";
+        return inTab && (statusFilter === "all" || s === statusFilter);
       }),
-    [list, displayStatus],
+    [list, displayStatus, statusFilter],
   );
+
+  function drillDown(tab: string, status: DisplayStatus | "all") {
+    setActiveTab(tab);
+    setStatusFilter(status);
+  }
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -185,6 +228,28 @@ export function WorkforceRequestsPage() {
     setModalOpen(true);
   }
 
+  /**
+   * §6.36 — the Gap Report links here with the department and shortfall
+   * already worked out, so the user doesn't have to carry the numbers across
+   * in their head. Consumed once, then the params are cleared.
+   */
+  const prefillHandled = useRef(false);
+  useEffect(() => {
+    if (prefillHandled.current) return;
+    const dept = searchParams.get("department");
+    if (!dept) return;
+    prefillHandled.current = true;
+    setEditingId(null);
+    setForm({
+      ...EMPTY_FORM,
+      department: dept,
+      numberOfHires: Math.max(1, Number(searchParams.get("hires")) || 1),
+      reason: searchParams.get("reason") ?? "",
+    });
+    setModalOpen(true);
+    router.replace("/talent/workforce-requests");
+  }, [searchParams, router]);
+
   function openEdit(wfr: WorkforceRequest) {
     setEditingId(wfr.id);
     setForm({
@@ -194,6 +259,12 @@ export function WorkforceRequestsPage() {
       budgetEstimate: wfr.budgetEstimate,
       urgency: wfr.urgency,
       expectedStartDate: wfr.expectedStartDate,
+      position: wfr.position ?? "",
+      grade: wfr.grade ?? "",
+      hiringReason: wfr.hiringReason ?? "new_position",
+      vacancyType: wfr.vacancyType ?? "permanent",
+      costCentreCode: wfr.costCentreCode ?? "",
+      businessUnit: wfr.businessUnit ?? "",
     });
     setModalOpen(true);
   }
@@ -201,6 +272,13 @@ export function WorkforceRequestsPage() {
   function saveDraft() {
     if (form.reason.trim().length < 4) {
       toast.error("Please add a reason for hiring.");
+      return;
+    }
+    // §7.3 — mandatory, so Finance always has something to book against.
+    if (!form.costCentreCode) {
+      toast.error("Select a cost centre", {
+        description: "Finance allocates this request's spend against it.",
+      });
       return;
     }
     if (editingId) {
@@ -428,25 +506,65 @@ export function WorkforceRequestsPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {[
-          { label: "Total Requests", value: stats.total },
-          { label: "In Approval Chain", value: stats.pending },
-          { label: "Approved", value: stats.approved },
-          { label: "Converted", value: stats.converted },
-        ].map((s) => (
-          <Card key={s.label} className="border-border/60">
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className="mt-1 text-2xl font-bold text-foreground">
-                {s.value}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <HrStatCardsGrid
+        columns={4}
+        stats={[
+          {
+            label: "Total Requests",
+            value: stats.total,
+            sub: "All workforce requests",
+            icon: ClipboardList,
+            tone: "blue",
+            active: statusFilter === "all",
+            onClick: () => drillDown("request", "all"),
+          },
+          {
+            label: "In Approval Chain",
+            value: stats.pending,
+            sub: "Awaiting a decision",
+            icon: Hourglass,
+            tone: "amber",
+            active: statusFilter === "Pending Approval",
+            onClick: () => drillDown("request", "Pending Approval"),
+          },
+          {
+            label: "Approved",
+            value: stats.approved,
+            sub: "Ready for requisition",
+            icon: CircleCheck,
+            tone: "emerald",
+            active: statusFilter === "Approved",
+            onClick: () => drillDown("approved", "Approved"),
+          },
+          {
+            label: "Converted",
+            value: stats.converted,
+            sub: "Requisition created",
+            icon: ArrowRightLeft,
+            tone: "violet",
+            active: statusFilter === "Converted to Requisition",
+            onClick: () => drillDown("approved", "Converted to Requisition"),
+          },
+        ]}
+      />
 
-      <Tabs defaultValue="request">
+      {statusFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="gap-1.5 py-1">
+            Filtered to {statusFilter}
+          </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setStatusFilter("all")}
+          >
+            Clear filter
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
             { value: "request", label: `Request (${requestList.length})` },
@@ -457,6 +575,7 @@ export function WorkforceRequestsPage() {
 
         <TabsContent value="request" className="mt-5">
           <DataTable
+            exportTitle="Workforce Requests"
             columns={requestColumns}
             data={requestList}
             getRowId={(r) => r.id}
@@ -468,6 +587,7 @@ export function WorkforceRequestsPage() {
 
         <TabsContent value="approved" className="mt-5">
           <DataTable
+            exportTitle="Workforce Requests"
             columns={approvedColumns}
             data={approvedList}
             getRowId={(r) => r.id}
@@ -511,6 +631,108 @@ export function WorkforceRequestsPage() {
                       {d}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* §7.3 — mandatory. Finance allocates payroll, recruitment and
+                training spend against this code, and a free-text version put
+                the cost in the wrong place whenever it was mistyped. */}
+            <div className="col-span-2 space-y-1.5">
+              <Label>
+                Cost Centre <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={form.costCentreCode}
+                onValueChange={(v) => {
+                  const centre = costCentres.find((c) => c.code === v);
+                  setForm((f) => ({
+                    ...f,
+                    costCentreCode: v,
+                    businessUnit: centre?.businessUnit ?? f.businessUnit,
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a cost centre" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectableCostCentres(costCentres).map((c) => (
+                    <SelectItem key={c.id} value={c.code}>
+                      {costCentreLabel(c)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.businessUnit && (
+                <p className="text-[11px] text-muted-foreground">
+                  Business unit: {form.businessUnit}
+                </p>
+              )}
+            </div>
+
+            {/* §7.2 — what the role actually is, not just a headcount number. */}
+            <div className="space-y-1.5">
+              <Label>Position</Label>
+              <Input
+                value={form.position}
+                placeholder="e.g. Senior HR Advisor"
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, position: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Grade</Label>
+              <Input
+                value={form.grade}
+                placeholder="e.g. Band 5"
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, grade: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Reason for hire</Label>
+              <Select
+                value={form.hiringReason}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, hiringReason: v as HiringReasonKind }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(
+                    Object.keys(HIRING_REASON_LABELS) as HiringReasonKind[]
+                  ).map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {HIRING_REASON_LABELS[r]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* §7.5 — contract shape drives the requisition that follows. */}
+            <div className="space-y-1.5">
+              <Label>Vacancy type</Label>
+              <Select
+                value={form.vacancyType}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, vacancyType: v as VacancyType }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(VACANCY_TYPE_LABELS) as VacancyType[]).map(
+                    (t) => (
+                      <SelectItem key={t} value={t}>
+                        {VACANCY_TYPE_LABELS[t]}
+                      </SelectItem>
+                    ),
+                  )}
                 </SelectContent>
               </Select>
             </div>

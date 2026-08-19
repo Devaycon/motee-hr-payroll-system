@@ -1,30 +1,34 @@
 "use client";
 
-import { useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Pencil, MapPin, Users } from "lucide-react";
+import { useCallback, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  ArrowLeft,
+  Pencil,
+  MapPin,
+  Users,
+  Columns3,
+  Table as TableIcon,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { useCan } from "@/src/lib/permissions/use-can";
 import { cn } from "@/src/lib/utils";
 import {
   EMPLOYMENT_TYPE_LABELS,
   REQUISITION_DISPLAY_STATUS,
   REQUISITION_DISPLAY_TONE_STYLES,
+  STAGE_TYPE_LABELS,
 } from "@/src/data/recruitment-demo";
-import type { RecruitmentStageType } from "@/src/lib/types/recruitment";
 import { useRecruitment } from "../hooks";
 import { getFlow, enabledStages } from "../flow";
 import { StagePanel } from "./stage-panel";
-
-/** Tab labels for the live three-stage pipeline. */
-const TAB_LABELS: Record<RecruitmentStageType, string> = {
-  applicants: "Applicant",
-  shortlisted: "Shortlisted",
-  interview: "Scheduled for Interview",
-  hired: "Hired",
-};
+import { PipelineBoard } from "./pipeline-board";
+import { CandidateDrawer } from "../components/candidate-drawer";
+import { RequisitionSummary } from "./requisition-summary";
+import { requisitionMetrics } from "./metrics";
 
 interface RequisitionDetailProps {
   requisitionId: string;
@@ -32,7 +36,9 @@ interface RequisitionDetailProps {
 
 export function RequisitionDetail({ requisitionId }: RequisitionDetailProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { country, loading, bucket } = useRecruitment();
+  const canEdit = useCan("talent.recruitment", "edit");
 
   const requisition = bucket.requisitions.find((r) => r.id === requisitionId);
 
@@ -42,9 +48,28 @@ export function RequisitionDetail({ requisitionId }: RequisitionDetailProps) {
     [bucket.candidates, requisitionId],
   );
 
+  const reqInterviews = useMemo(
+    () =>
+      bucket.interviews.filter((iv) => iv.requisitionId === requisitionId),
+    [bucket.interviews, requisitionId],
+  );
+
   const stages = useMemo(
     () => (requisition ? enabledStages(getFlow(requisition)) : []),
     [requisition],
+  );
+
+  const metrics = useMemo(
+    () =>
+      requisition
+        ? requisitionMetrics(
+            requisition,
+            reqCandidates,
+            reqInterviews,
+            getFlow(requisition),
+          )
+        : null,
+    [requisition, reqCandidates, reqInterviews],
   );
 
   const countByStage = useMemo(() => {
@@ -56,9 +81,38 @@ export function RequisitionDetail({ requisitionId }: RequisitionDetailProps) {
     return m;
   }, [reqCandidates]);
 
+  // View mode and the focused candidate live in the URL, so a recruiter can
+  // paste "the board, on this person" to a colleague.
+  const view = searchParams.get("view") === "board" ? "board" : "table";
+  const focusCandidateId = searchParams.get("candidate");
+  const activeTab = searchParams.get("tab") ?? stages[0] ?? "applicants";
+
+  const setParams = useCallback(
+    (patch: Record<string, string | null>) => {
+      const next = new URLSearchParams(searchParams.toString());
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null) next.delete(k);
+        else next.set(k, v);
+      }
+      const qs = next.toString();
+      router.replace(qs ? `?${qs}` : "?", { scroll: false });
+    },
+    [router, searchParams],
+  );
+
+  const focusCandidate = useCallback(
+    (id: string | null) => setParams({ candidate: id }),
+    [setParams],
+  );
+
+  const boardCandidate = useMemo(
+    () => reqCandidates.find((c) => c.id === focusCandidateId) ?? null,
+    [reqCandidates, focusCandidateId],
+  );
+
   if (loading) return null;
 
-  if (!requisition) {
+  if (!requisition || !metrics) {
     return (
       <div className="mx-auto w-full max-w-3xl space-y-3 py-16 text-center">
         <p className="text-sm font-medium text-foreground">
@@ -99,14 +153,18 @@ export function RequisitionDetail({ requisitionId }: RequisitionDetailProps) {
             <h1 className="text-3xl font-bold text-foreground">
               {requisition.positionTitle}
             </h1>
+            {/* Qualified with "Vacancy" so the badge says what it describes —
+                next to a job title, a bare "Open" reads as ambiguous. */}
             <Badge
               variant="outline"
               className={cn(
-                "text-[10px]",
+                "gap-1.5 text-[10px]",
                 REQUISITION_DISPLAY_TONE_STYLES[d.tone],
               )}
             >
-              {d.label}
+              <span className="font-normal opacity-70">Vacancy status</span>
+              <span className="opacity-40">·</span>
+              {d.short}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -118,42 +176,92 @@ export function RequisitionDetail({ requisitionId }: RequisitionDetailProps) {
               </span>
             )}
             <span className="inline-flex items-center gap-1">
-              <Users className="w-3 h-3" /> {reqCandidates.filter((c) => c.status !== "rejected").length}{" "}
-              applicants
+              <Users className="w-3 h-3" /> {metrics.activeTotal} applicants
             </span>
           </p>
         </div>
+        {canEdit && (
+          <Button
+            variant="outline"
+            className="gap-1.5"
+            onClick={() =>
+              router.push(`/talent/recruitment/new?req=${requisition.id}`)
+            }
+          >
+            <Pencil className="w-4 h-4" />
+            Edit
+          </Button>
+        )}
+      </div>
+
+      <RequisitionSummary requisition={requisition} metrics={metrics} />
+
+      <div className="flex items-center justify-end gap-1.5">
         <Button
-          variant="outline"
-          className="gap-1.5"
-          onClick={() =>
-            router.push(`/talent/recruitment/new?req=${requisition.id}`)
-          }
+          variant={view === "table" ? "secondary" : "ghost"}
+          size="sm"
+          className="h-8 gap-1.5 text-[11px]"
+          onClick={() => setParams({ view: null })}
         >
-          <Pencil className="w-4 h-4" />
-          Edit
+          <TableIcon className="w-3.5 h-3.5" />
+          Table
+        </Button>
+        <Button
+          variant={view === "board" ? "secondary" : "ghost"}
+          size="sm"
+          className="h-8 gap-1.5 text-[11px]"
+          onClick={() => setParams({ view: "board" })}
+        >
+          <Columns3 className="w-3.5 h-3.5" />
+          Board
         </Button>
       </div>
 
-      <Tabs defaultValue={stages[0] ?? "applicants"}>
-        <PageTabsList
-          tabs={stages.map((s) => ({
-            value: s,
-            label: `${TAB_LABELS[s]} (${countByStage.get(s) ?? 0})`,
-          }))}
+      {view === "board" ? (
+        <PipelineBoard
+          country={country}
+          requisition={requisition}
+          candidates={reqCandidates}
+          onOpenCandidate={focusCandidate}
         />
-        {stages.map((s) => (
-          <TabsContent key={s} value={s} className="mt-5">
-            <StagePanel
-              country={country}
-              requisition={requisition}
-              stage={s}
-              candidates={reqCandidates}
-              interviews={bucket.interviews}
-            />
-          </TabsContent>
-        ))}
-      </Tabs>
+      ) : (
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setParams({ tab: v, candidate: null })}
+        >
+          <PageTabsList
+            tabs={stages.map((s) => ({
+              value: s,
+              label: `${STAGE_TYPE_LABELS[s]} (${countByStage.get(s) ?? 0})`,
+            }))}
+          />
+          {stages.map((s) => (
+            <TabsContent key={s} value={s} className="mt-5">
+              <StagePanel
+                country={country}
+                requisition={requisition}
+                stage={s}
+                candidates={reqCandidates}
+                interviews={bucket.interviews}
+                focusCandidateId={focusCandidateId}
+                onFocusCandidate={focusCandidate}
+              />
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
+
+      {/* In table view the StagePanel owns the drawer; the board has no panel,
+          so the same `?candidate=` param opens it from here. */}
+      {view === "board" && boardCandidate && (
+        <CandidateDrawer
+          country={country}
+          candidate={boardCandidate}
+          requisition={requisition}
+          interviews={bucket.interviews}
+          onClose={() => focusCandidate(null)}
+        />
+      )}
     </div>
   );
 }

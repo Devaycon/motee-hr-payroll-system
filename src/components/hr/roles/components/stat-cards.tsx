@@ -6,14 +6,28 @@ import {
   AlertCircle,
   Building2,
 } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import type { Position } from "../types";
 
 interface StatCardsProps {
   positions: Position[];
+  /** The tab currently open. */
+  activeTab: string;
+  /** The status filter applied to the positions table, or "all". */
+  statusFilter: string;
+  /** Drill-down: opens the tab and status behind the number (§6.17). */
+  onDrillDown: (tab: string, status: string) => void;
 }
 
-export function StatCards({ positions }: StatCardsProps) {
+export function StatCards({
+  positions,
+  activeTab,
+  statusFilter,
+  onDrillDown,
+}: StatCardsProps) {
   const total = positions.length;
   const filled = positions.filter((p) => p.status === "filled").length;
   const vacant = positions.filter((p) => p.status === "vacant").length;
@@ -21,30 +35,36 @@ export function StatCards({ positions }: StatCardsProps) {
     positions.filter((p) => p.status === "vacant").map((p) => p.department),
   ).size;
 
-  const cards = [
+  /** A card is selected when both its tab and its status filter are live. */
+  const onPositions = activeTab === "positions";
+
+  const cards: HrStatCardItem[] = [
     {
       label: "Total Positions",
       value: total,
       sub: `${filled} filled, ${vacant} vacant`,
       icon: ListOrdered,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
+      tone: "blue",
+      active: onPositions && statusFilter === "all",
+      onClick: () => onDrillDown("positions", "all"),
     },
     {
       label: "Filled",
       value: filled,
       sub: `${Math.round((filled / total) * 100) || 0}% fill rate`,
       icon: CheckCircle2,
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10",
+      tone: "emerald",
+      active: onPositions && statusFilter === "filled",
+      onClick: () => onDrillDown("positions", "filled"),
     },
     {
       label: "Vacant",
       value: vacant,
       sub: vacant === 1 ? "1 open position" : `${vacant} open positions`,
       icon: AlertCircle,
-      color: "text-amber-500",
-      bg: "bg-amber-500/10",
+      tone: "amber",
+      active: onPositions && statusFilter === "vacant",
+      onClick: () => onDrillDown("positions", "vacant"),
     },
     {
       label: "Depts with Vacancies",
@@ -54,36 +74,13 @@ export function StatCards({ positions }: StatCardsProps) {
           ? "1 department affected"
           : `${departments} departments affected`,
       icon: Building2,
-      color: "text-violet-500",
-      bg: "bg-violet-500/10",
+      tone: "violet",
+      // The vacancy report is already grouped by department — that report is
+      // the list behind this number.
+      active: activeTab === "vacancies",
+      onClick: () => onDrillDown("vacancies", "all"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      {cards.map((c) => {
-        const Icon = c.icon;
-        return (
-          <Card key={c.label}>
-            <CardContent className="flex items-start gap-4 py-5">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${c.bg}`}
-              >
-                <Icon className={`w-5 h-5 ${c.color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground leading-none">
-                  {c.value}
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {c.label}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

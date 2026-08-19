@@ -19,6 +19,12 @@ export interface FileDropzoneProps {
   hint?: React.ReactNode;
   /** Icon shown in the circle. Defaults to an upload-cloud glyph. */
   icon?: React.ReactNode;
+  /**
+   * Accept files pasted from the clipboard while this dropzone is mounted
+   * (Ctrl/Cmd+V) — handy for screenshot receipts. Opt-in, since a page with
+   * several dropzones would otherwise not know which one to feed.
+   */
+  acceptPaste?: boolean;
   className?: string;
 }
 
@@ -37,9 +43,30 @@ export function FileDropzone({
   label,
   hint,
   icon,
+  acceptPaste,
   className,
 }: FileDropzoneProps) {
   const [isDragging, setIsDragging] = React.useState(false);
+
+  // Kept in a ref so the paste listener is attached once rather than on every
+  // render of the parent's inline callback.
+  const onFilesRef = React.useRef(onFiles);
+  React.useEffect(() => {
+    onFilesRef.current = onFiles;
+  }, [onFiles]);
+
+  React.useEffect(() => {
+    if (!acceptPaste || disabled) return;
+    const handler = (e: ClipboardEvent) => {
+      const files = e.clipboardData?.files;
+      if (files && files.length > 0) {
+        e.preventDefault();
+        onFilesRef.current?.(files);
+      }
+    };
+    window.addEventListener("paste", handler);
+    return () => window.removeEventListener("paste", handler);
+  }, [acceptPaste, disabled]);
 
   const content = (
     <>

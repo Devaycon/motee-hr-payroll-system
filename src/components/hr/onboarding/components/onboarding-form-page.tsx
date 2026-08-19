@@ -20,8 +20,10 @@ import { Separator } from "@/src/components/ui/separator";
 import { cn } from "@/src/lib/utils";
 import { DEPARTMENT_OPTIONS } from "../data";
 import type { ManualOnboardingData } from "../types";
-import { addPendingRecord } from "@/src/lib/demo/pending-onboarding";
-import { useAppSelector } from "@/src/lib/stores/hooks";
+import { addRecord } from "@/src/lib/stores/onboarding-records-slice";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
+import { onboardingStarted } from "@/src/lib/notifications/onboarding";
 import {
   getOnboardingTemplates,
   getDefaultOnboardingTemplate,
@@ -29,6 +31,7 @@ import {
 } from "../instantiate";
 import { EMPLOYMENT_TYPE_OPTIONS } from "@/src/lib/constants/employment-types";
 import { titlesForGender } from "@/src/lib/constants/titles";
+import { formatSortCode } from "@/src/lib/utils/bank-details";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Male" },
@@ -90,6 +93,7 @@ const step1Schema = z.object({
   maritalStatus: z.string().optional(),
   address: z.string().min(5, "At least 5 characters"),
   state: z.string().optional(),
+  postalCode: z.string().min(1, "Required"),
   country: z.string().min(1, "Required"),
 });
 
@@ -110,6 +114,12 @@ const step3Schema = z.object({
   bankName: z.string().optional(),
   bankAccountNumber: z.string().optional(),
   bankAccountName: z.string().optional(),
+  // §2.16 — validated in its own right now it has its own field.
+  sortCode: z
+    .string()
+    .regex(/^\d{2}-\d{2}-\d{2}$/, "Use the format NN-NN-NN")
+    .optional()
+    .or(z.literal("")),
 });
 
 const step4Schema = z.object({
@@ -118,6 +128,7 @@ const step4Schema = z.object({
   passportExpiry: z.string().optional(),
   passportCountry: z.string().optional(),
   driverLicenseNumber: z.string().optional(),
+  driverLicenseExpiry: z.string().optional(),
   taxId: z.string().optional(),
   pensionId: z.string().optional(),
   nhfNumber: z.string().optional(),
@@ -167,6 +178,7 @@ const EMPTY_DATA: ManualOnboardingData = {
   maritalStatus: "",
   address: "",
   state: "",
+  postalCode: "",
   country: "",
   employeeId: "",
   jobTitle: "",
@@ -181,12 +193,14 @@ const EMPTY_DATA: ManualOnboardingData = {
   bankName: "",
   bankAccountNumber: "",
   bankAccountName: "",
+  sortCode: "",
   ninNumber: "",
   niNumber: "",
   passportNumber: "",
   passportExpiry: "",
   passportCountry: "",
   driverLicenseNumber: "",
+  driverLicenseExpiry: "",
   taxId: "",
   pensionId: "",
   nhfNumber: "",
@@ -221,8 +235,11 @@ function ReviewRow({ label, value }: { label: string; value?: string }) {
 
 export function OnboardingFormPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const templates = useAppSelector((s) => s.approvals.templates);
   const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
+  // Sort code and driving-licence expiry are UK-shaped; NG uses NIN/TIN/PFA.
+  const isUK = useAppSelector((s) => s.locale.country) === "uk";
   const onboardingTemplates = getOnboardingTemplates(templates);
   const defaultTemplate = getDefaultOnboardingTemplate(templates);
   const [step, setStep] = useState(0);
@@ -292,26 +309,35 @@ export function OnboardingFormPage() {
       selectedWorkflowId,
     );
 
-    addPendingRecord({
-      id,
-      referenceId: data.employeeId || undefined,
-      employeeName: fullName,
-      employeeInitials: initials,
-      email: data.email,
-      jobTitle: data.jobTitle,
-      department: data.department,
-      startDate: data.startDate,
-      stage: "pre_boarding",
-      status: "not_started",
-      workflowTemplateId: template?.id,
-      workflowName: template?.name,
-      tasks,
-      completedTasks: 0,
-      totalTasks: tasks.length,
-      welcomeEmailSent: false,
-      initiatedAt: new Date().toISOString().slice(0, 10),
-      mode: "manual",
-    });
+    dispatch(
+      addRecord({
+        id,
+        referenceId: data.employeeId || undefined,
+        employeeName: fullName,
+        employeeInitials: initials,
+        email: data.email,
+        jobTitle: data.jobTitle,
+        department: data.department,
+        startDate: data.startDate,
+        stage: "pre_boarding",
+        status: "not_started",
+        workflowTemplateId: template?.id,
+        workflowName: template?.name,
+        tasks,
+        completedTasks: 0,
+        totalTasks: tasks.length,
+        welcomeEmailSent: false,
+        initiatedAt: new Date().toISOString().slice(0, 10),
+        mode: "manual",
+      }),
+    );
+
+    // §2.10 — the employer-side record of the process starting.
+    dispatch(
+      pushNotification(
+        onboardingStarted(fullName, data.jobTitle, data.startDate),
+      ),
+    );
 
     toast.success(`Onboarding initiated for ${fullName}`);
     router.push("/talent/onboarding");
@@ -608,6 +634,22 @@ export function OnboardingFormPage() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
+                  Postcode <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  value={data.postalCode}
+                  onChange={(e) =>
+                    update("postalCode", e.target.value.toUpperCase())
+                  }
+                  className="h-9 text-sm"
+                  placeholder="e.g. SW1A 1AA"
+                />
+                {err("postalCode") && (
+                  <p className="text-xs text-destructive">{err("postalCode")}</p>
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">
                   Country <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -855,12 +897,31 @@ export function OnboardingFormPage() {
                     )
                   }
                   className="h-9 text-sm"
-                  placeholder="10-digit account number"
-                  maxLength={10}
+                  placeholder={isUK ? "8-digit account number" : "10-digit account number"}
+                  maxLength={isUK ? 8 : 10}
                 />
               </div>
+              {/* §2.16 — sort code is its own field, formatted as NN-NN-NN. */}
+              {isUK && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">Sort Code</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={data.sortCode}
+                    onChange={(e) =>
+                      update("sortCode", formatSortCode(e.target.value))
+                    }
+                    className="h-9 text-sm"
+                    placeholder="NN-NN-NN"
+                    maxLength={8}
+                  />
+                  {err("sortCode") && (
+                    <p className="text-xs text-destructive">{err("sortCode")}</p>
+                  )}
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Account Name</Label>
+                <Label className="text-xs">Account Holder Name</Label>
                 <Input
                   value={data.bankAccountName}
                   onChange={(e) => update("bankAccountName", e.target.value)}
@@ -933,14 +994,30 @@ export function OnboardingFormPage() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Driver&apos;s License Number</Label>
+                <Label className="text-xs">
+                  {isUK ? "Driving Licence Number" : "Driver's License Number"}
+                </Label>
                 <Input
                   value={data.driverLicenseNumber}
                   onChange={(e) =>
                     update("driverLicenseNumber", e.target.value)
                   }
                   className="h-9 text-sm"
-                  placeholder="License number"
+                  placeholder="Licence number"
+                />
+              </div>
+              {/* §2.17 — expiry sits with the licence, as passport expiry does. */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">
+                  {isUK ? "Driving Licence Expiry" : "Driver's License Expiry"}
+                </Label>
+                <Input
+                  type="date"
+                  value={data.driverLicenseExpiry}
+                  onChange={(e) =>
+                    update("driverLicenseExpiry", e.target.value)
+                  }
+                  className="h-9 text-sm"
                 />
               </div>
               <div className="flex flex-col gap-1.5">

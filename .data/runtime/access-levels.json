@@ -1,3168 +1,5642 @@
-[
-  {
-    "id": "AL-SUPER-ADMIN",
-    "name": "Super Admin",
-    "description": "Full unrestricted access to every module and action",
-    "kind": "default",
-    "employeeCount": 1,
-    "lastModifiedBy": "System",
-    "lastModifiedAt": "2026-01-01",
-    "permissions": [
-      {
-        "module": "workspace.workflows",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "submissions.queue",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "submissions.workflows",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.company",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.departments",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.structure",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.roles",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.headcount",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employees",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employment-types",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.eor",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employee-checklist",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "employee.medical",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "employee.disciplinary",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "employee.grievances",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "employee.notes",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.workforce-requests",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.recruitment",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.onboarding",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.offboarding",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.performance",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.training",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "time-payroll.attendance",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "time-payroll.leave",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.assets",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.documents",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.contracts",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.reports",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.workforce",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.announcements",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.kudos",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.suggestions",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.surveys",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.helpdesk",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.knowledge",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.community",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.access-levels",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.audit-trail",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.grievance",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.settings",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      }
-    ]
-  },
-  {
-    "id": "AL-HR-ADMIN",
-    "name": "HR Admin",
-    "description": "Manage all HR modules end-to-end",
-    "kind": "default",
-    "employeeCount": 3,
-    "lastModifiedBy": "System",
-    "lastModifiedAt": "2026-01-01",
-    "permissions": [
-      {
-        "module": "workspace.workflows",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "submissions.queue",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "submissions.workflows",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.company",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.departments",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.structure",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.roles",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.headcount",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employees",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employment-types",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.eor",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employee-checklist",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "employee.medical",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "employee.disciplinary",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "employee.grievances",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "employee.notes",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.workforce-requests",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.recruitment",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.onboarding",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.offboarding",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.performance",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.training",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "time-payroll.attendance",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "time-payroll.leave",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.assets",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.documents",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.contracts",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.reports",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.workforce",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.announcements",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.kudos",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.suggestions",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.surveys",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.helpdesk",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.knowledge",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.community",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.access-levels",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.audit-trail",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.grievance",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.settings",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "delete",
-          "export",
-          "approve"
-        ]
-      }
-    ]
-  },
-  {
-    "id": "AL-HR-MANAGER",
-    "name": "HR Manager",
-    "description": "Run day-to-day people operations: employees, leave, performance, engagement",
-    "kind": "default",
-    "employeeCount": 5,
-    "lastModifiedBy": "System",
-    "lastModifiedAt": "2026-01-01",
-    "permissions": [
-      {
-        "module": "workspace.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "submissions.queue",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "submissions.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.company",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.departments",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.structure",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.roles",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.headcount",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employees",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employment-types",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.eor",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employee-checklist",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "employee.medical",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.disciplinary",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.grievances",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.notes",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.workforce-requests",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.recruitment",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.onboarding",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.offboarding",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.performance",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.training",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "time-payroll.attendance",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "time-payroll.leave",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.assets",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.documents",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.contracts",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.reports",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.workforce",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.announcements",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.kudos",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.suggestions",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.surveys",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.helpdesk",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.knowledge",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.community",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.access-levels",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.audit-trail",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.grievance",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.settings",
-        "access": false,
-        "actions": []
-      }
-    ]
-  },
-  {
-    "id": "AL-FINANCE",
-    "name": "Finance",
-    "description": "Payroll, benefits, compensation and finance-side reporting",
-    "kind": "default",
-    "employeeCount": 4,
-    "lastModifiedBy": "System",
-    "lastModifiedAt": "2026-01-01",
-    "permissions": [
-      {
-        "module": "workspace.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "submissions.queue",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "submissions.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.company",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.departments",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.structure",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.roles",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.headcount",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.employees",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.employment-types",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.eor",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employee-checklist",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.medical",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.disciplinary",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.grievances",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.notes",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.workforce-requests",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.recruitment",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.onboarding",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.offboarding",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.performance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.training",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "time-payroll.attendance",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "time-payroll.leave",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.assets",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.documents",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.contracts",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.reports",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.workforce",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.announcements",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.kudos",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.suggestions",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.surveys",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.helpdesk",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.knowledge",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.community",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.access-levels",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.audit-trail",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.grievance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.settings",
-        "access": false,
-        "actions": []
-      }
-    ]
-  },
-  {
-    "id": "AL-LINE-MANAGER",
-    "name": "Line Manager",
-    "description": "Manage direct reports: team view, leave approvals, performance reviews",
-    "kind": "default",
-    "employeeCount": 18,
-    "lastModifiedBy": "System",
-    "lastModifiedAt": "2026-01-01",
-    "permissions": [
-      {
-        "module": "workspace.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "submissions.queue",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "submissions.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.company",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.departments",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.structure",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.roles",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.headcount",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.employees",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "organization.employment-types",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.eor",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.employee-checklist",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.medical",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.disciplinary",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.grievances",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.notes",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.workforce-requests",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.recruitment",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.onboarding",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.offboarding",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.performance",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "talent.training",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "time-payroll.attendance",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "time-payroll.leave",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "operations.assets",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.documents",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.contracts",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.reports",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.workforce",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.announcements",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.kudos",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.suggestions",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.surveys",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.helpdesk",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.knowledge",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "workspace.community",
-        "access": true,
-        "actions": [
-          "view",
-          "edit",
-          "approve"
-        ]
-      },
-      {
-        "module": "admin.access-levels",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.audit-trail",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.grievance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.settings",
-        "access": false,
-        "actions": []
-      }
-    ]
-  },
-  {
-    "id": "AL-RECRUITER",
-    "name": "Recruiter",
-    "description": "Own the hiring pipeline and headcount planning",
-    "kind": "default",
-    "employeeCount": 3,
-    "lastModifiedBy": "System",
-    "lastModifiedAt": "2026-01-01",
-    "permissions": [
-      {
-        "module": "workspace.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "submissions.queue",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "submissions.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.company",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.departments",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.structure",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.roles",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "organization.headcount",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "organization.employees",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "organization.employment-types",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.eor",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.employee-checklist",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.medical",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.disciplinary",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.grievances",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.notes",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.workforce-requests",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.recruitment",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "talent.onboarding",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "talent.offboarding",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.performance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.training",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "time-payroll.attendance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "time-payroll.leave",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.assets",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.documents",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.contracts",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.reports",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.workforce",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "workspace.announcements",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "workspace.kudos",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "workspace.suggestions",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.surveys",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.helpdesk",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.knowledge",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "workspace.community",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "admin.access-levels",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.audit-trail",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.grievance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.settings",
-        "access": false,
-        "actions": []
-      }
-    ]
-  },
-  {
-    "id": "AL-IT-ADMIN",
-    "name": "IT Admin",
-    "description": "Manage assets, helpdesk, access levels and platform settings",
-    "kind": "default",
-    "employeeCount": 2,
-    "lastModifiedBy": "System",
-    "lastModifiedAt": "2026-01-01",
-    "permissions": [
-      {
-        "module": "workspace.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "submissions.queue",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "submissions.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.company",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.departments",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.structure",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.roles",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.headcount",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.employees",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.employment-types",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.eor",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.employee-checklist",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.medical",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.disciplinary",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.grievances",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.notes",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.workforce-requests",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.recruitment",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.onboarding",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.offboarding",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.performance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.training",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "time-payroll.attendance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "time-payroll.leave",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.assets",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "operations.documents",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.contracts",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.reports",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.workforce",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.announcements",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "workspace.kudos",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "workspace.suggestions",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.surveys",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.helpdesk",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "workspace.knowledge",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "workspace.community",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "admin.access-levels",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "admin.audit-trail",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      },
-      {
-        "module": "admin.grievance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.settings",
-        "access": true,
-        "actions": [
-          "view",
-          "create",
-          "edit"
-        ]
-      }
-    ]
-  },
-  {
-    "id": "AL-AUDITOR",
-    "name": "Auditor",
-    "description": "Read-only access across HR plus full audit trail visibility",
-    "kind": "default",
-    "employeeCount": 1,
-    "lastModifiedBy": "System",
-    "lastModifiedAt": "2026-01-01",
-    "permissions": [
-      {
-        "module": "workspace.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "submissions.queue",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "submissions.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.company",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "organization.departments",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "organization.structure",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "organization.roles",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "organization.headcount",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "organization.employees",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "organization.employment-types",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "organization.eor",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "organization.employee-checklist",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "employee.medical",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.disciplinary",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.grievances",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.notes",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.workforce-requests",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "talent.recruitment",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "talent.onboarding",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "talent.offboarding",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "talent.performance",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "talent.training",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "time-payroll.attendance",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "time-payroll.leave",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "operations.assets",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "operations.documents",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "operations.contracts",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "operations.reports",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "operations.workforce",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "workspace.announcements",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "workspace.kudos",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "workspace.suggestions",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "workspace.surveys",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "workspace.helpdesk",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "workspace.knowledge",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "workspace.community",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "admin.access-levels",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "admin.audit-trail",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "admin.grievance",
-        "access": true,
-        "actions": [
-          "view",
-          "export"
-        ]
-      },
-      {
-        "module": "admin.settings",
-        "access": false,
-        "actions": []
-      }
-    ]
-  },
-  {
-    "id": "AL-READ-ONLY",
-    "name": "Read-only",
-    "description": "View-only access across the system, no Audit Trail or Settings",
-    "kind": "default",
-    "employeeCount": 2,
-    "lastModifiedBy": "System",
-    "lastModifiedAt": "2026-01-01",
-    "permissions": [
-      {
-        "module": "workspace.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "submissions.queue",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "submissions.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.company",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "organization.departments",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "organization.structure",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "organization.roles",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "organization.headcount",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "organization.employees",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "organization.employment-types",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "organization.eor",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "organization.employee-checklist",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "employee.medical",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.disciplinary",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.grievances",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.notes",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.workforce-requests",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "talent.recruitment",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "talent.onboarding",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "talent.offboarding",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "talent.performance",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "talent.training",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "time-payroll.attendance",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "time-payroll.leave",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "operations.assets",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "operations.documents",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "operations.contracts",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "operations.reports",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "operations.workforce",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "workspace.announcements",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "workspace.kudos",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "workspace.suggestions",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "workspace.surveys",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "workspace.helpdesk",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "workspace.knowledge",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "workspace.community",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "admin.access-levels",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "admin.audit-trail",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.grievance",
-        "access": true,
-        "actions": [
-          "view"
-        ]
-      },
-      {
-        "module": "admin.settings",
-        "access": false,
-        "actions": []
-      }
-    ]
-  },
-  {
-    "id": "AL-EXECUTIVE",
-    "name": "Executive",
-    "description": "Executive oversight: approvals, headcount, workforce planning and reports",
-    "kind": "default",
-    "employeeCount": 3,
-    "lastModifiedBy": "System",
-    "lastModifiedAt": "2026-01-01",
-    "permissions": [
-      {
-        "module": "workspace.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "submissions.queue",
-        "access": true,
-        "actions": [
-          "view",
-          "approve",
-          "export"
-        ]
-      },
-      {
-        "module": "submissions.workflows",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.company",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.departments",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.structure",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.roles",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.headcount",
-        "access": true,
-        "actions": [
-          "view",
-          "approve",
-          "export"
-        ]
-      },
-      {
-        "module": "organization.employees",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.employment-types",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.eor",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "organization.employee-checklist",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.medical",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.disciplinary",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.grievances",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "employee.notes",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.workforce-requests",
-        "access": true,
-        "actions": [
-          "view",
-          "approve",
-          "export"
-        ]
-      },
-      {
-        "module": "talent.recruitment",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.onboarding",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.offboarding",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.performance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "talent.training",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "time-payroll.attendance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "time-payroll.leave",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.assets",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.documents",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.contracts",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "operations.reports",
-        "access": true,
-        "actions": [
-          "view",
-          "approve",
-          "export"
-        ]
-      },
-      {
-        "module": "operations.workforce",
-        "access": true,
-        "actions": [
-          "view",
-          "approve",
-          "export"
-        ]
-      },
-      {
-        "module": "workspace.announcements",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.kudos",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.suggestions",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.surveys",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.helpdesk",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.knowledge",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "workspace.community",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.access-levels",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.audit-trail",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.grievance",
-        "access": false,
-        "actions": []
-      },
-      {
-        "module": "admin.settings",
-        "access": false,
-        "actions": []
-      }
-    ]
-  }
-]
+{
+  "levels": [
+    {
+      "id": "AL-SUPER-ADMIN",
+      "name": "Super Admin",
+      "description": "Full unrestricted access to every module and action",
+      "kind": "default",
+      "employeeCount": 1,
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.projects",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.company",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.departments",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.structure",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.roles",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.headcount",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.eor",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "employee.medical",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "employee.grievances",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "employee.notes",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.recruitment",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.onboarding",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.offboarding",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.performance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.training",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "operations.assets",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "operations.documents",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "operations.contracts",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.surveys",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "admin.access-levels",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "admin.users",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "admin.grievance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "admin.settings",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        }
+      ],
+      "status": "active",
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "AL-HR-ADMIN",
+      "name": "HR Admin",
+      "description": "Manage all HR modules end-to-end",
+      "kind": "default",
+      "employeeCount": 3,
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.projects",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.company",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.departments",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.structure",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.roles",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.headcount",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.eor",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "employee.medical",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "employee.grievances",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "employee.notes",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.recruitment",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.onboarding",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.offboarding",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.performance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "talent.training",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "operations.assets",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "operations.documents",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "operations.contracts",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.surveys",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "admin.access-levels",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "admin.users",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "admin.grievance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "admin.settings",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        }
+      ],
+      "status": "active",
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "AL-HR-MANAGER",
+      "name": "HR Manager",
+      "description": "Run day-to-day people operations: employees, leave, performance, engagement",
+      "kind": "default",
+      "employeeCount": 5,
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.departments",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.structure",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.eor",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "talent.offboarding",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "talent.performance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "talent.training",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "operations.contracts",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.surveys",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ],
+      "status": "active",
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "AL-FINANCE",
+      "name": "Finance",
+      "description": "Payroll, benefits, compensation and finance-side reporting",
+      "kind": "default",
+      "employeeCount": 4,
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ],
+      "status": "active",
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "AL-LINE-MANAGER",
+      "name": "Line Manager",
+      "description": "Manage direct reports: team view, leave approvals, performance reviews",
+      "kind": "default",
+      "employeeCount": 18,
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ],
+      "status": "active",
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "AL-RECRUITER",
+      "name": "Recruiter",
+      "description": "Own the hiring pipeline and headcount planning",
+      "kind": "default",
+      "employeeCount": 3,
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "organization.headcount",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.recruitment",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "talent.onboarding",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.workforce",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ],
+      "status": "active",
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "AL-IT-ADMIN",
+      "name": "IT Admin",
+      "description": "Manage assets, helpdesk, access levels and platform settings",
+      "kind": "default",
+      "employeeCount": 2,
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.assets",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "operations.documents",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "admin.access-levels",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "admin.users",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        }
+      ],
+      "status": "active",
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "AL-AUDITOR",
+      "name": "Auditor",
+      "description": "Read-only access across HR plus full audit trail visibility",
+      "kind": "default",
+      "employeeCount": 1,
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.departments",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.structure",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.roles",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.headcount",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.eor",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "talent.recruitment",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "talent.onboarding",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "talent.offboarding",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "talent.performance",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "talent.training",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.assets",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.documents",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.contracts",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "workspace.surveys",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "admin.access-levels",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "admin.users",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "admin.grievance",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ],
+      "status": "active",
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "AL-READ-ONLY",
+      "name": "Read-only",
+      "description": "View-only access across the system, no Audit Trail or Settings",
+      "kind": "default",
+      "employeeCount": 2,
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "organization.departments",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "organization.structure",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "organization.roles",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "organization.headcount",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "organization.eor",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "talent.recruitment",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "talent.onboarding",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "talent.offboarding",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "talent.performance",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "talent.training",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "operations.assets",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "operations.documents",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "operations.contracts",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "workspace.surveys",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "admin.access-levels",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ],
+      "status": "active",
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "AL-EXECUTIVE",
+      "name": "Executive",
+      "description": "Executive oversight: approvals, headcount, workforce planning and reports",
+      "kind": "default",
+      "employeeCount": 3,
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.employees",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
+        },
+        {
+          "module": "workspace.announcements",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.kudos",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.community",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ],
+      "status": "active",
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "AL-PAYROLL-ADMIN",
+      "name": "Payroll Administrator",
+      "description": "Run payroll: attendance, leave, employment types and payroll reporting",
+      "kind": "default",
+      "status": "active",
+      "employeeCount": 0,
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.eor",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ]
+    },
+    {
+      "id": "AL-LD-ADMIN",
+      "name": "Learning & Development Administrator",
+      "description": "Own training, performance development, knowledge base and surveys",
+      "kind": "default",
+      "status": "active",
+      "employeeCount": 0,
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "talent.training",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ]
+    },
+    {
+      "id": "AL-HS-OFFICER",
+      "name": "Health & Safety Officer",
+      "description": "Occupational health, medical records, safety documents and incident reporting",
+      "kind": "default",
+      "status": "active",
+      "employeeCount": 0,
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ]
+    },
+    {
+      "id": "AL-COMPLIANCE-OFFICER",
+      "name": "Compliance Officer",
+      "description": "Audit trail, ER cases, contracts and document compliance oversight",
+      "kind": "default",
+      "status": "active",
+      "employeeCount": 0,
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "employee.grievances",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.contracts",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.kudos",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "admin.grievance",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ]
+    },
+    {
+      "id": "AL-FACILITIES-MANAGER",
+      "name": "Facilities Manager",
+      "description": "Manage assets, equipment assignments and facilities helpdesk requests",
+      "kind": "default",
+      "status": "active",
+      "employeeCount": 0,
+      "dataScope": {
+        "kind": "business_unit"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.assets",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "operations.documents",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ]
+    },
+    {
+      "id": "AL-SELF-SERVICE",
+      "name": "Employee Self-Service",
+      "description": "Standard employee access: own submissions, announcements, knowledge and community",
+      "kind": "default",
+      "status": "active",
+      "employeeCount": 0,
+      "dataScope": {
+        "kind": "self"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view",
+            "create"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view",
+            "create"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": true,
+          "actions": [
+            "view",
+            "create"
+          ]
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": true,
+          "actions": [
+            "view",
+            "create"
+          ]
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": true,
+          "actions": [
+            "view",
+            "create"
+          ]
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view",
+            "create"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": true,
+          "actions": [
+            "view",
+            "create"
+          ]
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ]
+    },
+    {
+      "id": "AL-CONTRACTOR",
+      "name": "Contractor",
+      "description": "Minimal access for non-employees: own submissions, announcements and knowledge base",
+      "kind": "default",
+      "status": "active",
+      "employeeCount": 0,
+      "dataScope": {
+        "kind": "self"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.departments",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.structure",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.contracts",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.reports",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "workspace.kudos",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "workspace.community",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ]
+    },
+    {
+      "id": "AL-EXTERNAL-AUDITOR",
+      "name": "External Auditor",
+      "description": "Read and export access for external audit, excluding sensitive employee records",
+      "kind": "default",
+      "status": "active",
+      "employeeCount": 0,
+      "dataScope": {
+        "kind": "all"
+      },
+      "createdBy": "System",
+      "createdAt": "2026-01-01",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "permissions": [
+        {
+          "module": "workspace.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.projects",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.queue",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "submissions.workflows",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.company",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.departments",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.structure",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.roles",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.headcount",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.employment-types",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.eor",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.employee-checklist",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.medical",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.disciplinary",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.grievances",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "employee.notes",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.workforce-requests",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.recruitment",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.onboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.offboarding",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.performance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "talent.training",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.attendance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.leave",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.assets",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "operations.documents",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.contracts",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.reports",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "operations.workforce",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.announcements",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.kudos",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.suggestions",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.surveys",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.helpdesk",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.knowledge",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "workspace.community",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.access-levels",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.users",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.audit-trail",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "admin.grievance",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "admin.settings",
+          "access": false,
+          "actions": []
+        }
+      ]
+    }
+  ],
+  "assignments": []
+}

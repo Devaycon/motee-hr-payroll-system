@@ -309,6 +309,7 @@ export function TimesheetsTable({
 
       <div className="mt-4">
         <DataTable
+          exportTitle="Timesheets"
           columns={columns}
           initialColumnVisibility={HIDE_SYSTEM_ID}
           enableColumnVisibility

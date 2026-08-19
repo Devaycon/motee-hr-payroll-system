@@ -5,7 +5,13 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import type { EmployeeRow } from "./components/data";
 import { useDirectoryEmployees } from "./hooks";
-import { DirectoryStatCards } from "./components/stat-cards";
+import {
+  DirectoryStatCards,
+  matchesDirectoryCardFilter,
+  DIRECTORY_CARD_FILTER_LABELS,
+  type DirectoryCardFilter,
+} from "./components/stat-cards";
+import { Button } from "@/src/components/ui/button";
 // import { CelebrationsBanner } from "./components/celebrations-banner";
 import { DirectoryTab } from "./components/directory-tab";
 import { OrgChartTab } from "./components/org-chart-tab";
@@ -16,6 +22,10 @@ export function EmployeeOrgChart() {
   const allEmployees = useMemo(() => employees ?? [], [employees]);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("directory");
+  /** Drill-down set by the KPI cards; "all" shows everyone. */
+  const [cardFilter, setCardFilter] = useState<DirectoryCardFilter>("all");
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeRow | null>(
     null,
   );
@@ -33,9 +43,11 @@ export function EmployeeOrgChart() {
         e.id.toLowerCase().includes(q) ||
         (e.referenceId?.toLowerCase().includes(q) ?? false);
       const matchDept = deptFilter === "all" || e.department === deptFilter;
-      return matchSearch && matchDept;
+      // The card drill-down composes with search and the department filter.
+      const matchCard = matchesDirectoryCardFilter(e, cardFilter);
+      return matchSearch && matchDept && matchCard;
     });
-  }, [allEmployees, search, deptFilter]);
+  }, [allEmployees, search, deptFilter, cardFilter]);
 
   // const { birthdays, anniversaries } = getThisMonthCelebrations(EMPLOYEES);
 
@@ -55,7 +67,33 @@ export function EmployeeOrgChart() {
         </p>
       </div>
 
-      <DirectoryStatCards />
+      <DirectoryStatCards
+        activeTab={activeTab}
+        deptFilter={deptFilter}
+        cardFilter={cardFilter}
+        onDrillDown={(tab, dept, filter) => {
+          setActiveTab(tab);
+          setDeptFilter(dept);
+          setCardFilter(filter);
+        }}
+      />
+
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {DIRECTORY_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">({filtered.length})</span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← Everyone
+          </Button>
+        </div>
+      )}
 
       {/* <CelebrationsBanner
         birthdays={birthdays}
@@ -63,10 +101,10 @@ export function EmployeeOrgChart() {
         onSelectEmployee={openDetail}
       /> */}
 
-      <Tabs defaultValue="directory">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
-            { value: "directory", label: "Directory" },
+            { value: "directory", label: `Directory (${filtered.length})` },
             { value: "org-chart", label: "Org Chart" },
           ]}
         />

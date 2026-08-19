@@ -1,14 +1,25 @@
 "use client";
 
 import { Users, UserCheck, Umbrella, AlertCircle } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  HrStatCardsGrid,
+  type HrStatCardItem,
+} from "@/src/components/shared/hr-stat-card";
 import type { EmployeeRow } from "../types";
 
 interface StatCardsProps {
   employees: EmployeeRow[];
+  /** The lifecycle tab currently open, so the matching card reads as selected. */
+  activeTab: string;
+  /** Drill-down: opens the tab listing the records behind the number. */
+  onTabChange: (tab: string) => void;
 }
 
-export function StatCards({ employees }: StatCardsProps) {
+export function StatCards({
+  employees,
+  activeTab,
+  onTabChange,
+}: StatCardsProps) {
   // Soft-deleted rows still render on their own tab but must not inflate
   // headcount (client feedback §1.1).
   const total = employees.filter((e) => e.status !== "deleted").length;
@@ -28,22 +39,27 @@ export function StatCards({ employees }: StatCardsProps) {
     .map(([label, n]) => `${n} ${label.replace(/ Leave$/, "").toLowerCase()}`)
     .join(" · ");
 
-  const cards = [
+  const cards: HrStatCardItem[] = [
     {
+      // Drills to the "All" tab, which is the only view spanning every
+      // lifecycle status — note it also lists soft-deleted rows, which this
+      // headcount deliberately leaves out (§1.1).
       label: "Total Employees",
       value: total,
       sub: `${active} active`,
       icon: Users,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
+      tone: "blue",
+      active: activeTab === "all",
+      onClick: () => onTabChange("all"),
     },
     {
       label: "Active",
       value: active,
       sub: `${Math.round((active / total) * 100) || 0}% of workforce`,
       icon: UserCheck,
-      color: "text-green-500",
-      bg: "bg-green-500/10",
+      tone: "emerald",
+      active: activeTab === "active",
+      onClick: () => onTabChange("active"),
     },
     {
       label: "On Leave",
@@ -52,44 +68,20 @@ export function StatCards({ employees }: StatCardsProps) {
         leaveBreakdown ||
         (onLeave === 1 ? "1 employee away" : `${onLeave} employees away`),
       icon: Umbrella,
-      color: "text-amber-500",
-      bg: "bg-amber-500/10",
+      tone: "amber",
+      active: activeTab === "on_leave",
+      onClick: () => onTabChange("on_leave"),
     },
     {
       label: "Probation",
       value: probation,
       sub: probation === 1 ? "1 under review" : `${probation} under review`,
       icon: AlertCircle,
-      color: "text-violet-500",
-      bg: "bg-violet-500/10",
+      tone: "violet",
+      active: activeTab === "probation",
+      onClick: () => onTabChange("probation"),
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      {cards.map((c) => {
-        const Icon = c.icon;
-        return (
-          <Card key={c.label}>
-            <CardContent className="flex items-start gap-4 py-5">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${c.bg}`}
-              >
-                <Icon className={`w-5 h-5 ${c.color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground leading-none">
-                  {c.value}
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {c.label}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
+  return <HrStatCardsGrid stats={cards} columns={4} />;
 }

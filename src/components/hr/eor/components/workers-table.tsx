@@ -157,6 +157,7 @@ export function WorkersTable({
   return (
     <>
       <DataTable
+        exportTitle="EOR Workers"
         columns={columns}
         data={workers}
         getRowId={(w) => w.id}

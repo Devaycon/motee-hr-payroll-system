@@ -210,6 +210,7 @@ export function EnrollmentsTable({
       />
       <div className="mt-4">
         <DataTable
+          exportTitle="Enrollments"
           columns={columns}
           initialColumnVisibility={HIDE_SYSTEM_ID}
           enableColumnVisibility

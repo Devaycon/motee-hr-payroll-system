@@ -40,6 +40,14 @@ export function ContractsPage() {
   );
   const drafts = contracts.filter((c) => c.status === "draft" && !c.isArchived);
   const activeContracts = contracts.filter((c) => !c.isArchived);
+  // Own tabs so the "Active Contracts" and "Expired" KPI cards have somewhere
+  // to drill into — every card must land on the list behind its number.
+  const inForce = contracts.filter(
+    (c) => c.status === "active" && !c.isArchived,
+  );
+  const expired = contracts.filter(
+    (c) => c.status === "expired" && !c.isArchived,
+  );
 
   function generateId() {
     const max = contracts.reduce((acc, c) => {
@@ -179,7 +187,11 @@ export function ContractsPage() {
         </div>
       </div>
 
-      <StatCards contracts={contracts} />
+      <StatCards
+        contracts={contracts}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
@@ -189,11 +201,21 @@ export function ContractsPage() {
               label: `All Contracts (${activeContracts.length})`,
             },
             {
+              value: "active",
+              label:
+                inForce.length > 0 ? `Active (${inForce.length})` : "Active",
+            },
+            {
               value: "expiring",
               label:
                 expiringSoon.length > 0
                   ? `Expiring Soon (${expiringSoon.length})`
                   : "Expiring Soon",
+            },
+            {
+              value: "expired",
+              label:
+                expired.length > 0 ? `Expired (${expired.length})` : "Expired",
             },
             {
               value: "drafts",
@@ -216,9 +238,35 @@ export function ContractsPage() {
           />
         </TabsContent>
 
+        <TabsContent value="active" className="mt-4">
+          <ContractsTable
+            contracts={inForce}
+            onAdd={handleAdd}
+            onView={handleView}
+            onEdit={handleEdit}
+            onSign={handleSign}
+            onDelete={handleDelete}
+            onPreview={handlePreview}
+            onMoveToDocuments={handleMoveToDocuments}
+          />
+        </TabsContent>
+
         <TabsContent value="expiring" className="mt-4">
           <ContractsTable
             contracts={expiringSoon}
+            onAdd={handleAdd}
+            onView={handleView}
+            onEdit={handleEdit}
+            onSign={handleSign}
+            onDelete={handleDelete}
+            onPreview={handlePreview}
+            onMoveToDocuments={handleMoveToDocuments}
+          />
+        </TabsContent>
+
+        <TabsContent value="expired" className="mt-4">
+          <ContractsTable
+            contracts={expired}
             onAdd={handleAdd}
             onView={handleView}
             onEdit={handleEdit}

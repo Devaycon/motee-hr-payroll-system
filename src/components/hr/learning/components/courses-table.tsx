@@ -209,6 +209,7 @@ export function CoursesTable({
       />
       <div className="mt-4">
         <DataTable
+          exportTitle="Courses"
           columns={columns}
           data={filtered}
           getRowId={(c) => c.id}

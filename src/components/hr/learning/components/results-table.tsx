@@ -116,6 +116,7 @@ export function ResultsTable({ courses, enrollments }: ResultsTableProps) {
 
   return (
     <DataTable
+      exportTitle="Learning Results"
       columns={columns}
       data={rows}
       getRowId={(r) => r.courseId}

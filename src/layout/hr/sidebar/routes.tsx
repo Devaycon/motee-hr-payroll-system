@@ -16,6 +16,7 @@ import {
   GraduationCap,
   Clock,
   CalendarDays,
+  Receipt,
   Package,
   Library,
   FileText,
@@ -38,6 +39,8 @@ import {
   CheckSquare,
   Workflow,
   Stethoscope,
+  UserCog,
+  FolderKanban,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -62,6 +65,15 @@ export interface Route {
  * to live here and duplicated the employee portal. They were removed in favour
  * of the Admin Service / Self-Service toggle in the navbar — the admin sidebar
  * now carries admin features only (client feedback §4.3).
+ *
+ * §4 / §4.15–4.16 — the information architecture is grouped by *what the user
+ * is trying to do*, not by which team built the feature. The old "Talent",
+ * "Time & Payroll" and "Operations" groups mixed unrelated jobs together:
+ * Occupational Health sat under Time & Payroll, and Asset Management under
+ * Operations alongside Reports. The groups below are the ones the client named.
+ *
+ * Group order in the sidebar follows first appearance in this array, so the
+ * order here is the order on screen.
  */
 export const routes: Route[] = [
   { group: "Overview", icon: Hand, label: "Welcome", link: "/welcome" },
@@ -100,6 +112,12 @@ export const routes: Route[] = [
     icon: Workflow,
     label: "Workflows",
     link: "/hr-action-center/workflows",
+  },
+  {
+    group: "Workspace",
+    icon: FolderKanban,
+    label: "Projects",
+    link: "/workspace/projects",
   },
   {
     group: "Employee Management",
@@ -198,68 +216,80 @@ export const routes: Route[] = [
     link: "/organization/headcount",
   },
 
+  // §4.16 — what the company does *for* an employee across their time here:
+  // how they're developed, and how their time is accounted for.
   {
-    group: "Talent",
+    group: "Employee Services",
     icon: TrendingUp,
     label: "Performance",
     link: "/talent/performance",
   },
   {
-    group: "Talent",
+    group: "Employee Services",
     icon: GraduationCap,
     label: "Learning & Development",
     link: "/talent/training",
   },
   {
-    group: "Talent",
-    icon: BookOpen,
-    label: "Knowledge Base",
-    link: "/workspace/knowledge",
-  },
-
-  {
-    group: "Time & Payroll",
+    group: "Employee Services",
     icon: Clock,
     label: "Attendance",
     link: "/time-payroll/attendance",
   },
   {
-    group: "Time & Payroll",
+    group: "Employee Services",
     icon: CalendarDays,
     label: "Leave Management",
     link: "/time-payroll/leave",
     badge: 3,
   },
   {
-    group: "Time & Payroll",
+    group: "Employee Services",
+    icon: Receipt,
+    label: "Expense Claims",
+    link: "/time-payroll/expenses",
+  },
+
+  // §4.16 — Occupational Health was buried under "Time & Payroll", which is
+  // not where anyone would look for it.
+  {
+    group: "Health & Wellbeing",
     icon: Stethoscope,
     label: "Occupational Health",
     link: "/time-payroll/occupational-health",
   },
-
   {
-    group: "Operations",
-    icon: Package,
-    label: "Assets Tracking",
-    link: "/operations/assets",
+    group: "Health & Wellbeing",
+    icon: LifeBuoy,
+    label: "HR Help Desk",
+    link: "/workspace/helpdesk",
+  },
+
+  // §4.15 — the reference material and company property an employee needs
+  // access to, rather than a person-shaped record.
+  {
+    group: "Knowledge & Resources",
+    icon: BookOpen,
+    label: "Knowledge Base",
+    link: "/workspace/knowledge",
   },
   {
-    group: "Operations",
+    group: "Knowledge & Resources",
     icon: Library,
     label: "Documents & Compliance",
     link: "/operations/documents",
   },
   {
-    group: "Operations",
+    group: "Knowledge & Resources",
     icon: FileText,
     label: "Contracts",
     link: "/operations/contracts",
   },
   {
-    group: "Operations",
-    icon: TrendingUpDown,
-    label: "Reports & Analytics",
-    link: "/operations/reports",
+    group: "Knowledge & Resources",
+    icon: Package,
+    label: "Asset Management",
+    link: "/operations/assets",
   },
 
   {
@@ -289,23 +319,32 @@ export const routes: Route[] = [
   },
   {
     group: "Engagement",
-    icon: LifeBuoy,
-    label: "HR Help Desk",
-    link: "/workspace/helpdesk",
-  },
-
-  {
-    group: "Engagement",
     icon: UsersRound,
     label: "Community",
     link: "/workspace/community",
   },
 
+  // Reports sat under "Operations" next to Assets and Contracts, which said
+  // nothing about what it is. It is the only reporting surface, so it gets
+  // named as one.
+  {
+    group: "Insights",
+    icon: TrendingUpDown,
+    label: "Reports & Analytics",
+    link: "/operations/reports",
+  },
+
   {
     group: "Admin",
     icon: ShieldCheck,
-    label: "Access Levels",
+    label: "Roles & Permissions",
     link: "/admin/access-levels",
+  },
+  {
+    group: "Admin",
+    icon: UserCog,
+    label: "User Management",
+    link: "/admin/users",
   },
   {
     group: "Admin",

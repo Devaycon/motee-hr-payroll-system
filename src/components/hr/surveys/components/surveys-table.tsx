@@ -275,6 +275,7 @@ export function SurveysTable({
       </div>
 
       <DataTable
+        exportTitle="Surveys"
         columns={columns}
         data={filtered}
         getRowId={(s) => s.id}

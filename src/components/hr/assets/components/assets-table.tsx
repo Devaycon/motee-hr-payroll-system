@@ -346,6 +346,7 @@ export function AssetsTable({
       </div>
 
       <DataTable
+        exportTitle="Assets"
         columns={columns}
         data={filtered}
         getRowId={(a) => a.id}

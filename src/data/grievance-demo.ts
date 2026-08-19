@@ -64,6 +64,67 @@ export const CASE_TYPE_CONFIG: Record<CaseComplaintType, Style> = {
     bg: "bg-sky-50 dark:bg-sky-950/40",
     border: "border-sky-200 dark:border-sky-800",
   },
+  // Client feedback §5.1.
+  bullying_harassment: {
+    label: "Bullying & Harassment",
+    color: "text-red-700 dark:text-red-400",
+    bg: "bg-red-50 dark:bg-red-950/40",
+    border: "border-red-200 dark:border-red-800",
+  },
+  absence_management: {
+    label: "Absence Management",
+    color: "text-teal-700 dark:text-teal-400",
+    bg: "bg-teal-50 dark:bg-teal-950/40",
+    border: "border-teal-200 dark:border-teal-800",
+  },
+  performance_improvement: {
+    label: "Performance Improvement",
+    color: "text-blue-700 dark:text-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-950/40",
+    border: "border-blue-200 dark:border-blue-800",
+  },
+  capability: {
+    label: "Capability",
+    color: "text-cyan-700 dark:text-cyan-400",
+    bg: "bg-cyan-50 dark:bg-cyan-950/40",
+    border: "border-cyan-200 dark:border-cyan-800",
+  },
+  whistleblowing: {
+    label: "Whistleblowing",
+    color: "text-purple-700 dark:text-purple-400",
+    bg: "bg-purple-50 dark:bg-purple-950/40",
+    border: "border-purple-200 dark:border-purple-800",
+  },
+  health_safety: {
+    label: "Health & Safety",
+    color: "text-lime-700 dark:text-lime-400",
+    bg: "bg-lime-50 dark:bg-lime-950/40",
+    border: "border-lime-200 dark:border-lime-800",
+  },
+  equality_diversity: {
+    label: "Equality & Diversity",
+    color: "text-fuchsia-700 dark:text-fuchsia-400",
+    bg: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
+    border: "border-fuchsia-200 dark:border-fuchsia-800",
+  },
+  appeal: {
+    label: "Appeal",
+    color: "text-slate-700 dark:text-slate-400",
+    bg: "bg-slate-50 dark:bg-slate-900/40",
+    border: "border-slate-200 dark:border-slate-700",
+  },
+  investigation: {
+    label: "Investigation",
+    color: "text-amber-700 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-950/40",
+    border: "border-amber-200 dark:border-amber-800",
+  },
+  safeguarding: {
+    label: "Safeguarding",
+    color: "text-rose-700 dark:text-rose-400",
+    bg: "bg-rose-50 dark:bg-rose-950/40",
+    border: "border-rose-200 dark:border-rose-800",
+  },
 };
 
 export const CASE_STAGE_CONFIG: Record<CaseStage, Style & { step: number }> = {
@@ -156,6 +217,13 @@ export const CONFIDENTIALITY_CONFIG: Record<ConfidentialityLevel, Style> = {
     bg: "bg-red-50 dark:bg-red-950/40",
     border: "border-red-200 dark:border-red-800",
   },
+  // §5.8 — the most restrictive level: named individuals only.
+  restricted: {
+    label: "Restricted",
+    color: "text-purple-700 dark:text-purple-400",
+    bg: "bg-purple-50 dark:bg-purple-950/40",
+    border: "border-purple-200 dark:border-purple-800",
+  },
 };
 
 export const CASE_OUTCOME_CONFIG: Record<CaseOutcome, Style> = {
@@ -224,6 +292,37 @@ export const CASE_OUTCOME_CONFIG: Record<CaseOutcome, Style> = {
     color: "text-emerald-700 dark:text-emerald-400",
     bg: "bg-emerald-50 dark:bg-emerald-950/40",
     border: "border-emerald-200 dark:border-emerald-800",
+  },
+  // §5.6 — the client's standard outcome list.
+  no_case_to_answer: {
+    label: "No Case to Answer",
+    color: "text-slate-600 dark:text-slate-400",
+    bg: "bg-slate-50 dark:bg-slate-900/40",
+    border: "border-slate-200 dark:border-slate-700",
+  },
+  informal_resolution: {
+    label: "Informal Resolution",
+    color: "text-emerald-700 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-950/40",
+    border: "border-emerald-200 dark:border-emerald-800",
+  },
+  mediation: {
+    label: "Mediation",
+    color: "text-sky-700 dark:text-sky-400",
+    bg: "bg-sky-50 dark:bg-sky-950/40",
+    border: "border-sky-200 dark:border-sky-800",
+  },
+  training_required: {
+    label: "Training Required",
+    color: "text-blue-700 dark:text-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-950/40",
+    border: "border-blue-200 dark:border-blue-800",
+  },
+  policy_update: {
+    label: "Policy Update",
+    color: "text-violet-700 dark:text-violet-400",
+    bg: "bg-violet-50 dark:bg-violet-950/40",
+    border: "border-violet-200 dark:border-violet-800",
   },
 };
 

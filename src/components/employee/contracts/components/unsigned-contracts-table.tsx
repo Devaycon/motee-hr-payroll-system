@@ -120,6 +120,7 @@ export function UnsignedContractsTable({
 
   return (
     <DataTable
+      exportTitle="Unsigned Contracts"
       columns={columns}
       data={contracts}
       getRowId={(c) => c.id}

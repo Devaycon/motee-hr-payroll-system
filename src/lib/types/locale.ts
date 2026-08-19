@@ -44,6 +44,12 @@ export interface LocaleRole {
   permissions: string[];
   linkedEmployeeId: string;
   linkedAccessLevelId: string;
+  /**
+   * §1.13 — extra access levels granted on top of `linkedAccessLevelId`, e.g.
+   * an HR Manager who also holds the Payroll Approver role. Absent for the
+   * single-role case, which is still the norm.
+   */
+  additionalAccessLevelIds?: string[];
   credentials: LocaleRoleCredentials;
 }
 
@@ -227,12 +233,14 @@ export interface LocalePayChange {
 }
 
 export interface LocaleHeadcountSnapshot {
-  month: string;
+  /** ISO date the snapshot was taken ("2025-06-18"), one per month. */
+  date: string;
   total: number;
   joiners?: number;
   leavers?: number;
-  attrition?: number;
+  attritionPct?: number;
   byDepartment?: Record<string, number>;
+  byEmploymentType?: Record<string, number>;
 }
 
 export interface LocaleAttendanceEntry {
@@ -324,7 +332,15 @@ export interface LocaleBundle {
 export interface AuthUser {
   roleId: string;
   roleName: string;
+  /** The user's primary role. Always present. */
   accessLevelId: string;
+  /**
+   * §1.13 — every access level the user holds, including the primary one.
+   * Permissions are the union of these; the data scope is the narrowest of
+   * them. Kept alongside `accessLevelId` rather than replacing it so existing
+   * readers of the singular field keep working.
+   */
+  accessLevelIds?: string[];
   name: string;
   email: string;
   employeeId: string;

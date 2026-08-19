@@ -8,7 +8,7 @@ export function SatisfactionCard() {
   const { data, loading } = useEmploymentTypeBreakdown();
 
   if (loading || !data) {
-    return <Skeleton className="col-span-2 h-72 w-full rounded-xl" />;
+    return <Skeleton className="h-72 w-full rounded-xl" />;
   }
 
   // Summary only — the slice labels and Apex legend already name every type.
@@ -18,7 +18,6 @@ export function SatisfactionCard() {
     <DonutChart
       title="Employment Type Distribution"
       description="Employee distribution by employment type"
-      className="col-span-2"
       height={260}
       centerLabel="Total Employees"
       viewMoreHref="/operations/reports/employees"

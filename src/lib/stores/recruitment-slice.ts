@@ -15,11 +15,27 @@ import type {
   RequisitionStatus,
   RequisitionTemplate,
   Scorecard,
+  ScorecardRecommendation,
+  WorkMode,
 } from "@/src/lib/types/recruitment";
 import { defaultFlow } from "@/src/data/recruitment-demo";
 
-/** Bump to force a one-time reseed of recruitment demo data on next load. */
-export const SEED_VERSION = 3;
+/**
+ * Bump to force a one-time reseed of recruitment demo data on next load.
+ *
+ * v5 flattened the pipeline to Applicant → Scheduled for Interview →
+ * Interviewed → Offer → Hired. Buckets persisted at v4 may hold candidates in
+ * `shortlisted` or `talent_pool`, which no longer have tabs, so they are
+ * discarded and reseeded rather than left stranded.
+ *
+ * v6 reseeds so every candidate satisfies the gates for the stage they are in:
+ * scored from `interviewed` onwards, and holding an offer at `offer`.
+ *
+ * v7 adds the §7.19 job advert. The bundles' `workMode` and salary currency
+ * were being read past and dropped, so buckets seeded at v6 have no advert at
+ * all and would export a job listing missing its most important fields.
+ */
+export const SEED_VERSION = 7;
 
 export interface RecruitmentBucket {
   requisitions: JobRequisition[];
@@ -69,25 +85,51 @@ function normalizeSource(s?: string): string {
   return "careers_page";
 }
 
-/** Map a raw/granular stage string onto the live 3-stage pipeline set. */
+/**
+ * Map a raw/granular stage string onto the live pipeline set.
+ *
+ * `shortlisted` and `talent_pool` were removed when the pipeline was flattened.
+ * They fall through to the entry stage rather than being dropped, so anyone
+ * parked in one reappears as an applicant instead of vanishing into a stage
+ * that no longer has a tab.
+ */
 function mapStage(s?: string): RecruitmentStageType {
   switch (s) {
     case "interview":
     case "interview_1":
     case "interview_2":
     case "assessment":
-    case "offer":
       return "interview";
+    case "interviewed":
+    case "interview_complete":
+      return "interviewed";
+    // The seed distinguishes offer from interview; folding them together lost
+    // the offer stage's whole population on import.
+    case "offer":
+      return "offer";
     case "hired":
       return "hired";
     default:
-      // applied, screening, talent_pool, shortlisted, rejected, unknown → entry
+      // applied, screening, shortlisted, talent_pool, rejected, unknown → entry
       return "applicants";
   }
 }
 
 function deriveStatus(s?: string): CandidateStatus {
   return s === "rejected" ? "rejected" : "active";
+}
+
+/**
+ * §7.19 — the bundles say "hybrid" / "onsite" / "remote"; job boards want the
+ * canonical three. Falls back to reading the employment type, which carries a
+ * "remote" member that is really a work mode.
+ */
+function mapWorkMode(raw?: string, employmentType?: string): WorkMode {
+  const v = (raw ?? "").toLowerCase().replace(/[\s_-]/g, "");
+  if (v === "remote" || v === "telecommute") return "remote";
+  if (v === "hybrid") return "hybrid";
+  if (v === "onsite" || v === "office" || v === "inoffice") return "on_site";
+  return employmentTypeFromName(employmentType) === "remote" ? "remote" : "on_site";
 }
 
 function mapReqStatus(s?: string): RequisitionStatus {
@@ -184,7 +226,9 @@ interface RawJobPosting {
   status?: string;
   openings?: number;
   location?: string;
-  salaryRange?: { min?: number; max?: number };
+  /** §7.19 — present in the bundles all along, but previously discarded. */
+  workMode?: string;
+  salaryRange?: { min?: number; max?: number; currency?: string };
   description?: string;
   postedAt?: string;
   closingDate?: string;
@@ -207,6 +251,63 @@ interface RawCandidate {
   resumeUrl?: string;
   rating?: number | null;
   notes?: string;
+}
+
+interface RawInterview {
+  id?: string;
+  candidateId?: string;
+  jobPostingId?: string;
+  round?: string;
+  scheduledAt?: string;
+  interviewerIds?: string[];
+  status?: string;
+  feedback?: string;
+}
+
+interface RawOffer {
+  id?: string;
+  candidateId?: string;
+  jobPostingId?: string;
+  amount?: number;
+  currency?: string;
+  extendedAt?: string;
+  status?: string;
+  startDate?: string;
+}
+
+/**
+ * How a round is run and how long it takes. The seed only names the round, but
+ * a schedule with no duration can't be laid out on a calendar or checked for
+ * clashes, so infer both from the round name.
+ */
+function interviewShapeFor(round: string): {
+  mode: Interview["mode"];
+  durationMins: number;
+} {
+  const r = round.toLowerCase();
+  if (r.includes("screen")) return { mode: "phone", durationMins: 30 };
+  if (r.includes("final") || r.includes("onsite") || r.includes("panel"))
+    return { mode: "onsite", durationMins: 60 };
+  if (r.includes("technical") || r.includes("design"))
+    return { mode: "video", durationMins: 60 };
+  return { mode: "video", durationMins: 45 };
+}
+
+function mapInterviewStatus(s?: string): Interview["status"] {
+  return s === "completed" ? "completed" : s === "cancelled" ? "cancelled" : "scheduled";
+}
+
+/** The seed calls an outstanding offer "pending"; the model calls it "sent". */
+function mapOfferStatus(s?: string): CandidateOffer["status"] {
+  switch (s) {
+    case "accepted":
+      return "accepted";
+    case "rejected":
+    case "declined":
+      return "rejected";
+    default:
+      return "sent";
+  }
 }
 
 // ── Synthetic demo applicants (so every requisition has a testable pipeline) ──
@@ -239,8 +340,14 @@ function makeSyntheticCandidate(
   const skillSource = req.requiredSkills.length ? req.requiredSkills : SKILL_POOL;
   const skills = skillSource.slice(0, 3 + (h % 2));
 
+  // Seeded candidates must satisfy the same gates a real one would have passed
+  // to reach their stage. Scoring someone still sitting in `interview` implied
+  // they had been rated before the interview happened; leaving `interviewed`
+  // and `offer` unscored put candidates in stages they could not legally have
+  // reached. Both read as bugs in the pipeline rather than in the fixture.
+  const SCORED_FROM: RecruitmentStageType[] = ["interviewed", "offer", "hired"];
   const scorecards: Scorecard[] = [];
-  if ((stage === "interview" || stage === "hired") && status !== "rejected") {
+  if (SCORED_FROM.includes(stage) && status !== "rejected") {
     const overall = 3 + (h % 3);
     scorecards.push({
       id: `${id}-SC`,
@@ -253,15 +360,28 @@ function makeSyntheticCandidate(
       ],
       overall,
       recommendation: overall >= 4 ? "yes" : "no",
+      comment: "Structured interview across the required skills.",
     });
   }
 
   const offers: CandidateOffer[] = [];
+  // Anyone at `hired` accepted; anyone at `offer` is still waiting to answer,
+  // which is what that stage means.
   if (stage === "hired") {
     offers.push({
       id: `${id}-OF`,
       at: createdAt,
       status: "accepted",
+      salary: req.salaryMin,
+      startDate: req.targetStartDate,
+      respondedAt: createdAt,
+      respondedBy: req.hiringManager,
+    });
+  } else if (stage === "offer" && status !== "rejected") {
+    offers.push({
+      id: `${id}-OF`,
+      at: createdAt,
+      status: "sent",
       salary: req.salaryMin,
       startDate: req.targetStartDate,
     });
@@ -307,21 +427,35 @@ function syntheticForRequisition(
   const enabled = new Set(
     (req.flow?.stages ?? []).filter((s) => s.enabled).map((s) => s.type),
   );
-  const base = { applicants: 5, shortlisted: 3, interview: 2, hired: 1 };
+  const base = {
+    applicants: 5,
+    interview: 2,
+    interviewed: 2,
+    offer: 1,
+    hired: 1,
+  };
   let applicants = base.applicants;
-  if (!enabled.has("shortlisted")) applicants += base.shortlisted;
   if (!enabled.has("interview")) applicants += base.interview;
   const counts: Record<RecruitmentStageType, number> = {
     applicants,
-    shortlisted: enabled.has("shortlisted") ? base.shortlisted : 0,
     interview: enabled.has("interview") ? base.interview : 0,
+    // A flow stored before a stage existed has no entry for it, so treat a
+    // missing entry as enabled rather than as switched off.
+    interviewed: enabled.has("interviewed") || !enabled.size ? base.interviewed : 0,
+    offer: enabled.has("offer") || !enabled.size ? base.offer : 0,
     hired: base.hired,
   };
 
   const out: Candidate[] = [];
   let n = 1;
   (
-    ["applicants", "shortlisted", "interview", "hired"] as RecruitmentStageType[]
+    [
+      "applicants",
+      "interview",
+      "interviewed",
+      "offer",
+      "hired",
+    ] as RecruitmentStageType[]
   ).forEach((st) => {
     for (let k = 0; k < counts[st]; k++) {
       out.push(makeSyntheticCandidate(req, n++, st, "active", createdAt));
@@ -394,12 +528,52 @@ export function seedBucketFromBundle(bundle: LocaleBundle): RecruitmentBucket {
   const employeesById = new Map(bundle.employees.map((e) => [e.id, e]));
   const departmentsById = new Map(bundle.departments.map((d) => [d.id, d]));
   const rec = (bundle as unknown as {
-    recruitment?: { jobPostings?: RawJobPosting[]; candidates?: RawCandidate[] };
+    recruitment?: {
+      jobPostings?: RawJobPosting[];
+      candidates?: RawCandidate[];
+      interviews?: RawInterview[];
+      offers?: RawOffer[];
+    };
   }).recruitment ?? {};
   const postings = rec.jobPostings ?? [];
   const rawCandidates = rec.candidates ?? [];
+  const rawInterviews = rec.interviews ?? [];
+  const rawOffers = rec.offers ?? [];
+
+  // The bundle's offers are the real ones; synthesising an offer for every
+  // hire (as this used to) overwrote the actual amounts and dates.
+  const offersByCandidate = new Map<string, CandidateOffer[]>();
+  for (const o of rawOffers) {
+    if (!o.candidateId) continue;
+    const list = offersByCandidate.get(o.candidateId) ?? [];
+    list.push({
+      id: o.id ?? uid("OF"),
+      at: o.extendedAt ?? "2026-01-01",
+      status: mapOfferStatus(o.status),
+      salary: o.amount,
+      startDate: o.startDate,
+    });
+    offersByCandidate.set(o.candidateId, list);
+  }
+  // `latestOffer()` reads the last element, so keep each list oldest-first.
+  for (const list of offersByCandidate.values()) {
+    list.sort((a, b) => a.at.localeCompare(b.at));
+  }
 
   const priorities = ["low", "medium", "high", "urgent"] as const;
+
+  // §7.19 — the employer's own address is the sensible default advert location
+  // when a posting only carries a city name.
+  const hq = (bundle as unknown as {
+    companyProfile?: {
+      headquarters?: {
+        city?: string;
+        region?: string;
+        postalCode?: string;
+        country?: string;
+      };
+    };
+  }).companyProfile?.headquarters;
 
   const requisitions: JobRequisition[] = postings.map((p, i) => {
     const dept = p.departmentId ? departmentsById.get(p.departmentId) : null;
@@ -426,6 +600,31 @@ export function seedBucketFromBundle(bundle: LocaleBundle): RecruitmentBucket {
       createdAt: p.postedAt ?? bundle.tenant.createdAt.slice(0, 10),
       requisitionNumber: `REQ-${String(i + 1).padStart(4, "0")}`,
       flow: defaultFlow(),
+      advert: {
+        workMode: mapWorkMode(p.workMode, p.employmentType),
+        // The HQ's region and postcode only belong to a posting in the HQ's
+        // own city — stamping "Lagos State, 101241" onto a role in Enugu would
+        // put a wrong address on a public advert, which is worse than an
+        // incomplete one. Country is safe to carry either way.
+        locations: [
+          (() => {
+            const city = p.location ?? hq?.city ?? "";
+            const atHq = !!hq?.city && city.toLowerCase() === hq.city.toLowerCase();
+            return {
+              city,
+              region: atHq ? hq?.region : undefined,
+              postalCode: atHq ? hq?.postalCode : undefined,
+              country: hq?.country ?? bundle.tenant.country,
+            };
+          })(),
+        ],
+        salaryCurrency: p.salaryRange?.currency ?? bundle.tenant.currency,
+        payPeriod: "year",
+        // Demo bands are shown: these are sample adverts, and a hidden band
+        // would make the export look broken rather than deliberate.
+        publishSalary: true,
+        apply: { mode: "internal" },
+      },
     };
   });
 
@@ -471,8 +670,10 @@ export function seedBucketFromBundle(bundle: LocaleBundle): RecruitmentBucket {
       });
     }
 
-    const offers: CandidateOffer[] = [];
-    if (stage === "hired") {
+    // Real offers from the bundle win; fall back to a synthetic acceptance so
+    // a hire imported without one still satisfies the offer gate.
+    const offers: CandidateOffer[] = offersByCandidate.get(id) ?? [];
+    if (!offers.length && stage === "hired") {
       offers.push({
         id: `${id}-OF1`,
         at: c.updatedAt ?? "2026-01-01",
@@ -531,10 +732,32 @@ export function seedBucketFromBundle(bundle: LocaleBundle): RecruitmentBucket {
     syntheticForRequisition(r, createdAt),
   );
 
+  const candidateNames = new Map(candidates.map((c) => [c.id, c.name]));
+  const interviews: Interview[] = rawInterviews.map((iv, i) => {
+    const round = iv.round ?? "Interview";
+    const { mode, durationMins } = interviewShapeFor(round);
+    const panel = iv.interviewerIds ?? [];
+    return {
+      id: iv.id ?? `INT-${i + 1}`,
+      candidateId: iv.candidateId ?? "",
+      candidateName: candidateNames.get(iv.candidateId ?? "") ?? "—",
+      requisitionId: iv.jobPostingId ?? "",
+      round,
+      scheduledAt: iv.scheduledAt ?? createdAt,
+      durationMins,
+      mode,
+      panel,
+      panelNames: panel.map(
+        (id) => employeesById.get(id)?.fullName ?? id,
+      ),
+      status: mapInterviewStatus(iv.status),
+    };
+  });
+
   return {
     requisitions,
     candidates: [...candidates, ...synthetic],
-    interviews: [],
+    interviews,
     templates: DEFAULT_TEMPLATES,
     seedVersion: SEED_VERSION,
   };
@@ -682,6 +905,97 @@ const recruitmentSlice = createSlice({
         }
       }
     },
+    /**
+     * §7.18 — record an offer against a candidate. `Candidate.offers` already
+     * existed but nothing ever wrote to it, so the offer/accept/decline round
+     * trip happened entirely outside the system.
+     */
+    sendOffer(
+      state,
+      action: PayloadAction<{
+        country: string;
+        candidateId: string;
+        salary?: number;
+        startDate?: string;
+        notes?: string;
+      }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      const c = b.candidates.find((x) => x.id === action.payload.candidateId);
+      if (!c) return;
+      const at = new Date().toISOString().slice(0, 10);
+      c.offers.push({
+        id: `OF-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        at,
+        status: "sent",
+        salary: action.payload.salary,
+        startDate: action.payload.startDate,
+        notes: action.payload.notes,
+      });
+      c.updatedAt = at;
+    },
+
+    /**
+     * §7.18 — the candidate's answer. Declining rejects them outright: an
+     * offer turned down is the end of that pipeline, not a state to sit in.
+     *
+     * The offer conversation itself happens over email. This records the
+     * outcome, which is what gates `hired` and what anyone auditing the hire
+     * later actually needs. `at` is left as the date the offer was *sent* —
+     * overwriting it with the response date lost how long the candidate took
+     * to answer, which is the one thing the pair of dates is good for.
+     */
+    respondToOffer(
+      state,
+      action: PayloadAction<{
+        country: string;
+        candidateId: string;
+        accepted: boolean;
+        by?: string;
+        note?: string;
+      }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      const c = b.candidates.find((x) => x.id === action.payload.candidateId);
+      if (!c) return;
+      const latest = c.offers.at(-1);
+      if (!latest) return;
+      const at = new Date().toISOString().slice(0, 10);
+      latest.status = action.payload.accepted ? "accepted" : "rejected";
+      latest.respondedAt = at;
+      latest.respondedBy = action.payload.by;
+      latest.responseNote = action.payload.note?.trim() || undefined;
+      if (!action.payload.accepted) {
+        c.status = "rejected";
+        c.rejectionReason = "Declined offer";
+        c.rejectedAt = at;
+      }
+      c.updatedAt = at;
+    },
+
+    /**
+     * §7.18 — links the candidate to the employee record created from them,
+     * so the Applicant → Offer → Hired → Onboarding → Employee chain can be
+     * followed in either direction.
+     */
+    linkEmployeeRecord(
+      state,
+      action: PayloadAction<{
+        country: string;
+        candidateId: string;
+        employeeId: string;
+      }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      const c = b.candidates.find((x) => x.id === action.payload.candidateId);
+      if (!c) return;
+      c.createdEmployeeId = action.payload.employeeId;
+      c.updatedAt = new Date().toISOString().slice(0, 10);
+    },
+
     setGateProgress(
       state,
       action: PayloadAction<{
@@ -732,32 +1046,10 @@ const recruitmentSlice = createSlice({
         }
       }
     },
-    addOffer(
-      state,
-      action: PayloadAction<{
-        country: string;
-        candidateId: string;
-        offer: CandidateOffer;
-      }>,
-    ) {
-      const b = state.byCountry[action.payload.country];
-      const c = b?.candidates.find((x) => x.id === action.payload.candidateId);
-      if (c) c.offers.unshift(action.payload.offer);
-    },
-    setOfferStatus(
-      state,
-      action: PayloadAction<{
-        country: string;
-        candidateId: string;
-        offerId: string;
-        status: CandidateOffer["status"];
-      }>,
-    ) {
-      const b = state.byCountry[action.payload.country];
-      const c = b?.candidates.find((x) => x.id === action.payload.candidateId);
-      const o = c?.offers.find((x) => x.id === action.payload.offerId);
-      if (o) o.status = action.payload.status;
-    },
+    // `addOffer`/`setOfferStatus` used to sit here as a second, incompatible
+    // offer path: they unshifted (so `latestOffer()` read the oldest offer)
+    // and changed nothing else, leaving a candidate who had accepted stuck at
+    // the offer stage. Everything now goes through sendOffer/respondToOffer.
 
     // ── Interviews ──
     scheduleInterview(
@@ -797,39 +1089,59 @@ const recruitmentSlice = createSlice({
       if (iv) iv.status = action.payload.status;
     },
     /**
-     * Bulk-complete the interviews for a set of candidates and record a single
-     * interview score on each (via a one-criterion scorecard, which feeds the
-     * candidate's Score column and the drawer's Score tab).
+     * Record the outcome of an interview: mark the session completed, write a
+     * scorecard, and move the candidate on.
+     *
+     * Scoring and advancing are one action rather than two dispatches because
+     * the `interview` → `interviewed` gate reads the candidate's score. Split
+     * across two dispatches the caller would be checking a candidate object
+     * captured before the score landed, so the gate would either reject a
+     * candidate who had just been scored or have to be skipped entirely — and a
+     * gate you skip on the happy path is not a gate.
      */
-    completeInterviews(
+    recordInterviewScores(
       state,
       action: PayloadAction<{
         country: string;
-        candidateIds: string[];
-        score: number;
+        entries: {
+          candidateId: string;
+          score: number;
+          comment?: string;
+          recommendation?: ScorecardRecommendation;
+        }[];
         by: string;
+        /** Stage to move the scored candidates into once recorded. */
+        advanceTo?: RecruitmentStageType;
       }>,
     ) {
       const b = state.byCountry[action.payload.country];
       if (!b) return;
       const at = new Date().toISOString().slice(0, 10);
-      const ids = new Set(action.payload.candidateIds);
+      const byId = new Map(
+        action.payload.entries.map((e) => [e.candidateId, e]),
+      );
+
       for (const iv of b.interviews) {
-        if (ids.has(iv.candidateId) && iv.status === "scheduled") {
+        if (byId.has(iv.candidateId) && iv.status === "scheduled") {
           iv.status = "completed";
         }
       }
+
       for (const c of b.candidates) {
-        if (!ids.has(c.id)) continue;
+        const entry = byId.get(c.id);
+        if (!entry) continue;
         c.scorecards.push({
           id: uid("SC"),
           by: action.payload.by,
           at,
-          criteria: [{ label: "Interview", score: action.payload.score }],
-          overall: action.payload.score,
-          recommendation: action.payload.score >= 4 ? "yes" : "no",
+          criteria: [{ label: "Interview", score: entry.score }],
+          overall: entry.score,
+          comment: entry.comment?.trim() || undefined,
+          recommendation:
+            entry.recommendation ?? (entry.score >= 4 ? "yes" : "no"),
         });
         recomputeScore(c);
+        if (action.payload.advanceTo) c.stage = action.payload.advanceTo;
         c.updatedAt = at;
       }
     },
@@ -857,16 +1169,17 @@ export const {
   updateCandidate,
   moveStage,
   setCandidateStatus,
+  sendOffer,
+  respondToOffer,
+  linkEmployeeRecord,
   setGateProgress,
   addScorecard,
   addCommunication,
-  addOffer,
-  setOfferStatus,
   scheduleInterview,
   cancelInterview,
   markReminder,
   setInterviewStatus,
-  completeInterviews,
+  recordInterviewScores,
   addTemplate,
 } = recruitmentSlice.actions;
 

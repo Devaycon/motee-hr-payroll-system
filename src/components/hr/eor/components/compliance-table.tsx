@@ -72,6 +72,7 @@ export function ComplianceTable({ workers, onView }: ComplianceTableProps) {
 
   return (
     <DataTable
+      exportTitle="EOR Compliance"
       columns={columns}
       data={workers}
       getRowId={(w) => w.id}

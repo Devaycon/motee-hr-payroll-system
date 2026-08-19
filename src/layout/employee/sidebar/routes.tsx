@@ -13,6 +13,8 @@ import {
   FolderOpen,
   Plane,
   CalendarPlus,
+  Clock,
+  HeartHandshake,
   LucideIcon,
 } from "lucide-react";
 
@@ -46,6 +48,14 @@ export const routes: Route[] = [
     link: "/profile/my-profile",
   },
   {
+    // §6.23 — its own entry rather than a tab inside My Profile: this is
+    // optional, self-declared and sensitive, not another profile field.
+    group: "Overview",
+    icon: HeartHandshake,
+    label: "Diversity & Inclusion",
+    link: "/profile/diversity",
+  },
+  {
     group: "Overview",
     icon: ClipboardList,
     label: "My Tasks",
@@ -62,6 +72,12 @@ export const routes: Route[] = [
     icon: CheckSquare,
     label: "My Submissions",
     link: "/employee/submissions",
+  },
+  {
+    group: "Overview",
+    icon: Clock,
+    label: "Time & Attendance",
+    link: "/time-off/attendance",
   },
   {
     group: "Overview",

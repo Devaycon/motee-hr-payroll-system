@@ -3,11 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Send, ArrowRightLeft, Pencil, Eye, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Send,
+  ArrowRightLeft,
+  Pencil,
+  Eye,
+  Trash2,
+  ClipboardList,
+  Clock,
+  CheckCircle2,
+} from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { HrStatCardsGrid } from "@/src/components/shared/hr-stat-card";
 import {
   DataTable,
   sortableHeader,
@@ -53,6 +63,29 @@ const STATUS_STYLES: Record<DisplayStatus, string> = {
   Returned: "bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400",
   "Converted to Recruitment": "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
 };
+
+/** The slice a KPI card drills the requisition tabs down to. */
+type CardFilter = "all" | "in_chain" | "approved" | "converted";
+
+const CARD_FILTER_LABELS: Record<Exclude<CardFilter, "all">, string> = {
+  in_chain: "In approval chain",
+  approved: "Approved",
+  converted: "Converted to recruitment",
+};
+
+/** Single source of truth for what each card counts and the tab then shows. */
+function matchesCardFilter(status: DisplayStatus, filter: CardFilter): boolean {
+  switch (filter) {
+    case "in_chain":
+      return status === "Pending Approval" || status === "Returned";
+    case "approved":
+      return status === "Approved";
+    case "converted":
+      return status === "Converted to Recruitment";
+    default:
+      return true;
+  }
+}
 
 const LIFECYCLE_LABELS: Record<RequisitionLifecycle, string> = {
   active: "Active",
@@ -121,21 +154,35 @@ export function RequisitionsPage() {
     };
   }, [approvalById]);
 
+  // Controlled so the KPI cards can drill into a tab, not just a filter.
+  const [activeTab, setActiveTab] = useState("request");
+  /** Drill-down set by the KPI cards; "all" shows every requisition. */
+  const [cardFilter, setCardFilter] = useState<CardFilter>("all");
+
+  /** Drill-down: opens the tab holding these rows and filters to them. */
+  function drillDown(tab: string, filter: CardFilter) {
+    setActiveTab(tab);
+    setCardFilter(filter);
+  }
+
   const requestList = useMemo(
     () =>
       list.filter((r) => {
         const s = displayStatus(r);
-        return s === "Draft" || s === "Pending Approval" || s === "Returned" || s === "Rejected";
+        const inTab =
+          s === "Draft" || s === "Pending Approval" || s === "Returned" || s === "Rejected";
+        return inTab && matchesCardFilter(s, cardFilter);
       }),
-    [list, displayStatus],
+    [list, displayStatus, cardFilter],
   );
   const approvedList = useMemo(
     () =>
       list.filter((r) => {
         const s = displayStatus(r);
-        return s === "Approved" || s === "Converted to Recruitment";
+        const inTab = s === "Approved" || s === "Converted to Recruitment";
+        return inTab && matchesCardFilter(s, cardFilter);
       }),
-    [list, displayStatus],
+    [list, displayStatus, cardFilter],
   );
 
   const stats = useMemo(() => {
@@ -331,23 +378,68 @@ export function RequisitionsPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {[
-          { label: "Total Requisitions", value: stats.total },
-          { label: "In Approval Chain", value: stats.pending },
-          { label: "Approved", value: stats.approved },
-          { label: "Converted", value: stats.converted },
-        ].map((s) => (
-          <Card key={s.label} className="border-border/60">
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className="mt-1 text-2xl font-bold text-foreground">{s.value}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <HrStatCardsGrid
+        columns={4}
+        stats={[
+          {
+            label: "Total Requisitions",
+            value: stats.total,
+            sub: "All raised requisitions",
+            icon: ClipboardList,
+            tone: "blue",
+            active: cardFilter === "all",
+            onClick: () => drillDown("request", "all"),
+          },
+          {
+            label: "In Approval Chain",
+            value: stats.pending,
+            sub: "Awaiting a decision",
+            icon: Clock,
+            tone: "amber",
+            active: cardFilter === "in_chain",
+            onClick: () => drillDown("request", "in_chain"),
+          },
+          {
+            label: "Approved",
+            value: stats.approved,
+            sub: "Cleared to recruit",
+            icon: CheckCircle2,
+            tone: "emerald",
+            active: cardFilter === "approved",
+            onClick: () => drillDown("approved", "approved"),
+          },
+          {
+            label: "Converted",
+            value: stats.converted,
+            sub: "Now a recruitment",
+            icon: ArrowRightLeft,
+            tone: "violet",
+            active: cardFilter === "converted",
+            onClick: () => drillDown("approved", "converted"),
+          },
+        ]}
+      />
 
-      <Tabs defaultValue="request">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">
+              ({requestList.length + approvedList.length})
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← All requisitions
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
             { value: "request", label: `Requested Requisition (${requestList.length})` },
@@ -358,6 +450,7 @@ export function RequisitionsPage() {
 
         <TabsContent value="request" className="mt-5">
           <DataTable
+            exportTitle="Requisitions"
             columns={requestColumns}
             data={requestList}
             getRowId={(r) => r.id}
@@ -369,6 +462,7 @@ export function RequisitionsPage() {
 
         <TabsContent value="approved" className="mt-5">
           <DataTable
+            exportTitle="Requisitions"
             columns={approvedColumns}
             data={approvedList}
             getRowId={(r) => r.id}
