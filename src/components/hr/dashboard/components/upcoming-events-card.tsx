@@ -1,7 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarClock, ChevronRight } from "lucide-react";
+import {
+  AlarmClock,
+  Bell,
+  Cake,
+  CalendarClock,
+  CalendarDays,
+  ChevronRight,
+  GraduationCap,
+  PartyPopper,
+  Plane,
+  type LucideIcon,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -40,6 +51,34 @@ const TYPE_STYLES: Record<string, string> = {
   reminder: "border-sky-500/30 bg-sky-500/10 text-sky-600",
   training: "border-teal-500/30 bg-teal-500/10 text-teal-600",
   meeting: "border-[#7F77DD]/30 bg-[#7F77DD]/10 text-[#7F77DD]",
+};
+
+/**
+ * An icon per event type so the list can be scanned rather than read (client
+ * feedback). Lucide rather than emoji — the rest of the app has no emoji, and
+ * they render inconsistently across platforms.
+ */
+const TYPE_ICONS: Record<string, LucideIcon> = {
+  birthday: Cake,
+  anniversary: PartyPopper,
+  holiday: Plane,
+  leave: Plane,
+  deadline: AlarmClock,
+  reminder: Bell,
+  training: GraduationCap,
+  meeting: CalendarDays,
+};
+
+/** Icon-only colour (no border/background) pulled from the badge tone. */
+const TYPE_ICON_COLORS: Record<string, string> = {
+  birthday: "text-pink-600 dark:text-pink-400",
+  anniversary: "text-amber-600 dark:text-amber-400",
+  holiday: "text-rose-600",
+  leave: "text-rose-600",
+  deadline: "text-orange-600",
+  reminder: "text-sky-600",
+  training: "text-teal-600",
+  meeting: "text-[#7F77DD]",
 };
 
 function relativeLabel(days: number) {
@@ -160,19 +199,25 @@ export function UpcomingEventsCard() {
         ) : (
           <ScrollArea className="max-h-80 pr-2">
             <div className="flex flex-col gap-2">
-              {data.map((e) => (
+              {data.map((e) => {
+                const Icon = TYPE_ICONS[e.type] ?? CalendarDays;
+                const iconColor =
+                  TYPE_ICON_COLORS[e.type] ?? "text-muted-foreground";
+                return (
                 <div
                   key={e.id}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border hover:bg-muted/40 transition-colors"
                 >
-                  <div className="flex flex-col items-center justify-center size-10 shrink-0 rounded-md bg-muted">
-                    <span className="text-sm font-bold text-foreground leading-none">
-                      {new Date(`${e.date}T00:00:00`).getDate()}
-                    </span>
-                    <span className="text-[10px] uppercase text-muted-foreground">
-                      {new Date(`${e.date}T00:00:00`).toLocaleDateString("en-GB", {
-                        month: "short",
-                      })}
+                  <div className="flex flex-col items-center justify-center size-10 shrink-0 rounded-md bg-muted gap-0.5">
+                    <Icon className={cn("size-3.5", iconColor)} aria-hidden />
+                    <span className="text-[11px] font-bold text-foreground leading-none">
+                      {new Date(`${e.date}T00:00:00`).getDate()}{" "}
+                      <span className="font-medium uppercase text-muted-foreground">
+                        {new Date(`${e.date}T00:00:00`).toLocaleDateString(
+                          "en-GB",
+                          { month: "short" },
+                        )}
+                      </span>
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -187,11 +232,12 @@ export function UpcomingEventsCard() {
                     <Badge
                       variant="outline"
                       className={cn(
-                        "text-[10px] capitalize",
+                        "text-[10px] capitalize gap-1",
                         TYPE_STYLES[e.type] ??
                           "border-border bg-muted text-muted-foreground",
                       )}
                     >
+                      <Icon className="size-3" aria-hidden />
                       {e.type}
                     </Badge>
                     <span className="text-[11px] font-medium text-muted-foreground">
@@ -199,7 +245,8 @@ export function UpcomingEventsCard() {
                     </span>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         )}

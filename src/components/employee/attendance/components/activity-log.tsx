@@ -1,26 +1,27 @@
 "use client";
 
-import { LogIn, LogOut, Coffee } from "lucide-react";
+import { Coffee, LogIn, LogOut } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
+import { formatTimeAMPM } from "@/src/lib/utils/format-duration";
 import type { ActivityEvent } from "./types";
 
 interface ActivityLogProps {
   activity: ActivityEvent[];
 }
 
-export function ActivityLog({ activity }: ActivityLogProps) {
-  const iconMap = {
-    clock_in: { icon: LogIn, color: "#1D9E75" },
-    clock_out: { icon: LogOut, color: "#EF4444" },
-    break_start: { icon: Coffee, color: "#F59E0B" },
-    break_end: { icon: Coffee, color: "#7F77DD" },
-  };
+const ICON_MAP = {
+  clock_in: { icon: LogIn, color: "#1D9E75" },
+  clock_out: { icon: LogOut, color: "#EF4444" },
+  break_start: { icon: Coffee, color: "#F59E0B" },
+  break_end: { icon: Coffee, color: "#7F77DD" },
+} as const;
 
+export function ActivityLog({ activity }: ActivityLogProps) {
   return (
     <Card className="flex-1 flex flex-col min-h-0">
       <CardContent className="p-4 flex flex-col gap-2 flex-1 overflow-auto">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-          Activity Log
+          Activity log
         </p>
         {activity.length === 0 ? (
           <p className="text-[11px] text-muted-foreground py-3 text-center">
@@ -29,10 +30,10 @@ export function ActivityLog({ activity }: ActivityLogProps) {
         ) : (
           <div className="flex flex-col">
             {activity.map((ev) => {
-              const { icon: Icon, color } = iconMap[ev.type];
+              const { icon: Icon, color } = ICON_MAP[ev.type];
               return (
                 <div
-                  key={ev.time}
+                  key={`${ev.type}-${ev.at}`}
                   className="flex items-start gap-2.5 py-2 border-b border-border/50 last:border-0"
                 >
                   <div
@@ -45,8 +46,8 @@ export function ActivityLog({ activity }: ActivityLogProps) {
                     <p className="text-[11px] font-medium text-foreground">
                       {ev.label}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {ev.time}
+                    <p className="text-[10px] text-muted-foreground tabular-nums">
+                      {formatTimeAMPM(new Date(ev.at))}
                     </p>
                   </div>
                 </div>

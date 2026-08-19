@@ -26,6 +26,40 @@ export type ExpenseCategory =
   | "training"
   | "other";
 
+/**
+ * A decision taken at one stage of the approval chain. Kept separately from
+ * the history entries because the chain timeline needs to know *which stage*
+ * a decision belongs to, which a flat audit line can't say.
+ */
+export interface ExpenseDecision {
+  id: string;
+  /** Chain stage the decision was taken at. */
+  stageIndex: number;
+  stepId?: string;
+  stageLabel: string;
+  decision: "approved" | "rejected" | "returned";
+  actorName: string;
+  actorEmployeeId?: string;
+  at: string;
+  note?: string;
+  /** The expense_claim chain requires a reviewer signature on approval. */
+  signatureDataUrl?: string;
+}
+
+/** One entry in a claim's audit trail, shown on the claim detail page. */
+export interface ExpenseHistoryEntry {
+  id: string;
+  /** ISO timestamp, or a plain ISO date for entries derived from demo data. */
+  at: string;
+  /** What happened, e.g. "Submitted", "Approved", "Withdrawn". */
+  action: string;
+  /** Who did it — the employee, an approver, or "Finance". */
+  actor?: string;
+  /** The status the claim landed in, when the entry moved it. */
+  toStatus?: ExpenseStatus;
+  note?: string;
+}
+
 export interface ExpenseClaim {
   id: string;
   title: string;
@@ -39,6 +73,70 @@ export interface ExpenseClaim {
   notes?: string;
   /** Receipts and supporting documents attached when the claim was raised. */
   attachments?: FileAttachment[];
+  /** Human-facing claim reference, e.g. EXP-2026-00124. */
+  reference?: string;
+  /** Who the claim sits with (or was decided by) — shown on the detail page. */
+  reviewer?: string;
+  /** Audit trail; absent on seeded claims, which derive one from their status. */
+  history?: ExpenseHistoryEntry[];
+
+  // ── who filed it ──────────────────────────────────────────────────────────
+  // Absent on claims created before the HR review flow existed; backfilled
+  // from the signed-in employee by `attributeSeed`.
+  employeeId?: string;
+  employeeName?: string;
+  employeeInitials?: string;
+  department?: string;
+
+  // ── where it sits in the approval chain ───────────────────────────────────
+  /** Chain stage awaited: -1 = not submitted, >= chain length = fully cleared. */
+  stageIndex?: number;
+  /** Chain the claim entered on, so a mid-flight template edit is detectable. */
+  chainTemplateId?: string;
+  /** Approver resolved for the current stage, snapshotted at each transition. */
+  currentApproverEmployeeId?: string | null;
+  currentApproverName?: string | null;
+  /** One entry per decision taken on the claim. */
+  decisions?: ExpenseDecision[];
+  /**
+   * Sent back for correction. The claim is a `draft` again — "returned" is a
+   * flag rather than a sixth status because a returned claim behaves exactly
+   * like a draft everywhere else (reopen, edit, resubmit, discard).
+   */
+  returned?: boolean;
+  returnedReason?: string;
+}
+
+/**
+ * Id for a newly filed claim. Kept out of the component so the clock is never
+ * read during render (`react-hooks/purity`).
+ */
+export function newExpenseClaimId(): string {
+  return `exp-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+}
+
+/** Human-facing claim reference, e.g. EXP-2026-00124. */
+export function formatExpenseReference(year: string, sequence: number): string {
+  return `EXP-${year}-${String(sequence).padStart(5, "0")}`;
+}
+
+/**
+ * The next free reference for a claim filed on `dateSubmitted`. Sequences run
+ * per year and continue from the highest one already issued, so reopening and
+ * resubmitting never hands out a reference twice.
+ */
+export function buildExpenseReference(
+  claims: ExpenseClaim[],
+  dateSubmitted: string,
+): string {
+  const year = dateSubmitted.slice(0, 4) || String(new Date().getFullYear());
+  const prefix = `EXP-${year}-`;
+  const highest = claims.reduce((max, c) => {
+    if (!c.reference?.startsWith(prefix)) return max;
+    const seq = Number(c.reference.slice(prefix.length));
+    return Number.isFinite(seq) && seq > max ? seq : max;
+  }, 0);
+  return formatExpenseReference(year, highest + 1);
 }
 
 /** Common payment currencies an employee may file an expense in. */
@@ -101,6 +199,7 @@ export const EXPENSE_STATUS_STYLES: Record<ExpenseStatus, string> = {
 export const EMPLOYEE_EXPENSES: ExpenseClaim[] = [
   {
     id: "exp-1",
+    reference: "EXP-2026-00007",
     title: "Client visit — Lagos to Abuja flight",
     category: "travel",
     amount: 185000,
@@ -108,18 +207,22 @@ export const EMPLOYEE_EXPENSES: ExpenseClaim[] = [
     status: "reimbursed",
     merchant: "Air Peace",
     notes: "Return economy ticket for Q2 client review.",
+    reviewer: "Adaeze Nwosu",
   },
   {
     id: "exp-2",
+    reference: "EXP-2026-00006",
     title: "Team lunch with new hires",
     category: "meals",
     amount: 42500,
     dateSubmitted: "2026-04-15",
     status: "approved",
     merchant: "The Yellow Chilli",
+    reviewer: "Adaeze Nwosu",
   },
   {
     id: "exp-3",
+    reference: "EXP-2026-00005",
     title: "Hotel stay — onboarding workshop",
     category: "accommodation",
     amount: 96000,
@@ -127,27 +230,33 @@ export const EMPLOYEE_EXPENSES: ExpenseClaim[] = [
     status: "submitted",
     merchant: "Radisson Blu",
     notes: "Two nights during the facilitator workshop.",
+    reviewer: "Adaeze Nwosu",
   },
   {
     id: "exp-4",
+    reference: "EXP-2026-00004",
     title: "Noise-cancelling headphones",
     category: "equipment",
     amount: 78000,
     dateSubmitted: "2026-04-10",
     status: "approved",
     merchant: "Slot Systems",
+    reviewer: "Adaeze Nwosu",
   },
   {
     id: "exp-5",
+    reference: "EXP-2026-00003",
     title: "Design software annual licence",
     category: "software",
     amount: 132000,
     dateSubmitted: "2026-04-08",
     status: "submitted",
     merchant: "Figma",
+    reviewer: "Adaeze Nwosu",
   },
   {
     id: "exp-6",
+    reference: "EXP-2026-00002",
     title: "Project management certification",
     category: "training",
     amount: 210000,
@@ -155,15 +264,18 @@ export const EMPLOYEE_EXPENSES: ExpenseClaim[] = [
     status: "rejected",
     merchant: "Coursera",
     notes: "Out of this quarter's L&D budget.",
+    reviewer: "Adaeze Nwosu",
   },
   {
     id: "exp-7",
+    reference: "EXP-2026-00001",
     title: "Airport taxi & parking",
     category: "travel",
     amount: 15500,
     dateSubmitted: "2026-04-03",
     status: "reimbursed",
     merchant: "Bolt",
+    reviewer: "Adaeze Nwosu",
   },
   {
     id: "exp-8",

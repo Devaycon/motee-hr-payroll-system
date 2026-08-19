@@ -1930,7 +1930,7 @@ function WorkScheduleTable({
   return (
     <div className="flex flex-col gap-2">
       {/* Table — sm and up */}
-      <div className="hidden sm:block overflow-x-auto rounded-xl border border-border">
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
           <caption className="sr-only">
             Weekly working pattern: start time, end time, unpaid break and paid hours

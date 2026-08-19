@@ -16,6 +16,106 @@ export type RequisitionEmploymentType = EmploymentType;
 
 export type HiringPriority = "low" | "medium" | "high" | "urgent";
 
+// ── Job advert (the board-facing half of a requisition) ──────────────────────
+/**
+ * §7.19 — everything an external job board asks for that the internal
+ * requisition never needed.
+ *
+ * This is a separate object rather than more fields on {@link JobRequisition}
+ * for one reason: it makes "what may be published" a type instead of a
+ * convention. The exporter whitelists this object plus a short list of named
+ * base fields, so pipeline metrics, the hiring manager, the approval chain,
+ * stage gates and quiz answer keys are internal *by construction* — a new
+ * field added to the requisition cannot leak onto a job advert by accident.
+ */
+
+/**
+ * Where the work physically happens. Deliberately separate from
+ * {@link RequisitionEmploymentType}, which answers a different question (what
+ * kind of contract). Boards treat them as independent facets: LinkedIn
+ * `workplaceTypes`, Indeed `remotetype`, schema.org `jobLocationType`.
+ */
+export type WorkMode = "on_site" | "hybrid" | "remote";
+
+/** The period a salary band is quoted in — schema.org `baseSalary.unitText`. */
+export type PayPeriod = "hour" | "day" | "week" | "month" | "year";
+
+/** Seniority, using LinkedIn's `experienceLevel` vocabulary. */
+export type ExperienceLevel =
+  | "internship"
+  | "entry"
+  | "associate"
+  | "mid_senior"
+  | "director"
+  | "executive";
+
+/** Highest qualification required — schema.org `educationRequirements`. */
+export type EducationLevel =
+  | "none"
+  | "secondary"
+  | "diploma"
+  | "bachelor"
+  | "master"
+  | "doctorate";
+
+/**
+ * A structured address. Boards need the parts, not one free-text string:
+ * Google for Jobs requires `addressLocality`/`addressCountry`, and Indeed
+ * and LinkedIn both key their location search off discrete city/region fields.
+ */
+export interface JobLocation {
+  streetAddress?: string;
+  city: string;
+  region?: string;
+  postalCode?: string;
+  /** ISO 3166-1 country name or code. */
+  country: string;
+}
+
+/**
+ * How someone applies from an external board. `internal` means the board links
+ * back to our own careers page, which is what schema.org `directApply` asserts.
+ */
+export interface ApplyMethod {
+  mode: "internal" | "external_url" | "email";
+  url?: string;
+  email?: string;
+}
+
+export interface JobAdvert {
+  workMode: WorkMode;
+  /** First entry is the primary location; the rest are alternates. */
+  locations: JobLocation[];
+  /** ISO 4217, e.g. "NGN" / "GBP". */
+  salaryCurrency: string;
+  payPeriod: PayPeriod;
+  /**
+   * Publish the band on the advert. When false the salary is omitted from
+   * every export — an internal band stays internal.
+   */
+  publishSalary: boolean;
+  apply: ApplyMethod;
+  /** What the person will do, kept apart from the general description. */
+  responsibilities?: string;
+  /** Perks and package — schema.org `jobBenefits`. */
+  benefits?: string;
+  experienceLevel?: ExperienceLevel;
+  minYearsExperience?: number;
+  educationLevel?: EducationLevel;
+  /** Free-text job family, e.g. "Engineering" — LinkedIn `jobFunctions`. */
+  jobFunction?: string;
+  /** Industry of the role, which need not match the company's own. */
+  industry?: string;
+  /** Whether the employer will sponsor a work visa for this role. */
+  visaSponsorship?: boolean;
+  /** Shift pattern or hours, e.g. "40 hours/week, Mon–Fri".  */
+  workingHours?: string;
+  /** Fixed-term length, carried over from the source requisition. */
+  contractMonths?: number;
+  /** Equal-opportunity statement printed at the foot of the advert. */
+  eeoStatement?: string;
+}
+
 // ── Application form builder ─────────────────────────────────────────────────
 export type FormFieldType =
   | "short_text"
@@ -52,19 +152,39 @@ export interface ApplicationFormField {
 // ── Recruitment flow (per-requisition pipeline config) ───────────────────────
 /**
  * Closed set of pipeline stages. `applicants` is the entry, `hired` the
- * terminal.
+ * terminal, and every candidate walks the line in order.
  *
- * §7.18 — `offer` sits between interview and hired. Offers were already on the
- * candidate record but had no stage of their own, so the pipeline jumped
- * straight from "interviewed" to "hired" with the offer/accept/decline round
- * trip happening entirely off-system.
+ * The pipeline is deliberately five linear steps with no sidings. Each
+ * transition out of the middle three is gated on something real having been
+ * recorded, which is what stops a candidate arriving at `hired` with no
+ * evidence behind them:
+ *
+ *  - `interview` → `interviewed` requires a scorecard. You cannot rate someone
+ *    you have not yet met, which is why a score is captured on the way *out* of
+ *    "scheduled for interview" rather than being editable while they sit in it.
+ *  - `offer` → `hired` requires an accepted offer. The offer conversation
+ *    itself happens over email; what the system holds is the outcome.
  */
 export type RecruitmentStageType =
   | "applicants"
-  | "shortlisted"
   | "interview"
+  | "interviewed"
   | "offer"
   | "hired";
+
+/**
+ * Stages that existed before the pipeline was flattened. Candidates parked in
+ * one are migrated back to `applicants` on read rather than being stranded in a
+ * stage that no longer renders.
+ */
+export const RETIRED_STAGES = ["shortlisted", "talent_pool"] as const;
+
+/** Normalise a possibly-retired stage value onto the current stage set. */
+export function normaliseStage(stage: string): RecruitmentStageType {
+  return (RETIRED_STAGES as readonly string[]).includes(stage)
+    ? "applicants"
+    : (stage as RecruitmentStageType);
+}
 
 /** What happens to an applicant who fails a stage's entry gate. */
 export type GateFailAction = "stay" | "reject";
@@ -178,6 +298,12 @@ export interface JobRequisition {
   expiryDate?: string;
   /** Close the vacancy automatically once the expiry date passes. */
   autoCloseOnExpiry?: boolean;
+  /**
+   * §7.19 — the board-facing advert. Optional because requisitions created
+   * before this existed (and demo seed rows) simply don't have one; the
+   * exporter degrades to what it can derive and warns about the rest.
+   */
+  advert?: JobAdvert;
 }
 
 /** §7.17 — one thing that should be sorted out before a vacancy goes live. */
@@ -315,6 +441,13 @@ export interface CandidateCommunication {
   by: string;
 }
 
+/**
+ * An offer and what came back.
+ *
+ * The negotiation happens over email — the system does not pretend to own the
+ * conversation. What it owns is the outcome, because that is what gates the
+ * move to `hired` and what anyone reviewing the hire later needs to see.
+ */
 export interface CandidateOffer {
   id: string;
   at: string;
@@ -322,6 +455,11 @@ export interface CandidateOffer {
   salary?: number;
   startDate?: string;
   notes?: string;
+  /** When the candidate's answer was recorded, and by whom. */
+  respondedAt?: string;
+  respondedBy?: string;
+  /** What the candidate said — their words, not a status label. */
+  responseNote?: string;
 }
 
 export interface CandidateAttachment {
@@ -366,6 +504,15 @@ export interface Candidate {
    * chain the client flagged as the biggest gap.
    */
   createdEmployeeId?: string;
+  /**
+   * When the onboarding invite was sent. Stored on the candidate rather than
+   * held in component state so a page reload doesn't make every hire look
+   * un-invited — and so the drawer and the stage table agree.
+   */
+  onboardingInvitedAt?: string;
+  /** Why the candidate was rejected, and when. Blank for active candidates. */
+  rejectionReason?: string;
+  rejectedAt?: string;
 }
 
 /** §7.18 — the candidate's most recent offer, or null if none has been sent. */
@@ -380,6 +527,33 @@ export function latestOffer(candidate: Candidate): CandidateOffer | null {
  */
 export function hasAcceptedOffer(candidate: Candidate): boolean {
   return candidate.offers.some((o) => o.status === "accepted");
+}
+
+/** Their latest offer was turned down — the pipeline ends here, not at hired. */
+export function hasDeclinedOffer(candidate: Candidate): boolean {
+  return latestOffer(candidate)?.status === "rejected";
+}
+
+/**
+ * Has this candidate actually been interviewed and rated?
+ *
+ * A score is the record that an interview happened. Without one there is
+ * nothing to justify moving them towards an offer, so this is what the
+ * `interview` → `interviewed` gate checks.
+ */
+export function hasInterviewScore(candidate: Candidate): boolean {
+  return candidate.scorecards.length > 0 && candidate.score != null;
+}
+
+/**
+ * Whether a stage is far enough along the pipeline for a score to exist.
+ *
+ * Used to decide where the Score column is worth rendering: showing it on
+ * "scheduled for interview" invites someone to rate a candidate they have not
+ * met yet, which is exactly the habit the score gate exists to break.
+ */
+export function stageShowsScore(stage: RecruitmentStageType): boolean {
+  return stage === "interviewed" || stage === "offer" || stage === "hired";
 }
 
 // ── Interviews ────────────────────────────────────────────────────────────--

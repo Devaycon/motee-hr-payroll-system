@@ -1,10 +1,12 @@
 "use client";
 
-import { Clock, LogIn, LogOut, Timer, Coffee, TrendingUp } from "lucide-react";
+import { Clock, Coffee, LogIn, LogOut, MapPin, Timer } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
-import type { ClockState } from "./types";
-import { MY_SCHEDULE, SCHEDULED_HOURS } from "./constants";
-import { formatTimeHHMM, secondsToHHMM, addMinutesToTime } from "./helpers";
+import type { ClockState, DaySchedule } from "@/src/lib/types/attendance";
+import {
+  formatTimeHHMM,
+  secondsToHHMM,
+} from "@/src/lib/utils/format-duration";
 
 interface TodaySummaryProps {
   clockInTime: Date | null;
@@ -13,7 +15,8 @@ interface TodaySummaryProps {
   workedSeconds: number;
   totalBreakSeconds: number;
   expectedEndTime: Date | null;
-  workedHours: number;
+  schedule: DaySchedule | null;
+  locationLabel: string;
 }
 
 export function TodaySummary({
@@ -23,17 +26,18 @@ export function TodaySummary({
   workedSeconds,
   totalBreakSeconds,
   expectedEndTime,
-  workedHours,
+  schedule,
+  locationLabel,
 }: TodaySummaryProps) {
   const rows = [
     {
-      label: "Clock In",
+      label: "Clock in",
       value: clockInTime ? formatTimeHHMM(clockInTime) : "—",
       icon: LogIn,
       color: "#1D9E75",
     },
     {
-      label: "Clock Out",
+      label: "Clock out",
       value: clockOutTime
         ? formatTimeHHMM(clockOutTime)
         : clockState !== "idle"
@@ -43,35 +47,29 @@ export function TodaySummary({
       color: "#EF4444",
     },
     {
-      label: "Time Worked",
+      label: "Time worked",
       value: clockInTime ? secondsToHHMM(workedSeconds) : "—",
       icon: Timer,
       color: "#7F77DD",
     },
     {
-      label: "Break Time",
+      label: "Break taken",
       value: totalBreakSeconds > 0 ? secondsToHHMM(totalBreakSeconds) : "—",
       icon: Coffee,
       color: "#F59E0B",
     },
     {
-      label: "Expected End",
+      label: "Expected end",
       value: expectedEndTime
         ? formatTimeHHMM(expectedEndTime)
-        : addMinutesToTime(
-            MY_SCHEDULE.startTime,
-            SCHEDULED_HOURS * 60 + MY_SCHEDULE.breakMinutes,
-          ),
+        : (schedule?.end ?? "—"),
       icon: Clock,
       color: "#2563EB",
     },
     {
-      label: "Overtime",
-      value:
-        workedHours > SCHEDULED_HOURS
-          ? secondsToHHMM(Math.max(0, workedSeconds - SCHEDULED_HOURS * 3600))
-          : "None",
-      icon: TrendingUp,
+      label: "Location",
+      value: clockState === "idle" ? "—" : locationLabel,
+      icon: MapPin,
       color: "#1D9E75",
     },
   ];
@@ -80,15 +78,15 @@ export function TodaySummary({
     <Card>
       <CardContent className="p-4 flex flex-col gap-3">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Today&apos;s Summary
+          Today&apos;s summary
         </p>
         {rows.map((r) => (
-          <div key={r.label} className="flex items-center justify-between">
+          <div key={r.label} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-              <r.icon className="w-3.5 h-3.5" style={{ color: r.color }} />
+              <r.icon className="w-3.5 h-3.5 shrink-0" style={{ color: r.color }} />
               {r.label}
             </div>
-            <span className="text-xs font-semibold text-foreground tabular-nums">
+            <span className="text-xs font-semibold text-foreground tabular-nums truncate">
               {r.value}
             </span>
           </div>

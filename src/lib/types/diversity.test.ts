@@ -21,10 +21,9 @@ describe("category sets", () => {
     }
   });
 
-  it("does not ask Nigeria for ethnicity or sexual orientation", () => {
+  it("does not ask Nigeria for ethnicity", () => {
     const keys = diversityCategories("ng").map((c) => c.key);
     expect(keys).not.toContain("ethnicity");
-    expect(keys).not.toContain("sexualOrientation");
   });
 
   it("asks the UK for the Equality Act characteristics", () => {
@@ -32,7 +31,13 @@ describe("category sets", () => {
     expect(keys).toContain("ethnicity");
     expect(keys).toContain("disability");
     expect(keys).toContain("religion");
-    expect(keys).toContain("sexualOrientation");
+  });
+
+  it("never asks about sexual orientation, in any jurisdiction", () => {
+    for (const jurisdiction of ["uk", "ng"] as const) {
+      const keys = diversityCategories(jurisdiction).map((c) => c.key);
+      expect(keys).not.toContain("sexualOrientation");
+    }
   });
 
   it("explains why every question is being asked", () => {

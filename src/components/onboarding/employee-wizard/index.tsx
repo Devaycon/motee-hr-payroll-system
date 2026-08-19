@@ -133,6 +133,7 @@ type JoinerForm = Pick<
   | "maritalStatus"
   | "address"
   | "state"
+  | "postalCode"
   | "country"
   | "bankName"
   | "bankAccountNumber"
@@ -177,6 +178,7 @@ const EMPTY_FORM: JoinerForm = {
   maritalStatus: "",
   address: "",
   state: "",
+  postalCode: "",
   country: "",
   bankName: "",
   bankAccountNumber: "",
@@ -211,6 +213,9 @@ const personalSchema = z.object({
   gender: z.string().min(1, "Required"),
   nationality: z.string().min(1, "Required"),
   address: z.string().min(5, "At least 5 characters"),
+  // Required: payroll and any postal correspondence need it, and it was the
+  // one address part the form never asked for (client feedback).
+  postalCode: z.string().trim().min(1, "Required"),
   country: z.string().min(1, "Required"),
 });
 
@@ -261,6 +266,7 @@ const FIELD_LABELS: Record<string, string> = {
   gender: "Gender",
   nationality: "Nationality",
   address: "Address",
+  postalCode: "Postcode",
   country: "Country",
   bankName: "Bank name",
   bankAccountNumber: "Account number",
@@ -569,26 +575,70 @@ export function EmployeeOnboardingWizard({
 
   if (submitted) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center px-4">
+      <div className="relative min-h-screen flex items-center justify-center px-4 py-10">
         <LogoPatternBackground />
         <div className="absolute right-5 top-5 z-20">
           <ThemeToggle />
         </div>
-        <div className="relative z-20 max-w-lg w-full rounded-2xl border border-border bg-card p-8 text-center flex flex-col items-center gap-4">
-          <div className="flex items-center justify-center w-14 h-14 rounded-full bg-primary/10">
-            <PartyPopper className="w-7 h-7 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">All done!</h1>
-          <p className="text-sm text-muted-foreground">
-            Thanks {form.firstName || "there"} — your details have been submitted
-            to the HR team. They&apos;ll be in touch with your next steps before
-            your start date.
-          </p>
-          {derivedPreview && (
-            <div className="w-full text-left">
-              <DerivedSummary record={derivedPreview} />
+        <div className="relative z-20 max-w-xl w-full rounded-2xl border border-border bg-card p-8 flex flex-col gap-5">
+          <div className="flex flex-col items-center gap-3 text-center">
+            {/* Green, not the brand violet — people read green as "succeeded"
+                and blue as "here's some information" (client feedback). */}
+            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500/10">
+              <PartyPopper className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             </div>
+            <h1 className="text-2xl font-bold text-foreground">All done!</h1>
+            <p className="text-sm text-muted-foreground">
+              Thanks{form.firstName ? `, ${form.firstName}` : ""}. Your
+              onboarding information has been successfully submitted to the HR
+              team. We&apos;ll contact you with the next steps before your start
+              date.
+            </p>
+          </div>
+
+          {derivedPreview && (
+            <>
+              <Separator />
+              <DerivedSummary record={derivedPreview} />
+            </>
           )}
+
+          <Separator />
+
+          {/* §2.9 named "what happens next" as a goal; the client asked for it
+              spelled out, so a new starter isn't left wondering. */}
+          <div className="flex flex-col gap-2">
+            <h2 className="text-base font-semibold text-foreground">
+              What happens next?
+            </h2>
+            <ul className="flex flex-col gap-1.5">
+              {[
+                "HR will review your information.",
+                "You'll receive confirmation if any additional information is required.",
+                "Your payroll record will be created before your first payday.",
+                "We'll contact you before your start date if there are any outstanding tasks.",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <Check
+                    className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+                    aria-hidden
+                  />
+                  <span className="text-sm text-muted-foreground">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Heads off the "where are my login details?" support ticket. */}
+          <p className="rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+            Please ensure you have access to the email address you used during
+            onboarding, as future updates and your login credentials will be
+            sent there.
+          </p>
+
+          <p className="text-center text-xs text-muted-foreground">
+            You may now close this page.
+          </p>
         </div>
       </div>
     );
@@ -962,6 +1012,23 @@ export function EmployeeOnboardingWizard({
                     onChange={(e) => set("state", e.target.value)}
                     className="h-10 text-base"
                   />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="joiner-postalCode" className="text-sm">
+                    Postcode <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    {...fieldProps("postalCode")}
+                    value={form.postalCode}
+                    onChange={(e) =>
+                      set("postalCode", e.target.value.toUpperCase())
+                    }
+                    className="h-10 text-base"
+                    placeholder={isUK ? "e.g. SW1A 1AA" : "e.g. 101241"}
+                  />
+                  {err("postalCode") && (
+                    <p id="joiner-postalCode-error" role="alert" className="text-xs text-destructive">{err("postalCode")}</p>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="joiner-country" className="text-sm">
@@ -1426,6 +1493,7 @@ export function EmployeeOnboardingWizard({
                   <ReviewRow label="Gender" value={form.gender} />
                   <ReviewRow label="Nationality" value={form.nationality} />
                   <ReviewRow label="Address" value={form.address} />
+                  <ReviewRow label="Postcode" value={form.postalCode} />
                   <ReviewRow label="Country" value={form.country} />
                 </div>
                 <div>

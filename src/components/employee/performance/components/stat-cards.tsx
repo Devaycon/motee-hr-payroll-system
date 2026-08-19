@@ -44,7 +44,7 @@ export function PerformanceStatCards({
     {
       label: "Active Goals",
       value: activeGoals,
-      sub: "In flight right now",
+      sub: "In progress right now",
       icon: Target,
       tone: "blue",
       ...card("active"),
