@@ -38,12 +38,12 @@ const formatDate = (date: Date) =>
     year: "numeric",
   });
 
-const formatTime = (date: Date) =>
-  date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
+// const formatTime = (date: Date) =>
+//   date.toLocaleTimeString("en-US", {
+//     hour: "2-digit",
+//     minute: "2-digit",
+//     hour12: true,
+//   });
 
 const Navbar = () => {
   const [now, setNow] = useState(new Date());

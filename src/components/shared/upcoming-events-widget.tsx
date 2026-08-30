@@ -26,7 +26,7 @@ interface Props {
 }
 
 /**
- * Shared "Upcoming Events" card used by the My Workspace and HR Action Center
+ * Shared "Upcoming Events" card used by the My Workspace and HR Action Centre
  * dashboards. Renders a list of {icon, label, date} rows inside a WorkspaceCard.
  */
 export function UpcomingEventsWidget({

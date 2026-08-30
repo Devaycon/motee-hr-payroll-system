@@ -10,6 +10,7 @@ import {
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
+import { GenderSplitBreakdown } from "@/src/components/shared/gender-figures";
 import {
   SUPPRESSION_THRESHOLD,
   type SuppressedBreakdown,
@@ -21,6 +22,39 @@ interface DemographicsCardProps {
   title: string;
   items: DemographicsItem[];
   emptyText?: string;
+}
+
+/**
+ * Gender, drawn as pictograms instead of the bar rows every other breakdown
+ * uses — the same treatment as the HR dashboard, so the two agree.
+ *
+ * `percentage` is recomputed here rather than trusted: the hook fills it for
+ * some breakdowns and leaves it undefined for others, and a figure captioned
+ * "0%" beside a real headcount would be worse than no figure.
+ */
+function GenderSection({ items }: { items: DemographicsItem[] }) {
+  if (items.length === 0) return null;
+
+  const total = items.reduce((sum, i) => sum + (i.count ?? 0), 0);
+  if (total === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="px-4 pt-4 pb-2">
+        <CardTitle className="text-sm font-medium">By Gender</CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 pb-5">
+        <GenderSplitBreakdown
+          items={items.map((i) => ({
+            label: i.label,
+            count: i.count ?? 0,
+            percentage: Math.round(((i.count ?? 0) / total) * 100),
+          }))}
+          total={total}
+        />
+      </CardContent>
+    </Card>
+  );
 }
 
 function DemographicsCard({ title, items, emptyText }: DemographicsCardProps) {
@@ -148,9 +182,13 @@ export function Demographics({
         <DemographicsCard title="By Tenure Range" items={tenure} />
       </Section>
 
+      {/* Gender is drawn as figures rather than bars — see
+          `shared/gender-figures`. It sits outside the two-column Section grid
+          because the pictograms need the full width and height. */}
+      <GenderSection items={gender} />
+
       <Section title="Employee Profile">
         <DemographicsCard title="By Age Band" items={age} />
-        <DemographicsCard title="By Gender" items={gender} />
         <DemographicsCard title="By Job Grade" items={grade} />
       </Section>
 

@@ -4,6 +4,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
+import { GenderSplitBreakdown } from "@/src/components/shared/gender-figures";
 import { WORKFORCE_DEMOGRAPHICS } from "../data";
 import type { DemographicItem } from "../types";
 
@@ -13,7 +14,6 @@ interface DemoCardProps {
   colorClass?: string;
 }
 
-const GENDER_COLORS = ["bg-blue-500", "bg-pink-500"];
 const AGE_COLORS = [
   "bg-slate-400",
   "bg-violet-500",
@@ -79,33 +79,32 @@ export function DemographicsSection() {
 
   return (
     <div className="space-y-6">
-      <Card className="py-2 px-6">
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-center">
-            <p className="text-2xl font-bold">{total}</p>
-            <p className="text-xs text-muted-foreground">Total Employees</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {gender.map((g, i) => (
-              <div key={g.label} className="flex items-center gap-1.5">
-                <div
-                  className={`size-2.5 rounded-full ${GENDER_COLORS[i % GENDER_COLORS.length]}`}
-                />
-                <span className="text-xs text-muted-foreground">
-                  {g.label}: {g.count} ({g.percentage}%)
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Gender gets figures rather than bars: it is the one breakdown people
+          scan for at a glance, and the pictograms read faster than two bars of
+          near-equal length. It spans the row because the figures need the
+          height.
+          The headcount strip that used to sit above this card is gone — it
+          repeated the same gender counts in a second colour scheme, which this
+          card now states once, with the total. */}
+      <Card className="border-border/60">
+        <CardHeader className="px-4 pt-4 pb-2">
+          <CardTitle className="text-sm font-semibold">
+            Gender Distribution
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-5">
+          <GenderSplitBreakdown
+            items={gender.map((g) => ({
+              label: g.label,
+              count: g.count ?? 0,
+              percentage: g.percentage ?? 0,
+            }))}
+            total={total}
+          />
+        </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <DemoCard
-          title="Gender Distribution"
-          items={gender}
-          colors={GENDER_COLORS}
-        />
         <DemoCard title="Age Group" items={ageGroup} colors={AGE_COLORS} />
         <DemoCard
           title="Employment Type"

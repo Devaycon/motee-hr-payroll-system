@@ -34,7 +34,7 @@ export function PermissionsCategory() {
         <SettingsLinkCard
           icon={GitBranch}
           title="Approval Workflows"
-          description="Approval chains, conditional routing, escalation and SLAs are configured in the HR Action Center. Use Submissions for the approvals engine and Workflows for automated task assignment."
+          description="Approval chains, conditional routing, escalation and SLAs are configured in the HR Action Centre. Use Submissions for the approvals engine and Workflows for automated task assignment."
           actions={[
             { label: "Open Submissions", href: "/hr-action-center/submissions" },
             { label: "Open Workflows", href: "/hr-action-center/workflows" },
