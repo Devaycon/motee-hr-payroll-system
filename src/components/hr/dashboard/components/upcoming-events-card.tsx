@@ -13,20 +13,15 @@ import {
   Plane,
   type LucideIcon,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
+import { Tile, TileLabel } from "./tiles";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { formatDate } from "@/src/lib/utils/format-date";
 import { cn } from "@/src/lib/utils";
 
-interface UpcomingEvent {
+export interface UpcomingEvent {
   id: string;
   title: string;
   date: string;
@@ -81,6 +76,37 @@ const TYPE_ICON_COLORS: Record<string, string> = {
   meeting: "text-[#7F77DD]",
 };
 
+/**
+ * The badge tones above as hex, for the summary donut on the Events tab —
+ * ApexCharts can't resolve Tailwind classes, and a type must be the same colour
+ * in the donut as on the row beneath it.
+ *
+ * The order is the assignment order and is fixed: it was validated for
+ * colour-vision separation as an adjacent sequence, so slices stay
+ * distinguishable however many types are present.
+ */
+export const EVENT_TYPE_ORDER = [
+  "meeting",
+  "birthday",
+  "anniversary",
+  "reminder",
+  "deadline",
+  "training",
+  "holiday",
+  "leave",
+] as const;
+
+export const EVENT_TYPE_HEX: Record<string, string> = {
+  meeting: "#7F77DD",
+  birthday: "#ec4899",
+  anniversary: "#f59e0b",
+  reminder: "#3b82f6",
+  deadline: "#ff8b2d",
+  training: "#14b8a6",
+  holiday: "#f43f5e",
+  leave: "#f43f5e",
+};
+
 function relativeLabel(days: number) {
   if (days === 0) return "Today";
   if (days === 1) return "Tomorrow";
@@ -98,7 +124,7 @@ function daysUntilAnnual(monthDay: string, ref: Date): number | null {
   return Math.round((next.getTime() - ref.getTime()) / 86_400_000);
 }
 
-function useUpcomingEvents() {
+export function useUpcomingEvents() {
   return useLocaleSection<UpcomingEvent[]>((bundle) => {
     const refIso =
       bundle._meta.referenceDate ?? new Date().toISOString().slice(0, 10);
@@ -171,86 +197,82 @@ export function UpcomingEventsCard() {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <CalendarClock className="w-4 h-4 text-[#7F77DD]" />
-          <CardTitle className="text-base">Upcoming Events (Next 7 Days)</CardTitle>
-        </div>
+    <Tile>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <TileLabel className="flex items-center gap-2 text-base">
+          <CalendarClock className="size-4 text-[#7F77DD]" aria-hidden />
+          Upcoming Events (Next 7 Days)
+        </TileLabel>
         <Link
           href="/hr-action-center/events"
-          className="flex items-center gap-0.5 text-xs font-medium text-primary hover:underline shrink-0"
+          className="flex shrink-0 items-center gap-0.5 text-xs font-medium text-primary hover:underline"
         >
           View calendar
-          <ChevronRight className="w-3.5 h-3.5" />
+          <ChevronRight className="size-3.5" />
         </Link>
-      </CardHeader>
-      <CardContent>
-        {data.length === 0 ? (
-          <div className="py-10 px-4 text-center">
-            <p className="text-sm font-semibold text-foreground">
-              No Upcoming Events
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              You don&apos;t have any scheduled HR activities, meetings, or
-              deadlines in the next 7 days.
-            </p>
-          </div>
-        ) : (
-          <ScrollArea className="max-h-80 pr-2">
-            <div className="flex flex-col gap-2">
-              {data.map((e) => {
-                const Icon = TYPE_ICONS[e.type] ?? CalendarDays;
-                const iconColor =
-                  TYPE_ICON_COLORS[e.type] ?? "text-muted-foreground";
-                return (
-                <div
+      </div>
+
+      {data.length === 0 ? (
+        <div className="px-4 py-10 text-center">
+          <p className="text-sm font-semibold text-foreground">
+            No Upcoming Events
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            You don&apos;t have any scheduled HR activities, meetings, or
+            deadlines in the next 7 days.
+          </p>
+        </div>
+      ) : (
+        <ScrollArea className="mt-1 max-h-80 pr-2">
+          <ul>
+            {data.map((e) => {
+              const Icon = TYPE_ICONS[e.type] ?? CalendarDays;
+              const iconColor =
+                TYPE_ICON_COLORS[e.type] ?? "text-muted-foreground";
+              const day = new Date(`${e.date}T00:00:00`);
+              return (
+                <li
                   key={e.id}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border hover:bg-muted/40 transition-colors"
+                  className="flex items-center gap-3 border-t border-border py-2.5"
                 >
-                  <div className="flex flex-col items-center justify-center size-10 shrink-0 rounded-md bg-muted gap-0.5">
-                    <Icon className={cn("size-3.5", iconColor)} aria-hidden />
-                    <span className="text-[11px] font-bold text-foreground leading-none">
-                      {new Date(`${e.date}T00:00:00`).getDate()}{" "}
-                      <span className="font-medium uppercase text-muted-foreground">
-                        {new Date(`${e.date}T00:00:00`).toLocaleDateString(
-                          "en-GB",
-                          { month: "short" },
-                        )}
-                      </span>
+                  <div className="flex size-10 shrink-0 flex-col items-center justify-center rounded-md bg-muted">
+                    <span className="text-sm font-bold leading-none text-foreground">
+                      {day.getDate()}
+                    </span>
+                    <span className="text-[10px] font-medium uppercase leading-none text-muted-foreground">
+                      {day.toLocaleDateString("en-GB", { month: "short" })}
                     </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
                       {e.title}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(e.date)}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
+                  <div className="flex shrink-0 flex-col items-end gap-1">
                     <Badge
                       variant="outline"
                       className={cn(
-                        "text-[10px] capitalize gap-1",
+                        "gap-1 text-[10px] capitalize",
                         TYPE_STYLES[e.type] ??
                           "border-border bg-muted text-muted-foreground",
                       )}
                     >
-                      <Icon className="size-3" aria-hidden />
+                      <Icon className={cn("size-3", iconColor)} aria-hidden />
                       {e.type}
                     </Badge>
                     <span className="text-[11px] font-medium text-muted-foreground">
                       {relativeLabel(e.daysUntil)}
                     </span>
                   </div>
-                </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
+                </li>
+              );
+            })}
+          </ul>
+        </ScrollArea>
+      )}
+    </Tile>
   );
 }

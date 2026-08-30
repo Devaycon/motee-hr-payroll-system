@@ -38,7 +38,6 @@ import {
   HR_ALERT_SEVERITY_LABELS,
   HR_ALERT_SEVERITY_STYLES,
   HR_ALERT_DEFAULT_DUE_DAYS,
-  HR_ALERT_TOTAL,
   countBySeverity,
   type HrAlert,
   type HrAlertCategory,
@@ -190,9 +189,13 @@ function SeverityChips({
   );
 }
 
-export function HrAlertsCard() {
-  const [tab, setTab] = useState(HR_ALERT_CATEGORIES[0]?.key ?? "");
-  const [severity, setSeverity] = useState<HrAlertSeverity | "all">("all");
+/**
+ * Every open action category: the static demo set plus the live self-onboarding
+ * one derived from Redux. Shared by this card and the dashboard's Priorities
+ * summary tiles so the headline count can never disagree with the list beneath
+ * it.
+ */
+export function useHrAlertCategories(): HrAlertCategory[] {
   const onboardingRecords = useAppSelector((s) => s.onboardingRecords.records);
 
   // Surface self-onboarding invites that the new hire hasn't started or finished.
@@ -221,15 +224,34 @@ export function HrAlertsCard() {
     };
   }, [onboardingRecords]);
 
-  const categories = useMemo(
+  return useMemo(
     () => [...HR_ALERT_CATEGORIES, onboardingCategory],
     [onboardingCategory],
   );
-  const openTotal = HR_ALERT_TOTAL + onboardingCategory.alerts.length;
-  const severityCounts = useMemo(
-    () => countBySeverity(categories),
-    [categories],
-  );
+}
+
+/**
+ * Open items, counted rather than asserted. This was a hardcoded `54`, which
+ * agreed with neither the severity chips beside it nor the live onboarding
+ * rows folded into the categories.
+ */
+export function useHrAlertTotals() {
+  const categories = useHrAlertCategories();
+  return useMemo(() => {
+    const counts = countBySeverity(categories);
+    const total = HR_ALERT_SEVERITIES.reduce((sum, s) => sum + counts[s], 0);
+    return { categories, counts, total };
+  }, [categories]);
+}
+
+export function HrAlertsCard() {
+  const [tab, setTab] = useState(HR_ALERT_CATEGORIES[0]?.key ?? "");
+  const [severity, setSeverity] = useState<HrAlertSeverity | "all">("all");
+  const {
+    categories,
+    counts: severityCounts,
+    total: openTotal,
+  } = useHrAlertTotals();
 
   /** The severity filter applies within whichever category tab is open. */
   const visibleAlerts = (category: HrAlertCategory) =>
@@ -242,7 +264,7 @@ export function HrAlertsCard() {
       <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <BellRing className="w-4 h-4 text-[#ff8b2d]" />
-          <CardTitle className="text-base">HR Action Centre</CardTitle>
+          <CardTitle className="text-base">Your HR priorities today</CardTitle>
         </div>
         <SeverityChips
           counts={severityCounts}

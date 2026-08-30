@@ -26,16 +26,16 @@ export function MyWorkspacePage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="py-6 w-fit">
-        <h1 className="text-4xl font-bold text-foreground">HR Action Center</h1>
+        <h1 className="text-4xl font-bold text-foreground">HR Action Centre</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           It&apos;s {dayName}, {dateStr}
         </p>
       </div>
 
-      <StatCards
+      {/* <StatCards
         pendingLeaveCount={pendingLeaveCount}
         openTaskCount={openTaskCount}
-      />
+      /> */}
 
       <div id="alerts" className="scroll-mt-24">
         <HrAlertsCard />

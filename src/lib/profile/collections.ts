@@ -60,10 +60,10 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
       f("description", "Description", "textarea"),
       f("dueDate", "Due date", "date"),
       f("priority", "Priority", "select", ["low", "medium", "high"]),
-      f("status", "Status", "select", ["todo", "in_progress", "done", "blocked"]),
+      f("status", "Status", "select", ["to-do", "in_progress", "done", "blocked"]),
       f("linkedTo", "Linked to"),
     ],
-    defaults: (employeeId) => ({ assigneeId: employeeId, status: "todo", priority: "medium" }),
+    defaults: (employeeId) => ({ assigneeId: employeeId, status: "to-do", priority: "medium" }),
   },
   documents: {
     key: "documents",

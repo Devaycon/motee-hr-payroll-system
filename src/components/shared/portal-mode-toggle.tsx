@@ -48,7 +48,7 @@ export function PortalModeToggle({ className }: { className?: string }) {
       variant="default"
       onClick={() => router.push(PORTAL_PATHS[target])}
       title={`Switch to ${label}`}
-      className={cn("h-11 gap-1.5 px-3 text-xs font-medium", className)}
+      className={cn("h-11 gap-1.5 px-3 text-xs font-medium bg-amber-600!", className)}
     >
       <Icon size={14} />
       <span className="hidden lg:inline">{label}</span>

@@ -1,0 +1,244 @@
+<h2 class="sr-only">Updated HR dashboard mockup: a full Untaken Leave action list added to the Attendance tab, the Upcoming Events card redesigned with date badges and type tags, and new stat and chart tiles added to the Priorities and Events tabs.</h2>
+<style>
+.tabbar{display:flex;border:0.5px solid var(--border);margin-bottom:16px;}
+.tab{flex:1;text-align:center;padding:14px 8px;font-size:15px;font-weight:500;color:var(--text-secondary);background:var(--surface-1);cursor:pointer;border-right:0.5px solid var(--border);}
+.tab:last-child{border-right:none;}
+.tab.active{background:var(--surface-2);color:var(--text-primary);}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}
+.tile{background:var(--surface-2);border:0.5px solid var(--border);border-radius:4px;padding:12px;margin-bottom:10px;}
+.t-label{font-size:13px;color:var(--text-primary);margin-bottom:2px;}
+.t-sub{font-size:11px;color:var(--text-muted);}
+.t-num{font-size:30px;font-weight:500;margin:6px 0 2px;}
+.up{color:var(--text-success);}
+.down{color:var(--text-danger);}
+.bars{display:flex;gap:6px;align-items:flex-end;height:40px;margin-top:10px;}
+.bar-col{flex:1;text-align:center;}
+.bar-val{font-size:11px;margin-bottom:2px;}
+.bar-fill{background:var(--border-strong);border-radius:2px 2px 0 0;}
+.bar-lbls{display:flex;gap:6px;margin-top:4px;}
+.bar-lbl{flex:1;text-align:center;font-size:11px;color:var(--text-muted);}
+.hbar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;}
+.hbar-label{width:100px;color:var(--text-secondary);flex-shrink:0;}
+.hbar-track{flex:1;height:6px;background:var(--surface-1);border-radius:3px;overflow:hidden;}
+.hbar-fill{height:100%;background:var(--fill-accent);}
+.hbar-val{width:22px;text-align:right;color:var(--text-secondary);flex-shrink:0;}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:0.5px solid var(--border);}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--surface-1);color:var(--text-accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;}
+.datebox{width:40px;text-align:center;background:var(--surface-1);border-radius:4px;padding:4px 0;flex-shrink:0;}
+.pill{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--surface-1);}
+.wide{grid-column:1/-1;}
+.span2{grid-column:span 2;}
+.brand{background:var(--fill-accent);border-color:var(--fill-accent);}
+.brand .t-label,.brand .t-sub,.brand .t-num{color:var(--on-accent);}
+</style>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+  <div>
+    <div style="font-size:16px;font-weight:500;">Welcome, William Jones</div>
+    <div class="t-sub">HR overview</div>
+  </div>
+  <button style="font-size:12px;">Customise</button>
+</div>
+
+<div class="tabbar">
+  <div class="tab active" data-tab="people">People</div>
+  <div class="tab" data-tab="attendance">Attendance</div>
+  <div class="tab" data-tab="priorities">Priorities</div>
+  <div class="tab" data-tab="events">Events</div>
+</div>
+
+<div class="panel" data-panel="people">
+  <div class="grid">
+    <div class="tile"><div class="t-label">Total employees</div><div class="t-sub">Active</div><div class="t-num">20</div><div class="t-sub up">+4.2% vs last month</div></div>
+    <div class="tile"><div class="t-label">New hires</div><div class="t-sub">This month</div><div class="t-num">0</div><div class="t-sub up">+12% vs last month</div></div>
+    <div class="tile"><div class="t-label">Leavers</div><div class="t-sub">This month</div><div class="t-num">2</div><div class="t-sub down">-2.1% vs last month</div></div>
+    <div class="tile"><div class="t-label">Remote today</div><div class="t-sub">Working remote</div><div class="t-num">6</div><div class="t-sub up">+6.5% vs last week</div></div>
+    <div class="tile"><div class="t-label">Birthdays</div><div class="t-sub">Next 7 days</div><div class="t-num">0</div><div class="t-sub up">+1.0% vs last week</div></div>
+    <div class="tile">
+      <div class="t-label">Turnover rate</div>
+      <div class="t-sub">Current quarter</div>
+      <div style="width:64px;height:64px;border-radius:50%;background:conic-gradient(var(--fill-accent) 0% 43%, var(--surface-1) 43% 100%);display:flex;align-items:center;justify-content:center;margin:8px auto 4px;">
+        <div style="width:46px;height:46px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;">4.3%</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);"><span>0%</span><span>10%</span></div>
+    </div>
+    <div class="tile span2">
+      <div class="t-label">Gender split</div>
+      <div class="t-sub">Current headcount</div>
+      <div style="display:flex;gap:12px;margin-top:10px;">
+        <div style="flex:1;text-align:center;">
+          <span class="pill" style="color:var(--text-accent);">Female</span>
+          <div style="font-size:24px;font-weight:600;margin:8px 0;">30%</div>
+          <i class="ti ti-gender-female" style="font-size:36px;color:var(--fill-accent);" aria-hidden="true"></i>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <span class="pill" style="color:var(--text-accent);">Male</span>
+          <div style="font-size:24px;font-weight:600;margin:8px 0;">60%</div>
+          <i class="ti ti-gender-male" style="font-size:36px;color:var(--fill-accent);" aria-hidden="true"></i>
+        </div>
+      </div>
+      <div class="t-sub" style="margin-top:8px;text-align:center;">Other 10%</div>
+    </div>
+  </div>
+  <div class="grid3">
+    <div class="tile">
+      <div class="t-label">Headcount trend</div>
+      <div class="t-sub">Last 3 months</div>
+      <div class="bars">
+        <div class="bar-col"><div class="bar-val">19</div><div class="bar-fill" style="height:30px;"></div></div>
+        <div class="bar-col"><div class="bar-val">20</div><div class="bar-fill" style="height:34px;"></div></div>
+        <div class="bar-col"><div class="bar-val">20</div><div class="bar-fill" style="height:34px;background:var(--fill-accent);"></div></div>
+      </div>
+      <div class="bar-lbls"><span class="bar-lbl">Sep</span><span class="bar-lbl">Oct</span><span class="bar-lbl">Nov</span></div>
+    </div>
+    <div class="tile">
+      <div class="t-label">Dept. headcount</div>
+      <div class="t-sub" style="margin-bottom:8px;">7 departments</div>
+      <div style="font-size:11px;line-height:1.9;color:var(--text-secondary);">Ops & Fleet — 6<br>Engineering — 4<br>Finance — 3<br>People — 3<br>Sales — 3<br>Exec Office — 1<br>CX — 1</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">Employment type</div>
+      <div class="t-sub" style="margin-bottom:8px;">Current headcount</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:conic-gradient(var(--text-primary) 0% 75%, var(--border-strong) 75% 90%, var(--border) 90% 100%);flex-shrink:0;"></div>
+        <div style="font-size:11px;color:var(--text-secondary);line-height:1.7;">Full-time 75%<br>Intern 15%<br>Contract/PT 10%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" data-panel="attendance">
+  <div class="grid">
+    <div class="tile"><div class="t-label">Present</div><div class="t-sub">Avg per day</div>
+      <div class="bars"><div class="bar-col"><div class="bar-val">10</div><div class="bar-fill" style="height:24px;"></div></div><div class="bar-col"><div class="bar-val">11</div><div class="bar-fill" style="height:27px;"></div></div><div class="bar-col"><div class="bar-val">12</div><div class="bar-fill" style="height:30px;background:var(--fill-accent);"></div></div></div>
+      <div class="bar-lbls"><span class="bar-lbl">Wk1</span><span class="bar-lbl">Wk2</span><span class="bar-lbl">Wk3</span></div>
+    </div>
+    <div class="tile"><div class="t-label">Late arrivals</div><div class="t-sub">Avg per day</div>
+      <div class="bars"><div class="bar-col"><div class="bar-val">6</div><div class="bar-fill" style="height:24px;"></div></div><div class="bar-col"><div class="bar-val">5</div><div class="bar-fill" style="height:20px;"></div></div><div class="bar-col"><div class="bar-val">4</div><div class="bar-fill" style="height:16px;background:var(--fill-accent);"></div></div></div>
+      <div class="bar-lbls"><span class="bar-lbl">Wk1</span><span class="bar-lbl">Wk2</span><span class="bar-lbl">Wk3</span></div>
+    </div>
+    <div class="tile"><div class="t-label">Absent</div><div class="t-sub">Avg per day</div>
+      <div class="bars"><div class="bar-col"><div class="bar-val">2</div><div class="bar-fill" style="height:16px;"></div></div><div class="bar-col"><div class="bar-val">2</div><div class="bar-fill" style="height:16px;"></div></div><div class="bar-col"><div class="bar-val">1</div><div class="bar-fill" style="height:10px;background:var(--fill-accent);"></div></div></div>
+      <div class="bar-lbls"><span class="bar-lbl">Wk1</span><span class="bar-lbl">Wk2</span><span class="bar-lbl">Wk3</span></div>
+    </div>
+  </div>
+  <div class="grid3">
+    <div class="tile"><div class="t-label">Annual leave</div><div class="t-sub">Requests</div><div class="t-num">0</div><div class="t-sub up">+3.4% vs last month</div></div>
+    <div class="tile"><div class="t-label">Sick leave</div><div class="t-sub">Requests</div><div class="t-num">0</div><div class="t-sub down">-1.8% vs last month</div></div>
+    <div class="tile">
+      <div class="t-label">Other leave</div>
+      <div class="t-sub">Last 3 months</div>
+      <div class="bars"><div class="bar-col"><div class="bar-val">78</div><div class="bar-fill" style="height:24px;"></div></div><div class="bar-col"><div class="bar-val">82</div><div class="bar-fill" style="height:26px;"></div></div><div class="bar-col"><div class="bar-val">88</div><div class="bar-fill" style="height:28px;background:var(--fill-accent);"></div></div></div>
+      <div class="bar-lbls"><span class="bar-lbl">Sep</span><span class="bar-lbl">Oct</span><span class="bar-lbl">Nov</span></div>
+    </div>
+  </div>
+  <div class="tile">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+      <div class="t-label" style="font-size:15px;">Untaken Leave — Action Needed</div>
+      <div class="t-sub" style="text-align:right;">5 employees at risk of losing leave</div>
+    </div>
+    <div class="row">
+      <div style="display:flex;align-items:center;gap:10px;"><span class="avatar">CO</span><div><div style="font-size:13px;color:var(--text-primary);">Chidinma Okeke</div><div class="t-sub">HR</div></div></div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-warning);">17 days</div>
+    </div>
+    <div class="row">
+      <div style="display:flex;align-items:center;gap:10px;"><span class="avatar">YG</span><div><div style="font-size:13px;color:var(--text-primary);">Yusuf Garba</div><div class="t-sub">HR</div></div></div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-warning);">16 days</div>
+    </div>
+    <div class="row">
+      <div style="display:flex;align-items:center;gap:10px;"><span class="avatar">CE</span><div><div style="font-size:13px;color:var(--text-primary);">Chukwuemeka Eze</div><div class="t-sub">Engineering</div></div></div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-warning);">15 days</div>
+    </div>
+    <div class="row">
+      <div style="display:flex;align-items:center;gap:10px;"><span class="avatar">AB</span><div><div style="font-size:13px;color:var(--text-primary);">Aisha Bello</div><div class="t-sub">Marketing</div></div></div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-warning);">13 days</div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:var(--text-accent);">View employees →</div>
+  </div>
+</div>
+
+<div class="panel" data-panel="priorities">
+  <div class="tile brand">
+    <div class="t-label">HR Action Centre</div>
+    <div class="t-sub">Open items</div>
+    <div class="t-num">56</div>
+  </div>
+  <div class="grid3">
+    <div class="tile"><div class="t-label">Critical</div><div class="t-sub">Open</div><div class="t-num" style="color:var(--text-danger);">18</div></div>
+    <div class="tile"><div class="t-label">Warning</div><div class="t-sub">Open</div><div class="t-num" style="color:var(--text-warning);">25</div></div>
+    <div class="tile"><div class="t-label">Info</div><div class="t-sub">Open</div><div class="t-num" style="color:var(--text-accent);">13</div></div>
+  </div>
+  <div class="tile">
+    <div class="t-label">By category</div>
+    <div class="t-sub" style="margin-bottom:10px;">Open items</div>
+    <div class="hbar-row"><span class="hbar-label">More</span><div class="hbar-track"><div class="hbar-fill" style="width:100%;"></div></div><span class="hbar-val">31</span></div>
+    <div class="hbar-row"><span class="hbar-label">Right to work</span><div class="hbar-track"><div class="hbar-fill" style="width:23%;"></div></div><span class="hbar-val">7</span></div>
+    <div class="hbar-row"><span class="hbar-label">Employee data</span><div class="hbar-track"><div class="hbar-fill" style="width:19%;"></div></div><span class="hbar-val">6</span></div>
+    <div class="hbar-row"><span class="hbar-label">Payroll</span><div class="hbar-track"><div class="hbar-fill" style="width:19%;"></div></div><span class="hbar-val">6</span></div>
+    <div class="hbar-row"><span class="hbar-label">Recruitment</span><div class="hbar-track"><div class="hbar-fill" style="width:19%;"></div></div><span class="hbar-val">6</span></div>
+  </div>
+</div>
+
+<div class="panel" data-panel="events">
+  <div class="grid">
+    <div class="tile"><div class="t-label">This week</div><div class="t-sub">Upcoming events</div><div class="t-num">3</div></div>
+    <div class="tile">
+      <div class="t-label">By type</div>
+      <div class="t-sub" style="margin-bottom:8px;">Next 7 days</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:conic-gradient(var(--text-accent) 0% 33%, var(--fill-warning) 33% 100%);flex-shrink:0;"></div>
+        <div style="font-size:11px;color:var(--text-secondary);line-height:1.7;">Meeting 1<br>Anniversary 2</div>
+      </div>
+    </div>
+  </div>
+  <div class="tile">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div class="t-label" style="font-size:15px;">Upcoming Events (Next 7 Days)</div>
+      <span style="font-size:12px;color:var(--text-accent);">View calendar →</span>
+    </div>
+    <div class="row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="datebox"><div style="font-size:13px;font-weight:600;">15</div><div style="font-size:11px;color:var(--text-muted);">NOV</div></div>
+        <div><div style="font-size:13px;color:var(--text-primary);">Engineering Off-site</div><div class="t-sub">15 November 2025</div></div>
+      </div>
+      <div style="text-align:right;">
+        <span class="pill" style="color:var(--text-accent);">Meeting</span>
+        <div class="t-sub" style="margin-top:2px;">Today</div>
+      </div>
+    </div>
+    <div class="row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="datebox"><div style="font-size:13px;font-weight:600;">17</div><div style="font-size:11px;color:var(--text-muted);">NOV</div></div>
+        <div><div style="font-size:13px;color:var(--text-primary);">Charlie Khan — 3yr anniversary</div><div class="t-sub">17 November 2025</div></div>
+      </div>
+      <div style="text-align:right;">
+        <span class="pill" style="color:var(--fill-warning);">Anniversary</span>
+        <div class="t-sub" style="margin-top:2px;">In 2 days</div>
+      </div>
+    </div>
+    <div class="row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="datebox"><div style="font-size:13px;font-weight:600;">20</div><div style="font-size:11px;color:var(--text-muted);">NOV</div></div>
+        <div><div style="font-size:13px;color:var(--text-primary);">Ella Walker — 3yr anniversary</div><div class="t-sub">20 November 2025</div></div>
+      </div>
+      <div style="text-align:right;">
+        <span class="pill" style="color:var(--fill-warning);">Anniversary</span>
+        <div class="t-sub" style="margin-top:2px;">In 5 days</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var panels = document.querySelectorAll('.panel');
+panels.forEach(function(p){ if(p.getAttribute('data-panel') !== 'people'){ p.style.display = 'none'; } });
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    panels.forEach(function(p){ p.style.display = 'none'; });
+    tab.classList.add('active');
+    document.querySelector('.panel[data-panel="' + tab.getAttribute('data-tab') + '"]').style.display = '';
+  });
+});
+</script>

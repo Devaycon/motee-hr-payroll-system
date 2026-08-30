@@ -47,7 +47,7 @@ const Sidebar = () => {
   );
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
-    Object.fromEntries(grouped.map((g) => [g.group, true])),
+    Object.fromEntries(grouped.map((g) => [g.group, false])),
   );
 
   const toggleGroup = (group: string) =>

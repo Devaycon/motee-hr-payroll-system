@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { employmentTypeFromName } from "@/src/lib/constants/employment-types";
+import { sicknessReasonCategory } from "@/src/lib/constants/sickness";
 import { TURNOVER_RECORDS, buildTurnoverTrends } from "@/src/data/workforce-demo";
 import type { ChartConfig } from "@/src/components/ui/chart";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
@@ -25,9 +26,29 @@ import {
   employmentLabel,
   getInitials,
 } from "@/src/lib/types/dashboard";
-import type { LocaleEmployee } from "@/src/lib/types/locale";
+import type {
+  LocaleEmployee,
+  LocaleLeaveRequest,
+} from "@/src/lib/types/locale";
+
+/**
+ * Stable identifiers for the KPI tiles. The dashboard tabs each render a subset,
+ * so they select by key rather than by matching the display label — renaming a
+ * card must not silently empty a tab.
+ */
+export type StatCardKey =
+  | "total"
+  | "new-hires"
+  | "leavers"
+  | "remote"
+  | "birthdays"
+  | "annual-leave"
+  | "sick-leave"
+  | "other-leave"
+  | "turnover";
 
 interface StatCard {
+  key: StatCardKey;
   label: string;
   value: string | number;
   sub: string;
@@ -35,8 +56,15 @@ interface StatCard {
   zeroSub?: string;
   link: string;
   icon: LucideIcon;
-  trend: string;
-  up: boolean;
+  /** Omitted when there is no sound basis for a comparison. */
+  trend?: string;
+  up?: boolean;
+  /**
+   * A plain-language line shown in place of the trend. Some figures have no
+   * meaningful percentage change to report, and a made-up or wildly-scaled one
+   * is worse than a concrete fact about the same number.
+   */
+  note?: string;
   /** What `trend` is measured against; defaults to "vs last month". */
   trendPeriod?: string;
 }
@@ -54,6 +82,136 @@ function isUpcomingWithinDays(dateStr: string | undefined, days: number) {
 
 function isoToday() {
   return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Which kind of leave a request is.
+ *
+ * The locale bundles carry `leaveType: "Sick Leave"` while the older typings
+ * describe a lowercase `type: "sick"`. Matching only the latter is why every
+ * leave KPI read zero, so this reads whichever the record actually has and
+ * normalises it.
+ */
+export type LeaveKind = "annual" | "sick" | "other";
+
+export function leaveKindOf(request: LocaleLeaveRequest): LeaveKind {
+  const raw = (
+    (request as LocaleLeaveRequest & { leaveType?: string }).leaveType ??
+    request.type ??
+    ""
+  ).toLowerCase();
+  if (raw.includes("annual")) return "annual";
+  if (raw.includes("sick")) return "sick";
+  return "other";
+}
+
+/** A request that is live: approved, or still waiting on someone. */
+function isOpenLeave(request: LocaleLeaveRequest): boolean {
+  const status = (request.status ?? "").toLowerCase();
+  return status === "approved" || status === "pending" || status === "in_progress";
+}
+
+/** Months of leave history the KPI tiles count. */
+export const LEAVE_WINDOW_MONTHS = 12;
+
+function shiftMonths(iso: string, months: number): string {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Open leave requests inside the rolling window, counted three ways: how many
+ * requests, how many days they add up to, and how many are still pending.
+ *
+ * A request and a day are not the same thing — one booking can be ten days —
+ * so the tiles state which they mean rather than leaving the reader to guess.
+ */
+function countLeaveByKind(
+  requests: LocaleLeaveRequest[],
+  refDate: string,
+): {
+  current: Record<LeaveKind, number>;
+  days: Record<LeaveKind, number>;
+  pending: Record<LeaveKind, number>;
+} {
+  const windowStart = shiftMonths(refDate, -LEAVE_WINDOW_MONTHS);
+
+  const current: Record<LeaveKind, number> = { annual: 0, sick: 0, other: 0 };
+  const days: Record<LeaveKind, number> = { annual: 0, sick: 0, other: 0 };
+  const pending: Record<LeaveKind, number> = { annual: 0, sick: 0, other: 0 };
+
+  for (const r of requests) {
+    if (!isOpenLeave(r) || !r.startDate) continue;
+    if (r.startDate > refDate || r.startDate < windowStart) continue;
+    const kind = leaveKindOf(r);
+    current[kind] += 1;
+    days[kind] += r.days ?? 1;
+    if ((r.status ?? "").toLowerCase() === "pending") pending[kind] += 1;
+  }
+
+  return { current, days, pending };
+}
+
+export interface LeaveBreakdown {
+  requests: Record<LeaveKind, number>;
+  days: Record<LeaveKind, number>;
+  pending: Record<LeaveKind, number>;
+}
+
+/**
+ * Leave over the rolling window, split by kind and measured three ways.
+ *
+ * Shared with `useStatCards` through `countLeaveByKind`, so the tile's headline
+ * and the pie beside it can never be computed from different windows.
+ */
+export function useLeaveBreakdown() {
+  return useLocaleSection<LeaveBreakdown>((bundle) => {
+    const refDate = bundle._meta.referenceDate ?? isoToday();
+    const { current, days, pending } = countLeaveByKind(
+      bundle.leaveRequests,
+      refDate,
+    );
+    return { requests: current, days, pending };
+  });
+}
+
+/**
+ * The secondary line on a leave tile: how many of those requests still need
+ * someone to act. A count a person can check against the leave screen, rather
+ * than a percentage change against a period the data barely covers.
+ *
+ * The day total lives on in `useLeaveBreakdown` — the pie beside the tile is a
+ * share of days — it is just no longer repeated in the text.
+ */
+function leaveNote(pending: number): string {
+  return pending === 0 ? "All approved" : `${pending} still to approve`;
+}
+
+/**
+ * Org-wide turnover: latest period rate and the delta against the prior period.
+ * Read by both the KPI tile and the Turnover gauge, so the two can never drift.
+ * `TURNOVER_RECORDS` is static demo data, not locale data, so this is a plain
+ * function rather than a `useLocaleSection` hook — there is nothing to load.
+ */
+export function getTurnoverRate(): {
+  rate: number;
+  delta: number;
+  /** Resignations in the latest period. */
+  voluntary: number;
+  /** Employer-initiated exits in the latest period. */
+  involuntary: number;
+} {
+  const trends = buildTurnoverTrends(TURNOVER_RECORDS);
+  const latest = trends[trends.length - 1];
+  const prior = trends[trends.length - 2];
+  return {
+    rate: latest?.rate ?? 0,
+    delta:
+      latest && prior ? Math.round((latest.rate - prior.rate) * 10) / 10 : 0,
+    voluntary: latest?.voluntary ?? 0,
+    involuntary: latest?.involuntary ?? 0,
+  };
 }
 
 export function useStatCards() {
@@ -77,25 +235,18 @@ export function useStatCards() {
       return isLeaver || leftThisMonth;
     }).length;
 
-    const activeLeave = bundle.leaveRequests.filter(
-      (r) => r.status === "approved" || r.status === "in_progress",
-    );
-    const annual = activeLeave.filter((r) => r.type === "annual").length;
-    const sick = activeLeave.filter((r) => r.type === "sick").length;
-    const other = activeLeave.length - annual - sick;
+    // Leave is counted over a rolling 12 months ending at the reference date,
+    // the same window the Sickness tab uses. Without a window the count swept
+    // in every record in the bundle — which runs a year past the reference
+    // date — so it was reporting leave that hasn't happened yet.
+    const leave = countLeaveByKind(bundle.leaveRequests, refDate);
+    const { annual, sick, other } = leave.current;
 
-    // Org-wide turnover: latest period rate and delta vs the prior period.
-    const turnoverTrends = buildTurnoverTrends(TURNOVER_RECORDS);
-    const latestTurnover = turnoverTrends[turnoverTrends.length - 1];
-    const priorTurnover = turnoverTrends[turnoverTrends.length - 2];
-    const turnoverRate = latestTurnover?.rate ?? 0;
-    const turnoverDelta =
-      latestTurnover && priorTurnover
-        ? Math.round((latestTurnover.rate - priorTurnover.rate) * 10) / 10
-        : 0;
+    const { rate: turnoverRate, delta: turnoverDelta } = getTurnoverRate();
 
     return [
       {
+        key: "total",
         label: "Total Employees",
         link: "/organization/employees",
         icon: Users,
@@ -105,6 +256,7 @@ export function useStatCards() {
         up: true,
       },
       {
+        key: "new-hires",
         label: "New Hires This Month",
         link: "/talent/onboarding",
         icon: UserRoundPlus,
@@ -115,6 +267,7 @@ export function useStatCards() {
         up: true,
       },
       {
+        key: "leavers",
         label: "Leavers This Month",
         link: "/talent/offboarding",
         icon: UserMinus,
@@ -125,6 +278,7 @@ export function useStatCards() {
         up: false,
       },
       {
+        key: "remote",
         label: "Employees Working Remotely Today",
         // Lands on the employee directory pre-filtered to remote workers — the
         // data this card actually counts. Previously pointed at Attendance,
@@ -139,6 +293,7 @@ export function useStatCards() {
         up: true,
       },
       {
+        key: "birthdays",
         label: "Upcoming Birthdays",
         // Scoped to birthdays rather than dumping the user on the generic
         // Calendar page (client feedback round 2, §E2).
@@ -152,36 +307,37 @@ export function useStatCards() {
         up: true,
       },
       {
+        key: "annual-leave",
         label: "Annual Leave Requests",
         link: "/time-payroll/leave",
         icon: CalendarCheck,
         value: annual,
-        sub: "Active annual leave requests",
-        zeroSub: "No active annual leave requests",
-        trend: "3.4%",
-        up: true,
+        sub: "Requests in the last 12 months",
+        zeroSub: "No requests in the last 12 months",
+        note: leaveNote(leave.pending.annual),
       },
       {
+        key: "sick-leave",
         label: "Sick Leave Requests",
         link: "/time-payroll/leave",
         icon: HeartPulse,
         value: sick,
-        sub: "Current sick leave requests",
-        zeroSub: "No current sick leave requests",
-        trend: "1.8%",
-        up: false,
+        sub: "Requests in the last 12 months",
+        zeroSub: "No requests in the last 12 months",
+        note: leaveNote(leave.pending.sick),
       },
       {
+        key: "other-leave",
         label: "Other Leave Requests",
         link: "/time-payroll/leave",
         icon: CalendarDays,
         value: Math.max(0, other),
-        sub: "Other leave requests",
-        zeroSub: "No other leave requests",
-        trend: "0.9%",
-        up: true,
+        sub: "Requests in the last 12 months",
+        zeroSub: "No requests in the last 12 months",
+        note: leaveNote(leave.pending.other),
       },
       {
+        key: "turnover",
         label: "Employee Turnover Rate",
         link: "/operations/workforce",
         icon: TrendingDown,
@@ -235,6 +391,264 @@ export function useAttendanceSeries() {
       });
       return { date: short, present: b.present, late: b.late, absent: b.absent };
     });
+  });
+}
+
+export interface WeeklyAttendancePoint {
+  /** "Wk1" … "Wk3", oldest first. */
+  week: string;
+  present: number;
+  late: number;
+  absent: number;
+}
+
+/** How many trailing weeks the Attendance tab's summary tiles show. */
+const ATTENDANCE_WEEKS = 3;
+
+/**
+ * The last few weeks of attendance as an average per day, which is what the
+ * Attendance tab's three summary tiles compare. Averaged rather than totalled
+ * so a short week (a bank holiday, or the partial week the data ends on) does
+ * not read as a collapse in attendance.
+ */
+export function useWeeklyAttendance() {
+  return useLocaleSection<WeeklyAttendancePoint[]>((bundle) => {
+    const byDate = new Map<
+      string,
+      { present: number; late: number; absent: number }
+    >();
+    for (const row of bundle.attendance) {
+      if (!byDate.has(row.date)) {
+        byDate.set(row.date, { present: 0, late: 0, absent: 0 });
+      }
+      const bucket = byDate.get(row.date)!;
+      if (row.status === "present") bucket.present += 1;
+      else if (row.status === "late") bucket.late += 1;
+      else if (row.status === "absent") bucket.absent += 1;
+    }
+
+    // Walk back from the most recent date in 7-day blocks so the last block is
+    // always the current week, regardless of which weekday the data ends on.
+    const dates = Array.from(byDate.keys()).sort();
+    const recent = dates.slice(-ATTENDANCE_WEEKS * 7);
+
+    const points: WeeklyAttendancePoint[] = [];
+    for (let i = 0; i < ATTENDANCE_WEEKS; i += 1) {
+      const start = recent.length - (ATTENDANCE_WEEKS - i) * 7;
+      const block = recent.slice(Math.max(0, start), Math.max(0, start + 7));
+      if (block.length === 0) continue;
+      let present = 0;
+      let late = 0;
+      let absent = 0;
+      for (const date of block) {
+        const b = byDate.get(date)!;
+        present += b.present;
+        late += b.late;
+        absent += b.absent;
+      }
+      points.push({
+        week: `Wk${points.length + 1}`,
+        present: Math.round(present / block.length),
+        late: Math.round(late / block.length),
+        absent: Math.round(absent / block.length),
+      });
+    }
+    return points;
+  });
+}
+
+export interface MonthlyCount {
+  /** Short month name, e.g. "Sep". */
+  month: string;
+  value: number;
+}
+
+/** Trailing months shown by the small leave trend tile. */
+const LEAVE_TREND_MONTHS = 3;
+
+/**
+ * Requests per month for each kind of leave, so the KPI tiles can carry a
+ * sparkline alongside the headline count — a bare "22" says nothing about
+ * whether that is rising.
+ *
+ * Months after the reference date are dropped: the demo bundle runs a year
+ * ahead of it, and a trend that includes leave which hasn't happened yet is
+ * misleading.
+ */
+export function useLeaveTrends() {
+  return useLocaleSection<Record<LeaveKind, MonthlyCount[]>>((bundle) => {
+    const refMonth = (bundle._meta.referenceDate ?? isoToday()).slice(0, 7);
+
+    const byKind: Record<LeaveKind, Map<string, number>> = {
+      annual: new Map(),
+      sick: new Map(),
+      other: new Map(),
+    };
+
+    for (const r of bundle.leaveRequests) {
+      const month = r.startDate?.slice(0, 7);
+      if (!month || month > refMonth) continue;
+      const months = byKind[leaveKindOf(r)];
+      months.set(month, (months.get(month) ?? 0) + 1);
+    }
+
+    const toSeries = (months: Map<string, number>): MonthlyCount[] =>
+      Array.from(months.keys())
+        .sort()
+        .slice(-LEAVE_TREND_MONTHS)
+        .map((month) => ({
+          month: new Date(`${month}-01T00:00:00`).toLocaleDateString("en-GB", {
+            month: "short",
+          }),
+          value: months.get(month) ?? 0,
+        }));
+
+    return {
+      annual: toSeries(byKind.annual),
+      sick: toSeries(byKind.sick),
+      other: toSeries(byKind.other),
+    };
+  });
+}
+
+export interface SicknessAbsentee {
+  employeeId: string;
+  name: string;
+  initials: string;
+  department: string;
+  days: number;
+  spells: number;
+}
+
+export interface SicknessData {
+  /** Sick days recorded over the rolling window. */
+  daysInWindow: number;
+  /** Distinct employees with a sick spell in the window. */
+  peopleInWindow: number;
+  /** Sick days as a share of available working days, as a percentage. */
+  absenceRate: number;
+  /** Average length of a sick spell, in days. */
+  averageSpell: number;
+  /** Sick days per month, oldest first, ending at the reference month. */
+  trend: MonthlyCount[];
+  /** Clinical categories, most days first. */
+  byReason: { label: string; value: number }[];
+  /** Highest total sick days over the window, most first. */
+  topAbsentees: SicknessAbsentee[];
+}
+
+/** Months of sickness history the trend tile shows. */
+const SICKNESS_TREND_MONTHS = 6;
+
+/**
+ * Absence is reported on a rolling 12 months rather than the calendar month —
+ * the standard HR measure, and the only one that stays meaningful when a given
+ * month happens to have no absence in it.
+ */
+const SICKNESS_WINDOW_MONTHS = 12;
+
+/** Working days in a year, for the absence-rate denominator. */
+const WORKING_DAYS_PER_YEAR = 260;
+
+/**
+ * Sickness absence, read off the same `leaveRequests` the Sickness & Absence
+ * module writes to (see `lib/profile/collections.ts`), classified through the
+ * shared clinical taxonomy so the dashboard and the module agree on categories.
+ */
+export function useSickness() {
+  return useLocaleSection<SicknessData>((bundle) => {
+    const refDate = bundle._meta.referenceDate ?? isoToday();
+    const refMonth = refDate.slice(0, 7);
+
+    const sick = bundle.leaveRequests.filter((r) => leaveKindOf(r) === "sick");
+    const headcount = bundle.employees.length || 1;
+
+    const daysOf = (r: LocaleLeaveRequest) => r.days ?? 1;
+
+    // Rolling window, ending at the reference date so nothing counted is in
+    // the future.
+    const windowStart = new Date(`${refDate}T00:00:00`);
+    windowStart.setMonth(windowStart.getMonth() - SICKNESS_WINDOW_MONTHS);
+    const windowStartIso = windowStart.toISOString().slice(0, 10);
+
+    const inWindow = sick.filter(
+      (r) =>
+        r.startDate && r.startDate >= windowStartIso && r.startDate <= refDate,
+    );
+    const daysInWindow = inWindow.reduce((sum, r) => sum + daysOf(r), 0);
+    const peopleInWindow = new Set(inWindow.map((r) => r.employeeId)).size;
+
+    const absenceRate =
+      Math.round(
+        (daysInWindow / (headcount * WORKING_DAYS_PER_YEAR)) * 1000,
+      ) / 10;
+
+    const averageSpell =
+      inWindow.length === 0
+        ? 0
+        : Math.round((daysInWindow / inWindow.length) * 10) / 10;
+
+    // Trend — the months up to and including the reference month, so the tile
+    // never shows absence that hasn't happened yet.
+    const byMonth = new Map<string, number>();
+    for (const r of sick) {
+      const month = r.startDate?.slice(0, 7);
+      if (!month || month > refMonth) continue;
+      byMonth.set(month, (byMonth.get(month) ?? 0) + daysOf(r));
+    }
+    const trend: MonthlyCount[] = Array.from(byMonth.keys())
+      .sort()
+      .slice(-SICKNESS_TREND_MONTHS)
+      .map((month) => ({
+        month: new Date(`${month}-01T00:00:00`).toLocaleDateString("en-GB", {
+          month: "short",
+        }),
+        value: byMonth.get(month) ?? 0,
+      }));
+
+    // Reasons, by days lost rather than spell count — a fortnight off matters
+    // more than a single afternoon.
+    const byReasonMap = new Map<string, number>();
+    for (const r of inWindow) {
+      const category = sicknessReasonCategory(r.reason);
+      byReasonMap.set(category, (byReasonMap.get(category) ?? 0) + daysOf(r));
+    }
+    const byReason = Array.from(byReasonMap.entries())
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value);
+
+    // Who is carrying the most absence.
+    const employeesById = new Map(bundle.employees.map((e) => [e.id, e]));
+    const perEmployee = new Map<string, { days: number; spells: number }>();
+    for (const r of inWindow) {
+      const entry = perEmployee.get(r.employeeId) ?? { days: 0, spells: 0 };
+      entry.days += daysOf(r);
+      entry.spells += 1;
+      perEmployee.set(r.employeeId, entry);
+    }
+    const topAbsentees: SicknessAbsentee[] = Array.from(perEmployee.entries())
+      .map(([employeeId, entry]) => {
+        const emp = employeesById.get(employeeId);
+        return {
+          employeeId,
+          name: emp?.fullName ?? employeeId,
+          initials: emp?.initials || getInitials(emp?.fullName ?? employeeId),
+          department: emp?.departmentName ?? "—",
+          days: entry.days,
+          spells: entry.spells,
+        };
+      })
+      .sort((a, b) => b.days - a.days);
+
+    return {
+      daysInWindow,
+      peopleInWindow,
+      absenceRate,
+      averageSpell,
+      trend,
+      byReason,
+      topAbsentees,
+    };
   });
 }
 
