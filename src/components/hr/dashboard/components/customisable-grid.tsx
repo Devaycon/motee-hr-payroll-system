@@ -31,19 +31,20 @@ import {
   DASHBOARD_WIDGETS,
   WIDGET_SPANS,
   resolveWidgetOrder,
+  type DashboardTabKey,
   type DashboardWidget,
 } from "../widgets";
 
 /**
  * Written out in full rather than interpolated so Tailwind's scanner keeps
- * these classes. Everything is full width below `lg` — a 2-of-6 chart on a
- * phone is unreadable.
+ * these classes. Quarter-width tiles pair up from `sm`; everything else waits
+ * for `lg`, because a third of a row on a phone is unreadable.
  */
 const SPAN_CLASS: Record<number, string> = {
-  2: "lg:col-span-2",
-  3: "lg:col-span-3",
-  4: "lg:col-span-4",
-  6: "lg:col-span-6",
+  3: "sm:col-span-6 lg:col-span-3",
+  4: "sm:col-span-6 lg:col-span-4",
+  6: "sm:col-span-6 lg:col-span-6",
+  12: "sm:col-span-12 lg:col-span-12",
 };
 
 function SortableWidget({
@@ -68,7 +69,10 @@ function SortableWidget({
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn(
-        "relative",
+        // `h-full` all the way down to the widget: the grid stretches this
+        // cell, but without it the card inside keeps its natural height and
+        // leaves a hole under a short tile.
+        "relative h-full",
         SPAN_CLASS[span] ?? SPAN_CLASS[widget.span],
         isDragging && "z-20 opacity-80",
         editing && "rounded-xl ring-2 ring-primary/40 ring-offset-2",
@@ -119,7 +123,7 @@ function SortableWidget({
       {/* In edit mode the widget is a layout object, not a control surface —
           swallowing pointer events stops a drag from firing a chart tooltip or
           following a "View more" link. */}
-      <div className={cn(editing && "pointer-events-none select-none")}>
+      <div className={cn("h-full", editing && "pointer-events-none select-none")}>
         <Widget />
       </div>
     </div>
@@ -128,20 +132,31 @@ function SortableWidget({
 
 interface CustomisableGridProps {
   editing: boolean;
+  /** Only this tab's widgets are rendered and reordered. */
+  tab: DashboardTabKey;
 }
 
-export function CustomisableGrid({ editing }: CustomisableGridProps) {
+export function CustomisableGrid({ editing, tab }: CustomisableGridProps) {
   const dispatch = useAppDispatch();
   const { order, hidden, spans } = useAppSelector((s) => s.dashboardLayout);
 
-  const widgets = useMemo(() => resolveWidgetOrder(order), [order]);
+  // The saved layout stays one flat list across every tab — widget keys are
+  // unique — and each tab simply renders its own slice of it in saved order.
+  const allWidgets = useMemo(() => resolveWidgetOrder(order), [order]);
+  const widgets = useMemo(
+    () => allWidgets.filter((w) => w.tab === tab),
+    [allWidgets, tab],
+  );
   const visible = useMemo(
     () => widgets.filter((w) => !hidden.includes(w.key)),
     [widgets, hidden],
   );
   const hiddenWidgets = useMemo(
-    () => DASHBOARD_WIDGETS.filter((w) => hidden.includes(w.key)),
-    [hidden],
+    () =>
+      DASHBOARD_WIDGETS.filter(
+        (w) => w.tab === tab && hidden.includes(w.key),
+      ),
+    [hidden, tab],
   );
 
   const sensors = useSensors(
@@ -154,11 +169,20 @@ export function CustomisableGrid({ editing }: CustomisableGridProps) {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const keys = widgets.map((w) => w.key);
-    const from = keys.indexOf(String(active.id));
-    const to = keys.indexOf(String(over.id));
+    const tabKeys = widgets.map((w) => w.key);
+    const from = tabKeys.indexOf(String(active.id));
+    const to = tabKeys.indexOf(String(over.id));
     if (from < 0 || to < 0) return;
-    dispatch(setOrder(arrayMove(keys, from, to)));
+
+    // Reorder within the tab, then thread the result back through the full
+    // list so the other tabs' saved positions are left exactly as they were.
+    const moved = arrayMove(tabKeys, from, to);
+    const inTab = new Set(tabKeys);
+    let i = 0;
+    const next = allWidgets.map((w) =>
+      inTab.has(w.key) ? moved[i++]! : w.key,
+    );
+    dispatch(setOrder(next));
   }
 
   function cycleSpan(key: string, current: number, direction: 1 | -1) {
@@ -181,7 +205,10 @@ export function CustomisableGrid({ editing }: CustomisableGridProps) {
           items={visible.map((w) => w.key)}
           strategy={rectSortingStrategy}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-start">
+          {/* One gap value drives both axes, so the gutters are identical
+              horizontally and vertically. Rows stretch (the grid default), so
+              a short tile never leaves a hole beneath it. */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-12">
             {visible.map((w) => {
               const span = spans[w.key] ?? w.span;
               return (
@@ -224,7 +251,7 @@ export function CustomisableGrid({ editing }: CustomisableGridProps) {
       {visible.length === 0 && !editing && (
         <div className="rounded-xl border border-dashed border-border py-12 text-center">
           <p className="text-sm font-semibold text-foreground">
-            Every widget is hidden
+            Every widget on this tab is hidden
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
             Use <span className="font-medium">Customise</span> to bring some

@@ -90,9 +90,9 @@ export const routes: Route[] = [
   {
     group: "Workspace",
     icon: BriefcaseBusiness,
-    label: "HR Action Center",
+    label: "HR Action Centre",
     link: "/hr-action-center",
-    badge: 47,
+    badge: 54,
     exact: true,
   },
   {
@@ -233,7 +233,7 @@ export const routes: Route[] = [
   {
     group: "Employee Services",
     icon: Clock,
-    label: "Attendance",
+    label: "Time & Attendance Management",
     link: "/time-payroll/attendance",
   },
   {
