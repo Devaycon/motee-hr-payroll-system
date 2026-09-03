@@ -49,6 +49,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
 
   // Organization
   "organization.company":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
+  // Facilities owns the sites themselves, so it sees Branches where it does
+  // not see Company Profile.
+  "organization.branches":           ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FACILITIES-MANAGER","AUDITOR","READ-ONLY"],
   "organization.departments":        ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.structure":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
   "organization.employees":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","RECRUITER","AUDITOR","READ-ONLY"],
@@ -155,6 +158,7 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
   "FACILITIES-MANAGER": [
     "submissions.queue",
     "organization.employees",
+    "organization.branches",
     "organization.departments",
     "operations.assets",
     "workspace.helpdesk",
@@ -179,6 +183,7 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
   // Like Auditor, but without the sensitive employee-detail sections.
   "EXTERNAL-AUDITOR": [
     "organization.company",
+    "organization.branches",
     "organization.departments",
     "organization.employees",
     "organization.structure",
@@ -266,8 +271,17 @@ const DEFAULT_SCOPES: Partial<Record<RoleSlug, DataScope>> = {
   "LINE-MANAGER": { kind: "direct_reports" },
   "SELF-SERVICE": { kind: "self" },
   CONTRACTOR: { kind: "self" },
-  "HR-MANAGER": { kind: "business_unit" },
-  "FACILITIES-MANAGER": { kind: "business_unit" },
+  // Branch-scoped with no explicit id list, which resolves to "whichever
+  // branch the holder works at". That keeps the seed tenant-agnostic — branch
+  // ids differ between the NG and UK bundles — and matches how these roles
+  // actually work: an HR Manager runs their site, not the company.
+  //
+  // HR-ADMIN and SUPER-ADMIN are deliberately absent and fall through to
+  // `{ kind: "all" }`: HR Admin is the system administrator and must keep
+  // seeing and doing everything. It is also the default demo identity, so the
+  // out-of-the-box demo is unaffected by any of this.
+  "HR-MANAGER": { kind: "branch" },
+  "FACILITIES-MANAGER": { kind: "branch" },
 };
 
 function makeLevel(

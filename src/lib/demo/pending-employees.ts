@@ -17,6 +17,10 @@ function toRow(record: OnboardingRecord, status: EmployeeStatus): EmployeeRow {
     salary: 0,
     managerId: null,
     managerName: null,
+    // Carried through so a hire still in onboarding answers the branch filter
+    // the same way an active employee does.
+    branchId: record.joinerData?.branchId,
+    branchName: record.joinerData?.workLocation,
   };
 }
 

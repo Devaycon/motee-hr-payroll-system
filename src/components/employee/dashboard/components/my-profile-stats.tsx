@@ -11,7 +11,9 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// Self-service shows one person their own record, so it is never narrowed
+// by the admin shell's branch switcher.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import {
   HrStatCardsGrid,
   type HrStatCardItem,

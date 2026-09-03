@@ -44,7 +44,10 @@ import {
   DATA_SCOPE_LABELS,
   type AccessLevel,
   type AccessLevelStatus,
+  type DataScope,
 } from "../types";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useAllBranches } from "@/src/lib/branches/use-branch";
 
 interface AccessLevelsListProps {
   levels: AccessLevel[];
@@ -137,6 +140,34 @@ interface AccessLevelCardProps {
   onPreview: (level: AccessLevel) => void;
 }
 
+/**
+ * The branches or departments a list-based scope names, or null when the kind
+ * carries no list. An empty list is meaningful rather than missing: the role is
+ * confined to whichever branch/department its holder belongs to.
+ */
+function useScopeTargetLabel(scope: DataScope): string | null {
+  const branches = useAllBranches();
+  const departments = useAppSelector((s) => s.locale.data?.departments);
+
+  if (scope.kind === "branch") {
+    const ids = scope.branchIds ?? [];
+    if (ids.length === 0) return "the holder's own branch";
+    return branches
+      .filter((b) => ids.includes(b.id))
+      .map((b) => b.name)
+      .join(", ");
+  }
+  if (scope.kind === "department") {
+    const ids = scope.departmentIds ?? [];
+    if (ids.length === 0) return "the holder's own department";
+    return (departments ?? [])
+      .filter((d) => ids.includes(d.id))
+      .map((d) => d.name)
+      .join(", ");
+  }
+  return null;
+}
+
 function AccessLevelCard({
   level,
   onView,
@@ -153,6 +184,7 @@ function AccessLevelCard({
     (sum, p) => sum + p.actions.length,
     0,
   );
+  const scopeTargets = useScopeTargetLabel(level.dataScope);
 
   return (
     <div className="group relative flex flex-col rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all hover:shadow-md">
@@ -300,10 +332,17 @@ function AccessLevelCard({
         <span>{totalActions} permissions</span>
       </div>
 
-      {/* §1.4 — the record-level restriction, which module counts don't convey. */}
-      <div className="mt-3 flex items-center gap-1 text-[11px] text-muted-foreground">
-        <Database className="h-3 w-3" />
-        Data access: {DATA_SCOPE_LABELS[level.dataScope.kind]}
+      {/* §1.4 — the record-level restriction, which module counts don't convey.
+          A list-based scope names its targets: "Assigned branches" on its own
+          says nothing about how much the role can actually reach. */}
+      <div className="mt-3 flex items-start gap-1 text-[11px] text-muted-foreground">
+        <Database className="mt-0.5 h-3 w-3 shrink-0" />
+        <span>
+          Data access: {DATA_SCOPE_LABELS[level.dataScope.kind]}
+          {scopeTargets && (
+            <span className="text-foreground"> — {scopeTargets}</span>
+          )}
+        </span>
       </div>
 
       {/* §1.8 — usage signals that make an obsolete role obvious. */}

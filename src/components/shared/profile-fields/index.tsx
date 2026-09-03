@@ -44,6 +44,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useBranchOptions } from "@/src/lib/branches/use-branch";
 import {
   applyEdit,
   requestEdit,
@@ -176,7 +177,7 @@ function FieldEditDialog({
                 <SelectContent>
                   {field.options.map((o) => (
                     <SelectItem key={o} value={o} className="text-sm">
-                      {optionLabel(o)}
+                      {fieldValueLabel(field, o)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -248,7 +249,8 @@ function BulkFieldsEditModal({
 }) {
   const dispatch = useAppDispatch();
   const actorName = useAppSelector((s) => s.auth.user?.name) ?? "HR";
-  const allFields = getEmployeeProfileFields(employee);
+  const branches = useBranchOptions();
+  const allFields = getEmployeeProfileFields(employee, branches);
   const fields = groups ? allFields.filter((f) => groups.includes(f.group)) : allFields;
 
   const [values, setValues] = useState<Record<string, string>>({});
@@ -352,7 +354,7 @@ function BulkFieldsEditModal({
                   <SelectContent>
                     {f.options.map((o) => (
                       <SelectItem key={o} value={o} className="text-sm">
-                        {optionLabel(o)}
+                        {fieldValueLabel(f, o)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -617,7 +619,8 @@ export function ProfileFieldsEditor({
   const [bulkOpen, setBulkOpen] = useState(false);
   const [warnField, setWarnField] = useState<ProfileField | null>(null);
 
-  const allFields = getEmployeeProfileFields(employee);
+  const branches = useBranchOptions();
+  const allFields = getEmployeeProfileFields(employee, branches);
   const fields = groups ? allFields.filter((f) => groups.includes(f.group)) : allFields;
   const pendingByField = new Set(
     requests.filter((r) => r.status === "pending").map((r) => r.field),

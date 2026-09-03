@@ -81,6 +81,19 @@
           ]
         },
         {
+          "module": "organization.branches",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "organization.departments",
           "access": true,
           "actions": [
@@ -657,6 +670,19 @@
           ]
         },
         {
+          "module": "organization.branches",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "organization.departments",
           "access": true,
           "actions": [
@@ -1160,7 +1186,7 @@
       "status": "active",
       "employeeCount": 5,
       "dataScope": {
-        "kind": "business_unit"
+        "kind": "branch"
       },
       "createdBy": "System",
       "createdAt": "2026-01-01",
@@ -1199,6 +1225,16 @@
         },
         {
           "module": "organization.company",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "organization.branches",
           "access": true,
           "actions": [
             "view",
@@ -1585,6 +1621,11 @@
           "actions": []
         },
         {
+          "module": "organization.branches",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.departments",
           "access": false,
           "actions": []
@@ -1870,6 +1911,11 @@
           "actions": []
         },
         {
+          "module": "organization.branches",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.departments",
           "access": false,
           "actions": []
@@ -2150,6 +2196,11 @@
           "actions": []
         },
         {
+          "module": "organization.branches",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.departments",
           "access": false,
           "actions": []
@@ -2402,6 +2453,11 @@
         },
         {
           "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.branches",
           "access": false,
           "actions": []
         },
@@ -2682,6 +2738,11 @@
           "actions": []
         },
         {
+          "module": "organization.branches",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.departments",
           "access": false,
           "actions": []
@@ -2956,6 +3017,14 @@
         },
         {
           "module": "organization.company",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.branches",
           "access": true,
           "actions": [
             "view",
@@ -3300,6 +3369,13 @@
           ]
         },
         {
+          "module": "organization.branches",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
           "module": "organization.departments",
           "access": true,
           "actions": [
@@ -3599,6 +3675,11 @@
           "actions": []
         },
         {
+          "module": "organization.branches",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.departments",
           "access": false,
           "actions": []
@@ -3885,6 +3966,11 @@
           "actions": []
         },
         {
+          "module": "organization.branches",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.departments",
           "access": false,
           "actions": []
@@ -4145,6 +4231,11 @@
         },
         {
           "module": "organization.company",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.branches",
           "access": false,
           "actions": []
         },
@@ -4412,6 +4503,11 @@
           "actions": []
         },
         {
+          "module": "organization.branches",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.departments",
           "access": false,
           "actions": []
@@ -4638,7 +4734,7 @@
       "status": "active",
       "employeeCount": 0,
       "dataScope": {
-        "kind": "business_unit"
+        "kind": "branch"
       },
       "createdBy": "System",
       "createdAt": "2026-01-01",
@@ -4673,6 +4769,15 @@
           "module": "organization.company",
           "access": false,
           "actions": []
+        },
+        {
+          "module": "organization.branches",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
         },
         {
           "module": "organization.departments",
@@ -4934,6 +5039,11 @@
           "actions": []
         },
         {
+          "module": "organization.branches",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.departments",
           "access": false,
           "actions": []
@@ -5186,6 +5296,11 @@
           "actions": []
         },
         {
+          "module": "organization.branches",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.departments",
           "access": false,
           "actions": []
@@ -5418,6 +5533,14 @@
         },
         {
           "module": "organization.company",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.branches",
           "access": true,
           "actions": [
             "view",

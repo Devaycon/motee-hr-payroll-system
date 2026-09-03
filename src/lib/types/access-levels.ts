@@ -61,6 +61,7 @@ export interface ModulePermission {
 export type DataScopeKind =
   | "all"
   | "business_unit"
+  | "branch"
   | "department"
   | "direct_reports"
   | "self";
@@ -69,6 +70,8 @@ export interface DataScope {
   kind: DataScopeKind;
   /** Departments the role is confined to when kind is "department". */
   departmentIds?: string[];
+  /** Branches the role is confined to when kind is "branch". */
+  branchIds?: string[];
   /** Business units the role is confined to when kind is "business_unit". */
   businessUnits?: string[];
 }
@@ -76,6 +79,7 @@ export interface DataScope {
 export const DATA_SCOPE_LABELS: Record<DataScopeKind, string> = {
   all: "All records",
   business_unit: "Assigned business units",
+  branch: "Assigned branches",
   department: "Assigned departments",
   direct_reports: "Direct reports only",
   self: "Own record only",
@@ -84,10 +88,24 @@ export const DATA_SCOPE_LABELS: Record<DataScopeKind, string> = {
 export const DATA_SCOPE_DESCRIPTIONS: Record<DataScopeKind, string> = {
   all: "No restriction — sees every record in every module they can open.",
   business_unit: "Sees only records belonging to the business units assigned below.",
-  department: "Sees only records belonging to the departments assigned below.",
+  branch:
+    "Sees only people posted to the branches assigned below. Leave the list empty to confine the role to whichever branch the holder works at.",
+  department:
+    "Sees only records belonging to the departments assigned below. Leave the list empty to confine the role to the holder's own department.",
   direct_reports: "Sees only the people who report to them.",
   self: "Sees only their own record.",
 };
+
+/**
+ * Scope kinds resolved against an attribute the holder carries themselves, so
+ * an empty list means "their own" rather than "no restriction". This is what
+ * lets a seeded role say `{ kind: "branch" }` and stay tenant-agnostic —
+ * branch ids differ between the NG and UK bundles.
+ *
+ * `business_unit` is deliberately not in here: no employee field corresponds
+ * to it, so an empty list has nothing to resolve against and stays open.
+ */
+export const SELF_RELATIVE_SCOPES: DataScopeKind[] = ["branch", "department"];
 
 /** Lifecycle of the role itself (client feedback §1.7). */
 export type AccessLevelStatus = "active" | "inactive" | "draft";

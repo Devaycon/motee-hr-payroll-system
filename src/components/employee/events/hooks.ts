@@ -1,6 +1,8 @@
 "use client";
 
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// Self-service shows one person their own record, so it is never narrowed
+// by the admin shell's branch switcher.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import type { EmployeeCalEvent, EmployeeEventType } from "./types";
 

@@ -80,6 +80,125 @@
       "Inclusion"
     ]
   },
+  "branches": [
+    {
+      "id": "NG-BR-0001",
+      "tenantId": "tenant_ng_001",
+      "name": "Lagos HQ",
+      "code": "LAG",
+      "kind": "headquarters",
+      "status": "active",
+      "addressLines": [
+        "12B Adeola Odeku Street",
+        "Victoria Island"
+      ],
+      "city": "Lagos",
+      "region": "Lagos State",
+      "postalCode": "101241",
+      "country": "Nigeria",
+      "timezone": "Africa/Lagos",
+      "phone": "+234 1 270 1100",
+      "email": "lagos@sahelfintech.ng",
+      "managerEmployeeId": "NG-EMP-0020",
+      "headcountTarget": 5,
+      "openedAt": "2023-04-12"
+    },
+    {
+      "id": "NG-BR-0002",
+      "tenantId": "tenant_ng_001",
+      "name": "Abuja Office",
+      "code": "ABU",
+      "kind": "branch",
+      "status": "active",
+      "addressLines": [],
+      "city": "Abuja",
+      "region": "FCT",
+      "postalCode": "900271",
+      "country": "Nigeria",
+      "timezone": "Africa/Lagos",
+      "phone": "",
+      "email": "abuja@sahelfintech.ng",
+      "managerEmployeeId": "NG-EMP-0010",
+      "headcountTarget": 5,
+      "openedAt": "2025-05-20"
+    },
+    {
+      "id": "NG-BR-0003",
+      "tenantId": "tenant_ng_001",
+      "name": "Port Harcourt Office",
+      "code": "PHA",
+      "kind": "branch",
+      "status": "active",
+      "addressLines": [],
+      "city": "Port Harcourt",
+      "region": "Rivers State",
+      "postalCode": "500272",
+      "country": "Nigeria",
+      "timezone": "Africa/Lagos",
+      "phone": "",
+      "email": "port-harcourt@sahelfintech.ng",
+      "managerEmployeeId": "NG-EMP-0002",
+      "headcountTarget": 10,
+      "openedAt": "2017-12-09"
+    },
+    {
+      "id": "NG-BR-0004",
+      "tenantId": "tenant_ng_001",
+      "name": "Ibadan Office",
+      "code": "IBA",
+      "kind": "branch",
+      "status": "active",
+      "addressLines": [],
+      "city": "Ibadan",
+      "region": "",
+      "postalCode": "",
+      "country": "Nigeria",
+      "timezone": "Africa/Lagos",
+      "phone": "",
+      "email": "ibadan@sahelfintech.ng",
+      "managerEmployeeId": "NG-EMP-0001",
+      "headcountTarget": 5,
+      "openedAt": "2017-05-25"
+    },
+    {
+      "id": "NG-BR-0005",
+      "tenantId": "tenant_ng_001",
+      "name": "Kano Office",
+      "code": "KAN",
+      "kind": "branch",
+      "status": "active",
+      "addressLines": [],
+      "city": "Kano",
+      "region": "",
+      "postalCode": "",
+      "country": "Nigeria",
+      "timezone": "Africa/Lagos",
+      "phone": "",
+      "email": "kano@sahelfintech.ng",
+      "managerEmployeeId": "NG-EMP-0004",
+      "headcountTarget": 5,
+      "openedAt": "2019-10-22"
+    },
+    {
+      "id": "NG-BR-0006",
+      "tenantId": "tenant_ng_001",
+      "name": "Enugu Office",
+      "code": "ENU",
+      "kind": "branch",
+      "status": "active",
+      "addressLines": [],
+      "city": "Enugu",
+      "region": "",
+      "postalCode": "",
+      "country": "Nigeria",
+      "timezone": "Africa/Lagos",
+      "phone": "",
+      "email": "enugu@sahelfintech.ng",
+      "managerEmployeeId": "NG-EMP-0014",
+      "headcountTarget": 5,
+      "openedAt": "2022-04-14"
+    }
+  ],
   "companyVerification": {
     "registration": {
       "label": "CAC Registration",
@@ -509,7 +628,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Ibadan",
+      "workLocation": "Ibadan Office",
       "identifiers": {
         "nin": "70974072362",
         "bvn": "60419805398",
@@ -691,7 +810,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "NG-BR-0004"
     },
     {
       "id": "NG-EMP-0002",
@@ -730,7 +850,7 @@
         "type": "Home"
       },
       "workMode": "onsite",
-      "workLocation": "Port Harcourt",
+      "workLocation": "Port Harcourt Office",
       "identifiers": {
         "nin": "77467704769",
         "bvn": "98489799955",
@@ -912,7 +1032,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0003"
     },
     {
       "id": "NG-EMP-0003",
@@ -951,7 +1072,7 @@
         "type": "Home"
       },
       "workMode": "onsite",
-      "workLocation": "Port Harcourt",
+      "workLocation": "Port Harcourt Office",
       "identifiers": {
         "nin": "65356994031",
         "bvn": "97575947498",
@@ -1127,7 +1248,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0003"
     },
     {
       "id": "NG-EMP-0004",
@@ -1166,7 +1288,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Kano",
+      "workLocation": "Kano Office",
       "identifiers": {
         "nin": "40642365610",
         "bvn": "33425813969",
@@ -1342,7 +1464,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0005"
     },
     {
       "id": "NG-EMP-0005",
@@ -1381,7 +1504,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Kano",
+      "workLocation": "Kano Office",
       "identifiers": {
         "nin": "44369143450",
         "bvn": "53475587760",
@@ -1557,7 +1680,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "invite"
+      "onboardingMethod": "invite",
+      "branchId": "NG-BR-0005"
     },
     {
       "id": "NG-EMP-0006",
@@ -1596,7 +1720,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Lagos",
+      "workLocation": "Lagos HQ",
       "identifiers": {
         "nin": "61249921164",
         "bvn": "64527611052",
@@ -1765,7 +1889,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "NG-BR-0001"
     },
     {
       "id": "NG-EMP-0007",
@@ -1804,7 +1929,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Port Harcourt",
+      "workLocation": "Port Harcourt Office",
       "identifiers": {
         "nin": "58530444622",
         "bvn": "59676625807",
@@ -1973,7 +2098,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "NG-BR-0003"
     },
     {
       "id": "NG-EMP-0008",
@@ -2012,7 +2138,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Kano",
+      "workLocation": "Kano Office",
       "identifiers": {
         "nin": "93921499072",
         "bvn": "75295725451",
@@ -2187,7 +2313,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0005"
     },
     {
       "id": "NG-EMP-0009",
@@ -2226,7 +2353,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Enugu",
+      "workLocation": "Enugu Office",
       "identifiers": {
         "nin": "53225744345",
         "bvn": "72289915881",
@@ -2401,7 +2528,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0006"
     },
     {
       "id": "NG-EMP-0010",
@@ -2440,7 +2568,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Abuja",
+      "workLocation": "Abuja Office",
       "identifiers": {
         "nin": "38175888276",
         "bvn": "32016702854",
@@ -2616,7 +2744,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "NG-BR-0002"
     },
     {
       "id": "NG-EMP-0011",
@@ -2655,7 +2784,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Port Harcourt",
+      "workLocation": "Port Harcourt Office",
       "identifiers": {
         "nin": "61991217772",
         "bvn": "80602682917",
@@ -2824,7 +2953,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "NG-BR-0003"
     },
     {
       "id": "NG-EMP-0012",
@@ -2863,7 +2993,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Port Harcourt",
+      "workLocation": "Port Harcourt Office",
       "identifiers": {
         "nin": "64778181104",
         "bvn": "33273264215",
@@ -3032,7 +3162,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "invite"
+      "onboardingMethod": "invite",
+      "branchId": "NG-BR-0003"
     },
     {
       "id": "NG-EMP-0013",
@@ -3071,7 +3202,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Ibadan",
+      "workLocation": "Ibadan Office",
       "identifiers": {
         "nin": "77817817736",
         "bvn": "68284602772",
@@ -3247,7 +3378,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0004"
     },
     {
       "id": "NG-EMP-0014",
@@ -3286,7 +3418,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Enugu",
+      "workLocation": "Enugu Office",
       "identifiers": {
         "nin": "79939671641",
         "bvn": "77769759579",
@@ -3467,7 +3599,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "invite"
+      "onboardingMethod": "invite",
+      "branchId": "NG-BR-0006"
     },
     {
       "id": "NG-EMP-0015",
@@ -3506,7 +3639,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Lagos",
+      "workLocation": "Lagos HQ",
       "identifiers": {
         "nin": "40412353685",
         "bvn": "70622358983",
@@ -3687,7 +3820,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0001"
     },
     {
       "id": "NG-EMP-0016",
@@ -3726,7 +3860,7 @@
         "type": "Home"
       },
       "workMode": "onsite",
-      "workLocation": "Enugu",
+      "workLocation": "Enugu Office",
       "identifiers": {
         "nin": "67330479604",
         "bvn": "85868584845",
@@ -3901,7 +4035,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0006"
     },
     {
       "id": "NG-EMP-0017",
@@ -3940,7 +4075,7 @@
         "type": "Home"
       },
       "workMode": "onsite",
-      "workLocation": "Port Harcourt",
+      "workLocation": "Port Harcourt Office",
       "identifiers": {
         "nin": "69090650834",
         "bvn": "87231355187",
@@ -4116,7 +4251,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0003"
     },
     {
       "id": "NG-EMP-0018",
@@ -4155,7 +4291,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Kano",
+      "workLocation": "Kano Office",
       "identifiers": {
         "nin": "56710632471",
         "bvn": "13083812373",
@@ -4337,7 +4473,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0005"
     },
     {
       "id": "NG-EMP-0019",
@@ -4376,7 +4513,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Enugu",
+      "workLocation": "Enugu Office",
       "identifiers": {
         "nin": "60186619961",
         "bvn": "32533949064",
@@ -4557,7 +4694,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0006"
     },
     {
       "id": "NG-EMP-0020",
@@ -4596,7 +4734,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Lagos",
+      "workLocation": "Lagos HQ",
       "identifiers": {
         "nin": "61293590510",
         "bvn": "60758282920",
@@ -4772,7 +4910,8 @@
           "country": "Nigeria"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "NG-BR-0001"
     }
   ],
   "orgStructure": [

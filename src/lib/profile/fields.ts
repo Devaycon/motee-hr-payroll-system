@@ -254,8 +254,23 @@ export function regionWordForCountry(country?: string | null): string {
     : "state / region";
 }
 
-/** The full set of employee-provided, editable fields for an employee. */
-export function getEmployeeProfileFields(emp: LocaleEmployee): ProfileField[] {
+/** Just enough of a branch to build the Branch dropdown. */
+export interface ProfileBranchOption {
+  id: string;
+  name: string;
+}
+
+/**
+ * The full set of employee-provided, editable fields for an employee.
+ *
+ * `branches` is optional because the field list is also built in contexts that
+ * have no bundle to hand; without it the Branch field falls back to free text,
+ * exactly as it behaved before branches existed.
+ */
+export function getEmployeeProfileFields(
+  emp: LocaleEmployee,
+  branches: ProfileBranchOption[] = [],
+): ProfileField[] {
   const idFields: ProfileField[] = Object.keys(emp.identifiers ?? {}).map((k) => ({
     key: `identifiers.${k}`,
     label: ID_LABELS[k] ?? labelFromKey(k),
@@ -298,11 +313,27 @@ export function getEmployeeProfileFields(emp: LocaleEmployee): ProfileField[] {
   // The Title dropdown only offers what this person's gender and marital status
   // allow (plus the honorifics, which anyone can hold) — so "Mr" can't be picked
   // for a woman, nor "Miss" for a married one.
-  const fields = STATIC_FIELDS.map((f) =>
-    f.key === "title"
-      ? { ...f, options: titlesForGender(emp.gender, emp.maritalStatus) }
-      : f,
-  );
+  const fields = STATIC_FIELDS.map((f) => {
+    if (f.key === "title") {
+      return { ...f, options: titlesForGender(emp.gender, emp.maritalStatus) };
+    }
+    // Work location used to be free text. It is a real record now, so the field
+    // edits the branch *id* and `workLocation` is re-derived from it in
+    // `applyBundleOverrides` — one source of truth, no pair to keep in step.
+    // Without a branch list to hand (callers that have no bundle) it stays as
+    // it was.
+    if (f.key === "workLocation" && branches.length > 0) {
+      return {
+        ...f,
+        key: "branchId",
+        label: "Branch",
+        type: "select" as const,
+        options: branches.map((b) => b.id),
+        optionLabels: Object.fromEntries(branches.map((b) => [b.id, b.name])),
+      };
+    }
+    return f;
+  });
 
   return [...fields, ...addressFields, ...emergencyFields, ...idFields];
 }

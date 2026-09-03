@@ -30,6 +30,8 @@ export interface MyProfile extends Employee {
   nationality?: string;
   maritalStatus?: string;
   workMode?: string;
+  branchId?: string;
+  branchName?: string;
   workLocation?: string;
   grade?: string;
   /** Country-specific identity/tax IDs, e.g. { nin, tin } (NG) or { nino, utr } (UK). */

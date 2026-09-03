@@ -259,6 +259,12 @@ function buildHeadcount(bundle: LocaleBundle): HeadcountData {
   const genderMap = new Map<string, number>();
   const gradeMap = new Map<string, number>();
   const locationMap = new Map<string, number>();
+  // Work location is a real branch record now, so the breakdown is keyed by
+  // branch name and can drill through to that branch's people.
+  const branchNameById = new Map(
+    (bundle.branches ?? []).map((b) => [b.id, b.name]),
+  );
+  const branchIdByLabel = new Map<string, string>();
   for (const e of bundle.employees) {
     const band = ageBand(e.dateOfBirth, now);
     if (band) ageMap.set(band, (ageMap.get(band) ?? 0) + 1);
@@ -266,8 +272,13 @@ function buildHeadcount(bundle: LocaleBundle): HeadcountData {
     if (gender) genderMap.set(gender, (genderMap.get(gender) ?? 0) + 1);
     const grade = e.grade?.trim();
     if (grade) gradeMap.set(grade, (gradeMap.get(grade) ?? 0) + 1);
-    const location = e.workLocation?.trim();
-    if (location) locationMap.set(location, (locationMap.get(location) ?? 0) + 1);
+    const location =
+      (e.branchId ? branchNameById.get(e.branchId) : undefined) ??
+      e.workLocation?.trim();
+    if (location) {
+      locationMap.set(location, (locationMap.get(location) ?? 0) + 1);
+      if (e.branchId) branchIdByLabel.set(location, e.branchId);
+    }
   }
 
   return {
@@ -279,7 +290,12 @@ function buildHeadcount(bundle: LocaleBundle): HeadcountData {
       age: toItems(ageMap),
       gender: toItems(genderMap),
       grade: toItems(gradeMap),
-      location: toItems(locationMap),
+      location: toItems(locationMap, (label) => {
+        const id = branchIdByLabel.get(label);
+        return id
+          ? `/organization/employees?branch=${encodeURIComponent(id)}`
+          : undefined;
+      }),
       // §6.25 — each segment drills into the matching employee list. The
       // Employees page filters on the canonical slug, not the locale name.
       employmentType: toItems(

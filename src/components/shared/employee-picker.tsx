@@ -17,7 +17,9 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// Unscoped: you can name anyone in the company as a manager, approver or
+// recipient, whichever branch the view is currently narrowed to.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { cn } from "@/src/lib/utils";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 

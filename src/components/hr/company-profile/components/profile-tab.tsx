@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import {
   Building2,
   Upload,
@@ -8,6 +9,8 @@ import {
   Save,
   Users,
   Pencil,
+  MapPin,
+  ChevronRight,
 } from "lucide-react";
 import {
   Card,
@@ -26,8 +29,71 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import {
+  useAllBranches,
+  useBranchHeadcounts,
+} from "@/src/lib/branches/use-branch";
+import { BRANCH_KIND_LABELS } from "@/src/lib/types/branches";
 import type { ProfileData, VerificationStage } from "../types";
 import { STAGE_ICONS, STAGE_STYLES, ACTIVITY_STATS } from "../data";
+
+/**
+ * Every site the company operates from. Read unscoped on purpose — the company
+ * profile describes the whole company, whichever branch the app is showing.
+ */
+function LocationsCard() {
+  const branches = useAllBranches();
+  const headcounts = useBranchHeadcounts();
+
+  if (branches.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center gap-2 px-4 pt-4 pb-3">
+        <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted">
+          <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+        </div>
+        <CardTitle className="text-sm font-medium">
+          Locations{" "}
+          <span className="text-muted-foreground font-normal">
+            ({branches.length})
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 pb-4">
+        <div className="flex flex-col gap-1">
+          {branches.map((b) => (
+            <Link
+              key={b.id}
+              href={`/organization/branches/${b.id}`}
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 -mx-2 hover:bg-accent transition-colors"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-foreground truncate">{b.name}</p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {BRANCH_KIND_LABELS[b.kind]}
+                  {b.city ? ` · ${b.city}` : ""}
+                </p>
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0">
+                {headcounts[b.id] ?? 0}
+              </span>
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            </Link>
+          ))}
+        </div>
+        <Button
+          asChild
+          size="sm"
+          variant="outline"
+          className="h-8 w-full mt-3 text-xs"
+        >
+          <Link href="/organization/branches">Manage branches</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 type ProfileTabProps = {
   editing: boolean;
@@ -249,6 +315,8 @@ export function ProfileTab({
         </Card>
 
         <div className="flex flex-col gap-4">
+          <LocationsCard />
+
           <Card>
             <CardHeader className="flex flex-row items-center gap-2 px-4 pt-4 pb-3">
               <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted">

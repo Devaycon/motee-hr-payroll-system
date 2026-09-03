@@ -20,6 +20,7 @@ import { initProjectsPersistence } from "./projects-persistence";
 import { initAttendancePersistence } from "./attendance-persistence";
 import { initExpensesPersistence } from "./expenses-persistence";
 import { initDashboardLayoutPersistence } from "./dashboard-layout-persistence";
+import { initBranchPersistence } from "./branch-persistence";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -40,6 +41,7 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
     initAttendancePersistence();
     initExpensesPersistence();
     initDashboardLayoutPersistence();
+    initBranchPersistence();
   }, []);
 
   return <Provider store={store}>{children}</Provider>;

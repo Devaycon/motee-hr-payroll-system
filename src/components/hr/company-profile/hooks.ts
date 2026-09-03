@@ -1,6 +1,8 @@
 "use client";
 
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// The company profile describes the whole company — including its full list of
+// sites — so it never narrows to the branch the navbar is scoped to.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import type {
   ProfileData,

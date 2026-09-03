@@ -91,6 +91,18 @@ export function AdvancedEmployeesTable({
         ),
       },
       {
+        accessorKey: "branchName",
+        header: sortableHeader("Branch"),
+        cell: ({ row }) =>
+          row.original.branchName ? (
+            <span className="text-sm text-foreground">
+              {row.original.branchName}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground italic">—</span>
+          ),
+      },
+      {
         accessorKey: "jobTitle",
         header: sortableHeader("Job Title"),
         cell: ({ row }) => (
@@ -213,6 +225,10 @@ export function AdvancedEmployeesTable({
         enableSelection
         enableDnd
         enableColumnVisibility
+        // Off by default: most tenants run one site, and the navbar switcher
+        // already says which branch you are looking at. Turn it on from the
+        // column menu when comparing across branches.
+        initialColumnVisibility={{ branchName: false }}
         pageSize={10}
         emptyMessage={emptyMessage}
       />

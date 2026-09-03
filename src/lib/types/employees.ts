@@ -51,6 +51,10 @@ export interface EmployeeRow {
   state?: string;
   country?: string;
   workMode?: string;
+  /** Site the person works out of. Resolved from `LocaleEmployee.branchId`. */
+  branchId?: string;
+  /** Display name of `branchId`, resolved against `bundle.branches`. */
+  branchName?: string;
   workLocation?: string;
   grade?: string;
   bankName?: string;

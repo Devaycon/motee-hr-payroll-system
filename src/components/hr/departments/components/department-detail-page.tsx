@@ -2,6 +2,7 @@
 import { formatDate } from "@/src/lib/utils/format-date";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -272,6 +273,18 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
   const activeMembers = members.filter((m) => m.status === "active").length;
   const onLeave = members.filter((m) => m.status === "on_leave").length;
   const activity = ACTIVITY_BY_DEPT[dept.name] ?? [];
+  // Departments are company-wide, so the interesting question is where this
+  // one's people actually sit. Derived from the members, never stored.
+  const byBranch = (() => {
+    const counts = new Map<string, { id?: string; count: number }>();
+    for (const m of members) {
+      const label = m.branchName ?? "Unassigned";
+      const entry = counts.get(label) ?? { id: m.branchId, count: 0 };
+      entry.count += 1;
+      counts.set(label, entry);
+    }
+    return [...counts.entries()].sort((a, b) => b[1].count - a[1].count);
+  })();
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -510,6 +523,57 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                   })}
                 </CardContent>
               </Card>
+
+              {byBranch.length > 0 && (
+                <Card>
+                  <CardHeader className="px-4 pt-4 pb-3 flex flex-row items-center gap-2">
+                    <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted">
+                      <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                    </div>
+                    <CardTitle className="text-sm font-medium">
+                      Branches
+                    </CardTitle>
+                  </CardHeader>
+                  <Separator />
+                  <CardContent className="px-4 py-4 flex flex-col gap-2">
+                    {byBranch.map(([label, { id, count }]) => {
+                      const pct =
+                        members.length > 0
+                          ? Math.round((count / members.length) * 100)
+                          : 0;
+                      const row = (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-foreground truncate">
+                              {label}
+                            </span>
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              {count} · {pct}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-primary transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                      return id ? (
+                        <Link
+                          key={label}
+                          href={`/organization/branches/${id}`}
+                          className="hover:opacity-80 transition-opacity"
+                        >
+                          {row}
+                        </Link>
+                      ) : (
+                        <div key={label}>{row}</div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              )}
 
               <Card>
                 <CardHeader className="px-4 pt-4 pb-3 flex flex-row items-center gap-2">

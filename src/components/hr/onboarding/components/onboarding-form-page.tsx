@@ -22,6 +22,7 @@ import { DEPARTMENT_OPTIONS } from "../data";
 import type { ManualOnboardingData } from "../types";
 import { addRecord } from "@/src/lib/stores/onboarding-records-slice";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useBranchOptions } from "@/src/lib/branches/use-branch";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { onboardingStarted } from "@/src/lib/notifications/onboarding";
 import {
@@ -187,6 +188,7 @@ const EMPTY_DATA: ManualOnboardingData = {
   manager: "",
   startDate: "",
   salary: "",
+  branchId: "",
   workLocation: "",
   workMode: "",
   grade: "",
@@ -240,6 +242,7 @@ export function OnboardingFormPage() {
   const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
   // Sort code and driving-licence expiry are UK-shaped; NG uses NIN/TIN/PFA.
   const isUK = useAppSelector((s) => s.locale.country) === "uk";
+  const branchOptions = useBranchOptions();
   const onboardingTemplates = getOnboardingTemplates(templates);
   const defaultTemplate = getDefaultOnboardingTemplate(templates);
   const [step, setStep] = useState(0);
@@ -798,14 +801,32 @@ export function OnboardingFormPage() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
-                  Work Location <span className="text-destructive">*</span>
+                  Branch <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  value={data.workLocation}
-                  onChange={(e) => update("workLocation", e.target.value)}
-                  className="h-9 text-sm"
-                  placeholder="e.g. Lagos Head Office"
-                />
+                {/* Picked from the branch list rather than typed, so the hire
+                    lands on a real site. Both the id and its name are stored:
+                    the id is the FK, the name is what older readers display. */}
+                <Select
+                  value={data.branchId}
+                  onValueChange={(v) => {
+                    update("branchId", v);
+                    update(
+                      "workLocation",
+                      branchOptions.find((b) => b.id === v)?.name ?? "",
+                    );
+                  }}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branchOptions.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {err("workLocation") && (
                   <p className="text-xs text-destructive">
                     {err("workLocation")}

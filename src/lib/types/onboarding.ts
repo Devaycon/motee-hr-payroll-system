@@ -321,6 +321,8 @@ export interface ManualOnboardingData {
   manager: string;
   startDate: string;
   salary: string;
+  /** The branch the hire is posted to. `workLocation` is its display name. */
+  branchId: string;
   workLocation: string;
   workMode: string;
   grade: string;

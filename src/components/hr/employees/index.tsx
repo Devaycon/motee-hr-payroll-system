@@ -66,7 +66,11 @@ export function EmployeesPage() {
   const [activeTab, setActiveTab] = useState(() => {
     const status = searchParams.get("status");
     if (status && TABS.some((t) => t.value === status)) return status;
-    if (searchParams.get("department") || searchParams.get("employmentType")) {
+    if (
+      searchParams.get("department") ||
+      searchParams.get("employmentType") ||
+      searchParams.get("branch")
+    ) {
       return "all";
     }
     return "active";
@@ -83,6 +87,11 @@ export function EmployeesPage() {
   // (e.g. "Employees Working Remotely Today" → ?workMode=remote).
   const [workModeFilter, setWorkModeFilter] = useState(
     () => WORK_MODE_PARAM_TO_ROW[searchParams.get("workMode") ?? ""] ?? "all",
+  );
+  // Deep-linkable so the branches table, branch detail page and the Headcount
+  // location breakdown can all land here pre-filtered.
+  const [branchFilter, setBranchFilter] = useState(
+    () => searchParams.get("branch") ?? "all",
   );
 
   const employees = useMemo(() => data ?? [], [data]);
@@ -104,9 +113,13 @@ export function EmployeesPage() {
       const matchType = typeFilter === "all" || e.employmentType === typeFilter;
       const matchWorkMode =
         workModeFilter === "all" || e.workMode === workModeFilter;
-      return matchSearch && matchDept && matchType && matchWorkMode;
+      const matchBranch =
+        branchFilter === "all" || e.branchId === branchFilter;
+      return (
+        matchSearch && matchDept && matchType && matchWorkMode && matchBranch
+      );
     });
-  }, [employees, search, deptFilter, typeFilter, workModeFilter]);
+  }, [employees, search, deptFilter, typeFilter, workModeFilter, branchFilter]);
 
   const rowsByTab = useMemo(
     () =>
@@ -304,6 +317,8 @@ export function EmployeesPage() {
         onTypeFilterChange={setTypeFilter}
         workModeFilter={workModeFilter}
         onWorkModeFilterChange={setWorkModeFilter}
+        branchFilter={branchFilter}
+        onBranchFilterChange={setBranchFilter}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

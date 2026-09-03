@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import onboardingReducer from "./onboarding-slice";
 import onboardingRecordsReducer from "./onboarding-records-slice";
 import localeReducer from "./locale-slice";
+import branchReducer from "./branch-slice";
 import authReducer from "./auth-slice";
 import accessLevelsReducer from "./access-levels-slice";
 import approvalsReducer from "./approvals-slice";
@@ -29,6 +30,7 @@ export const store = configureStore({
     onboarding: onboardingReducer,
     onboardingRecords: onboardingRecordsReducer,
     locale: localeReducer,
+    branch: branchReducer,
     auth: authReducer,
     accessLevels: accessLevelsReducer,
     approvals: approvalsReducer,

@@ -19,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// Unscoped: assignable stock is a company-wide pool, not a per-branch one.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppDispatch } from "@/src/lib/stores/hooks";
 import { addRecord } from "@/src/lib/stores/collection-edits-slice";
 import { COLLECTION_SCHEMAS } from "@/src/lib/profile/collections";

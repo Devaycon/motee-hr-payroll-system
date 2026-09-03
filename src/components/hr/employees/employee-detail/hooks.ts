@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// The detail page is about one named person, so it must resolve even when the
+// navbar is scoped to a different branch — every read here is unscoped.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { applyEmployeeOverrides } from "@/src/lib/profile/overrides";
 import { applyCollection } from "@/src/lib/profile/collection-edits";
@@ -251,6 +253,23 @@ export function useEmployeeRecord(id: string) {
     [res.data, ov],
   );
   return { ...res, data };
+}
+
+/**
+ * Whether `id` is a real employee that the viewer's role simply cannot see, as
+ * opposed to one that does not exist.
+ *
+ * Reads the raw bundle on purpose. "Outside your access" is a far more useful
+ * answer than "not found", and an employee's *existence* is not confidential in
+ * a system that already publishes an org chart and a staff directory — no field
+ * of the record is exposed here, only the fact that the id resolves.
+ */
+export function useIsHiddenByScope(id: string): boolean {
+  const existsInTenant = useAppSelector((s) =>
+    Boolean(s.locale.data?.employees.some((e) => e.id === id)),
+  );
+  const { data, loading } = useEmployeeRecord(id);
+  return !loading && !data && existsInTenant;
 }
 
 // ── stats strip ───────────────────────────────────────────────────────────--

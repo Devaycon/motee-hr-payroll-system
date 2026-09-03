@@ -23,6 +23,9 @@ function buildHierarchy(bundle: LocaleBundle): HierarchyNode[] {
     }
   }
   const employeesById = new Map(bundle.employees.map((e) => [e.id, e]));
+  const branchNameById = new Map(
+    (bundle.branches ?? []).map((b) => [b.id, b.name]),
+  );
   return bundle.employees.map((e) => {
     const manager = e.managerId ? employeesById.get(e.managerId) : null;
     return {
@@ -33,6 +36,7 @@ function buildHierarchy(bundle: LocaleBundle): HierarchyNode[] {
       gender: e.gender,
       jobTitle: e.jobTitle,
       department: e.departmentName,
+      branchName: e.branchId ? branchNameById.get(e.branchId) : undefined,
       managerId: e.managerId,
       managerName: manager?.fullName,
       status: mapStatus(e.status),

@@ -80,6 +80,125 @@
       "Inclusion"
     ]
   },
+  "branches": [
+    {
+      "id": "GB-BR-0001",
+      "tenantId": "tenant_uk_001",
+      "name": "London HQ",
+      "code": "LON",
+      "kind": "headquarters",
+      "status": "active",
+      "addressLines": [
+        "1 Canary Wharf",
+        "Floor 14"
+      ],
+      "city": "London",
+      "region": "Greater London",
+      "postalCode": "E14 5AB",
+      "country": "United Kingdom",
+      "timezone": "Europe/London",
+      "phone": "+44 20 7946 0102",
+      "email": "london@northwind.co.uk",
+      "managerEmployeeId": "GB-EMP-0002",
+      "headcountTarget": 5,
+      "openedAt": "2023-04-12"
+    },
+    {
+      "id": "GB-BR-0002",
+      "tenantId": "tenant_uk_001",
+      "name": "Manchester Hub",
+      "code": "MAN",
+      "kind": "branch",
+      "status": "active",
+      "addressLines": [],
+      "city": "Manchester",
+      "region": "Greater Manchester",
+      "postalCode": "M1 4ET",
+      "country": "United Kingdom",
+      "timezone": "Europe/London",
+      "phone": "",
+      "email": "manchester@northwind.co.uk",
+      "managerEmployeeId": "GB-EMP-0009",
+      "headcountTarget": 5,
+      "openedAt": "2024-02-15"
+    },
+    {
+      "id": "GB-BR-0003",
+      "tenantId": "tenant_uk_001",
+      "name": "Birmingham Depot",
+      "code": "BIR",
+      "kind": "branch",
+      "status": "active",
+      "addressLines": [],
+      "city": "Birmingham",
+      "region": "West Midlands",
+      "postalCode": "B1 1AA",
+      "country": "United Kingdom",
+      "timezone": "Europe/London",
+      "phone": "",
+      "email": "birmingham@northwind.co.uk",
+      "managerEmployeeId": "GB-EMP-0016",
+      "headcountTarget": 10,
+      "openedAt": "2019-07-15"
+    },
+    {
+      "id": "GB-BR-0004",
+      "tenantId": "tenant_uk_001",
+      "name": "Bristol Office",
+      "code": "BRI",
+      "kind": "branch",
+      "status": "active",
+      "addressLines": [],
+      "city": "Bristol",
+      "region": "",
+      "postalCode": "",
+      "country": "United Kingdom",
+      "timezone": "Europe/London",
+      "phone": "",
+      "email": "bristol@northwind.co.uk",
+      "managerEmployeeId": "GB-EMP-0001",
+      "headcountTarget": 5,
+      "openedAt": "2022-09-23"
+    },
+    {
+      "id": "GB-BR-0005",
+      "tenantId": "tenant_uk_001",
+      "name": "Leeds Office",
+      "code": "LEE",
+      "kind": "branch",
+      "status": "active",
+      "addressLines": [],
+      "city": "Leeds",
+      "region": "",
+      "postalCode": "",
+      "country": "United Kingdom",
+      "timezone": "Europe/London",
+      "phone": "",
+      "email": "leeds@northwind.co.uk",
+      "managerEmployeeId": "GB-EMP-0020",
+      "headcountTarget": 5,
+      "openedAt": "2021-12-17"
+    },
+    {
+      "id": "GB-BR-0006",
+      "tenantId": "tenant_uk_001",
+      "name": "Edinburgh Office",
+      "code": "EDI",
+      "kind": "branch",
+      "status": "active",
+      "addressLines": [],
+      "city": "Edinburgh",
+      "region": "",
+      "postalCode": "",
+      "country": "United Kingdom",
+      "timezone": "Europe/London",
+      "phone": "",
+      "email": "edinburgh@northwind.co.uk",
+      "managerEmployeeId": "GB-EMP-0019",
+      "headcountTarget": 5,
+      "openedAt": "2022-12-05"
+    }
+  ],
   "companyVerification": {
     "registration": {
       "label": "Company Registration (Companies House)",
@@ -503,7 +622,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Bristol",
+      "workLocation": "Bristol Office",
       "identifiers": {
         "nationalInsuranceNumber": "AB719176D",
         "passport": "134126396",
@@ -676,7 +795,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "GB-BR-0004"
     },
     {
       "id": "GB-EMP-0002",
@@ -715,7 +835,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "London",
+      "workLocation": "London HQ",
       "identifiers": {
         "nationalInsuranceNumber": "AB865179D",
         "passport": "675770529",
@@ -888,7 +1008,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0001"
     },
     {
       "id": "GB-EMP-0003",
@@ -927,7 +1048,7 @@
         "type": "Home"
       },
       "workMode": "onsite",
-      "workLocation": "Bristol",
+      "workLocation": "Bristol Office",
       "identifiers": {
         "nationalInsuranceNumber": "SR497887C",
         "passport": "787194506",
@@ -1100,7 +1221,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0004"
     },
     {
       "id": "GB-EMP-0004",
@@ -1139,7 +1261,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Birmingham",
+      "workLocation": "Birmingham Depot",
       "identifiers": {
         "nationalInsuranceNumber": "AB892495A",
         "passport": "217734861",
@@ -1306,7 +1428,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0003"
     },
     {
       "id": "GB-EMP-0005",
@@ -1345,7 +1468,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Birmingham",
+      "workLocation": "Birmingham Depot",
       "identifiers": {
         "nationalInsuranceNumber": "QQ260263C",
         "passport": "918739736",
@@ -1517,7 +1640,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0003"
     },
     {
       "id": "GB-EMP-0006",
@@ -1556,7 +1680,7 @@
         "type": "Home"
       },
       "workMode": "onsite",
-      "workLocation": "Bristol",
+      "workLocation": "Bristol Office",
       "identifiers": {
         "nationalInsuranceNumber": "QQ847581C",
         "passport": "528414718",
@@ -1722,7 +1846,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "GB-BR-0004"
     },
     {
       "id": "GB-EMP-0007",
@@ -1761,7 +1886,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "London",
+      "workLocation": "London HQ",
       "identifiers": {
         "nationalInsuranceNumber": "SR299659A",
         "passport": "204078666",
@@ -1933,7 +2058,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "invite"
+      "onboardingMethod": "invite",
+      "branchId": "GB-BR-0001"
     },
     {
       "id": "GB-EMP-0008",
@@ -1972,7 +2098,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Leeds",
+      "workLocation": "Leeds Office",
       "identifiers": {
         "nationalInsuranceNumber": "AB890170B",
         "passport": "278575192",
@@ -2144,7 +2270,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0005"
     },
     {
       "id": "GB-EMP-0009",
@@ -2183,7 +2310,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Manchester",
+      "workLocation": "Manchester Hub",
       "identifiers": {
         "nationalInsuranceNumber": "QQ523389A",
         "passport": "711684318",
@@ -2356,7 +2483,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0002"
     },
     {
       "id": "GB-EMP-0010",
@@ -2395,7 +2523,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Manchester",
+      "workLocation": "Manchester Hub",
       "identifiers": {
         "nationalInsuranceNumber": "JM265409D",
         "passport": "995226828",
@@ -2573,7 +2701,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "GB-BR-0002"
     },
     {
       "id": "GB-EMP-0011",
@@ -2612,7 +2741,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Manchester",
+      "workLocation": "Manchester Hub",
       "identifiers": {
         "nationalInsuranceNumber": "JM908577B",
         "passport": "784095277",
@@ -2784,7 +2913,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "GB-BR-0002"
     },
     {
       "id": "GB-EMP-0012",
@@ -2823,7 +2953,7 @@
         "type": "Home"
       },
       "workMode": "onsite",
-      "workLocation": "London",
+      "workLocation": "London HQ",
       "identifiers": {
         "nationalInsuranceNumber": "QQ938742B",
         "passport": "542697755",
@@ -2995,7 +3125,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "invite"
+      "onboardingMethod": "invite",
+      "branchId": "GB-BR-0001"
     },
     {
       "id": "GB-EMP-0013",
@@ -3034,7 +3165,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "London",
+      "workLocation": "London HQ",
       "identifiers": {
         "nationalInsuranceNumber": "JM128941A",
         "passport": "380477683",
@@ -3207,7 +3338,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "GB-BR-0001"
     },
     {
       "id": "GB-EMP-0014",
@@ -3246,7 +3378,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Birmingham",
+      "workLocation": "Birmingham Depot",
       "identifiers": {
         "nationalInsuranceNumber": "JM681343B",
         "passport": "305986733",
@@ -3424,7 +3556,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "invite"
+      "onboardingMethod": "invite",
+      "branchId": "GB-BR-0003"
     },
     {
       "id": "GB-EMP-0015",
@@ -3463,7 +3596,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Edinburgh",
+      "workLocation": "Edinburgh Office",
       "identifiers": {
         "nationalInsuranceNumber": "QQ945742B",
         "passport": "258220114",
@@ -3635,7 +3768,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "manual"
+      "onboardingMethod": "manual",
+      "branchId": "GB-BR-0006"
     },
     {
       "id": "GB-EMP-0016",
@@ -3674,7 +3808,7 @@
         "type": "Home"
       },
       "workMode": "remote",
-      "workLocation": "Birmingham",
+      "workLocation": "Birmingham Depot",
       "identifiers": {
         "nationalInsuranceNumber": "JM891937D",
         "passport": "757830420",
@@ -3841,7 +3975,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0003"
     },
     {
       "id": "GB-EMP-0017",
@@ -3880,7 +4015,7 @@
         "type": "Home"
       },
       "workMode": "onsite",
-      "workLocation": "Birmingham",
+      "workLocation": "Birmingham Depot",
       "identifiers": {
         "nationalInsuranceNumber": "JM668969D",
         "passport": "546434187",
@@ -4058,7 +4193,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0003"
     },
     {
       "id": "GB-EMP-0018",
@@ -4097,7 +4233,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Birmingham",
+      "workLocation": "Birmingham Depot",
       "identifiers": {
         "nationalInsuranceNumber": "AB513160A",
         "passport": "190137896",
@@ -4276,7 +4412,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0003"
     },
     {
       "id": "GB-EMP-0019",
@@ -4315,7 +4452,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Edinburgh",
+      "workLocation": "Edinburgh Office",
       "identifiers": {
         "nationalInsuranceNumber": "QQ350132B",
         "passport": "608482316",
@@ -4493,7 +4630,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0006"
     },
     {
       "id": "GB-EMP-0020",
@@ -4532,7 +4670,7 @@
         "type": "Home"
       },
       "workMode": "hybrid",
-      "workLocation": "Leeds",
+      "workLocation": "Leeds Office",
       "identifiers": {
         "nationalInsuranceNumber": "AB934904A",
         "passport": "472807202",
@@ -4705,7 +4843,8 @@
           "country": "United Kingdom"
         }
       },
-      "onboardingMethod": "bulk"
+      "onboardingMethod": "bulk",
+      "branchId": "GB-BR-0005"
     }
   ],
   "orgStructure": [

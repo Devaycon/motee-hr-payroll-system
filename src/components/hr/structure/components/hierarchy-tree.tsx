@@ -62,6 +62,11 @@ function ManagerCard({ node }: { node: HierarchyNode }) {
         <p className="font-mono text-[10px] text-muted-foreground/70 mt-0.5 truncate">
           {node.employeeNumber ?? node.id}
         </p>
+        {node.branchName && (
+          <p className="text-[10px] text-muted-foreground/70 mt-0.5 truncate">
+            {node.branchName}
+          </p>
+        )}
       </div>
       <Badge
         variant="outline"
@@ -91,6 +96,11 @@ function MemberCard({ node }: { node: HierarchyNode }) {
         <p className="font-mono text-[10px] text-muted-foreground/70 mt-0.5 truncate">
           {node.employeeNumber ?? node.id}
         </p>
+        {node.branchName && (
+          <p className="text-[10px] text-muted-foreground/70 mt-0.5 truncate">
+            {node.branchName}
+          </p>
+        )}
       </div>
       <div className="flex flex-col items-center gap-1 w-full">
         <Badge

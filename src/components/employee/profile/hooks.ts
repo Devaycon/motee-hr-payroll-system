@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// Self-service shows one person their own record, so it is never narrowed
+// by the admin shell's branch switcher.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { applyEmployeeOverrides } from "@/src/lib/profile/overrides";
 import { employmentTypeFromName } from "@/src/lib/constants/employment-types";

@@ -30,11 +30,20 @@ export function isAssignable(level: AccessLevel): boolean {
   return (level.status ?? "active") === "active";
 }
 
-/** Narrowest first. A lower index wins when two roles disagree. */
+/**
+ * Narrowest first. A lower index wins when two roles disagree.
+ *
+ * Branch sits above department: a site normally holds several departments,
+ * so "this branch" is the wider of the two. They are not strictly nested —
+ * a department can span branches — but the merge rule needs a total order,
+ * and ranking branch wider is the conservative reading in the case that
+ * matters (holding both should not hand someone the whole site).
+ */
 const SCOPE_BREADTH: DataScopeKind[] = [
   "self",
   "direct_reports",
   "department",
+  "branch",
   "business_unit",
   "all",
 ];
@@ -66,6 +75,7 @@ export function narrowerScope(a: DataScope, b: DataScope): DataScope {
   return {
     kind: a.kind,
     departmentIds: intersect(a.departmentIds, b.departmentIds),
+    branchIds: intersect(a.branchIds, b.branchIds),
     businessUnits: intersect(a.businessUnits, b.businessUnits),
   };
 }

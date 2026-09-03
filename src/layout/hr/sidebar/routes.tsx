@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   BriefcaseBusiness,
   Building2,
+  MapPin,
   Network,
   GitFork,
   Users,
@@ -190,6 +191,12 @@ export const routes: Route[] = [
     icon: Building2,
     label: "Company Profile",
     link: "/organization/company",
+  },
+  {
+    group: "Organization",
+    icon: MapPin,
+    label: "Branches",
+    link: "/organization/branches",
   },
   {
     group: "Organization",

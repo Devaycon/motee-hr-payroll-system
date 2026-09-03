@@ -27,6 +27,7 @@ export const ALL_MODULES: ModuleEntry[] = [
 
   // Organization
   { id: "organization.company",            label: "Company Profile",          group: "Organization", link: "/organization/company" },
+  { id: "organization.branches",           label: "Branches",                 group: "Organization", link: "/organization/branches" },
   { id: "organization.departments",        label: "Departments",              group: "Organization", link: "/organization/departments" },
   { id: "organization.structure",          label: "Structure & Hierarchy",    group: "Organization", link: "/organization/structure" },
   { id: "organization.roles",              label: "Roles & Positions",        group: "Organization", link: "/organization/roles" },
