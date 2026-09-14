@@ -49,7 +49,15 @@ function mergeWithSeed(cached: AccessLevel): AccessLevel {
     // sidebar. Re-derive from the seed instead; a real edit sets
     // `lastModifiedBy` to "You" and takes the preserving path.
     if (cached.lastModifiedBy === SYSTEM_AUTHOR) {
-      return { ...cached, permissions: clonePermissions(seed.permissions) };
+      // `dataScope` is re-derived for the same reason as the permissions, and
+      // it is the same bug when it isn't: a snapshot taken while the scope was
+      // still an inert placeholder would pin the role to it forever, so a
+      // newly enforced restriction would silently never apply.
+      return {
+        ...cached,
+        dataScope: seed.dataScope,
+        permissions: clonePermissions(seed.permissions),
+      };
     }
     const merged: ModulePermission[] = seed.permissions.map((seedPerm) => {
       const existing = cachedMap.get(seedPerm.module);

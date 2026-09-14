@@ -12,7 +12,9 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/src/components/ui/command";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// Unscoped: "search everyone" is the whole point — a search that silently
+// hides colleagues at other sites would be worse than no search.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
 import { routes } from "@/src/layout/hr/sidebar/routes";
 

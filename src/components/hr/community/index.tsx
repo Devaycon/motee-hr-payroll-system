@@ -59,6 +59,7 @@ export function CommunityPage() {
       celebrationKind: newPost.celebrationKind as
         | import("@/src/lib/types/community").CelebrationKind
         | undefined,
+      celebrationPersonId: newPost.celebrationPersonId,
       celebrationPerson: newPost.celebrationPerson,
       celebrationDetail: newPost.celebrationDetail,
       createdAt: new Date().toISOString().slice(0, 10),

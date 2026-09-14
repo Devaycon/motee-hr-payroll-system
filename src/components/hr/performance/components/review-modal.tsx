@@ -30,6 +30,10 @@ import {
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Separator } from "@/src/components/ui/separator";
 import {
+  EmployeePicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
+import {
   REVIEW_TYPE_LABELS,
   REVIEW_TYPE_STYLES,
   REVIEW_STATUS_LABELS,
@@ -46,6 +50,7 @@ import type {
 import { toast } from "sonner";
 
 const createSchema = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
   employeeName: z
     .string()
     .min(2, { message: "Name must be at least 2 characters" }),
@@ -57,6 +62,7 @@ const createSchema = z.object({
   jobTitle: z.string().min(2, { message: "Job title is required" }),
   reviewType: z.string().min(1, { message: "Review type is required" }),
   period: z.string().min(1, { message: "Period is required" }),
+  reviewerId: z.string().min(1, { message: "Reviewer is required" }),
   reviewer: z.string().min(2, { message: "Reviewer name is required" }),
   dueDate: z.string().min(1, { message: "Due date is required" }),
 });
@@ -78,12 +84,14 @@ interface ReviewModalProps {
 }
 
 const defaultForm = {
+  employeeId: "",
   employeeName: "",
   employeeInitials: "",
   department: "",
   jobTitle: "",
   reviewType: "",
   period: "",
+  reviewerId: "",
   reviewer: "",
   dueDate: "",
 };
@@ -134,12 +142,14 @@ export function ReviewModal({
       return;
     }
     onSave({
+      employeeId: form.employeeId,
       employeeName: form.employeeName,
       employeeInitials: form.employeeInitials,
       department: form.department,
       jobTitle: form.jobTitle,
       reviewType: form.reviewType as ReviewType,
       period: form.period,
+      reviewerId: form.reviewerId,
       reviewer: form.reviewer,
       dueDate: form.dueDate,
     });
@@ -391,43 +401,34 @@ export function ReviewModal({
           <>
             <ScrollArea className="max-h-[60vh] pr-2">
               <div className="grid grid-cols-2 gap-4 py-1">
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 col-span-2">
                   <Label className="text-xs">
-                    Employee Name <span className="text-destructive">*</span>
+                    Employee <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    placeholder="Full name"
-                    value={form.employeeName}
-                    onChange={(e) =>
-                      handleField("employeeName", e.target.value)
-                    }
-                    className="h-8 text-xs"
+                  <EmployeePicker
+                    value={form.employeeId || undefined}
+                    placeholder="Search for an employee…"
+                    onChange={(picked: PickedEmployee | null) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        employeeId: picked?.id ?? "",
+                        employeeName: picked?.name ?? "",
+                        employeeInitials: picked?.initials ?? "",
+                        department: picked?.department ?? prev.department,
+                        jobTitle: picked?.jobTitle ?? prev.jobTitle,
+                      }));
+                      if (errors.employeeId || errors.employeeName) {
+                        setErrors((prev) => ({
+                          ...prev,
+                          employeeId: "",
+                          employeeName: "",
+                        }));
+                      }
+                    }}
                   />
-                  {errors.employeeName && (
+                  {(errors.employeeId || errors.employeeName) && (
                     <p className="text-[10px] text-destructive">
-                      {errors.employeeName}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">
-                    Initials <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    placeholder="e.g. CO"
-                    value={form.employeeInitials}
-                    onChange={(e) =>
-                      handleField(
-                        "employeeInitials",
-                        e.target.value.toUpperCase().slice(0, 3),
-                      )
-                    }
-                    className="h-8 text-xs"
-                    maxLength={3}
-                  />
-                  {errors.employeeInitials && (
-                    <p className="text-[10px] text-destructive">
-                      {errors.employeeInitials}
+                      {errors.employeeId || errors.employeeName}
                     </p>
                   )}
                 </div>
@@ -519,15 +520,27 @@ export function ReviewModal({
                   <Label className="text-xs">
                     Reviewer <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    placeholder="Reviewer name"
-                    value={form.reviewer}
-                    onChange={(e) => handleField("reviewer", e.target.value)}
-                    className="h-8 text-xs"
+                  <EmployeePicker
+                    value={form.reviewerId || undefined}
+                    placeholder="Search for a reviewer…"
+                    onChange={(picked: PickedEmployee | null) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        reviewerId: picked?.id ?? "",
+                        reviewer: picked?.name ?? "",
+                      }));
+                      if (errors.reviewerId || errors.reviewer) {
+                        setErrors((prev) => ({
+                          ...prev,
+                          reviewerId: "",
+                          reviewer: "",
+                        }));
+                      }
+                    }}
                   />
-                  {errors.reviewer && (
+                  {(errors.reviewerId || errors.reviewer) && (
                     <p className="text-[10px] text-destructive">
-                      {errors.reviewer}
+                      {errors.reviewerId || errors.reviewer}
                     </p>
                   )}
                 </div>

@@ -36,7 +36,7 @@ import { formatDate } from "@/src/lib/utils/format-date";
 type StatusFilter = "all" | "published" | "scheduled" | "draft" | "expired";
 
 const statusStyles: Record<string, string> = {
-  published: "bg-[#4ED251]/10 text-[#4ED251]",
+  published: "bg-[#50D34C]/10 text-[#50D34C]",
   scheduled: "bg-blue-500/10 text-blue-500",
   draft: "bg-muted text-muted-foreground",
   expired: "bg-slate-500/10 text-slate-500",
@@ -49,7 +49,7 @@ const priorityStyles: Record<string, string> = {
 
 const categoryColors: Record<string, string> = {
   System: "bg-slate-500/10 text-slate-500",
-  Feature: "bg-[#ff8b2d]/10 text-[#ff8b2d]",
+  Feature: "bg-[#FE8F44]/10 text-[#FE8F44]",
   Release: "bg-violet-500/10 text-violet-500",
   Compliance: "bg-amber-500/10 text-amber-500",
 };
@@ -117,7 +117,7 @@ export function NoticesPage() {
         <Button
           size="sm"
           onClick={() => setShowCreateModal(true)}
-          className="gap-1.5 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white shrink-0"
+          className="gap-1.5 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white shrink-0"
         >
           <Plus className="h-4 w-4" />
           New Announcement
@@ -135,7 +135,7 @@ export function NoticesPage() {
             label: "Published",
             value: DEMO_ANNOUNCEMENTS.filter((a) => a.status === "published")
               .length,
-            color: "text-[#4ED251]",
+            color: "text-[#50D34C]",
           },
           {
             label: "Scheduled",
@@ -186,7 +186,7 @@ export function NoticesPage() {
         {filtered.map((ann) => (
           <Card
             key={ann.id}
-            className="cursor-pointer hover:border-[#ff8b2d]/40 transition-colors"
+            className="cursor-pointer hover:border-[#FE8F44]/40 transition-colors"
             onClick={() => setSelectedAnnouncement(ann)}
           >
             <CardContent className="p-5">
@@ -348,7 +348,7 @@ export function NoticesPage() {
                       </div>
                       <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
                         <div
-                          className="h-full bg-[#4ED251] rounded-full transition-all"
+                          className="h-full bg-[#50D34C] rounded-full transition-all"
                           style={{ width: `${ackRate(selectedAnnouncement)}%` }}
                         />
                       </div>
@@ -368,7 +368,7 @@ export function NoticesPage() {
               </Button>
               {selectedAnnouncement.status === "draft" && (
                 <Button
-                  className="bg-[#4ED251] hover:bg-[#4ED251]/90 text-white"
+                  className="bg-[#50D34C] hover:bg-[#50D34C]/90 text-white"
                   onClick={() => setSelectedAnnouncement(null)}
                 >
                   Publish Now
@@ -383,7 +383,7 @@ export function NoticesPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Megaphone className="h-5 w-5 text-[#ff8b2d]" />
+              <Megaphone className="h-5 w-5 text-[#FE8F44]" />
               Create Announcement
             </DialogTitle>
           </DialogHeader>
@@ -424,7 +424,7 @@ export function NoticesPage() {
                       category: e.target.value,
                     }))
                   }
-                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
                 >
                   {[
                     "Feature",
@@ -451,7 +451,7 @@ export function NoticesPage() {
                       target: e.target.value,
                     }))
                   }
-                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
                 >
                   <option value="all">All Tenants</option>
                   <option value="plan">Specific Plan</option>
@@ -477,7 +477,7 @@ export function NoticesPage() {
                         },
                       }))
                     }
-                    className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors ${newAnnouncement.channels[channel] ? "border-[#ff8b2d] bg-[#ff8b2d]/10 text-[#ff8b2d]" : "border-border text-muted-foreground"}`}
+                    className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors ${newAnnouncement.channels[channel] ? "border-[#FE8F44] bg-[#FE8F44]/10 text-[#FE8F44]" : "border-border text-muted-foreground"}`}
                   >
                     {channel === "in-app" ? (
                       <Bell className="h-3.5 w-3.5" />
@@ -498,7 +498,7 @@ export function NoticesPage() {
                     onClick={() =>
                       setNewAnnouncement((prev) => ({ ...prev, priority: p }))
                     }
-                    className={`flex-1 rounded-md border py-2 text-sm font-medium capitalize transition-colors ${newAnnouncement.priority === p ? "border-[#ff8b2d] bg-[#ff8b2d]/10 text-[#ff8b2d]" : "border-border text-muted-foreground hover:border-foreground/30"}`}
+                    className={`flex-1 rounded-md border py-2 text-sm font-medium capitalize transition-colors ${newAnnouncement.priority === p ? "border-[#FE8F44] bg-[#FE8F44]/10 text-[#FE8F44]" : "border-border text-muted-foreground hover:border-foreground/30"}`}
                   >
                     {p === "urgent" ? "⚠ Urgent (modal ack)" : "Standard"}
                   </button>
@@ -556,7 +556,7 @@ export function NoticesPage() {
                 !newAnnouncement.title.trim() || !newAnnouncement.body.trim()
               }
               onClick={() => setShowCreateModal(false)}
-              className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+              className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             >
               {newAnnouncement.publishDate ? "Schedule" : "Publish Now"}
             </Button>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { ResponsiveLine } from "@nivo/line";
 import { Card, CardContent } from "@/src/components/ui/card";
-import { LineChart } from "@/src/components/shared/charts";
+import { ChartCard, NIVO_THEME } from "@/src/components/shared/charts";
 import {
   Select,
   SelectContent,
@@ -24,19 +25,6 @@ const DEPT_OPTIONS: { value: DeptKey | "all"; label: string }[] = [
   { value: "operations", label: "Operations" },
 ];
 
-const ALL_LINES: {
-  key: DeptKey | "companyWide";
-  label: string;
-  color: string;
-}[] = [
-  { key: "companyWide", label: "Company Wide", color: "#4ED251" },
-  { key: "engineering", label: "Engineering", color: "#6366f1" },
-  { key: "marketing", label: "Marketing", color: "#ff8b2d" },
-  { key: "sales", label: "Sales", color: "#3b82f6" },
-  { key: "hr", label: "HR", color: "#a855f7" },
-  { key: "operations", label: "Operations", color: "#14b8a6" },
-];
-
 export function EngagementTrend() {
   const [dept, setDept] = useState<DeptKey | "all">("all");
 
@@ -48,10 +36,15 @@ export function EngagementTrend() {
   const prevScoreVal = dept === "all" ? prevScore.companyWide : prevScore[dept];
   const diff = currentScore - prevScoreVal;
 
-  const visibleLines =
-    dept === "all"
-      ? ALL_LINES
-      : ALL_LINES.filter((l) => l.key === "companyWide" || l.key === dept);
+  const lineData = [
+    {
+      id: dept === "all" ? "Company Wide" : DEPT_OPTIONS.find((o) => o.value === dept)?.label ?? dept,
+      data: ENGAGEMENT_TREND_DATA.map((d) => ({
+        x: d.month,
+        y: dept === "all" ? d.companyWide : d[dept],
+      })),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -97,18 +90,35 @@ export function EngagementTrend() {
         </Select>
       </div>
 
-      <LineChart
+      <ChartCard
         title="Engagement Score Trend"
         description="Monthly engagement score over the last 12 months"
-        categories={ENGAGEMENT_TREND_DATA.map((d) => d.month)}
-        series={visibleLines.map((l) => ({
-          name: l.label,
-          data: ENGAGEMENT_TREND_DATA.map(
-            (d) => (d as unknown as Record<string, number>)[l.key],
-          ),
-          color: l.color,
-        }))}
-      />
+      >
+        <div style={{ height: 240 }}>
+          <ResponsiveLine
+            data={lineData}
+            margin={{ top: 16, right: 24, bottom: 32, left: 44 }}
+            xScale={{ type: "point" }}
+            yScale={{ type: "linear", min: 0, max: 100 }}
+            curve="monotoneX"
+            axisBottom={{ tickSize: 0, tickPadding: 8 }}
+            axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 5 }}
+            enableGridX={false}
+            colors={["#6366f1"]}
+            lineWidth={2.5}
+            enableArea
+            areaOpacity={0.12}
+            pointSize={7}
+            pointColor="#6366f1"
+            pointBorderWidth={2}
+            pointBorderColor="var(--card)"
+            enableSlices="x"
+            useMesh
+            theme={NIVO_THEME}
+            motionConfig="gentle"
+          />
+        </div>
+      </ChartCard>
 
       <div className="grid grid-cols-3 gap-3">
         {[

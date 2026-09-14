@@ -68,13 +68,14 @@ const attendanceSlice = createSlice({
         at: string;
         location: WorkLocation;
         locationName?: string;
-        bookingId?: string;
         source?: PunchSource;
         /** Id of the attendance row opened for this day. */
         logId?: string;
+        /** "lat,lng" captured from the device at the moment of punching in. */
+        coords?: string;
       }>,
     ) {
-      const { employeeId, date, at, location, locationName, bookingId, logId } =
+      const { employeeId, date, at, location, locationName, logId } =
         action.payload;
       state.sessions[employeeId] = {
         employeeId,
@@ -84,9 +85,9 @@ const attendanceSlice = createSlice({
         breaks: [],
         location,
         locationName,
-        bookingId,
         source: action.payload.source ?? "web",
         logId,
+        clockInCoords: action.payload.coords,
       };
     },
 
@@ -114,6 +115,8 @@ const attendanceSlice = createSlice({
         employeeId: string;
         at: string;
         note?: string;
+        /** "lat,lng" captured from the device at the moment of punching out. */
+        coords?: string;
       }>,
     ) {
       const s = state.sessions[action.payload.employeeId];
@@ -124,23 +127,22 @@ const attendanceSlice = createSlice({
       s.clockOutAt = action.payload.at;
       s.state = "clocked_out";
       s.note = action.payload.note;
+      s.clockOutCoords = action.payload.coords;
     },
 
-    /** Switch work location mid-session (moved desk, went home after lunch). */
+    /** Switch work location mid-session (e.g. went home after lunch). */
     setLocation(
       state,
       action: PayloadAction<{
         employeeId: string;
         location: WorkLocation;
         locationName?: string;
-        bookingId?: string;
       }>,
     ) {
       const s = state.sessions[action.payload.employeeId];
       if (!s) return;
       s.location = action.payload.location;
       s.locationName = action.payload.locationName;
-      s.bookingId = action.payload.bookingId;
     },
 
     /** Drops a session so a new day starts clean. */

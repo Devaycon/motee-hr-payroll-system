@@ -116,7 +116,7 @@ export function ApprovalChainTab({ documentType }: ApprovalChainTabProps) {
             <Card
               key={chain.id}
               className={
-                chain.isDefault ? "border-[#ff8b2d]/50" : "border-border/60"
+                chain.isDefault ? "border-[#FE8F44]/50" : "border-border/60"
               }
             >
               <CardContent className="p-4">
@@ -127,7 +127,7 @@ export function ApprovalChainTab({ documentType }: ApprovalChainTabProps) {
                         {chain.name}
                       </h3>
                       {chain.isDefault && (
-                        <Badge className="bg-[#ff8b2d] text-white">
+                        <Badge className="bg-[#FE8F44] text-white">
                           Active
                         </Badge>
                       )}

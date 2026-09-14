@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 /**
@@ -10,10 +10,12 @@ import { cn } from "@/src/lib/utils";
  * as one surface.
  *
  * These are deliberately plain markup rather than the app's `ChartCard` /
- * ApexCharts wrappers: the mockup's tiles are small, label-led and
- * self-contained, with no chart chrome, toolbar or tooltip layer. Anything that
- * genuinely needs a full chart (the 30-day attendance trend, the action list)
- * still uses the shared chart components underneath these.
+ * Nivo wrappers: the mockup's tiles are small, label-led and self-contained,
+ * with no chart chrome, toolbar or tooltip layer — drawn directly in CSS/SVG
+ * rather than a charting library, since at this size there is nothing to
+ * hover and a library's own chrome would cost more room than it explains.
+ * Anything that genuinely needs a full chart (the 30-day attendance trend,
+ * the action list) uses the shared chart components instead.
  */
 
 export function Tile({
@@ -95,13 +97,15 @@ export function TileDelta({
   up: boolean;
   children: ReactNode;
 }) {
+  const Icon = up ? ArrowUp : ArrowDown;
   return (
     <p
       className={cn(
-        "mt-1.5 text-xs font-medium",
-        up ? "text-[#4ED251]" : "text-red-600",
+        "mt-1.5 inline-flex items-center gap-0.5 text-xs font-medium",
+        up ? "text-[#50D34C]" : "text-red-600",
       )}
     >
+      <Icon className="h-3 w-3" />
       {children}
     </p>
   );
@@ -138,9 +142,6 @@ export interface MiniBarItem {
   value: number;
 }
 
-const BAR_MIN_H = 10;
-const BAR_MAX_H = 34;
-
 /**
  * Three-or-so bars with the value printed above each and the most recent one
  * picked out. Direct-labelled rather than given an axis: at this size a scale
@@ -149,40 +150,63 @@ const BAR_MAX_H = 34;
 export function MiniBars({
   items,
   ariaLabel,
+  height = 64,
+  highlight = "latest",
 }: {
   items: MiniBarItem[];
   ariaLabel?: string;
+  height?: number;
+  /**
+   * Which bars get the primary colour: `"latest"` (default) picks out the
+   * most recent item, for a weekly trend where "how does this period compare"
+   * is the point. `"nonzero"` colours every bar with a value instead — for a
+   * categorical breakdown (e.g. events by day) there is no "latest", and
+   * highlighting by position instead of by data left an empty bar coloured
+   * while the bars that actually had something in them stayed grey.
+   */
+  highlight?: "latest" | "nonzero";
 }) {
+  if (items.length === 0) return null;
+
   const max = Math.max(...items.map((i) => i.value), 1);
+  const lastIndex = items.length - 1;
 
   return (
     <div className="mt-3" role="img" aria-label={ariaLabel}>
-      <div className="flex h-13 items-end gap-1.5">
+      <div className="flex items-end gap-1.5" style={{ height }}>
         {items.map((item, i) => {
-          const isLatest = i === items.length - 1;
+          const pct = Math.max(Math.round((item.value / max) * 100), item.value > 0 ? 6 : 2);
+          const isHighlighted =
+            highlight === "latest" ? i === lastIndex : item.value > 0;
           return (
-            <div key={item.label} className="flex-1 text-center">
-              <p className="mb-1 text-[11px] font-medium text-foreground tabular-nums">
+            <div
+              key={`${item.label}-${i}`}
+              className="flex h-full flex-1 flex-col items-center justify-end gap-1"
+            >
+              <span
+                className={cn(
+                  "text-[10px] font-semibold tabular-nums",
+                  isHighlighted ? "text-foreground" : "text-muted-foreground",
+                )}
+              >
                 {item.value}
-              </p>
+              </span>
               <div
                 className={cn(
-                  "rounded-t-sm",
-                  isLatest ? "bg-primary" : "bg-muted-foreground/25",
+                  "w-full rounded-t-sm",
+                  isHighlighted ? "bg-primary" : "bg-muted-foreground/25",
                 )}
-                style={{
-                  height: BAR_MIN_H + (item.value / max) * (BAR_MAX_H - BAR_MIN_H),
-                }}
+                style={{ height: `${pct}%` }}
               />
             </div>
           );
         })}
       </div>
-      <div className="mt-1.5 flex gap-1.5">
-        {items.map((item) => (
+      <div className="mt-1 flex gap-1.5">
+        {items.map((item, i) => (
           <span
-            key={item.label}
-            className="flex-1 text-center text-[11px] text-muted-foreground"
+            key={`${item.label}-label-${i}`}
+            className="flex-1 truncate text-center text-[10px] text-muted-foreground"
           >
             {item.label}
           </span>
@@ -214,34 +238,36 @@ export function HBars({
    */
   fill?: boolean;
 }) {
+  if (items.length === 0) return null;
+
   const max = Math.max(...items.map((i) => i.value), 1);
 
   return (
     <div
       className={cn(
-        "mt-3 flex flex-col",
-        fill ? "flex-1 justify-around" : "gap-2",
+        "mt-3 flex flex-col gap-2",
+        fill ? "flex-1 justify-center" : "justify-start",
       )}
     >
-      {items.map((item) => (
-        <div key={item.label} className="flex items-center gap-3 text-xs">
-          {/* Wraps rather than truncates: these are clinical categories and
-              case statuses — "Medical Appointment", "Fit with adjustments" —
-              and an ellipsis hides exactly the word that identifies them. */}
-          <span className="w-28 shrink-0 leading-tight text-muted-foreground">
-            {item.label}
-          </span>
-          <div className="h-1.5 min-w-8 flex-1 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary"
-              style={{ width: `${(item.value / max) * 100}%` }}
-            />
+      {items.map((item, i) => {
+        const pct = Math.max(Math.round((item.value / max) * 100), 4);
+        return (
+          <div key={`${item.label}-${i}`} className="flex items-center gap-2">
+            <span className="w-20 shrink-0 truncate text-xs text-muted-foreground">
+              {item.label}
+            </span>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="w-8 shrink-0 text-right text-xs font-semibold tabular-nums text-foreground">
+              {item.value}
+            </span>
           </div>
-          <span className="w-6 shrink-0 text-right text-muted-foreground tabular-nums">
-            {item.value}
-          </span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -269,18 +295,13 @@ export function MiniPie({
   donut?: boolean;
   className?: string;
 }) {
-  const total = slices.reduce((sum, s) => sum + s.value, 0) || 1;
-
-  // Running offsets built up front rather than accumulated inside the map, so
-  // nothing is reassigned during render.
-  const offsets = slices.reduce<number[]>(
-    (acc, s) => [...acc, acc[acc.length - 1]! + s.value],
-    [0],
-  );
-  const stops = slices.map((s, i) => {
-    const start = (offsets[i]! / total) * 100;
-    const end = (offsets[i + 1]! / total) * 100;
-    return `${s.color} ${start}% ${end}%`;
+  const total = slices.reduce((sum, s) => sum + s.value, 0);
+  let cursor = 0;
+  const stops = slices.map((s) => {
+    const start = (cursor / (total || 1)) * 360;
+    cursor += s.value;
+    const end = (cursor / (total || 1)) * 360;
+    return `${s.color} ${start}deg ${end}deg`;
   });
 
   return (
@@ -289,12 +310,11 @@ export function MiniPie({
       style={{
         width: size,
         height: size,
-        background: `conic-gradient(${stops.join(", ")})`,
+        background:
+          total > 0 ? `conic-gradient(${stops.join(", ")})` : "var(--muted)",
       }}
       role="img"
-      aria-label={slices
-        .map((s) => `${s.label} ${Math.round((s.value / total) * 100)}%`)
-        .join(", ")}
+      aria-label={slices.map((s) => `${s.label}: ${s.value}`).join(", ")}
     >
       {donut && (
         <div

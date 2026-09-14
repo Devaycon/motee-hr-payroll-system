@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import type { DataScope, PermissionAction } from "@/src/lib/types/access-levels";
 import {
@@ -29,12 +30,20 @@ export function useEffectiveAccess(): EffectiveAccess {
     roleId ? s.users.overrides[roleId]?.state : undefined,
   );
 
-  return resolveEffectiveLevel(levels, {
-    accessLevelId,
-    accessLevelIds,
-    previewLevelId,
-    accountState,
-  });
+  // Memoised because the result is now a *dependency*, not just a read: the
+  // data scope on it feeds `useLocaleSection`'s memo, and a fresh object on
+  // every render would re-run the bundle filter (and re-flash every skeleton)
+  // continuously.
+  return useMemo(
+    () =>
+      resolveEffectiveLevel(levels, {
+        accessLevelId,
+        accessLevelIds,
+        previewLevelId,
+        accountState,
+      }),
+    [levels, accessLevelId, accessLevelIds, previewLevelId, accountState],
+  );
 }
 
 /**

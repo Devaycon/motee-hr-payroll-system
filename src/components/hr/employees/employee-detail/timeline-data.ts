@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// Unscoped — part of the employee detail page. See its hooks.ts.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { applyCollection } from "@/src/lib/profile/collection-edits";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";

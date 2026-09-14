@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import onboardingReducer from "./onboarding-slice";
 import onboardingRecordsReducer from "./onboarding-records-slice";
 import localeReducer from "./locale-slice";
+import branchReducer from "./branch-slice";
 import authReducer from "./auth-slice";
 import accessLevelsReducer from "./access-levels-slice";
 import approvalsReducer from "./approvals-slice";
@@ -21,14 +22,18 @@ import notificationsReducer from "./notifications-slice";
 import employeesReducer from "./employees-slice";
 import offboardingReducer from "./offboarding-slice";
 import attendanceReducer from "./attendance-slice";
+import presenceCheckReducer from "./presence-check-slice";
 import expensesReducer from "./expenses-slice";
-import dashboardLayoutReducer from "./dashboard-layout-slice";
+import shiftsReducer from "./shifts-slice";
+import benefitPlansReducer from "./benefit-plans-slice";
+import docuSignReducer from "./docu-sign-slice";
 
 export const store = configureStore({
   reducer: {
     onboarding: onboardingReducer,
     onboardingRecords: onboardingRecordsReducer,
     locale: localeReducer,
+    branch: branchReducer,
     auth: authReducer,
     accessLevels: accessLevelsReducer,
     approvals: approvalsReducer,
@@ -48,8 +53,11 @@ export const store = configureStore({
     employees: employeesReducer,
     offboarding: offboardingReducer,
     attendance: attendanceReducer,
+    presenceCheck: presenceCheckReducer,
     expenses: expensesReducer,
-    dashboardLayout: dashboardLayoutReducer,
+    shifts: shiftsReducer,
+    benefitPlans: benefitPlansReducer,
+    docuSign: docuSignReducer,
   },
 });
 

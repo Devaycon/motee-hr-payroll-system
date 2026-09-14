@@ -124,7 +124,7 @@ import { CandidateDrawer } from "../components/candidate-drawer";
 import { openMailto } from "../components/mailto";
 
 const ORANGE_TAB =
-  "data-[state=active]:bg-[#ff8b2d]! data-[state=active]:text-white! data-[state=active]:shadow-none!";
+  "data-[state=active]:bg-[#FE8F44]! data-[state=active]:text-white! data-[state=active]:shadow-none!";
 
 const MODE_ICON: Record<InterviewMode, typeof Monitor> = {
   video: Monitor,

@@ -25,7 +25,8 @@ import type {
   LeavePrefill,
   LeaveRequestEntry,
 } from "./components/types";
-import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { addRequest } from "@/src/lib/stores/leave-slice";
 
 const STATUS_ICON: Record<LeaveStatus, React.ReactNode> = {
   approved: <CheckCircle2 className="w-3.5 h-3.5 text-[#1D9E75]" />,
@@ -64,7 +65,9 @@ function buildMyBalances(employeeName: string | undefined): LeaveBalance {
  * "Leave" tab inside the self My Profile page. Scoped to the logged-in user.
  */
 export function LeaveRequestPanel() {
-  const employeeName = useAppSelector((s) => s.auth.user?.name);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((s) => s.auth.user);
+  const employeeName = user?.name;
   const MY_BALANCES = buildMyBalances(employeeName);
   const initialRequests: LeaveRequestEntry[] = LEAVE_REQUESTS.filter(
     (r) => r.employeeName === employeeName,
@@ -78,6 +81,8 @@ export function LeaveRequestPanel() {
     halfDayPeriod: r.halfDayPeriod,
     status: r.status,
     notes: r.notes,
+    contactAddress: r.contactAddress ?? "",
+    contactPhone: r.contactPhone ?? "",
     approvedBy: r.approvedBy,
     rejectionReason: r.rejectionReason,
     submittedAt: r.submittedAt,
@@ -97,6 +102,36 @@ export function LeaveRequestPanel() {
 
   function handleNewRequest(entry: LeaveRequestEntry) {
     setRequests((prev) => [entry, ...prev]);
+    // Mirror into the shared leave store so HR's Leave Management module
+    // (and this employee's HR-viewed profile) sees the request too — the
+    // panel's own list above is local so the "Pending"/"History" lists here
+    // update instantly without waiting on a store round-trip.
+    dispatch(
+      addRequest({
+        request: {
+          id: entry.id,
+          employeeId: user?.employeeId,
+          employeeName: user?.name ?? "Unknown",
+          employeeInitials: user?.initials ?? "",
+          department: user?.departmentName ?? "",
+          jobTitle: user?.jobTitle ?? "",
+          leaveType: entry.leaveType,
+          startDate: entry.startDate,
+          endDate: entry.endDate,
+          totalDays: entry.totalDays,
+          isHalfDay: entry.isHalfDay,
+          halfDayPeriod: entry.halfDayPeriod,
+          status: entry.status,
+          notes: entry.notes,
+          contactAddress: entry.contactAddress,
+          contactPhone: entry.contactPhone,
+          reliefEmployeeId: entry.reliefEmployeeId,
+          reliefEmployeeName: entry.reliefEmployeeName,
+          submittedAt: entry.submittedAt,
+        },
+        actor: user?.name ?? "Employee",
+      }),
+    );
   }
 
   function handleCancel(id: string) {

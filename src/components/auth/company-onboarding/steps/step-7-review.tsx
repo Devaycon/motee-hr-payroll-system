@@ -80,7 +80,16 @@ export function Step7Review() {
       <ReviewSection title="Organisational Structure" step={2}>
         <ReviewRow label="Manager Title" value={organizationConfig.managerTitle} />
         <ReviewRow label="Department Label" value={organizationConfig.departmentLabel} />
-        <ReviewRow label="Structure Type" value={organizationConfig.structureType === "hierarchical" ? "Hierarchical" : "Flat"} />
+        <ReviewRow
+          label="Structure Type"
+          value={
+            organizationConfig.structureType === "hierarchical"
+              ? "Hierarchical"
+              : organizationConfig.structureType === "matrix"
+                ? "Matrix"
+                : "Flat"
+          }
+        />
       </ReviewSection>
 
       <ReviewSection title="Role & Permissions" step={3}>

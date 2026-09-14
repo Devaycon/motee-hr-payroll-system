@@ -36,7 +36,7 @@ import { DEMO_INVOICES, DEMO_TENANTS } from "@/src/data/motee-demo";
 import type { Invoice } from "@/src/lib/types/motee.types";
 
 const invoiceStatusStyles: Record<string, string> = {
-  paid: "bg-[#4ED251]/10 text-[#4ED251]",
+  paid: "bg-[#50D34C]/10 text-[#50D34C]",
   pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   overdue: "bg-red-500/10 text-red-600 dark:text-red-400",
   voided: "bg-slate-500/10 text-slate-500",
@@ -238,7 +238,7 @@ export function BillingInvoicesPage() {
         <div className="flex items-center gap-2 shrink-0">
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="gap-2 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+            className="gap-2 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             size="sm"
           >
             <Plus className="h-4 w-4" />
@@ -255,7 +255,7 @@ export function BillingInvoicesPage() {
         <Card>
           <CardContent className="p-5">
             <p className="text-xs text-muted-foreground">Total Collected</p>
-            <p className="mt-1 text-2xl font-bold text-[#4ED251]">
+            <p className="mt-1 text-2xl font-bold text-[#50D34C]">
               ${totalRevenue.toLocaleString()}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -301,7 +301,7 @@ export function BillingInvoicesPage() {
           <select
             value={tenantFilter}
             onChange={(e) => setTenantFilter(e.target.value)}
-            className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+            className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
           >
             <option value="all">All Tenants</option>
             {tenantNames.map((name) => (
@@ -430,7 +430,7 @@ export function BillingInvoicesPage() {
                               );
                               if (tenant) router.push(`/tenants/${tenant.id}`);
                             }}
-                            className="text-sm font-medium text-foreground hover:text-[#ff8b2d] transition-colors"
+                            className="text-sm font-medium text-foreground hover:text-[#FE8F44] transition-colors"
                           >
                             {invoice.tenantName}
                           </button>
@@ -475,7 +475,7 @@ export function BillingInvoicesPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-7 px-2 text-xs gap-1 text-[#4ED251] hover:text-[#4ED251]"
+                                  className="h-7 px-2 text-xs gap-1 text-[#50D34C] hover:text-[#50D34C]"
                                   onClick={() => {
                                     setSelectedInvoice(invoice);
                                     setShowMarkPaidModal(true);
@@ -678,7 +678,7 @@ export function BillingInvoicesPage() {
                   )}
                   <Button
                     size="sm"
-                    className="gap-1 bg-[#4ED251] hover:bg-[#4ED251]/90 text-white"
+                    className="gap-1 bg-[#50D34C] hover:bg-[#50D34C]/90 text-white"
                     onClick={() => setShowMarkPaidModal(true)}
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
@@ -715,7 +715,7 @@ export function BillingInvoicesPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-[#4ED251]" />
+              <CheckCircle2 className="h-5 w-5 text-[#50D34C]" />
               Mark as Paid
             </DialogTitle>
           </DialogHeader>
@@ -762,7 +762,7 @@ export function BillingInvoicesPage() {
             <Button
               disabled={!markPaidRef.trim()}
               onClick={handleMarkPaid}
-              className="bg-[#4ED251] hover:bg-[#4ED251]/90 text-white"
+              className="bg-[#50D34C] hover:bg-[#50D34C]/90 text-white"
             >
               Confirm Payment
             </Button>
@@ -793,7 +793,7 @@ export function BillingInvoicesPage() {
                   onClick={() => setRefundType(type)}
                   className={`flex-1 rounded-md border py-2 text-sm font-medium transition-colors capitalize ${
                     refundType === type
-                      ? "border-[#ff8b2d] bg-[#ff8b2d]/10 text-[#ff8b2d]"
+                      ? "border-[#FE8F44] bg-[#FE8F44]/10 text-[#FE8F44]"
                       : "border-border text-muted-foreground hover:border-foreground/30"
                   }`}
                 >
@@ -922,7 +922,7 @@ export function BillingInvoicesPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-[#ff8b2d]" />
+              <Plus className="h-5 w-5 text-[#FE8F44]" />
               Create Invoice
             </DialogTitle>
           </DialogHeader>
@@ -936,7 +936,7 @@ export function BillingInvoicesPage() {
                 onChange={(e) =>
                   setNewInvoice((prev) => ({ ...prev, tenant: e.target.value }))
                 }
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
               >
                 <option value="">Select a tenant</option>
                 {DEMO_TENANTS.map((t) => (
@@ -998,7 +998,7 @@ export function BillingInvoicesPage() {
                 !newInvoice.tenant || !newInvoice.amount || !newInvoice.dueDate
               }
               onClick={() => setShowCreateModal(false)}
-              className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+              className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             >
               Create Invoice
             </Button>

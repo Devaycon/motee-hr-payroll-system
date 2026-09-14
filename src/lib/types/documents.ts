@@ -29,6 +29,7 @@ export interface DocumentVersion {
 
 export interface DocumentShare {
 	id: string;
+	employeeId?: string;
 	employeeName: string;
 	employeeInitials: string;
 	permission: DocumentPermission;
@@ -78,6 +79,8 @@ export interface HRDocument {
 	acknowledgements?: DocumentAcknowledgement[];
 	/** Headcount the document is assigned to (for acknowledgement reporting). */
 	totalAssigned?: number;
+	/** Real file content (data URL) — set for documents saved from the Docu-Sign tool. */
+	fileUrl?: string;
 }
 
 export interface Folder {
@@ -102,6 +105,7 @@ export interface NewDocument {
 }
 
 export interface NewShare {
+	employeeId?: string;
 	employeeName: string;
 	employeeInitials: string;
 	permission: DocumentPermission;

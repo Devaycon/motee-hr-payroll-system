@@ -14,6 +14,7 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { EMPLOYMENT_TYPE_LABELS } from "../data";
 import { useDepartmentOptions } from "../hooks";
+import { useBranchOptions } from "@/src/lib/branches/use-branch";
 
 // Export lives on the employees table itself (DataTable renders an ExportMenu
 // from its visible columns and current sort/filter). This toolbar used to
@@ -29,6 +30,9 @@ interface EmployeesToolbarProps {
   onTypeFilterChange: (v: string) => void;
   workModeFilter: string;
   onWorkModeFilterChange: (v: string) => void;
+  /** Branch id, or "all". Narrows within whatever the navbar switcher shows. */
+  branchFilter: string;
+  onBranchFilterChange: (v: string) => void;
 }
 
 /** Matches the display values produced by `toEmployeeRow` in ../hooks.ts. */
@@ -47,9 +51,12 @@ export function EmployeesToolbar({
   onTypeFilterChange,
   workModeFilter,
   onWorkModeFilterChange,
+  branchFilter,
+  onBranchFilterChange,
 }: EmployeesToolbarProps) {
   const { data: deptOptions } = useDepartmentOptions();
   const depts = deptOptions ?? ["all"];
+  const branches = useBranchOptions();
 
   // Status is not a filter here — it is the tab strip above the table
   // (client feedback §1.1); a second status control fought with it.
@@ -57,6 +64,7 @@ export function EmployeesToolbar({
     deptFilter !== "all",
     typeFilter !== "all",
     workModeFilter !== "all",
+    branchFilter !== "all",
   ].filter(Boolean).length;
   const hasActiveFilter = activeFilters > 0;
 
@@ -91,6 +99,33 @@ export function EmployeesToolbar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
+            {/* Only worth showing for a multi-site company — a single-branch
+                tenant already sees everyone. */}
+            {branches.length > 1 && (
+              <>
+                <DropdownMenuLabel className="text-xs">Branch</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={branchFilter}
+                  onValueChange={onBranchFilterChange}
+                >
+                  <DropdownMenuRadioItem value="all" className="text-xs">
+                    All Branches
+                  </DropdownMenuRadioItem>
+                  {branches.map((b) => (
+                    <DropdownMenuRadioItem
+                      key={b.id}
+                      value={b.id}
+                      className="text-xs"
+                    >
+                      {b.name}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+                <DropdownMenuSeparator />
+              </>
+            )}
+
             <DropdownMenuLabel className="text-xs">
               Department
             </DropdownMenuLabel>

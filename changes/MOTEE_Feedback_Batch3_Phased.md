@@ -22,9 +22,6 @@ below actually gets built.
   in the system. Needs explicit sign-off as a whole before any individual
   rename inside it is actioned, since moving one item implies moving
   others.
-- **Project Module** (§10) — confirm whether this is a real net-new
-  module or already planned elsewhere. No screenshot evidence it exists;
-  everything else in this batch does.
 - **Company logo on exports** (§12.1) — client raised this as a question,
   not a firm request. Confirm intent.
 - **Cost Centre data model** (§7.3–7.4) — decide the master-data shape
@@ -327,6 +324,13 @@ module — both now schedule dependent, assignable work. The dependency logic is
 shared rather than duplicated, but if the client only wanted "who is working on
 what", a good deal of this is more than they asked for. **No spec existed for
 this module at all**; the scope above is an assumption.
+**Status update:** `MOTEE_Project_Module_Feedback.md` confirms this module
+exists and is populated with a real project (HRIS Platform Rollout) — the P0
+open question above (line 25 in the earlier version of this section) is
+resolved: `[CONFIRMED EXISTING - MODIFY]`, not a new build. That document also
+flags a likely naming collision with this module vs. a Workday-style
+time-tracking/billing concept described elsewhere in this batch — still open,
+needs a direct client answer, not assumed.
 
 ---
 

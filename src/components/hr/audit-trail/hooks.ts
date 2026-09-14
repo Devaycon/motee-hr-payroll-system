@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// The audit trail must never be silently narrowed — a filtered log is a
+// misleading log.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import type {
   AuditActionType,

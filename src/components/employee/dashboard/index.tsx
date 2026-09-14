@@ -13,6 +13,7 @@ import { TeamOnLeave } from "./components/team-on-leave";
 import { RecentActivity } from "./components/recent-activity";
 import { QuickLinks } from "./components/quick-links";
 import { MyTasks } from "./components/my-tasks";
+import { TodayShiftCard } from "@/src/components/employee/shifts/components/today-shift-card";
 
 export function EmployeeDashboard() {
   const user = useAppSelector((s) => s.auth.user);
@@ -37,6 +38,8 @@ export function EmployeeDashboard() {
         <LeaveBalanceCards />
         <QuickLinks />
       </div>
+
+      <TodayShiftCard />
 
       <div className="grid grid-cols-3 gap-4">
         <PendingItems />

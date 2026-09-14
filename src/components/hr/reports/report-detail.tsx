@@ -8,8 +8,6 @@ import { useAppSelector } from "@/src/lib/stores/hooks";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { Tabs, TabsContent } from "@/src/components/ui/tabs";
-import { PageTabsList } from "@/src/components/shared/page-tabs";
 import {
   Select,
   SelectContent,
@@ -19,7 +17,6 @@ import {
 } from "@/src/components/ui/select";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import { getReport } from "@/src/lib/reports/registry";
-import { ReportAnalyticsView } from "./components/report-analytics";
 import { ReportTable } from "./components/report-table";
 import { ExportModal } from "./components/export-modal";
 
@@ -33,7 +30,7 @@ function BackLink() {
     >
       <Link href="/operations/reports">
         <ArrowLeft className="h-4 w-4" />
-        Reports &amp; Analytics
+        Reports
       </Link>
     </Button>
   );
@@ -135,15 +132,20 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
             )}
           </div>
         </div>
-        <ExportModal
-          baseName={def.id}
-          title={def.label}
-          columns={def.columns}
-          rows={filteredRows}
-          allRows={allRows}
-          params={def.exportParams ?? []}
-          stats={analytics?.stats ?? []}
-        />
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/operations/analytics/${def.id}`}>View analytics</Link>
+          </Button>
+          <ExportModal
+            baseName={def.id}
+            title={def.label}
+            columns={def.columns}
+            rows={filteredRows}
+            allRows={allRows}
+            params={def.exportParams ?? []}
+            stats={analytics?.stats ?? []}
+          />
+        </div>
       </div>
 
       {/* Filters */}
@@ -183,20 +185,7 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
         })}
       </div>
 
-      <Tabs defaultValue="analytics">
-        <PageTabsList
-          tabs={[
-            { value: "analytics", label: "Analytics" },
-            { value: "report", label: "Report" },
-          ]}
-        />
-        <TabsContent value="analytics" className="mt-4">
-          {analytics && <ReportAnalyticsView analytics={analytics} />}
-        </TabsContent>
-        <TabsContent value="report" className="mt-4">
-          <ReportTable columns={def.columns} rows={filteredRows} />
-        </TabsContent>
-      </Tabs>
+      <ReportTable columns={def.columns} rows={filteredRows} />
     </div>
   );
 }

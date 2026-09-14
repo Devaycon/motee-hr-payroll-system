@@ -16,18 +16,23 @@ import {
   type JoinerDocument,
   type JoinerDocumentKind,
 } from "@/src/lib/types/onboarding";
+import type { CountryKey } from "@/src/lib/types/locale";
 
 interface DocumentsStepProps {
   documents: JoinerDocument[];
   onChange: (documents: JoinerDocument[]) => void;
+  country: CountryKey;
 }
 
 /**
  * Identity and right-to-work uploads (client feedback §2.6). Before this, only
  * a profile photo was collected and everything else was chased over email.
  */
-export function DocumentsStep({ documents, onChange }: DocumentsStepProps) {
+export function DocumentsStep({ documents, onChange, country }: DocumentsStepProps) {
   const byKind = new Map(documents.map((d) => [d.kind, d]));
+  const specs = JOINER_DOCUMENTS.filter(
+    (spec) => !spec.country || spec.country === country,
+  );
 
   async function handleFiles(kind: JoinerDocumentKind, list: FileList | null) {
     const { attachments, errors } = await readAttachments(list);
@@ -47,7 +52,7 @@ export function DocumentsStep({ documents, onChange }: DocumentsStepProps) {
     onChange(documents.filter((d) => d.kind !== kind));
   }
 
-  const missingRequired = JOINER_DOCUMENTS.filter(
+  const missingRequired = specs.filter(
     (spec) => spec.required && !byKind.has(spec.kind),
   );
 
@@ -71,7 +76,7 @@ export function DocumentsStep({ documents, onChange }: DocumentsStepProps) {
       )}
 
       <div className="flex flex-col gap-4">
-        {JOINER_DOCUMENTS.map((spec) => {
+        {specs.map((spec) => {
           const doc = byKind.get(spec.kind);
           return (
             <div
@@ -152,9 +157,13 @@ export function DocumentsStep({ documents, onChange }: DocumentsStepProps) {
 /** Required documents the joiner hasn't uploaded yet, named for the review step. */
 export function missingRequiredDocuments(
   documents: JoinerDocument[],
+  country: CountryKey,
 ): string[] {
   const present = new Set(documents.map((d) => d.kind));
-  return JOINER_DOCUMENTS.filter((s) => s.required && !present.has(s.kind)).map(
-    (s) => s.label,
-  );
+  return JOINER_DOCUMENTS.filter(
+    (s) =>
+      s.required &&
+      (!s.country || s.country === country) &&
+      !present.has(s.kind),
+  ).map((s) => s.label);
 }

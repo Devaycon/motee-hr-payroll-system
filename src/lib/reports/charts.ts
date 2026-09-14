@@ -6,10 +6,10 @@ import type {
 } from "./types";
 
 export const PALETTE = [
-  "#4ED251",
+  "#50D34C",
   "#6366f1",
-  "#ff8b2d",
-  "#3b82f6",
+  "#FE8F44",
+  "#5192FA",
   "#a855f7",
   "#14b8a6",
   "#f43f5e",
@@ -104,6 +104,108 @@ export function byMonth<T>(
   return Array.from(m, ([label, value]) => ({ label, value })).sort((a, z) =>
     a.label.localeCompare(z.label),
   );
+}
+
+/**
+ * "YYYY-MM" keys for the last `n` consecutive calendar months ending at `end`
+ * (default: now). Use with {@link fillMonths} / {@link byMonthCross}'s
+ * `months` param so a trend never skips straight from e.g. "Mar" to "Sep"
+ * just because nothing happened in between — a real gap still reads as a
+ * flat zero stretch instead of vanishing and warping the axis order.
+ */
+export function lastMonths(n: number, end: Date = new Date()): string[] {
+  const anchor = new Date(end.getFullYear(), end.getMonth(), 1);
+  const keys: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1);
+    keys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+  return keys;
+}
+
+/** Reindex "YYYY-MM"-labelled tallies onto exactly `months`, filling gaps with 0. */
+export function fillMonths(tallies: Tally[], months: string[]): Tally[] {
+  const byKey = new Map(tallies.map((t) => [t.label, t.value]));
+  return months.map((label) => ({ label, value: byKey.get(label) ?? 0 }));
+}
+
+/**
+ * Two-way tally (e.g. gender × department) shaped for {@link multiBarSpec}:
+ * one row per group, one field per series value, sorted by row total desc.
+ */
+export function crossTab<T>(
+  rows: T[],
+  groupKey: (r: T) => string | null | undefined,
+  seriesKey: (r: T) => string | null | undefined,
+): { data: Record<string, unknown>[]; series: ChartSeries[] } {
+  const groups = new Map<string, Map<string, number>>();
+  const seriesSet = new Set<string>();
+  for (const r of rows) {
+    const g = (groupKey(r) ?? "").toString().trim() || "—";
+    const s = (seriesKey(r) ?? "").toString().trim() || "—";
+    seriesSet.add(s);
+    const m = groups.get(g) ?? new Map<string, number>();
+    m.set(s, (m.get(s) ?? 0) + 1);
+    groups.set(g, m);
+  }
+  const seriesNames = Array.from(seriesSet);
+  const data = Array.from(groups, ([group, m]) => {
+    const row: Record<string, unknown> = { group };
+    for (const s of seriesNames) row[s] = m.get(s) ?? 0;
+    return row;
+  }).sort((a, z) => {
+    const total = (r: Record<string, unknown>) =>
+      seriesNames.reduce((s, k) => s + (Number(r[k]) || 0), 0);
+    return total(z) - total(a);
+  });
+  const series: ChartSeries[] = seriesNames.map((name, i) => ({
+    key: name,
+    label: name,
+    color: paletteColor(i),
+  }));
+  return { data, series };
+}
+
+/**
+ * Like {@link crossTab}, but grouped by calendar month instead of a category.
+ * Pass `months` (e.g. from {@link lastMonths}) to reindex onto a fixed,
+ * gap-filled window instead of only the months rows happen to land in —
+ * otherwise a sparse dataset produces a trend whose x-axis silently skips
+ * years, reading as nonsense (labels look out of order once the year is
+ * dropped for display).
+ */
+export function byMonthCross<T>(
+  rows: T[],
+  date: (r: T) => string | null | undefined,
+  seriesKey: (r: T) => string | null | undefined,
+  months?: string[],
+): { data: Record<string, unknown>[]; series: ChartSeries[] } {
+  const buckets = new Map<string, Map<string, number>>();
+  const seriesSet = new Set<string>();
+  for (const r of rows) {
+    const d = (date(r) ?? "").toString();
+    if (d.length < 7) continue;
+    const k = d.slice(0, 7);
+    const s = (seriesKey(r) ?? "").toString().trim() || "—";
+    seriesSet.add(s);
+    const m = buckets.get(k) ?? new Map<string, number>();
+    m.set(s, (m.get(s) ?? 0) + 1);
+    buckets.set(k, m);
+  }
+  const seriesNames = Array.from(seriesSet);
+  const keys = months ?? Array.from(buckets.keys()).sort();
+  const data = keys.map((ym) => {
+    const m = buckets.get(ym);
+    const row: Record<string, unknown> = { month: monthLabel(ym) };
+    for (const s of seriesNames) row[s] = m?.get(s) ?? 0;
+    return row;
+  });
+  const series: ChartSeries[] = seriesNames.map((name, i) => ({
+    key: name,
+    label: name,
+    color: paletteColor(i),
+  }));
+  return { data, series };
 }
 
 /** "2026-03" → "Mar". */

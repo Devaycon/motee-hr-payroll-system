@@ -48,7 +48,7 @@ const ForgotPasswordVerifyOtpIndex = () => {
     <div
       className="relative min-h-screen flex items-center justify-end overflow-hidden"
       style={{
-        backgroundImage: "url('/wife-bg.png')",
+        backgroundImage: "url('/login-bg.jpeg')",
         backgroundSize: "cover",
         backgroundPosition: "bottom",
       }}
@@ -141,7 +141,7 @@ const ForgotPasswordVerifyOtpIndex = () => {
             )}
 
             {resent && (
-              <p className="text-xs text-[#4ED251] text-center">
+              <p className="text-xs text-[#50D34C] text-center">
                 A new code has been sent to your email.
               </p>
             )}

@@ -89,7 +89,7 @@ function SaveRow({ onSave }: { onSave: () => void }) {
     <div className="flex justify-end pt-2">
       <Button
         size="sm"
-        className="gap-2 bg-[#ff8b2d] hover:bg-[#e67820] text-white"
+        className="gap-2 bg-[#FE8F44] hover:bg-[#e67820] text-white"
         onClick={onSave}
       >
         <Save className="w-4 h-4" /> Save Changes
@@ -206,7 +206,7 @@ export function SystemConfigPage() {
             onClick={() => setActiveTab(t.id)}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
               activeTab === t.id
-                ? "bg-background border border-b-background border-border text-[#ff8b2d] -mb-px"
+                ? "bg-background border border-b-background border-border text-[#FE8F44] -mb-px"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >

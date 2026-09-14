@@ -7,6 +7,7 @@ import {
   formatTimeHHMM,
   secondsToHHMM,
 } from "@/src/lib/utils/format-duration";
+import { MapsLink } from "@/src/components/shared/maps-link";
 
 interface TodaySummaryProps {
   clockInTime: Date | null;
@@ -17,6 +18,8 @@ interface TodaySummaryProps {
   expectedEndTime: Date | null;
   schedule: DaySchedule | null;
   locationLabel: string;
+  /** "lat,lng" the device reported for the most recent punch, if any. */
+  locationCoords?: string;
 }
 
 export function TodaySummary({
@@ -28,6 +31,7 @@ export function TodaySummary({
   expectedEndTime,
   schedule,
   locationLabel,
+  locationCoords,
 }: TodaySummaryProps) {
   const rows = [
     {
@@ -66,12 +70,6 @@ export function TodaySummary({
       icon: Clock,
       color: "#2563EB",
     },
-    {
-      label: "Location",
-      value: clockState === "idle" ? "—" : locationLabel,
-      icon: MapPin,
-      color: "#1D9E75",
-    },
   ];
 
   return (
@@ -91,6 +89,21 @@ export function TodaySummary({
             </span>
           </div>
         ))}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: "#1D9E75" }} />
+            Location
+          </div>
+          {clockState === "idle" ? (
+            <span className="text-xs font-semibold text-foreground truncate">—</span>
+          ) : locationCoords ? (
+            <MapsLink address={locationCoords} className="text-xs font-semibold" />
+          ) : (
+            <span className="text-xs font-semibold text-foreground truncate">
+              {locationLabel}
+            </span>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

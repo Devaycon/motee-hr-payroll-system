@@ -40,23 +40,30 @@ export const PROJECT_STATUS_STYLES: Record<ProjectStatus, string> = {
 export type ProjectTaskStatus =
   | "not_started"
   | "in_progress"
+  | "at_risk"
   | "blocked"
-  | "completed";
+  | "completed"
+  | "cancelled";
 
 export const TASK_STATUS_LABELS: Record<ProjectTaskStatus, string> = {
   not_started: "Not Started",
   in_progress: "In Progress",
+  at_risk: "At Risk",
   blocked: "Blocked",
   completed: "Completed",
+  cancelled: "Cancelled",
 };
 
 export const TASK_STATUS_STYLES: Record<ProjectTaskStatus, string> = {
   not_started: "border-border bg-muted text-muted-foreground",
   in_progress:
     "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  at_risk: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
   blocked: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
   completed:
     "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  cancelled:
+    "border-border bg-muted text-muted-foreground/60 line-through decoration-muted-foreground/40",
 };
 
 export type ProjectPriority = "low" | "medium" | "high" | "critical";
@@ -89,14 +96,40 @@ export interface ProjectTask {
   phase?: string;
 }
 
+export type MilestoneStatus =
+  | "not_started"
+  | "in_progress"
+  | "at_risk"
+  | "completed";
+
+export const MILESTONE_STATUS_LABELS: Record<MilestoneStatus, string> = {
+  not_started: "Not Started",
+  in_progress: "In Progress",
+  at_risk: "At Risk",
+  completed: "Completed",
+};
+
 export interface Milestone {
   id: string;
   name: string;
+  /** Target date. */
   date: string;
+  actualDate?: string;
+  status?: MilestoneStatus;
+  /** 0–100. */
+  percentComplete?: number;
   description?: string;
   reached: boolean;
-  /** Tasks that must be complete for this milestone to be met. */
+  /** Tasks that must be complete for this milestone to be met, and also
+      shown as the milestone's "related tasks". */
   taskIds?: string[];
+  responsibleId?: string;
+  responsibleName?: string;
+  /** Ids into the project's Risks & Issues list. */
+  riskIds?: string[];
+  approved?: boolean;
+  approvedBy?: string;
+  approvedAt?: string;
 }
 
 /** How much of one person's time a project has claimed. */
@@ -168,12 +201,17 @@ export function addDays(iso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** A task is blocked while anything it depends on is unfinished. */
+/**
+ * A task is blocked while anything it depends on is unfinished. A cancelled
+ * dependency counts as satisfied — otherwise a cancelled predecessor would
+ * zombie-block its dependents forever, since it can never become "completed".
+ */
 export function isTaskBlocked(task: ProjectTask, tasks: ProjectTask[]): boolean {
   const byId = new Map(tasks.map((t) => [t.id, t]));
-  return (task.dependsOn ?? []).some(
-    (id) => byId.get(id)?.status !== "completed",
-  );
+  return (task.dependsOn ?? []).some((id) => {
+    const status = byId.get(id)?.status;
+    return status !== "completed" && status !== "cancelled";
+  });
 }
 
 /**
@@ -182,7 +220,10 @@ export function isTaskBlocked(task: ProjectTask, tasks: ProjectTask[]): boolean 
  */
 export function availableProjectTasks(tasks: ProjectTask[]): ProjectTask[] {
   return tasks.filter(
-    (t) => t.status !== "completed" && !isTaskBlocked(t, tasks),
+    (t) =>
+      t.status !== "completed" &&
+      t.status !== "cancelled" &&
+      !isTaskBlocked(t, tasks),
   );
 }
 
@@ -215,54 +256,79 @@ export function findScheduleConflicts(tasks: ProjectTask[]): ScheduleConflict[] 
 }
 
 /**
- * The longest dependency chain through the project — the sequence where a
- * day's slip is a day's slip to the whole project.
+ * The longest dependency chain through the project, weighted by each task's
+ * own duration rather than by task count — a two-task chain of 90-day tasks
+ * is more "critical" than a four-task chain of 5-day tasks, and the Gantt's
+ * own bars are already date-driven, so criticality should agree with them.
  *
  * Cycles are guarded with a visiting set: a dependency loop would otherwise
  * recurse forever, and a corrupt import shouldn't hang the page.
  */
 export function criticalPath(tasks: ProjectTask[]): string[] {
   const byId = new Map(tasks.map((t) => [t.id, t]));
-  const memo = new Map<string, string[]>();
+  const memo = new Map<string, { path: string[]; duration: number }>();
   const visiting = new Set<string>();
 
-  function chainTo(taskId: string): string[] {
+  function chainTo(taskId: string): { path: string[]; duration: number } {
     if (memo.has(taskId)) return memo.get(taskId)!;
-    if (visiting.has(taskId)) return [];
+    if (visiting.has(taskId)) return { path: [], duration: 0 };
     const task = byId.get(taskId);
-    if (!task) return [];
+    if (!task) return { path: [], duration: 0 };
 
     visiting.add(taskId);
-    let longest: string[] = [];
+    let longest = { path: [] as string[], duration: 0 };
     for (const depId of task.dependsOn ?? []) {
       const chain = chainTo(depId);
-      if (chain.length > longest.length) longest = chain;
+      if (chain.duration > longest.duration) longest = chain;
     }
     visiting.delete(taskId);
 
-    const result = [...longest, taskId];
+    const ownDuration = Math.max(1, daysBetween(task.startDate, task.endDate));
+    const result = {
+      path: [...longest.path, taskId],
+      duration: longest.duration + ownDuration,
+    };
     memo.set(taskId, result);
     return result;
   }
 
-  let best: string[] = [];
+  let best = { path: [] as string[], duration: 0 };
   for (const task of tasks) {
     const chain = chainTo(task.id);
-    if (chain.length > best.length) best = chain;
+    if (chain.duration > best.duration) best = chain;
   }
-  return best;
+  return best.path;
 }
 
 // ── Roll-ups ────────────────────────────────────────────────────────────────
 
-/** Weighted by task count, not by duration — every task counts once. */
+/**
+ * Weighted by task count, not by duration — every task counts once.
+ * Cancelled tasks are excluded from both sides of the average: they're out
+ * of scope, not partial progress toward it.
+ */
 export function projectProgress(project: Project): number {
-  if (project.tasks.length === 0) return 0;
-  const total = project.tasks.reduce(
+  const counted = project.tasks.filter((t) => t.status !== "cancelled");
+  if (counted.length === 0) return 0;
+  const total = counted.reduce(
     (sum, t) => sum + (t.status === "completed" ? 100 : t.percentComplete),
     0,
   );
-  return Math.round(total / project.tasks.length);
+  return Math.round(total / counted.length);
+}
+
+/** Average %complete across just the tasks on the critical path. */
+export function criticalPathProgress(project: Project): number {
+  const ids = new Set(criticalPath(project.tasks));
+  const tasks = project.tasks.filter(
+    (t) => ids.has(t.id) && t.status !== "cancelled",
+  );
+  if (tasks.length === 0) return 0;
+  const total = tasks.reduce(
+    (sum, t) => sum + (t.status === "completed" ? 100 : t.percentComplete),
+    0,
+  );
+  return Math.round(total / tasks.length);
 }
 
 /** Total FTE claimed by a project, where 100% of one person is 1.0. */
@@ -323,6 +389,38 @@ export function approvedHours(
     .reduce((sum, e) => sum + e.hours, 0);
 }
 
+/** Approved hours for one person on one project. */
+export function approvedHoursForEmployee(
+  entries: TimesheetEntry[],
+  projectId: string,
+  employeeId: string,
+): number {
+  return entries
+    .filter(
+      (e) =>
+        e.projectId === projectId &&
+        e.employeeId === employeeId &&
+        e.status === "approved",
+    )
+    .reduce((sum, e) => sum + e.hours, 0);
+}
+
+/**
+ * How many of a project's tasks belong to one person. Joins on `assigneeId`
+ * where set, falling back to a name match for older tasks that predate it.
+ */
+export function taskCountForEmployee(
+  project: Project,
+  employeeId: string,
+  employeeName: string,
+): number {
+  return project.tasks.filter(
+    (t) =>
+      t.assigneeId === employeeId ||
+      (!t.assigneeId && t.assigneeName === employeeName),
+  ).length;
+}
+
 /** Cost of approved time, using each person's project charge rate. */
 export function projectSpend(
   project: Project,
@@ -337,6 +435,67 @@ export function projectSpend(
       (sum, e) => sum + e.hours * (rateByEmployee.get(e.employeeId) ?? 0),
       0,
     );
+}
+
+/**
+ * Estimated cost of the work that hasn't happened yet, using each task's
+ * assignee rate. There's no independently-tracked "committed" figure in the
+ * data model, so this is derived rather than manually entered — a stored
+ * number here would need constant manual upkeep to stay honest.
+ */
+export function committedSpend(project: Project): number {
+  const rateById = new Map(
+    project.allocations.map((a) => [a.employeeId, a.hourlyRate ?? 0]),
+  );
+  const rateByName = new Map(
+    project.allocations.map((a) => [a.employeeName, a.hourlyRate ?? 0]),
+  );
+  return project.tasks
+    .filter((t) => t.status !== "completed" && t.status !== "cancelled")
+    .reduce((sum, t) => {
+      const rate =
+        (t.assigneeId && rateById.get(t.assigneeId)) ||
+        (t.assigneeName && rateByName.get(t.assigneeName)) ||
+        0;
+      const remainingHours =
+        (t.estimatedHours ?? 0) * (1 - t.percentComplete / 100);
+      return sum + remainingHours * rate;
+    }, 0);
+}
+
+/** Actual spend to date plus the estimated cost of remaining work. */
+export function forecastFinalCost(
+  project: Project,
+  entries: TimesheetEntry[],
+): number {
+  return projectSpend(project, entries) + committedSpend(project);
+}
+
+/** Budget left once the forecast (actual + committed) is accounted for. */
+export function remainingBudget(
+  project: Project,
+  entries: TimesheetEntry[],
+): number {
+  return (project.budget ?? 0) - forecastFinalCost(project, entries);
+}
+
+/**
+ * Budget minus forecast final cost. Under this simple model this is the same
+ * number as `remainingBudget` — kept as a separate named function because
+ * the client's ask names both concepts, leaving room for them to diverge
+ * later under a richer earned-value model without a rename.
+ */
+export function budgetVariance(
+  project: Project,
+  entries: TimesheetEntry[],
+): number {
+  return (project.budget ?? 0) - forecastFinalCost(project, entries);
+}
+
+/** Raw (unrounded) utilisation percent, so callers can pick their own precision. */
+export function budgetUtilisationPercent(spend: number, budget: number): number {
+  if (!budget) return 0;
+  return (spend / budget) * 100;
 }
 
 export interface NewProject {

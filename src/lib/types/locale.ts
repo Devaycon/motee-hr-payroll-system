@@ -1,4 +1,6 @@
 import type { StarterTaxRecord } from "./starter-tax";
+import type { LocaleBranch } from "./branches";
+import type { Guarantor } from "./onboarding";
 
 export type CountryKey = "ng" | "uk";
 
@@ -82,11 +84,19 @@ export interface LocaleEmployee {
   /** Detailed addresses keyed by type slug (home, work, holiday, …). */
   addresses?: Record<string, Record<string, string>>;
   workMode?: string;
+  /**
+   * The branch this person works out of. The canonical site FK; `workLocation`
+   * is the denormalised branch name kept alongside it for the display-only
+   * readers that predate branches.
+   */
+  branchId?: string;
   workLocation?: string;
   identifiers?: Record<string, string>;
   bankDetails?: Record<string, string>;
   emergencyContact?: LocaleEmergencyContact;
   emergencyContacts?: LocaleEmergencyContact[];
+  /** Always required for NG employees; absent for UK ones. */
+  guarantors?: Guarantor[];
   workPattern?: LocaleWorkPattern;
   roleIds?: string[];
   accessLevelId?: string;
@@ -186,18 +196,6 @@ export interface LocaleEmploymentEvent {
   actorId: string;
 }
 
-export interface LocaleLocationBooking {
-  id: string;
-  employeeId: string;
-  locationType: "desk" | "meeting_room" | "parking";
-  locationName: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: "confirmed" | "cancelled";
-  notes: string;
-}
-
 export interface LocaleMedicalFacts {
   employeeId: string;
   allergies: string[];
@@ -251,6 +249,10 @@ export interface LocaleAttendanceEntry {
   clockOut?: string | null;
   hoursWorked?: number;
   source?: string;
+  location?: string;
+  /** "lat,lng" captured from the device at the moment of clock-in/out. */
+  clockInCoords?: string;
+  clockOutCoords?: string;
 }
 
 export interface LocaleLeaveRequest {
@@ -276,6 +278,11 @@ export interface LocaleBundle {
   _meta: { tenantKey: string; generatedAt: string; referenceDate: string; historyDays: number; seed: number; employeeCount: number };
   tenant: LocaleTenant;
   companyProfile: Record<string, unknown>;
+  /**
+   * The company's sites. Optional so a bundle generated before branches
+   * existed still typechecks — readers must treat `undefined` as "none".
+   */
+  branches?: LocaleBranch[];
   departments: LocaleDepartment[];
   employmentTypes: Array<{ id: string; name: string; defaultLeaveDays: number; eligibleForBenefits: boolean; probationMonths: number }>;
   roles: LocaleRole[];
@@ -321,7 +328,6 @@ export interface LocaleBundle {
   disciplinaries?: LocaleDisciplinary[];
   expenses?: LocaleExpense[];
   employmentHistory?: LocaleEmploymentEvent[];
-  locationBookings?: LocaleLocationBooking[];
   medicalFacts?: LocaleMedicalFacts[];
   employeeNotes?: LocaleEmployeeNote[];
   payHistory?: LocalePayChange[];

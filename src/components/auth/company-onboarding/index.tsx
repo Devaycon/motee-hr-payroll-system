@@ -109,7 +109,7 @@ export default function CompanyOnboardingIndex() {
     <div
       className="relative h-screen flex items-center justify-end overflow-hidden"
       style={{
-        backgroundImage: "url('/registration-bg.png')",
+        backgroundImage: "url('/registration-bg.jpeg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useMotionValue, useMotionTemplate } from "motion/react";
-import { useEffect, useRef } from "react";
+// Hovering color-reveal effect temporarily disabled — see commented block below.
+// import { motion, useMotionValue, useMotionTemplate } from "motion/react";
+// import { useEffect, useRef } from "react";
 
 /**
  * App background: a faint, repeating watermark of the brand logo, with a soft
@@ -18,32 +19,36 @@ export function LogoPatternBackground({
   /** Rendered width of one tile in px; height follows the tile's aspect. */
   tileW?: number;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  // Start off-screen so nothing is revealed until the mouse enters.
-  const x = useMotionValue(-9999);
-  const y = useMotionValue(-9999);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const onMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      x.set(e.clientX - rect.left);
-      y.set(e.clientY - rect.top);
-    };
-    const onLeave = () => {
-      x.set(-9999);
-      y.set(-9999);
-    };
-
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseleave", onLeave);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseleave", onLeave);
-    };
-  }, [x, y]);
+  // --- Hovering color-reveal effect (disabled) ---
+  // const containerRef = useRef<HTMLDivElement>(null);
+  // // Start off-screen so nothing is revealed until the mouse enters.
+  // const x = useMotionValue(-9999);
+  // const y = useMotionValue(-9999);
+  //
+  // useEffect(() => {
+  //   const container = containerRef.current;
+  //   if (!container) return;
+  //
+  //   const onMove = (e: MouseEvent) => {
+  //     const rect = container.getBoundingClientRect();
+  //     x.set(e.clientX - rect.left);
+  //     y.set(e.clientY - rect.top);
+  //   };
+  //   const onLeave = () => {
+  //     x.set(-9999);
+  //     y.set(-9999);
+  //   };
+  //
+  //   window.addEventListener("mousemove", onMove);
+  //   window.addEventListener("mouseleave", onLeave);
+  //   return () => {
+  //     window.removeEventListener("mousemove", onMove);
+  //     window.removeEventListener("mouseleave", onLeave);
+  //   };
+  // }, [x, y]);
+  //
+  // const spotlightMask = useMotionTemplate`radial-gradient(150px circle at ${x}px ${y}px, black 0%, black 35%, transparent 70%)`;
+  // --- end disabled block ---
 
   const tiled = {
     backgroundImage: `url(${src})`,
@@ -51,13 +56,8 @@ export function LogoPatternBackground({
     backgroundSize: `${tileW}px auto`,
   };
 
-  const spotlightMask = useMotionTemplate`radial-gradient(150px circle at ${x}px ${y}px, black 0%, black 35%, transparent 70%)`;
-
   return (
-    <div
-      ref={containerRef}
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-    >
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {/* 1. Very light orange-white surface (dark-mode fallback). */}
       <div className="absolute inset-0 bg-[#fff8f1] dark:bg-black" />
 
@@ -74,7 +74,8 @@ export function LogoPatternBackground({
         style={tiled}
       />
 
-      {/* 3. Full-color logo tiles, revealed only inside the cursor spotlight. */}
+      {/* 3. Full-color logo tiles, revealed only inside the cursor spotlight.
+            Disabled along with the hover-tracking effect above.
       <motion.div
         className="absolute inset-0"
         style={{
@@ -83,6 +84,7 @@ export function LogoPatternBackground({
           WebkitMaskImage: spotlightMask,
         }}
       />
+      */}
     </div>
   );
 }

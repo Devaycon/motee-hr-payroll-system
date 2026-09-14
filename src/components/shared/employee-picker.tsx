@@ -17,7 +17,10 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { Badge } from "@/src/components/ui/badge";
+// Unscoped: you can name anyone in the company as a manager, approver or
+// recipient, whichever branch the view is currently narrowed to.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { cn } from "@/src/lib/utils";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 
@@ -172,5 +175,145 @@ export function EmployeePicker({
         </Command>
       </PopoverContent>
     </Popover>
+  );
+}
+
+interface EmployeeMultiPickerProps {
+  /** Currently selected employee ids. */
+  value: string[];
+  onChange: (employees: PickedEmployee[]) => void;
+  /** Ids to leave out — e.g. the case subject themselves. */
+  excludeIds?: string[];
+  placeholder?: string;
+  className?: string;
+  disabled?: boolean;
+}
+
+/**
+ * Searchable multi-employee picker (e.g. a hearing panel) — same Popover +
+ * cmdk Command primitives as `EmployeePicker`, but toggles membership in a
+ * list instead of replacing a single value, and shows the picks as chips.
+ */
+export function EmployeeMultiPicker({
+  value,
+  onChange,
+  excludeIds = [],
+  placeholder = "Search for a colleague…",
+  className,
+  disabled,
+}: EmployeeMultiPickerProps) {
+  const [open, setOpen] = useState(false);
+  const { data: bundle } = useLocaleSection<LocaleBundle>((b) => b);
+
+  const employees = useMemo<PickedEmployee[]>(() => {
+    const excluded = new Set(excludeIds);
+    return (bundle?.employees ?? [])
+      .filter((e) => !excluded.has(e.id))
+      .map((e) => ({
+        id: e.id,
+        employeeNumber: e.employeeNumber,
+        name: e.fullName,
+        initials: e.initials,
+        department: e.departmentName,
+        jobTitle: e.jobTitle,
+      }));
+  }, [bundle, excludeIds]);
+
+  const selectedSet = new Set(value);
+  const selected = employees.filter((e) => selectedSet.has(e.id));
+
+  function toggle(emp: PickedEmployee) {
+    const next = selectedSet.has(emp.id)
+      ? selected.filter((e) => e.id !== emp.id)
+      : [...selected, emp];
+    onChange(next);
+  }
+
+  return (
+    <div className={cn("space-y-1.5", className)}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            disabled={disabled}
+            className="w-full justify-between font-normal h-9"
+          >
+            <span className="text-muted-foreground">
+              {selected.length > 0
+                ? `${selected.length} selected`
+                : placeholder}
+            </span>
+            <ChevronsUpDown className="size-3.5 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-(--radix-popover-trigger-width) p-0"
+          align="start"
+        >
+          <Command>
+            <CommandInput placeholder="Search by name, ID or department…" />
+            <CommandList className="max-h-64">
+              <CommandEmpty>No colleague found.</CommandEmpty>
+              <CommandGroup>
+                {employees.map((e) => (
+                  <CommandItem
+                    key={e.id}
+                    value={`${e.name} ${e.department} ${e.jobTitle} ${e.employeeNumber ?? ""} ${e.id}`}
+                    onSelect={() => toggle(e)}
+                    className="gap-2"
+                  >
+                    <PersonAvatar
+                      name={e.name}
+                      initials={e.initials}
+                      className="size-6 shrink-0"
+                      fallbackClassName="bg-primary/10 text-primary text-[10px] font-semibold"
+                    />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm">{e.name}</span>
+                      <span className="truncate text-[11px] text-muted-foreground">
+                        {e.employeeNumber ? `${e.employeeNumber} · ` : ""}
+                        {e.jobTitle} · {e.department}
+                      </span>
+                    </span>
+                    <Check
+                      className={cn(
+                        "ml-auto size-3.5",
+                        selectedSet.has(e.id) ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((e) => (
+            <Badge
+              key={e.id}
+              variant="secondary"
+              className="gap-1 pr-1 font-normal"
+            >
+              {e.name}
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={() => toggle(e)}
+                  aria-label={`Remove ${e.name}`}
+                  className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+                >
+                  <X className="size-2.5" />
+                </button>
+              )}
+            </Badge>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

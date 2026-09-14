@@ -35,7 +35,7 @@ import {
 import type { AssistedAccessSession } from "@/src/data/motee-demo";
 
 const SESSION_STATUS_STYLES: Record<string, string> = {
-  active: "bg-[#4ED251]/10 text-[#4ED251]",
+  active: "bg-[#50D34C]/10 text-[#50D34C]",
   ended: "bg-muted text-muted-foreground",
   expired: "bg-amber-500/10 text-amber-500",
 };
@@ -70,7 +70,7 @@ export function ImpersonatePage() {
       label: "Active Now",
       value: DEMO_ASSISTED_ACCESS_SESSIONS.filter((s) => s.status === "active")
         .length,
-      color: "text-[#4ED251]",
+      color: "text-[#50D34C]",
     },
     {
       label: "Expired",
@@ -102,7 +102,7 @@ export function ImpersonatePage() {
         <Button
           size="sm"
           onClick={() => setShowInitiateModal(true)}
-          className="gap-1.5 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white shrink-0"
+          className="gap-1.5 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white shrink-0"
         >
           <Eye className="h-4 w-4" />
           Initiate Session
@@ -178,8 +178,8 @@ export function ImpersonatePage() {
                 >
                   <td className="px-6 py-3.5">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ff8b2d]/10">
-                        <Building2 className="h-3.5 w-3.5 text-[#ff8b2d]" />
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FE8F44]/10">
+                        <Building2 className="h-3.5 w-3.5 text-[#FE8F44]" />
                       </div>
                       <span className="text-sm font-medium text-foreground">
                         {session.tenantName}
@@ -245,7 +245,7 @@ export function ImpersonatePage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <UserRoundCog className="h-5 w-5 text-[#ff8b2d]" />
+              <UserRoundCog className="h-5 w-5 text-[#FE8F44]" />
               Initiate Assisted Access
             </DialogTitle>
           </DialogHeader>
@@ -264,7 +264,7 @@ export function ImpersonatePage() {
               <select
                 value={selectedTenantId}
                 onChange={(e) => setSelectedTenantId(e.target.value)}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
               >
                 <option value="">Choose a tenant…</option>
                 {activeTenants.map((t) => (
@@ -276,8 +276,8 @@ export function ImpersonatePage() {
             </div>
             {selectedTenant && (
               <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ff8b2d]/10">
-                  <Building2 className="h-4 w-4 text-[#ff8b2d]" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FE8F44]/10">
+                  <Building2 className="h-4 w-4 text-[#FE8F44]" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">
@@ -307,13 +307,13 @@ export function ImpersonatePage() {
             <div
               className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
                 confirmed
-                  ? "border-[#ff8b2d]/50 bg-[#ff8b2d]/5"
+                  ? "border-[#FE8F44]/50 bg-[#FE8F44]/5"
                   : "border-border hover:border-foreground/30"
               }`}
               onClick={() => setConfirmed((p) => !p)}
             >
               <div
-                className={`flex h-4 w-4 shrink-0 mt-0.5 items-center justify-center rounded border transition-colors ${confirmed ? "bg-[#ff8b2d] border-[#ff8b2d]" : "border-border"}`}
+                className={`flex h-4 w-4 shrink-0 mt-0.5 items-center justify-center rounded border transition-colors ${confirmed ? "bg-[#FE8F44] border-[#FE8F44]" : "border-border"}`}
               >
                 {confirmed && <CheckCircle2 className="h-3 w-3 text-white" />}
               </div>
@@ -339,7 +339,7 @@ export function ImpersonatePage() {
             <Button
               disabled={!selectedTenantId || !reason.trim() || !confirmed}
               onClick={handleInitiate}
-              className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white gap-1.5"
+              className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white gap-1.5"
             >
               <Eye className="h-4 w-4" />
               Start Session
@@ -359,7 +359,7 @@ export function ImpersonatePage() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <UserRoundCog className="h-5 w-5 text-[#ff8b2d]" />
+                  <UserRoundCog className="h-5 w-5 text-[#FE8F44]" />
                   Session Detail
                   <Badge
                     className={`text-xs border-0 capitalize ${SESSION_STATUS_STYLES[showSessionDetail.status]}`}

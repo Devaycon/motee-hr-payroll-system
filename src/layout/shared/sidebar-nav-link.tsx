@@ -21,7 +21,7 @@ export function SidebarNavLink({
   active,
   collapsed,
   onClick,
-  activeClassName = "bg-primary text-white border-l-4 border-[#4ED251]",
+  activeClassName = "bg-primary text-white border-l-4 border-[#50D34C]",
   /** Collapsed drops the left border — there's no row for it to edge. */
   activeCollapsedClassName = "bg-primary text-white",
   badgeClassName = "bg-primary text-white",

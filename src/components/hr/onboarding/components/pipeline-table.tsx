@@ -48,6 +48,8 @@ import {
   ONBOARDING_STAGE_STYLES,
   ONBOARDING_STATUS_LABELS,
   ONBOARDING_STATUS_STYLES,
+  ONBOARDING_MODE_LABELS,
+  ONBOARDING_MODE_STYLES,
 } from "../data";
 import {
   INVITATION_STATUS_LABELS,
@@ -133,6 +135,23 @@ export function PipelineTable({
             {ONBOARDING_STAGE_LABELS[row.original.stage]}
           </span>
         ),
+      },
+      {
+        id: "method",
+        header: "Method",
+        cell: ({ row }) => {
+          const mode = row.original.mode ?? "manual";
+          return (
+            <span
+              className={cn(
+                "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
+                ONBOARDING_MODE_STYLES[mode],
+              )}
+            >
+              {ONBOARDING_MODE_LABELS[mode]}
+            </span>
+          );
+        },
       },
       {
         id: "progress",

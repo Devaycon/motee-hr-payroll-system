@@ -34,7 +34,7 @@ import type { FeatureFlag } from "@/src/data/motee-demo";
 type ScopeFilter = "all" | "platform" | "plan" | "tenant";
 
 const scopeStyles: Record<string, string> = {
-  platform: "bg-[#ff8b2d]/10 text-[#ff8b2d]",
+  platform: "bg-[#FE8F44]/10 text-[#FE8F44]",
   plan: "bg-blue-500/10 text-blue-500",
   tenant: "bg-violet-500/10 text-violet-500",
 };
@@ -169,7 +169,7 @@ export function FeatureFlagsPage() {
           <Button
             size="sm"
             onClick={() => setShowCreateModal(true)}
-            className="gap-1.5 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+            className="gap-1.5 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
           >
             <Plus className="h-4 w-4" />
             New Flag
@@ -188,8 +188,8 @@ export function FeatureFlagsPage() {
           {
             label: "Enabled",
             value: DEMO_FEATURE_FLAGS.filter((f) => f.enabled).length,
-            color: "text-[#4ED251]",
-            bg: "bg-[#4ED251]/10",
+            color: "text-[#50D34C]",
+            bg: "bg-[#50D34C]/10",
           },
           {
             label: "Beta Only",
@@ -219,7 +219,7 @@ export function FeatureFlagsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <History className="h-4 w-4 text-[#ff8b2d]" />
+              <History className="h-4 w-4 text-[#FE8F44]" />
               Recent Flag Changes
             </CardTitle>
           </CardHeader>
@@ -372,7 +372,7 @@ export function FeatureFlagsPage() {
                       <td className="px-6 py-3.5">
                         <button
                           onClick={() => handleToggle(flag)}
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${enabled ? "bg-[#4ED251]" : "bg-muted-foreground/30"}`}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${enabled ? "bg-[#50D34C]" : "bg-muted-foreground/30"}`}
                         >
                           <span
                             className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-4" : "translate-x-0"}`}
@@ -384,7 +384,7 @@ export function FeatureFlagsPage() {
                           <div className="flex items-center gap-2">
                             <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
                               <div
-                                className="h-full bg-[#ff8b2d] rounded-full"
+                                className="h-full bg-[#FE8F44] rounded-full"
                                 style={{ width: `${flag.rolloutPercent}%` }}
                               />
                             </div>
@@ -433,7 +433,7 @@ export function FeatureFlagsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sliders className="h-5 w-5 text-[#ff8b2d]" />
+              <Sliders className="h-5 w-5 text-[#FE8F44]" />
               Tenant-Level Override
             </DialogTitle>
           </DialogHeader>
@@ -452,7 +452,7 @@ export function FeatureFlagsPage() {
               <select
                 value={overrideTenant}
                 onChange={(e) => setOverrideTenant(e.target.value)}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
               >
                 <option value="">Select tenant</option>
                 {DEMO_TENANTS.map((t) => (
@@ -471,7 +471,7 @@ export function FeatureFlagsPage() {
                   <button
                     key={state}
                     onClick={() => setOverrideState(state)}
-                    className={`flex-1 rounded-md border py-2 text-sm font-medium capitalize transition-colors ${overrideState === state ? "border-[#ff8b2d] bg-[#ff8b2d]/10 text-[#ff8b2d]" : "border-border text-muted-foreground hover:border-foreground/30"}`}
+                    className={`flex-1 rounded-md border py-2 text-sm font-medium capitalize transition-colors ${overrideState === state ? "border-[#FE8F44] bg-[#FE8F44]/10 text-[#FE8F44]" : "border-border text-muted-foreground hover:border-foreground/30"}`}
                   >
                     {state}
                   </button>
@@ -489,7 +489,7 @@ export function FeatureFlagsPage() {
             <Button
               disabled={!overrideTenant}
               onClick={() => setShowOverrideModal(false)}
-              className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+              className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             >
               Apply Override
             </Button>
@@ -501,7 +501,7 @@ export function FeatureFlagsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Flag className="h-5 w-5 text-[#ff8b2d]" />
+              <Flag className="h-5 w-5 text-[#FE8F44]" />
               Create Feature Flag
             </DialogTitle>
           </DialogHeader>
@@ -547,7 +547,7 @@ export function FeatureFlagsPage() {
                   onChange={(e) =>
                     setNewFlag((p) => ({ ...p, scope: e.target.value }))
                   }
-                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
                 >
                   <option value="platform">Platform-Wide</option>
                   <option value="plan">Plan-Level</option>
@@ -596,7 +596,7 @@ export function FeatureFlagsPage() {
             <Button
               disabled={!newFlag.name.trim()}
               onClick={() => setShowCreateModal(false)}
-              className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+              className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             >
               Create Flag
             </Button>

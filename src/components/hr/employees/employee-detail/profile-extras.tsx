@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Mail, Phone, ChevronRight } from "lucide-react";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// Unscoped: a person's manager or a named colleague may sit at another branch.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { COLLECTION_SCHEMAS } from "@/src/lib/profile/collections";

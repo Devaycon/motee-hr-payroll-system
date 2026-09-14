@@ -44,7 +44,7 @@ const STATUS_STYLES: Record<string, string> = {
   open: "bg-blue-500/10 text-blue-500",
   in_progress: "bg-amber-500/10 text-amber-500",
   awaiting: "bg-purple-500/10 text-purple-500",
-  resolved: "bg-[#4ED251]/10 text-[#4ED251]",
+  resolved: "bg-[#50D34C]/10 text-[#50D34C]",
   closed: "bg-muted text-muted-foreground",
 };
 
@@ -318,7 +318,7 @@ export function TicketsPage() {
                   onClick={() => setActiveTab(tab.key)}
                   className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                     activeTab === tab.key
-                      ? "bg-[#ff8b2d] text-white"
+                      ? "bg-[#FE8F44] text-white"
                       : "bg-muted text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -474,7 +474,7 @@ export function TicketsPage() {
                         }
                         className={`rounded-md border px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
                           getStatus(selected) === s
-                            ? "border-[#ff8b2d] bg-[#ff8b2d]/10 text-[#ff8b2d]"
+                            ? "border-[#FE8F44] bg-[#FE8F44]/10 text-[#FE8F44]"
                             : "border-border text-muted-foreground hover:border-foreground/30"
                         }`}
                       >
@@ -505,7 +505,7 @@ export function TicketsPage() {
                         onClick={() => setDetailTab(tab.key)}
                         className={`flex items-center gap-1.5 py-3 text-xs font-medium border-b-2 transition-colors ${
                           detailTab === tab.key
-                            ? "border-[#ff8b2d] text-[#ff8b2d]"
+                            ? "border-[#FE8F44] text-[#FE8F44]"
                             : "border-transparent text-muted-foreground hover:text-foreground"
                         }`}
                       >
@@ -526,12 +526,12 @@ export function TicketsPage() {
                             <div
                               className={`max-w-[85%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
                                 msg.role === "support"
-                                  ? "bg-[#ff8b2d]/10 text-foreground rounded-tr-none"
+                                  ? "bg-[#FE8F44]/10 text-foreground rounded-tr-none"
                                   : "bg-muted text-foreground rounded-tl-none"
                               }`}
                             >
                               <p
-                                className={`text-xs font-medium mb-1 ${msg.role === "support" ? "text-[#ff8b2d]" : "text-muted-foreground"}`}
+                                className={`text-xs font-medium mb-1 ${msg.role === "support" ? "text-[#FE8F44]" : "text-muted-foreground"}`}
                               >
                                 {msg.from}
                               </p>
@@ -600,7 +600,7 @@ export function TicketsPage() {
                             <Button
                               size="sm"
                               disabled={!reply.trim()}
-                              className="h-7 px-2 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white gap-1"
+                              className="h-7 px-2 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white gap-1"
                               onClick={() => setReply("")}
                             >
                               <Send className="h-3.5 w-3.5" />
@@ -637,7 +637,7 @@ export function TicketsPage() {
                         <Button
                           size="sm"
                           disabled={!internalNote.trim()}
-                          className="mt-2 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+                          className="mt-2 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
                           onClick={() => setInternalNote("")}
                         >
                           Add Note
@@ -655,8 +655,8 @@ export function TicketsPage() {
                     {tenantContext ? (
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ff8b2d]/10">
-                            <Building2 className="h-4 w-4 text-[#ff8b2d]" />
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FE8F44]/10">
+                            <Building2 className="h-4 w-4 text-[#FE8F44]" />
                           </div>
                           <div>
                             <p className="text-xs font-medium text-foreground">
@@ -671,7 +671,7 @@ export function TicketsPage() {
                         <div className="flex flex-col gap-2 text-xs">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Plan</span>
-                            <Badge className="text-[10px] border-0 capitalize bg-[#ff8b2d]/10 text-[#ff8b2d] h-4">
+                            <Badge className="text-[10px] border-0 capitalize bg-[#FE8F44]/10 text-[#FE8F44] h-4">
                               {tenantContext.plan}
                             </Badge>
                           </div>

@@ -48,16 +48,19 @@ export function Step4ModulePreferences() {
               type="button"
               onClick={() => toggle(mod.id)}
               className={cn(
-                "flex items-center justify-between rounded-lg border p-4 text-left transition-all",
+                "flex items-start justify-between gap-3 rounded-lg border p-4 text-left transition-all",
                 isSelected
                   ? "border-border bg-muted/50"
                   : "border-border hover:bg-muted/30"
               )}
             >
-              <span className="text-sm font-medium text-foreground">{mod.label}</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium text-foreground">{mod.label}</span>
+                <span className="text-xs text-muted-foreground">{mod.description}</span>
+              </div>
               <div
                 className={cn(
-                  "flex h-5 w-5 items-center justify-center rounded-full border transition-all",
+                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all",
                   isSelected ? "border-transparent text-white" : "border-border"
                 )}
                 style={isSelected ? { backgroundColor: "#1D9E75" } : {}}

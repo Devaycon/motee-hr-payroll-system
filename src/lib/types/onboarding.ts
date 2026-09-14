@@ -1,5 +1,6 @@
 ﻿import type { StarterTaxRecord } from "./starter-tax";
 import type { FileAttachment } from "@/src/lib/utils/file-attachments";
+import type { CountryKey } from "./locale";
 
 export type OnboardingStage =
   | "pre_boarding"
@@ -82,13 +83,17 @@ export type JoinerDocumentKind =
   | "visa"
   | "proof_of_address"
   | "qualifications"
-  | "p45";
+  | "p45"
+  | "guarantor1_id"
+  | "guarantor2_id";
 
 export interface JoinerDocumentSpec {
   kind: JoinerDocumentKind;
   label: string;
   hint: string;
   required: boolean;
+  /** Restricts the slot to one tenant country. Absent = shown for both. */
+  country?: CountryKey;
 }
 
 export const JOINER_DOCUMENTS: JoinerDocumentSpec[] = [
@@ -103,6 +108,7 @@ export const JOINER_DOCUMENTS: JoinerDocumentSpec[] = [
     label: "Right to Work evidence",
     hint: "Share code, BRP or another accepted document",
     required: true,
+    country: "uk",
   },
   {
     kind: "driving_licence",
@@ -115,6 +121,7 @@ export const JOINER_DOCUMENTS: JoinerDocumentSpec[] = [
     label: "Visa",
     hint: "Only if your right to work depends on one",
     required: false,
+    country: "uk",
   },
   {
     kind: "proof_of_address",
@@ -128,6 +135,20 @@ export const JOINER_DOCUMENTS: JoinerDocumentSpec[] = [
     hint: "Optional — certificates relevant to your role",
     required: false,
   },
+  {
+    kind: "guarantor1_id",
+    label: "Guarantor 1 — ID Document",
+    hint: "National ID, passport or driver's licence",
+    required: true,
+    country: "ng",
+  },
+  {
+    kind: "guarantor2_id",
+    label: "Guarantor 2 — ID Document",
+    hint: "National ID, passport or driver's licence",
+    required: true,
+    country: "ng",
+  },
 ];
 
 /** An uploaded joiner document, keyed by what it evidences. */
@@ -135,6 +156,18 @@ export interface JoinerDocument {
   kind: JoinerDocumentKind;
   file: FileAttachment;
   uploadedAt: string;
+}
+
+/**
+ * A reference who vouches for a new hire — always required for NG joiners
+ * (not collected for UK tenants).
+ */
+export interface Guarantor {
+  name: string;
+  relationship: string;
+  address: string;
+  phone: string;
+  occupation: string;
 }
 
 /**
@@ -318,9 +351,13 @@ export interface ManualOnboardingData {
   jobTitle: string;
   department: string;
   employmentType: string;
+  /** Links `manager` to the real employee record picked in the form. */
+  managerId?: string;
   manager: string;
   startDate: string;
   salary: string;
+  /** The branch the hire is posted to. `workLocation` is its display name. */
+  branchId: string;
   workLocation: string;
   workMode: string;
   grade: string;
@@ -350,6 +387,8 @@ export interface ManualOnboardingData {
   emergencyContactRelationship: string;
   emergencyContactPhone: string;
   emergencyContactEmail: string;
+  /** Always required for NG joiners; not collected for UK tenants. */
+  guarantors: Guarantor[];
   // Medical facts
   allergies: string;
   conditions: string;

@@ -18,10 +18,16 @@ import {
 } from "@/src/components/ui/select";
 import { Separator } from "@/src/components/ui/separator";
 import { cn } from "@/src/lib/utils";
+import {
+  EmployeePicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
 import { DEPARTMENT_OPTIONS } from "../data";
-import type { ManualOnboardingData } from "../types";
+import type { ManualOnboardingData, Guarantor } from "../types";
+import { guarantorsSchema, emptyGuarantor } from "@/src/lib/validation/guarantor";
 import { addRecord } from "@/src/lib/stores/onboarding-records-slice";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useBranchOptions } from "@/src/lib/branches/use-branch";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { onboardingStarted } from "@/src/lib/notifications/onboarding";
 import {
@@ -65,16 +71,35 @@ const ETHNICITY_OPTIONS = [
   "Prefer not to say",
 ];
 
-const STEPS = [
-  { label: "Personal" },
-  { label: "Employment" },
-  { label: "Bank Details" },
-  { label: "Documents" },
-  { label: "Emergency" },
-  { label: "Medical" },
-  { label: "Assets" },
-  { label: "Review" },
-];
+type StepKey =
+  | "personal"
+  | "employment"
+  | "bank"
+  | "identity"
+  | "emergency"
+  | "guarantors"
+  | "medical"
+  | "assets"
+  | "review";
+
+const STEP_LABELS: Record<StepKey, string> = {
+  personal: "Personal",
+  employment: "Employment",
+  bank: "Bank Details",
+  identity: "Documents",
+  emergency: "Emergency",
+  guarantors: "Guarantors",
+  medical: "Medical",
+  assets: "Assets",
+  review: "Review",
+};
+
+/** Guarantors are always required for NG hires; never collected for UK. */
+function buildStepKeys(isUK: boolean): StepKey[] {
+  return isUK
+    ? ["personal", "employment", "bank", "identity", "emergency", "medical", "assets", "review"]
+    : ["personal", "employment", "bank", "identity", "emergency", "guarantors", "medical", "assets", "review"];
+}
 
 const step1Schema = z.object({
   title: z.string().optional(),
@@ -184,9 +209,11 @@ const EMPTY_DATA: ManualOnboardingData = {
   jobTitle: "",
   department: "",
   employmentType: "",
+  managerId: "",
   manager: "",
   startDate: "",
   salary: "",
+  branchId: "",
   workLocation: "",
   workMode: "",
   grade: "",
@@ -208,6 +235,7 @@ const EMPTY_DATA: ManualOnboardingData = {
   emergencyContactRelationship: "",
   emergencyContactPhone: "",
   emergencyContactEmail: "",
+  guarantors: [emptyGuarantor(), emptyGuarantor()],
   allergies: "",
   conditions: "",
   medications: "",
@@ -240,8 +268,10 @@ export function OnboardingFormPage() {
   const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
   // Sort code and driving-licence expiry are UK-shaped; NG uses NIN/TIN/PFA.
   const isUK = useAppSelector((s) => s.locale.country) === "uk";
+  const branchOptions = useBranchOptions();
   const onboardingTemplates = getOnboardingTemplates(templates);
   const defaultTemplate = getDefaultOnboardingTemplate(templates);
+  const stepKeys = buildStepKeys(isUK);
   const [step, setStep] = useState(0);
   const [data, setData] = useState<ManualOnboardingData>(() => ({
     ...EMPTY_DATA,
@@ -249,7 +279,19 @@ export function OnboardingFormPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const currentKey = stepKeys[step];
   const selectedWorkflowId = data.workflowTemplateId || defaultTemplate?.id || "";
+
+  const stepSchemas: Partial<Record<StepKey, z.ZodType>> = {
+    personal: step1Schema,
+    employment: step2Schema,
+    bank: step3Schema,
+    identity: step4Schema,
+    emergency: step5Schema,
+    guarantors: guarantorsSchema,
+    medical: step6Schema,
+    assets: step7Schema,
+  };
 
   function update(field: keyof ManualOnboardingData, value: string) {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -260,23 +302,30 @@ export function OnboardingFormPage() {
     });
   }
 
+  /** Updates one field on one of the two guarantors — always required for NG. */
+  function updateGuarantor(index: number, field: keyof Guarantor, value: string) {
+    setData((prev) => ({
+      ...prev,
+      guarantors: prev.guarantors.map((g, i) =>
+        i === index ? { ...g, [field]: value } : g,
+      ),
+    }));
+    const errKey = `guarantors.${index}.${field}`;
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[errKey];
+      return next;
+    });
+  }
+
   function validateStep(s: number): boolean {
-    const schemas = [
-      step1Schema,
-      step2Schema,
-      step3Schema,
-      step4Schema,
-      step5Schema,
-      step6Schema,
-      step7Schema,
-    ];
-    if (s >= schemas.length) return true;
-    const result = schemas[s].safeParse(data);
+    const schema = stepSchemas[stepKeys[s]];
+    if (!schema) return true;
+    const result = schema.safeParse(data);
     if (!result.success) {
       const errs: Record<string, string> = {};
       for (const issue of result.error.issues) {
-        const key = issue.path[0] as string;
-        errs[key] = issue.message;
+        errs[issue.path.join(".")] = issue.message;
       }
       setErrors(errs);
       return false;
@@ -297,7 +346,7 @@ export function OnboardingFormPage() {
   }
 
   function handleSubmit() {
-    if (!validateStep(STEPS.length - 2)) return;
+    if (!validateStep(stepKeys.length - 2)) return;
     setIsSubmitting(true);
     const id = `onb-${Date.now()}`;
     const fullName = `${data.firstName} ${data.lastName}`;
@@ -329,6 +378,11 @@ export function OnboardingFormPage() {
         welcomeEmailSent: false,
         initiatedAt: new Date().toISOString().slice(0, 10),
         mode: "manual",
+        // Everything else this wizard collected (bank, tax, emergency
+        // contact, medical, assets…) used to be discarded here — it never
+        // reached the record at all, so there was nothing for the employee
+        // handoff to carry through later.
+        joinerData: data,
       }),
     );
 
@@ -357,8 +411,8 @@ export function OnboardingFormPage() {
       </div>
 
       <div className="flex items-center w-full">
-        {STEPS.map((s, i) => (
-          <div key={i} className="flex items-center flex-1 last:flex-none">
+        {stepKeys.map((key, i) => (
+          <div key={key} className="flex items-center flex-1 last:flex-none">
             <div className="flex flex-col items-center gap-1.5">
               <div
                 className={cn(
@@ -378,10 +432,10 @@ export function OnboardingFormPage() {
                   i === step ? "text-foreground" : "text-muted-foreground",
                 )}
               >
-                {s.label}
+                {STEP_LABELS[key]}
               </span>
             </div>
-            {i < STEPS.length - 1 && (
+            {i < stepKeys.length - 1 && (
               <div
                 className={cn(
                   "flex-1 h-0.5 mx-2 mb-5 transition-colors",
@@ -394,7 +448,7 @@ export function OnboardingFormPage() {
       </div>
 
       <div className="rounded-xl border border-border bg-card p-6 flex flex-col gap-5">
-        {step === 0 && (
+        {currentKey === "personal" && (
           <>
             <h2 className="text-sm font-semibold text-foreground">
               Personal Information
@@ -666,7 +720,7 @@ export function OnboardingFormPage() {
           </>
         )}
 
-        {step === 1 && (
+        {currentKey === "employment" && (
           <>
             <h2 className="text-sm font-semibold text-foreground">
               Employment Details
@@ -760,11 +814,21 @@ export function OnboardingFormPage() {
                 <Label className="text-xs">
                   Line Manager <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  value={data.manager}
-                  onChange={(e) => update("manager", e.target.value)}
-                  className="h-9 text-sm"
-                  placeholder="Manager's name"
+                <EmployeePicker
+                  value={data.managerId || undefined}
+                  placeholder="Search for a manager…"
+                  onChange={(picked: PickedEmployee | null) => {
+                    setData((prev) => ({
+                      ...prev,
+                      managerId: picked?.id ?? "",
+                      manager: picked?.name ?? "",
+                    }));
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.manager;
+                      return next;
+                    });
+                  }}
                 />
                 {err("manager") && (
                   <p className="text-xs text-destructive">{err("manager")}</p>
@@ -798,14 +862,32 @@ export function OnboardingFormPage() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
-                  Work Location <span className="text-destructive">*</span>
+                  Branch <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  value={data.workLocation}
-                  onChange={(e) => update("workLocation", e.target.value)}
-                  className="h-9 text-sm"
-                  placeholder="e.g. Lagos Head Office"
-                />
+                {/* Picked from the branch list rather than typed, so the hire
+                    lands on a real site. Both the id and its name are stored:
+                    the id is the FK, the name is what older readers display. */}
+                <Select
+                  value={data.branchId}
+                  onValueChange={(v) => {
+                    update("branchId", v);
+                    update(
+                      "workLocation",
+                      branchOptions.find((b) => b.id === v)?.name ?? "",
+                    );
+                  }}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branchOptions.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {err("workLocation") && (
                   <p className="text-xs text-destructive">
                     {err("workLocation")}
@@ -869,7 +951,7 @@ export function OnboardingFormPage() {
           </>
         )}
 
-        {step === 2 && (
+        {currentKey === "bank" && (
           <>
             <h2 className="text-sm font-semibold text-foreground">
               Bank Details
@@ -933,7 +1015,7 @@ export function OnboardingFormPage() {
           </>
         )}
 
-        {step === 3 && (
+        {currentKey === "identity" && (
           <>
             <h2 className="text-sm font-semibold text-foreground">
               Identity Documents
@@ -1051,7 +1133,7 @@ export function OnboardingFormPage() {
           </>
         )}
 
-        {step === 4 && (
+        {currentKey === "emergency" && (
           <>
             <h2 className="text-sm font-semibold text-foreground">
               Emergency Contact
@@ -1137,7 +1219,121 @@ export function OnboardingFormPage() {
           </>
         )}
 
-        {step === 5 && (
+        {currentKey === "guarantors" && (
+          <>
+            <h2 className="text-sm font-semibold text-foreground">
+              Guarantors
+            </h2>
+            <p className="text-xs text-muted-foreground -mt-1">
+              Two guarantors are required for every NG hire.
+            </p>
+            <Separator />
+            <div className="flex flex-col gap-5">
+              {data.guarantors.map((guarantor, i) => (
+                <div key={i} className="flex flex-col gap-3">
+                  <h3 className="text-xs font-semibold text-foreground">
+                    Guarantor {i + 1}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <Label className="text-xs">
+                        Full Name <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        value={guarantor.name}
+                        onChange={(e) => updateGuarantor(i, "name", e.target.value)}
+                        className="h-9 text-sm"
+                        placeholder="Guarantor's full name"
+                      />
+                      {err(`guarantors.${i}.name`) && (
+                        <p className="text-xs text-destructive">
+                          {err(`guarantors.${i}.name`)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">
+                        Relationship <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        value={guarantor.relationship}
+                        onChange={(e) =>
+                          updateGuarantor(i, "relationship", e.target.value)
+                        }
+                        className="h-9 text-sm"
+                        placeholder="e.g. Colleague, Family friend"
+                      />
+                      {err(`guarantors.${i}.relationship`) && (
+                        <p className="text-xs text-destructive">
+                          {err(`guarantors.${i}.relationship`)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <Label className="text-xs">
+                        Address <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        value={guarantor.address}
+                        onChange={(e) => updateGuarantor(i, "address", e.target.value)}
+                        className="h-9 text-sm"
+                        placeholder="Guarantor's home address"
+                      />
+                      {err(`guarantors.${i}.address`) && (
+                        <p className="text-xs text-destructive">
+                          {err(`guarantors.${i}.address`)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">
+                        Phone Number <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        type="tel"
+                        value={guarantor.phone}
+                        onChange={(e) =>
+                          updateGuarantor(
+                            i,
+                            "phone",
+                            e.target.value.replace(/[^\d+\s-]/g, ""),
+                          )
+                        }
+                        className="h-9 text-sm"
+                        placeholder="+234 800 000 0000"
+                      />
+                      {err(`guarantors.${i}.phone`) && (
+                        <p className="text-xs text-destructive">
+                          {err(`guarantors.${i}.phone`)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">
+                        Occupation <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        value={guarantor.occupation}
+                        onChange={(e) =>
+                          updateGuarantor(i, "occupation", e.target.value)
+                        }
+                        className="h-9 text-sm"
+                        placeholder="e.g. Civil Servant"
+                      />
+                      {err(`guarantors.${i}.occupation`) && (
+                        <p className="text-xs text-destructive">
+                          {err(`guarantors.${i}.occupation`)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {currentKey === "medical" && (
           <>
             <h2 className="text-sm font-semibold text-foreground">
               Medical Facts
@@ -1197,7 +1393,7 @@ export function OnboardingFormPage() {
           </>
         )}
 
-        {step === 6 && (
+        {currentKey === "assets" && (
           <>
             <h2 className="text-sm font-semibold text-foreground">
               Assets to Assign
@@ -1257,7 +1453,7 @@ export function OnboardingFormPage() {
           </>
         )}
 
-        {step === 7 && (
+        {currentKey === "review" && (
           <>
             <h2 className="text-sm font-semibold text-foreground">
               Review & Confirm
@@ -1350,6 +1546,20 @@ export function OnboardingFormPage() {
                 <ReviewRow label="Phone" value={data.emergencyContactPhone} />
                 <ReviewRow label="Email" value={data.emergencyContactEmail} />
               </div>
+              {!isUK && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                    Guarantors
+                  </p>
+                  {data.guarantors.map((g, i) => (
+                    <ReviewRow
+                      key={i}
+                      label={`Guarantor ${i + 1}`}
+                      value={[g.name, g.relationship].filter(Boolean).join(" — ")}
+                    />
+                  ))}
+                </div>
+              )}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                   Medical
@@ -1399,7 +1609,7 @@ export function OnboardingFormPage() {
           {step === 0 ? "Cancel" : "Back"}
         </Button>
 
-        {step < STEPS.length - 1 ? (
+        {step < stepKeys.length - 1 ? (
           <Button
             size="sm"
             onClick={handleNext}

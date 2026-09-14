@@ -23,7 +23,7 @@ const uploadSchema = z.object({
   companyEmailDomain: z.string().optional(),
   managerTitle: z.string().optional(),
   departmentLabel: z.string().optional(),
-  structureType: z.enum(["hierarchical", "flat"]).optional(),
+  structureType: z.enum(["hierarchical", "flat", "matrix"]).optional(),
   accessControlModel: z.enum(["RBAC", "PERMISSION", "HYBRID"]).optional(),
   roles: z.string().optional(),
   permissions: z.string().optional(),

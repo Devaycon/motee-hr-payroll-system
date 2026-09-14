@@ -33,8 +33,22 @@ export function applyBundleOverrides(
   map: OverridesMap,
 ): LocaleBundle {
   if (!map || Object.keys(map).length === 0) return bundle;
+  const branchNameById = new Map(
+    (bundle.branches ?? []).map((b) => [b.id, b.name]),
+  );
   return {
     ...bundle,
-    employees: bundle.employees.map((e) => applyEmployeeOverrides(e, map[e.id])),
+    employees: bundle.employees.map((e) => {
+      const next = applyEmployeeOverrides(e, map[e.id]);
+      // `branchId` is the source of truth and `workLocation` its denormalised
+      // label, so moving someone between sites has to move both — otherwise
+      // the scoped views and the row they show disagree. Only ever reached
+      // when the id actually changed, which means `next` is already a clone.
+      if (next.branchId && next.branchId !== e.branchId) {
+        const name = branchNameById.get(next.branchId);
+        if (name) next.workLocation = name;
+      }
+      return next;
+    }),
   };
 }

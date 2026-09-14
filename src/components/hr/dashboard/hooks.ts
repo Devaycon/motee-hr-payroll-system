@@ -15,8 +15,9 @@ import type { LucideIcon } from "lucide-react";
 import { employmentTypeFromName } from "@/src/lib/constants/employment-types";
 import { sicknessReasonCategory } from "@/src/lib/constants/sickness";
 import { TURNOVER_RECORDS, buildTurnoverTrends } from "@/src/data/workforce-demo";
-import type { ChartConfig } from "@/src/components/ui/chart";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+
+type ChartConfig = Record<string, { label?: string; color?: string }>;
 import type {
   EmployeeRow,
   AttendanceRow,
@@ -361,8 +362,8 @@ interface AttendancePoint {
 }
 
 export const ATTENDANCE_CONFIG: ChartConfig = {
-  present: { label: "Present", color: "#4ED251" },
-  late: { label: "Late arrivals", color: "#ff8b2d" },
+  present: { label: "Present", color: "#50D34C" },
+  late: { label: "Late arrivals", color: "#FE8F44" },
   absent: { label: "Absent", color: "#6366f1" },
 };
 
@@ -662,7 +663,7 @@ interface HeadcountPoint {
 }
 
 export const HEADCOUNT_CONFIG: ChartConfig = {
-  headcount: { label: "Headcount", color: "#4ED251" },
+  headcount: { label: "Headcount", color: "#50D34C" },
 };
 
 export function useHeadcountTrend() {
@@ -719,14 +720,14 @@ export function useGenderSplit() {
     }
     return {
       series: [
-        { key: "male", label: "Male", value: male, color: "#4ED251" },
+        { key: "male", label: "Male", value: male, color: "#50D34C" },
         { key: "female", label: "Female", value: female, color: "#6366f1" },
-        { key: "other", label: "Other", value: other, color: "#ff8b2d" },
+        { key: "other", label: "Other", value: other, color: "#FE8F44" },
       ],
       config: {
-        male: { label: "Male", color: "#4ED251" },
+        male: { label: "Male", color: "#50D34C" },
         female: { label: "Female", color: "#6366f1" },
-        other: { label: "Other", color: "#ff8b2d" },
+        other: { label: "Other", color: "#FE8F44" },
       },
     };
   });
@@ -738,14 +739,14 @@ interface DeptHeadcountPoint {
 }
 
 const DEPT_PALETTE = [
-  "#4ED251",
-  "#ff8b2d",
+  "#50D34C",
+  "#FE8F44",
   "#6366f1",
   "#06b6d4",
   "#a78bfa",
   "#f59e0b",
   "#f43f5e",
-  "#3b82f6",
+  "#5192FA",
   "#84cc16",
   "#ec4899",
 ];
@@ -780,8 +781,8 @@ interface EmploymentTypeData {
 }
 
 const EMPLOYMENT_TYPE_PALETTE: Record<string, string> = {
-  "Full-time": "#4ED251",
-  "Part-time": "#ff8b2d",
+  "Full-time": "#50D34C",
+  "Part-time": "#FE8F44",
   Contract: "#6366f1",
   Intern: "#06b6d4",
   "NYSC Corps Member": "#a78bfa",

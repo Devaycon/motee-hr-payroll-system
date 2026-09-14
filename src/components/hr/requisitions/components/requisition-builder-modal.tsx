@@ -31,7 +31,11 @@ import {
   submitApproval,
   upsertRequests,
 } from "@/src/lib/stores/approvals-slice";
-import { seedCountry as seedWorkforce } from "@/src/lib/stores/workforce-requests-slice";
+import {
+  seedCountry as seedWorkforce,
+  markConverted as markWorkforceConverted,
+  type WorkforceRequest,
+} from "@/src/lib/stores/workforce-requests-slice";
 import {
   addRequest,
   updateRequest,
@@ -68,6 +72,20 @@ interface ReqForm {
   jobDescriptionSource: "written" | "template" | "upload";
   jobDescriptionTemplateId: string;
   jobDescriptionFileName: string;
+}
+
+/** Fields the requisition form pre-fills from the approved workforce it's raised against. */
+function withWorkforce(base: ReqForm, wf: WorkforceRequest): ReqForm {
+  return {
+    ...base,
+    workforceRequestId: wf.id,
+    workforceLabel: `${wf.numberOfHires} hire${wf.numberOfHires === 1 ? "" : "s"} — ${wf.department}`,
+    department: wf.department,
+    numberOfPositions: wf.numberOfHires,
+    startDate: wf.expectedStartDate || base.startDate,
+    budgetAllocation: wf.budgetEstimate || base.budgetAllocation,
+    title: base.title || `${wf.department} role`,
+  };
 }
 
 const EMPTY: ReqForm = {
@@ -127,9 +145,20 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: Requisition | null;
+  /**
+   * Set when the Workforce Requests list deep-links here for a specific
+   * approved request ("Create requisition"), so the workforce is pre-selected
+   * instead of making the user re-pick it from the step-1 dropdown.
+   */
+  prefillWorkforceRequestId?: string;
 }
 
-export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) {
+export function RequisitionBuilderModal({
+  open,
+  onOpenChange,
+  editing,
+  prefillWorkforceRequestId,
+}: Props) {
   const dispatch = useAppDispatch();
   const { format: formatMoney } = useCurrency();
   const country = useAppSelector((s) => s.locale.country);
@@ -194,8 +223,16 @@ export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) 
         });
         setStep(1);
       } else {
-        setForm({ ...EMPTY });
-        setStep(0);
+        const prefillWf = prefillWorkforceRequestId
+          ? approvedWorkforces.find((w) => w.id === prefillWorkforceRequestId)
+          : undefined;
+        if (prefillWf) {
+          setForm(withWorkforce({ ...EMPTY }, prefillWf));
+          setStep(1);
+        } else {
+          setForm({ ...EMPTY });
+          setStep(0);
+        }
       }
     }
   }
@@ -206,16 +243,7 @@ export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) 
   function pickWorkforce(id: string) {
     const wf = approvedWorkforces.find((w) => w.id === id);
     if (!wf) return;
-    setForm((f) => ({
-      ...f,
-      workforceRequestId: wf.id,
-      workforceLabel: `${wf.numberOfHires} hire${wf.numberOfHires === 1 ? "" : "s"} — ${wf.department}`,
-      department: wf.department,
-      numberOfPositions: wf.numberOfHires,
-      startDate: wf.expectedStartDate || f.startDate,
-      budgetAllocation: wf.budgetEstimate || f.budgetAllocation,
-      title: f.title || `${wf.department} role`,
-    }));
+    setForm((f) => withWorkforce(f, wf));
   }
 
   function buildRecord(): Requisition {
@@ -277,6 +305,16 @@ export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) 
       toast.success("Requisition updated");
     } else {
       dispatch(addRequest({ country, requisition: record }));
+      // Marks the source workforce request "Converted" and links it back to
+      // this requisition, so the reverse hop actually shows up on the
+      // Workforce Requests page instead of leaving that status unreachable.
+      dispatch(
+        markWorkforceConverted({
+          country,
+          id: record.workforceRequestId,
+          requisitionId: record.id,
+        }),
+      );
       toast.success("Draft requisition saved");
     }
     onOpenChange(false);
@@ -290,6 +328,13 @@ export function RequisitionBuilderModal({ open, onOpenChange, editing }: Props) 
     }
     const record = buildRecord();
     dispatch(addRequest({ country, requisition: record }));
+    dispatch(
+      markWorkforceConverted({
+        country,
+        id: record.workforceRequestId,
+        requisitionId: record.id,
+      }),
+    );
     await dispatch(
       submitApproval({
         documentType: "job_requisition",

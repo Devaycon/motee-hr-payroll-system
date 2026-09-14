@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Plane } from "lucide-react";
+import { CalendarClock, Plane, Radio } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { SettingsLinkCard } from "./settings-link-card";
@@ -19,6 +19,7 @@ export function AbsenceCategory() {
           { value: "year", label: "Holiday Year" },
           { value: "holidays", label: "Company Holidays" },
           { value: "blackout", label: "Company Blackout" },
+          { value: "presence", label: "Presence Check-ins" },
         ]}
       />
 
@@ -52,6 +53,20 @@ export function AbsenceCategory() {
 
       <TabsContent value="blackout" className="mt-6">
         <BlackoutPanel periods={BLACKOUT_PERIODS} />
+      </TabsContent>
+
+      <TabsContent value="presence" className="mt-6">
+        <SettingsLinkCard
+          icon={Radio}
+          title="Presence Check-ins"
+          description="Turn on periodic 'are you still there?' prompts for clocked-in employees, and configure the interval range, response window and missed-prompt threshold, in the Attendance module."
+          actions={[
+            {
+              label: "Open Attendance",
+              href: "/time-payroll/attendance?tab=presence",
+            },
+          ]}
+        />
       </TabsContent>
     </Tabs>
   );

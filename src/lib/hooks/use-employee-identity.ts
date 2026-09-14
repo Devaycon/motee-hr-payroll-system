@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// A name/id lookup index, not a list. It stays company-wide so an approver or
+// line manager based at another site still resolves instead of rendering raw.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
 
 export interface EmployeeIdentity {

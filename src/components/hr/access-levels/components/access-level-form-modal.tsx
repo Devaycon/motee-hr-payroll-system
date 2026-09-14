@@ -46,6 +46,63 @@ import {
   type PermissionAction,
 } from "../types";
 import { cn } from "@/src/lib/utils";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useAllBranches } from "@/src/lib/branches/use-branch";
+
+/**
+ * The records a list-based scope is confined to. Until this existed the form
+ * could set `kind: "department"` but never name a department, so the scope
+ * had nothing to match on — which is why "Assigned departments" behaved
+ * identically to "All records".
+ *
+ * Leaving every box unticked is meaningful, not incomplete: the role is then
+ * confined to the holder's *own* branch or department, which is what makes a
+ * single "Branch Manager" role work across every site.
+ */
+function ScopeTargets({
+  label,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string;
+  options: { id: string; name: string }[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  if (options.length === 0) return null;
+  const toggle = (id: string) =>
+    onChange(
+      selected.includes(id)
+        ? selected.filter((v) => v !== id)
+        : [...selected, id],
+    );
+
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <div className="max-h-40 overflow-y-auto rounded-md border border-border p-2 space-y-1">
+        {options.map((o) => (
+          <label
+            key={o.id}
+            className="flex items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-accent cursor-pointer"
+          >
+            <Checkbox
+              checked={selected.includes(o.id)}
+              onCheckedChange={() => toggle(o.id)}
+            />
+            <span className="truncate">{o.name}</span>
+          </label>
+        ))}
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        {selected.length === 0
+          ? "Nothing selected — the role is confined to the holder's own."
+          : `${selected.length} selected.`}
+      </p>
+    </div>
+  );
+}
 
 const formSchema = z.object({
   name: z
@@ -83,6 +140,17 @@ export function AccessLevelFormModal({
   const [dataScope, setDataScope] = useState<DataScope>({ kind: "all" });
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
     Object.fromEntries(MODULE_GROUPS.map((g) => [g, true])),
+  );
+
+  const branches = useAllBranches();
+  const departments = useAppSelector((s) => s.locale.data?.departments);
+  const branchOptions = useMemo(
+    () => branches.map((b) => ({ id: b.id, name: b.name })),
+    [branches],
+  );
+  const departmentOptions = useMemo(
+    () => (departments ?? []).map((d) => ({ id: d.id, name: d.name })),
+    [departments],
   );
 
   if (open !== prevOpen) {
@@ -333,7 +401,9 @@ export function AccessLevelFormModal({
                 <Select
                   value={dataScope.kind}
                   onValueChange={(v) =>
-                    setDataScope({ kind: v as DataScopeKind })
+                    // Carry the picked lists across a kind change so switching
+                    // away and back does not silently discard them.
+                    setDataScope({ ...dataScope, kind: v as DataScopeKind })
                   }
                 >
                   <SelectTrigger id="role-scope" className="w-full">
@@ -353,6 +423,28 @@ export function AccessLevelFormModal({
                   {DATA_SCOPE_DESCRIPTIONS[dataScope.kind]}
                 </p>
               </div>
+
+              {dataScope.kind === "branch" && (
+                <ScopeTargets
+                  label="Branches"
+                  options={branchOptions}
+                  selected={dataScope.branchIds ?? []}
+                  onChange={(branchIds) =>
+                    setDataScope((s) => ({ ...s, branchIds }))
+                  }
+                />
+              )}
+
+              {dataScope.kind === "department" && (
+                <ScopeTargets
+                  label="Departments"
+                  options={departmentOptions}
+                  selected={dataScope.departmentIds ?? []}
+                  onChange={(departmentIds) =>
+                    setDataScope((s) => ({ ...s, departmentIds }))
+                  }
+                />
+              )}
             </div>
           </div>
 

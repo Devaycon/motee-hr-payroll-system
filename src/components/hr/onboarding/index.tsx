@@ -153,6 +153,23 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         welcomeEmailSent: false,
         initiatedAt: new Date().toISOString().slice(0, 10),
         mode: "bulk" as const,
+        // The rest of what the import row carries (employment type, manager,
+        // medical facts, asset assignment) used to be dropped here, with no
+        // path back to the employee record once onboarding cleared.
+        joinerData: {
+          employmentType: row.employmentType,
+          manager: row.manager,
+          allergies: row.allergies,
+          conditions: row.conditions,
+          medications: row.medications,
+          dietaryRequirements: row.dietaryRequirements,
+          accessibilityNeeds: row.accessibilityNeeds,
+          assetTag: row.assetTag,
+          assetName: row.assetName,
+          assetCategory: row.assetCategory,
+          assetSerialNumber: row.assetSerialNumber,
+          assetAssignedDate: row.assetAssignedDate,
+        },
       };
     });
     dispatch(addRecords(newRecords));

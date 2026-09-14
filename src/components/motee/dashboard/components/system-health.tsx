@@ -13,8 +13,8 @@ import { SYSTEM_HEALTH } from "@/src/data/motee-demo";
 
 const STATUS_STYLES = {
   operational: {
-    dot: "bg-[#4ED251]",
-    badge: "bg-[#4ED251]/10 text-[#4ED251] border-[#4ED251]/30",
+    dot: "bg-[#50D34C]",
+    badge: "bg-[#50D34C]/10 text-[#50D34C] border-[#50D34C]/30",
     label: "Operational",
   },
   degraded: {
@@ -55,7 +55,7 @@ export function SystemHealthCard() {
           </div>
         )}
         {allOperational && (
-          <div className="rounded-md bg-[#4ED251]/10 border border-[#4ED251]/20 px-3 py-1.5 text-xs text-[#4ED251] font-medium">
+          <div className="rounded-md bg-[#50D34C]/10 border border-[#50D34C]/20 px-3 py-1.5 text-xs text-[#50D34C] font-medium">
             All systems operational
           </div>
         )}

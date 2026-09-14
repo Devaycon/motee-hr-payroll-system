@@ -27,20 +27,19 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/src/components/ui/dialog";
-import { AreaChart } from "@/src/components/shared/charts";
+import { ChartCard, ChartPlaceholder } from "@/src/components/shared/charts";
 import {
   SYSTEM_HEALTH,
   DEMO_JOB_QUEUES,
   DEMO_INCIDENTS,
-  API_RESPONSE_TIME_DATA,
 } from "@/src/data/motee-demo";
 import type { SystemIncident } from "@/src/data/motee-demo";
 
 const componentStatusStyles = {
   operational: {
-    badge: "bg-[#4ED251]/10 text-[#4ED251]",
+    badge: "bg-[#50D34C]/10 text-[#50D34C]",
     icon: CheckCircle2,
-    color: "text-[#4ED251]",
+    color: "text-[#50D34C]",
   },
   degraded: {
     badge: "bg-amber-500/10 text-amber-500",
@@ -64,11 +63,11 @@ const incidentStatusStyles: Record<string, string> = {
   investigating: "bg-red-500/10 text-red-500",
   identified: "bg-amber-500/10 text-amber-500",
   monitoring: "bg-blue-500/10 text-blue-500",
-  resolved: "bg-[#4ED251]/10 text-[#4ED251]",
+  resolved: "bg-[#50D34C]/10 text-[#50D34C]",
 };
 
 const queueStatusStyles: Record<string, string> = {
-  healthy: "bg-[#4ED251]/10 text-[#4ED251]",
+  healthy: "bg-[#50D34C]/10 text-[#50D34C]",
   warning: "bg-amber-500/10 text-amber-500",
   failing: "bg-red-500/10 text-red-500",
 };
@@ -117,7 +116,7 @@ export function PlatformHealthPage() {
         <Button
           size="sm"
           onClick={() => setShowNewModal(true)}
-          className="gap-1.5 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white shrink-0"
+          className="gap-1.5 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white shrink-0"
         >
           <Plus className="h-4 w-4" />
           New Incident
@@ -127,14 +126,14 @@ export function PlatformHealthPage() {
       <div
         className={`flex items-center gap-3 rounded-lg border p-4 ${
           overallStatus === "operational"
-            ? "border-[#4ED251]/30 bg-[#4ED251]/5"
+            ? "border-[#50D34C]/30 bg-[#50D34C]/5"
             : overallStatus === "degraded"
               ? "border-amber-500/30 bg-amber-500/5"
               : "border-red-500/30 bg-red-500/5"
         }`}
       >
         {overallStatus === "operational" ? (
-          <CheckCircle2 className="h-5 w-5 text-[#4ED251] shrink-0" />
+          <CheckCircle2 className="h-5 w-5 text-[#50D34C] shrink-0" />
         ) : overallStatus === "degraded" ? (
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
         ) : (
@@ -190,16 +189,9 @@ export function PlatformHealthPage() {
         </div>
       </div>
 
-      <AreaChart
-        title="API Response Times (ms)"
-        icon={Activity}
-        categories={API_RESPONSE_TIME_DATA.map((d) => d.month)}
-        series={[
-          { name: "Avg (ms)", data: API_RESPONSE_TIME_DATA.map((d) => d.avg), color: "#ff8b2d" },
-          { name: "P95 (ms)", data: API_RESPONSE_TIME_DATA.map((d) => d.p95), color: "#4ED251" },
-          { name: "P99 (ms)", data: API_RESPONSE_TIME_DATA.map((d) => d.p99), color: "#6366f1" },
-        ]}
-      />
+      <ChartCard title="API Response Times (ms)" icon={Activity}>
+        <ChartPlaceholder />
+      </ChartCard>
 
       <Card>
         <CardHeader className="pb-3">
@@ -356,7 +348,7 @@ export function PlatformHealthPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 px-2 text-xs gap-1 text-[#4ED251] hover:text-[#4ED251]"
+                          className="h-7 px-2 text-xs gap-1 text-[#50D34C] hover:text-[#50D34C]"
                           onClick={() =>
                             setIncidentStatuses((p) => ({
                               ...p,
@@ -453,7 +445,7 @@ export function PlatformHealthPage() {
                               [selectedIncident.id]: s,
                             }))
                           }
-                          className={`rounded-md border px-3 py-1.5 text-xs font-medium capitalize transition-colors ${getIncidentStatus(selectedIncident) === s ? "border-[#ff8b2d] bg-[#ff8b2d]/10 text-[#ff8b2d]" : "border-border text-muted-foreground hover:border-foreground/30"}`}
+                          className={`rounded-md border px-3 py-1.5 text-xs font-medium capitalize transition-colors ${getIncidentStatus(selectedIncident) === s ? "border-[#FE8F44] bg-[#FE8F44]/10 text-[#FE8F44]" : "border-border text-muted-foreground hover:border-foreground/30"}`}
                         >
                           {s.replace("_", " ")}
                         </button>
@@ -479,7 +471,7 @@ export function PlatformHealthPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-[#ff8b2d]" />
+              <AlertTriangle className="h-5 w-5 text-[#FE8F44]" />
               Create Incident
             </DialogTitle>
           </DialogHeader>
@@ -506,7 +498,7 @@ export function PlatformHealthPage() {
                   onChange={(e) =>
                     setNewIncident((p) => ({ ...p, component: e.target.value }))
                   }
-                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
                 >
                   <option value="">Select component</option>
                   {SYSTEM_HEALTH.map((c) => (
@@ -523,7 +515,7 @@ export function PlatformHealthPage() {
                   onChange={(e) =>
                     setNewIncident((p) => ({ ...p, severity: e.target.value }))
                   }
-                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
                 >
                   <option value="minor">Minor</option>
                   <option value="major">Major</option>
@@ -550,7 +542,7 @@ export function PlatformHealthPage() {
             <Button
               disabled={!newIncident.title.trim()}
               onClick={() => setShowNewModal(false)}
-              className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+              className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             >
               Create Incident
             </Button>

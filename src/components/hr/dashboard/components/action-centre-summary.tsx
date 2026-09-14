@@ -15,8 +15,8 @@ import {
   type HrAlertSeverity,
 } from "@/src/data/hr-alerts-demo";
 import { cn } from "@/src/lib/utils";
-import { Tile, TileLabel, TileSub, TileNum, HBars, TileLink } from "./tiles";
-import { useHrAlertCategories } from "@/src/components/hr/hr-alerts";
+import { HeroRingCard } from "@/src/components/shared/charts";
+import { Tile, TileLabel, TileSub, TileNum, TileLink } from "./tiles";
 
 /**
  * The Priorities tab's headline: how much is open, and how much of it is
@@ -113,51 +113,34 @@ export const InfoAlertsTile = () => <SeverityTile severity="info" />;
 /** Kept for the registry's severity row, in the order HR reads them. */
 export const ALERT_SEVERITY_ORDER = HR_ALERT_SEVERITIES;
 
-/** How many categories the tile lists before folding the rest into "More". */
-const CATEGORY_LIMIT = 5;
+/** Hex twin of `SEVERITY_STYLE`'s tailwind tones — the ring needs real colours, not classes. */
+const SEVERITY_HEX: Record<HrAlertSeverity, string> = {
+  critical: "#f43f5e",
+  warning: "#f59e0b",
+  info: "#3b82f6",
+};
 
-/**
- * Where the open work actually sits. One measure across one dimension, so
- * single-hue ranked bars with the count at the end of every row — the bar
- * length never has to be estimated.
- */
-export function AlertsByCategoryTile() {
-  const categories = useHrAlertCategories();
+/** The Priorities tab's hero card: severity mix, at a glance, with the same rings/summary/ranked-breakdown pattern used across the dashboard. */
+export function PriorityHeroRing() {
+  const { counts, total } = useHrAlertTotals();
+  if (total === 0) return null;
 
-  const rows = categories
-    .map((c) => ({ label: c.label, value: c.alerts.length }))
-    .filter((r) => r.value > 0)
-    .sort((a, b) => b.value - a.value);
+  const segments = HR_ALERT_SEVERITIES.map((severity) => ({
+    key: severity,
+    label: HR_ALERT_SEVERITY_LABELS[severity],
+    value: counts[severity],
+    color: SEVERITY_HEX[severity],
+  })).filter((s) => s.value > 0);
 
-  if (rows.length === 0) return null;
-
-  // A long tail of one-item categories would crowd out the ones that matter,
-  // so everything past the top few is summed into a single "More" row.
-  const top = rows.slice(0, CATEGORY_LIMIT);
-  const rest = rows.slice(CATEGORY_LIMIT);
-  const items =
-    rest.length > 0
-      ? [
-          ...top,
-          {
-            label: `More (${rest.length})`,
-            value: rest.reduce((sum, r) => sum + r.value, 0),
-          },
-        ]
-      : top;
+  if (segments.length === 0) return null;
 
   return (
-    <Tile>
-      <TileLabel>By category</TileLabel>
-      <TileSub>Open items</TileSub>
-      <HBars items={items} />
-      <Link
-        href="/hr-action-center"
-        className="mt-auto inline-flex w-fit items-center gap-0.5 pt-3 text-xs font-medium text-primary hover:underline"
-      >
-        View action centre
-        <ChevronRight className="size-3.5" />
-      </Link>
-    </Tile>
+    <HeroRingCard
+      title="Workforce Priorities"
+      description="Open HR action items by severity"
+      segments={segments}
+      totalNoun="open items"
+      variant="gauge"
+    />
   );
 }

@@ -33,6 +33,7 @@ export interface CommunityPost {
   pollQuestion?: string;
   pollOptions?: PollOption[];
   celebrationKind?: CelebrationKind;
+  celebrationPersonId?: string;
   celebrationPerson?: string;
   celebrationDetail?: string;
 }
@@ -45,6 +46,7 @@ export interface NewPost {
   pollQuestion?: string;
   pollOptions?: string[];
   celebrationKind?: string;
+  celebrationPersonId?: string;
   celebrationPerson?: string;
   celebrationDetail?: string;
 }

@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Badge } from "@/src/components/ui/badge";
-import { MultiBarChart } from "@/src/components/shared/charts";
+import { ChartCard, ChartPlaceholder } from "@/src/components/shared/charts";
 import {
   TURNOVER_RECORDS,
   TURNOVER_PERIODS,
@@ -56,12 +56,6 @@ export function TurnoverSection() {
   );
 
   const trends = buildTurnoverTrends(TURNOVER_RECORDS);
-  const chartData = trends.map((t) => ({
-    period: t.period,
-    voluntary: t.voluntary,
-    involuntary: t.involuntary,
-    rate: t.rate,
-  }));
 
   const deptRecords = TURNOVER_RECORDS.filter((r) => r.period === activePeriod);
 
@@ -100,23 +94,12 @@ export function TurnoverSection() {
         ))}
       </div>
 
-      <MultiBarChart
+      <ChartCard
         title="Quarterly Turnover Trend"
         description="Voluntary vs involuntary exits across the last 5 quarters"
-        categories={chartData.map((d) => d.period)}
-        series={[
-          {
-            name: "Voluntary",
-            data: chartData.map((d) => d.voluntary),
-            color: "#ff8b2d",
-          },
-          {
-            name: "Involuntary",
-            data: chartData.map((d) => d.involuntary),
-            color: "#f43f5e",
-          },
-        ]}
-      />
+      >
+        <ChartPlaceholder />
+      </ChartCard>
 
       <div>
         <div className="mb-3 flex items-center justify-between">
