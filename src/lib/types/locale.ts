@@ -1,5 +1,6 @@
 import type { StarterTaxRecord } from "./starter-tax";
 import type { LocaleBranch } from "./branches";
+import type { Guarantor } from "./onboarding";
 
 export type CountryKey = "ng" | "uk";
 
@@ -94,6 +95,8 @@ export interface LocaleEmployee {
   bankDetails?: Record<string, string>;
   emergencyContact?: LocaleEmergencyContact;
   emergencyContacts?: LocaleEmergencyContact[];
+  /** Always required for NG employees; absent for UK ones. */
+  guarantors?: Guarantor[];
   workPattern?: LocaleWorkPattern;
   roleIds?: string[];
   accessLevelId?: string;
@@ -193,18 +196,6 @@ export interface LocaleEmploymentEvent {
   actorId: string;
 }
 
-export interface LocaleLocationBooking {
-  id: string;
-  employeeId: string;
-  locationType: "desk" | "meeting_room" | "parking";
-  locationName: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: "confirmed" | "cancelled";
-  notes: string;
-}
-
 export interface LocaleMedicalFacts {
   employeeId: string;
   allergies: string[];
@@ -258,6 +249,10 @@ export interface LocaleAttendanceEntry {
   clockOut?: string | null;
   hoursWorked?: number;
   source?: string;
+  location?: string;
+  /** "lat,lng" captured from the device at the moment of clock-in/out. */
+  clockInCoords?: string;
+  clockOutCoords?: string;
 }
 
 export interface LocaleLeaveRequest {
@@ -333,7 +328,6 @@ export interface LocaleBundle {
   disciplinaries?: LocaleDisciplinary[];
   expenses?: LocaleExpense[];
   employmentHistory?: LocaleEmploymentEvent[];
-  locationBookings?: LocaleLocationBooking[];
   medicalFacts?: LocaleMedicalFacts[];
   employeeNotes?: LocaleEmployeeNote[];
   payHistory?: LocalePayChange[];

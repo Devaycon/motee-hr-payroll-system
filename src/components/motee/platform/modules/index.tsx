@@ -23,17 +23,17 @@ import type { PlatformModule } from "@/src/data/motee-demo";
 
 const planBadgeStyles: Record<string, string> = {
   starter: "bg-indigo-500/10 text-indigo-500",
-  growth: "bg-[#4ED251]/10 text-[#4ED251]",
-  enterprise: "bg-[#ff8b2d]/10 text-[#ff8b2d]",
+  growth: "bg-[#50D34C]/10 text-[#50D34C]",
+  enterprise: "bg-[#FE8F44]/10 text-[#FE8F44]",
 };
 
 const categoryColors: Record<string, string> = {
   Core: "bg-blue-500/10 text-blue-500",
-  Finance: "bg-[#4ED251]/10 text-[#4ED251]",
+  Finance: "bg-[#50D34C]/10 text-[#50D34C]",
   Growth: "bg-violet-500/10 text-violet-500",
   Talent: "bg-pink-500/10 text-pink-500",
   Operations: "bg-amber-500/10 text-amber-500",
-  Reports: "bg-[#ff8b2d]/10 text-[#ff8b2d]",
+  Reports: "bg-[#FE8F44]/10 text-[#FE8F44]",
   Engagement: "bg-teal-500/10 text-teal-500",
   Support: "bg-slate-500/10 text-slate-500",
 };
@@ -109,7 +109,7 @@ export function ModulesPage() {
             value: DEMO_MODULES.filter(
               (m) => m.plans.length === 1 && m.plans[0] === "enterprise",
             ).length,
-            color: "text-[#ff8b2d]",
+            color: "text-[#FE8F44]",
           },
         ].map((s) => (
           <Card key={s.label}>
@@ -213,7 +213,7 @@ export function ModulesPage() {
                           <div className="flex items-center gap-2">
                             <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
                               <div
-                                className="h-full bg-[#ff8b2d] rounded-full"
+                                className="h-full bg-[#FE8F44] rounded-full"
                                 style={{ width: `${rate}%` }}
                               />
                             </div>
@@ -295,7 +295,7 @@ export function ModulesPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Boxes className="h-5 w-5 text-[#ff8b2d]" />
+              <Boxes className="h-5 w-5 text-[#FE8F44]" />
               Module Override — {selectedModule?.name}
             </DialogTitle>
           </DialogHeader>
@@ -314,7 +314,7 @@ export function ModulesPage() {
               <select
                 value={overrideTenant}
                 onChange={(e) => setOverrideTenant(e.target.value)}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
               >
                 <option value="">Select tenant</option>
                 {DEMO_TENANTS.map((t) => (
@@ -331,7 +331,7 @@ export function ModulesPage() {
                   <button
                     key={action}
                     onClick={() => setOverrideAction(action)}
-                    className={`flex-1 rounded-md border py-2 text-sm font-medium capitalize transition-colors ${overrideAction === action ? "border-[#ff8b2d] bg-[#ff8b2d]/10 text-[#ff8b2d]" : "border-border text-muted-foreground hover:border-foreground/30"}`}
+                    className={`flex-1 rounded-md border py-2 text-sm font-medium capitalize transition-colors ${overrideAction === action ? "border-[#FE8F44] bg-[#FE8F44]/10 text-[#FE8F44]" : "border-border text-muted-foreground hover:border-foreground/30"}`}
                   >
                     {action}
                   </button>
@@ -349,7 +349,7 @@ export function ModulesPage() {
             <Button
               disabled={!overrideTenant}
               onClick={() => setShowOverrideModal(false)}
-              className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+              className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             >
               Apply Override
             </Button>

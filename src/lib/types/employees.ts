@@ -1,4 +1,6 @@
 ﻿import type { EmploymentType } from "@/src/lib/constants/employment-types";
+import type { OnboardingMethod } from "@/src/lib/constants/onboarding-methods";
+import type { Guarantor } from "@/src/lib/types/onboarding";
 export type { EmploymentType };
 /**
  * Lifecycle state of an employee record. Drives both the Employees table tabs
@@ -31,6 +33,8 @@ export interface EmployeeRow {
   jobTitle: string;
   employmentType: EmploymentType;
   status: EmployeeStatus;
+  /** How this record was created — see lib/constants/onboarding-methods. */
+  onboardingMethod?: OnboardingMethod;
   /** Leave type the employee is currently on, when `status` is `on_leave`. */
   leaveType?: string;
   /** Human-readable form of `leaveType`, e.g. "Annual Leave". */
@@ -63,6 +67,8 @@ export interface EmployeeRow {
   emergencyContactName?: string;
   emergencyContactRelationship?: string;
   emergencyContactPhone?: string;
+  /** Always required for NG hires; absent for UK ones. */
+  guarantors?: Guarantor[];
   ninNumber?: string;
   passportNumber?: string;
   passportExpiry?: string;

@@ -83,6 +83,7 @@ type WorkflowDraft = {
   // §11.13 — configuration that lets different groups have different workflows.
   status?: Workflow["status"];
   effectiveDate?: string;
+  ownerId?: string;
   owner?: string;
   employmentType?: string;
 };
@@ -115,6 +116,7 @@ const workflowsSlice = createSlice({
         actorName,
         status,
         effectiveDate,
+        ownerId,
         owner,
         employmentType,
       } = action.payload;
@@ -135,6 +137,7 @@ const workflowsSlice = createSlice({
         status: status ?? "draft",
         version: 1,
         effectiveDate,
+        ownerId,
         owner: owner || actorName,
         employmentType,
       });
@@ -155,6 +158,7 @@ const workflowsSlice = createSlice({
         actorName,
         status,
         effectiveDate,
+        ownerId,
         owner,
         employmentType,
       } = action.payload;
@@ -176,6 +180,7 @@ const workflowsSlice = createSlice({
       wf.lastModifiedAt = nowIso().slice(0, 10);
       if (status) wf.status = status;
       wf.effectiveDate = effectiveDate;
+      wf.ownerId = ownerId;
       wf.owner = owner;
       wf.employmentType = employmentType;
     },

@@ -21,7 +21,6 @@ import type {
   LocaleDbsCheck,
   LocaleDisciplinary,
   LocaleEmploymentEvent,
-  LocaleLocationBooking,
   LocaleMedicalFacts,
   LocaleEmployeeNote,
   LocalePayChange,
@@ -49,6 +48,9 @@ interface RawLeaveRequest {
   status: string;
   approverId?: string;
   submittedAt?: string;
+  /** Where the employee can be reached while on this leave. */
+  contactAddress?: string;
+  contactPhone?: string;
 }
 interface RawLeavePolicy {
   id: string;
@@ -75,6 +77,9 @@ interface RawAttendance {
   status: string;
   location?: string;
   source?: string;
+  /** "lat,lng" captured from the device at the moment of clock-in/out. */
+  clockInCoords?: string;
+  clockOutCoords?: string;
 }
 export interface RawAsset {
   id: string;
@@ -555,18 +560,6 @@ export function useEmployeeKudos(id: string) {
     };
   }, [bundle, edits, id]);
   return { data, loading, error };
-}
-export function useEmployeeBookings(id: string) {
-  const res = useEmployeeCollection<LocaleLocationBooking>(
-    "locationBookings",
-    id,
-    (b) => b.locationBookings ?? [],
-  );
-  const data = useMemo(
-    () => (res.data ? [...res.data].sort((a, c) => c.date.localeCompare(a.date)) : null),
-    [res.data],
-  );
-  return { ...res, data };
 }
 export function useEmployeeMedical(id: string) {
   const res = useEmployeeCollection<LocaleMedicalFacts>(

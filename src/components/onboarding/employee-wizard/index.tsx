@@ -56,7 +56,9 @@ import {
   type ManualOnboardingData,
   type JoinerDocument,
   type PrivacyConsent,
+  type Guarantor,
 } from "@/src/lib/types/onboarding";
+import { guarantorsSchema, emptyGuarantor } from "@/src/lib/validation/guarantor";
 import { PrivacyGate } from "./privacy-gate";
 import {
   DocumentsStep,
@@ -98,6 +100,7 @@ type StepKey =
   | "personal"
   | "financial"
   | "documents"
+  | "guarantors"
   | "emergency"
   | "tax"
   | "review";
@@ -110,10 +113,18 @@ const STEP_LABELS: Record<StepKey, string> = {
   personal: "Personal Details",
   financial: "Bank & Identity",
   documents: "Documents",
+  guarantors: "Guarantors",
   emergency: "Emergency Contact",
   tax: "Starter Checklist",
   review: "Review & Submit",
 };
+
+/** The step list is country-shaped: guarantors are NG-only, tax is UK-only. */
+function buildStepKeys(isUK: boolean): StepKey[] {
+  return isUK
+    ? ["personal", "financial", "documents", "emergency", "tax", "review"]
+    : ["personal", "financial", "documents", "guarantors", "emergency", "review"];
+}
 
 /** Fields the joiner enters themselves (HR-only fields are excluded). */
 type JoinerForm = Pick<
@@ -155,6 +166,7 @@ type JoinerForm = Pick<
   | "emergencyContactRelationship"
   | "emergencyContactPhone"
   | "emergencyContactEmail"
+  | "guarantors"
   | "allergies"
   | "conditions"
   | "medications"
@@ -200,6 +212,7 @@ const EMPTY_FORM: JoinerForm = {
   emergencyContactRelationship: "",
   emergencyContactPhone: "",
   emergencyContactEmail: "",
+  guarantors: [emptyGuarantor(), emptyGuarantor()],
   allergies: "",
   conditions: "",
   medications: "",
@@ -255,6 +268,8 @@ function buildStepSchemas(isUK: boolean): Partial<Record<StepKey, z.ZodType>> {
   return {
     personal: personalSchema,
     financial: buildFinancialSchema(isUK),
+    // Guarantors are always required for NG joiners, never collected for UK.
+    ...(isUK ? {} : { guarantors: guarantorsSchema }),
     emergency: emergencySchema,
   };
 }
@@ -277,6 +292,15 @@ const FIELD_LABELS: Record<string, string> = {
   emergencyContactName: "Emergency contact name",
   emergencyContactRelationship: "Emergency contact relationship",
   emergencyContactPhone: "Emergency contact phone",
+};
+
+/** Field keys inside one `Guarantor` entry → the wording shown to the joiner. */
+const GUARANTOR_FIELD_LABELS: Record<string, string> = {
+  name: "Full name",
+  relationship: "Relationship",
+  address: "Address",
+  phone: "Phone number",
+  occupation: "Occupation",
 };
 
 function ReviewRow({ label, value }: { label: string; value?: string }) {
@@ -328,16 +352,12 @@ export function EmployeeOnboardingWizard({
   };
 
   const isUK = country === "uk";
-  const stepKeys: StepKey[] = isUK
-    ? ["personal", "financial", "documents", "emergency", "tax", "review"]
-    : ["personal", "financial", "documents", "emergency", "review"];
+  const stepKeys: StepKey[] = buildStepKeys(isUK);
 
   // §2.3 — resume from a saved draft when one exists.
   const [step, setStep] = useState(() => {
     const savedKey = record?.draft?.stepKey as StepKey | undefined;
-    const keys: StepKey[] = isUK
-      ? ["personal", "financial", "documents", "emergency", "tax", "review"]
-      : ["personal", "financial", "documents", "emergency", "review"];
+    const keys = buildStepKeys(isUK);
     const idx = savedKey ? keys.indexOf(savedKey) : -1;
     return idx >= 0 ? idx : 0;
   });
@@ -389,16 +409,24 @@ export function EmployeeOnboardingWizard({
       const result = schema!.safeParse(form);
       if (result.success) continue;
       for (const issue of result.error.issues) {
+        if (issue.path[0] === "guarantors") {
+          const idx = issue.path[1] as number;
+          const field = issue.path[2] as string;
+          out.push(
+            `${STEP_LABELS.guarantors}: Guarantor ${idx + 1} — ${GUARANTOR_FIELD_LABELS[field] ?? field}`,
+          );
+          continue;
+        }
         out.push(
           `${STEP_LABELS[key as StepKey]}: ${FIELD_LABELS[issue.path[0] as string] ?? String(issue.path[0])}`,
         );
       }
     }
-    for (const label of missingRequiredDocuments(documents)) {
+    for (const label of missingRequiredDocuments(documents, country)) {
       out.push(`${STEP_LABELS.documents}: ${label}`);
     }
     return out;
-  }, [form, stepSchemas, documents]);
+  }, [form, stepSchemas, documents, country]);
 
   const canSubmit =
     missingFields.length === 0 &&
@@ -436,6 +464,26 @@ export function EmployeeOnboardingWizard({
   };
   const patchTax = (patch: Partial<TaxFormState>) =>
     setTax((prev) => ({ ...prev, ...patch }));
+
+  /** Updates one field on one of the two guarantors (§ NG onboarding). */
+  const setGuarantorField = (
+    index: number,
+    field: keyof Guarantor,
+    value: string,
+  ) => {
+    setForm((prev) => {
+      const guarantors = prev.guarantors.map((g, i) =>
+        i === index ? { ...g, [field]: value } : g,
+      );
+      return { ...prev, guarantors };
+    });
+    const errKey = `guarantors.${index}.${field}`;
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[errKey];
+      return next;
+    });
+  };
   const err = (k: string) => errors[k];
 
   /**
@@ -455,7 +503,7 @@ export function EmployeeOnboardingWizard({
       if (!result.success) {
         const errs: Record<string, string> = {};
         for (const issue of result.error.issues) {
-          errs[issue.path[0] as string] = issue.message;
+          errs[issue.path.join(".")] = issue.message;
         }
         setErrors(errs);
         toast.error("Please correct the highlighted fields.");
@@ -464,7 +512,7 @@ export function EmployeeOnboardingWizard({
     }
     // §2.6 — required identity evidence must be attached before moving on.
     if (currentKey === "documents") {
-      const missing = missingRequiredDocuments(documents);
+      const missing = missingRequiredDocuments(documents, country);
       if (missing.length > 0) {
         toast.error(`Still needed: ${missing.join(", ")}`);
         return false;
@@ -559,7 +607,7 @@ export function EmployeeOnboardingWizard({
           : onboardingSubmitted(employeeName, role),
       ),
     );
-    const missing = missingRequiredDocuments(documents);
+    const missing = missingRequiredDocuments(documents, country);
     if (missing.length > 0) {
       dispatch(
         pushNotification(onboardingDocumentsMissing(employeeName, missing)),
@@ -1295,7 +1343,167 @@ export function EmployeeOnboardingWizard({
 
           {/* §2.6 — identity and right-to-work evidence. */}
           {currentKey === "documents" && (
-            <DocumentsStep documents={documents} onChange={setDocuments} />
+            <DocumentsStep
+              documents={documents}
+              onChange={setDocuments}
+              country={country}
+            />
+          )}
+
+          {/* Guarantors are always required for NG joiners. */}
+          {currentKey === "guarantors" && (
+            <>
+              <h2 className="text-lg font-semibold text-foreground">
+                Guarantors
+              </h2>
+              <p className="text-sm text-muted-foreground -mt-2">
+                Two guarantors are required. Each must provide their own
+                identity document in the Documents step.
+              </p>
+              <Separator />
+              <div className="flex flex-col gap-6">
+                {form.guarantors.map((guarantor, i) => (
+                  <div key={i} className="flex flex-col gap-4">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      Guarantor {i + 1}
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <Label
+                          htmlFor={`joiner-guarantor-${i}-name`}
+                          className="text-sm"
+                        >
+                          Full Name <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          {...fieldProps(`guarantors.${i}.name`)}
+                          value={guarantor.name}
+                          onChange={(e) =>
+                            setGuarantorField(i, "name", e.target.value)
+                          }
+                          className="h-10 text-base"
+                        />
+                        {err(`guarantors.${i}.name`) && (
+                          <p
+                            id={`joiner-guarantor-${i}-name-error`}
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
+                            {err(`guarantors.${i}.name`)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label
+                          htmlFor={`joiner-guarantor-${i}-relationship`}
+                          className="text-sm"
+                        >
+                          Relationship <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          {...fieldProps(`guarantors.${i}.relationship`)}
+                          value={guarantor.relationship}
+                          onChange={(e) =>
+                            setGuarantorField(i, "relationship", e.target.value)
+                          }
+                          className="h-10 text-base"
+                          placeholder="e.g. Colleague, Family friend"
+                        />
+                        {err(`guarantors.${i}.relationship`) && (
+                          <p
+                            id={`joiner-guarantor-${i}-relationship-error`}
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
+                            {err(`guarantors.${i}.relationship`)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1.5 sm:col-span-2">
+                        <Label
+                          htmlFor={`joiner-guarantor-${i}-address`}
+                          className="text-sm"
+                        >
+                          Address <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          {...fieldProps(`guarantors.${i}.address`)}
+                          value={guarantor.address}
+                          onChange={(e) =>
+                            setGuarantorField(i, "address", e.target.value)
+                          }
+                          className="h-10 text-base"
+                        />
+                        {err(`guarantors.${i}.address`) && (
+                          <p
+                            id={`joiner-guarantor-${i}-address-error`}
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
+                            {err(`guarantors.${i}.address`)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label
+                          htmlFor={`joiner-guarantor-${i}-phone`}
+                          className="text-sm"
+                        >
+                          Phone <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          {...fieldProps(`guarantors.${i}.phone`)}
+                          type="tel"
+                          value={guarantor.phone}
+                          onChange={(e) =>
+                            setGuarantorField(
+                              i,
+                              "phone",
+                              e.target.value.replace(/[^\d+\s-]/g, ""),
+                            )
+                          }
+                          className="h-10 text-base"
+                        />
+                        {err(`guarantors.${i}.phone`) && (
+                          <p
+                            id={`joiner-guarantor-${i}-phone-error`}
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
+                            {err(`guarantors.${i}.phone`)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label
+                          htmlFor={`joiner-guarantor-${i}-occupation`}
+                          className="text-sm"
+                        >
+                          Occupation <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          {...fieldProps(`guarantors.${i}.occupation`)}
+                          value={guarantor.occupation}
+                          onChange={(e) =>
+                            setGuarantorField(i, "occupation", e.target.value)
+                          }
+                          className="h-10 text-base"
+                        />
+                        {err(`guarantors.${i}.occupation`) && (
+                          <p
+                            id={`joiner-guarantor-${i}-occupation-error`}
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
+                            {err(`guarantors.${i}.occupation`)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
           {currentKey === "emergency" && (
@@ -1522,6 +1730,20 @@ export function EmployeeOnboardingWizard({
                   </p>
                   <ReviewRow label="Contact" value={form.emergencyContactName} />
                   <ReviewRow label="Phone" value={form.emergencyContactPhone} />
+                  {!isUK && (
+                    <>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 mt-4">
+                        Guarantors
+                      </p>
+                      {form.guarantors.map((g, i) => (
+                        <ReviewRow
+                          key={i}
+                          label={`Guarantor ${i + 1}`}
+                          value={[g.name, g.relationship].filter(Boolean).join(" — ")}
+                        />
+                      ))}
+                    </>
+                  )}
                   {/* §2.6 — confirm what was actually attached. */}
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 mt-4">
                     Documents

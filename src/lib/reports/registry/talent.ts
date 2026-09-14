@@ -158,7 +158,7 @@ const recruitmentReport = defineReport<CandRow>({
         lineSpec(
           "Applications by Month",
           months.map((m) => ({ month: monthLabel(m.label), applications: m.value })),
-          [{ key: "applications", label: "Applications", color: "#3b82f6" }],
+          [{ key: "applications", label: "Applications", color: "#5192FA" }],
           "month",
           "line",
           { fullWidth: true, description: "Application volume trend over time." },
@@ -166,8 +166,8 @@ const recruitmentReport = defineReport<CandRow>({
         radialSpec(
           "Pipeline vs Hired",
           [
-            { key: "hired", label: "Hired", value: hired, color: "#4ED251" },
-            { key: "pipeline", label: "In Pipeline", value: inPipeline, color: "#ff8b2d" },
+            { key: "hired", label: "Hired", value: hired, color: "#50D34C" },
+            { key: "pipeline", label: "In Pipeline", value: inPipeline, color: "#FE8F44" },
             {
               key: "rejected",
               label: "Rejected",
@@ -291,9 +291,9 @@ const performanceReport = defineReport<ReviewRow>({
           "Self vs Manager vs Calibrated",
           radarData,
           [
-            { key: "self", label: "Self", color: "#3b82f6" },
-            { key: "manager", label: "Manager", color: "#ff8b2d" },
-            { key: "calibrated", label: "Calibrated", color: "#4ED251" },
+            { key: "self", label: "Self", color: "#5192FA" },
+            { key: "manager", label: "Manager", color: "#FE8F44" },
+            { key: "calibrated", label: "Calibrated", color: "#50D34C" },
           ],
           "cycle",
           { description: "Average rating by source across review cycles." },
@@ -313,7 +313,7 @@ const performanceReport = defineReport<ReviewRow>({
         radialSpec(
           "Goal On-Track Rate",
           [
-            { key: "ontrack", label: "On Track", value: onTrack, color: "#4ED251" },
+            { key: "ontrack", label: "On Track", value: onTrack, color: "#50D34C" },
             {
               key: "off",
               label: "At Risk / Off",
@@ -451,12 +451,12 @@ const learningReport = defineReport<EnrolRow>({
         radialSpec(
           "Completion Rate",
           [
-            { key: "completed", label: "Completed", value: completed, color: "#4ED251" },
+            { key: "completed", label: "Completed", value: completed, color: "#50D34C" },
             {
               key: "inprogress",
               label: "In Progress / Other",
               value: Math.max(0, rows.length - completed),
-              color: "#ff8b2d",
+              color: "#FE8F44",
             },
           ],
           { centerLabel: "Enrolments", description: "Completed vs in-progress courses." },
@@ -548,7 +548,7 @@ const onboardingReport = defineReport<HireRow>({
         lineSpec(
           "Hires by Month",
           months.map((m) => ({ month: monthLabel(m.label), hires: m.value })),
-          [{ key: "hires", label: "Hires", color: "#4ED251" }],
+          [{ key: "hires", label: "Hires", color: "#50D34C" }],
           "month",
           "area",
           { fullWidth: true, description: "Hiring momentum across the year." },
@@ -559,7 +559,7 @@ const onboardingReport = defineReport<HireRow>({
             key: `t${i}`,
             label: t.label,
             value: t.value,
-            color: ["#4ED251", "#ff8b2d", "#3b82f6", "#a855f7", "#14b8a6"][i % 5],
+            color: ["#50D34C", "#FE8F44", "#5192FA", "#a855f7", "#14b8a6"][i % 5],
           })),
           { centerLabel: "Hires", description: "Concentration of hire types." },
         ),
@@ -673,7 +673,7 @@ const offboardingReport = defineReport<OffRow>({
         radialSpec(
           "Recommendation Rate",
           [
-            { key: "yes", label: "Would Recommend", value: recommend, color: "#4ED251" },
+            { key: "yes", label: "Would Recommend", value: recommend, color: "#50D34C" },
             {
               key: "no",
               label: "Would Not / N/A",

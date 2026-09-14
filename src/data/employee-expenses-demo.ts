@@ -190,7 +190,7 @@ export const EXPENSE_STATUS_STYLES: Record<ExpenseStatus, string> = {
   draft: "border-border bg-muted text-muted-foreground",
   submitted: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400",
   approved:
-    "border-[#4ED251]/40 bg-[#4ED251]/10 text-[#4ED251]",
+    "border-[#50D34C]/40 bg-[#50D34C]/10 text-[#50D34C]",
   rejected: "border-rose-500/30 bg-rose-500/10 text-rose-600",
   reimbursed:
     "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",

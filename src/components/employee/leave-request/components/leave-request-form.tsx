@@ -59,6 +59,8 @@ export function LeaveRequestForm({
     "morning",
   );
   const [fNotes, setFNotes] = useState("");
+  const [fContactAddress, setFContactAddress] = useState("");
+  const [fContactPhone, setFContactPhone] = useState("");
   const [fReliefId, setFReliefId] = useState("");
   const [fReliefName, setFReliefName] = useState("");
 
@@ -130,7 +132,9 @@ export function LeaveRequestForm({
     (fHalf || fEnd) &&
     computedDays > 0 &&
     !insufficientBalance &&
-    minNoticeOk;
+    minNoticeOk &&
+    fContactAddress.trim() &&
+    fContactPhone.trim();
 
   function reset() {
     setFType("");
@@ -138,6 +142,8 @@ export function LeaveRequestForm({
     setFEnd("");
     setFHalf(false);
     setFNotes("");
+    setFContactAddress("");
+    setFContactPhone("");
     setFReliefId("");
     setFReliefName("");
     setSubmitted(false);
@@ -156,6 +162,8 @@ export function LeaveRequestForm({
       halfDayPeriod: fHalf ? fHalfPeriod : undefined,
       status: "pending" as LeaveStatus,
       notes: fNotes || undefined,
+      contactAddress: fContactAddress.trim(),
+      contactPhone: fContactPhone.trim(),
       reliefEmployeeId: fReliefId || undefined,
       reliefEmployeeName: fReliefName || undefined,
       submittedAt: new Date().toISOString().slice(0, 10),
@@ -348,6 +356,37 @@ export function LeaveRequestForm({
                     {reliefConflictMessage}
                   </div>
                 )}
+
+                {/* Where HR/your manager can reach you while you're away —
+                    required so it's never missing from a request they need
+                    to act on. */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-xs font-medium">
+                      Contact address{" "}
+                      <span className="text-destructive">*</span>
+                    </p>
+                    <Input
+                      value={fContactAddress}
+                      onChange={(e) => setFContactAddress(e.target.value)}
+                      placeholder="Where you can be reached while away"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-xs font-medium">
+                      Contact number{" "}
+                      <span className="text-destructive">*</span>
+                    </p>
+                    <Input
+                      type="tel"
+                      value={fContactPhone}
+                      onChange={(e) => setFContactPhone(e.target.value)}
+                      placeholder="Phone number"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
 
                 <div className="flex flex-col gap-1.5">
                   <p className="text-xs font-medium">

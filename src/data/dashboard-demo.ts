@@ -1,6 +1,7 @@
 ﻿import { Users, UserRoundPlus, Home, Cake, UserMinus, CalendarCheck, HeartPulse, CalendarDays } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { ChartConfig } from "@/src/components/ui/chart";
+
+type ChartConfig = Record<string, { label?: string; color?: string }>;
 
 interface RadialSeries {
   key: string;
@@ -48,8 +49,8 @@ export const ATTENDANCE_DATA: { date: string; present: number; late: number; abs
 ];
 
 export const ATTENDANCE_CONFIG: ChartConfig = {
-  present: { label: "Present",      color: "#4ED251" },
-  late:    { label: "Late arrivals", color: "#ff8b2d" },
+  present: { label: "Present",      color: "#50D34C" },
+  late:    { label: "Late arrivals", color: "#FE8F44" },
   absent:  { label: "Absent",        color: "var(--primary)" },
 };
 
@@ -67,7 +68,7 @@ export const HEADCOUNT_DATA: { month: string; headcount: number }[] = [
 ];
 
 export const HEADCOUNT_CONFIG: ChartConfig = {
-  headcount: { label: "Headcount", color: "#4ED251" },
+  headcount: { label: "Headcount", color: "#50D34C" },
 };
 
 export const SALARY_DIST_DATA: { category: string; value: number }[] = [
@@ -82,26 +83,26 @@ export const SALARY_DIST_DATA: { category: string; value: number }[] = [
 ];
 
 export const SALARY_DIST_CONFIG: ChartConfig = {
-  "Engineering":    { label: "Engineering",     color: "#4ED251" },
-  "Sales":          { label: "Sales",           color: "#ff8b2d" },
+  "Engineering":    { label: "Engineering",     color: "#50D34C" },
+  "Sales":          { label: "Sales",           color: "#FE8F44" },
   "Human Resources":{ label: "Human Resources", color: "var(--primary)" },
   "Finance":        { label: "Finance",         color: "#06b6d4" },
   "Marketing":      { label: "Marketing",       color: "#a78bfa" },
   "Operations":     { label: "Operations",      color: "#f59e0b" },
   "Legal":          { label: "Legal",           color: "#f43f5e" },
-  "Product":        { label: "Product",         color: "#3b82f6" },
+  "Product":        { label: "Product",         color: "#5192FA" },
 };
 
 export const GENDER_SPLIT_SERIES: RadialSeries[] = [
-  { key: "male",   label: "Male",   value: 108, color: "#4ED251" },
+  { key: "male",   label: "Male",   value: 108, color: "#50D34C" },
   { key: "female", label: "Female", value: 73,  color: "var(--primary)" },
-  { key: "other",  label: "Other",  value: 2,   color: "#ff8b2d" },
+  { key: "other",  label: "Other",  value: 2,   color: "#FE8F44" },
 ];
 
 export const GENDER_SPLIT_CONFIG: ChartConfig = {
-  male:   { label: "Male",   color: "#4ED251" },
+  male:   { label: "Male",   color: "#50D34C" },
   female: { label: "Female", color: "var(--primary)" },
-  other:  { label: "Other",  color: "#ff8b2d" },
+  other:  { label: "Other",  color: "#FE8F44" },
 };
 
 export const CITIES: string[] = [
@@ -113,15 +114,15 @@ export const WORK_MODES_MAP: string[] = [
 ];
 
 export const EMPLOYMENT_TYPE_DATA: { key: string; label: string; value: number; fill: string }[] = [
-  { key: "full_time",  label: "Full-Time",  value: 128, fill: "#4ED251" },
-  { key: "part_time",  label: "Part-Time",  value: 24,  fill: "#ff8b2d" },
+  { key: "full_time",  label: "Full-Time",  value: 128, fill: "#50D34C" },
+  { key: "part_time",  label: "Part-Time",  value: 24,  fill: "#FE8F44" },
   { key: "contract",   label: "Contract",   value: 18,  fill: "var(--primary)" },
   { key: "intern",     label: "Intern",     value: 13,  fill: "#06b6d4" },
 ];
 
 export const EMPLOYMENT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  full_time: { label: "Full-Time",  color: "#4ED251" },
-  part_time: { label: "Part-Time",  color: "#ff8b2d" },
+  full_time: { label: "Full-Time",  color: "#50D34C" },
+  part_time: { label: "Part-Time",  color: "#FE8F44" },
   contract:  { label: "Contract",   color: "var(--primary)" },
   intern:    { label: "Intern",     color: "#06b6d4" },
 };

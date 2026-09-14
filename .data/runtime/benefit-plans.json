@@ -1,0 +1,291 @@
+{
+  "plans": [
+    {
+      "id": "BEN-HMO",
+      "name": "Group Health Insurance (HMO)",
+      "category": "health",
+      "description": "Comprehensive in-patient and out-patient medical cover through a licensed HMO, extending to immediate family.",
+      "provider": "AXA Mansard HMO",
+      "coverageDetails": "Employee + spouse + up to 4 children · in-patient, out-patient, dental and optical care",
+      "costNote": "Fully employer-funded",
+      "waitingPeriodDays": 90,
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based",
+          "contract"
+        ]
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-PENSION",
+      "name": "Contributory Pension Scheme",
+      "category": "retirement",
+      "description": "Retirement savings account with a licensed Pension Fund Administrator, per the Pension Reform Act.",
+      "provider": "Employee's chosen PenCom-licensed PFA",
+      "coverageDetails": "Minimum statutory contribution split",
+      "employerContributionPct": 10,
+      "employeeContributionPct": 8,
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-LIFE",
+      "name": "Group Life Assurance",
+      "category": "insurance",
+      "description": "Statutory life cover paying out at least three times annual gross salary to a nominated beneficiary.",
+      "provider": "Group life insurer",
+      "coverageDetails": "Minimum 3x annual gross salary",
+      "costNote": "Fully employer-funded",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-PA",
+      "name": "Group Personal Accident Cover",
+      "category": "insurance",
+      "description": "Covers accidental death, and permanent or temporary disability, arising in the course of employment.",
+      "costNote": "Fully employer-funded",
+      "scope": {
+        "kind": "all"
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-LEAVE",
+      "name": "Annual Leave",
+      "category": "leave",
+      "description": "Paid time off every year, pro-rated by employment type and increasing with tenure.",
+      "coverageDetails": "21–30 working days/year depending on grade and tenure",
+      "scope": {
+        "kind": "all"
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-LEAVE-ALLOWANCE",
+      "name": "Leave Allowance",
+      "category": "financial",
+      "description": "One-off cash allowance paid alongside annual leave, standard practice across Nigerian employers.",
+      "coverageDetails": "10% of annual basic salary, paid once per year",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based",
+          "contract"
+        ]
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-13TH",
+      "name": "13th Month Bonus",
+      "category": "financial",
+      "description": "Not a statutory requirement, but near-universal across corporate Nigeria — one month's basic salary paid every December.",
+      "coverageDetails": "One month's basic salary, pro-rated for partial years",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based",
+          "contract"
+        ]
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-PARENTAL",
+      "name": "Paid Parental Leave",
+      "category": "leave",
+      "description": "Fully paid time off around the birth or adoption of a child.",
+      "coverageDetails": "16 weeks maternity · 4 weeks paternity, at full pay",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-TRANSPORT",
+      "name": "Transport & Housing Allowance",
+      "category": "financial",
+      "description": "Monthly allowance paid alongside salary to offset commuting and housing costs.",
+      "coverageDetails": "₦20,000–₦50,000/month depending on grade",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based",
+          "contract",
+          "temporary",
+          "seasonal",
+          "part_time"
+        ]
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-MEAL",
+      "name": "Meal Subsidy",
+      "category": "perks",
+      "description": "Subsidised meals on-site, or a daily meal allowance for remote and field-based staff.",
+      "scope": {
+        "kind": "all"
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-REMOTE-STIPEND",
+      "name": "Remote Work & Data Stipend",
+      "category": "perks",
+      "description": "Monthly stipend toward internet/data and home-office costs for staff who work outside a fixed office.",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "remote",
+          "field_based",
+          "full_time"
+        ]
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-EAP",
+      "name": "Employee Assistance Program",
+      "category": "wellness",
+      "description": "Confidential counselling, mental health support and a wellness helpline, open to every employee and their immediate family.",
+      "costNote": "Fully employer-funded",
+      "scope": {
+        "kind": "all"
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-GYM",
+      "name": "Wellness & Gym Membership Subsidy",
+      "category": "wellness",
+      "description": "Partial reimbursement of gym or fitness membership fees.",
+      "coverageDetails": "Up to 50% reimbursed, capped monthly",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based",
+          "part_time"
+        ]
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-LND",
+      "name": "Learning & Development Budget",
+      "category": "development",
+      "description": "Annual budget toward courses, certifications and conferences, plus access to internal training programmes.",
+      "scope": {
+        "kind": "all"
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "id": "BEN-LONG-SERVICE",
+      "name": "Long Service Award",
+      "category": "financial",
+      "description": "One-off cash award and recognition at 5, 10 and 15-year work anniversaries.",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      },
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01"
+    }
+  ]
+}

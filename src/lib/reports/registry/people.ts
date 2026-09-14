@@ -10,9 +10,18 @@ import {
   CalendarClock,
   CheckCircle2,
   Scale,
+  VenusAndMars,
+  Cake,
+  UserPlus,
 } from "lucide-react";
 import type { LocaleBundle } from "@/src/lib/types/locale";
-import { defineReport, type AnyReportDef } from "../types";
+import {
+  defineReport,
+  type AnyReportDef,
+  type ReportChartSpec,
+  type ReportColumn,
+  type ReportFilterDef,
+} from "../types";
 import {
   countBy,
   sumBy,
@@ -24,6 +33,11 @@ import {
   pieSpec,
   lineSpec,
   radialSpec,
+  multiBarSpec,
+  crossTab,
+  byMonthCross,
+  lastMonths,
+  fillMonths,
 } from "../charts";
 import { buildCases } from "@/src/components/hr/grievance/build-cases";
 import {
@@ -62,6 +76,104 @@ interface EmpRow {
   manager: string;
   directReports: number;
   salary: number;
+  region: string;
+}
+
+/**
+ * Shared by every Employees-derived report — the roster itself and each
+ * single-dimension deep-dive (Gender Split, Age Demographics, Department
+ * Breakdown, Hiring Trend) that used to live under it as a "breakdown" and
+ * now stands on its own on the analytics hub. All five read the same roster,
+ * so the row shape, columns and filters are defined once here rather than
+ * risking the reports drifting apart from each other.
+ */
+function selectEmployeeRows(b: LocaleBundle): EmpRow[] {
+  const types = new Map(b.employmentTypes.map((t) => [t.id, t.name]));
+  const names = new Map(b.employees.map((e) => [e.id, e.fullName]));
+  const reportCounts = new Map<string, number>();
+  for (const e of b.employees) {
+    if (e.managerId)
+      reportCounts.set(e.managerId, (reportCounts.get(e.managerId) ?? 0) + 1);
+  }
+  // `region` prefers the branch's own region, falls back to the branch's
+  // city, then to the employee's free-text work location — `branches` is
+  // optional on the bundle, so this degrades gracefully when it's absent.
+  const branchRegion = new Map(
+    (b.branches ?? []).map((br) => [br.id, br.region ?? br.city]),
+  );
+  const ref = b._meta?.referenceDate
+    ? new Date(b._meta.referenceDate)
+    : new Date();
+  const YEAR_MS = 365.25 * 24 * 3600 * 1000;
+  return b.employees.map((e) => {
+    const dob = e.dateOfBirth ? new Date(e.dateOfBirth) : null;
+    const age = dob
+      ? Math.max(0, Math.floor((ref.getTime() - dob.getTime()) / YEAR_MS))
+      : 0;
+    const tenureYears = e.startDate
+      ? Math.max(
+          0,
+          Math.round(
+            ((ref.getTime() - new Date(e.startDate).getTime()) / YEAR_MS) * 10,
+          ) / 10,
+        )
+      : 0;
+    return {
+      employeeNumber: e.employeeNumber,
+      fullName: e.fullName,
+      department: e.departmentName,
+      jobTitle: e.jobTitle,
+      employmentType: types.get(e.employmentTypeId) ?? e.employmentTypeId,
+      status: e.status,
+      gender: e.gender ?? "—",
+      grade: e.grade ?? "—",
+      age,
+      startDate: e.startDate,
+      tenureYears,
+      manager: e.managerId ? names.get(e.managerId) ?? "—" : "—",
+      directReports: reportCounts.get(e.id) ?? 0,
+      salary: e.salary?.amount ?? 0,
+      region:
+        (e.branchId ? branchRegion.get(e.branchId) : undefined) ??
+        e.workLocation ??
+        "Unspecified",
+    };
+  });
+}
+
+const EMPLOYEE_COLUMNS: ReportColumn<EmpRow>[] = [
+  { key: "employeeNumber", header: "Employee ID", value: (r) => r.employeeNumber },
+  { key: "fullName", header: "Name", value: (r) => r.fullName },
+  { key: "department", header: "Department", value: (r) => r.department },
+  { key: "jobTitle", header: "Job Title", value: (r) => r.jobTitle },
+  { key: "employmentType", header: "Type", value: (r) => r.employmentType },
+  { key: "grade", header: "Grade", value: (r) => r.grade },
+  { key: "status", header: "Status", value: (r) => r.status },
+  { key: "manager", header: "Manager", value: (r) => r.manager },
+  { key: "directReports", header: "Direct Reports", value: (r) => r.directReports },
+  { key: "age", header: "Age", value: (r) => r.age },
+  { key: "tenureYears", header: "Tenure (yrs)", value: (r) => r.tenureYears },
+  { key: "startDate", header: "Start Date", value: (r) => r.startDate },
+  { key: "salary", header: "Annual Salary", value: (r) => r.salary, money: true },
+];
+
+const EMPLOYEE_FILTERS: ReportFilterDef<EmpRow>[] = [
+  {
+    key: "department",
+    label: "Department",
+    options: (rows) => [...new Set(rows.map((r) => r.department))],
+    match: (r, v) => r.department === v,
+  },
+  {
+    key: "employmentType",
+    label: "Employment type",
+    options: (rows) => [...new Set(rows.map((r) => r.employmentType))],
+    match: (r, v) => r.employmentType === v,
+  },
+];
+
+function employeeSearchText(r: EmpRow): string {
+  return `${r.fullName} ${r.department} ${r.jobTitle}`;
 }
 
 function ageBucket(age: number): string {
@@ -71,6 +183,540 @@ function ageBucket(age: number): string {
   if (age < 55) return "45–54";
   return "55+";
 }
+const AGE_BUCKET_ORDER = ["Under 25", "25–34", "35–44", "45–54", "55+"];
+
+// Gender is stored raw ("male" / "female" / …); every chart in the Gender
+// Split breakdown re-labels and re-colors through these so the palette always
+// matches the dashboard's Gender Split card (male=green, female=indigo) no
+// matter which gender happens to sort first in the data.
+const GENDER_RANK: Record<string, number> = { male: 0, female: 1 };
+const GENDER_HEX: Record<string, string> = { male: "#50D34C", female: "#6366f1" };
+function genderLabel(raw: string): string {
+  const k = raw.trim().toLowerCase();
+  if (k === "male") return "Male";
+  if (k === "female") return "Female";
+  if (k === "non_binary" || k === "non-binary") return "Non-binary";
+  if (k === "prefer_not_to_say") return "Prefer not to say";
+  if (!raw || raw === "—") return "Unspecified";
+  // Any other raw enum value: humanize snake_case/kebab-case instead of
+  // leaking it verbatim into charts (e.g. "some_new_value" -> "Some new value").
+  const spaced = raw.replace(/[_-]+/g, " ").trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
+}
+function genderRank(label: string): number {
+  return GENDER_RANK[label.toLowerCase()] ?? 2;
+}
+function genderColor(label: string): string {
+  return GENDER_HEX[label.toLowerCase()] ?? "#64748b";
+}
+function byGenderOrder<T extends { label: string }>(items: T[]): T[] {
+  return [...items].sort((a, z) => genderRank(a.label) - genderRank(z.label));
+}
+
+type PieSpec = Extract<ReportChartSpec, { kind: "pie" }>;
+type BarSpec = Extract<ReportChartSpec, { kind: "bar" }>;
+
+/** Recolors a pie built by the generic `pieSpec()` helper (which colors by
+ * slice position, not meaning) to the same male/female/other palette every
+ * other chart on the Gender Split page uses — otherwise a third category
+ * (e.g. "Unspecified") lands on whatever the palette's third color happens
+ * to be. */
+function recolorByGender(spec: PieSpec): PieSpec {
+  return {
+    ...spec,
+    data: spec.data.map((d) => ({ ...d, fill: genderColor(d.label) })),
+    details: spec.details?.map((d) => ({ ...d, color: genderColor(d.label) })),
+  };
+}
+
+/** Same recolor, for the `barSpec()`-built gender comparison bars. */
+function recolorBarByGender(spec: BarSpec): BarSpec {
+  return {
+    ...spec,
+    data: spec.data.map((d) => ({ ...d, fill: genderColor(d.category) })),
+    details: spec.details?.map((d) => ({ ...d, color: genderColor(d.label) })),
+  };
+}
+
+/** Non-orange palette for charts with no inherent gender/semantic color. */
+const NEUTRAL_PALETTE = ["#5192FA", "#50D34C", "#a855f7", "#14b8a6", "#64748b", "#0ea5e9"];
+function neutralColor(i: number): string {
+  return NEUTRAL_PALETTE[i % NEUTRAL_PALETTE.length];
+}
+function recolorNeutral(spec: PieSpec): PieSpec {
+  return { ...spec, data: spec.data.map((d, i) => ({ ...d, fill: neutralColor(i) })) };
+}
+
+// ── Employee demographics: single-dimension reports over the same roster ───
+const genderSplitReport = defineReport<EmpRow>({
+  id: "gender",
+  label: "Gender Split",
+  description: "Representation, pay and tenure by gender across the workforce.",
+  icon: VenusAndMars,
+  group: "People",
+  permission: "organization.employees",
+  select: selectEmployeeRows,
+  columns: EMPLOYEE_COLUMNS,
+  filters: EMPLOYEE_FILTERS,
+  searchText: employeeSearchText,
+  analytics: (rows) => {
+    const total = rows.length || 1;
+    const genderOf = (r: EmpRow) => genderLabel(r.gender);
+
+    const distribution = byGenderOrder(countBy(rows, genderOf));
+    const male = distribution.find((t) => t.label === "Male")?.value ?? 0;
+    const female = distribution.find((t) => t.label === "Female")?.value ?? 0;
+    const malePct = Math.round((male / total) * 100);
+    const femalePct = Math.round((female / total) * 100);
+
+    const deptCross = crossTab(rows, (r) => r.department, genderOf);
+    const deptSeries = byGenderOrder(deptCross.series).map((s) => ({
+      ...s,
+      color: genderColor(s.label),
+    }));
+
+    const gradeCross = crossTab(rows, (r) => r.grade, genderOf);
+    const gradeSeries = byGenderOrder(gradeCross.series).map((s) => ({
+      ...s,
+      color: genderColor(s.label),
+    }));
+
+    const ageCross = crossTab(rows, (r) => ageBucket(r.age), genderOf);
+    const ageSeries = byGenderOrder(ageCross.series).map((s) => ({
+      ...s,
+      color: genderColor(s.label),
+    }));
+    const ageData = [...ageCross.data].sort(
+      (a, z) =>
+        AGE_BUCKET_ORDER.indexOf(String(a.group)) -
+        AGE_BUCKET_ORDER.indexOf(String(z.group)),
+    );
+
+    const hiresCross = byMonthCross(rows, (r) => r.startDate, genderOf, lastMonths(12));
+    const hiresSeries = byGenderOrder(hiresCross.series).map((s) => ({
+      ...s,
+      color: genderColor(s.label),
+    }));
+    const hiresData = hiresCross.data;
+
+    const avgTenure = byGenderOrder(avgBy(rows, genderOf, (r) => r.tenureYears));
+    const avgSalary = byGenderOrder(avgBy(rows, genderOf, (r) => r.salary));
+    const maleSalary = avgSalary.find((t) => t.label === "Male")?.value ?? 0;
+    const femaleSalary = avgSalary.find((t) => t.label === "Female")?.value ?? 0;
+    const payGapPct = maleSalary
+      ? Math.round(((maleSalary - femaleSalary) / maleSalary) * 100)
+      : 0;
+
+    // "Leavers" mirrors the same active/inactive split the Employees
+    // report's own "Workforce Status" ring already uses — no new status
+    // semantics introduced, just the same cut read through gender.
+    const leavers = byGenderOrder(
+      countBy(
+        rows.filter((r) => r.status !== "active"),
+        genderOf,
+      ),
+    );
+    const recentHires = rows.filter((r) => r.tenureYears <= 1);
+    const byRegion = countBy(recentHires, (r) => r.region);
+
+    return {
+      stats: [
+        {
+          label: "Female Representation",
+          value: `${femalePct}%`,
+          sub: `${female} of ${total} employees`,
+          icon: VenusAndMars,
+          tone: "violet",
+        },
+        {
+          label: "Male Representation",
+          value: `${malePct}%`,
+          sub: `${male} of ${total} employees`,
+          icon: VenusAndMars,
+          tone: "emerald",
+        },
+        {
+          label: "Avg Tenure Gap",
+          value: `${Math.abs(
+            (avgTenure.find((t) => t.label === "Male")?.value ?? 0) -
+              (avgTenure.find((t) => t.label === "Female")?.value ?? 0),
+          ).toFixed(1)} yrs`,
+          sub: "Difference in average years served",
+          icon: Timer,
+        },
+        {
+          label: "Gender Pay Gap",
+          value: `${Math.abs(payGapPct)}%`,
+          sub:
+            payGapPct > 0
+              ? "Female average trails male average"
+              : payGapPct < 0
+                ? "Female average leads male average"
+                : "No measurable gap",
+          icon: Wallet,
+          trend: `${payGapPct}%`,
+          up: payGapPct <= 0,
+          tone: payGapPct > 0 ? "amber" : "emerald",
+        },
+      ],
+      charts: [
+        recolorByGender(
+          pieSpec("gender-split-donut", "Gender Distribution", distribution, {
+            centerLabel: "Employees",
+            description: "Overall workforce composition by gender.",
+          }) as PieSpec,
+        ),
+        recolorByGender(
+          pieSpec("leavers-by-gender", "Leavers by Gender", leavers, {
+            centerLabel: "Leavers",
+            description: "Gender mix of employees who have left.",
+          }) as PieSpec,
+        ),
+        recolorNeutral(
+          pieSpec("new-hires-by-region", "New Hires by Region", byRegion, {
+            centerLabel: "New Hires",
+            description: "Where employees hired in the last year are based.",
+          }) as PieSpec,
+        ),
+        multiBarSpec("Gender by Department", deptCross.data, deptSeries, "group", {
+          stacked: true,
+          description: "Where representation skews by department.",
+        }),
+        multiBarSpec("Gender by Grade", gradeCross.data, gradeSeries, "group", {
+          stacked: true,
+          description: "Representation across pay grades / bands.",
+        }),
+        multiBarSpec("Gender by Age Band", ageData, ageSeries, "group", {
+          stacked: true,
+          description: "Age profile split by gender.",
+        }),
+        lineSpec(
+          "Hires by Gender (last 12 months)",
+          hiresData,
+          hiresSeries,
+          "month",
+          "area",
+          {
+            fullWidth: true,
+            description: "New joiners per month, split by gender.",
+          },
+        ),
+        recolorBarByGender(
+          barSpec("Avg Tenure by Gender", avgTenure, {
+            valueLabel: "Years",
+            layout: "horizontal",
+            description: "Average years of service by gender.",
+          }) as BarSpec,
+        ),
+        recolorBarByGender(
+          barSpec("Avg Salary by Gender", avgSalary, {
+            valueLabel: "Salary",
+            money: true,
+            layout: "horizontal",
+            description: "Average annual salary by gender — a quick pay-equity check.",
+          }) as BarSpec,
+        ),
+      ],
+    };
+  },
+});
+
+const ageDemographicsReport = defineReport<EmpRow>({
+  id: "age",
+  label: "Age Demographics",
+  description: "Workforce age profile, tenure and pay by age band.",
+  icon: Cake,
+  group: "People",
+  permission: "organization.employees",
+  select: selectEmployeeRows,
+  columns: EMPLOYEE_COLUMNS,
+  filters: EMPLOYEE_FILTERS,
+  searchText: employeeSearchText,
+  analytics: (rows) => {
+    const total = rows.length || 1;
+    const buckets = [...countBy(rows, (r) => ageBucket(r.age))].sort(
+      (a, z) => AGE_BUCKET_ORDER.indexOf(a.label) - AGE_BUCKET_ORDER.indexOf(z.label),
+    );
+    const avgAge = Math.round((rows.reduce((s, r) => s + r.age, 0) / total) * 10) / 10;
+    const under35 = rows.filter((r) => r.age < 35).length;
+    const over55 = rows.filter((r) => r.age >= 55).length;
+    const widest = [...buckets].sort((a, z) => z.value - a.value)[0];
+
+    const deptCross = crossTab(rows, (r) => r.department, (r) => ageBucket(r.age));
+    const deptSeries = [...deptCross.series].sort(
+      (a, z) => AGE_BUCKET_ORDER.indexOf(a.label) - AGE_BUCKET_ORDER.indexOf(z.label),
+    );
+
+    const genderCross = crossTab(rows, (r) => ageBucket(r.age), (r) => genderLabel(r.gender));
+    const genderData = [...genderCross.data].sort(
+      (a, z) =>
+        AGE_BUCKET_ORDER.indexOf(String(a.group)) -
+        AGE_BUCKET_ORDER.indexOf(String(z.group)),
+    );
+    const genderSeries = byGenderOrder(genderCross.series).map((s) => ({
+      ...s,
+      color: genderColor(s.label),
+    }));
+
+    const avgTenureByAge = [...avgBy(rows, (r) => ageBucket(r.age), (r) => r.tenureYears)].sort(
+      (a, z) => AGE_BUCKET_ORDER.indexOf(a.label) - AGE_BUCKET_ORDER.indexOf(z.label),
+    );
+    const avgSalaryByAge = [...avgBy(rows, (r) => ageBucket(r.age), (r) => r.salary)].sort(
+      (a, z) => AGE_BUCKET_ORDER.indexOf(a.label) - AGE_BUCKET_ORDER.indexOf(z.label),
+    );
+
+    return {
+      stats: [
+        { label: "Average Age", value: avgAge, sub: "Years, across the roster", icon: Cake },
+        {
+          label: "Under 35",
+          value: under35,
+          sub: `${Math.round((under35 / total) * 100)}% of workforce`,
+          icon: Users,
+          tone: "blue",
+        },
+        {
+          label: "55 and Over",
+          value: over55,
+          sub: `${Math.round((over55 / total) * 100)}% of workforce`,
+          icon: Users,
+          tone: "amber",
+        },
+        {
+          label: "Widest Age Band",
+          value: widest?.label ?? "—",
+          sub: `${widest?.value ?? 0} employees`,
+          icon: Users,
+        },
+      ],
+      charts: [
+        barSpec("Age Distribution", buckets, {
+          valueLabel: "Employees",
+          layout: "horizontal",
+          description: "Headcount by age band.",
+        }),
+        multiBarSpec("Age Band by Department", deptCross.data, deptSeries, "group", {
+          stacked: true,
+          description: "Where each age group concentrates.",
+        }),
+        multiBarSpec("Age Band by Gender", genderData, genderSeries, "group", {
+          stacked: true,
+          description: "Gender mix within each age band.",
+        }),
+        barSpec("Avg Tenure by Age Band", avgTenureByAge, {
+          valueLabel: "Years",
+          layout: "horizontal",
+          description: "Longer-serving age bands vs newer ones.",
+        }),
+        barSpec("Avg Salary by Age Band", avgSalaryByAge, {
+          valueLabel: "Salary",
+          money: true,
+          layout: "horizontal",
+          description: "Average annual salary by age band.",
+        }),
+        radialSpec(
+          "Workforce Age Mix",
+          [
+            { key: "under35", label: "Under 35", value: under35, color: "#5192FA" },
+            { key: "over35", label: "35 and Over", value: total - under35, color: "#64748b" },
+          ],
+          {
+            centerLabel: "Under 35",
+            description: "Share of the workforce younger than 35.",
+          },
+        ),
+      ],
+    };
+  },
+});
+
+const departmentReport = defineReport<EmpRow>({
+  id: "department",
+  label: "Department Breakdown",
+  description: "Headcount, pay, tenure and gender mix by department.",
+  icon: Building2,
+  group: "People",
+  permission: "organization.employees",
+  select: selectEmployeeRows,
+  columns: EMPLOYEE_COLUMNS,
+  filters: EMPLOYEE_FILTERS,
+  searchText: employeeSearchText,
+  analytics: (rows) => {
+    const deptHeadcount = countBy(rows, (r) => r.department);
+    const totalDepts = deptHeadcount.length;
+    const totalPayroll = rows.reduce((s, r) => s + r.salary, 0);
+    const largest = deptHeadcount[0];
+    const avgDeptSize = Math.round((rows.length / (totalDepts || 1)) * 10) / 10;
+
+    const payrollByDept = sumBy(rows, (r) => r.department, (r) => r.salary);
+    const genderCross = crossTab(rows, (r) => r.department, (r) => genderLabel(r.gender));
+    const genderSeries = byGenderOrder(genderCross.series).map((s) => ({
+      ...s,
+      color: genderColor(s.label),
+    }));
+    const avgTenureByDept = avgBy(rows, (r) => r.department, (r) => r.tenureYears);
+    const avgSalaryByDept = avgBy(rows, (r) => r.department, (r) => r.salary);
+
+    return {
+      stats: [
+        { label: "Departments", value: totalDepts, sub: "Distinct department units", icon: Building2 },
+        {
+          label: "Largest Department",
+          value: largest?.label ?? "—",
+          sub: `${largest?.value ?? 0} employees`,
+          icon: Users,
+        },
+        { label: "Avg Department Size", value: avgDeptSize, sub: "Employees per department", icon: Users },
+        {
+          label: "Total Payroll",
+          value: totalPayroll,
+          money: true,
+          sub: "Across all departments",
+          icon: Wallet,
+        },
+      ],
+      charts: [
+        barSpec("Headcount by Department", deptHeadcount, {
+          valueLabel: "Employees",
+          description: "Team size, largest first.",
+        }),
+        barSpec("Payroll by Department", payrollByDept, {
+          valueLabel: "Payroll",
+          money: true,
+          description: "Total annual salary cost per department.",
+        }),
+        multiBarSpec("Gender Mix by Department", genderCross.data, genderSeries, "group", {
+          stacked: true,
+          description: "Representation within each department.",
+        }),
+        barSpec("Avg Tenure by Department", avgTenureByDept, {
+          valueLabel: "Years",
+          description: "Average years of service by team.",
+        }),
+        barSpec("Avg Salary by Department", avgSalaryByDept, {
+          valueLabel: "Salary",
+          money: true,
+          description: "Average annual salary by department.",
+        }),
+        pieSpec("dept-share", "Headcount Share", deptHeadcount, {
+          centerLabel: "Employees",
+          description: "Each department's share of total headcount.",
+        }),
+      ],
+    };
+  },
+});
+
+const hiringTrendReport = defineReport<EmpRow>({
+  id: "hiring-trend",
+  label: "Hiring Trend",
+  description: "New-hire volume, source mix and growth pace over time.",
+  icon: UserPlus,
+  group: "People",
+  permission: "organization.employees",
+  select: selectEmployeeRows,
+  columns: EMPLOYEE_COLUMNS,
+  filters: EMPLOYEE_FILTERS,
+  searchText: employeeSearchText,
+  analytics: (rows) => {
+    const months12 = lastMonths(12);
+    const hires12 = fillMonths(byMonth(rows, (r) => r.startDate), months12);
+    const hires3 = hires12.slice(-3);
+    const totalHires12 = hires12.reduce((s, m) => s + m.value, 0);
+    const totalHires3 = hires3.reduce((s, m) => s + m.value, 0);
+    const avgPerMonth = Math.round((totalHires12 / (hires12.length || 1)) * 10) / 10;
+    const busiest = [...hires12].sort((a, z) => z.value - a.value)[0];
+
+    const recentHireRows = rows.filter((r) => r.tenureYears <= 1);
+    const deptHiresRecent = countBy(recentHireRows, (r) => r.department);
+    const typeHiresRecent = countBy(recentHireRows, (r) => r.employmentType);
+
+    const genderCross = byMonthCross(
+      rows,
+      (r) => r.startDate,
+      (r) => genderLabel(r.gender),
+      months12,
+    );
+    const genderSeries = byGenderOrder(genderCross.series).map((s) => ({
+      ...s,
+      color: genderColor(s.label),
+    }));
+    const genderData = genderCross.data;
+
+    return {
+      stats: [
+        {
+          label: "Hires (12 months)",
+          value: totalHires12,
+          sub: `${avgPerMonth} per month average`,
+          icon: UserPlus,
+          tone: "emerald",
+        },
+        { label: "Hires (3 months)", value: totalHires3, sub: "Most recent quarter", icon: UserPlus },
+        {
+          label: "Recent Hires",
+          value: recentHireRows.length,
+          sub: `${Math.round((recentHireRows.length / (rows.length || 1)) * 100)}% of current workforce`,
+          icon: Users,
+        },
+        {
+          label: "Busiest Hiring Month",
+          value: busiest ? monthLabel(busiest.label) : "—",
+          sub: busiest ? `${busiest.value} hires that month` : "No hires on record",
+          icon: CalendarDays,
+        },
+      ],
+      charts: [
+        lineSpec(
+          "Hires by Month",
+          hires12.map((m) => ({ month: monthLabel(m.label), hires: m.value })),
+          [{ key: "hires", label: "Hires", color: "#50D34C" }],
+          "month",
+          "area",
+          {
+            fullWidth: true,
+            description: "New joiners per month over the last year.",
+            footer: `${totalHires12} hires across ${hires12.length} months.`,
+          },
+        ),
+        lineSpec("Hires by Gender (last 12 months)", genderData, genderSeries, "month", "area", {
+          fullWidth: true,
+          description: "New-hire volume split by gender.",
+        }),
+        barSpec("Recent Hires by Department", deptHiresRecent, {
+          valueLabel: "Hires",
+          description: "Where the last year's hiring concentrated.",
+        }),
+        barSpec("Recent Hires by Employment Type", typeHiresRecent, {
+          valueLabel: "Hires",
+          layout: "horizontal",
+          description: "Contract mix among recent joiners.",
+        }),
+        radialSpec(
+          "Workforce Freshness",
+          [
+            {
+              key: "recent",
+              label: "Hired ≤ 1 year ago",
+              value: recentHireRows.length,
+              color: "#50D34C",
+            },
+            {
+              key: "tenured",
+              label: "Tenured (> 1 year)",
+              value: rows.length - recentHireRows.length,
+              color: "#64748b",
+            },
+          ],
+          {
+            centerLabel: "Recent Hires",
+            description: "Share of the workforce hired within the last year.",
+          },
+        ),
+      ],
+    };
+  },
+});
 
 const employeesReport = defineReport<EmpRow>({
   id: "employees",
@@ -79,78 +725,9 @@ const employeesReport = defineReport<EmpRow>({
   icon: Users,
   group: "People",
   permission: "organization.employees",
-  select: (b) => {
-    const types = new Map(b.employmentTypes.map((t) => [t.id, t.name]));
-    const names = new Map(b.employees.map((e) => [e.id, e.fullName]));
-    const reportCounts = new Map<string, number>();
-    for (const e of b.employees) {
-      if (e.managerId)
-        reportCounts.set(e.managerId, (reportCounts.get(e.managerId) ?? 0) + 1);
-    }
-    const ref = b._meta?.referenceDate
-      ? new Date(b._meta.referenceDate)
-      : new Date();
-    const YEAR_MS = 365.25 * 24 * 3600 * 1000;
-    return b.employees.map((e) => {
-      const dob = e.dateOfBirth ? new Date(e.dateOfBirth) : null;
-      const age = dob
-        ? Math.max(0, Math.floor((ref.getTime() - dob.getTime()) / YEAR_MS))
-        : 0;
-      const tenureYears = e.startDate
-        ? Math.max(
-            0,
-            Math.round(
-              ((ref.getTime() - new Date(e.startDate).getTime()) / YEAR_MS) * 10,
-            ) / 10,
-          )
-        : 0;
-      return {
-        employeeNumber: e.employeeNumber,
-        fullName: e.fullName,
-        department: e.departmentName,
-        jobTitle: e.jobTitle,
-        employmentType: types.get(e.employmentTypeId) ?? e.employmentTypeId,
-        status: e.status,
-        gender: e.gender ?? "—",
-        grade: e.grade ?? "—",
-        age,
-        startDate: e.startDate,
-        tenureYears,
-        manager: e.managerId ? names.get(e.managerId) ?? "—" : "—",
-        directReports: reportCounts.get(e.id) ?? 0,
-        salary: e.salary?.amount ?? 0,
-      };
-    });
-  },
-  columns: [
-    { key: "employeeNumber", header: "Employee ID", value: (r) => r.employeeNumber },
-    { key: "fullName", header: "Name", value: (r) => r.fullName },
-    { key: "department", header: "Department", value: (r) => r.department },
-    { key: "jobTitle", header: "Job Title", value: (r) => r.jobTitle },
-    { key: "employmentType", header: "Type", value: (r) => r.employmentType },
-    { key: "grade", header: "Grade", value: (r) => r.grade },
-    { key: "status", header: "Status", value: (r) => r.status },
-    { key: "manager", header: "Manager", value: (r) => r.manager },
-    { key: "directReports", header: "Direct Reports", value: (r) => r.directReports },
-    { key: "age", header: "Age", value: (r) => r.age },
-    { key: "tenureYears", header: "Tenure (yrs)", value: (r) => r.tenureYears },
-    { key: "startDate", header: "Start Date", value: (r) => r.startDate },
-    { key: "salary", header: "Annual Salary", value: (r) => r.salary, money: true },
-  ],
-  filters: [
-    {
-      key: "department",
-      label: "Department",
-      options: (rows) => [...new Set(rows.map((r) => r.department))],
-      match: (r, v) => r.department === v,
-    },
-    {
-      key: "employmentType",
-      label: "Employment type",
-      options: (rows) => [...new Set(rows.map((r) => r.employmentType))],
-      match: (r, v) => r.employmentType === v,
-    },
-  ],
+  select: selectEmployeeRows,
+  columns: EMPLOYEE_COLUMNS,
+  filters: EMPLOYEE_FILTERS,
   exportParams: [
     {
       key: "lineManagers",
@@ -177,12 +754,12 @@ const employeesReport = defineReport<EmpRow>({
       predicate: (r) => r.tenureYears <= 1,
     },
   ],
-  searchText: (r) => `${r.fullName} ${r.department} ${r.jobTitle}`,
+  searchText: employeeSearchText,
   analytics: (rows) => {
     const active = rows.filter((r) => r.status === "active").length;
     const payroll = rows.reduce((s, r) => s + r.salary, 0);
     const avgSalary = Math.round(payroll / (rows.length || 1));
-    const hires = byMonth(rows, (r) => r.startDate).slice(-12);
+    const hires = fillMonths(byMonth(rows, (r) => r.startDate), lastMonths(12));
     return {
       stats: [
         {
@@ -240,15 +817,22 @@ const employeesReport = defineReport<EmpRow>({
           layout: "horizontal",
           description: "Distribution across pay grades / bands.",
         }),
-        barSpec("Age Distribution", countBy(rows, (r) => ageBucket(r.age)), {
-          valueLabel: "Employees",
-          layout: "horizontal",
-          description: "Workforce age profile by band.",
-        }),
+        barSpec(
+          "Age Distribution",
+          [...countBy(rows, (r) => ageBucket(r.age))].sort(
+            (a, z) =>
+              AGE_BUCKET_ORDER.indexOf(a.label) - AGE_BUCKET_ORDER.indexOf(z.label),
+          ),
+          {
+            valueLabel: "Employees",
+            layout: "horizontal",
+            description: "Workforce age profile by band.",
+          },
+        ),
         lineSpec(
           "Hires by Month",
           hires.map((m) => ({ month: monthLabel(m.label), hires: m.value })),
-          [{ key: "hires", label: "Hires", color: "#4ED251" }],
+          [{ key: "hires", label: "Hires", color: "#50D34C" }],
           "month",
           "area",
           {
@@ -260,7 +844,7 @@ const employeesReport = defineReport<EmpRow>({
         radialSpec(
           "Workforce Status",
           [
-            { key: "active", label: "Active", value: active, color: "#4ED251" },
+            { key: "active", label: "Active", value: active, color: "#50D34C" },
             {
               key: "inactive",
               label: "Inactive / Left",
@@ -392,7 +976,7 @@ const attendanceReport = defineReport<AttRow>({
         lineSpec(
           "Hours Worked (recent)",
           byDate.map((d) => ({ date: d.label.slice(5), hours: Math.round(d.value) })),
-          [{ key: "hours", label: "Hours", color: "#4ED251" }],
+          [{ key: "hours", label: "Hours", color: "#50D34C" }],
           "date",
           "area",
           {
@@ -409,14 +993,14 @@ const attendanceReport = defineReport<AttRow>({
               label: "Attendance Rate",
               value: rate,
               total: 100,
-              color: "#4ED251",
+              color: "#50D34C",
             },
           ],
           {
             centerLabel: "Attendance Rate",
             description: "Attended as a share of scheduled days.",
             details: [
-              { label: "Attended", value: attended, color: "#4ED251" },
+              { label: "Attended", value: attended, color: "#50D34C" },
               {
                 label: "Absent / Leave",
                 value: Math.max(0, scheduled - attended),
@@ -523,7 +1107,7 @@ const leaveReport = defineReport<LeaveRow>({
         lineSpec(
           "Requests by Month",
           months.map((m) => ({ month: monthLabel(m.label), requests: m.value })),
-          [{ key: "requests", label: "Requests", color: "#3b82f6" }],
+          [{ key: "requests", label: "Requests", color: "#5192FA" }],
           "month",
           "area",
           { fullWidth: true, description: "Leave demand trend over time." },
@@ -531,8 +1115,8 @@ const leaveReport = defineReport<LeaveRow>({
         radialSpec(
           "Approval Status",
           [
-            { key: "approved", label: "Approved", value: approved, color: "#4ED251" },
-            { key: "pending", label: "Pending", value: pending, color: "#ff8b2d" },
+            { key: "approved", label: "Approved", value: approved, color: "#50D34C" },
+            { key: "pending", label: "Pending", value: pending, color: "#FE8F44" },
             {
               key: "other",
               label: "Rejected / Other",
@@ -778,6 +1362,10 @@ const erCasesReport = defineReport<CaseRow>({
 
 export const PEOPLE_REPORTS: AnyReportDef[] = [
   employeesReport,
+  genderSplitReport,
+  ageDemographicsReport,
+  departmentReport,
+  hiringTrendReport,
   attendanceReport,
   leaveReport,
   erCasesReport,

@@ -24,6 +24,8 @@ export type GoalCategory =
 
 export interface PerformanceReview {
   id: string;
+  /** Links the review to the employee record it concerns. */
+  employeeId?: string;
   employeeName: string;
   employeeInitials?: string;
   jobTitle?: string;
@@ -31,6 +33,7 @@ export interface PerformanceReview {
   reviewType: ReviewType;
   period: string;
   status: ReviewStatus;
+  reviewerId?: string;
   reviewer: string;
   rating?: PerformanceRating;
   strengths?: string;
@@ -41,18 +44,22 @@ export interface PerformanceReview {
 }
 
 export interface NewReview {
+  employeeId?: string;
   employeeName: string;
   employeeInitials?: string;
   jobTitle?: string;
   department: string;
   reviewType: ReviewType;
   period: string;
+  reviewerId?: string;
   reviewer: string;
   dueDate: string;
 }
 
 export interface PerformanceGoal {
   id: string;
+  /** Links the goal to the employee record it concerns. */
+  employeeId?: string;
   employeeName: string;
   employeeInitials?: string;
   department: string;
@@ -67,6 +74,7 @@ export interface PerformanceGoal {
 }
 
 export interface NewGoal {
+  employeeId?: string;
   employeeName: string;
   employeeInitials?: string;
   department: string;

@@ -1,4 +1,11 @@
 import type { Project, TimesheetEntry } from "@/src/lib/types/projects";
+import type { ProjectRisk } from "@/src/lib/types/project-risks";
+import type { ProjectDocument } from "@/src/lib/types/project-documents";
+import type {
+  GoLiveCategory,
+  GoLiveChecklist,
+  GoLiveChecklistItem,
+} from "@/src/lib/types/go-live-readiness";
 
 /**
  * §10 — seed projects, so the module has something to show on a cold load in
@@ -34,6 +41,7 @@ export const DEMO_PROJECTS: Project[] = [
         startDate: "2026-01-12",
         endDate: "2026-02-20",
         percentComplete: 100,
+        assigneeId: "emp-001",
         assigneeName: "Amara Okafor",
         estimatedHours: 160,
       },
@@ -46,6 +54,7 @@ export const DEMO_PROJECTS: Project[] = [
         startDate: "2026-02-23",
         endDate: "2026-03-20",
         percentComplete: 100,
+        assigneeId: "emp-002",
         assigneeName: "Daniel Reyes",
         dependsOn: ["PRJ-001-T1"],
         estimatedHours: 80,
@@ -59,6 +68,7 @@ export const DEMO_PROJECTS: Project[] = [
         startDate: "2026-03-23",
         endDate: "2026-06-12",
         percentComplete: 65,
+        assigneeId: "emp-003",
         assigneeName: "Priya Nair",
         dependsOn: ["PRJ-001-T2"],
         estimatedHours: 320,
@@ -67,11 +77,15 @@ export const DEMO_PROJECTS: Project[] = [
         id: "PRJ-001-T4",
         name: "Payroll integration",
         phase: "Build",
-        status: "in_progress",
+        // At risk rather than plain in-progress — it's the payroll item the
+        // client's own §5 risk example calls out, and gives the new status a
+        // real place to show up in the demo (nothing exercised it before).
+        status: "at_risk",
         priority: "high",
         startDate: "2026-04-06",
         endDate: "2026-07-10",
         percentComplete: 30,
+        assigneeId: "emp-002",
         assigneeName: "Daniel Reyes",
         dependsOn: ["PRJ-001-T2"],
         estimatedHours: 280,
@@ -85,6 +99,7 @@ export const DEMO_PROJECTS: Project[] = [
         startDate: "2026-07-13",
         endDate: "2026-08-21",
         percentComplete: 0,
+        assigneeId: "emp-003",
         assigneeName: "Priya Nair",
         dependsOn: ["PRJ-001-T3", "PRJ-001-T4"],
         estimatedHours: 200,
@@ -98,6 +113,7 @@ export const DEMO_PROJECTS: Project[] = [
         startDate: "2026-08-24",
         endDate: "2026-09-30",
         percentComplete: 0,
+        assigneeId: "emp-001",
         assigneeName: "Amara Okafor",
         dependsOn: ["PRJ-001-T5"],
         estimatedHours: 180,
@@ -108,22 +124,40 @@ export const DEMO_PROJECTS: Project[] = [
         id: "PRJ-001-M1",
         name: "Vendor contract signed",
         date: "2026-03-20",
+        actualDate: "2026-03-20",
+        status: "completed",
+        percentComplete: 100,
         reached: true,
         taskIds: ["PRJ-001-T2"],
+        responsibleId: "emp-002",
+        responsibleName: "Daniel Reyes",
+        approved: true,
+        approvedBy: "Amara Okafor",
+        approvedAt: "2026-03-21",
       },
       {
         id: "PRJ-001-M2",
         name: "Build complete",
         date: "2026-07-10",
+        status: "at_risk",
+        percentComplete: 55,
         reached: false,
         taskIds: ["PRJ-001-T3", "PRJ-001-T4"],
+        responsibleId: "emp-001",
+        responsibleName: "Amara Okafor",
+        riskIds: ["RISK-002"],
       },
       {
         id: "PRJ-001-M3",
         name: "Go-live",
         date: "2026-09-30",
+        status: "not_started",
+        percentComplete: 0,
         reached: false,
         taskIds: ["PRJ-001-T6"],
+        responsibleId: "emp-001",
+        responsibleName: "Amara Okafor",
+        riskIds: ["RISK-003"],
       },
     ],
     allocations: [
@@ -304,5 +338,216 @@ export const DEMO_TIMESHEETS: TimesheetEntry[] = [
     hours: 4,
     notes: "Contractor walkthrough",
     status: "submitted",
+  },
+];
+
+/** §5 — the client's own example rows for the HRIS-2026 project. */
+export const DEMO_PROJECT_RISKS: ProjectRisk[] = [
+  {
+    id: "RISK-001",
+    projectId: "PRJ-001",
+    type: "issue",
+    title: "Vendor selection blocked",
+    ownerId: "emp-002",
+    ownerName: "Daniel Reyes",
+    impact: "high",
+    status: "open",
+    dueDate: "2026-09-01",
+    createdAt: "2026-08-01",
+    relatedTaskIds: ["PRJ-001-T2"],
+  },
+  {
+    id: "RISK-002",
+    projectId: "PRJ-001",
+    type: "risk",
+    title: "Data migration delay",
+    ownerId: "emp-003",
+    ownerName: "Priya Nair",
+    impact: "high",
+    status: "monitoring",
+    dueDate: "2026-09-10",
+    createdAt: "2026-07-15",
+    relatedTaskIds: ["PRJ-001-T3"],
+    relatedMilestoneIds: ["PRJ-001-M2"],
+  },
+  {
+    id: "RISK-003",
+    projectId: "PRJ-001",
+    type: "risk",
+    title: "Training readiness",
+    ownerId: "emp-001",
+    ownerName: "Amara Okafor",
+    impact: "medium",
+    status: "open",
+    dueDate: "2026-09-15",
+    createdAt: "2026-08-05",
+    relatedTaskIds: ["PRJ-001-T6"],
+    relatedMilestoneIds: ["PRJ-001-M3"],
+  },
+];
+
+/** §11 — one seeded document per suggested category, for HRIS-2026. */
+export const DEMO_PROJECT_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: "PDOC-001",
+    projectId: "PRJ-001",
+    name: "HRIS-2026 Project Charter",
+    fileType: "pdf",
+    category: "charter",
+    fileSize: 512_000,
+    uploadedAt: "2026-01-15",
+    uploadedBy: "Amara Okafor",
+  },
+  {
+    id: "PDOC-002",
+    projectId: "PRJ-001",
+    name: "Business Requirements Document v2",
+    fileType: "docx",
+    category: "business_requirements",
+    fileSize: 890_000,
+    uploadedAt: "2026-02-10",
+    uploadedBy: "Amara Okafor",
+  },
+  {
+    id: "PDOC-003",
+    projectId: "PRJ-001",
+    name: "Payroll Process Map",
+    fileType: "pdf",
+    category: "process_maps",
+    fileSize: 340_000,
+    uploadedAt: "2026-02-20",
+    uploadedBy: "Daniel Reyes",
+  },
+  {
+    id: "PDOC-004",
+    projectId: "PRJ-001",
+    name: "Data Migration Plan",
+    fileType: "docx",
+    category: "data_migration_plan",
+    fileSize: 610_000,
+    uploadedAt: "2026-03-25",
+    uploadedBy: "Priya Nair",
+  },
+  {
+    id: "PDOC-005",
+    projectId: "PRJ-001",
+    name: "Payroll Integration Specification",
+    fileType: "pdf",
+    category: "payroll_integration_spec",
+    fileSize: 720_000,
+    uploadedAt: "2026-04-10",
+    uploadedBy: "Daniel Reyes",
+  },
+  {
+    id: "PDOC-006",
+    projectId: "PRJ-001",
+    name: "UAT Plan",
+    fileType: "docx",
+    category: "uat_plan",
+    fileSize: 280_000,
+    uploadedAt: "2026-06-01",
+    uploadedBy: "Priya Nair",
+  },
+  {
+    id: "PDOC-007",
+    projectId: "PRJ-001",
+    name: "Training Plan",
+    fileType: "docx",
+    category: "training_plan",
+    fileSize: 300_000,
+    uploadedAt: "2026-06-15",
+    uploadedBy: "Amara Okafor",
+  },
+  {
+    id: "PDOC-008",
+    projectId: "PRJ-001",
+    name: "Go-Live Checklist",
+    fileType: "pdf",
+    category: "go_live_checklist",
+    fileSize: 180_000,
+    uploadedAt: "2026-07-01",
+    uploadedBy: "Amara Okafor",
+  },
+  {
+    id: "PDOC-009",
+    projectId: "PRJ-001",
+    name: "Risk Register",
+    fileType: "pdf",
+    category: "risk_register",
+    fileSize: 210_000,
+    uploadedAt: "2026-08-01",
+    uploadedBy: "Amara Okafor",
+  },
+  {
+    id: "PDOC-010",
+    projectId: "PRJ-001",
+    name: "August Status Report",
+    fileType: "pdf",
+    category: "status_report",
+    fileSize: 150_000,
+    uploadedAt: "2026-08-31",
+    uploadedBy: "Amara Okafor",
+  },
+  {
+    id: "PDOC-011",
+    projectId: "PRJ-001",
+    name: "Vendor Contract — HRIS Platform Co.",
+    fileType: "pdf",
+    category: "vendor_contract",
+    fileSize: 950_000,
+    uploadedAt: "2026-03-20",
+    uploadedBy: "Daniel Reyes",
+  },
+];
+
+/**
+ * §14 — 25 items across 5 categories, 18 done, calibrated to the client's
+ * own stated example: "Go-live readiness: 72%".
+ */
+let goLiveIdCounter = 0;
+function goLiveItem(
+  category: GoLiveCategory,
+  label: string,
+  done: boolean,
+): GoLiveChecklistItem {
+  goLiveIdCounter += 1;
+  return { id: `GL-${goLiveIdCounter}`, category, label, done };
+}
+
+export const DEMO_GO_LIVE_CHECKLISTS: GoLiveChecklist[] = [
+  {
+    projectId: "PRJ-001",
+    items: [
+      // People — 4/5 done
+      goLiveItem("people", "Super-users identified per department", true),
+      goLiveItem("people", "Training sessions completed", true),
+      goLiveItem("people", "Support roster confirmed for go-live week", true),
+      goLiveItem("people", "Change communications sent to all staff", true),
+      goLiveItem("people", "Manager sign-off on team readiness", false),
+      // Data — 4/5 done
+      goLiveItem("data", "Data migration mapping signed off", true),
+      goLiveItem("data", "Trial migration reconciliation passed", true),
+      goLiveItem("data", "Historical payroll data validated", true),
+      goLiveItem("data", "Data cleansing completed", true),
+      goLiveItem("data", "Final cutover migration rehearsed", false),
+      // Systems — 3/5 done
+      goLiveItem("systems", "Payroll integration tested end-to-end", true),
+      goLiveItem("systems", "Performance / load testing passed", true),
+      goLiveItem("systems", "Production environment provisioned", true),
+      goLiveItem("systems", "Security review passed", false),
+      goLiveItem("systems", "Monitoring & alerting configured", false),
+      // Compliance — 3/5 done
+      goLiveItem("compliance", "DPIA completed and approved", true),
+      goLiveItem("compliance", "Statutory reporting validated", true),
+      goLiveItem("compliance", "Audit trail configured", true),
+      goLiveItem("compliance", "Data retention policy signed off", false),
+      goLiveItem("compliance", "Regulator notification (if required) sent", false),
+      // Support — 4/5 done
+      goLiveItem("support", "Helpdesk scripts published", true),
+      goLiveItem("support", "Escalation path defined", true),
+      goLiveItem("support", "Hypercare plan approved", true),
+      goLiveItem("support", "Knowledge base articles published", true),
+      goLiveItem("support", "Post-go-live review scheduled", false),
+    ],
   },
 ];

@@ -28,6 +28,7 @@ import { buildClearanceItems } from "@/src/components/hr/offboarding/instantiate
 import { SendKudosModal } from "@/src/components/hr/kudos/components/send-kudos-modal";
 import type { NewKudos } from "@/src/components/hr/kudos/types";
 import type { OffboardingRecord } from "@/src/lib/types/offboarding";
+import type { ExitDetails } from "./components/employee-row-actions";
 
 /** Query-param value → the display value `toEmployeeRow` puts on the row. */
 const WORK_MODE_PARAM_TO_ROW: Record<string, string> = {
@@ -214,9 +215,13 @@ export function EmployeesPage() {
   /**
    * Exit Employee — creates a pending record on the Offboarding pipeline and
    * moves the employee to the Offboarding Notice tab (client feedback §1.2).
+   * The reason and last working date come from the "Start Offboarding"
+   * dialog rather than being assumed, since every exit initiated from here
+   * used to be silently recorded as a same-day resignation regardless of the
+   * truth, corrupting offboarding's exit-reason reporting.
    */
   const handleExit = useCallback(
-    (e: EmployeeRow) => {
+    (e: EmployeeRow, details: ExitDetails) => {
       const id = `off-${Date.now()}`;
       const record: OffboardingRecord = {
         id,
@@ -225,8 +230,8 @@ export function EmployeesPage() {
         employeeInitials: e.initials,
         jobTitle: e.jobTitle,
         department: e.department,
-        lastWorkingDate: new Date().toISOString().slice(0, 10),
-        exitReason: "resignation",
+        lastWorkingDate: details.lastWorkingDate,
+        exitReason: details.exitReason,
         status: "pending",
         clearanceItems: buildClearanceItems(id),
         exitInterviewCompleted: false,

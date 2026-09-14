@@ -39,16 +39,14 @@ const CLOCK_IN = clockIn({
   at: at(9),
   location: "office",
   locationName: "Desk 14",
-  bookingId: "LB-1",
   logId: "ATT-1",
 });
 
 describe("punch state machine", () => {
-  it("opens a session on clock-in, carrying the booking it was made against", () => {
+  it("opens a session on clock-in", () => {
     const s = run([CLOCK_IN]);
     expect(s.state).toBe("clocked_in");
     expect(s.clockInAt).toBe(at(9));
-    expect(s.bookingId).toBe("LB-1");
     expect(s.logId).toBe("ATT-1");
   });
 
@@ -292,34 +290,5 @@ describe("time-log integration", () => {
     // Both the fixture history and today's fresh punch are inside the window —
     // the bug this replaced anchored on wall-clock today and showed neither.
     expect(visible.map((r) => r.date).sort()).toEqual(["2025-11-14", DATE]);
-  });
-});
-
-describe("location booking integration", () => {
-  it("a desk booked from the clock appears in the bookings collection", () => {
-    const edits = collectionReducer(
-      undefined,
-      addRecord({
-        key: "locationBookings",
-        record: {
-          id: "LB-9",
-          employeeId: EMP,
-          locationType: "desk",
-          locationName: "Desk 14",
-          date: DATE,
-          startTime: "09:00",
-          endTime: "17:30",
-          status: "confirmed",
-          notes: "Booked from the attendance clock",
-        },
-      }),
-    );
-    const merged = applyCollection([], "locationBookings", edits);
-    expect(merged).toHaveLength(1);
-    expect(merged[0]).toMatchObject({
-      locationName: "Desk 14",
-      locationType: "desk",
-      status: "confirmed",
-    });
   });
 });

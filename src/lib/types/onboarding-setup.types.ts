@@ -11,7 +11,7 @@ export interface CompanyProfile {
 export interface OrganizationConfig {
   managerTitle: string;
   departmentLabel: string;
-  structureType: "hierarchical" | "flat";
+  structureType: "hierarchical" | "flat" | "matrix";
 }
 
 export type AccessControlModel = "RBAC" | "PERMISSION" | "HYBRID";
@@ -125,12 +125,46 @@ export const COMPANY_SIZES = [
 ];
 
 export const AVAILABLE_MODULES = [
-  { id: "employee-management", label: "Employee Management" },
-  { id: "attendance", label: "Attendance" },
-  { id: "payroll", label: "Payroll" },
-  { id: "leave-management", label: "Leave Management" },
-  { id: "recruitment", label: "Recruitment" },
-  { id: "performance", label: "Performance" },
+  {
+    id: "employee-management",
+    label: "Employee Management",
+    description: "Employee records, onboarding, documents and ESS",
+  },
+  {
+    id: "attendance",
+    label: "Attendance",
+    description: "Time tracking, shifts, GPS attendance and compliance",
+  },
+  {
+    id: "leave-management",
+    label: "Leave Management",
+    description: "Leave requests, approvals and leave balances",
+  },
+  {
+    id: "recruitment",
+    label: "Recruitment",
+    description: "Job requisitions, candidates and hiring pipeline",
+  },
+  {
+    id: "performance",
+    label: "Performance",
+    description: "Goals, appraisals and performance reviews",
+  },
+  {
+    id: "learning",
+    label: "Learning",
+    description: "Training, certifications and development plans",
+  },
+  {
+    id: "payroll",
+    label: "Payroll",
+    description: "Salary processing, taxes and payslips",
+  },
+  {
+    id: "benefits",
+    label: "Benefits",
+    description: "Pension, insurance, allowances and employee wellbeing programmes",
+  },
 ];
 
 export const PERMISSION_OPTIONS = [

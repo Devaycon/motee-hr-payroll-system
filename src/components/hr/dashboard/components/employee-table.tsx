@@ -639,7 +639,7 @@ export function EmployeeTable() {
             <PersonAvatar
               name={row.original.name}
               className="size-7 shrink-0"
-              fallbackClassName="bg-[#4ED251]/10 text-[#4ED251] text-xs font-semibold"
+              fallbackClassName="bg-[#50D34C]/10 text-[#50D34C] text-xs font-semibold"
             />
             <span className="text-sm font-medium text-foreground">
               {row.original.name}
@@ -685,7 +685,7 @@ export function EmployeeTable() {
               variant="outline"
               className={cn("text-xs px-2", {
                 "border-red-500/30 bg-red-500/10 text-red-400": s === "absent",
-                "border-[#ff8b2d]/40 bg-[#ff8b2d]/10 text-[#ff8b2d]":
+                "border-[#FE8F44]/40 bg-[#FE8F44]/10 text-[#FE8F44]":
                   s === "late",
                 "border-primary/30 bg-primary/10 text-primary":
                   s === "on_leave",
@@ -778,7 +778,7 @@ export function EmployeeTable() {
             <PersonAvatar
               name={row.original.name}
               className="size-7 shrink-0"
-              fallbackClassName="bg-[#4ED251]/10 text-[#4ED251] text-xs font-semibold"
+              fallbackClassName="bg-[#50D34C]/10 text-[#50D34C] text-xs font-semibold"
             />
             <span className="text-sm font-medium text-foreground">
               {row.original.name}
@@ -833,9 +833,9 @@ export function EmployeeTable() {
             <Badge
               variant="outline"
               className={cn("text-xs px-2", {
-                "border-[#4ED251]/40 bg-[#4ED251]/10 text-[#4ED251]":
+                "border-[#50D34C]/40 bg-[#50D34C]/10 text-[#50D34C]":
                   s === "approved",
-                "border-[#ff8b2d]/40 bg-[#ff8b2d]/10 text-[#ff8b2d]":
+                "border-[#FE8F44]/40 bg-[#FE8F44]/10 text-[#FE8F44]":
                   s === "pending",
                 "border-red-500/30 bg-red-500/10 text-red-400":
                   s === "rejected",
@@ -1179,26 +1179,26 @@ export function EmployeeTable() {
             <TabsList className="h-8 bg-muted/60 **:data-[slot=badge]:size-4 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 **:data-[slot=badge]:text-[9px]">
               <TabsTrigger
                 value="employees"
-                className="text-xs px-2.5 data-[state=active]:!bg-[#ff8b2d] data-[state=active]:!text-white data-[state=active]:!shadow-none"
+                className="text-xs px-2.5 data-[state=active]:!bg-[#FE8F44] data-[state=active]:!text-white data-[state=active]:!shadow-none"
               >
                 Employees{" "}
                 <Badge variant="secondary">{employeeData.length}</Badge>
               </TabsTrigger>
               <TabsTrigger
                 value="absent"
-                className="text-xs px-2.5 data-[state=active]:!bg-[#ff8b2d] data-[state=active]:!text-white data-[state=active]:!shadow-none"
+                className="text-xs px-2.5 data-[state=active]:!bg-[#FE8F44] data-[state=active]:!text-white data-[state=active]:!shadow-none"
               >
                 Absent <Badge variant="secondary">{absentData.length}</Badge>
               </TabsTrigger>
               <TabsTrigger
                 value="on-leave"
-                className="text-xs px-2.5 data-[state=active]:!bg-[#ff8b2d] data-[state=active]:!text-white data-[state=active]:!shadow-none"
+                className="text-xs px-2.5 data-[state=active]:!bg-[#FE8F44] data-[state=active]:!text-white data-[state=active]:!shadow-none"
               >
                 On Leave <Badge variant="secondary">{onLeaveData.length}</Badge>
               </TabsTrigger>
               <TabsTrigger
                 value="late"
-                className="text-xs px-2.5 data-[state=active]:!bg-[#ff8b2d] data-[state=active]:!text-white data-[state=active]:!shadow-none"
+                className="text-xs px-2.5 data-[state=active]:!bg-[#FE8F44] data-[state=active]:!text-white data-[state=active]:!shadow-none"
               >
                 Late <Badge variant="secondary">{lateData.length}</Badge>
               </TabsTrigger>

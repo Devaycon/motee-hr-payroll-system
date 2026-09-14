@@ -22,8 +22,11 @@ import notificationsReducer from "./notifications-slice";
 import employeesReducer from "./employees-slice";
 import offboardingReducer from "./offboarding-slice";
 import attendanceReducer from "./attendance-slice";
+import presenceCheckReducer from "./presence-check-slice";
 import expensesReducer from "./expenses-slice";
-import dashboardLayoutReducer from "./dashboard-layout-slice";
+import shiftsReducer from "./shifts-slice";
+import benefitPlansReducer from "./benefit-plans-slice";
+import docuSignReducer from "./docu-sign-slice";
 
 export const store = configureStore({
   reducer: {
@@ -50,8 +53,11 @@ export const store = configureStore({
     employees: employeesReducer,
     offboarding: offboardingReducer,
     attendance: attendanceReducer,
+    presenceCheck: presenceCheckReducer,
     expenses: expensesReducer,
-    dashboardLayout: dashboardLayoutReducer,
+    shifts: shiftsReducer,
+    benefitPlans: benefitPlansReducer,
+    docuSign: docuSignReducer,
   },
 });
 

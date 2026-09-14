@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
 import {
   HrStatCardsGrid,
@@ -87,10 +88,14 @@ export function ApprovalsPage({
   variant = "hr",
   basePath = "/hr-action-center/submissions",
 }: ApprovalsPageProps) {
-  useDemoApprovalSeed();
+  const seeding = useDemoApprovalSeed();
   const user = useAppSelector((s) => s.auth.user);
   const requests = useAppSelector((s) => s.approvals.requests);
   const canSubmit = useCan("submissions.queue", "create");
+  // Only while genuinely empty — once anything is seeded (or this isn't the
+  // first mount of the session), never re-show the skeleton on top of data
+  // that's already there.
+  const showSkeleton = seeding && requests.length === 0;
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<ApprovalDocumentType | "all">(
@@ -250,6 +255,20 @@ export function ApprovalsPage({
     ).length;
     return { waitingOnMe, mine, inProgress, approvedThisWeek };
   }, [requests, myEmployeeId, myRoleId, weekAgoMs]);
+
+  if (showSkeleton) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Skeleton className="h-16 w-96" />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   /** Drill-down: opens the queue holding these requests and filters to them. */
   function drillDown(tab: string, filter: ApprovalCardFilter) {

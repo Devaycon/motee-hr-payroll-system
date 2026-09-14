@@ -7,6 +7,8 @@ import { Button } from "@/src/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group";
 import { Switch } from "@/src/components/ui/switch";
 import { Badge } from "@/src/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/src/components/ui/tooltip";
+import { Info } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import {
   updateAccessControlConfig,
@@ -18,21 +20,43 @@ import {
   AccessControlModel,
 } from "@/src/lib/types/onboarding-setup.types";
 
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="More information"
+          >
+            <Info size={13} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{text}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 const ACCESS_CONTROL_OPTIONS = [
   {
     value: "RBAC",
     label: "Role-Based (RBAC)",
-    desc: "Assign permissions through predefined roles",
+    desc: "Users are assigned a role, and permissions are inherited from that role.",
+    badge: "Recommended for most organisations",
   },
   {
     value: "PERMISSION",
     label: "Permission-Based",
-    desc: "Granular control over individual capabilities",
+    desc: "Permissions are assigned individually rather than through roles.",
+    badge: "Advanced security configuration",
   },
   {
     value: "HYBRID",
     label: "Hybrid",
-    desc: "Combine roles and granular permissions",
+    desc: "Start with roles and then add or remove individual permissions.",
+    badge: "Recommended for enterprise organisations",
   },
 ] as const;
 
@@ -77,20 +101,32 @@ export function Step3RolePermissions() {
           onValueChange={handleModelChange}
           className="flex flex-col gap-3 mt-1"
         >
-          {ACCESS_CONTROL_OPTIONS.map(({ value, label, desc }) => (
+          {ACCESS_CONTROL_OPTIONS.map(({ value, label, desc, badge }) => (
             <div
               key={value}
               className="flex items-start gap-3 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors"
             >
               <RadioGroupItem value={value} id={value} className="mt-0.5" />
-              <div className="flex flex-col gap-0.5">
-                <label
-                  htmlFor={value}
-                  className="text-sm font-medium text-foreground cursor-pointer"
-                >
-                  {label}
-                </label>
+              <div className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <label
+                    htmlFor={value}
+                    className="text-sm font-medium text-foreground cursor-pointer"
+                  >
+                    {label}
+                  </label>
+                  <InfoTooltip text={desc} />
+                  {value === "RBAC" && (
+                    <Badge variant="secondary" className="text-[10px]">Recommended default</Badge>
+                  )}
+                  {value === "HYBRID" && (
+                    <Badge className="text-[10px]" style={{ backgroundColor: "rgba(216,90,48,0.12)", color: "#D85A30", borderColor: "rgba(216,90,48,0.3)" }}>
+                      ⭐ Recommended for enterprise
+                    </Badge>
+                  )}
+                </div>
                 <span className="text-xs text-muted-foreground">{desc}</span>
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">{badge}</span>
               </div>
             </div>
           ))}
@@ -99,7 +135,10 @@ export function Step3RolePermissions() {
 
       {(model === "RBAC" || model === "HYBRID") && (
         <div className="flex flex-col gap-3">
-          <Label>Define & Rename Roles</Label>
+          <div className="flex items-center gap-1.5">
+            <Label>Define and rename Roles</Label>
+            <InfoTooltip text="Rename each role to match your organisation's terminology. The permissions attached to a role stay the same — only the label changes." />
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {roles.map((role) => (
               <div key={role.id} className="flex flex-col gap-1">

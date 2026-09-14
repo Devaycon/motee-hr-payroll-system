@@ -111,13 +111,13 @@ export function EventsPage() {
           <TabsList>
             <TabsTrigger
               value="all"
-              className="data-[state=active]:bg-[#ff8b2d]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
+              className="data-[state=active]:bg-[#FE8F44]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
             >
               All Events
             </TabsTrigger>
             <TabsTrigger
               value="breakdown"
-              className="data-[state=active]:bg-[#ff8b2d]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
+              className="data-[state=active]:bg-[#FE8F44]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
             >
               Calendar Breakdown
             </TabsTrigger>

@@ -6,7 +6,6 @@ import {
   Users,
   UserRound,
   Receipt,
-  MapPin,
   FileText,
   GraduationCap,
 } from "lucide-react";
@@ -28,7 +27,6 @@ interface Figures {
   expensesPending: number;
   courses: number;
   tasks: number;
-  bookings: number;
   reports: number;
   years: number;
 }
@@ -40,7 +38,6 @@ const EMPTY: Figures = {
   expensesPending: 0,
   courses: 0,
   tasks: 0,
-  bookings: 0,
   reports: 0,
   years: 0,
 };
@@ -86,10 +83,6 @@ function useMyFigures(): Figures {
       (t) => t.assigneeId === me.id && t.status !== "done" && t.status !== "completed",
     ).length;
 
-    const bookings = (b.locationBookings ?? []).filter(
-      (x) => x.employeeId === me.id && x.status === "confirmed",
-    ).length;
-
     const reports = b.employees.filter((e) => e.managerId === me.id).length;
 
     const ref = b._meta?.referenceDate ? new Date(b._meta.referenceDate) : new Date();
@@ -104,7 +97,6 @@ function useMyFigures(): Figures {
       expensesPending,
       courses,
       tasks,
-      bookings,
       reports,
       years,
     };
@@ -154,14 +146,6 @@ export function MyProfileStats() {
       value: f.tasks,
       sub: "Assigned to me",
       link: "/employee/tasks",
-    },
-    {
-      icon: MapPin,
-      label: "Location Bookings",
-      value: f.bookings,
-      sub: "Confirmed bookings",
-      // No standalone bookings page — deep-link the profile module that owns it.
-      link: "/profile/my-profile?module=bookings",
     },
     {
       icon: Users,

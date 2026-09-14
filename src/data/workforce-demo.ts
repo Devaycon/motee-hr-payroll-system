@@ -40,7 +40,7 @@ export const TURNOVER_PERIODS: TurnoverPeriod[] = [
 ];
 
 export const TURNOVER_CHART_CONFIG = {
-  voluntary:   { label: "Voluntary",   color: "#ff8b2d" },
+  voluntary:   { label: "Voluntary",   color: "#FE8F44" },
   involuntary: { label: "Involuntary", color: "var(--primary)" },
 } as const;
 

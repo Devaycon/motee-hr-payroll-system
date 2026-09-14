@@ -74,13 +74,16 @@ export function GrievancePage() {
       id: generateId(),
       caseNumber: generateCaseNumber(),
       complaintType: d.complaintType,
+      employeeId: d.employeeId,
       employeeName: d.employeeName,
-      employeeInitials: d.employeeName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2),
+      employeeInitials:
+        d.employeeInitials ??
+        d.employeeName
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2),
       employeeDept: d.employeeDept,
       dateRaised: today,
       incidentDate: d.incidentDate,

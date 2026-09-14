@@ -63,6 +63,7 @@ function toEmployeeRow(
     jobTitle: emp.jobTitle,
     employmentType: employmentTypeFromName(empTypeName),
     status: mapStatus(emp.status),
+    onboardingMethod: emp.onboardingMethod,
     startDate: emp.startDate,
     salary: emp.salary?.amount ?? 0,
     managerId: emp.managerId,

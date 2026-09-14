@@ -9,6 +9,7 @@ import {
   Layers,
   User,
   ShieldCheck,
+  MapPin,
 } from "lucide-react";
 import {
   Dialog,
@@ -17,6 +18,7 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { Badge } from "@/src/components/ui/badge";
+import { MapsLink } from "@/src/components/shared/maps-link";
 import { ACTION_TYPE_CONFIG, MODULE_LABELS } from "../data";
 import type { AuditEntry } from "../types";
 
@@ -174,6 +176,15 @@ export function ActivityDetailModal({
                   </p>
                 </div>
               </div>
+              {entry.location && (
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground">Location</p>
+                    <MapsLink address={entry.location} className="font-medium" />
+                  </div>
+                </div>
+              )}
               <div className="flex items-start gap-3">
                 <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <div>

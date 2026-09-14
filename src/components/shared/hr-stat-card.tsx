@@ -135,7 +135,7 @@ export function HrStatCard({ stat }: HrStatCardProps) {
               className={cn(
                 "shrink-0 text-[10px] px-1.5 py-0 font-medium gap-0.5",
                 stat.up
-                  ? "border-[#4ED251]/40 bg-[#4ED251]/10 text-[#4ED251]"
+                  ? "border-[#50D34C]/40 bg-[#50D34C]/10 text-[#50D34C]"
                   : "border-orange-600/50 bg-orange-600/5 text-red-600",
               )}
             >

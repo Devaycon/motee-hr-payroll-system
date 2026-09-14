@@ -249,8 +249,9 @@ function BulkFieldsEditModal({
 }) {
   const dispatch = useAppDispatch();
   const actorName = useAppSelector((s) => s.auth.user?.name) ?? "HR";
+  const country = useAppSelector((s) => s.locale.country);
   const branches = useBranchOptions();
-  const allFields = getEmployeeProfileFields(employee, branches);
+  const allFields = getEmployeeProfileFields(employee, branches, country);
   const fields = groups ? allFields.filter((f) => groups.includes(f.group)) : allFields;
 
   const [values, setValues] = useState<Record<string, string>>({});
@@ -611,6 +612,7 @@ export function ProfileFieldsEditor({
   const dispatch = useAppDispatch();
   const actorName = useAppSelector((s) => s.auth.user?.name) ?? "HR";
   const actorId = useAppSelector((s) => s.auth.user?.employeeId);
+  const country = useAppSelector((s) => s.locale.country);
   const requests = useAppSelector((s) =>
     s.profileEdits.requests.filter((r) => r.employeeId === employeeId),
   );
@@ -620,7 +622,7 @@ export function ProfileFieldsEditor({
   const [warnField, setWarnField] = useState<ProfileField | null>(null);
 
   const branches = useBranchOptions();
-  const allFields = getEmployeeProfileFields(employee, branches);
+  const allFields = getEmployeeProfileFields(employee, branches, country);
   const fields = groups ? allFields.filter((f) => groups.includes(f.group)) : allFields;
   const pendingByField = new Set(
     requests.filter((r) => r.status === "pending").map((r) => r.field),

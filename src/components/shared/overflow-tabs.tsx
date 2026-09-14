@@ -139,7 +139,7 @@ export function OverflowTabsList({
           <TabsTrigger
             key={t.value}
             value={t.value}
-            className="flex-none data-[state=active]:bg-[#ff8b2d]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
+            className="flex-none data-[state=active]:bg-[#FE8F44]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
           >
             {t.label}
           </TabsTrigger>
@@ -154,7 +154,7 @@ export function OverflowTabsList({
               >
                 More
                 {overflowBadgeTotal > 0 && (
-                  <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-[#ff8b2d] text-[10px] font-semibold text-white">
+                  <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-[#FE8F44] text-[10px] font-semibold text-white">
                     {overflowBadgeTotal}
                   </span>
                 )}

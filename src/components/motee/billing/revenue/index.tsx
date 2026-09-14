@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { AreaChart, BarChart, ColumnChart } from "@/src/components/shared/charts";
+import { ChartCard, ChartPlaceholder } from "@/src/components/shared/charts";
 import {
   REVENUE_TREND_DATA,
   DEMO_TENANTS,
@@ -33,14 +33,14 @@ const planRevenue = [
     value: DEMO_TENANTS.filter(
       (t) => t.plan === "enterprise" && t.status === "active",
     ).reduce((a, t) => a + t.mrr, 0),
-    fill: "#ff8b2d",
+    fill: "#FE8F44",
   },
   {
     category: "growth",
     value: DEMO_TENANTS.filter(
       (t) => t.plan === "growth" && t.status === "active",
     ).reduce((a, t) => a + t.mrr, 0),
-    fill: "#4ED251",
+    fill: "#50D34C",
   },
   {
     category: "starter",
@@ -50,12 +50,6 @@ const planRevenue = [
     fill: "#6366f1",
   },
 ];
-
-const planRevenueConfig = {
-  enterprise: { label: "Enterprise", color: "#ff8b2d" },
-  growth: { label: "Growth", color: "#4ED251" },
-  starter: { label: "Starter", color: "#6366f1" },
-};
 
 const monthlyBreakdown = REVENUE_TREND_DATA.map((item, i, arr) => {
   const prev = arr[i - 1]?.revenue ?? item.revenue;
@@ -70,8 +64,8 @@ const statCards = [
     sub: `${mrrGrowthUp ? "+" : ""}${mrrGrowth}% vs last month`,
     up: mrrGrowthUp,
     icon: TrendingUp,
-    color: "text-[#ff8b2d]",
-    bg: "bg-[#ff8b2d]/10",
+    color: "text-[#FE8F44]",
+    bg: "bg-[#FE8F44]/10",
   },
   {
     label: "Annual Recurring Revenue",
@@ -79,8 +73,8 @@ const statCards = [
     sub: "Projected based on current MRR",
     up: true,
     icon: DollarSign,
-    color: "text-[#4ED251]",
-    bg: "bg-[#4ED251]/10",
+    color: "text-[#50D34C]",
+    bg: "bg-[#50D34C]/10",
   },
   {
     label: "Avg Revenue per Tenant",
@@ -97,8 +91,8 @@ const statCards = [
     sub: "Enterprise plan",
     up: true,
     icon: DollarSign,
-    color: "text-[#ff8b2d]",
-    bg: "bg-[#ff8b2d]/10",
+    color: "text-[#FE8F44]",
+    bg: "bg-[#FE8F44]/10",
   },
 ];
 
@@ -123,7 +117,7 @@ export function BillingRevenuePage() {
                     {card.value}
                   </p>
                   <div
-                    className={`mt-0.5 flex items-center gap-1 text-xs ${card.up ? "text-[#4ED251]" : "text-red-500"}`}
+                    className={`mt-0.5 flex items-center gap-1 text-xs ${card.up ? "text-[#50D34C]" : "text-red-500"}`}
                   >
                     {card.up ? (
                       <ArrowUp className="h-3 w-3" />
@@ -144,30 +138,13 @@ export function BillingRevenuePage() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
-          <AreaChart
-            title="MRR Trend (12 months)"
-            icon={TrendingUp}
-            money
-            categories={REVENUE_TREND_DATA.map((d) => d.month)}
-            series={[
-              {
-                name: "Revenue",
-                data: REVENUE_TREND_DATA.map((d) => d.revenue),
-                color: "#ff8b2d",
-              },
-            ]}
-          />
+          <ChartCard title="MRR Trend (12 months)" icon={TrendingUp}>
+            <ChartPlaceholder />
+          </ChartCard>
         </div>
-        <ColumnChart
-          title="Revenue by Plan"
-          icon={DollarSign}
-          money
-          categories={planRevenue.map(
-            (p) => planRevenueConfig[p.category as keyof typeof planRevenueConfig]?.label ?? p.category,
-          )}
-          series={[{ name: "MRR", data: planRevenue.map((p) => p.value) }]}
-          colors={planRevenue.map((p) => p.fill)}
-        />
+        <ChartCard title="Revenue by Plan" icon={DollarSign}>
+          <ChartPlaceholder />
+        </ChartCard>
       </div>
 
       <Card>
@@ -199,12 +176,12 @@ export function BillingRevenuePage() {
                 {monthlyBreakdown.map((row, i) => (
                   <tr
                     key={row.month}
-                    className={`hover:bg-muted/40 transition-colors ${i === 0 ? "bg-[#ff8b2d]/5" : ""}`}
+                    className={`hover:bg-muted/40 transition-colors ${i === 0 ? "bg-[#FE8F44]/5" : ""}`}
                   >
                     <td className="px-6 py-3.5 text-sm font-medium text-foreground">
                       {row.month}
                       {i === 0 && (
-                        <span className="ml-2 text-xs text-[#ff8b2d] font-normal">
+                        <span className="ml-2 text-xs text-[#FE8F44] font-normal">
                           Current
                         </span>
                       )}
@@ -217,7 +194,7 @@ export function BillingRevenuePage() {
                         <span className="text-xs text-muted-foreground">—</span>
                       ) : (
                         <span
-                          className={`flex items-center gap-1 text-xs font-medium ${row.changeUp ? "text-[#4ED251]" : "text-red-500"}`}
+                          className={`flex items-center gap-1 text-xs font-medium ${row.changeUp ? "text-[#50D34C]" : "text-red-500"}`}
                         >
                           {row.changeUp ? (
                             <ArrowUp className="h-3 w-3" />
@@ -288,13 +265,9 @@ export function BillingRevenuePage() {
         </Card>
       </div>
 
-      <BarChart
-        title="Monthly Churn Rate (%)"
-        icon={TrendingUp}
-        categories={CHURN_MONTHLY_DATA.map((d) => d.month)}
-        series={[{ name: "Churn Rate", data: CHURN_MONTHLY_DATA.map((d) => d.churnRate) }]}
-        colors={CHURN_MONTHLY_DATA.map(() => "#ef4444")}
-      />
+      <ChartCard title="Monthly Churn Rate (%)" icon={TrendingUp}>
+        <ChartPlaceholder />
+      </ChartCard>
 
       <Card>
         <CardHeader className="pb-3">

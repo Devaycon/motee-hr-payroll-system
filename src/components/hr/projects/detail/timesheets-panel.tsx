@@ -108,7 +108,7 @@ export function TimesheetsPanel({ project }: { project: Project }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border/60 p-3">
+      <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border/60 bg-card p-3">
         <div className="space-y-1.5">
           <Label className="text-xs">Person</Label>
           <Select value={employeeId} onValueChange={setEmployeeId}>
@@ -203,7 +203,7 @@ export function TimesheetsPanel({ project }: { project: Project }) {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border/60">
+        <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
           <div className="flex justify-end border-b border-border/40 bg-muted/30 px-3 py-2">
             <ExportMenu
               name={`${project.code}-timesheets`}

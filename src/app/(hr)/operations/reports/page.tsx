@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import dynamic from "next/dynamic";
 
 export const metadata: Metadata = {
-  title: "Reports & Analytics — Motee HR",
+  title: "Reports — Motee HR",
   description: "",
 };
 

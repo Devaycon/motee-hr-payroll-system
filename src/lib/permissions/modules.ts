@@ -36,6 +36,7 @@ export const ALL_MODULES: ModuleEntry[] = [
   // Employment Management
   { id: "organization.employees",          label: "Employees",                group: "Employment Management", link: "/organization/employees" },
   { id: "organization.employment-types",   label: "Employment Types",         group: "Employment Management", link: "/organization/employment-types" },
+  { id: "organization.benefit-plans",      label: "Benefits",                 group: "Employment Management", link: "/organization/benefit-plans" },
   { id: "organization.eor",                 label: "Employer of Record",       group: "Employment Management", link: "/organization/eor" },
   { id: "organization.employee-checklist", label: "Employee Checklist",       group: "Employment Management", link: "/organization/employee-checklist" },
 
@@ -47,6 +48,7 @@ export const ALL_MODULES: ModuleEntry[] = [
 
   // Talent
   { id: "talent.workforce-requests", label: "Workforce Requests",  group: "Talent", link: "/talent/workforce-requests" },
+  { id: "talent.requisition",  label: "Requisition",              group: "Talent", link: "/talent/requisition" },
   { id: "talent.recruitment",  label: "Recruitment",              group: "Talent", link: "/talent/recruitment" },
   { id: "talent.onboarding",   label: "Onboarding",               group: "Talent", link: "/talent/onboarding" },
   { id: "talent.offboarding",  label: "Offboarding",              group: "Talent", link: "/talent/offboarding" },
@@ -62,7 +64,8 @@ export const ALL_MODULES: ModuleEntry[] = [
   { id: "operations.assets",     label: "Asset Management",       group: "Operations", link: "/operations/assets" },
   { id: "operations.documents",  label: "Documents & Compliance", group: "Operations", link: "/operations/documents" },
   { id: "operations.contracts",  label: "Contracts",              group: "Operations", link: "/operations/contracts" },
-  { id: "operations.reports",    label: "Reports & Analytics",    group: "Operations", link: "/operations/reports" },
+  { id: "operations.reports",    label: "Reports",                group: "Operations", link: "/operations/reports" },
+  { id: "operations.analytics",  label: "Analytics",              group: "Operations", link: "/operations/analytics" },
   { id: "operations.workforce",  label: "Workforce Planning",     group: "Operations", link: "/operations/workforce" },
 
   // Engagement

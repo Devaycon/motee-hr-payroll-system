@@ -15,6 +15,8 @@ import {
   CalendarPlus,
   Clock,
   HeartHandshake,
+  CalendarClock,
+  FileSignature,
   LucideIcon,
 } from "lucide-react";
 
@@ -81,6 +83,12 @@ export const routes: Route[] = [
   },
   {
     group: "Overview",
+    icon: CalendarClock,
+    label: "My Shifts",
+    link: "/time-off/shifts",
+  },
+  {
+    group: "Overview",
     icon: Plane,
     label: "My Leave",
     link: "/time-off/balance",
@@ -102,6 +110,12 @@ export const routes: Route[] = [
     icon: FolderOpen,
     label: "My Documents",
     link: "/employee/documents",
+  },
+  {
+    group: "Overview",
+    icon: FileSignature,
+    label: "Docu-Sign",
+    link: "/sign",
   },
 
   {

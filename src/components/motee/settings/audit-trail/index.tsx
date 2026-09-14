@@ -145,7 +145,7 @@ export function AuditTrailPage() {
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
               tab === t.id
-                ? "bg-background border border-b-background border-border text-[#ff8b2d] -mb-px"
+                ? "bg-background border border-b-background border-border text-[#FE8F44] -mb-px"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -299,7 +299,7 @@ export function AuditTrailPage() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-[#ff8b2d]" /> Audit Log
+              <ClipboardList className="w-5 h-5 text-[#FE8F44]" /> Audit Log
               Detail
             </DialogTitle>
           </DialogHeader>

@@ -145,16 +145,32 @@ export function GanttChart({
 
       <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-4 rounded-sm bg-primary/60" />
-          Task
+          <span className="h-2 w-4 rounded-sm bg-emerald-500/70" />
+          Completed
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-4 rounded-sm bg-rose-500/70" />
-          Critical path
+          <span className="h-2 w-4 rounded-sm bg-primary/60" />
+          In Progress
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-2 w-4 rounded-sm bg-muted-foreground/30" />
+          Not Started
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-4 rounded-sm bg-amber-500/70" />
+          At Risk
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-4 rounded-sm bg-rose-500/70" />
           Blocked
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-4 rounded-sm border border-dashed border-muted-foreground/50 bg-muted-foreground/10" />
+          Cancelled
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Flag className="h-3 w-3 text-rose-500" />
+          Critical path
         </span>
         <span className="flex items-center gap-1.5">
           <Diamond className="h-3 w-3 fill-amber-500 text-amber-500" />
@@ -162,7 +178,7 @@ export function GanttChart({
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border/60">
+      <div className="overflow-x-auto rounded-xl border border-border/60 bg-card">
         <div style={{ minWidth: chartWidth }}>
           {/* Axis */}
           <div className="relative h-7 border-b border-border/60 bg-muted/30">
@@ -192,30 +208,48 @@ export function GanttChart({
                   const blocked = isTaskBlocked(task, tasks);
                   const conflicted = conflictTaskIds.has(task.id);
 
+                  // Status drives the fill color; critical-path membership
+                  // is an orthogonal characteristic of the task, not a
+                  // status, so it's rendered as a flag overlay instead of
+                  // competing for the same color (client feedback §8).
+                  const barColor =
+                    task.status === "cancelled"
+                      ? "border border-dashed border-muted-foreground/50 bg-muted-foreground/10"
+                      : task.status === "completed"
+                        ? "bg-emerald-500/70"
+                        : blocked || task.status === "blocked"
+                          ? "bg-rose-500/70"
+                          : task.status === "at_risk"
+                            ? "bg-amber-500/70"
+                            : task.status === "in_progress"
+                              ? "bg-primary/60"
+                              : "bg-muted-foreground/30"; // not_started
+
                   return (
                     <div
                       key={task.id}
                       className="relative flex h-9 items-center border-b border-border/30 last:border-0 hover:bg-muted/20"
                     >
+                      {isCritical && (
+                        <Flag
+                          className="absolute h-3 w-3 -translate-x-4 text-rose-500"
+                          style={{ left: geometry.left }}
+                        />
+                      )}
                       <div
                         className={cn(
                           "absolute h-4 rounded-sm",
-                          task.status === "completed"
-                            ? "bg-emerald-500/70"
-                            : blocked
-                              ? "bg-muted-foreground/30"
-                              : isCritical
-                                ? "bg-rose-500/70"
-                                : "bg-primary/60",
+                          barColor,
                           conflicted && "ring-2 ring-amber-500/70",
                         )}
                         style={geometry}
-                        title={`${task.name} · ${task.startDate} → ${task.endDate} · ${task.percentComplete}%`}
+                        title={`${task.name} · ${task.startDate} → ${task.endDate} · ${task.percentComplete}%${isCritical ? " · Critical path" : ""}`}
                       >
                         {/* Progress fill inside the bar, so plan and actual
                             are readable in one glance. */}
                         {task.percentComplete > 0 &&
-                          task.status !== "completed" && (
+                          task.status !== "completed" &&
+                          task.status !== "cancelled" && (
                             <div
                               className="h-full rounded-sm bg-foreground/25"
                               style={{ width: `${task.percentComplete}%` }}

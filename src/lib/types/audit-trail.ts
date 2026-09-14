@@ -23,6 +23,8 @@ export interface AuditEntry {
   httpMethod: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   httpStatus: number;
   ipAddress: string;
+  /** City-level place the IP resolved to, for a Google Maps link. */
+  location?: string;
   responseTimeMs: number;
   timestamp: string;
   isSuspicious: boolean;

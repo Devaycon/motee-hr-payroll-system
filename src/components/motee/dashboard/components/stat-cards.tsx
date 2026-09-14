@@ -15,8 +15,8 @@ export function CmsStatCards() {
         <Card key={stat.label} className="transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-[#ff8b2d]/10">
-                <stat.icon className="w-3.5 h-3.5 text-[#ff8b2d]" />
+              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-[#FE8F44]/10">
+                <stat.icon className="w-3.5 h-3.5 text-[#FE8F44]" />
               </div>
               <span className="text-sm font-medium text-muted-foreground">
                 {stat.label}
@@ -49,7 +49,7 @@ export function CmsStatCards() {
                 className={cn(
                   "text-xs px-2 py-0.5 font-medium gap-0.5",
                   stat.up
-                    ? "border-[#4ED251]/40 bg-[#4ED251]/10 text-[#4ED251]"
+                    ? "border-[#50D34C]/40 bg-[#50D34C]/10 text-[#50D34C]"
                     : "border-red-400/30 bg-red-500/10 text-red-500",
                 )}
               >

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import type SignatureCanvasType from "react-signature-canvas";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -15,6 +16,10 @@ import {
   Type,
   Trash2,
   X,
+  Upload,
+  FileUp,
+  Download,
+  FolderInput,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -24,6 +29,8 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { cn } from "@/src/lib/utils";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { queueSignedDocument } from "@/src/lib/stores/docu-sign-slice";
 
 const SignatureCanvas = dynamic(() => import("react-signature-canvas"), {
   ssr: false,
@@ -42,6 +49,12 @@ const INK_COLORS = [
   "#0096c7",
 ];
 
+/** Reference size the on-screen document canvas is laid out at (A4 @ ~72dpi). */
+const DOC_W = 595;
+const DOC_H = 842;
+
+const ACCEPTED_MIME_TYPES = ["application/pdf", "image/png", "image/jpeg"];
+
 interface Annotation {
   id: string;
   type: "signature" | "text";
@@ -49,6 +62,135 @@ interface Annotation {
   y: number;
   dataUrl?: string;
   text?: string;
+}
+
+interface UploadedFile {
+  name: string;
+  mimeType: string;
+  dataUrl: string;
+  bytes: Uint8Array;
+}
+
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const base64 = dataUrl.split(",")[1] ?? "";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function signedFileName(originalName: string, ext: string): string {
+  const base = originalName.replace(/\.[^./]+$/, "");
+  return `${base}-signed.${ext}`;
+}
+
+interface SignedFile {
+  blob: Blob;
+  fileName: string;
+  fileType: "pdf" | "png" | "jpg";
+}
+
+/** Flattens the annotation overlay into the uploaded file itself. PDFs only get
+ * annotations burned onto their first page — the editor doesn't track which
+ * page an annotation belongs to. */
+async function buildSignedFile(
+  file: UploadedFile,
+  annotations: Annotation[],
+): Promise<SignedFile> {
+  if (file.mimeType === "application/pdf") {
+    const pdfDoc = await PDFDocument.load(file.bytes);
+    const page = pdfDoc.getPage(0);
+    const { width: pw, height: ph } = page.getSize();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    for (const ann of annotations) {
+      const px = (ann.x / DOC_W) * pw;
+      const pyTop = (ann.y / DOC_H) * ph;
+      if (ann.type === "signature" && ann.dataUrl) {
+        const png = await pdfDoc.embedPng(dataUrlToBytes(ann.dataUrl));
+        const w = (160 / DOC_W) * pw;
+        const h = (60 / DOC_H) * ph;
+        page.drawImage(png, { x: px, y: ph - pyTop - h, width: w, height: h });
+      } else if (ann.type === "text" && ann.text) {
+        const size = (14 / DOC_H) * ph;
+        page.drawText(ann.text, {
+          x: px,
+          y: ph - pyTop - size,
+          size,
+          font,
+          color: rgb(0.14, 0.2, 0.85),
+        });
+      }
+    }
+
+    const bytes = await pdfDoc.save();
+    return {
+      blob: new Blob([bytes as BlobPart], { type: "application/pdf" }),
+      fileName: signedFileName(file.name, "pdf"),
+      fileType: "pdf",
+    };
+  }
+
+  // Image (PNG/JPG) — composite the annotations onto a canvas.
+  const baseImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = file.dataUrl;
+  });
+
+  const canvas = document.createElement("canvas");
+  canvas.width = baseImg.naturalWidth;
+  canvas.height = baseImg.naturalHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas is not supported in this browser.");
+  ctx.drawImage(baseImg, 0, 0);
+
+  const scaleX = baseImg.naturalWidth / DOC_W;
+  const scaleY = baseImg.naturalHeight / DOC_H;
+
+  for (const ann of annotations) {
+    if (ann.type === "signature" && ann.dataUrl) {
+      const sigImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = ann.dataUrl!;
+      });
+      ctx.drawImage(
+        sigImg,
+        ann.x * scaleX,
+        ann.y * scaleY,
+        160 * scaleX,
+        60 * scaleY,
+      );
+    } else if (ann.type === "text" && ann.text) {
+      ctx.fillStyle = "#2141d1";
+      ctx.font = `${14 * scaleY}px sans-serif`;
+      ctx.fillText(ann.text, ann.x * scaleX, ann.y * scaleY + 14 * scaleY);
+    }
+  }
+
+  const mime = file.mimeType === "image/png" ? "image/png" : "image/jpeg";
+  const ext = mime === "image/png" ? "png" : "jpg";
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error("Failed to export image."))),
+      mime,
+      0.92,
+    );
+  });
+
+  return { blob, fileName: signedFileName(file.name, ext), fileType: ext };
 }
 
 function SignatureModal({
@@ -282,12 +424,66 @@ function DocContent({ fileType, name }: { fileType: string; name: string }) {
   );
 }
 
+function UploadedDocContent({ file }: { file: UploadedFile }) {
+  if (file.mimeType === "application/pdf") {
+    return (
+      <iframe
+        src={file.dataUrl}
+        title={file.name}
+        className="absolute inset-0 w-full h-full border-0"
+      />
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={file.dataUrl}
+      alt={file.name}
+      className="absolute inset-0 w-full h-full object-contain bg-white"
+    />
+  );
+}
+
+function EmptyDocPlaceholder({ onUploadClick }: { onUploadClick: () => void }) {
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-8">
+      <Upload className="w-10 h-10 text-muted-foreground/40" />
+      <p className="text-sm font-medium text-foreground">
+        No document uploaded
+      </p>
+      <p className="text-xs text-muted-foreground max-w-[220px]">
+        Upload a PDF, PNG, or JPG to start signing.
+      </p>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-8 text-xs mt-1"
+        onClick={onUploadClick}
+      >
+        <Upload className="mr-1.5 w-3.5 h-3.5" />
+        Upload Document
+      </Button>
+    </div>
+  );
+}
+
 export function DocuSignPageContent() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
-  const name = searchParams.get("name") ?? "Document";
+  const existingName = searchParams.get("name");
   const fileType = searchParams.get("fileType") ?? "pdf";
   const back = searchParams.get("back") ?? "/operations/documents";
+
+  // Opened from the sidebar with no document context — starts empty and lets
+  // the user upload their own file. Opened from an existing document's "Sign"
+  // action instead, `name` is present and uploading is locked to avoid
+  // clobbering the document already loaded here.
+  const isStandalone = !existingName;
+
+  const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
+  const [busy, setBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -304,8 +500,36 @@ export function DocuSignPageContent() {
     startAnnY: number;
   } | null>(null);
 
-  const docW = (595 * zoom) / 100;
-  const docH = (842 * zoom) / 100;
+  const docName = uploadedFile?.name ?? existingName ?? "Untitled Document";
+  const hasContent = isStandalone ? Boolean(uploadedFile) : true;
+
+  const docW = (DOC_W * zoom) / 100;
+  const docH = (DOC_H * zoom) / 100;
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
+      toast.error("Only PDF, PNG, or JPG files are supported.");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("File is too large (max 15MB).");
+      return;
+    }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const dataUrl = await blobToDataUrl(file);
+    setUploadedFile({ name: file.name, mimeType: file.type, dataUrl, bytes });
+    setAnnotations([]);
+    setSelectedId(null);
+  }
+
+  function removeUploadedFile() {
+    setUploadedFile(null);
+    setAnnotations([]);
+    setSelectedId(null);
+  }
 
   function handleDocClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!textMode) return;
@@ -326,7 +550,7 @@ export function DocuSignPageContent() {
     const id = `ann-${Date.now()}`;
     setAnnotations((prev) => [
       ...prev,
-      { id, type: "signature", x: 595 * 0.3, y: 842 * 0.65, dataUrl },
+      { id, type: "signature", x: DOC_W * 0.3, y: DOC_H * 0.65, dataUrl },
     ]);
     setSelectedId(id);
     toast.success("Signature added — drag to reposition");
@@ -371,6 +595,57 @@ export function DocuSignPageContent() {
     dragState.current = null;
   }
 
+  function triggerDownload(blob: Blob, fileName: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleDownload() {
+    if (!uploadedFile) return;
+    setBusy(true);
+    try {
+      const signed = await buildSignedFile(uploadedFile, annotations);
+      triggerDownload(signed.blob, signed.fileName);
+      toast.success("Signed document downloaded.");
+    } catch {
+      toast.error("Could not generate the signed document.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSaveToCompliance() {
+    if (!uploadedFile) return;
+    setBusy(true);
+    try {
+      const signed = await buildSignedFile(uploadedFile, annotations);
+      const dataUrl = await blobToDataUrl(signed.blob);
+      dispatch(
+        queueSignedDocument({
+          id: `DSF-${Date.now()}`,
+          name: signed.fileName,
+          fileType: signed.fileType,
+          fileSize: signed.blob.size,
+          fileUrl: dataUrl,
+          createdAt: new Date().toISOString(),
+          createdBy: "HR Admin",
+        }),
+      );
+      toast.success('Saved to Documents & Compliance → "docu-sign file"');
+      router.push("/operations/documents");
+    } catch {
+      toast.error("Could not save the signed document.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-background flex flex-col overflow-hidden">
       {/* ── Top Nav ── */}
@@ -383,23 +658,94 @@ export function DocuSignPageContent() {
           Back
         </button>
         <p className="text-sm font-medium text-foreground truncate max-w-xs">
-          {name}
+          {docName}
         </p>
-        <Button
-          size="sm"
-          className="h-8 text-xs gap-1.5"
-          onClick={() => {
-            toast.success("Document signed and saved.");
-            router.push(back);
-          }}
-        >
-          Save &amp; Sign
-        </Button>
+        {isStandalone ? (
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5"
+              disabled={!uploadedFile || busy}
+              onClick={handleDownload}
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download
+            </Button>
+            <Button
+              size="sm"
+              className="h-8 text-xs gap-1.5"
+              disabled={!uploadedFile || busy}
+              onClick={handleSaveToCompliance}
+            >
+              <FolderInput className="w-3.5 h-3.5" />
+              Save to Compliance
+            </Button>
+          </div>
+        ) : (
+          <Button
+            size="sm"
+            className="h-8 text-xs gap-1.5"
+            onClick={() => {
+              toast.success("Document signed and saved.");
+              router.push(back);
+            }}
+          >
+            Save &amp; Sign
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* ── Left Sidebar ── */}
         <div className="w-48 shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto">
+          {/* DOCUMENT */}
+          <div className="px-4 pt-4 pb-4 border-b border-border flex flex-col gap-2">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+              Document
+            </p>
+            {isStandalone ? (
+              uploadedFile ? (
+                <button
+                  onClick={removeUploadedFile}
+                  className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-500/20 transition-colors text-left"
+                >
+                  <X className="w-3.5 h-3.5 shrink-0" />
+                  Remove Document
+                </button>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted/60 transition-colors text-left"
+                >
+                  <FileUp className="w-3.5 h-3.5 text-primary shrink-0" />
+                  Upload PDF or Image
+                </button>
+              )
+            ) : (
+              <button
+                disabled
+                title="Upload is disabled while editing an existing document"
+                className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground opacity-50 cursor-not-allowed text-left"
+              >
+                <FileUp className="w-3.5 h-3.5 shrink-0" />
+                Upload PDF or Image
+              </button>
+            )}
+            {isStandalone && (
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                PDF, PNG, or JPG only.
+              </p>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+
           {/* ANNOTATIONS */}
           <div className="px-4 py-4 border-b border-border flex flex-col gap-2">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
@@ -407,15 +753,17 @@ export function DocuSignPageContent() {
             </p>
             <button
               onClick={() => setSignatureOpen(true)}
-              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted/60 transition-colors text-left"
+              disabled={!hasContent}
+              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted/60 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
             >
               <PenLine className="w-3.5 h-3.5 text-primary shrink-0" />
               Draw Signature
             </button>
             <button
               onClick={() => setTextMode((v) => !v)}
+              disabled={!hasContent}
               className={cn(
-                "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors text-left",
+                "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed",
                 textMode
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border hover:bg-muted/60",
@@ -463,37 +811,43 @@ export function DocuSignPageContent() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Page Nav + Zoom */}
           <div className="flex items-center justify-between px-5 py-2 border-b border-border bg-card shrink-0">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              {[1, 2, 3, 4].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setPage(n)}
-                  className={cn(
-                    "w-6 h-6 rounded text-xs font-medium transition-colors",
-                    page === n
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted text-muted-foreground",
-                  )}
-                >
-                  {n}
-                </button>
-              ))}
-              <button
-                onClick={() => setPage((p) => Math.min(p + 1, 4))}
-                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <span className="text-xs text-muted-foreground ml-1 tabular-nums">
-                {page} / 4
+            {isStandalone ? (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                Page 1
               </span>
-            </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                  className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {[1, 2, 3, 4].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n)}
+                    className={cn(
+                      "w-6 h-6 rounded text-xs font-medium transition-colors",
+                      page === n
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {n}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPage((p) => Math.min(p + 1, 4))}
+                  className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <span className="text-xs text-muted-foreground ml-1 tabular-nums">
+                  {page} / 4
+                </span>
+              </div>
+            )}
 
             <div className="flex items-center gap-1">
               <button
@@ -553,14 +907,24 @@ export function DocuSignPageContent() {
                   ref={docAreaRef}
                   className="relative bg-white shadow-2xl select-none origin-top-left"
                   style={{
-                    width: "595px",
-                    minHeight: "842px",
+                    width: `${DOC_W}px`,
+                    minHeight: `${DOC_H}px`,
                     transform: `scale(${zoom / 100})`,
                     cursor: textMode ? "crosshair" : "default",
                   }}
                   onClick={handleDocClick}
                 >
-                  <DocContent fileType={fileType} name={name} />
+                  {isStandalone ? (
+                    uploadedFile ? (
+                      <UploadedDocContent file={uploadedFile} />
+                    ) : (
+                      <EmptyDocPlaceholder
+                        onUploadClick={() => fileInputRef.current?.click()}
+                      />
+                    )
+                  ) : (
+                    <DocContent fileType={fileType} name={docName} />
+                  )}
 
                   {annotations.map((ann) => (
                     <div

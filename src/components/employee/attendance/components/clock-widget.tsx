@@ -4,9 +4,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Coffee,
+  Loader2,
   LogIn,
   LogOut,
-  MapPin,
   Timer,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -18,7 +18,6 @@ import type {
   ClockState,
   DaySchedule,
 } from "@/src/lib/types/attendance";
-import type { LocaleLocationBooking } from "@/src/lib/types/locale";
 import { secondsToHHMMSS } from "@/src/lib/utils/format-duration";
 import { LOCATION_CONFIG, STATUS_BADGE, STATUS_LABEL } from "./constants";
 import { LocationPicker, type LocationChoice } from "./location-picker";
@@ -29,18 +28,18 @@ interface ClockWidgetProps {
   schedule: DaySchedule | null;
   scheduledHours: number;
   choice: LocationChoice;
-  bookings: LocaleLocationBooking[];
   workedSeconds: number;
   progressPct: number;
   currentBreakSeconds: number;
   todayStatus: AttendanceStatus;
   isLateNow: boolean;
+  /** Awaiting a location reading for the in-flight clock-in. */
+  clockingIn?: boolean;
   onClockIn: () => void;
   onBreakStart: () => void;
   onBreakEnd: () => void;
   onClockOutOpen: () => void;
   onLocationChange: (choice: LocationChoice) => void;
-  onBookDesk: (name: string) => string;
 }
 
 export function ClockWidget({
@@ -49,21 +48,19 @@ export function ClockWidget({
   schedule,
   scheduledHours,
   choice,
-  bookings,
   workedSeconds,
   progressPct,
   currentBreakSeconds,
   todayStatus,
   isLateNow,
+  clockingIn,
   onClockIn,
   onBreakStart,
   onBreakEnd,
   onClockOutOpen,
   onLocationChange,
-  onBookDesk,
 }: ClockWidgetProps) {
   const locationCfg = LOCATION_CONFIG[choice.location];
-  const LocationIcon = choice.bookingId ? MapPin : locationCfg.icon;
   const locationLabel = choice.locationName ?? locationCfg.label;
 
   return (
@@ -157,15 +154,10 @@ export function ClockWidget({
         <Separator />
 
         {clockState === "idle" ? (
-          <LocationPicker
-            choice={choice}
-            bookings={bookings}
-            onChange={onLocationChange}
-            onBookDesk={onBookDesk}
-          />
+          <LocationPicker choice={choice} onChange={onLocationChange} />
         ) : (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <LocationIcon
+            <locationCfg.icon
               className="w-3.5 h-3.5"
               style={{ color: locationCfg.color }}
             />
@@ -181,8 +173,17 @@ export function ClockWidget({
             <Button
               className="flex-1 h-11 text-sm gap-2 bg-[#7F77DD] hover:bg-[#6c64cc] text-white font-semibold"
               onClick={onClockIn}
+              disabled={clockingIn}
             >
-              <LogIn className="w-4 h-4" /> Clock In
+              {clockingIn ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Getting your location…
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4" /> Clock In
+                </>
+              )}
             </Button>
           )}
           {clockState === "clocked_in" && (

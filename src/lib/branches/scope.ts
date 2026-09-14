@@ -24,7 +24,6 @@ const EMPLOYEE_KEYED = [
   "documents",
   "expenses",
   "employmentHistory",
-  "locationBookings",
   "payHistory",
   "dbsChecks",
   "disciplinaries",

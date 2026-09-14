@@ -94,8 +94,8 @@ const VerifyOtpIndex = () => {
         {/* Card body */}
         <div className="flex flex-col items-center px-8 pb-6 gap-6">
           <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#ff8b2d]/10">
-              <ShieldCheck className="h-7 w-7 text-[#ff8b2d]" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FE8F44]/10">
+              <ShieldCheck className="h-7 w-7 text-[#FE8F44]" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-foreground">
@@ -136,7 +136,7 @@ const VerifyOtpIndex = () => {
             )}
 
             {resent && (
-              <p className="text-xs text-[#4ED251] text-center">
+              <p className="text-xs text-[#50D34C] text-center">
                 A new code has been sent to your email.
               </p>
             )}
@@ -144,7 +144,7 @@ const VerifyOtpIndex = () => {
 
           <Button
             size="lg"
-            className="w-fit px-10 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+            className="w-fit px-10 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             disabled={otp.length < TOTAL || loading}
             onClick={handleVerify}
           >

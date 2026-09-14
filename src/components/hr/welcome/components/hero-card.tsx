@@ -32,7 +32,7 @@ export function HeroCard({ dateStr }: HeroCardProps) {
             <div className="flex items-center gap-2 mt-4">
               <Badge
                 variant="outline"
-                className="text-xs border-[#4ED251]/40 bg-[#4ED251]/10 text-[#4ED251]"
+                className="text-xs border-[#50D34C]/40 bg-[#50D34C]/10 text-[#50D34C]"
               >
                 HR Admin
               </Badge>

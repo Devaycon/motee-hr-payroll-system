@@ -18,39 +18,14 @@ import {
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { AreaChart, PieChart } from "@/src/components/shared/charts";
-import {
-  DEMO_INVOICES,
-  DEMO_TENANTS,
-  REVENUE_TREND_DATA,
-} from "@/src/data/motee-demo";
+import { ChartCard, ChartPlaceholder } from "@/src/components/shared/charts";
+import { DEMO_INVOICES } from "@/src/data/motee-demo";
 
 const invoiceStatusStyles: Record<string, string> = {
-  paid: "bg-[#4ED251]/10 text-[#4ED251]",
+  paid: "bg-[#50D34C]/10 text-[#50D34C]",
   pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   overdue: "bg-red-500/10 text-red-600 dark:text-red-400",
 };
-
-const planDistributionData = [
-  {
-    key: "enterprise",
-    label: "Enterprise",
-    value: DEMO_TENANTS.filter((t) => t.plan === "enterprise").length,
-    fill: "#ff8b2d",
-  },
-  {
-    key: "growth",
-    label: "Growth",
-    value: DEMO_TENANTS.filter((t) => t.plan === "growth").length,
-    fill: "#4ED251",
-  },
-  {
-    key: "starter",
-    label: "Starter",
-    value: DEMO_TENANTS.filter((t) => t.plan === "starter").length,
-    fill: "#6366f1",
-  },
-];
 
 const currentMonth = new Date().toISOString().slice(0, 7);
 const currentYear = new Date().getFullYear().toString();
@@ -79,8 +54,8 @@ const statCards = [
     value: `$${revenueThisMonth.toLocaleString()}`,
     sub: "Paid invoices this month",
     icon: TrendingUp,
-    color: "text-[#ff8b2d]",
-    bg: "bg-[#ff8b2d]/10",
+    color: "text-[#FE8F44]",
+    bg: "bg-[#FE8F44]/10",
     link: "/billing/revenue",
   },
   {
@@ -88,8 +63,8 @@ const statCards = [
     value: `$${revenueThisYear.toLocaleString()}`,
     sub: `Year-to-date ${currentYear}`,
     icon: DollarSign,
-    color: "text-[#4ED251]",
-    bg: "bg-[#4ED251]/10",
+    color: "text-[#50D34C]",
+    bg: "bg-[#50D34C]/10",
     link: "/billing/revenue",
   },
   {
@@ -156,7 +131,7 @@ export function BillingOverviewPage() {
           <Card
             key={card.label}
             onClick={() => router.push(card.link)}
-            className="cursor-pointer hover:border-[#ff8b2d]/40 transition-colors"
+            className="cursor-pointer hover:border-[#FE8F44]/40 transition-colors"
           >
             <CardContent className="p-5">
               <div className="flex items-start justify-between gap-2">
@@ -182,28 +157,14 @@ export function BillingOverviewPage() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
-          <AreaChart
-            title="MRR Trend (12 months)"
-            icon={TrendingUp}
-            money
-            categories={REVENUE_TREND_DATA.map((d) => d.month)}
-            series={[
-              {
-                name: "Revenue",
-                data: REVENUE_TREND_DATA.map((d) => d.revenue),
-                color: "#ff8b2d",
-              },
-            ]}
-          />
+          <ChartCard title="MRR Trend (12 months)" icon={TrendingUp}>
+            <ChartPlaceholder />
+          </ChartCard>
         </div>
 
-        <PieChart
-          title="Tenants by Plan"
-          icon={Building2}
-          labels={planDistributionData.map((d) => d.label)}
-          values={planDistributionData.map((d) => d.value)}
-          colors={planDistributionData.map((d) => d.fill)}
-        />
+        <ChartCard title="Tenants by Plan" icon={Building2}>
+          <ChartPlaceholder />
+        </ChartCard>
       </div>
 
       <Card>

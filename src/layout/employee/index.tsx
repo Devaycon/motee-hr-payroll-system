@@ -7,6 +7,7 @@ import { LogoPatternBackground } from "@/src/components/shared/logo-pattern-back
 import { MoteeFollowingPointer } from "@/src/components/shared/motee-following-pointer";
 import { SidebarInset } from "@/src/layout/shared/sidebar-collapse";
 import { useCurrentUser } from "@/src/lib/auth/demo-identity";
+import { PresenceCheckWatcher } from "@/src/components/employee/attendance/presence-check-watcher";
 
 const EmployeeLayout = ({ children }: { children: ReactNode }) => {
   // Resolves (and seeds) the signed-in user so self-service and the admin
@@ -23,6 +24,10 @@ const EmployeeLayout = ({ children }: { children: ReactNode }) => {
           <div className="relative z-10">{children}</div>
         </main>
       </SidebarInset>
+      {/* Mounted once here rather than inside the Attendance page — a
+          presence check should keep firing regardless of which page the
+          employee is on while clocked in. */}
+      <PresenceCheckWatcher />
     </div>
   );
 };

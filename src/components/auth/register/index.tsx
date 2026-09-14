@@ -1,20 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { RegisterForm } from "@/src/components/auth/register-form";
+import { CountrySwitcher } from "@/src/components/auth/country-switcher";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
-import { cn } from "@/src/lib/utils";
 import Image from "next/image";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { loadLocale } from "@/src/lib/stores/locale-slice";
 
 const RegisterIndex = () => {
-  const [country, setCountry] = useState<"ng" | "uk">("ng");
+  const dispatch = useAppDispatch();
+  const country = useAppSelector((s) => s.locale.country);
+
+  useEffect(() => {
+    dispatch(loadLocale(country));
+  }, [country, dispatch]);
 
   return (
     <div
       className="relative min-h-screen flex items-center justify-end overflow-hidden"
       style={{
-        backgroundImage: "url('/login-bg.png')",
+        backgroundImage: "url('/wife-and-daughter.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
@@ -77,24 +84,7 @@ const RegisterIndex = () => {
         <div className="flex items-center justify-between px-6 py-4">
           <div className="hidden md:block" />
           <div className="flex justify-between w-full items-center gap-2">
-            <div className="flex items-center rounded-full border border-border bg-muted p-0.5 gap-0.5">
-              {(["ng", "uk"] as const).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setCountry(key)}
-                  title={key === "ng" ? "Nigeria" : "United Kingdom"}
-                  className={cn(
-                    "flex items-center justify-center w-8 h-7 rounded-full text-base transition-all duration-150 cursor-pointer",
-                    country === key
-                      ? "bg-card shadow-sm"
-                      : "opacity-50 hover:opacity-100",
-                  )}
-                >
-                  {key === "ng" ? "🇳🇬" : "🇬🇧"}
-                </button>
-              ))}
-            </div>
+            <CountrySwitcher />
             <ThemeToggle />
           </div>
         </div>

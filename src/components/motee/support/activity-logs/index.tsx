@@ -152,7 +152,7 @@ export function ActivityLogsPage() {
                   onClick={() => setActiveTab(tab.key)}
                   className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                     activeTab === tab.key
-                      ? "bg-[#ff8b2d] text-white"
+                      ? "bg-[#FE8F44] text-white"
                       : "bg-muted text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -175,7 +175,7 @@ export function ActivityLogsPage() {
                 <select
                   value={sourceFilter}
                   onChange={(e) => setSourceFilter(e.target.value)}
-                  className="rounded-md border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                  className="rounded-md border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
                 >
                   <option value="all">All Sources</option>
                   <option value="cms_operator">CMS Operator</option>
@@ -186,7 +186,7 @@ export function ActivityLogsPage() {
                 <select
                   value={severityFilter}
                   onChange={(e) => setSeverityFilter(e.target.value)}
-                  className="rounded-md border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                  className="rounded-md border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
                 >
                   <option value="all">All Severities</option>
                   <option value="info">Info</option>
@@ -203,8 +203,8 @@ export function ActivityLogsPage() {
             <div className="rounded-lg border border-border bg-muted/30 p-4">
               <div className="flex items-center gap-2 mb-4">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4ED251] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#4ED251]"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#50D34C] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#50D34C]"></span>
                 </span>
                 <p className="text-xs font-medium text-foreground">
                   Live — Last 10 events
@@ -423,8 +423,8 @@ export function ActivityLogsPage() {
                             {selected.before ?? "—"}
                           </p>
                         </div>
-                        <div className="rounded-md bg-[#4ED251]/5 border border-[#4ED251]/20 px-3 py-2">
-                          <p className="text-[10px] text-[#4ED251] font-medium mb-1">
+                        <div className="rounded-md bg-[#50D34C]/5 border border-[#50D34C]/20 px-3 py-2">
+                          <p className="text-[10px] text-[#50D34C] font-medium mb-1">
                             After
                           </p>
                           <p className="text-xs text-foreground font-mono">

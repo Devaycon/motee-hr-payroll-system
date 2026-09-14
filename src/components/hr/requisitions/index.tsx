@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   Plus,
@@ -101,12 +101,13 @@ const LIFECYCLE_STYLES: Record<RequisitionLifecycle, string> = {
 export function RequisitionsPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const country = useAppSelector((s) => s.locale.country);
   const user = useAppSelector((s) => s.auth.user);
   const requisitions = useAppSelector((s) => s.requisitions.byCountry[country]);
   const approvalRequests = useAppSelector((s) => s.approvals.requests);
 
-  const canCreate = useCan("talent.workforce-requests", "create");
+  const canCreate = useCan("talent.requisition", "create");
 
   useEffect(() => {
     const demo = buildRequisitionDemo();
@@ -199,15 +200,37 @@ export function RequisitionsPage() {
   const [detail, setDetail] = useState<Requisition | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [editing, setEditing] = useState<Requisition | null>(null);
+  const [prefillWorkforceRequestId, setPrefillWorkforceRequestId] = useState<
+    string | undefined
+  >(undefined);
 
   function openCreate() {
     setEditing(null);
+    setPrefillWorkforceRequestId(undefined);
     setBuilderOpen(true);
   }
   function openEdit(req: Requisition) {
     setEditing(req);
+    setPrefillWorkforceRequestId(undefined);
     setBuilderOpen(true);
   }
+
+  /**
+   * The Workforce Requests list's "Create requisition" action deep-links here
+   * with the source request's id, so the user doesn't have to re-find and
+   * re-pick the same approved request from the builder's dropdown.
+   */
+  const prefillHandled = useRef(false);
+  useEffect(() => {
+    if (prefillHandled.current) return;
+    const wfrId = searchParams.get("workforceRequest");
+    if (!wfrId) return;
+    prefillHandled.current = true;
+    setEditing(null);
+    setPrefillWorkforceRequestId(wfrId);
+    setBuilderOpen(true);
+    router.replace("/talent/requisition");
+  }, [searchParams, router]);
 
   async function submit(req: Requisition) {
     if (!user) {
@@ -487,9 +510,13 @@ export function RequisitionsPage() {
         open={builderOpen}
         onOpenChange={(v) => {
           setBuilderOpen(v);
-          if (!v) setEditing(null);
+          if (!v) {
+            setEditing(null);
+            setPrefillWorkforceRequestId(undefined);
+          }
         }}
         editing={editing}
+        prefillWorkforceRequestId={prefillWorkforceRequestId}
       />
     </div>
   );

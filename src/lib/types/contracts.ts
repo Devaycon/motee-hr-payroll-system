@@ -39,6 +39,7 @@ export interface Contract {
 	description?: string;
 	contractType: ContractType;
 	status: ContractStatus;
+	employeeId?: string;
 	employeeName: string;
 	employeeInitials: string;
 	department: string;
@@ -64,6 +65,7 @@ export interface NewContract {
 	description?: string;
 	contractType: ContractType;
 	status: ContractStatus;
+	employeeId?: string;
 	employeeName: string;
 	employeeInitials: string;
 	department: string;

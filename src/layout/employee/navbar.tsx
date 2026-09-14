@@ -122,7 +122,7 @@ const Navbar = () => {
               className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-background border border-border text-muted-foreground hover:text-foreground transition-colors"
             >
               <MessageSquare size={16} />
-              <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-[#4ED251] px-1 text-[10px] font-semibold text-white">
+              <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-[#50D34C] px-1 text-[10px] font-semibold text-white">
                 3
               </span>
             </button>
@@ -141,7 +141,7 @@ const Navbar = () => {
               className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-background border border-border text-muted-foreground hover:text-foreground transition-colors"
             >
               <Bell size={16} />
-              <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-[#4ED251] px-1 text-[10px] font-semibold text-white">
+              <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-[#50D34C] px-1 text-[10px] font-semibold text-white">
                 3
               </span>
             </button>

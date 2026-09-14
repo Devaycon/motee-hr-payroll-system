@@ -22,6 +22,7 @@ import {
   Library,
   FileText,
   TrendingUpDown,
+  FileBarChart2,
   BarChart3,
   Bell,
   Award,
@@ -38,10 +39,14 @@ import {
   LucideIcon,
   Hand,
   CheckSquare,
+  Milestone,
   Workflow,
   Stethoscope,
   UserCog,
   FolderKanban,
+  CalendarClock,
+  Gift,
+  FileSignature,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -87,6 +92,13 @@ export const routes: Route[] = [
     badge: 5,
     exact: true,
   },
+  {
+    group: "Overview",
+    icon: Milestone,
+    label: "Employee Lifecycle",
+    link: "/lifecycle",
+    exact: true,
+  },
 
   {
     group: "Workspace",
@@ -121,6 +133,12 @@ export const routes: Route[] = [
     link: "/workspace/projects",
   },
   {
+    group: "Workspace",
+    icon: FileSignature,
+    label: "Docu-Sign",
+    link: "/sign",
+  },
+  {
     group: "Employee Management",
     icon: Users,
     label: "Employees",
@@ -137,6 +155,12 @@ export const routes: Route[] = [
     icon: Layers,
     label: "Employment Types",
     link: "/organization/employment-types",
+  },
+  {
+    group: "Employee Management",
+    icon: Gift,
+    label: "Benefits",
+    link: "/organization/benefit-plans",
   },
     {
     group: "Employee Management",
@@ -245,6 +269,12 @@ export const routes: Route[] = [
   },
   {
     group: "Employee Services",
+    icon: CalendarClock,
+    label: "Shift Scheduling",
+    link: "/time-payroll/shifts",
+  },
+  {
+    group: "Employee Services",
     icon: CalendarDays,
     label: "Leave Management",
     link: "/time-payroll/leave",
@@ -333,11 +363,19 @@ export const routes: Route[] = [
 
   // Reports sat under "Operations" next to Assets and Contracts, which said
   // nothing about what it is. It is the only reporting surface, so it gets
-  // named as one.
+  // named as one. Analytics (charts/KPIs) and Reports (tables/export) used to
+  // be tabs on one page — split into their own modules so each can be gated
+  // and navigated independently.
   {
     group: "Insights",
     icon: TrendingUpDown,
-    label: "Reports & Analytics",
+    label: "Analytics",
+    link: "/operations/analytics",
+  },
+  {
+    group: "Insights",
+    icon: FileBarChart2,
+    label: "Reports",
     link: "/operations/reports",
   },
 

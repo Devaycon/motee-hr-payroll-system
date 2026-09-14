@@ -9,7 +9,6 @@ import {
   Plane,
   Thermometer,
   Clock,
-  MapPin,
   TrendingUp,
   BookOpen,
   GraduationCap,
@@ -37,8 +36,12 @@ import {
   Network,
   FileClock,
   Milestone,
+  Gift,
+  UserCheck,
 } from "lucide-react";
 import { useCan } from "@/src/lib/permissions/use-can";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import type { CountryKey } from "@/src/lib/types/locale";
 import * as Mod from "./modules";
 import type { ModuleProps } from "./modules";
 import { EmployeeDocumentsModule } from "./employee-documents";
@@ -46,6 +49,7 @@ import { ContractsModule } from "./contracts-module";
 import { TeamModule } from "./team-module";
 import { ChangeLogModule } from "./change-log-module";
 import { TimelineModule } from "./timeline-module";
+import { BenefitsModule } from "./benefits-module";
 
 export interface ModuleEntry {
   key: string;
@@ -53,6 +57,8 @@ export interface ModuleEntry {
   group: string;
   icon: LucideIcon;
   permission?: string;
+  /** Restricts the module to one tenant country. Absent = shown for both. */
+  country?: CountryKey;
   Component: ComponentType<ModuleProps>;
 }
 
@@ -72,18 +78,19 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "timeline", label: "Timeline", group: "Profile", icon: Milestone, Component: TimelineModule },
   { key: "job", label: "Job", group: "Profile", icon: BriefcaseBusiness, Component: Mod.JobModule },
   { key: "compensation", label: "Compensation", group: "Profile", icon: Coins, Component: Mod.CompensationModule },
+  { key: "benefits", label: "Benefits", group: "Profile", icon: Gift, Component: BenefitsModule },
   { key: "payslips", label: "Payslips", group: "Profile", icon: Banknote, Component: Mod.PayslipsModule },
   { key: "preferences", label: "Preferences", group: "Profile", icon: Settings2, Component: Mod.PreferencesModule },
   { key: "documents", label: "Employee Documents", group: "Profile", icon: FileText, Component: EmployeeDocumentsModule },
   { key: "contracts", label: "Contracts", group: "Profile", icon: ScrollText, Component: ContractsModule },
   { key: "emergency", label: "Emergency Contact", group: "Profile", icon: Phone, Component: Mod.EmergencyContactModule },
+  { key: "guarantors", label: "Guarantors", group: "Profile", icon: UserCheck, country: "ng", Component: Mod.GuarantorsModule },
   { key: "team", label: "Team & Structure", group: "Profile", icon: Network, Component: TeamModule },
 
   { key: "work-pattern", label: "Work Pattern", group: "Time & Attendance", icon: CalendarClock, Component: Mod.WorkPatternModule },
   { key: "leave", label: "Leave", group: "Time & Attendance", icon: Plane, Component: Mod.LeaveModule },
   { key: "sickness", label: "Sickness", group: "Time & Attendance", icon: Thermometer, Component: Mod.SicknessModule },
-  { key: "time-logs", label: "Time Logs", group: "Time & Attendance", icon: Clock, Component: Mod.TimeLogsModule },
-  { key: "bookings", label: "Location Bookings", group: "Time & Attendance", icon: MapPin, Component: Mod.BookingsModule },
+  { key: "time-logs", label: "Time & Location Logs", group: "Time & Attendance", icon: Clock, Component: Mod.TimeLogsModule },
   { key: "expenses", label: "Expenses", group: "Time & Attendance", icon: Receipt, Component: Mod.ExpensesModule },
 
   { key: "performance", label: "Performance", group: "Growth", icon: TrendingUp, Component: Mod.PerformanceModule },
@@ -123,12 +130,12 @@ export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
   "documents",
   "contracts",
   "emergency",
+  "guarantors",
   "team",
   "work-pattern",
   "leave",
   "sickness",
   "time-logs",
-  "bookings",
   "expenses",
   "performance",
   "learn",
@@ -138,6 +145,7 @@ export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
   "jobs",
   "pay",
   "compensation",
+  "benefits",
   "payslips",
   "assets",
   "dbs",
@@ -154,5 +162,10 @@ export function useVisibleEmployeeModules(): ModuleEntry[] {
     "employee.grievances": useCan("employee.grievances", "view"),
     "employee.notes": useCan("employee.notes", "view"),
   };
-  return EMPLOYEE_MODULES.filter((m) => !m.permission || can[m.permission]);
+  const country = useAppSelector((s) => s.locale.country);
+  return EMPLOYEE_MODULES.filter(
+    (m) =>
+      (!m.permission || can[m.permission]) &&
+      (!m.country || m.country === country),
+  );
 }

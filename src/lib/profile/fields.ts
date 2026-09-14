@@ -1,4 +1,4 @@
-import type { LocaleEmployee } from "@/src/lib/types/locale";
+import type { LocaleEmployee, CountryKey } from "@/src/lib/types/locale";
 import { TITLE_OPTIONS, titlesForGender } from "@/src/lib/constants/titles";
 import {
   DEPARTMENTS,
@@ -20,6 +20,7 @@ export type ProfileFieldGroup =
   | "contact"
   | "address"
   | "emergency"
+  | "guarantors"
   | "bank"
   | "identity"
   | "work"
@@ -52,6 +53,7 @@ export const PROFILE_GROUP_LABELS: Record<ProfileFieldGroup, string> = {
   contact: "Contact",
   address: "Address",
   emergency: "Emergency Contact",
+  guarantors: "Guarantors",
   bank: "Bank Details",
   identity: "Identity Numbers",
   work: "Work Pattern",
@@ -67,6 +69,7 @@ export const PROFILE_GROUP_ORDER: ProfileFieldGroup[] = [
   "contact",
   "address",
   "emergency",
+  "guarantors",
   "bank",
   "identity",
   "work",
@@ -270,6 +273,8 @@ export interface ProfileBranchOption {
 export function getEmployeeProfileFields(
   emp: LocaleEmployee,
   branches: ProfileBranchOption[] = [],
+  /** Tenant country — guarantors are always required for NG, never for UK. */
+  country?: CountryKey,
 ): ProfileField[] {
   const idFields: ProfileField[] = Object.keys(emp.identifiers ?? {}).map((k) => ({
     key: `identifiers.${k}`,
@@ -288,6 +293,18 @@ export function getEmployeeProfileFields(
       { key: `emergencyContacts.${i}.phone`, label: `Contact${n} phone`, group: "emergency", type: "tel" },
     );
   }
+  // Always exactly 2 guarantors for NG employees — a mandatory pair, not an
+  // open-ended list like emergency contacts, so no "+1 spare" slot.
+  const guarantorFields: ProfileField[] =
+    country === "ng"
+      ? [0, 1].flatMap((i) => [
+          { key: `guarantors.${i}.name`, label: `Guarantor ${i + 1} name`, group: "guarantors" as const, type: "text" as const },
+          { key: `guarantors.${i}.relationship`, label: `Guarantor ${i + 1} relationship`, group: "guarantors" as const, type: "text" as const },
+          { key: `guarantors.${i}.address`, label: `Guarantor ${i + 1} address`, group: "guarantors" as const, type: "text" as const },
+          { key: `guarantors.${i}.phone`, label: `Guarantor ${i + 1} phone`, group: "guarantors" as const, type: "tel" as const },
+          { key: `guarantors.${i}.occupation`, label: `Guarantor ${i + 1} occupation`, group: "guarantors" as const, type: "text" as const },
+        ])
+      : [];
   // Eight detailed address blocks (Home, Dependant, Forwarding, Holiday,
   // Relations, Weekday, Weekend, Work). State/Region is a dropdown that depends
   // on each block's own selected country.
@@ -335,7 +352,7 @@ export function getEmployeeProfileFields(
     return f;
   });
 
-  return [...fields, ...addressFields, ...emergencyFields, ...idFields];
+  return [...fields, ...addressFields, ...emergencyFields, ...guarantorFields, ...idFields];
 }
 
 /**
@@ -347,6 +364,7 @@ export function profileFieldGroupOf(key: string): ProfileFieldGroup | null {
   if (key === "photoUrl") return null;
   if (key.startsWith("addresses.") || key.startsWith("address.")) return "address";
   if (key.startsWith("emergencyContacts.")) return "emergency";
+  if (key.startsWith("guarantors.")) return "guarantors";
   if (key.startsWith("identifiers.")) return "identity";
   if (key.startsWith("bankDetails.")) return "bank";
   if (key.startsWith("workPattern.")) return "work";

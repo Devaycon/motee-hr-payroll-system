@@ -3,12 +3,11 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { LoginForm } from "./login-form";
+import { CountrySwitcher } from "./country-switcher";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
-import { cn } from "@/src/lib/utils";
 import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { loadLocale, setCountry } from "@/src/lib/stores/locale-slice";
-import type { CountryKey } from "@/src/lib/types/locale";
+import { loadLocale } from "@/src/lib/stores/locale-slice";
 
 const AuthIndex = () => {
   const dispatch = useAppDispatch();
@@ -22,7 +21,7 @@ const AuthIndex = () => {
     <div
       className="relative min-h-screen flex items-center justify-end overflow-hidden"
       style={{
-        backgroundImage: "url('/wife-bg-v2.png')",
+        backgroundImage: "url('/wife-bg-v3.png')",
         backgroundSize: "cover",
         backgroundPosition: "bottom",
       }}
@@ -87,34 +86,7 @@ const AuthIndex = () => {
           </div>
           <div className="hidden md:block" />
           <div className="flex w-full justify-between items-center gap-2">
-            <div className="flex items-center rounded-full border border-border bg-muted p-0.5 gap-0.5">
-              {(["uk", "ng"] as const).map((key: CountryKey) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => dispatch(setCountry(key))}
-                  title={key === "uk" ? "United Kingdom" : "Nigeria"}
-                  className={cn(
-                    "flex items-center justify-center w-8 h-7 rounded-full transition-all duration-150 cursor-pointer",
-                    country === key
-                      ? "bg-card shadow-sm"
-                      : "opacity-50 hover:opacity-100",
-                  )}
-                >
-                  <Image
-                    src={
-                      key === "uk"
-                        ? "/united-kingdom-flag-icon.png"
-                        : "/nigeria-flag-icon.png"
-                    }
-                    alt={key === "uk" ? "United Kingdom" : "Nigeria"}
-                    width={22}
-                    height={16}
-                    className="rounded-[3px] object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+            <CountrySwitcher />
             <ThemeToggle />
           </div>
         </div>

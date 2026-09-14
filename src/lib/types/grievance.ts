@@ -163,6 +163,8 @@ export interface ERCase {
   evidence: CaseEvidence[];
   // Hearing
   hearingDate?: string;
+  /** Employee ids backing `hearingPanel`, where the members were picked from the directory. */
+  hearingPanelIds?: string[];
   hearingPanel: string[];
   // Outcome
   outcome?: CaseOutcome | string;
@@ -234,7 +236,10 @@ export type AnyCase = ERCase;
 
 export interface NewERCase {
   complaintType: CaseComplaintType;
+  /** §5.7 — links the case to the employee record it concerns. */
+  employeeId?: string;
   employeeName: string;
+  employeeInitials?: string;
   employeeDept: string;
   incidentDate?: string;
   description: string;

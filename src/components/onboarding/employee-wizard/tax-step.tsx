@@ -46,7 +46,7 @@ import {
 
 /** Orange brand active state, matching the convention used across the app's tabs. */
 const TAB_ACTIVE =
-  "flex-1 text-sm gap-2 data-[state=active]:bg-[#ff8b2d]! data-[state=active]:text-white! data-[state=active]:shadow-none!";
+  "flex-1 text-sm gap-2 data-[state=active]:bg-[#FE8F44]! data-[state=active]:text-white! data-[state=active]:shadow-none!";
 
 type YesNo = "yes" | "no" | "";
 

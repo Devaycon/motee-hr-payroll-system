@@ -10,7 +10,6 @@ import {
   DialogFooter,
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Badge } from "@/src/components/ui/badge";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
@@ -22,9 +21,14 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Share2, X, Download, Eye } from "lucide-react";
+import {
+  EmployeePicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
 import type { HRDocument, DocumentPermission, NewShare } from "../types";
 
 const shareSchema = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required." }),
   employeeName: z.string().min(2, { message: "Employee name is required." }),
   employeeInitials: z
     .string()
@@ -39,7 +43,12 @@ type ShareForm = z.infer<typeof shareSchema>;
 type ShareErrors = Partial<Record<keyof ShareForm, string>>;
 
 function getInitialForm(): ShareForm {
-  return { employeeName: "", employeeInitials: "", permission: "view_only" };
+  return {
+    employeeId: "",
+    employeeName: "",
+    employeeInitials: "",
+    permission: "view_only",
+  };
 }
 
 interface ShareModalProps {
@@ -91,6 +100,7 @@ export function ShareModal({
       return;
     }
     onShare(doc.id, {
+      employeeId: form.employeeId,
       employeeName: form.employeeName,
       employeeInitials: form.employeeInitials.toUpperCase(),
       permission: form.permission as DocumentPermission,
@@ -117,37 +127,31 @@ export function ShareModal({
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2 space-y-1.5">
-                <Label htmlFor="emp-name">Employee Name</Label>
-                <Input
-                  id="emp-name"
-                  placeholder="e.g. Fatimah Bello"
-                  value={form.employeeName}
-                  onChange={(e) => set("employeeName", e.target.value)}
+                <Label>Employee</Label>
+                <EmployeePicker
+                  value={form.employeeId || undefined}
+                  placeholder="Search for an employee…"
+                  onChange={(picked: PickedEmployee | null) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      employeeId: picked?.id ?? "",
+                      employeeName: picked?.name ?? "",
+                      employeeInitials: picked?.initials ?? "",
+                    }));
+                    setErrors((e) => ({
+                      ...e,
+                      employeeId: undefined,
+                      employeeName: undefined,
+                    }));
+                  }}
                 />
-                {errors.employeeName && (
+                {(errors.employeeId || errors.employeeName) && (
                   <p className="text-xs text-destructive">
-                    {errors.employeeName}
+                    {errors.employeeId || errors.employeeName}
                   </p>
                 )}
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="emp-initials">Initials</Label>
-                <Input
-                  id="emp-initials"
-                  placeholder="FB"
-                  maxLength={3}
-                  value={form.employeeInitials}
-                  onChange={(e) =>
-                    set("employeeInitials", e.target.value.toUpperCase())
-                  }
-                />
-                {errors.employeeInitials && (
-                  <p className="text-xs text-destructive">
-                    {errors.employeeInitials}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-1.5">
+              <div className="col-span-2 space-y-1.5">
                 <Label>Permission</Label>
                 <Select
                   value={form.permission}

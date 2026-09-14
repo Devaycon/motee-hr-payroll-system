@@ -14,12 +14,14 @@ import {
   toggleMilestone,
 } from "@/src/lib/stores/projects-slice";
 import { cn } from "@/src/lib/utils";
-import { daysBetween, type Project } from "@/src/lib/types/projects";
+import { daysBetween, type Milestone, type Project } from "@/src/lib/types/projects";
+import { MilestoneDetailDialog } from "./milestone-detail-dialog";
 
 export function MilestonesPanel({ project }: { project: Project }) {
   const dispatch = useAppDispatch();
   const [name, setName] = useState("");
   const [date, setDate] = useState(project.endDate);
+  const [detail, setDetail] = useState<Milestone | null>(null);
 
   const today = new Date().toISOString().slice(0, 10);
   const sorted = [...project.milestones].sort((a, b) =>
@@ -43,7 +45,7 @@ export function MilestonesPanel({ project }: { project: Project }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border/60 p-3">
+      <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border/60 bg-card p-3">
         <div className="space-y-1.5">
           <Label className="text-xs">Milestone</Label>
           <Input
@@ -89,24 +91,34 @@ export function MilestonesPanel({ project }: { project: Project }) {
             return (
               <li
                 key={m.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setDetail(m)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setDetail(m);
+                  }
+                }}
                 className={cn(
-                  "flex flex-wrap items-center gap-3 rounded-lg border p-3",
+                  "flex flex-wrap items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/20",
                   overdue
                     ? "border-rose-500/30 bg-rose-500/5"
-                    : "border-border/60",
+                    : "border-border/60 bg-card",
                 )}
               >
                 <button
                   type="button"
                   aria-label={m.reached ? "Mark not reached" : "Mark reached"}
-                  onClick={() =>
+                  onClick={(e) => {
+                    e.stopPropagation();
                     dispatch(
                       toggleMilestone({
                         projectId: project.id,
                         milestoneId: m.id,
                       }),
-                    )
-                  }
+                    );
+                  }}
                 >
                   {m.reached ? (
                     <CircleCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -156,14 +168,15 @@ export function MilestonesPanel({ project }: { project: Project }) {
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 text-destructive"
-                  onClick={() =>
+                  onClick={(e) => {
+                    e.stopPropagation();
                     dispatch(
                       deleteMilestone({
                         projectId: project.id,
                         milestoneId: m.id,
                       }),
-                    )
-                  }
+                    );
+                  }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -172,6 +185,13 @@ export function MilestonesPanel({ project }: { project: Project }) {
           })}
         </ol>
       )}
+
+      <MilestoneDetailDialog
+        open={detail !== null}
+        project={project}
+        milestone={detail}
+        onClose={() => setDetail(null)}
+      />
     </div>
   );
 }

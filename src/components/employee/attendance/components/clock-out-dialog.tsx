@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -20,6 +20,8 @@ interface ClockOutDialogProps {
   noteOut: string;
   onNoteChange: (note: string) => void;
   onConfirm: () => void;
+  /** Awaiting a location reading for the in-flight clock-out. */
+  confirming?: boolean;
 }
 
 export function ClockOutDialog({
@@ -30,6 +32,7 @@ export function ClockOutDialog({
   noteOut,
   onNoteChange,
   onConfirm,
+  confirming,
 }: ClockOutDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,6 +85,7 @@ export function ClockOutDialog({
             size="sm"
             className="text-xs h-8"
             onClick={() => onOpenChange(false)}
+            disabled={confirming}
           >
             Cancel
           </Button>
@@ -89,8 +93,17 @@ export function ClockOutDialog({
             size="sm"
             className="text-xs h-8 bg-red-600 hover:bg-red-700 text-white gap-1.5"
             onClick={onConfirm}
+            disabled={confirming}
           >
-            <LogOut className="w-3.5 h-3.5" /> Confirm Clock Out
+            {confirming ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Getting location…
+              </>
+            ) : (
+              <>
+                <LogOut className="w-3.5 h-3.5" /> Confirm Clock Out
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
