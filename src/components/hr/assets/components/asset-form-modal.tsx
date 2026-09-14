@@ -23,6 +23,10 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import {
+  EmployeePicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
+import {
   ASSET_TYPE_OPTIONS,
   ASSET_TYPE_LABELS,
   ASSET_CONDITION_LABELS,
@@ -73,6 +77,7 @@ const assetSchema = z.object({
     .positive({ message: "Value must be a positive number." })
     .optional()
     .or(z.literal("")),
+  assignedToId: z.string().optional(),
   assignedTo: z.string().optional(),
   assignedToInitials: z
     .string()
@@ -96,6 +101,7 @@ function getInitial(asset: Asset | null): FormData {
       conditionNotes: "",
       purchaseDate: "",
       purchaseValue: "",
+      assignedToId: "",
       assignedTo: "",
       assignedToInitials: "",
       assignedToDepartment: "",
@@ -112,6 +118,7 @@ function getInitial(asset: Asset | null): FormData {
     conditionNotes: asset.conditionNotes ?? "",
     purchaseDate: asset.purchaseDate ?? "",
     purchaseValue: asset.purchaseValue ?? "",
+    assignedToId: asset.assignedToId ?? "",
     assignedTo: asset.assignedTo ?? "",
     assignedToInitials: asset.assignedToInitials ?? "",
     assignedToDepartment: asset.assignedToDepartment ?? "",
@@ -178,6 +185,7 @@ export function AssetFormModal({
       imageUrl: imageUrl || undefined,
       ...(d.status === "assigned"
         ? {
+            assignedToId: d.assignedToId || undefined,
             assignedTo: d.assignedTo || undefined,
             assignedToInitials:
               d.assignedToInitials?.toUpperCase() || undefined,
@@ -424,32 +432,22 @@ export function AssetFormModal({
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="assignedTo">Employee Name</Label>
-                  <Input
-                    id="assignedTo"
-                    placeholder="e.g. Chukwuemeka Okonkwo"
-                    value={form.assignedTo}
-                    onChange={(e) => set("assignedTo", e.target.value)}
+                <div className="col-span-2 space-y-1.5">
+                  <Label>Employee</Label>
+                  <EmployeePicker
+                    value={form.assignedToId || undefined}
+                    placeholder="Search for an employee…"
+                    onChange={(picked: PickedEmployee | null) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        assignedToId: picked?.id ?? "",
+                        assignedTo: picked?.name ?? "",
+                        assignedToInitials: picked?.initials ?? "",
+                        assignedToDepartment:
+                          picked?.department ?? prev.assignedToDepartment,
+                      }));
+                    }}
                   />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="initials">Initials (max 3)</Label>
-                  <Input
-                    id="initials"
-                    placeholder="e.g. CO"
-                    maxLength={3}
-                    value={form.assignedToInitials}
-                    onChange={(e) =>
-                      set("assignedToInitials", e.target.value.toUpperCase())
-                    }
-                  />
-                  {errors.assignedToInitials && (
-                    <p className="text-xs text-destructive">
-                      {errors.assignedToInitials}
-                    </p>
-                  )}
                 </div>
 
                 <div className="space-y-1.5">

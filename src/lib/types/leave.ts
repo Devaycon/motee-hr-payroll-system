@@ -82,6 +82,14 @@ export interface LeaveRequest {
   reason?: string;
   notes?: string;
   /**
+   * Address where the employee can be reached while on leave. Required on
+   * every request going forward; absent on legacy/demo rows created before
+   * this was captured.
+   */
+  contactAddress?: string;
+  /** Phone number where the employee can be reached while on leave. */
+  contactPhone?: string;
+  /**
    * Colleague nominated to cover this employee while they are away
    * (client feedback §3). Optional and purely informational — the relief
    * employee is not asked to accept.
@@ -121,6 +129,10 @@ export interface NewLeaveRequest {
   halfDayPeriod?: "morning" | "afternoon";
   reason?: string;
   notes?: string;
+  /** Address where the employee can be reached while on leave — required. */
+  contactAddress: string;
+  /** Phone number where the employee can be reached while on leave — required. */
+  contactPhone: string;
   reliefEmployeeId?: string;
   reliefEmployeeName?: string;
   documents?: LeaveDocument[];

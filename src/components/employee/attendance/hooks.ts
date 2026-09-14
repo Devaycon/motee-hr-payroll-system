@@ -2,14 +2,13 @@
 
 import { useCallback, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// Self-service shows one person their own record, so it is never narrowed
+// by the admin shell's branch switcher.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { applyCollection } from "@/src/lib/profile/collection-edits";
 import { addRecord, updateRecord } from "@/src/lib/stores/collection-edits-slice";
 import { useMyEmployeeRecord } from "@/src/components/employee/profile/hooks";
-import type {
-  LocaleBundle,
-  LocaleLocationBooking,
-} from "@/src/lib/types/locale";
+import type { LocaleBundle } from "@/src/lib/types/locale";
 import type { AttendanceStatus, DailyEntry } from "@/src/lib/types/attendance";
 import {
   isoDateOf,
@@ -35,6 +34,9 @@ export interface TimeLogRow {
   status: string;
   location?: string;
   source?: string;
+  /** "lat,lng" captured from the device at the moment of clock-in/out. */
+  clockInCoords?: string;
+  clockOutCoords?: string;
 }
 
 /** The employee whose clock this is, plus their contracted pattern. */
@@ -70,54 +72,6 @@ export function useMyTimeLogs(employeeId: string | null) {
 }
 
 /**
- * Location bookings for the logged-in employee, session edits merged in.
- *
- * Read through the same `applyCollection` path as `useEmployeeBookings` so a
- * desk booked from the clock widget shows up on the profile's Location Bookings
- * tab without any further plumbing.
- */
-export function useMyBookings(employeeId: string | null) {
-  const edits = useAppSelector((s) => s.collectionEdits);
-  const { data: bundle, loading, error } = useLocaleSection<LocaleBundle>((b) => b);
-  const data = useMemo<LocaleLocationBooking[] | null>(() => {
-    if (!bundle || !employeeId) return null;
-    return applyCollection(
-      bundle.locationBookings ?? [],
-      "locationBookings",
-      edits,
-    )
-      .filter((b) => b.employeeId === employeeId)
-      .sort((a, b) => b.date.localeCompare(a.date));
-  }, [bundle, edits, employeeId]);
-  return { data, loading, error };
-}
-
-/**
- * Today's *usable* bookings — confirmed, dated today, and somewhere you could
- * actually work from (a parking bay is a booking, but not a place to sit).
- *
- * The demo fixtures are dated mid-2026, so this is routinely empty; the clock
- * widget treats that as the normal case and falls back to the plain location
- * toggle rather than blocking.
- */
-export function useTodayBookings(
-  employeeId: string | null,
-  isoToday: string,
-): LocaleLocationBooking[] {
-  const { data } = useMyBookings(employeeId);
-  return useMemo(
-    () =>
-      (data ?? []).filter(
-        (b) =>
-          b.date === isoToday &&
-          b.status === "confirmed" &&
-          b.locationType !== "parking",
-      ),
-    [data, isoToday],
-  );
-}
-
-/**
  * Writes into the shared `attendance` collection.
  *
  * A day is opened on clock-in (so an in-progress day is visible on the profile
@@ -144,21 +98,6 @@ export function useTimeLogWriter() {
   );
 
   return { openDay, closeDay };
-}
-
-/** Creates a location booking that the profile's Bookings tab will pick up. */
-export function useBookingWriter() {
-  const dispatch = useAppDispatch();
-  return useCallback(
-    (booking: Omit<LocaleLocationBooking, "id">) => {
-      const id = `LB-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      dispatch(
-        addRecord({ key: "locationBookings", record: { ...booking, id } }),
-      );
-      return id;
-    },
-    [dispatch],
-  );
 }
 
 // ── week assembly ───────────────────────────────────────────────────────────

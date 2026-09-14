@@ -2,7 +2,9 @@
 
 import { useMemo } from "react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// User accounts and their roles are a tenant-wide administrative concern, not
+// a per-branch one.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import type { UserAccount } from "@/src/lib/types/users";
 

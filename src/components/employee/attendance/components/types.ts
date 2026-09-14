@@ -21,6 +21,8 @@ export interface ActivityEvent {
   at: string;
   label: string;
   type: "clock_in" | "clock_out" | "break_start" | "break_end";
+  /** "lat,lng" the device reported for this punch, if any. */
+  coords?: string;
 }
 
 /** A day cell in the month calendar. */

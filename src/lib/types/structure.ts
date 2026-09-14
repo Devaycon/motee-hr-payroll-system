@@ -11,6 +11,8 @@ export interface HierarchyNode {
   gender?: string;
   jobTitle: string;
   department: string;
+  /** Site the person sits at, when the tenant has branches. */
+  branchName?: string;
   managerId: string | null;
   managerName?: string;
   status: HierarchyNodeStatus;

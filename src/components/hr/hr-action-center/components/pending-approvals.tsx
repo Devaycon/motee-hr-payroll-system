@@ -93,7 +93,7 @@ export function PendingApprovals({
                     {approved && (
                       <Badge
                         variant="outline"
-                        className="text-[10px] px-1.5 py-0 border-[#4ED251]/40 bg-[#4ED251]/10 text-[#4ED251]"
+                        className="text-[10px] px-1.5 py-0 border-[#50D34C]/40 bg-[#50D34C]/10 text-[#50D34C]"
                       >
                         Approved
                       </Badge>
@@ -117,7 +117,7 @@ export function PendingApprovals({
                     <Button
                       size="icon"
                       variant="outline"
-                      className="size-7 border-[#4ED251]/40 text-[#4ED251] hover:bg-[#4ED251]/10"
+                      className="size-7 border-[#50D34C]/40 text-[#50D34C] hover:bg-[#50D34C]/10"
                       onClick={() => onApproveLeave(leave.id)}
                     >
                       <Check className="size-3.5" />

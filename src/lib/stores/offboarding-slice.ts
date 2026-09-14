@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import type { OffboardingRecord } from "@/src/lib/types/offboarding";
+import type { ClearanceItem, OffboardingRecord } from "@/src/lib/types/offboarding";
 
 /**
  * Offboarding pipeline state (client feedback §2).
@@ -26,6 +26,25 @@ function today(): string {
 
 function find(state: OffboardingState, id: string) {
   return state.records.find((r) => r.id === id);
+}
+
+function isExitInterviewClearanceItem(item: ClearanceItem): boolean {
+  return item.label.toLowerCase().includes("exit interview");
+}
+
+/**
+ * An approved exit moves into `in_progress` as soon as clearance starts, and
+ * to `completed` once every checklist step plus the exit interview are done.
+ * Shared by `toggleClearanceItem` and `updateExitInterview` so both entry
+ * points into "is the exit interview done" resolve status the same way.
+ */
+function recomputeOffboardingStatus(record: OffboardingRecord) {
+  const allDone = record.clearanceItems.every((c) => c.completed);
+  if (allDone && record.exitInterviewCompleted) {
+    record.status = "completed";
+  } else if (record.status === "approved") {
+    record.status = "in_progress";
+  }
 }
 
 const offboardingSlice = createSlice({
@@ -149,14 +168,14 @@ const offboardingSlice = createSlice({
       item.completed = !item.completed;
       item.completedAt = item.completed ? today() : undefined;
 
-      // An approved exit moves into `in_progress` as soon as clearance starts,
-      // and to `completed` once every step plus the exit interview is done.
-      const allDone = record.clearanceItems.every((c) => c.completed);
-      if (allDone && record.exitInterviewCompleted) {
-        record.status = "completed";
-      } else if (record.status === "approved") {
-        record.status = "in_progress";
+      // The exit-interview checklist row and `exitInterviewCompleted` used to
+      // be two independent flags that could disagree — toggling this one and
+      // the Exit Interview tab's own toggle now keep each other in sync.
+      if (isExitInterviewClearanceItem(item)) {
+        record.exitInterviewCompleted = item.completed;
       }
+
+      recomputeOffboardingStatus(record);
     },
 
     updateExitInterview(
@@ -167,6 +186,14 @@ const offboardingSlice = createSlice({
       if (!record) return;
       record.exitInterviewNotes = action.payload.notes;
       record.exitInterviewCompleted = action.payload.completed;
+
+      const step = record.clearanceItems.find(isExitInterviewClearanceItem);
+      if (step && step.completed !== action.payload.completed) {
+        step.completed = action.payload.completed;
+        step.completedAt = action.payload.completed ? today() : undefined;
+      }
+
+      recomputeOffboardingStatus(record);
     },
 
     completeRecord(state, action: PayloadAction<string>) {

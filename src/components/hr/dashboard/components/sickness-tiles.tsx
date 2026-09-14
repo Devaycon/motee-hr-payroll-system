@@ -1,18 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ResponsiveBar } from "@nivo/bar";
+import { ResponsivePie } from "@nivo/pie";
+import { ChevronRight, CalendarClock } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { OH_REFERRALS } from "@/src/data/occupational-health-demo";
 import { OH_FITNESS_LABELS } from "@/src/lib/types/occupational-health";
-import {
-  Tile,
-  TileLabel,
-  TileSub,
-  TileNum,
-  MiniBars,
-  HBars,
-} from "./tiles";
+import { Tile, TileLabel, TileSub, TileNum, HBars } from "./tiles";
+import { ChartCard, HeroRingCard, chartColor, NIVO_THEME } from "@/src/components/shared/charts";
 import { useSickness } from "../hooks";
 
 /**
@@ -142,37 +138,78 @@ export function OhCasesTile() {
 
 export function SicknessTrendTile() {
   const { data, loading } = useSickness();
-  if (loading || !data) return <Skeleton className="h-52 w-full rounded-xl" />;
+  if (loading || !data) return <Skeleton className="h-56 w-full rounded-xl" />;
+
+  if (data.trend.length === 0) {
+    return (
+      <ChartCard
+        title="Sickness trend"
+        description="Days lost"
+        compact
+        viewMoreHref={LEAVE_HREF}
+        className="h-full"
+      >
+        <p className="text-xs text-muted-foreground">No sickness recorded yet.</p>
+      </ChartCard>
+    );
+  }
 
   const total = data.trend.reduce((sum, m) => sum + m.value, 0);
 
   return (
-    <Tile>
-      <TileLabel>Sickness trend</TileLabel>
-      <TileSub>
-        {data.trend.length > 0
-          ? `Days lost · last ${data.trend.length} months`
-          : "Days lost"}
-      </TileSub>
+    <ChartCard
+      title="Sickness trend"
+      description={`Last ${data.trend.length} months`}
+      icon={CalendarClock}
+      compact
+      footer={`${total} days lost over the period`}
+      viewMoreHref={LEAVE_HREF}
+      className="h-full"
+    >
+      <div style={{ height: 140 }}>
+        <ResponsiveBar
+          data={data.trend.map((d) => ({ month: d.month, value: d.value }))}
+          keys={["value"]}
+          indexBy="month"
+          margin={{ top: 8, right: 8, bottom: 24, left: 32 }}
+          padding={0.4}
+          colors={["#f43f5e"]}
+          borderRadius={3}
+          axisTop={null}
+          axisRight={null}
+          axisBottom={{ tickSize: 0, tickPadding: 6 }}
+          axisLeft={{ tickSize: 0, tickPadding: 6, tickValues: 3 }}
+          enableGridY
+          enableLabel={false}
+          theme={NIVO_THEME}
+          motionConfig="gentle"
+        />
+      </div>
+    </ChartCard>
+  );
+}
 
-      {data.trend.length === 0 ? (
-        <p className="mt-3 text-xs text-muted-foreground">
-          No sickness recorded yet.
-        </p>
-      ) : (
-        <>
-          <MiniBars
-            ariaLabel="Sick days lost by month"
-            items={data.trend.map((m) => ({ label: m.month, value: m.value }))}
-          />
-          <p className="mt-3 text-xs text-muted-foreground">
-            {total} days lost over the period
-          </p>
-        </>
-      )}
+/** The Sickness tab's hero card: absence by clinical reason, with the same rings/summary/ranked-breakdown pattern used across the dashboard. */
+export function SicknessHeroRing() {
+  const { data, loading } = useSickness();
+  if (loading || !data) return <Skeleton className="h-64 w-full rounded-xl" />;
+  if (data.byReason.length === 0) return null;
 
-      <TileLink href={LEAVE_HREF}>View leave</TileLink>
-    </Tile>
+  const segments = data.byReason.map((r, i) => ({
+    key: r.label,
+    label: r.label,
+    value: r.value,
+    color: chartColor(i),
+  }));
+
+  return (
+    <HeroRingCard
+      title="Sickness Absence by Reason"
+      description="Days lost by clinical category, last 12 months"
+      segments={segments}
+      totalNoun="sick days"
+      variant="gauge"
+    />
   );
 }
 
@@ -233,22 +270,65 @@ export function OhFitnessTile() {
     }))
     .sort((a, b) => b.value - a.value);
 
-  return (
-    <Tile>
-      <TileLabel>Fitness for work</TileLabel>
-      {/* OH reports fitness and adjustments only — never a diagnosis. */}
-      <TileSub>Open OH cases</TileSub>
-
-      {items.length === 0 ? (
-        <p className="mt-3 text-xs text-muted-foreground">
+  if (items.length === 0) {
+    // OH reports fitness and adjustments only — never a diagnosis.
+    return (
+      <ChartCard
+        title="Fitness for work"
+        description="Open OH cases"
+        compact
+        viewMoreHref={OH_HREF}
+        className="h-full"
+      >
+        <p className="text-xs text-muted-foreground">
           No open occupational health cases.
         </p>
-      ) : (
-        <HBars items={items} fill />
-      )}
+      </ChartCard>
+    );
+  }
 
-      <TileLink href={OH_HREF}>View OH</TileLink>
-    </Tile>
+  const pieData = items.map((item, i) => ({
+    id: item.label,
+    label: item.label,
+    value: item.value,
+    color: chartColor(i),
+  }));
+
+  return (
+    <ChartCard
+      title="Fitness for work"
+      description="Open OH cases"
+      compact
+      viewMoreHref={OH_HREF}
+      className="h-full"
+    >
+      <div style={{ height: 144 }}>
+        <ResponsivePie
+          data={pieData}
+          margin={{ top: 4, right: 8, bottom: 4, left: 8 }}
+          innerRadius={0.55}
+          padAngle={1.5}
+          cornerRadius={3}
+          colors={{ datum: "data.color" }}
+          borderWidth={0}
+          enableArcLinkLabels={false}
+          arcLabelsTextColor="var(--card)"
+          arcLabelsSkipAngle={18}
+          theme={NIVO_THEME}
+          motionConfig="gentle"
+        />
+      </div>
+      {/* Wraps rather than a fixed-width nivo legend, so it never overflows the
+          narrower widths this tile shares a row with. */}
+      <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1">
+        {pieData.map((slice) => (
+          <span key={slice.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="size-2 shrink-0 rounded-full" style={{ background: slice.color }} />
+            {slice.label} ({slice.value})
+          </span>
+        ))}
+      </div>
+    </ChartCard>
   );
 }
 

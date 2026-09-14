@@ -34,7 +34,7 @@ const ForgotPasswordIndex = () => {
     <div
       className="relative min-h-screen flex items-center justify-end overflow-hidden"
       style={{
-        backgroundImage: "url('/wife-bg-v2.png')",
+        backgroundImage: "url('/login-bg.jpeg')",
         backgroundSize: "cover",
         backgroundPosition: "bottom",
       }}

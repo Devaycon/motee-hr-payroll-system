@@ -1,6 +1,18 @@
 "use client";
 
 import type { ReactNode } from "react";
+import {
+  Users,
+  UserPlus,
+  UserMinus,
+  House,
+  Cake,
+  Plane,
+  Thermometer,
+  CircleEllipsis,
+  TrendingDown,
+  type LucideIcon,
+} from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
 import {
@@ -25,8 +37,8 @@ import {
  * own question.
  *
  * Rendered with the dashboard's own `Tile` rather than the app-wide
- * `HrStatCard`: no icon chip and no badge — the label, the number, a delta
- * line and an explicit link to the module that owns the figure.
+ * `HrStatCard`: no badge — the label (with its own icon chip), the number, a
+ * delta line and an explicit link to the module that owns the figure.
  */
 
 /**
@@ -34,16 +46,19 @@ import {
  * scope. `link` names the destination so the drill-down says where it goes
  * rather than a bare "View".
  */
-const HEADINGS: Record<StatCardKey, { label: string; sub: string; link: string }> = {
-  total: { label: "Total employees", sub: "Active", link: "View employees" },
-  "new-hires": { label: "New hires", sub: "This month", link: "View onboarding" },
-  leavers: { label: "Leavers", sub: "This month", link: "View offboarding" },
-  remote: { label: "Remote today", sub: "Working remote", link: "View employees" },
-  birthdays: { label: "Birthdays", sub: "Next 7 days", link: "View calendar" },
-  "annual-leave": { label: "Annual leave", sub: "Requests in the last 12 months", link: "View leave" },
-  "sick-leave": { label: "Sick leave", sub: "Requests in the last 12 months", link: "View leave" },
-  "other-leave": { label: "Other leave", sub: "Requests in the last 12 months", link: "View leave" },
-  turnover: { label: "Turnover rate", sub: "Current quarter", link: "View workforce" },
+const HEADINGS: Record<
+  StatCardKey,
+  { label: string; sub: string; link: string; icon: LucideIcon }
+> = {
+  total: { label: "Total Employees", sub: "Active", link: "View employees", icon: Users },
+  "new-hires": { label: "New Hires", sub: "This month", link: "View onboarding", icon: UserPlus },
+  leavers: { label: "Leavers", sub: "This month", link: "View offboarding", icon: UserMinus },
+  remote: { label: "Remote Today", sub: "Working remote", link: "View employees", icon: House },
+  birthdays: { label: "Birthdays", sub: "Next 7 days", link: "View calendar", icon: Cake },
+  "annual-leave": { label: "Annual Leave", sub: "Requests in the last 12 months", link: "View leave", icon: Plane },
+  "sick-leave": { label: "Sick Leave", sub: "Requests in the last 12 months", link: "View leave", icon: Thermometer },
+  "other-leave": { label: "Other Leave", sub: "Requests in the last 12 months", link: "View leave", icon: CircleEllipsis },
+  turnover: { label: "Turnover Rate", sub: "Current quarter", link: "View workforce", icon: TrendingDown },
 };
 
 export function StatTile({
@@ -76,7 +91,12 @@ export function StatTile({
           the link down and made the tile twice as tall as the People KPIs. */}
       <div className="flex flex-1 gap-3">
         <div className="flex min-w-0 flex-1 flex-col">
-          <TileLabel>{heading.label}</TileLabel>
+          <div className="flex items-center gap-1.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#7F77DD]/10">
+              <heading.icon className="h-5 w-5 text-[#7F77DD]" />
+            </div>
+            <TileLabel>{heading.label}</TileLabel>
+          </div>
           <TileSub>{heading.sub}</TileSub>
           <TileNum>{stat.value}</TileNum>
           {/* One line either way, so a row of tiles stays level: a percentage
@@ -84,7 +104,6 @@ export function StatTile({
               same figure. */}
           {stat.trend ? (
             <TileDelta up={Boolean(stat.up)}>
-              {stat.up ? "+" : "−"}
               {stat.trend} {trendPeriod}
             </TileDelta>
           ) : (

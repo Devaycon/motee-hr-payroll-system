@@ -70,7 +70,7 @@ export function GettingStartedCard({
               className="flex items-center gap-2 group"
             >
               {step.done ? (
-                <CheckCircle2 className="w-4 h-4 text-[#4ED251] shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-[#50D34C] shrink-0" />
               ) : (
                 <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
               )}

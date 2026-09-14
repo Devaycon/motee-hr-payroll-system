@@ -20,7 +20,7 @@ export function PageTabsList({ tabs, className }: PageTabsListProps) {
         <TabsTrigger
           key={tab.value}
           value={tab.value}
-          className="text-sm px-3 data-[state=active]:bg-[#ff8b2d]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
+          className="text-sm px-3 data-[state=active]:bg-[#FE8F44]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
         >
           {tab.label}
         </TabsTrigger>

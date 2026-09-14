@@ -11,7 +11,7 @@ import { GlobalSearch } from "@/src/components/shared/global-search";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, ChevronDown } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -160,11 +160,12 @@ const Navbar = () => {
                     {adminSubtitle}
                   </span>
                 </div>
+                <ChevronDown size={14} className="shrink-0 text-muted-foreground" />
               </div>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-44 p-1.5">
               <button
-                onClick={() => router.push("/admin/settings")}
+                onClick={() => router.push("/organization/company")}
                 className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
               >
                 <User size={14} />

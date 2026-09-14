@@ -20,11 +20,11 @@ import type { TenantPlan, TenantStatus } from "@/src/lib/types/motee.types";
 const planStyles: Record<TenantPlan, string> = {
   starter: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
   growth: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  enterprise: "bg-[#ff8b2d]/10 text-[#ff8b2d]",
+  enterprise: "bg-[#FE8F44]/10 text-[#FE8F44]",
 };
 
 const statusStyles: Record<TenantStatus, string> = {
-  active: "bg-[#4ED251]/10 text-[#4ED251]",
+  active: "bg-[#50D34C]/10 text-[#50D34C]",
   trial: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   suspended: "bg-red-500/10 text-red-600 dark:text-red-400",
 };
@@ -84,7 +84,7 @@ export function AllTenantsPage() {
         </div>
         <Button
           onClick={() => router.push("/tenants/onboard")}
-          className="shrink-0 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white gap-2"
+          className="shrink-0 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white gap-2"
         >
           <Plus className="h-4 w-4" />
           Onboard Tenant
@@ -109,7 +109,7 @@ export function AllTenantsPage() {
               onClick={() => setPlanFilter(tab.key)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors border ${
                 planFilter === tab.key
-                  ? "bg-[#ff8b2d] text-white border-[#ff8b2d]"
+                  ? "bg-[#FE8F44] text-white border-[#FE8F44]"
                   : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
               }`}
             >
@@ -151,13 +151,13 @@ export function AllTenantsPage() {
             <Card
               key={tenant.id}
               onClick={() => router.push(`/tenants/${tenant.id}`)}
-              className="cursor-pointer hover:border-[#ff8b2d]/50 transition-colors group"
+              className="cursor-pointer hover:border-[#FE8F44]/50 transition-colors group"
             >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-10 w-10 rounded-full bg-[#ff8b2d]/10 flex items-center justify-center shrink-0">
-                      <Building2 className="h-5 w-5 text-[#ff8b2d]" />
+                    <div className="h-10 w-10 rounded-full bg-[#FE8F44]/10 flex items-center justify-center shrink-0">
+                      <Building2 className="h-5 w-5 text-[#FE8F44]" />
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-foreground truncate">
@@ -168,7 +168,7 @@ export function AllTenantsPage() {
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1 group-hover:text-[#ff8b2d] transition-colors" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1 group-hover:text-[#FE8F44] transition-colors" />
                 </div>
 
                 <div className="mt-4 flex items-center gap-2 flex-wrap">

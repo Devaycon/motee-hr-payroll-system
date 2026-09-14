@@ -18,15 +18,35 @@ import {
   PROJECT_STATUS_LABELS,
   PROJECT_STATUS_STYLES,
   approvedHours,
+  budgetUtilisationPercent,
   projectProgress,
   projectSpend,
   totalAllocation,
 } from "@/src/lib/types/projects";
+import {
+  computeProjectHealth,
+  criticalPathAlert,
+  nextActions,
+} from "@/src/lib/types/project-insights";
 import { GanttChart } from "../components/gantt-chart";
 import { TasksPanel } from "./tasks-panel";
 import { MilestonesPanel } from "./milestones-panel";
 import { TeamPanel } from "./team-panel";
 import { TimesheetsPanel } from "./timesheets-panel";
+import { RisksPanel } from "./risks-panel";
+import { DocumentsPanel } from "./documents-panel";
+import { GoLivePanel } from "./go-live-panel";
+import { ProjectHealthPanel } from "./project-health";
+import { CriticalPathAlertBanner } from "./critical-path-alert";
+import { ProgressBreakdownStrip } from "./progress-breakdown";
+import { NextActionsPanel } from "./next-actions";
+
+/** Non-zero spend that rounds to 0% still reads as "nothing spent" — show
+    enough precision to be honest about it (client feedback §9). */
+function utilisationLabel(pct: number): string {
+  if (pct === 0) return "0%";
+  return pct < 1 ? `${pct.toFixed(2)}%` : `${Math.round(pct)}%`;
+}
 
 export function ProjectDetail({ projectId }: { projectId: string }) {
   const router = useRouter();
@@ -34,7 +54,11 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   const project = useAppSelector((s) =>
     s.projects.projects.find((p) => p.id === projectId),
   );
+  const allProjects = useAppSelector((s) => s.projects.projects);
   const timesheets = useAppSelector((s) => s.projects.timesheets);
+  const risks = useAppSelector((s) =>
+    s.projects.risks.filter((r) => r.projectId === projectId),
+  );
   // Controlled so each KPI card can open the panel behind its number.
   const [activeTab, setActiveTab] = useState("timeline");
 
@@ -42,6 +66,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     if (!project) return [];
     const spend = projectSpend(project, timesheets);
     const budget = project.budget ?? 0;
+    const completed = project.tasks.filter((t) => t.status === "completed").length;
     const card = (tab: string) => ({
       active: activeTab === tab,
       onClick: () => setActiveTab(tab),
@@ -49,9 +74,13 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     return [
       {
         icon: Target,
-        label: "Progress",
+        label: "Weighted Progress",
         value: `${projectProgress(project)}%`,
-        sub: `${project.tasks.filter((t) => t.status === "completed").length} of ${project.tasks.length} tasks done`,
+        // Raw completed-count fraction shown separately from the weighted %,
+        // so "2 of 6 done" no longer reads as contradicting "49%".
+        sub: `${completed}/${project.tasks.length} tasks complete (${
+          project.tasks.length ? Math.round((completed / project.tasks.length) * 100) : 0
+        }%)`,
         tone: "violet",
         ...card("tasks"),
       },
@@ -76,7 +105,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         label: "Spend",
         value: format(spend, { compact: true }),
         sub: budget
-          ? `${Math.round((spend / budget) * 100)}% of ${format(budget, { compact: true })}`
+          ? `${utilisationLabel(budgetUtilisationPercent(spend, budget))} utilised — ${format(spend)} of ${format(budget)}`
           : "No budget set",
         // Over budget is the one number that should shout.
         tone: budget && spend > budget ? "red" : "amber",
@@ -85,6 +114,19 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
       },
     ];
   }, [project, timesheets, format, activeTab]);
+
+  const health = useMemo(
+    () => (project ? computeProjectHealth(project, timesheets, allProjects) : null),
+    [project, timesheets, allProjects],
+  );
+  const alert = useMemo(
+    () => (project ? criticalPathAlert(project) : null),
+    [project],
+  );
+  const actions = useMemo(
+    () => (project ? nextActions(project) : []),
+    [project],
+  );
 
   if (!project) {
     return (
@@ -141,7 +183,16 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         </div>
       </div>
 
+      {health && <ProjectHealthPanel health={health} />}
+      <CriticalPathAlertBanner
+        alert={alert}
+        onViewTasks={() => setActiveTab("tasks")}
+      />
+
       <HrStatCardsGrid stats={stats} columns={4} />
+
+      <ProgressBreakdownStrip project={project} />
+      <NextActionsPanel actions={actions} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
@@ -154,6 +205,9 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             },
             { value: "team", label: `Team (${project.allocations.length})` },
             { value: "time", label: "Timesheets" },
+            { value: "risks", label: `Risks & Issues (${risks.length})` },
+            { value: "documents", label: "Documents" },
+            { value: "golive", label: "Go-Live Readiness" },
           ]}
         />
 
@@ -180,6 +234,18 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 
         <TabsContent value="time" className="mt-5">
           <TimesheetsPanel project={project} />
+        </TabsContent>
+
+        <TabsContent value="risks" className="mt-5">
+          <RisksPanel project={project} />
+        </TabsContent>
+
+        <TabsContent value="documents" className="mt-5">
+          <DocumentsPanel project={project} />
+        </TabsContent>
+
+        <TabsContent value="golive" className="mt-5">
+          <GoLivePanel project={project} />
         </TabsContent>
       </Tabs>
     </div>

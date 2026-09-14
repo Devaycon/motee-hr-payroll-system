@@ -24,6 +24,10 @@ import { Slider } from "@/src/components/ui/slider";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Separator } from "@/src/components/ui/separator";
 import {
+  EmployeePicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
+import {
   GOAL_CATEGORY_LABELS,
   GOAL_STATUS_LABELS,
   DEPARTMENT_OPTIONS,
@@ -36,6 +40,7 @@ import type {
 } from "../types";
 
 const createSchema = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
   employeeName: z
     .string()
     .min(2, { message: "Name must be at least 2 characters" }),
@@ -66,6 +71,7 @@ interface GoalModalProps {
 }
 
 const defaultForm = {
+  employeeId: "",
   employeeName: "",
   employeeInitials: "",
   department: "",
@@ -93,6 +99,7 @@ export function GoalModal({
     if (open) {
       if (editingGoal) {
         setForm({
+          employeeId: editingGoal.employeeId ?? "",
           employeeName: editingGoal.employeeName,
           employeeInitials: editingGoal.employeeInitials ?? "",
           department: editingGoal.department,
@@ -135,6 +142,7 @@ export function GoalModal({
       return;
     }
     onSave({
+      employeeId: form.employeeId,
       employeeName: form.employeeName,
       employeeInitials: form.employeeInitials,
       department: form.department,
@@ -161,47 +169,35 @@ export function GoalModal({
           <div className="space-y-4 py-1">
             {!isEdit ? (
               <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">
-                      Employee Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      placeholder="Full name"
-                      value={form.employeeName}
-                      onChange={(e) =>
-                        handleField("employeeName", e.target.value)
+                <div className="space-y-1.5">
+                  <Label className="text-xs">
+                    Employee <span className="text-destructive">*</span>
+                  </Label>
+                  <EmployeePicker
+                    value={form.employeeId || undefined}
+                    placeholder="Search for an employee…"
+                    onChange={(picked: PickedEmployee | null) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        employeeId: picked?.id ?? "",
+                        employeeName: picked?.name ?? "",
+                        employeeInitials: picked?.initials ?? "",
+                        department: picked?.department ?? prev.department,
+                      }));
+                      if (errors.employeeId || errors.employeeName) {
+                        setErrors((prev) => ({
+                          ...prev,
+                          employeeId: "",
+                          employeeName: "",
+                        }));
                       }
-                      className="h-8 text-xs"
-                    />
-                    {errors.employeeName && (
-                      <p className="text-[10px] text-destructive">
-                        {errors.employeeName}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">
-                      Initials <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      placeholder="e.g. CO"
-                      value={form.employeeInitials}
-                      onChange={(e) =>
-                        handleField(
-                          "employeeInitials",
-                          e.target.value.toUpperCase().slice(0, 3),
-                        )
-                      }
-                      className="h-8 text-xs"
-                      maxLength={3}
-                    />
-                    {errors.employeeInitials && (
-                      <p className="text-[10px] text-destructive">
-                        {errors.employeeInitials}
-                      </p>
-                    )}
-                  </div>
+                    }}
+                  />
+                  {(errors.employeeId || errors.employeeName) && (
+                    <p className="text-[10px] text-destructive">
+                      {errors.employeeId || errors.employeeName}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">

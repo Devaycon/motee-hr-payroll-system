@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { CalendarRange, Clock, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
-import { ColumnChart, LineChart } from "@/src/components/shared/charts";
+import { ChartCard, ChartPlaceholder } from "@/src/components/shared/charts";
 import type { LocaleWorkPattern } from "@/src/lib/types/locale";
 import {
   contractedWeeklyHours,
@@ -136,60 +136,30 @@ export function InsightsTab({
         ))}
       </div>
 
-      <ColumnChart
+      <ChartCard
         title="Hours worked against contract"
         description={`Weekly totals for the last ${WEEKS} weeks`}
         icon={CalendarRange}
-        categories={weeks.map((w) => w.label)}
-        series={[
-          {
-            name: "Hours worked",
-            data: weeks.map((w) => w.totals.totalHours),
-            color: "#7F77DD",
-          },
-          ...(contracted
-            ? [
-                {
-                  name: "Contracted",
-                  data: weeks.map(() => contracted),
-                  color: "#94a3b8",
-                },
-              ]
-            : []),
-        ]}
-        height={260}
-      />
+      >
+        <ChartPlaceholder height={260} />
+      </ChartCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <LineChart
+        <ChartCard
           title="Punctuality trend"
           description="Share of days you arrived on time"
           icon={TrendingUp}
-          categories={weeks.map((w) => w.label)}
-          series={[
-            {
-              name: "On time",
-              data: weeks.map((w) => w.punctuality),
-              color: "#1D9E75",
-            },
-          ]}
-          height={240}
-        />
+        >
+          <ChartPlaceholder height={240} />
+        </ChartCard>
 
-        <ColumnChart
+        <ChartCard
           title="Overtime by week"
           description="Hours beyond your contracted week"
           icon={Clock}
-          categories={weeks.map((w) => w.label)}
-          series={[
-            {
-              name: "Overtime",
-              data: weeks.map((w) => w.totals.overtimeHours),
-              color: "#ff8b2d",
-            },
-          ]}
-          height={240}
-        />
+        >
+          <ChartPlaceholder height={240} />
+        </ChartCard>
       </div>
     </div>
   );

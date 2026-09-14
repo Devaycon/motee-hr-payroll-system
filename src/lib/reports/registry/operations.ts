@@ -165,7 +165,7 @@ const assetsReport = defineReport<AssetRow>({
         radialSpec(
           "Assignment",
           [
-            { key: "assigned", label: "Assigned", value: assigned, color: "#4ED251" },
+            { key: "assigned", label: "Assigned", value: assigned, color: "#50D34C" },
             {
               key: "unassigned",
               label: "Unassigned",
@@ -263,7 +263,7 @@ const disciplinaryReport = defineReport<DiscRow>({
         lineSpec(
           "Cases by Month",
           months.map((m) => ({ month: monthLabel(m.label), cases: m.value })),
-          [{ key: "cases", label: "Cases", color: "#ff8b2d" }],
+          [{ key: "cases", label: "Cases", color: "#FE8F44" }],
           "month",
           "area",
           { fullWidth: true, description: "Disciplinary case trend over time." },
@@ -271,7 +271,7 @@ const disciplinaryReport = defineReport<DiscRow>({
         radialSpec(
           "Resolution Rate",
           [
-            { key: "resolved", label: "Resolved", value: resolved, color: "#4ED251" },
+            { key: "resolved", label: "Resolved", value: resolved, color: "#50D34C" },
             { key: "active", label: "Active", value: active, color: "#f43f5e" },
           ],
           { centerLabel: "Cases", description: "Resolved vs active caseload." },
@@ -381,7 +381,7 @@ const grievanceReport = defineReport<GrvRow>({
         radialSpec(
           "Resolution Rate",
           [
-            { key: "resolved", label: "Resolved", value: resolved, color: "#4ED251" },
+            { key: "resolved", label: "Resolved", value: resolved, color: "#50D34C" },
             { key: "open", label: "Open", value: open, color: "#f43f5e" },
           ],
           { centerLabel: "Cases", description: "Resolved vs open caseload." },

@@ -19,8 +19,11 @@ import { DocumentDetailModal } from "./components/document-detail-modal";
 import { ShareModal } from "./components/share-modal";
 import { CreateFolderModal } from "./components/create-folder-modal";
 import { FOLDERS as SEED_FOLDERS } from "./data";
-import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppSelector, useAppDispatch } from "@/src/lib/stores/hooks";
+import { dequeueSignedDocument } from "@/src/lib/stores/docu-sign-slice";
 import type { HRDocument, Folder, NewDocument, NewShare } from "./types";
+
+const DOCU_SIGN_FOLDER_ID = "docu-sign-file";
 
 function getDocumentsForFolder(
   folderId: string | null,
@@ -47,8 +50,10 @@ function getDocumentsForFolder(
 
 export function DocumentsPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { data, loading } = useDocuments();
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
+  const signedQueue = useAppSelector((s) => s.docuSign.queue);
 
   const [documents, setDocuments] = useState<HRDocument[]>([]);
   const [folders, setFolders] = useState<Folder[]>(SEED_FOLDERS);
@@ -81,6 +86,58 @@ export function DocumentsPage() {
       });
     }
   }, [data]);
+
+  // Docu-Sign tool saves land here as a queue (it's a separate route/page) —
+  // file each one into the "docu-sign file" folder, then drain the queue so
+  // it isn't re-added on the next mount.
+  useEffect(() => {
+    if (signedQueue.length === 0) return;
+    setFolders((prev) =>
+      prev.some((f) => f.id === DOCU_SIGN_FOLDER_ID)
+        ? prev
+        : [
+            ...prev,
+            {
+              id: DOCU_SIGN_FOLDER_ID,
+              name: "docu-sign file",
+              type: "custom",
+              createdAt: new Date().toISOString().split("T")[0],
+              createdBy: "HR Admin",
+            },
+          ],
+    );
+    setDocuments((prev) => [
+      ...signedQueue.map((q): HRDocument => {
+        const uploadedAt = q.createdAt.split("T")[0];
+        return {
+          id: `DOC-SIGN-${q.id}`,
+          name: q.name,
+          fileType: q.fileType,
+          category: "other",
+          folderId: DOCU_SIGN_FOLDER_ID,
+          fileSize: q.fileSize,
+          uploadedAt,
+          uploadedBy: q.createdBy,
+          isArchived: false,
+          versions: [
+            {
+              id: `V-DOC-SIGN-${q.id}-1`,
+              version: 1,
+              uploadedAt,
+              uploadedBy: q.createdBy,
+              fileSize: q.fileSize,
+              notes: "Signed via Docu-Sign.",
+            },
+          ],
+          shares: [],
+          acknowledgements: [],
+          fileUrl: q.fileUrl,
+        };
+      }),
+      ...prev,
+    ]);
+    signedQueue.forEach((q) => dispatch(dequeueSignedDocument(q.id)));
+  }, [signedQueue, dispatch]);
 
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
@@ -164,6 +221,7 @@ export function DocumentsPage() {
                 ...d.shares,
                 {
                   id: `SH-${docId}-${Date.now()}`,
+                  employeeId: data.employeeId,
                   employeeName: data.employeeName,
                   employeeInitials: data.employeeInitials,
                   permission: data.permission,

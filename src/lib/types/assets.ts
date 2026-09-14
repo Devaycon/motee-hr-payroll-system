@@ -51,6 +51,7 @@ export interface Asset {
   condition: AssetCondition;
   conditionNotes?: string;
   status: AssetStatus;
+  assignedToId?: string;
   assignedTo?: string;
   assignedToInitials?: string;
   assignedToDepartment?: string;
@@ -69,6 +70,7 @@ export interface NewAsset {
   condition: AssetCondition;
   conditionNotes?: string;
   status: AssetStatus;
+  assignedToId?: string;
   assignedTo?: string;
   assignedToInitials?: string;
   assignedToDepartment?: string;

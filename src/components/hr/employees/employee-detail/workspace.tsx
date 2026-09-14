@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ImageUp, Clock } from "lucide-react";
+import { ImageUp, Clock, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -16,6 +16,9 @@ import { personPhotoUrl } from "@/src/lib/utils/avatar";
 import type { EmployeeStats } from "@/src/lib/types/employee-detail";
 import { cn } from "@/src/lib/utils";
 import { leaveTypeTone } from "@/src/lib/utils/active-leave";
+import { employeeStatusLabel, employeeStatusTone } from "@/src/lib/utils/employee-status";
+import { isoDateOf } from "@/src/lib/types/attendance";
+import { resolveShiftForDate } from "@/src/lib/stores/shifts-selectors";
 import {
   useVisibleEmployeeModules,
   SELF_PROFILE_MODULE_KEYS,
@@ -115,6 +118,20 @@ export function EmployeeProfileWorkspace({
 
   const { data: activeLeave } = useActiveLeave(id);
 
+  const shiftTemplates = useAppSelector((s) => s.shifts.templates);
+  const shiftAssignments = useAppSelector((s) => s.shifts.assignments);
+  const todayShift = useMemo(
+    () =>
+      resolveShiftForDate(
+        id,
+        isoDateOf(new Date()),
+        emp.workPattern,
+        shiftTemplates,
+        shiftAssignments,
+      ),
+    [id, emp.workPattern, shiftTemplates, shiftAssignments],
+  );
+
   const modules = useVisibleEmployeeModules();
   const navModules = useMemo(() => {
     const withoutProfile = modules.filter((m) => m.key !== "profile");
@@ -124,7 +141,7 @@ export function EmployeeProfileWorkspace({
   }, [modules, variant]);
 
   // `?module=` deep-links a specific module so cards elsewhere in the app can
-  // land directly on it (e.g. Location Bookings → ?module=bookings).
+  // land directly on it (e.g. Assets → ?module=assets).
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -238,22 +255,62 @@ export function EmployeeProfileWorkspace({
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {emp.jobTitle}
                   </p>
-                  {/* Which leave, not just "On Leave" (§C1). */}
-                  {activeLeave && (
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2">
                     <Badge
                       variant="outline"
                       className={cn(
-                        "mt-2 text-[10px] font-medium",
-                        leaveTypeTone(activeLeave.type),
+                        "text-[10px] font-medium",
+                        employeeStatusTone(emp.status),
                       )}
                     >
-                      On {activeLeave.label} · back{" "}
-                      {new Date(activeLeave.returnDate).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                      })}
+                      {employeeStatusLabel(emp.status)}
                     </Badge>
-                  )}
+
+                    {/* Which leave, not just "On Leave" (§C1). */}
+                    {activeLeave && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[10px] font-medium",
+                          leaveTypeTone(activeLeave.type),
+                        )}
+                      >
+                        On {activeLeave.label} · back{" "}
+                        {new Date(activeLeave.returnDate).toLocaleDateString(
+                          "en-GB",
+                          { day: "numeric", month: "short" },
+                        )}
+                      </Badge>
+                    )}
+
+                    {/* Current shift, from the shift roster — a terminated
+                        employee has no shift status worth showing. */}
+                    {emp.status !== "terminated" &&
+                      (todayShift ? (
+                        <Badge
+                          variant="outline"
+                          className="gap-1 text-[10px] font-medium"
+                          style={{
+                            borderColor: `${todayShift.template.color}4D`,
+                            backgroundColor: `${todayShift.template.color}1A`,
+                            color: todayShift.template.color,
+                          }}
+                        >
+                          <CalendarClock className="w-2.5 h-2.5" />
+                          {todayShift.template.name} ·{" "}
+                          {todayShift.template.startTime}–
+                          {todayShift.template.endTime}
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-border bg-muted text-[10px] font-medium text-muted-foreground"
+                        >
+                          <CalendarClock className="w-2.5 h-2.5" />
+                          Off shift today
+                        </Badge>
+                      ))}
+                  </div>
                 </div>
 
                 <Button
@@ -299,7 +356,7 @@ export function EmployeeProfileWorkspace({
               onSelect={selectModule}
             />
             <Card className="min-w-0 flex flex-col lg:h-full">
-              <CardContent className="px-5 py-5 flex-1 min-h-0 overflow-y-auto [&_[data-slot=tabs-trigger][data-state=active]]:bg-[#ff8b2d]! [&_[data-slot=tabs-trigger][data-state=active]]:text-white! [&_[data-slot=tabs-trigger][data-state=active]]:shadow-none!">
+              <CardContent className="px-5 py-5 flex-1 min-h-0 overflow-y-auto [&_[data-slot=tabs-trigger][data-state=active]]:bg-[#FE8F44]! [&_[data-slot=tabs-trigger][data-state=active]]:text-white! [&_[data-slot=tabs-trigger][data-state=active]]:shadow-none!">
                 {ActiveComponent && (
                   <ActiveComponent employeeId={id} employee={emp} />
                 )}

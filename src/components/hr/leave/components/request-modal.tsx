@@ -23,7 +23,10 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group";
-import { EmployeePicker } from "@/src/components/shared/employee-picker";
+import {
+  EmployeePicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
 import { reliefConflict } from "@/src/lib/leave/conflicts";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
@@ -34,6 +37,7 @@ import {
 import type { LeaveRequest, NewLeaveRequest, LeaveTypeName } from "../types";
 
 const schema = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
   employeeName: z
     .string()
     .min(2, { message: "Name must be at least 2 characters" }),
@@ -48,12 +52,17 @@ const schema = z.object({
   endDate: z.string().min(1, { message: "End date is required" }),
   reason: z.string().min(1, { message: "Reason is required" }),
   notes: z.string().optional(),
+  contactAddress: z
+    .string()
+    .min(1, { message: "Contact address is required" }),
+  contactPhone: z.string().min(1, { message: "Contact number is required" }),
   // Relief cover is optional (client feedback §3.1).
   reliefEmployeeId: z.string().optional(),
   reliefEmployeeName: z.string().optional(),
 });
 
 type FormValues = {
+  employeeId: string;
   employeeName: string;
   employeeInitials: string;
   department: string;
@@ -65,6 +74,8 @@ type FormValues = {
   halfDayPeriod: "morning" | "afternoon";
   reason: string;
   notes: string;
+  contactAddress: string;
+  contactPhone: string;
   reliefEmployeeId: string;
   reliefEmployeeName: string;
 };
@@ -72,6 +83,7 @@ type FormValues = {
 function getDefaults(request: LeaveRequest | null): FormValues {
   if (!request) {
     return {
+      employeeId: "",
       employeeName: "",
       employeeInitials: "",
       department: "",
@@ -83,11 +95,14 @@ function getDefaults(request: LeaveRequest | null): FormValues {
       halfDayPeriod: "morning",
       reason: "",
       notes: "",
+      contactAddress: "",
+      contactPhone: "",
       reliefEmployeeId: "",
       reliefEmployeeName: "",
     };
   }
   return {
+    employeeId: request.employeeId ?? "",
     employeeName: request.employeeName,
     employeeInitials: request.employeeInitials,
     department: request.department,
@@ -99,6 +114,8 @@ function getDefaults(request: LeaveRequest | null): FormValues {
     halfDayPeriod: request.halfDayPeriod ?? "morning",
     reason: request.reason ?? "",
     notes: request.notes ?? "",
+    contactAddress: request.contactAddress ?? "",
+    contactPhone: request.contactPhone ?? "",
     reliefEmployeeId: request.reliefEmployeeId ?? "",
     reliefEmployeeName: request.reliefEmployeeName ?? "",
   };
@@ -172,6 +189,7 @@ export function RequestModal({
     );
 
     onSave({
+      employeeId: result.data.employeeId,
       employeeName: result.data.employeeName,
       employeeInitials: result.data.employeeInitials.toUpperCase(),
       department: result.data.department,
@@ -184,6 +202,8 @@ export function RequestModal({
       halfDayPeriod: form.isHalfDay ? form.halfDayPeriod : undefined,
       reason: result.data.reason,
       notes: result.data.notes || undefined,
+      contactAddress: result.data.contactAddress,
+      contactPhone: result.data.contactPhone,
       reliefEmployeeId: form.reliefEmployeeId || undefined,
       reliefEmployeeName: form.reliefEmployeeName || undefined,
     });
@@ -221,35 +241,32 @@ export function RequestModal({
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-3.5 py-2">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Employee Name</Label>
-            <Input
-              className="h-8 text-xs"
-              value={form.employeeName}
-              onChange={(e) => update("employeeName", e.target.value)}
-              placeholder="Full name"
+          <div className="col-span-2 space-y-1.5">
+            <Label className="text-xs">Employee</Label>
+            <EmployeePicker
+              value={form.employeeId || undefined}
+              placeholder="Search for an employee…"
+              onChange={(picked: PickedEmployee | null) => {
+                setForm((f) => ({
+                  ...f,
+                  employeeId: picked?.id ?? "",
+                  employeeName: picked?.name ?? "",
+                  employeeInitials: picked?.initials ?? "",
+                  department: picked?.department ?? f.department,
+                  jobTitle: picked?.jobTitle ?? f.jobTitle,
+                }));
+                if (errors.employeeId || errors.employeeName) {
+                  setErrors((e) => ({
+                    ...e,
+                    employeeId: undefined,
+                    employeeName: undefined,
+                  }));
+                }
+              }}
             />
-            {errors.employeeName && (
+            {(errors.employeeId || errors.employeeName) && (
               <p className="text-[10px] text-destructive">
-                {errors.employeeName}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs">Initials</Label>
-            <Input
-              className="h-8 text-xs"
-              value={form.employeeInitials}
-              onChange={(e) =>
-                update("employeeInitials", e.target.value.toUpperCase())
-              }
-              placeholder="e.g. CO"
-              maxLength={3}
-            />
-            {errors.employeeInitials && (
-              <p className="text-[10px] text-destructive">
-                {errors.employeeInitials}
+                {errors.employeeId || errors.employeeName}
               </p>
             )}
           </div>
@@ -403,6 +420,41 @@ export function RequestModal({
               </div>
             </div>
           )}
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">
+              Contact address <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              className="h-8 text-xs"
+              value={form.contactAddress}
+              onChange={(e) => update("contactAddress", e.target.value)}
+              placeholder="Where they can be reached while away"
+            />
+            {errors.contactAddress && (
+              <p className="text-[10px] text-destructive">
+                {errors.contactAddress}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">
+              Contact number <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              type="tel"
+              className="h-8 text-xs"
+              value={form.contactPhone}
+              onChange={(e) => update("contactPhone", e.target.value)}
+              placeholder="Phone number"
+            />
+            {errors.contactPhone && (
+              <p className="text-[10px] text-destructive">
+                {errors.contactPhone}
+              </p>
+            )}
+          </div>
 
           {/* Reason is the employee's own explanation and shows on the request
               detail panel; notes are internal context (§F3). */}

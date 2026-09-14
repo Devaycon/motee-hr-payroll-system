@@ -92,7 +92,7 @@ export function SettingsPage() {
                 className={cn(
                   "flex shrink-0 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors lg:w-full",
                   isActive
-                    ? "border-transparent bg-[#ff8b2d] text-white shadow-sm"
+                    ? "border-transparent bg-[#FE8F44] text-white shadow-sm"
                     : "border-border bg-card text-foreground hover:bg-muted/50",
                 )}
               >

@@ -3,6 +3,7 @@
 import { Coffee, LogIn, LogOut } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { formatTimeAMPM } from "@/src/lib/utils/format-duration";
+import { MapsLink } from "@/src/components/shared/maps-link";
 import type { ActivityEvent } from "./types";
 
 interface ActivityLogProps {
@@ -46,9 +47,18 @@ export function ActivityLog({ activity }: ActivityLogProps) {
                     <p className="text-[11px] font-medium text-foreground">
                       {ev.label}
                     </p>
-                    <p className="text-[10px] text-muted-foreground tabular-nums">
-                      {formatTimeAMPM(new Date(ev.at))}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[10px] text-muted-foreground tabular-nums">
+                        {formatTimeAMPM(new Date(ev.at))}
+                      </p>
+                      {ev.coords && (
+                        <MapsLink
+                          address={ev.coords}
+                          showLabel={false}
+                          className="text-[10px]"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               );

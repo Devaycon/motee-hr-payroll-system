@@ -1,5 +1,5 @@
 /**
- * Enrich the locale demo data so Reports & Analytics charts look busy and
+ * Enrich the locale demo data so the Analytics and Reports charts look busy and
  * well-distributed. Deterministic (seeded from _meta.seed) and idempotent:
  * thin top-level arrays are REBUILT to fixed sizes and dates are recomputed
  * from index, so re-running yields the same result (never doubles).

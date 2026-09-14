@@ -71,7 +71,7 @@ export function TopPerformers() {
               </div>
               <Badge
                 variant="outline"
-                className="text-xs shrink-0 border-[#4ED251]/40 bg-[#4ED251]/10 text-[#4ED251]"
+                className="text-xs shrink-0 border-[#50D34C]/40 bg-[#50D34C]/10 text-[#50D34C]"
               >
                 {performer.rating}% Rating
               </Badge>

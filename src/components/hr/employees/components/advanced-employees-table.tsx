@@ -22,6 +22,10 @@ import {
   formatDate,
 } from "../data";
 import {
+  ONBOARDING_METHOD_LABELS,
+  ONBOARDING_METHOD_STYLES,
+} from "@/src/lib/constants/onboarding-methods";
+import {
   EmployeeRowActions,
   type EmployeeRowHandlers,
 } from "./employee-row-actions";
@@ -91,6 +95,18 @@ export function AdvancedEmployeesTable({
         ),
       },
       {
+        accessorKey: "branchName",
+        header: sortableHeader("Branch"),
+        cell: ({ row }) =>
+          row.original.branchName ? (
+            <span className="text-sm text-foreground">
+              {row.original.branchName}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground italic">—</span>
+          ),
+      },
+      {
         accessorKey: "jobTitle",
         header: sortableHeader("Job Title"),
         cell: ({ row }) => (
@@ -113,6 +129,23 @@ export function AdvancedEmployeesTable({
               row.original.employmentType}
           </span>
         ),
+      },
+      {
+        accessorKey: "onboardingMethod",
+        header: sortableHeader("Method"),
+        cell: ({ row }) =>
+          row.original.onboardingMethod ? (
+            <span
+              className={cn(
+                "text-[10px] px-2 py-0.5 rounded-full border font-medium",
+                ONBOARDING_METHOD_STYLES[row.original.onboardingMethod],
+              )}
+            >
+              {ONBOARDING_METHOD_LABELS[row.original.onboardingMethod]}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground italic">—</span>
+          ),
       },
       {
         accessorKey: "managerName",
@@ -213,6 +246,10 @@ export function AdvancedEmployeesTable({
         enableSelection
         enableDnd
         enableColumnVisibility
+        // Off by default: most tenants run one site, and the navbar switcher
+        // already says which branch you are looking at. Turn it on from the
+        // column menu when comparing across branches.
+        initialColumnVisibility={{ branchName: false }}
         pageSize={10}
         emptyMessage={emptyMessage}
       />

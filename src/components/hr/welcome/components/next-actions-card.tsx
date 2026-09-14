@@ -43,7 +43,7 @@ export function NextActionsCard() {
                     action.priority === "high"
                       ? "border-red-400/40 bg-red-400/10 text-red-500"
                       : action.priority === "medium"
-                        ? "border-[#ff8b2d]/40 bg-[#ff8b2d]/10 text-[#ff8b2d]"
+                        ? "border-[#FE8F44]/40 bg-[#FE8F44]/10 text-[#FE8F44]"
                         : "border-border text-muted-foreground"
                   }`}
                 >

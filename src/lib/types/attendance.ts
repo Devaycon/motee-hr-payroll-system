@@ -46,6 +46,7 @@ export interface DailyEntry {
 
 export interface AttendanceRecord {
   id: string;
+  employeeId?: string;
   employeeName: string;
   employeeInitials: string;
   department: string;
@@ -62,6 +63,7 @@ export interface AttendanceRecord {
 }
 
 export interface NewAttendanceRecord {
+  employeeId?: string;
   employeeName: string;
   employeeInitials: string;
   department: string;
@@ -144,8 +146,9 @@ export interface ClockSession {
   location: WorkLocation;
   /** Free-text place — a booked desk name, or the office/remote label. */
   locationName?: string;
-  /** Set when the employee clocked in against a confirmed location booking. */
-  bookingId?: string;
+  /** "lat,lng" captured from the device at the moment of clock-in/out. */
+  clockInCoords?: string;
+  clockOutCoords?: string;
   source: PunchSource;
   note?: string;
   /**

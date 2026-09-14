@@ -21,6 +21,10 @@ import {
 import { Textarea } from "@/src/components/ui/textarea";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
+import {
+  EmployeePicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
 import { POST_TYPE_OPTIONS } from "../data";
 import type { CelebrationKind, NewPost, PostType } from "../types";
 
@@ -60,6 +64,7 @@ export function PostFormModal({
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [celebrationKind, setCelebrationKind] = useState("");
+  const [celebrationPersonId, setCelebrationPersonId] = useState("");
   const [celebrationPerson, setCelebrationPerson] = useState("");
   const [celebrationDetail, setCelebrationDetail] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -74,6 +79,7 @@ export function PostFormModal({
       setPollQuestion("");
       setPollOptions(["", ""]);
       setCelebrationKind("");
+      setCelebrationPersonId("");
       setCelebrationPerson("");
       setCelebrationDetail("");
       setErrors({});
@@ -149,6 +155,8 @@ export function PostFormModal({
         type === "milestone"
           ? (celebrationKind as CelebrationKind) || undefined
           : undefined,
+      celebrationPersonId:
+        type === "milestone" ? celebrationPersonId || undefined : undefined,
       celebrationPerson: type === "milestone" ? celebrationPerson : undefined,
       celebrationDetail: type === "milestone" ? celebrationDetail : undefined,
     });
@@ -317,11 +325,14 @@ export function PostFormModal({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Person&apos;s Name</Label>
-                <Input
-                  placeholder="e.g., Priya Sharma"
-                  value={celebrationPerson}
-                  onChange={(e) => setCelebrationPerson(e.target.value)}
+                <Label>Person</Label>
+                <EmployeePicker
+                  value={celebrationPersonId || undefined}
+                  placeholder="Search for an employee…"
+                  onChange={(picked: PickedEmployee | null) => {
+                    setCelebrationPersonId(picked?.id ?? "");
+                    setCelebrationPerson(picked?.name ?? "");
+                  }}
                 />
               </div>
               <div className="space-y-1.5">

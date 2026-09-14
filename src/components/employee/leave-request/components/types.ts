@@ -10,6 +10,10 @@ export interface LeaveRequestEntry {
   halfDayPeriod?: "morning" | "afternoon";
   status: LeaveStatus;
   notes?: string;
+  /** Address where the employee can be reached while on leave — required. */
+  contactAddress: string;
+  /** Phone number where the employee can be reached while on leave — required. */
+  contactPhone: string;
   /** Colleague nominated to cover while away (client feedback §3). */
   reliefEmployeeId?: string;
   reliefEmployeeName?: string;

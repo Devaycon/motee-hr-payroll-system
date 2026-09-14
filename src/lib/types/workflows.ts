@@ -181,6 +181,7 @@ export interface Workflow {
   version?: number;
   /** ISO date this version takes effect from. */
   effectiveDate?: string;
+  ownerId?: string;
   owner?: string;
   /** Restrict to an employment type (e.g. only permanent staff). */
   employmentType?: string;

@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
-import { LineChart } from "@/src/components/shared/charts";
+import { ChartCard, ChartPlaceholder } from "@/src/components/shared/charts";
 import {
   HrStatCardsGrid,
   type HrStatCardItem,
@@ -18,7 +18,6 @@ import {
 import { cn } from "@/src/lib/utils";
 import type { HeadcountPlan, PlanPeriod } from "../types";
 import {
-  headcountSeries,
   quarterOverQuarter,
   yearOverYear,
   type TrendRow,
@@ -74,7 +73,6 @@ export function Trends({ plans, activePeriod }: TrendsProps) {
     () => yearOverYear(plans, activePeriod),
     [plans, activePeriod],
   );
-  const series = useMemo(() => headcountSeries(plans), [plans]);
 
   const stats = useMemo<HrStatCardItem[]>(
     () => [
@@ -122,7 +120,7 @@ export function Trends({ plans, activePeriod }: TrendsProps) {
     <div className="space-y-6">
       <HrStatCardsGrid stats={stats} columns={4} />
 
-      <LineChart
+      <ChartCard
         title="Headcount Trend"
         description="Company-wide actual against target across every quarter held."
         footer={
@@ -130,12 +128,9 @@ export function Trends({ plans, activePeriod }: TrendsProps) {
             ? `${activePeriod} is ${movementLabel(qoq.totalDelta, qoq.totalPctChange)} against ${qoq.comparisonPeriod}.`
             : undefined
         }
-        categories={series.map((p) => p.period)}
-        series={[
-          { name: "Actual", data: series.map((p) => p.actual) },
-          { name: "Target", data: series.map((p) => p.target) },
-        ]}
-      />
+      >
+        <ChartPlaceholder />
+      </ChartCard>
 
       <TrendTable
         title="Quarter on Quarter"

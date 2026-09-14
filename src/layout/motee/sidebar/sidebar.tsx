@@ -14,8 +14,8 @@ import { SidebarNavLink } from "@/src/layout/shared/sidebar-nav-link";
 import { SidebarBrand } from "@/src/layout/shared/sidebar-brand";
 
 /** The Motee admin portal's own accent, passed to the shared link. */
-const ACTIVE = "bg-[#ff8b2d] text-white border-l-4 border-[#4ED251]";
-const ACTIVE_COLLAPSED = "bg-[#ff8b2d] text-white";
+const ACTIVE = "bg-[#FE8F44] text-white border-l-4 border-[#50D34C]";
+const ACTIVE_COLLAPSED = "bg-[#FE8F44] text-white";
 const BADGE = "bg-primary/10 text-primary";
 
 const Sidebar = () => {

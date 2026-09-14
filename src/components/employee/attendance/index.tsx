@@ -30,14 +30,13 @@ import {
   workedSeconds,
 } from "@/src/lib/types/attendance";
 import { formatTimeHHMM } from "@/src/lib/utils/format-duration";
+import { getCurrentCoords } from "@/src/lib/utils/geolocation";
 import {
   buildWeek,
   recentWeekStarts,
-  useBookingWriter,
   useMyAttendanceIdentity,
   useMyTimeLogs,
   useTimeLogWriter,
-  useTodayBookings,
 } from "./hooks";
 import { LATE_GRACE_MINUTES, LOCATION_CONFIG, TIMESHEET_WEEKS } from "./components/constants";
 import type { ActivityEvent } from "./components/types";
@@ -73,6 +72,8 @@ export function MyAttendancePage() {
   });
   const [noteOut, setNoteOut] = useState("");
   const [clockOutOpen, setClockOutOpen] = useState(false);
+  const [clockingIn, setClockingIn] = useState(false);
+  const [confirmingOut, setConfirmingOut] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [correcting, setCorrecting] = useState<DailyEntry | null>(null);
   const [detailTs, setDetailTs] = useState<TimesheetRecord | null>(null);
@@ -90,9 +91,7 @@ export function MyAttendancePage() {
   const timesheets = useAppSelector((s) => s.attendance.timesheets);
 
   const { data: logs } = useMyTimeLogs(employeeId);
-  const bookings = useTodayBookings(employeeId, todayIso);
   const { openDay, closeDay } = useTimeLogWriter();
-  const bookDesk = useBookingWriter();
 
   // A session from a previous day is history, not today's clock.
   const activeSession =
@@ -207,6 +206,7 @@ export function MyAttendancePage() {
           LOCATION_CONFIG[activeSession.location].label
         }`,
         type: "clock_in",
+        coords: activeSession.clockInCoords,
       });
     }
     for (const b of activeSession.breaks) {
@@ -220,6 +220,7 @@ export function MyAttendancePage() {
         at: activeSession.clockOutAt,
         label: `Clocked out${activeSession.note ? ` · "${activeSession.note}"` : ""}`,
         type: "clock_out",
+        coords: activeSession.clockOutCoords,
       });
     }
     // Newest first.
@@ -228,8 +229,15 @@ export function MyAttendancePage() {
 
   // ── handlers ──────────────────────────────────────────────────────────────
 
-  function handleClockIn() {
-    if (!employeeId) return;
+  async function handleClockIn() {
+    if (!employeeId || clockingIn) return;
+    setClockingIn(true);
+    const { coords, error: geoError } = await getCurrentCoords();
+    setClockingIn(false);
+    if (geoError) {
+      toast.message("Clocking in without a location", { description: geoError });
+    }
+
     const at = new Date();
     const status = punchStatus(
       at,
@@ -246,6 +254,7 @@ export function MyAttendancePage() {
       status: choice.location === "remote" ? "remote" : status,
       location: choice.locationName ?? LOCATION_CONFIG[choice.location].label,
       source: "web",
+      clockInCoords: coords ?? undefined,
     });
     dispatch(
       clockInAction({
@@ -254,9 +263,9 @@ export function MyAttendancePage() {
         at: at.toISOString(),
         location: choice.location,
         locationName: choice.locationName,
-        bookingId: choice.bookingId,
         source: "web",
         logId,
+        coords: coords ?? undefined,
       }),
     );
     toast.success(
@@ -275,8 +284,15 @@ export function MyAttendancePage() {
     dispatch(endBreakAction({ employeeId, at: new Date().toISOString() }));
   }
 
-  function handleClockOutConfirm() {
-    if (!employeeId || !activeSession) return;
+  async function handleClockOutConfirm() {
+    if (!employeeId || !activeSession || confirmingOut) return;
+    setConfirmingOut(true);
+    const { coords, error: geoError } = await getCurrentCoords();
+    setConfirmingOut(false);
+    if (geoError) {
+      toast.message("Clocking out without a location", { description: geoError });
+    }
+
     const at = new Date();
     const finalWorked = Math.max(
       0,
@@ -290,12 +306,14 @@ export function MyAttendancePage() {
         employeeId,
         at: at.toISOString(),
         note: noteOut.trim() || undefined,
+        coords: coords ?? undefined,
       }),
     );
     if (activeSession.logId) {
       closeDay(activeSession.logId, {
         clockOut: formatTimeHHMM(at),
         hoursWorked: Math.round((finalWorked / 3600) * 100) / 100,
+        clockOutCoords: coords ?? undefined,
       });
     }
     setClockOutOpen(false);
@@ -313,28 +331,9 @@ export function MyAttendancePage() {
           employeeId,
           location: next.location,
           locationName: next.locationName,
-          bookingId: next.bookingId,
         }),
       );
     }
-  }
-
-  function handleBookDesk(name: string): string {
-    if (!employeeId) return "";
-    const id = bookDesk({
-      employeeId,
-      locationType: "desk",
-      locationName: name,
-      date: todayIso,
-      startTime: schedule?.start ?? "09:00",
-      endTime: schedule?.end ?? "17:00",
-      status: "confirmed",
-      notes: "Booked from the attendance clock",
-    });
-    toast.success("Desk booked", {
-      description: `${name} for today — visible on your profile's Location Bookings.`,
-    });
-    return id;
   }
 
   function handleDrillDown(next: Exclude<AttendanceCardFilter, "all">) {
@@ -395,6 +394,10 @@ export function MyAttendancePage() {
     (activeSession
       ? LOCATION_CONFIG[activeSession.location].label
       : (choice.locationName ?? LOCATION_CONFIG[choice.location].label));
+  // The most recent punch's reading — clock-out once the day is closed,
+  // clock-in while it's still open.
+  const locationCoords =
+    activeSession?.clockOutCoords ?? activeSession?.clockInCoords;
 
   return (
     <div className="flex flex-col gap-5 pb-10">
@@ -441,22 +444,20 @@ export function MyAttendancePage() {
                     ? {
                         location: activeSession.location,
                         locationName: activeSession.locationName,
-                        bookingId: activeSession.bookingId,
                       }
                     : choice
                 }
-                bookings={bookings}
                 workedSeconds={worked}
                 progressPct={progressPct}
                 currentBreakSeconds={currentBreakSeconds}
                 todayStatus={todayStatus}
                 isLateNow={isLateNow}
+                clockingIn={clockingIn}
                 onClockIn={handleClockIn}
                 onBreakStart={handleBreakStart}
                 onBreakEnd={handleBreakEnd}
                 onClockOutOpen={() => setClockOutOpen(true)}
                 onLocationChange={handleLocationChange}
-                onBookDesk={handleBookDesk}
               />
               <ComplianceStrip
                 breaks={compliance}
@@ -479,6 +480,7 @@ export function MyAttendancePage() {
                 expectedEndTime={expectedEndTime}
                 schedule={schedule}
                 locationLabel={locationLabel}
+                locationCoords={locationCoords}
               />
               <ActivityLog activity={activity} />
             </div>
@@ -529,6 +531,7 @@ export function MyAttendancePage() {
         noteOut={noteOut}
         onNoteChange={setNoteOut}
         onConfirm={handleClockOutConfirm}
+        confirming={confirmingOut}
       />
 
       <SubmitTimesheetDialog

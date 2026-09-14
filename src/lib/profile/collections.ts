@@ -15,8 +15,8 @@ export interface CollectionSchema {
   addable?: boolean; // default true
   /**
    * Owning system module, named in full in the override warning — required, so
-   * the warning can never fall back to the singular and say "the booking
-   * module". Use the module's own label, e.g. "Location Bookings".
+   * the warning can never fall back to the singular and say "the asset
+   * module". Use the module's own label, e.g. "Assigned Assets".
    */
   source: string;
   fields: ProfileField[];
@@ -115,22 +115,6 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
     ],
     defaults: (employeeId) => ({ employeeId, createdAt: new Date().toISOString(), type: "note", pinned: false, visibility: "hr_only" }),
   },
-  locationBookings: {
-    key: "locationBookings",
-    singular: "booking",
-    source: "Location Bookings",
-    idPrefix: "LB",
-    fields: [
-      f("locationType", "Type", "select", ["desk", "meeting_room", "parking"]),
-      f("locationName", "Location"),
-      f("date", "Date", "date"),
-      f("startTime", "Start time"),
-      f("endTime", "End time"),
-      f("status", "Status", "select", ["confirmed", "cancelled"]),
-      f("notes", "Notes"),
-    ],
-    defaults: (employeeId) => ({ employeeId, date: today(), status: "confirmed" }),
-  },
   dbsChecks: {
     key: "dbsChecks",
     singular: "check",
@@ -173,6 +157,8 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
       f("days", "Days", "number"),
       f("reason", "Reason", "textarea"),
       f("status", "Status", "select", ["pending", "approved", "rejected"]),
+      f("contactAddress", "Contact address while away"),
+      f("contactPhone", "Contact number while away"),
     ],
     defaults: (employeeId) => ({ employeeId, status: "pending" }),
   },
@@ -328,7 +314,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
   attendance: {
     key: "attendance",
     singular: "time log",
-    source: "Time Logs",
+    source: "Time & Location Logs",
     idPrefix: "ATT",
     fields: [
       f("date", "Date", "date"),
@@ -337,6 +323,8 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
       f("hoursWorked", "Hours", "number"),
       f("status", "Status", "select", ["present", "late", "absent", "remote"]),
       f("location", "Location"),
+      f("clockInCoords", "Clock-in location (lat,lng)"),
+      f("clockOutCoords", "Clock-out location (lat,lng)"),
     ],
     defaults: (employeeId) => ({ employeeId, date: today(), status: "present" }),
   },

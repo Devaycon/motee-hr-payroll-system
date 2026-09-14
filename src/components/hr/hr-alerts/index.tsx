@@ -263,7 +263,7 @@ export function HrAlertsCard() {
     <Card>
       <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <BellRing className="w-4 h-4 text-[#ff8b2d]" />
+          <BellRing className="w-4 h-4 text-[#FE8F44]" />
           <CardTitle className="text-base">Your HR priorities today</CardTitle>
         </div>
         <SeverityChips

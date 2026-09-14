@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// The detail page is about one named person, so it must resolve even when the
+// navbar is scoped to a different branch — every read here is unscoped.
+import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { applyEmployeeOverrides } from "@/src/lib/profile/overrides";
 import { applyCollection } from "@/src/lib/profile/collection-edits";
@@ -19,7 +21,6 @@ import type {
   LocaleDbsCheck,
   LocaleDisciplinary,
   LocaleEmploymentEvent,
-  LocaleLocationBooking,
   LocaleMedicalFacts,
   LocaleEmployeeNote,
   LocalePayChange,
@@ -47,6 +48,9 @@ interface RawLeaveRequest {
   status: string;
   approverId?: string;
   submittedAt?: string;
+  /** Where the employee can be reached while on this leave. */
+  contactAddress?: string;
+  contactPhone?: string;
 }
 interface RawLeavePolicy {
   id: string;
@@ -73,6 +77,9 @@ interface RawAttendance {
   status: string;
   location?: string;
   source?: string;
+  /** "lat,lng" captured from the device at the moment of clock-in/out. */
+  clockInCoords?: string;
+  clockOutCoords?: string;
 }
 export interface RawAsset {
   id: string;
@@ -251,6 +258,23 @@ export function useEmployeeRecord(id: string) {
     [res.data, ov],
   );
   return { ...res, data };
+}
+
+/**
+ * Whether `id` is a real employee that the viewer's role simply cannot see, as
+ * opposed to one that does not exist.
+ *
+ * Reads the raw bundle on purpose. "Outside your access" is a far more useful
+ * answer than "not found", and an employee's *existence* is not confidential in
+ * a system that already publishes an org chart and a staff directory — no field
+ * of the record is exposed here, only the fact that the id resolves.
+ */
+export function useIsHiddenByScope(id: string): boolean {
+  const existsInTenant = useAppSelector((s) =>
+    Boolean(s.locale.data?.employees.some((e) => e.id === id)),
+  );
+  const { data, loading } = useEmployeeRecord(id);
+  return !loading && !data && existsInTenant;
 }
 
 // ── stats strip ───────────────────────────────────────────────────────────--
@@ -536,18 +560,6 @@ export function useEmployeeKudos(id: string) {
     };
   }, [bundle, edits, id]);
   return { data, loading, error };
-}
-export function useEmployeeBookings(id: string) {
-  const res = useEmployeeCollection<LocaleLocationBooking>(
-    "locationBookings",
-    id,
-    (b) => b.locationBookings ?? [],
-  );
-  const data = useMemo(
-    () => (res.data ? [...res.data].sort((a, c) => c.date.localeCompare(a.date)) : null),
-    [res.data],
-  );
-  return { ...res, data };
 }
 export function useEmployeeMedical(id: string) {
   const res = useEmployeeCollection<LocaleMedicalFacts>(

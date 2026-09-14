@@ -24,6 +24,10 @@ import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Separator } from "@/src/components/ui/separator";
 import { Textarea } from "@/src/components/ui/textarea";
 import {
+  EmployeePicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
+import {
   CONTRACT_TYPE_OPTIONS,
   CONTRACT_STATUS_OPTIONS,
   DEPARTMENT_OPTIONS,
@@ -61,6 +65,7 @@ const contractSchema = z.object({
     ],
     { message: "Status is required." },
   ),
+  employeeId: z.string().min(1, { message: "Employee is required." }),
   employeeName: z
     .string()
     .min(2, { message: "Employee name must be at least 2 characters." }),
@@ -97,6 +102,7 @@ const EMPTY: NewContract = {
   description: "",
   contractType: "employment",
   status: "draft",
+  employeeId: "",
   employeeName: "",
   employeeInitials: "",
   department: "",
@@ -130,6 +136,7 @@ export function ContractFormModal({
           description: contract.description ?? "",
           contractType: contract.contractType,
           status: contract.status,
+          employeeId: contract.employeeId ?? "",
           employeeName: contract.employeeName,
           employeeInitials: contract.employeeInitials,
           department: contract.department,
@@ -258,37 +265,31 @@ export function ContractFormModal({
 
             <Separator />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Employee Name</Label>
-                <Input
-                  placeholder="Full name"
-                  value={form.employeeName}
-                  onChange={(e) => set("employeeName", e.target.value)}
-                />
-                {errors.employeeName && (
-                  <p className="text-xs text-destructive">
-                    {errors.employeeName}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Initials</Label>
-                <Input
-                  placeholder="e.g. CO"
-                  maxLength={3}
-                  value={form.employeeInitials}
-                  onChange={(e) =>
-                    set("employeeInitials", e.target.value.toUpperCase())
-                  }
-                />
-                {errors.employeeInitials && (
-                  <p className="text-xs text-destructive">
-                    {errors.employeeInitials}
-                  </p>
-                )}
-              </div>
+            <div className="space-y-1.5">
+              <Label>Employee</Label>
+              <EmployeePicker
+                value={form.employeeId || undefined}
+                placeholder="Search for an employee…"
+                onChange={(picked: PickedEmployee | null) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    employeeId: picked?.id ?? "",
+                    employeeName: picked?.name ?? "",
+                    employeeInitials: picked?.initials ?? "",
+                    department: picked?.department ?? prev.department,
+                  }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    employeeId: undefined,
+                    employeeName: undefined,
+                  }));
+                }}
+              />
+              {(errors.employeeId || errors.employeeName) && (
+                <p className="text-xs text-destructive">
+                  {errors.employeeId || errors.employeeName}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">

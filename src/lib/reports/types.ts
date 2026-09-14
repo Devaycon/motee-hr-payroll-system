@@ -42,6 +42,8 @@ export interface ReportStat {
   trend?: string;
   /** Trend direction: true = green/up, false = red/down. */
   up?: boolean;
+  /** Accent color for the stat's icon chip — lets a breakdown page (e.g. per-gender stats) carry meaning through color. */
+  tone?: "violet" | "blue" | "amber" | "emerald" | "red";
 }
 
 /** One row in a chart card's breakdown legend (label · value · %). */
@@ -148,6 +150,19 @@ export interface ReportAnalytics {
   charts: ReportChartSpec[];
 }
 
+/**
+ * A dedicated deep-dive on one dimension of a report (e.g. "Gender Split"
+ * inside the Employees report) — its own page, its own robust set of stats
+ * and charts, reusing the parent report's row shape and filters.
+ */
+export interface ReportBreakdownDef<T> {
+  id: string;
+  label: string;
+  description?: string;
+  icon: LucideIcon;
+  analytics: (rows: T[], bundle: LocaleBundle) => ReportAnalytics;
+}
+
 export interface ReportDef<T> {
   id: string;
   label: string;
@@ -165,10 +180,14 @@ export interface ReportDef<T> {
   /** Free-text search haystack for a row. */
   searchText?: (row: T) => string;
   analytics: (rows: T[], bundle: LocaleBundle) => ReportAnalytics;
+  /** Dedicated single-dimension deep-dive pages, each with several graphs of its own. */
+  breakdowns?: ReportBreakdownDef<T>[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyReportDef = ReportDef<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyReportBreakdownDef = ReportBreakdownDef<any>;
 
 /** Identity helper that preserves the row type while authoring a report def. */
 export function defineReport<T>(def: ReportDef<T>): ReportDef<T> {

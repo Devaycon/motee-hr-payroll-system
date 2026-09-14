@@ -22,6 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import {
+  EmployeePicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
 import type {
   ERCase,
   NewERCase,
@@ -58,7 +62,8 @@ const DEPARTMENTS = [
 
 const caseSchema = z.object({
   complaintType: z.string().min(1, { message: "Case type is required." }),
-  employeeName: z.string().min(2, { message: "Employee name is required." }),
+  employeeId: z.string().min(1, { message: "Employee is required." }),
+  employeeName: z.string().min(2, { message: "Employee is required." }),
   employeeDept: z.string().min(1, { message: "Department is required." }),
   incidentDate: z.string().optional(),
   description: z
@@ -94,7 +99,11 @@ export function CaseFormModal({
   const [complaintType, setComplaintType] = useState<string>(
     editing?.complaintType ?? "grievance",
   );
+  const [employeeId, setEmployeeId] = useState(editing?.employeeId ?? "");
   const [employeeName, setEmployeeName] = useState(editing?.employeeName ?? "");
+  const [employeeInitials, setEmployeeInitials] = useState(
+    editing?.employeeInitials ?? "",
+  );
   const [employeeDept, setEmployeeDept] = useState(editing?.employeeDept ?? "");
   const [incidentDate, setIncidentDate] = useState(editing?.incidentDate ?? "");
   const [description, setDescription] = useState(editing?.description ?? "");
@@ -118,7 +127,9 @@ export function CaseFormModal({
     setPrevOpen(open);
     if (open) {
       setComplaintType(editing?.complaintType ?? "grievance");
+      setEmployeeId(editing?.employeeId ?? "");
       setEmployeeName(editing?.employeeName ?? "");
+      setEmployeeInitials(editing?.employeeInitials ?? "");
       setEmployeeDept(editing?.employeeDept ?? "");
       setIncidentDate(editing?.incidentDate ?? "");
       setDescription(editing?.description ?? "");
@@ -134,6 +145,7 @@ export function CaseFormModal({
   function validate(): boolean {
     const result = caseSchema.safeParse({
       complaintType,
+      employeeId,
       employeeName,
       employeeDept,
       incidentDate,
@@ -166,7 +178,9 @@ export function CaseFormModal({
       if (isEdit && editing) {
         onUpdate(editing.id, {
           complaintType: complaintType as CaseComplaintType,
+          employeeId,
           employeeName,
+          employeeInitials,
           employeeDept,
           incidentDate: incidentDate || undefined,
           description,
@@ -181,7 +195,9 @@ export function CaseFormModal({
       } else {
         onCreate({
           complaintType: complaintType as CaseComplaintType,
+          employeeId,
           employeeName,
+          employeeInitials,
           employeeDept,
           incidentDate: incidentDate || undefined,
           description,
@@ -251,18 +267,20 @@ export function CaseFormModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="emp-name">Employee Name</Label>
-              <Input
-                id="emp-name"
-                value={employeeName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setEmployeeName(e.target.value)
-                }
-                placeholder="Full name"
+              <Label>Employee</Label>
+              <EmployeePicker
+                value={employeeId || undefined}
+                placeholder="Search for an employee…"
+                onChange={(picked: PickedEmployee | null) => {
+                  setEmployeeId(picked?.id ?? "");
+                  setEmployeeName(picked?.name ?? "");
+                  setEmployeeInitials(picked?.initials ?? "");
+                  setEmployeeDept(picked?.department ?? employeeDept);
+                }}
               />
-              {errors.employeeName && (
+              {(errors.employeeId || errors.employeeName) && (
                 <p className="text-xs text-destructive">
-                  {errors.employeeName}
+                  {errors.employeeId || errors.employeeName}
                 </p>
               )}
             </div>

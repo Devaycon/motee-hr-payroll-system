@@ -67,9 +67,9 @@ const plans = [
     name: "Growth",
     price: 999,
     icon: Rocket,
-    color: "text-[#4ED251]",
-    bg: "bg-[#4ED251]/10",
-    border: "border-[#4ED251]/30",
+    color: "text-[#50D34C]",
+    bg: "bg-[#50D34C]/10",
+    border: "border-[#50D34C]/30",
     highlight: true,
     description: "For scaling companies that need advanced HR workflows.",
     features: [
@@ -92,9 +92,9 @@ const plans = [
     name: "Enterprise",
     price: 2499,
     icon: Building2,
-    color: "text-[#ff8b2d]",
-    bg: "bg-[#ff8b2d]/10",
-    border: "border-[#ff8b2d]/30",
+    color: "text-[#FE8F44]",
+    bg: "bg-[#FE8F44]/10",
+    border: "border-[#FE8F44]/30",
     highlight: false,
     description: "For large enterprises with complex, multi-entity needs.",
     features: [
@@ -164,7 +164,7 @@ export function BillingPlansPage() {
           >
             {plan.highlight && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <Badge className="bg-[#4ED251] text-white border-0 text-xs px-3">
+                <Badge className="bg-[#50D34C] text-white border-0 text-xs px-3">
                   Most Popular
                 </Badge>
               </div>
@@ -257,7 +257,7 @@ export function BillingPlansPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => router.push(`/tenants?plan=${plan.key}`)}
-                className={`w-full gap-2 ${plan.highlight ? `border-[#4ED251]/40 text-[#4ED251] hover:bg-[#4ED251]/10` : ""}`}
+                className={`w-full gap-2 ${plan.highlight ? `border-[#50D34C]/40 text-[#50D34C] hover:bg-[#50D34C]/10` : ""}`}
               >
                 View {plan.tenantCount} tenant
                 {plan.tenantCount !== 1 ? "s" : ""}
@@ -333,10 +333,10 @@ export function BillingPlansPage() {
                 <td className="px-6 py-3.5 text-sm font-bold text-foreground">
                   {planStats.reduce((a, p) => a + p.activeTenantCount, 0)}
                 </td>
-                <td className="px-6 py-3.5 text-sm font-bold text-[#ff8b2d]">
+                <td className="px-6 py-3.5 text-sm font-bold text-[#FE8F44]">
                   ${planStats.reduce((a, p) => a + p.mrr, 0).toLocaleString()}
                 </td>
-                <td className="px-6 py-3.5 text-sm font-bold text-[#ff8b2d]">
+                <td className="px-6 py-3.5 text-sm font-bold text-[#FE8F44]">
                   $
                   {(
                     planStats.reduce((a, p) => a + p.mrr, 0) * 12
@@ -351,13 +351,13 @@ export function BillingPlansPage() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Tag className="h-4 w-4 text-[#ff8b2d]" />
+              <Tag className="h-4 w-4 text-[#FE8F44]" />
               Discount Codes
             </CardTitle>
             <Button
               size="sm"
               onClick={() => setShowDiscountModal(true)}
-              className="gap-1.5 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white h-8"
+              className="gap-1.5 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white h-8"
             >
               <Plus className="h-3.5 w-3.5" />
               Create Discount
@@ -415,7 +415,7 @@ export function BillingPlansPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
                           <div
-                            className="h-full bg-[#ff8b2d] rounded-full"
+                            className="h-full bg-[#FE8F44] rounded-full"
                             style={{
                               width: `${Math.min(100, (d.usedCount / d.maxUses) * 100)}%`,
                             }}
@@ -442,7 +442,7 @@ export function BillingPlansPage() {
                     </td>
                     <td className="px-6 py-3.5">
                       <Badge
-                        className={`text-xs border-0 capitalize ${d.status === "active" ? "bg-[#4ED251]/10 text-[#4ED251]" : "bg-muted text-muted-foreground"}`}
+                        className={`text-xs border-0 capitalize ${d.status === "active" ? "bg-[#50D34C]/10 text-[#50D34C]" : "bg-muted text-muted-foreground"}`}
                       >
                         {d.status}
                       </Badge>
@@ -459,13 +459,13 @@ export function BillingPlansPage() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Percent className="h-4 w-4 text-[#ff8b2d]" />
+              <Percent className="h-4 w-4 text-[#FE8F44]" />
               Tax Rates
             </CardTitle>
             <Button
               size="sm"
               onClick={() => setShowTaxModal(true)}
-              className="gap-1.5 bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white h-8"
+              className="gap-1.5 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white h-8"
             >
               <Plus className="h-3.5 w-3.5" />
               Add Tax Rate
@@ -504,7 +504,7 @@ export function BillingPlansPage() {
                   </td>
                   <td className="px-6 py-3.5">
                     <Badge
-                      className={`text-xs border-0 ${t.active ? "bg-[#4ED251]/10 text-[#4ED251]" : "bg-muted text-muted-foreground"}`}
+                      className={`text-xs border-0 ${t.active ? "bg-[#50D34C]/10 text-[#50D34C]" : "bg-muted text-muted-foreground"}`}
                     >
                       {t.active ? "Active" : "Inactive"}
                     </Badge>
@@ -520,7 +520,7 @@ export function BillingPlansPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Tag className="h-5 w-5 text-[#ff8b2d]" />
+              <Tag className="h-5 w-5 text-[#FE8F44]" />
               Create Discount Code
             </DialogTitle>
           </DialogHeader>
@@ -545,7 +545,7 @@ export function BillingPlansPage() {
                   onChange={(e) =>
                     setNewDiscount((p) => ({ ...p, type: e.target.value }))
                   }
-                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                  className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
                 >
                   <option value="percentage">Percentage (%)</option>
                   <option value="fixed">Fixed ($)</option>
@@ -607,7 +607,7 @@ export function BillingPlansPage() {
                     restrictedPlan: e.target.value,
                   }))
                 }
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#ff8b2d]"
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FE8F44]"
               >
                 <option value="">All Plans</option>
                 <option value="starter">Starter</option>
@@ -626,7 +626,7 @@ export function BillingPlansPage() {
             <Button
               disabled={!newDiscount.code.trim() || !newDiscount.value}
               onClick={() => setShowDiscountModal(false)}
-              className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+              className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             >
               Create Code
             </Button>
@@ -638,7 +638,7 @@ export function BillingPlansPage() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Percent className="h-5 w-5 text-[#ff8b2d]" />
+              <Percent className="h-5 w-5 text-[#FE8F44]" />
               Add Tax Rate
             </DialogTitle>
           </DialogHeader>
@@ -686,7 +686,7 @@ export function BillingPlansPage() {
             <Button
               disabled={!newTax.country.trim() || !newTax.rate}
               onClick={() => setShowTaxModal(false)}
-              className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+              className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             >
               Add Rate
             </Button>

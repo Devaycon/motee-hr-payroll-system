@@ -73,7 +73,7 @@ const FORMATS: { value: Format; label: string; icon: typeof FileText }[] = [
 
 /** Orange brand active state, shared across the reports module tabs. */
 const TAB_ACTIVE =
-  "data-[state=active]:bg-[#ff8b2d]! data-[state=active]:text-white! data-[state=active]:shadow-none!";
+  "data-[state=active]:bg-[#FE8F44]! data-[state=active]:text-white! data-[state=active]:shadow-none!";
 
 export function ExportModal({
   baseName,

@@ -46,6 +46,7 @@ function toEmployeeRow(
   empTypeName: string | undefined,
   managerName: string | null,
   directReportCount: number,
+  branchName: string | undefined,
   activeLeave?: ActiveLeave,
 ): EmployeeRow {
   return {
@@ -62,6 +63,7 @@ function toEmployeeRow(
     jobTitle: emp.jobTitle,
     employmentType: employmentTypeFromName(empTypeName),
     status: mapStatus(emp.status),
+    onboardingMethod: emp.onboardingMethod,
     startDate: emp.startDate,
     salary: emp.salary?.amount ?? 0,
     managerId: emp.managerId,
@@ -80,6 +82,10 @@ function toEmployeeRow(
         : emp.workMode === "hybrid"
           ? "Hybrid"
           : "At Office",
+    branchId: emp.branchId,
+    // Falls back to the denormalised name so a record predating branches still
+    // shows something rather than an empty cell.
+    branchName: branchName ?? emp.workLocation,
     workLocation: emp.workLocation,
     grade: emp.grade,
     bankName: emp.bankDetails?.bankName,
@@ -98,6 +104,9 @@ function buildEmployees(bundle: LocaleBundle): EmployeeRow[] {
   const employeesById = new Map(bundle.employees.map((e) => [e.id, e]));
   const empTypeNameById = new Map(
     bundle.employmentTypes.map((t) => [t.id, t.name]),
+  );
+  const branchNameById = new Map(
+    (bundle.branches ?? []).map((b) => [b.id, b.name]),
   );
   // Count direct reports per manager so the table can flag line managers.
   const directReportCounts = new Map<string, number>();
@@ -118,6 +127,7 @@ function buildEmployees(bundle: LocaleBundle): EmployeeRow[] {
       empTypeNameById.get(e.employmentTypeId),
       manager?.fullName ?? null,
       directReportCounts.get(e.id) ?? 0,
+      e.branchId ? branchNameById.get(e.branchId) : undefined,
       activeLeave.get(e.id),
     );
   });

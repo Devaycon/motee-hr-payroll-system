@@ -24,7 +24,7 @@ export function AlertsSection({
         <Card key={alert.id}>
           <CardContent className="flex items-start gap-3 px-4 py-3">
             <AlertTriangle
-              className="w-4 h-4 mt-0.5 shrink-0 text-[#ff8b2d]"
+              className="w-4 h-4 mt-0.5 shrink-0 text-[#FE8F44]"
             />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground">

@@ -7,18 +7,41 @@ import type {
   ProjectTask,
   TimesheetEntry,
 } from "@/src/lib/types/projects";
-import { DEMO_PROJECTS, DEMO_TIMESHEETS } from "@/src/data/projects-demo";
+import type { NewProjectRisk, ProjectRisk } from "@/src/lib/types/project-risks";
+import type {
+  NewProjectDocument,
+  ProjectDocument,
+} from "@/src/lib/types/project-documents";
+import type {
+  GoLiveChecklist,
+  GoLiveChecklistItem,
+} from "@/src/lib/types/go-live-readiness";
+import {
+  DEMO_GO_LIVE_CHECKLISTS,
+  DEMO_PROJECT_DOCUMENTS,
+  DEMO_PROJECT_RISKS,
+  DEMO_PROJECTS,
+  DEMO_TIMESHEETS,
+} from "@/src/data/projects-demo";
 
 interface ProjectsState {
   projects: Project[];
   /** Kept flat rather than nested per project — timesheets are queried by
       person as often as by project, and nesting would make that a scan. */
   timesheets: TimesheetEntry[];
+  /** Same reasoning as `timesheets` — kept flat, filtered by `projectId`. */
+  risks: ProjectRisk[];
+  documents: ProjectDocument[];
+  /** One checklist per project, so it's keyed by `projectId` rather than an id. */
+  goLiveChecklists: GoLiveChecklist[];
 }
 
 const initialState: ProjectsState = {
   projects: DEMO_PROJECTS,
   timesheets: DEMO_TIMESHEETS,
+  risks: DEMO_PROJECT_RISKS,
+  documents: DEMO_PROJECT_DOCUMENTS,
+  goLiveChecklists: DEMO_GO_LIVE_CHECKLISTS,
 };
 
 function uid(prefix: string): string {
@@ -38,13 +61,22 @@ const projectsSlice = createSlice({
       action: PayloadAction<{
         projects?: Project[];
         timesheets?: TimesheetEntry[];
+        risks?: ProjectRisk[];
+        documents?: ProjectDocument[];
+        goLiveChecklists?: GoLiveChecklist[];
       }>,
     ) {
-      const { projects, timesheets } = action.payload;
+      const { projects, timesheets, risks, documents, goLiveChecklists } =
+        action.payload;
       if (Array.isArray(projects) && projects.length > 0) {
         state.projects = projects;
       }
       if (Array.isArray(timesheets)) state.timesheets = timesheets;
+      if (Array.isArray(risks)) state.risks = risks;
+      if (Array.isArray(documents)) state.documents = documents;
+      if (Array.isArray(goLiveChecklists)) {
+        state.goLiveChecklists = goLiveChecklists;
+      }
     },
 
     // ── Projects ────────────────────────────────────────────────────────────
@@ -77,9 +109,17 @@ const projectsSlice = createSlice({
     deleteProject(state, action: PayloadAction<string>) {
       state.projects = state.projects.filter((p) => p.id !== action.payload);
       // Orphaned time entries would keep counting toward spend on a project
-      // that no longer exists.
+      // that no longer exists. Same reasoning extends to the newer
+      // per-project collections below.
       state.timesheets = state.timesheets.filter(
         (t) => t.projectId !== action.payload,
+      );
+      state.risks = state.risks.filter((r) => r.projectId !== action.payload);
+      state.documents = state.documents.filter(
+        (d) => d.projectId !== action.payload,
+      );
+      state.goLiveChecklists = state.goLiveChecklists.filter(
+        (c) => c.projectId !== action.payload,
       );
     },
 
@@ -180,6 +220,35 @@ const projectsSlice = createSlice({
       milestone.reached = !milestone.reached;
     },
 
+    /** §13 — full detail-view edits (target/actual date, status, %, owner,
+        related tasks/risks, approval), alongside the simpler `toggleMilestone`. */
+    updateMilestone(
+      state,
+      action: PayloadAction<{
+        projectId: string;
+        milestoneId: string;
+        patch: Partial<Milestone>;
+      }>,
+    ) {
+      const project = state.projects.find(
+        (p) => p.id === action.payload.projectId,
+      );
+      const milestone = project?.milestones.find(
+        (m) => m.id === action.payload.milestoneId,
+      );
+      if (!milestone) return;
+      Object.assign(milestone, action.payload.patch);
+      // Same completion/status sync guard as updateTask — a milestone
+      // shouldn't be "completed" but not reached, or reached but not
+      // "completed".
+      if (action.payload.patch.status === "completed") {
+        milestone.reached = true;
+      }
+      if (action.payload.patch.reached === true) {
+        milestone.status = "completed";
+      }
+    },
+
     deleteMilestone(
       state,
       action: PayloadAction<{ projectId: string; milestoneId: string }>,
@@ -249,6 +318,71 @@ const projectsSlice = createSlice({
         (t) => t.id !== action.payload,
       );
     },
+
+    // ── Risks & Issues (§5) ────────────────────────────────────────────────
+    addRisk(
+      state,
+      action: PayloadAction<{ projectId: string; risk: NewProjectRisk }>,
+    ) {
+      state.risks.push({
+        ...action.payload.risk,
+        id: uid("RISK"),
+        projectId: action.payload.projectId,
+        createdAt: today(),
+      });
+    },
+
+    updateRisk(
+      state,
+      action: PayloadAction<{ riskId: string; patch: Partial<ProjectRisk> }>,
+    ) {
+      const risk = state.risks.find((r) => r.id === action.payload.riskId);
+      if (!risk) return;
+      Object.assign(risk, action.payload.patch);
+    },
+
+    deleteRisk(state, action: PayloadAction<string>) {
+      state.risks = state.risks.filter((r) => r.id !== action.payload);
+    },
+
+    // ── Project Documents (§11) ────────────────────────────────────────────
+    addProjectDocument(
+      state,
+      action: PayloadAction<{
+        projectId: string;
+        document: NewProjectDocument;
+      }>,
+    ) {
+      state.documents.push({
+        ...action.payload.document,
+        id: uid("PDOC"),
+        projectId: action.payload.projectId,
+        uploadedAt: today(),
+      });
+    },
+
+    deleteProjectDocument(state, action: PayloadAction<string>) {
+      state.documents = state.documents.filter((d) => d.id !== action.payload);
+    },
+
+    // ── Go-Live Readiness (§14) ────────────────────────────────────────────
+    updateGoLiveItem(
+      state,
+      action: PayloadAction<{
+        projectId: string;
+        itemId: string;
+        patch: Partial<Pick<GoLiveChecklistItem, "done" | "notes">>;
+      }>,
+    ) {
+      const checklist = state.goLiveChecklists.find(
+        (c) => c.projectId === action.payload.projectId,
+      );
+      const item = checklist?.items.find(
+        (i) => i.id === action.payload.itemId,
+      );
+      if (!item) return;
+      Object.assign(item, action.payload.patch);
+    },
   },
 });
 
@@ -262,12 +396,19 @@ export const {
   deleteTask,
   addMilestone,
   toggleMilestone,
+  updateMilestone,
   deleteMilestone,
   setAllocation,
   removeAllocation,
   logTime,
   setTimesheetStatus,
   deleteTimeEntry,
+  addRisk,
+  updateRisk,
+  deleteRisk,
+  addProjectDocument,
+  deleteProjectDocument,
+  updateGoLiveItem,
 } = projectsSlice.actions;
 export default projectsSlice.reducer;
 export type { ProjectsState };

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { seedRequests } from "@/src/lib/stores/approvals-slice";
+import { seedRequestsForType } from "@/src/lib/stores/approvals-slice";
 import type {
   ApprovalAttachment,
   ApprovalDocumentType,
@@ -166,56 +166,56 @@ const SCENARIOS: Scenario[] = [
     returnNote: "Please attach the exam booking confirmation.",
   },
 
-  // Job Requisitions (3)
+  // Job Requisitions are seeded from src/data/requisitions-demo.ts instead —
+  // those records are linked to real entries on the Requisitions page
+  // (workforceLabel, approvalRequestId), so seeding a second, unlinked set
+  // of job_requisition requests here would either be starved out by that
+  // seeder (seedRequestsForType is idempotent per type — whichever runs
+  // first wins) or, worse, sit in the queue with no matching Requisition row.
+
+  // Onboarding (3) — the "onboarding" document type had zero seeded requests
+  // anywhere before this: instantiate.ts only reads the chain template to
+  // build the task checklist, it never creates an ApprovalRequest.
   {
-    documentType: "job_requisition",
+    documentType: "onboarding",
     submitterIndex: 4,
-    title: () => "Hire Senior Backend Engineer",
-    summary: () => "Replacing departing senior in Engineering",
+    title: (e) => `New starter onboarding – ${e.fullName}`,
+    summary: () => "Pre-boarding pack awaiting line manager confirmation",
     payload: () => ({
-      positionTitle: "Senior Backend Engineer",
-      department: "Engineering",
-      openings: 1,
-      salaryRange: "₦12–16M",
+      startDate: "2026-07-06",
+      workLocation: "Head Office",
+      equipmentRequested: "Laptop, monitor, access card",
     }),
     status: "in_progress",
     progressTo: 1,
-    skipped: [
-      // Pretend step 2 (Finance) is on leave → rerouted to manager
-      { stepIndex: 2, reassignedFromName: "Adebayo Finance" },
-    ],
   },
   {
-    documentType: "job_requisition",
+    documentType: "onboarding",
     submitterIndex: 5,
-    title: () => "Hire Junior Frontend Engineer",
-    summary: () => "Backfill for Q3 roadmap",
+    title: (e) => `New starter onboarding – ${e.fullName}`,
+    summary: () => "IT provisioning and HR compliance sign-off complete",
     payload: () => ({
-      positionTitle: "Junior Frontend Engineer",
-      department: "Engineering",
-      openings: 2,
-      salaryRange: "₦6–9M",
+      startDate: "2026-06-22",
+      workLocation: "Remote",
+      equipmentRequested: "Laptop, headset",
     }),
     status: "approved",
     progressTo: 3,
-    reviewerSignatures: [
-      { stepIndex: 2, variantIndex: 1 },
-    ],
+    reviewerSignatures: [{ stepIndex: 2, variantIndex: 2 }],
   },
   {
-    documentType: "job_requisition",
+    documentType: "onboarding",
     submitterIndex: 6,
-    title: () => "Hire Marketing Lead",
-    summary: () => "Drive growth into 2H",
+    title: (e) => `New starter onboarding – ${e.fullName}`,
+    summary: () => "Documents outstanding before provisioning",
     payload: () => ({
-      positionTitle: "Marketing Lead",
-      department: "Growth",
-      openings: 1,
-      salaryRange: "₦14–18M",
+      startDate: "2026-07-20",
+      workLocation: "Head Office",
+      equipmentRequested: "Laptop, phone",
     }),
-    status: "rejected",
-    progressTo: 1,
-    rejectionNote: "Budget freeze until Q4. Reopen after October planning.",
+    status: "returned",
+    returnNote:
+      "Right to Work document missing — please upload before we proceed.",
   },
 
   // Contracts (3)
@@ -315,6 +315,22 @@ const SCENARIOS: Scenario[] = [
       { stepIndex: 2, variantIndex: 2 },
       { stepIndex: 3, variantIndex: 0 },
     ],
+  },
+
+  {
+    documentType: "offboarding_clearance",
+    submitterIndex: 20,
+    title: (e) => `Offboarding – ${e.fullName}`,
+    summary: () => "Contract ended, handover incomplete",
+    payload: () => ({
+      lastDay: "2026-06-20",
+      reason: "Contract ended",
+    }),
+    status: "rejected",
+    progressTo: 1,
+    attachments: [ATT_EXIT_FORM()],
+    rejectionNote:
+      "Handover documentation incomplete — resubmit once complete.",
   },
 
   // Promotion / Salary Change (3)
@@ -504,6 +520,35 @@ const SCENARIOS: Scenario[] = [
     progressTo: 1,
     attachments: [ATT_RECEIPT()],
   },
+
+  // draft/cancelled coverage — every other scenario above only ever uses
+  // in_progress/approved/rejected/returned, so the status filter's "Draft"
+  // and "Cancelled" options had nothing to show.
+  {
+    documentType: "asset_request",
+    submitterIndex: 24,
+    title: (e) => `Standing desk – ${e.fullName}`,
+    summary: () => "Ergonomic setup request, not yet submitted",
+    payload: () => ({
+      assetType: "Furniture",
+      model: "Electric standing desk",
+      justification: "Ergonomic assessment recommendation",
+    }),
+    status: "draft",
+  },
+  {
+    documentType: "expense_claim",
+    submitterIndex: 25,
+    title: (e) => `Taxi fare – ${e.fullName}`,
+    summary: () => "Withdrawn after the receipt was lost",
+    payload: () => ({
+      category: "Travel",
+      amount: 12000,
+      incurredOn: "2026-05-10",
+      merchant: "Uber",
+    }),
+    status: "cancelled",
+  },
 ];
 
 /* ---------- Resolution helpers ---------- */
@@ -540,6 +585,11 @@ const STEP_BLUEPRINTS: Record<
   ],
   contract: [
     { label: "HR Manager", approver: "ROLE:ROLE-HRMGR" },
+    { label: "HR Admin", approver: "ROLE:ROLE-HRADMIN" },
+  ],
+  onboarding: [
+    { label: "Line Manager", approver: "LINE_MANAGER" },
+    { label: "IT Admin", approver: "ROLE:ROLE-IT" },
     { label: "HR Admin", approver: "ROLE:ROLE-HRADMIN" },
   ],
   offboarding_clearance: [
@@ -869,26 +919,53 @@ function buildSeedRequests(bundle: LocaleBundle): ApprovalRequest[] {
 
 /* ---------- Hook ---------- */
 
-export function useDemoApprovalSeed(): void {
+/**
+ * Seeds demo approval requests per document type (via `seedRequestsForType`,
+ * the same idempotent-per-type reducer the Workforce Requests and
+ * Requisitions pages use), rather than one all-or-nothing `seedRequests`
+ * call gated on the whole `requests` array being empty. The old guard meant
+ * whichever page happened to load first "won" — visiting Workforce Requests
+ * or Requisitions before ever opening Submissions & Approvals would seed
+ * just those types and then permanently starve every other document type of
+ * demo data, since this hook saw `requestCount > 0` and skipped entirely.
+ * Seeding per type makes every type's demo data appear regardless of visit
+ * order, and never duplicates a type that another module already seeded
+ * (e.g. job_requisition, seeded from src/data/requisitions-demo.ts).
+ *
+ * Returns whether seeding is still pending, so the page can show a loading
+ * state instead of confidently-empty KPI cards/tables. Locale data itself
+ * loads via an async dynamic import of a large per-country JSON bundle
+ * (`loadLocale` in locale-slice.ts) — on a cold load that plus this hook's
+ * own 600ms stagger is long enough to notice, and with no loading state the
+ * page rendered its real "0 / nothing here" empty copy the whole time,
+ * reading as broken until a refresh (which usually hits a warm cache) papered
+ * over it.
+ */
+export function useDemoApprovalSeed(): boolean {
   const dispatch = useAppDispatch();
   const bundle = useAppSelector((s) => s.locale.data);
-  const requestCount = useAppSelector((s) => s.approvals.requests.length);
   const tried = useRef(false);
+  const [seeding, setSeeding] = useState(true);
 
   useEffect(() => {
     if (tried.current) return;
     if (!bundle) return;
-    if (requestCount > 0) {
-      tried.current = true;
-      return;
-    }
+    tried.current = true;
     const timer = setTimeout(() => {
       const seeds = buildSeedRequests(bundle);
-      if (seeds.length > 0) {
-        dispatch(seedRequests(seeds));
+      const byType = new Map<ApprovalDocumentType, ApprovalRequest[]>();
+      for (const req of seeds) {
+        const group = byType.get(req.documentType);
+        if (group) group.push(req);
+        else byType.set(req.documentType, [req]);
       }
-      tried.current = true;
+      byType.forEach((requests, documentType) => {
+        dispatch(seedRequestsForType({ documentType, requests }));
+      });
+      setSeeding(false);
     }, 600);
     return () => clearTimeout(timer);
-  }, [bundle, requestCount, dispatch]);
+  }, [bundle, dispatch]);
+
+  return seeding;
 }

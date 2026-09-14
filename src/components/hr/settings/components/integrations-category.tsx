@@ -24,7 +24,7 @@ import { ApiSetupPanel } from "./api-setup-panel";
 import { API_KEYS, API_USAGE_LOGS } from "../data";
 
 const ACTIVE_TRIGGER =
-  "text-sm px-3 data-[state=active]:bg-[#ff8b2d]! data-[state=active]:text-white! data-[state=active]:shadow-none!";
+  "text-sm px-3 data-[state=active]:bg-[#FE8F44]! data-[state=active]:text-white! data-[state=active]:shadow-none!";
 
 export function IntegrationsCategory() {
   return (

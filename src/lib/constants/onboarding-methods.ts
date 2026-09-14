@@ -17,6 +17,12 @@ export const ONBOARDING_METHOD_DESCRIPTIONS: Record<OnboardingMethod, string> = 
   bulk: "Imported as part of a bulk spreadsheet upload.",
 };
 
+export const ONBOARDING_METHOD_STYLES: Record<OnboardingMethod, string> = {
+  manual: "bg-slate-500/10 text-slate-600 border-slate-500/20",
+  invite: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  bulk: "bg-violet-500/10 text-violet-600 border-violet-500/20",
+};
+
 export function onboardingMethodLabel(method?: string | null): string | null {
   if (!method) return null;
   return ONBOARDING_METHOD_LABELS[method as OnboardingMethod] ?? null;

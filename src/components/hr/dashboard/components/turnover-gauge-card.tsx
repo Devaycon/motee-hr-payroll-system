@@ -7,7 +7,7 @@ import { getTurnoverRate } from "../hooks";
 
 /**
  * Turnover against the scale HR reads it on, rather than a bare percentage: the
- * ring shows where the quarter sits between 0% and a 10% ceiling, so "4.3%" is
+ * bar shows where the quarter sits between 0% and a 10% ceiling, so "4.3%" is
  * legible without already knowing what good looks like.
  *
  * Deliberately not the shared `RadialGauge` — that wrapper prints the *share of
@@ -16,9 +16,6 @@ import { getTurnoverRate } from "../hooks";
  */
 const SCALE_CEILING = 10;
 
-const RADIUS = 34;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-
 export function TurnoverGaugeCard() {
   const { rate, delta, voluntary, involuntary } = getTurnoverRate();
   const leavers = voluntary + involuntary;
@@ -26,78 +23,57 @@ export function TurnoverGaugeCard() {
   const fraction = Math.min(Math.max(rate / SCALE_CEILING, 0), 1);
 
   return (
-    // Details left, ring right. Stacking them left a band of empty card under
-    // a centred ring; side by side, the text column fills the height and the
-    // ring uses the width that was going spare.
     <Tile>
-      <div className="flex flex-1 gap-4">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <TileLabel>Turnover rate</TileLabel>
-          <TileSub>Current quarter</TileSub>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TileLabel>Turnover rate</TileLabel>
+        <TileSub>Current quarter</TileSub>
 
-          {/* Plain counts first, then the rate they produce. "Leavers as a
-              share of headcount on a 0–10% scale" made the reader do the
-              arithmetic before they could tell whether 4.3% was a problem. */}
-          <p className="mt-2 text-xs text-foreground">
-            {leavers} {leavers === 1 ? "person" : "people"} left this quarter
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {voluntary} resigned, {involuntary} let go
-          </p>
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            {delta === 0
-              ? "Same as last quarter"
-              : `${delta > 0 ? "Up" : "Down"} ${Math.abs(delta)}% on last quarter`}
-          </p>
+        {/* Plain counts first, then the rate they produce. "Leavers as a
+            share of headcount on a 0–10% scale" made the reader do the
+            arithmetic before they could tell whether 4.3% was a problem. */}
+        <p className="mt-2 text-xs text-foreground">
+          {leavers} {leavers === 1 ? "person" : "people"} left this quarter
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {voluntary} resigned, {involuntary} let go
+        </p>
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          {delta === 0
+            ? "Same as last quarter"
+            : `${delta > 0 ? "Up" : "Down"} ${Math.abs(delta)}% on last quarter`}
+        </p>
 
-          <Link
-            href="/operations/workforce"
-            className="mt-auto inline-flex w-fit items-center gap-0.5 pt-3 text-xs font-medium text-primary hover:underline"
-          >
-            View workforce
-            <ChevronRight className="size-3.5" />
-          </Link>
-        </div>
-
-        {/* Sized to the row rather than fixed, so the ring grows to fill the
-            card instead of floating in the middle of it. */}
-        <svg
-          viewBox="0 0 80 80"
-          className="h-full max-h-36 w-auto shrink-0 self-center"
+        {/* The same 0–10% scale as before, just as a bar instead of a ring —
+            a fixed-height row, so it never pushes the card's own height
+            around the way a chart sized to fill spare space would. */}
+        <div
+          className="mt-3"
           role="img"
           aria-label={`Turnover rate ${rate}% on a 0 to ${SCALE_CEILING}% scale`}
         >
-          {/* Rotated so the ring fills clockwise from 12 o'clock. */}
-          <g transform="rotate(-90 40 40)">
-            <circle
-              cx="40"
-              cy="40"
-              r={RADIUS}
-              fill="none"
-              strokeWidth="9"
-              className="stroke-muted"
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm font-semibold text-foreground">{rate}%</span>
+            <span className="text-[10px] text-muted-foreground">of {SCALE_CEILING}% scale</span>
+          </div>
+          <div className="relative mt-1.5 h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${fraction * 100}%` }}
             />
-            <circle
-              cx="40"
-              cy="40"
-              r={RADIUS}
-              fill="none"
-              strokeWidth="9"
-              strokeLinecap="round"
-              className="stroke-primary"
-              strokeDasharray={`${fraction * CIRCUMFERENCE} ${CIRCUMFERENCE}`}
-            />
-          </g>
-          <text
-            x="40"
-            y="40"
-            textAnchor="middle"
-            dominantBaseline="central"
-            className="fill-foreground text-[14px] font-semibold"
-          >
-            {rate}%
-          </text>
-        </svg>
+          </div>
+          <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
+            <span>0%</span>
+            <span>{SCALE_CEILING}%</span>
+          </div>
+        </div>
+
+        <Link
+          href="/operations/workforce"
+          className="mt-auto inline-flex w-fit items-center gap-0.5 pt-3 text-xs font-medium text-primary hover:underline"
+        >
+          View workforce
+          <ChevronRight className="size-3.5" />
+        </Link>
       </div>
     </Tile>
   );

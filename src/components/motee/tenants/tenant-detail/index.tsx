@@ -42,17 +42,17 @@ import type { TenantPlan, TenantStatus } from "@/src/lib/types/motee.types";
 const planStyles: Record<TenantPlan, string> = {
   starter: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
   growth: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  enterprise: "bg-[#ff8b2d]/10 text-[#ff8b2d]",
+  enterprise: "bg-[#FE8F44]/10 text-[#FE8F44]",
 };
 
 const statusStyles: Record<TenantStatus, string> = {
-  active: "bg-[#4ED251]/10 text-[#4ED251]",
+  active: "bg-[#50D34C]/10 text-[#50D34C]",
   trial: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   suspended: "bg-red-500/10 text-red-600 dark:text-red-400",
 };
 
 const invoiceStatusStyles: Record<string, string> = {
-  paid: "bg-[#4ED251]/10 text-[#4ED251]",
+  paid: "bg-[#50D34C]/10 text-[#50D34C]",
   pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   overdue: "bg-red-500/10 text-red-600 dark:text-red-400",
 };
@@ -145,10 +145,10 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
   return (
     <div className="flex flex-col gap-6">
       {assistedAccessActive && (
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-[#ff8b2d]/50 bg-[#ff8b2d]/10 px-4 py-3">
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-[#FE8F44]/50 bg-[#FE8F44]/10 px-4 py-3">
           <div className="flex items-center gap-2">
-            <Eye className="h-4 w-4 text-[#ff8b2d]" />
-            <span className="text-sm font-medium text-[#ff8b2d]">
+            <Eye className="h-4 w-4 text-[#FE8F44]" />
+            <span className="text-sm font-medium text-[#FE8F44]">
               Assisted Access Active — You are viewing {tenant.name} in
               read-only mode
             </span>
@@ -157,7 +157,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
             size="sm"
             variant="outline"
             onClick={handleEndAccess}
-            className="border-[#ff8b2d]/50 text-[#ff8b2d] hover:bg-[#ff8b2d]/10 shrink-0"
+            className="border-[#FE8F44]/50 text-[#FE8F44] hover:bg-[#FE8F44]/10 shrink-0"
           >
             End Session
           </Button>
@@ -198,7 +198,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
             variant="outline"
             size="sm"
             onClick={() => setShowAccessModal(true)}
-            className="gap-2 border-[#ff8b2d]/30 text-[#ff8b2d] hover:bg-[#ff8b2d]/10"
+            className="gap-2 border-[#FE8F44]/30 text-[#FE8F44] hover:bg-[#FE8F44]/10"
           >
             <Eye className="h-4 w-4" />
             Assisted Access
@@ -215,7 +215,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Employees</p>
             <div className="mt-1 flex items-center gap-2">
-              <Users className="h-4 w-4 text-[#ff8b2d]" />
+              <Users className="h-4 w-4 text-[#FE8F44]" />
               <p className="text-xl font-bold text-foreground">
                 {tenant.employeeCount.toLocaleString()}
               </p>
@@ -226,7 +226,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Monthly Revenue</p>
             <div className="mt-1 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-[#4ED251]" />
+              <TrendingUp className="h-4 w-4 text-[#50D34C]" />
               <p className="text-xl font-bold text-foreground">
                 ${tenant.mrr.toLocaleString()}
               </p>
@@ -248,7 +248,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Total Invoices</p>
             <div className="mt-1 flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-[#ff8b2d]" />
+              <Building2 className="h-4 w-4 text-[#FE8F44]" />
               <p className="text-xl font-bold text-foreground">
                 {tenantInvoices.length}
               </p>
@@ -264,7 +264,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
             onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
               activeTab === tab.key
-                ? "border-[#ff8b2d] text-[#ff8b2d]"
+                ? "border-[#FE8F44] text-[#FE8F44]"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -398,7 +398,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="justify-start gap-2 text-[#4ED251] hover:text-[#4ED251] border-[#4ED251]/20 hover:bg-[#4ED251]/10"
+                    className="justify-start gap-2 text-[#50D34C] hover:text-[#50D34C] border-[#50D34C]/20 hover:bg-[#50D34C]/10"
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     Reactivate Tenant
@@ -473,8 +473,8 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
             <Card key={user.email}>
               <CardContent className="flex items-center justify-between gap-4 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-[#ff8b2d]/10 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-semibold text-[#ff8b2d]">
+                  <div className="h-9 w-9 rounded-full bg-[#FE8F44]/10 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-semibold text-[#FE8F44]">
                       {user.name
                         .split(" ")
                         .map((n) => n[0])
@@ -519,7 +519,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
                   onClick={handleAddNote}
                   disabled={!noteText.trim()}
                   size="sm"
-                  className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+                  className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
                 >
                   Add Note
                 </Button>
@@ -556,7 +556,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-[#ff8b2d]" />
+              <Eye className="h-5 w-5 text-[#FE8F44]" />
               Assisted Access
             </DialogTitle>
           </DialogHeader>
@@ -587,7 +587,7 @@ export function TenantDetailPage({ id }: TenantDetailPageProps) {
             <Button
               onClick={handleStartAccess}
               disabled={!accessReason.trim()}
-              className="bg-[#ff8b2d] hover:bg-[#ff8b2d]/90 text-white"
+              className="bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             >
               Start Session
             </Button>

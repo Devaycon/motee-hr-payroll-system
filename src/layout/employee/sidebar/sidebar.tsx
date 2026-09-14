@@ -16,8 +16,8 @@ import { SidebarNavLink } from "@/src/layout/shared/sidebar-nav-link";
 import { SidebarBrand } from "@/src/layout/shared/sidebar-brand";
 
 /** The employee portal's own accent, passed through to the shared link. */
-const ACTIVE = "bg-[#4ED251] text-white border-l-4 border-[#ff8b2d]";
-const ACTIVE_COLLAPSED = "bg-[#4ED251] text-white";
+const ACTIVE = "bg-[#50D34C] text-white border-l-4 border-[#FE8F44]";
+const ACTIVE_COLLAPSED = "bg-[#50D34C] text-white";
 const BADGE = "bg-primary/10 text-primary";
 
 const Sidebar = () => {

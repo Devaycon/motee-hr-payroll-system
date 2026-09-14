@@ -208,6 +208,28 @@ export function ReviewModal({
             </Field>
           )}
 
+          {/* Where HR/the manager can reach the employee while they're away. */}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Contact address">
+              <p className="text-xs font-medium">
+                {req.contactAddress || (
+                  <span className="text-muted-foreground italic">
+                    Not provided
+                  </span>
+                )}
+              </p>
+            </Field>
+            <Field label="Contact number">
+              <p className="text-xs font-medium">
+                {req.contactPhone || (
+                  <span className="text-muted-foreground italic">
+                    Not provided
+                  </span>
+                )}
+              </p>
+            </Field>
+          </div>
+
           {/* Who is covering while they are away (client feedback §3.2). */}
           <Field label="Relief employee">
             {req.reliefEmployeeName ? (

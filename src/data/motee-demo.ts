@@ -14,8 +14,9 @@
   Mail,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { ChartConfig } from "@/src/components/ui/chart";
 import type { Tenant, Invoice, SupportTicket, PlatformStats, TenantPlan } from "@/src/lib/types/motee.types";
+
+type ChartConfig = Record<string, { label?: string; color?: string }>;
 
 export const DEMO_TENANTS: Tenant[] = [
   {
@@ -232,7 +233,7 @@ export const REVENUE_TREND_DATA: { month: string; revenue: number }[] = [
 ];
 
 export const REVENUE_TREND_CONFIG: ChartConfig = {
-  revenue: { label: "MRR", color: "#ff8b2d" },
+  revenue: { label: "MRR", color: "#FE8F44" },
 };
 
 export const TENANT_REGISTRATIONS_DATA: { month: string; registrations: number }[] = [
@@ -251,7 +252,7 @@ export const TENANT_REGISTRATIONS_DATA: { month: string; registrations: number }
 ];
 
 export const TENANT_REGISTRATIONS_CONFIG: ChartConfig = {
-  registrations: { label: "New Tenants", color: "#4ED251" },
+  registrations: { label: "New Tenants", color: "#50D34C" },
 };
 
 export interface SystemHealthItem {
@@ -279,16 +280,16 @@ export interface ActivityItem {
 }
 
 export const RECENT_ACTIVITY: ActivityItem[] = [
-  { id: "a-01", icon: UserPlus,     iconColor: "text-[#4ED251]",  message: "Nova Finance registered a new account",                  tenant: "Nova Finance",       time: "2 min ago"  },
-  { id: "a-02", icon: ArrowUpRight, iconColor: "text-[#ff8b2d]",  message: "Flutterwave upgraded from Growth to Enterprise",         tenant: "Flutterwave",        time: "14 min ago" },
+  { id: "a-01", icon: UserPlus,     iconColor: "text-[#50D34C]",  message: "Nova Finance registered a new account",                  tenant: "Nova Finance",       time: "2 min ago"  },
+  { id: "a-02", icon: ArrowUpRight, iconColor: "text-[#FE8F44]",  message: "Flutterwave upgraded from Growth to Enterprise",         tenant: "Flutterwave",        time: "14 min ago" },
   { id: "a-03", icon: AlertTriangle,iconColor: "text-red-500",     message: "Payment failed for Interswitch — invoice INV-005",       tenant: "Interswitch",        time: "31 min ago" },
   { id: "a-04", icon: ShieldAlert,  iconColor: "text-amber-500",   message: "Assisted Access session started on BrightTech Ltd",      tenant: "BrightTech Ltd",     time: "1 hr ago"   },
-  { id: "a-05", icon: CheckCircle2, iconColor: "text-[#4ED251]",   message: "Sterling Bank trial extended by 7 days",                 tenant: "Sterling Bank",      time: "1 hr ago"   },
+  { id: "a-05", icon: CheckCircle2, iconColor: "text-[#50D34C]",   message: "Sterling Bank trial extended by 7 days",                 tenant: "Sterling Bank",      time: "1 hr ago"   },
   { id: "a-06", icon: XCircle,      iconColor: "text-red-500",     message: "TechAdvance subscription cancelled",                     tenant: "TechAdvance",        time: "2 hrs ago"  },
   { id: "a-07", icon: Webhook,      iconColor: "text-violet-500",  message: "Failed webhook delivery — Konga endpoint /hr-events",    tenant: "Konga",              time: "3 hrs ago"  },
   { id: "a-08", icon: Mail,         iconColor: "text-sky-500",     message: "Trial expiry warning sent to Nova Finance (7-day notice)",tenant: "Nova Finance",       time: "4 hrs ago"  },
-  { id: "a-09", icon: UserPlus,     iconColor: "text-[#4ED251]",   message: "Andela Nigeria added 12 new employee records",           tenant: "Andela Nigeria",     time: "5 hrs ago"  },
-  { id: "a-10", icon: CreditCard,   iconColor: "text-[#ff8b2d]",   message: "Invoice INV-007 marked as paid — Access Bank",           tenant: "Access Bank",        time: "6 hrs ago"  },
+  { id: "a-09", icon: UserPlus,     iconColor: "text-[#50D34C]",   message: "Andela Nigeria added 12 new employee records",           tenant: "Andela Nigeria",     time: "5 hrs ago"  },
+  { id: "a-10", icon: CreditCard,   iconColor: "text-[#FE8F44]",   message: "Invoice INV-007 marked as paid — Access Bank",           tenant: "Access Bank",        time: "6 hrs ago"  },
 ];
 
 export interface PendingTaskItem {

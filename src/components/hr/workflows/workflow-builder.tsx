@@ -30,6 +30,10 @@ import {
 } from "@/src/components/ui/select";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import {
+  EmployeePicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
+import {
   createWorkflow,
   updateWorkflow,
 } from "@/src/lib/stores/workflows-slice";
@@ -233,6 +237,7 @@ export function WorkflowBuilder({
   const [status, setStatus] = useState<WorkflowStatus>(
     workflow?.status ?? "draft",
   );
+  const [ownerId, setOwnerId] = useState(workflow?.ownerId ?? "");
   const [owner, setOwner] = useState(workflow?.owner ?? "");
   const [effectiveDate, setEffectiveDate] = useState(
     workflow?.effectiveDate ?? "",
@@ -452,6 +457,7 @@ export function WorkflowBuilder({
       actorName,
       // §11.13
       status,
+      ownerId: ownerId || undefined,
       owner: owner.trim() || undefined,
       effectiveDate: effectiveDate || undefined,
       employmentType: employmentType || undefined,
@@ -704,11 +710,14 @@ export function WorkflowBuilder({
 
           <div className="space-y-1.5">
             <Label>Owner</Label>
-            <Input
-              value={owner}
+            <EmployeePicker
+              value={ownerId || undefined}
               disabled={readOnly}
-              placeholder={actorName}
-              onChange={(e) => setOwner(e.target.value)}
+              placeholder={`Defaults to you (${actorName})`}
+              onChange={(picked: PickedEmployee | null) => {
+                setOwnerId(picked?.id ?? "");
+                setOwner(picked?.name ?? "");
+              }}
             />
             <p className="text-[11px] text-muted-foreground">
               Who is accountable for this process. Defaults to you.

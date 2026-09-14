@@ -26,11 +26,13 @@ import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { addTask, deleteTask, updateTask } from "@/src/lib/stores/projects-slice";
 import { cn } from "@/src/lib/utils";
 import {
+  PROJECT_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
   TASK_STATUS_STYLES,
   criticalPath,
   isTaskBlocked,
   type Project,
+  type ProjectPriority,
   type ProjectTask,
   type ProjectTaskStatus,
 } from "@/src/lib/types/projects";
@@ -38,26 +40,45 @@ import { ExportMenu } from "@/src/components/shared/export-menu";
 import type { ReportColumn } from "@/src/lib/reports/types";
 
 /** Mirrors the columns on screen, so an export reads the same as the table. */
-const TASK_EXPORT_COLUMNS: ReportColumn<ProjectTask>[] = [
-  { key: "name", header: "Task", value: (t) => t.name },
-  {
-    key: "assigneeName",
-    header: "Assignee",
-    value: (t) => t.assigneeName ?? "Unassigned",
-  },
-  { key: "startDate", header: "Start", value: (t) => t.startDate },
-  { key: "endDate", header: "End", value: (t) => t.endDate },
-  {
-    key: "percentComplete",
-    header: "Progress %",
-    value: (t) => t.percentComplete,
-  },
-  {
-    key: "status",
-    header: "Status",
-    value: (t) => TASK_STATUS_LABELS[t.status],
-  },
-];
+function dependencyNames(task: ProjectTask, tasks: ProjectTask[]): string {
+  return (task.dependsOn ?? [])
+    .map((id) => tasks.find((t) => t.id === id)?.name)
+    .filter(Boolean)
+    .join(", ");
+}
+
+function buildExportColumns(tasks: ProjectTask[]): ReportColumn<ProjectTask>[] {
+  return [
+    { key: "name", header: "Task", value: (t) => t.name },
+    {
+      key: "assigneeName",
+      header: "Owner",
+      value: (t) => t.assigneeName ?? "Unassigned",
+    },
+    { key: "startDate", header: "Start", value: (t) => t.startDate },
+    { key: "endDate", header: "Due", value: (t) => t.endDate },
+    {
+      key: "status",
+      header: "Status",
+      value: (t) => TASK_STATUS_LABELS[t.status],
+    },
+    {
+      key: "percentComplete",
+      header: "% Complete",
+      value: (t) => t.percentComplete,
+    },
+    {
+      key: "dependsOn",
+      header: "Dependency",
+      value: (t) => dependencyNames(t, tasks) || "—",
+    },
+    {
+      key: "priority",
+      header: "Priority",
+      value: (t) => (t.priority ? PROJECT_PRIORITY_LABELS[t.priority] : "—"),
+    },
+  ];
+}
 
 export function TasksPanel({ project }: { project: Project }) {
   const dispatch = useAppDispatch();
@@ -109,12 +130,12 @@ export function TasksPanel({ project }: { project: Project }) {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border/60">
+        <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
           <div className="flex justify-end border-b border-border/40 bg-muted/30 px-3 py-2">
             <ExportMenu
               name={`${project.code}-tasks`}
               title={`${project.name} — Tasks`}
-              columns={TASK_EXPORT_COLUMNS}
+              columns={buildExportColumns(project.tasks)}
               rows={project.tasks}
               variant="outline"
               buttonClassName="h-7 text-xs"
@@ -125,10 +146,15 @@ export function TasksPanel({ project }: { project: Project }) {
               <thead>
                 <tr className="border-b border-border/40 bg-muted/30 text-left text-xs text-muted-foreground">
                   <th className="px-3 py-2 font-medium">Task</th>
-                  <th className="px-3 py-2 font-medium">Assignee</th>
-                  <th className="px-3 py-2 font-medium">Dates</th>
-                  <th className="px-3 py-2 text-center font-medium">Progress</th>
+                  <th className="px-3 py-2 font-medium">Owner</th>
+                  <th className="px-3 py-2 font-medium">Start</th>
+                  <th className="px-3 py-2 font-medium">Due</th>
                   <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 text-center font-medium">
+                    % Complete
+                  </th>
+                  <th className="px-3 py-2 font-medium">Dependency</th>
+                  <th className="px-3 py-2 font-medium">Priority</th>
                   <th className="px-3 py-2" />
                 </tr>
               </thead>
@@ -172,19 +198,43 @@ export function TasksPanel({ project }: { project: Project }) {
                             {task.phase}
                           </p>
                         )}
-                        {blockerNames.length > 0 && (
-                          <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <Link2 className="h-2.5 w-2.5" />
-                            After {blockerNames.join(", ")}
-                          </p>
-                        )}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {task.assigneeName ?? "Unassigned"}
                       </td>
                       <td className="px-3 py-2 text-[11px] text-muted-foreground">
                         {task.startDate}
-                        <br />→ {task.endDate}
+                      </td>
+                      <td className="px-3 py-2 text-[11px] text-muted-foreground">
+                        {task.endDate}
+                      </td>
+                      <td className="px-3 py-2">
+                        <Select
+                          value={task.status}
+                          onValueChange={(v) =>
+                            setStatus(task, v as ProjectTaskStatus)
+                          }
+                        >
+                          <SelectTrigger
+                            className={cn(
+                              "h-7 w-36 text-[11px]",
+                              TASK_STATUS_STYLES[task.status],
+                            )}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(
+                              Object.keys(
+                                TASK_STATUS_LABELS,
+                              ) as ProjectTaskStatus[]
+                            ).map((s) => (
+                              <SelectItem key={s} value={s}>
+                                {TASK_STATUS_LABELS[s]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-3 py-2">
                         <div className="mx-auto w-24 space-y-1">
@@ -211,29 +261,40 @@ export function TasksPanel({ project }: { project: Project }) {
                           />
                         </div>
                       </td>
+                      <td className="px-3 py-2 text-[11px] text-muted-foreground">
+                        {blockerNames.length > 0 ? (
+                          <span className="flex items-center gap-1">
+                            <Link2 className="h-2.5 w-2.5 shrink-0" />
+                            {blockerNames.join(", ")}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="px-3 py-2">
                         <Select
-                          value={task.status}
+                          value={task.priority ?? "medium"}
                           onValueChange={(v) =>
-                            setStatus(task, v as ProjectTaskStatus)
+                            dispatch(
+                              updateTask({
+                                projectId: project.id,
+                                taskId: task.id,
+                                patch: { priority: v as ProjectPriority },
+                              }),
+                            )
                           }
                         >
-                          <SelectTrigger
-                            className={cn(
-                              "h-7 w-36 text-[11px]",
-                              TASK_STATUS_STYLES[task.status],
-                            )}
-                          >
+                          <SelectTrigger className="h-7 w-24 text-[11px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             {(
                               Object.keys(
-                                TASK_STATUS_LABELS,
-                              ) as ProjectTaskStatus[]
-                            ).map((s) => (
-                              <SelectItem key={s} value={s}>
-                                {TASK_STATUS_LABELS[s]}
+                                PROJECT_PRIORITY_LABELS,
+                              ) as ProjectPriority[]
+                            ).map((p) => (
+                              <SelectItem key={p} value={p}>
+                                {PROJECT_PRIORITY_LABELS[p]}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -325,6 +386,7 @@ function AddTaskDialog({
       toast.error("The end date is before the start date.");
       return;
     }
+    const assignedEmployee = employees.find((e) => e.id === assignee);
     onAdd({
       name: name.trim(),
       phase: phase.trim() || undefined,
@@ -332,7 +394,8 @@ function AddTaskDialog({
       startDate,
       endDate,
       percentComplete: 0,
-      assigneeName: assignee || undefined,
+      assigneeId: assignedEmployee?.id,
+      assigneeName: assignedEmployee?.name,
       dependsOn: dependsOn.length ? dependsOn : undefined,
     });
   }
@@ -370,7 +433,7 @@ function AddTaskDialog({
                 <SelectContent>
                   <SelectItem value="none">Unassigned</SelectItem>
                   {employees.slice(0, 60).map((e) => (
-                    <SelectItem key={e.id} value={e.name}>
+                    <SelectItem key={e.id} value={e.id}>
                       {e.name}
                     </SelectItem>
                   ))}

@@ -72,7 +72,7 @@ export const FollowPointer = ({
     "#737373",
     "#14b8a6",
     "#22c55e",
-    "#3b82f6",
+    "#5192FA",
     "#ef4444",
     "#eab308",
   ];

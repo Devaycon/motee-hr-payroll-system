@@ -49,10 +49,14 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
 
   // Organization
   "organization.company":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
+  // Facilities owns the sites themselves, so it sees Branches where it does
+  // not see Company Profile.
+  "organization.branches":           ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FACILITIES-MANAGER","AUDITOR","READ-ONLY"],
   "organization.departments":        ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.structure":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
   "organization.employees":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","RECRUITER","AUDITOR","READ-ONLY"],
   "organization.employment-types":   ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
+  "organization.benefit-plans":      ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.eor":                ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
   "organization.employee-checklist": ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.roles":              ["SUPER-ADMIN","HR-ADMIN","RECRUITER","AUDITOR","READ-ONLY"],
@@ -65,6 +69,7 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   "employee.notes":        ["SUPER-ADMIN","HR-ADMIN"],
   // Talent
   "talent.workforce-requests":       ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","EXECUTIVE","FINANCE","AUDITOR","READ-ONLY"],
+  "talent.requisition":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
   "talent.recruitment":              ["SUPER-ADMIN","HR-ADMIN","RECRUITER","AUDITOR","READ-ONLY"],
   "talent.onboarding":               ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","RECRUITER","AUDITOR","READ-ONLY"],
   "talent.offboarding":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
@@ -81,6 +86,7 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   "operations.documents":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "operations.contracts":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "operations.reports":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FINANCE","EXECUTIVE","AUDITOR","READ-ONLY"],
+  "operations.analytics":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FINANCE","EXECUTIVE","AUDITOR","READ-ONLY"],
   "operations.workforce":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","RECRUITER","EXECUTIVE","AUDITOR","READ-ONLY"],
   // Engagement
   "workspace.announcements":         ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FINANCE","LINE-MANAGER","RECRUITER","IT-ADMIN","AUDITOR","READ-ONLY"],
@@ -111,11 +117,13 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
     "submissions.queue",
     "organization.employees",
     "organization.employment-types",
+    "organization.benefit-plans",
     "organization.eor",
     "time-payroll.attendance",
     "time-payroll.leave",
     "time-payroll.expenses",
     "operations.reports",
+    "operations.analytics",
     "operations.documents",
     "workspace.announcements",
     "workspace.knowledge",
@@ -128,6 +136,7 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
     "workspace.knowledge",
     "workspace.surveys",
     "operations.reports",
+    "operations.analytics",
     "workspace.announcements",
   ],
   "HS-OFFICER": [
@@ -136,6 +145,7 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
     "employee.medical",
     "operations.documents",
     "operations.reports",
+    "operations.analytics",
     "workspace.announcements",
     "workspace.helpdesk",
     "workspace.knowledge",
@@ -150,11 +160,13 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
     "operations.documents",
     "operations.contracts",
     "operations.reports",
+    "operations.analytics",
     "workspace.knowledge",
   ],
   "FACILITIES-MANAGER": [
     "submissions.queue",
     "organization.employees",
+    "organization.branches",
     "organization.departments",
     "operations.assets",
     "workspace.helpdesk",
@@ -179,12 +191,14 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
   // Like Auditor, but without the sensitive employee-detail sections.
   "EXTERNAL-AUDITOR": [
     "organization.company",
+    "organization.branches",
     "organization.departments",
     "organization.employees",
     "organization.structure",
     "operations.documents",
     "operations.contracts",
     "operations.reports",
+    "operations.analytics",
     "admin.audit-trail",
   ],
 };
@@ -266,8 +280,17 @@ const DEFAULT_SCOPES: Partial<Record<RoleSlug, DataScope>> = {
   "LINE-MANAGER": { kind: "direct_reports" },
   "SELF-SERVICE": { kind: "self" },
   CONTRACTOR: { kind: "self" },
-  "HR-MANAGER": { kind: "business_unit" },
-  "FACILITIES-MANAGER": { kind: "business_unit" },
+  // Branch-scoped with no explicit id list, which resolves to "whichever
+  // branch the holder works at". That keeps the seed tenant-agnostic — branch
+  // ids differ between the NG and UK bundles — and matches how these roles
+  // actually work: an HR Manager runs their site, not the company.
+  //
+  // HR-ADMIN and SUPER-ADMIN are deliberately absent and fall through to
+  // `{ kind: "all" }`: HR Admin is the system administrator and must keep
+  // seeing and doing everything. It is also the default demo identity, so the
+  // out-of-the-box demo is unaffected by any of this.
+  "HR-MANAGER": { kind: "branch" },
+  "FACILITIES-MANAGER": { kind: "branch" },
 };
 
 function makeLevel(

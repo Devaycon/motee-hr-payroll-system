@@ -43,6 +43,18 @@ export const ONBOARDING_STATUS_STYLES: Record<string, string> = {
   overdue: "bg-red-500/10 text-red-600 border-red-500/20",
 };
 
+export const ONBOARDING_MODE_LABELS: Record<string, string> = {
+  manual: "Manual Upload",
+  invited: "Self-Onboarding",
+  bulk: "Bulk Upload",
+};
+
+export const ONBOARDING_MODE_STYLES: Record<string, string> = {
+  manual: "bg-slate-500/10 text-slate-600 border-slate-500/20",
+  invited: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  bulk: "bg-violet-500/10 text-violet-600 border-violet-500/20",
+};
+
 export const ASSIGNEE_LABELS: Record<string, string> = {
   hr: "HR",
   manager: "Manager",

@@ -22,6 +22,10 @@ import {
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
 import {
+  EmployeeMultiPicker,
+  type PickedEmployee,
+} from "@/src/components/shared/employee-picker";
+import {
   MessageSquare,
   Lock,
   Scale,
@@ -86,7 +90,8 @@ export function CaseDetailModal({
 
   // Per-stage capture fields
   const [hearingDate, setHearingDate] = useState("");
-  const [hearingPanel, setHearingPanel] = useState("");
+  const [hearingPanelIds, setHearingPanelIds] = useState<string[]>([]);
+  const [hearingPanelNames, setHearingPanelNames] = useState<string[]>([]);
   const [outcome, setOutcome] = useState("");
   const [outcomeDate, setOutcomeDate] = useState("");
   const [appealReviewer, setAppealReviewer] = useState("");
@@ -100,7 +105,8 @@ export function CaseDetailModal({
       setNoteContent("");
       setNoteVisibility("hr_only");
       setHearingDate(caseData.hearingDate ?? "");
-      setHearingPanel((caseData.hearingPanel ?? []).join(", "));
+      setHearingPanelIds(caseData.hearingPanelIds ?? []);
+      setHearingPanelNames(caseData.hearingPanel ?? []);
       setOutcome(typeof caseData.outcome === "string" ? caseData.outcome : "");
       setOutcomeDate(caseData.outcomeDate ?? "");
       setAppealReviewer(caseData.appealReviewer ?? "");
@@ -181,13 +187,11 @@ export function CaseDetailModal({
 
   function saveHearing() {
     if (!caseData) return;
-    const panel = hearingPanel
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
     onUpdateCase(caseData.id, {
       hearingDate: hearingDate || undefined,
-      hearingPanel: panel,
+      hearingPanelIds:
+        hearingPanelIds.length > 0 ? hearingPanelIds : undefined,
+      hearingPanel: hearingPanelNames,
       stage: "hearing",
     });
     toast.success("Hearing details saved.");
@@ -551,22 +555,21 @@ export function CaseDetailModal({
               {/* Hearing */}
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Hearing</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="date"
-                    value={hearingDate}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setHearingDate(e.target.value)
-                    }
-                  />
-                  <Input
-                    value={hearingPanel}
-                    placeholder="Panel (comma separated)"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setHearingPanel(e.target.value)
-                    }
-                  />
-                </div>
+                <Input
+                  type="date"
+                  value={hearingDate}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setHearingDate(e.target.value)
+                  }
+                />
+                <EmployeeMultiPicker
+                  value={hearingPanelIds}
+                  placeholder="Select panel members…"
+                  onChange={(picked: PickedEmployee[]) => {
+                    setHearingPanelIds(picked.map((e) => e.id));
+                    setHearingPanelNames(picked.map((e) => e.name));
+                  }}
+                />
                 <Button size="sm" variant="outline" onClick={saveHearing}>
                   Save hearing
                 </Button>

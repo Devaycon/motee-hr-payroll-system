@@ -374,7 +374,7 @@ export function CandidateDrawer({
                 <TabsTrigger
                   key={t.value}
                   value={t.value}
-                  className="text-sm px-3 data-[state=active]:bg-[#ff8b2d]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
+                  className="text-sm px-3 data-[state=active]:bg-[#FE8F44]! data-[state=active]:text-white! data-[state=active]:shadow-none!"
                 >
                   {t.label}
                 </TabsTrigger>
@@ -389,7 +389,7 @@ export function CandidateDrawer({
                     className={cn(
                       "h-9 gap-1",
                       overflowTabs.some((t) => t.value === tab) &&
-                        "bg-[#ff8b2d] text-white hover:bg-[#ff8b2d]/90 hover:text-white border-transparent",
+                        "bg-[#FE8F44] text-white hover:bg-[#FE8F44]/90 hover:text-white border-transparent",
                     )}
                   >
                     More

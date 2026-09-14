@@ -28,6 +28,7 @@ import { buildClearanceItems } from "@/src/components/hr/offboarding/instantiate
 import { SendKudosModal } from "@/src/components/hr/kudos/components/send-kudos-modal";
 import type { NewKudos } from "@/src/components/hr/kudos/types";
 import type { OffboardingRecord } from "@/src/lib/types/offboarding";
+import type { ExitDetails } from "./components/employee-row-actions";
 
 /** Query-param value → the display value `toEmployeeRow` puts on the row. */
 const WORK_MODE_PARAM_TO_ROW: Record<string, string> = {
@@ -66,7 +67,11 @@ export function EmployeesPage() {
   const [activeTab, setActiveTab] = useState(() => {
     const status = searchParams.get("status");
     if (status && TABS.some((t) => t.value === status)) return status;
-    if (searchParams.get("department") || searchParams.get("employmentType")) {
+    if (
+      searchParams.get("department") ||
+      searchParams.get("employmentType") ||
+      searchParams.get("branch")
+    ) {
       return "all";
     }
     return "active";
@@ -83,6 +88,11 @@ export function EmployeesPage() {
   // (e.g. "Employees Working Remotely Today" → ?workMode=remote).
   const [workModeFilter, setWorkModeFilter] = useState(
     () => WORK_MODE_PARAM_TO_ROW[searchParams.get("workMode") ?? ""] ?? "all",
+  );
+  // Deep-linkable so the branches table, branch detail page and the Headcount
+  // location breakdown can all land here pre-filtered.
+  const [branchFilter, setBranchFilter] = useState(
+    () => searchParams.get("branch") ?? "all",
   );
 
   const employees = useMemo(() => data ?? [], [data]);
@@ -104,9 +114,13 @@ export function EmployeesPage() {
       const matchType = typeFilter === "all" || e.employmentType === typeFilter;
       const matchWorkMode =
         workModeFilter === "all" || e.workMode === workModeFilter;
-      return matchSearch && matchDept && matchType && matchWorkMode;
+      const matchBranch =
+        branchFilter === "all" || e.branchId === branchFilter;
+      return (
+        matchSearch && matchDept && matchType && matchWorkMode && matchBranch
+      );
     });
-  }, [employees, search, deptFilter, typeFilter, workModeFilter]);
+  }, [employees, search, deptFilter, typeFilter, workModeFilter, branchFilter]);
 
   const rowsByTab = useMemo(
     () =>
@@ -201,9 +215,13 @@ export function EmployeesPage() {
   /**
    * Exit Employee — creates a pending record on the Offboarding pipeline and
    * moves the employee to the Offboarding Notice tab (client feedback §1.2).
+   * The reason and last working date come from the "Start Offboarding"
+   * dialog rather than being assumed, since every exit initiated from here
+   * used to be silently recorded as a same-day resignation regardless of the
+   * truth, corrupting offboarding's exit-reason reporting.
    */
   const handleExit = useCallback(
-    (e: EmployeeRow) => {
+    (e: EmployeeRow, details: ExitDetails) => {
       const id = `off-${Date.now()}`;
       const record: OffboardingRecord = {
         id,
@@ -212,8 +230,8 @@ export function EmployeesPage() {
         employeeInitials: e.initials,
         jobTitle: e.jobTitle,
         department: e.department,
-        lastWorkingDate: new Date().toISOString().slice(0, 10),
-        exitReason: "resignation",
+        lastWorkingDate: details.lastWorkingDate,
+        exitReason: details.exitReason,
         status: "pending",
         clearanceItems: buildClearanceItems(id),
         exitInterviewCompleted: false,
@@ -304,6 +322,8 @@ export function EmployeesPage() {
         onTypeFilterChange={setTypeFilter}
         workModeFilter={workModeFilter}
         onWorkModeFilterChange={setWorkModeFilter}
+        branchFilter={branchFilter}
+        onBranchFilterChange={setBranchFilter}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

@@ -342,8 +342,8 @@ export function WorkforceRequestsPage() {
     }
   }
 
-  function startRequisition() {
-    router.push(`/talent/requisition`);
+  function startRequisition(wfr: WorkforceRequest) {
+    router.push(`/talent/requisition?workforceRequest=${wfr.id}`);
   }
 
   const stats = useMemo(() => {
@@ -462,7 +462,7 @@ export function WorkforceRequestsPage() {
                 <Button
                   size="sm"
                   className="h-7 gap-1 text-[11px]"
-                  onClick={() => startRequisition()}
+                  onClick={() => startRequisition(wfr)}
                 >
                   <ArrowRightLeft className="w-3 h-3" />
                   Create requisition

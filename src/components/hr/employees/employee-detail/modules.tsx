@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Pin, ChevronRight, Check, TriangleAlert } from "lucide-react";
+import { AlertTriangle, Pin, ChevronLeft, ChevronRight, Check, TriangleAlert } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   Tabs,
@@ -42,6 +42,7 @@ import {
   EditButton,
 } from "@/src/components/shared/profile-fields/record-form";
 import { COLLECTION_SCHEMAS } from "@/src/lib/profile/collections";
+import { MapsLink } from "@/src/components/shared/maps-link";
 import { regionWordForCountry, profileFieldGroupOf } from "@/src/lib/profile/fields";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { useProfileVariant } from "./variant";
@@ -92,7 +93,6 @@ import {
   useEmployeeHistory,
   useEmployeeJobs,
   useEmployeeKudos,
-  useEmployeeBookings,
   useEmployeeMedical,
   useEmployeeNotes,
   useEmployeePay,
@@ -405,6 +405,29 @@ export function LeaveModule({ employeeId, employee }: ModuleProps) {
  * to "how much can still be booked?"; "Taken" is used everywhere the tabs use
  * it, so a column never disagrees with the tab above it.
  */
+/** Where the employee said they could be reached while on this leave (§ leave contact). */
+function LeaveContactCell({
+  request,
+}: {
+  request: { contactPhone?: string; contactAddress?: string };
+}) {
+  if (!request.contactPhone && !request.contactAddress) {
+    return <span className="text-muted-foreground italic">Not provided</span>;
+  }
+  return (
+    <div className="space-y-0.5">
+      {request.contactPhone && (
+        <p className="text-xs">{request.contactPhone}</p>
+      )}
+      {request.contactAddress && (
+        <p className="text-[11px] text-muted-foreground">
+          {request.contactAddress}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function HrLeaveSummary({ employeeId, employee }: ModuleProps) {
   const { data, loading } = useEmployeeLeave(employeeId);
   const canEdit = useCan("organization.employees", "edit");
@@ -544,7 +567,7 @@ function HrLeaveSummary({ employeeId, employee }: ModuleProps) {
               }
             />
           ) : (
-            <DataTable columns={["Type", "From", "To", "Days", "Status"]}>
+            <DataTable columns={["Type", "From", "To", "Days", "Status", "Contact while away"]}>
               {booked.map((r) => (
                 <Row key={r.id}>
                   <Cell>{r.leaveType}</Cell>
@@ -552,6 +575,7 @@ function HrLeaveSummary({ employeeId, employee }: ModuleProps) {
                   <Cell>{fmtDate(r.endDate)}</Cell>
                   <Cell>{r.days}</Cell>
                   <Cell><StatusBadge status={r.status} /></Cell>
+                  <Cell><LeaveContactCell request={r} /></Cell>
                 </Row>
               ))}
             </DataTable>
@@ -568,7 +592,7 @@ function HrLeaveSummary({ employeeId, employee }: ModuleProps) {
               }
             />
           ) : (
-            <DataTable columns={["Type", "From", "To", "Days", "Status"]}>
+            <DataTable columns={["Type", "From", "To", "Days", "Status", "Contact while away"]}>
               {taken.map((r) => (
                 <Row key={r.id}>
                   <Cell>{r.leaveType}</Cell>
@@ -576,6 +600,7 @@ function HrLeaveSummary({ employeeId, employee }: ModuleProps) {
                   <Cell>{fmtDate(r.endDate)}</Cell>
                   <Cell>{r.days}</Cell>
                   <Cell><StatusBadge status={r.status} /></Cell>
+                  <Cell><LeaveContactCell request={r} /></Cell>
                 </Row>
               ))}
             </DataTable>
@@ -1303,6 +1328,21 @@ export function EmergencyContactModule({ employeeId, employee }: ModuleProps) {
   );
 }
 
+// ── Guarantors (always required for NG employees) ──────────────────────────
+export function GuarantorsModule({ employeeId, employee }: ModuleProps) {
+  return (
+    <Section title="Guarantors" description="Two guarantors are required for every NG employee.">
+      <ProfileFieldsEditor
+        employee={employee}
+        employeeId={employeeId}
+        mode="edit"
+        groups={["guarantors"]}
+        bulkEditLabel="Guarantors"
+      />
+    </Section>
+  );
+}
+
 // ── Assigned assets ─────────────────────────────────────────────────────────
 export function AssetsModule({ employeeId }: ModuleProps) {
   const { data, loading } = useEmployeeAssets(employeeId);
@@ -1572,39 +1612,6 @@ export function KudosModule({ employeeId }: ModuleProps) {
   );
 }
 
-// ── Location bookings ───────────────────────────────────────────────────────
-export function BookingsModule({ employeeId }: ModuleProps) {
-  const { data, loading } = useEmployeeBookings(employeeId);
-  const canEdit = useCan("organization.employees", "edit");
-  const rf = useRecordForm(COLLECTION_SCHEMAS.locationBookings, employeeId);
-  if (loading && !data) return <LoadingPanel />;
-  const rows = data ?? [];
-  return (
-    <Section
-      title="Location Bookings"
-      action={canEdit ? <AddButton label="Add booking" onClick={rf.openCreate} /> : undefined}
-    >
-      {rf.node}
-      {rows.length === 0 ? (
-        <Empty label="No bookings." />
-      ) : (
-        <DataTable columns={["Date", "Type", "Location", "Time", "Status", ...(canEdit ? [""] : [])]}>
-          {rows.map((b) => (
-            <Row key={b.id}>
-              <Cell>{fmtDate(b.date)}</Cell>
-              <Cell>{titleCase(b.locationType)}</Cell>
-              <Cell>{b.locationName}</Cell>
-              <Cell>{b.startTime}–{b.endTime}</Cell>
-              <Cell><StatusBadge status={b.status} /></Cell>
-              {canEdit && <Cell><EditButton onClick={() => rf.openEdit(b)} /></Cell>}
-            </Row>
-          ))}
-        </DataTable>
-      )}
-    </Section>
-  );
-}
-
 // ── Medical facts (sensitive) ───────────────────────────────────────────────
 export function MedicalModule({ employeeId }: ModuleProps) {
   const { data, loading } = useEmployeeMedical(employeeId);
@@ -1809,15 +1816,27 @@ export function TasksModule({ employeeId }: ModuleProps) {
 }
 
 // ── Time logs ───────────────────────────────────────────────────────────────
+const TIME_LOGS_PAGE_SIZE = 10;
+
 export function TimeLogsModule({ employeeId }: ModuleProps) {
   const { data, loading } = useEmployeeTimeLogs(employeeId);
   const canEdit = useCan("organization.employees", "edit");
   const rf = useRecordForm(COLLECTION_SCHEMAS.attendance, employeeId);
+  const [page, setPage] = React.useState(1);
+  const records = data?.records ?? [];
+  const pageCount = Math.max(1, Math.ceil(records.length / TIME_LOGS_PAGE_SIZE));
+  // Clamp rather than reset to 1 — deleting the last row on the last page
+  // should land you on the new last page, not jump you back to the top.
+  const activePage = Math.min(page, pageCount);
+  const pageRecords = records.slice(
+    (activePage - 1) * TIME_LOGS_PAGE_SIZE,
+    activePage * TIME_LOGS_PAGE_SIZE,
+  );
   if (loading && !data) return <LoadingPanel />;
   if (!data) return <Empty />;
   return (
     <Section
-      title="Time Logs"
+      title="Time & Location Logs"
       description="Last 30 days."
       action={canEdit ? <AddButton label="Add log" onClick={rf.openCreate} /> : undefined}
     >
@@ -1830,22 +1849,62 @@ export function TimeLogsModule({ employeeId }: ModuleProps) {
           { label: "Absent", value: data.summary.daysAbsent },
         ]}
       />
-      {data.records.length === 0 ? (
+      {records.length === 0 ? (
         <Empty label="No attendance in the last 30 days." />
       ) : (
-        <DataTable columns={["Date", "Clock in", "Clock out", "Hours", "Status", "Location", ...(canEdit ? [""] : [])]}>
-          {data.records.map((r) => (
-            <Row key={r.id}>
-              <Cell>{fmtDate(r.date)}</Cell>
-              <Cell>{r.clockIn ?? "—"}</Cell>
-              <Cell>{r.clockOut ?? "—"}</Cell>
-              <Cell>{r.hoursWorked ?? "—"}</Cell>
-              <Cell><StatusBadge status={r.status} /></Cell>
-              <Cell>{r.location ?? "—"}</Cell>
-              {canEdit && <Cell><EditButton onClick={() => rf.openEdit(r)} /></Cell>}
-            </Row>
-          ))}
-        </DataTable>
+        <>
+          <DataTable columns={["Date", "Clock in", "Clock out", "Hours", "Status", "Location", ...(canEdit ? [""] : [])]}>
+            {pageRecords.map((r) => (
+              <Row key={r.id}>
+                <Cell className="whitespace-nowrap">{fmtDate(r.date)}</Cell>
+                <Cell className="whitespace-nowrap">{r.clockIn ?? "—"}</Cell>
+                <Cell className="whitespace-nowrap">{r.clockOut ?? "—"}</Cell>
+                <Cell className="whitespace-nowrap">{r.hoursWorked ?? "—"}</Cell>
+                <Cell><StatusBadge status={r.status} /></Cell>
+                <Cell className="whitespace-nowrap">
+                  {r.location ? (
+                    <MapsLink
+                      address={r.clockOutCoords ?? r.clockInCoords ?? r.location}
+                      label={r.location}
+                    />
+                  ) : (
+                    "—"
+                  )}
+                </Cell>
+                {canEdit && <Cell><EditButton onClick={() => rf.openEdit(r)} /></Cell>}
+              </Row>
+            ))}
+          </DataTable>
+          {pageCount > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Page {activePage} of {pageCount} · {records.length} logs
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={activePage <= 1}
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={activePage >= pageCount}
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </Section>
   );
