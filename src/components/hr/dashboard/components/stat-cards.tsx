@@ -91,11 +91,11 @@ export function StatTile({
           the link down and made the tile twice as tall as the People KPIs. */}
       <div className="flex flex-1 gap-3">
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center justify-between gap-1.5">
-            <TileLabel>{heading.label}</TileLabel>
+          <div className="flex items-center gap-1.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#7F77DD]/10">
               <heading.icon className="h-5 w-5 text-[#7F77DD]" />
             </div>
+            <TileLabel>{heading.label}</TileLabel>
           </div>
           <TileSub>{heading.sub}</TileSub>
           <TileNum>{stat.value}</TileNum>
