@@ -1,12 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { setCurrentStep, setIsComplete, setIsSubmitting } from "@/src/lib/stores/onboarding-slice";
 import { AVAILABLE_MODULES } from "@/src/lib/types/onboarding-setup.types";
-import { Pencil } from "lucide-react";
+import { CheckCircle2, Pencil } from "lucide-react";
 
 interface SectionProps {
   title: string;
@@ -46,15 +55,21 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 export function Step7Review() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { companyProfile, organizationConfig, accessControlConfig, enabledModules, workflowConfig, uiLabels } =
+  const { companyProfile, organizationConfig, accessControlConfig, enabledModules, workflowConfig } =
     useAppSelector((s) => s.onboarding.companySetup);
   const isSubmitting = useAppSelector((s) => s.onboarding.isSubmitting);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSubmit = async () => {
     dispatch(setIsSubmitting(true));
     await new Promise((r) => setTimeout(r, 1200));
     dispatch(setIsSubmitting(false));
     dispatch(setIsComplete(true));
+    setShowSuccess(true);
+  };
+
+  const handleGoToDashboard = () => {
+    setShowSuccess(false);
     router.push("/hr");
   };
 
@@ -116,14 +131,8 @@ export function Step7Review() {
         <ReviewRow label="Auto-approval" value={workflowConfig.autoApproval ? "Enabled" : "Disabled"} />
       </ReviewSection>
 
-      <ReviewSection title="UI Labels" step={6}>
-        <ReviewRow label="Manager Label" value={uiLabels.manager} />
-        <ReviewRow label="Employee ID Label" value={uiLabels.employeeId} />
-        <ReviewRow label="Department Label" value={uiLabels.department} />
-      </ReviewSection>
-
       <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={() => dispatch(setCurrentStep(6))}>
+        <Button type="button" variant="outline" onClick={() => dispatch(setCurrentStep(5))}>
           Back
         </Button>
         <Button
@@ -135,6 +144,27 @@ export function Step7Review() {
           {isSubmitting ? "Saving…" : "Complete Setup"}
         </Button>
       </div>
+
+      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+        <DialogContent showCloseButton={false} className="text-center">
+          <DialogHeader className="items-center">
+            <CheckCircle2 size={48} style={{ color: "#1D9E75" }} />
+            <DialogTitle className="text-lg">Setup Complete!</DialogTitle>
+            <DialogDescription>
+              Your organisation has been configured successfully. You&apos;re all set to get started.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button
+              type="button"
+              onClick={handleGoToDashboard}
+              style={{ backgroundColor: "#1D9E75", borderColor: "#1D9E75" }}
+            >
+              Go to Dashboard
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
