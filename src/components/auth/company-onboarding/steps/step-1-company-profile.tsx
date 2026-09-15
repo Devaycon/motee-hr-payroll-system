@@ -117,15 +117,15 @@ export function Step1CompanyProfile() {
 
         <div className="flex flex-col gap-1.5 sm:col-span-2">
           <Label htmlFor="companyEmailDomain">Company Email Domain</Label>
-          <Input id="companyEmailDomain" placeholder="acme.com" {...register("companyEmailDomain")} />
+          <Input id="companyEmailDomain" placeholder="e.g. acme.com" {...register("companyEmailDomain")} />
           {errors.companyEmailDomain && <span className="text-xs text-destructive">{errors.companyEmailDomain.message}</span>}
         </div>
 
         <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <Label htmlFor="companyPolicies">Company Policies <span className="text-muted-foreground">(optional)</span></Label>
+          <Label htmlFor="companyPolicies">Company Description <span className="text-muted-foreground">(optional)</span></Label>
           <Textarea
             id="companyPolicies"
-            placeholder="Describe your company policies or paste them here…"
+            placeholder="Describe your company or paste details here…"
             rows={4}
             {...register("companyPolicies")}
           />

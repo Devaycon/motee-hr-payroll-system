@@ -11,7 +11,6 @@ import { Step2OrgStructure } from "./steps/step-2-org-structure";
 import { Step3RolePermissions } from "./steps/step-3-role-permissions";
 import { Step4ModulePreferences } from "./steps/step-4-module-preferences";
 import { Step5WorkflowConfig } from "./steps/step-5-workflow-config";
-import { Step6UILabels } from "./steps/step-6-ui-labels";
 import { Step7Review } from "./steps/step-7-review";
 import { Step8BulkUpload } from "./steps/step-8-bulk-upload";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
@@ -50,12 +49,6 @@ const STEPS = [
   },
   {
     number: 6,
-    label: "Labels",
-    title: "Table & Dashboard Labels",
-    description: "Customise UI terminology",
-  },
-  {
-    number: 7,
     label: "Review",
     title: "Review & Submit",
     description: "Confirm your configuration",
@@ -75,8 +68,6 @@ function StepContent({ step }: { step: number }) {
     case 5:
       return <Step5WorkflowConfig />;
     case 6:
-      return <Step6UILabels />;
-    case 7:
       return <Step7Review />;
     case 8:
       return <Step8BulkUpload />;
