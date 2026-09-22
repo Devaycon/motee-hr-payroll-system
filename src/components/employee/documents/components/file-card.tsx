@@ -137,6 +137,20 @@ export function FileCard({
         </p>
 
         <p className="text-[10px] text-muted-foreground">{doc.fileSize}</p>
+
+        {/* §8.3 — a self-service upload is routed to HR for review, not
+            filed automatically; this is the only signal of that on the
+            employee's own list. */}
+        {doc.reviewStatus === "awaiting_review" && (
+          <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold text-amber-600">
+            Awaiting HR review
+          </span>
+        )}
+        {doc.reviewStatus === "rejected" && (
+          <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[9px] font-semibold text-red-600">
+            Needs resubmission
+          </span>
+        )}
       </div>
 
       {(isExpired || expiringSoon) && (

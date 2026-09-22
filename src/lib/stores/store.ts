@@ -27,6 +27,7 @@ import expensesReducer from "./expenses-slice";
 import shiftsReducer from "./shifts-slice";
 import benefitPlansReducer from "./benefit-plans-slice";
 import docuSignReducer from "./docu-sign-slice";
+import myDocumentsReducer from "./my-documents-slice";
 
 export const store = configureStore({
   reducer: {
@@ -58,6 +59,7 @@ export const store = configureStore({
     shifts: shiftsReducer,
     benefitPlans: benefitPlansReducer,
     docuSign: docuSignReducer,
+    myDocuments: myDocumentsReducer,
   },
 });
 

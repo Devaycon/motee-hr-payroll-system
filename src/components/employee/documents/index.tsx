@@ -71,6 +71,8 @@ import {
   UploadModal,
 } from "./components/doc-modals";
 import { useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { submitSelfServiceDocument } from "@/src/lib/stores/my-documents-slice";
 
 /** The slice a KPI card drills the document library down to. */
 type DocCardFilter = "all" | "pending_ack" | "expiring";
@@ -100,6 +102,8 @@ function matchesDocCardFilter(
 
 export function MyDocumentsPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((s) => s.auth.user);
   const [docs, setDocs] = useState<EmployeeDocument[]>(DEMO_DOCUMENTS);
   const [folders, setFolders] = useState<DocFolder[]>(DEMO_FOLDERS);
 
@@ -230,8 +234,21 @@ export function MyDocumentsPage() {
       expiryDate: uploadExpiry || undefined,
       requiresAck: false,
       acknowledged: false,
+      // §8.3 — routed to HR for review/approval, not filed automatically.
+      reviewStatus: "awaiting_review",
     };
     setDocs((prev) => [newDoc, ...prev]);
+    dispatch(
+      submitSelfServiceDocument({
+        employeeId: user?.employeeId,
+        employeeName: user?.name ?? "Employee",
+        employeeInitials: user?.initials ?? "EM",
+        name: uploadName,
+        docType: uploadType,
+        ext: uploadExt,
+        expiryDate: uploadExpiry || undefined,
+      }),
+    );
     setUploadDone(true);
     setTimeout(() => {
       setUploadDone(false);
