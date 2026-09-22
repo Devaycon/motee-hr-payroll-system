@@ -55,7 +55,7 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 export function Step7Review() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { companyProfile, organizationConfig, accessControlConfig, enabledModules, workflowConfig } =
+  const { companyProfile, organizationConfig, accessControlConfig, enabledModules } =
     useAppSelector((s) => s.onboarding.companySetup);
   const isSubmitting = useAppSelector((s) => s.onboarding.isSubmitting);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -125,14 +125,8 @@ export function Step7Review() {
         <ReviewRow label="Active Modules" value={moduleLabels || "None selected"} />
       </ReviewSection>
 
-      <ReviewSection title="Workflow Configuration" step={5}>
-        <ReviewRow label="Leave Approval" value={workflowConfig.leaveApproval.charAt(0).toUpperCase() + workflowConfig.leaveApproval.slice(1)} />
-        <ReviewRow label="Multi-level Approval" value={workflowConfig.multiLevelApproval ? "Enabled" : "Disabled"} />
-        <ReviewRow label="Auto-approval" value={workflowConfig.autoApproval ? "Enabled" : "Disabled"} />
-      </ReviewSection>
-
       <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={() => dispatch(setCurrentStep(5))}>
+        <Button type="button" variant="outline" onClick={() => dispatch(setCurrentStep(4))}>
           Back
         </Button>
         <Button

@@ -35,6 +35,7 @@ export const ALL_MODULES: ModuleEntry[] = [
 
   // Employment Management
   { id: "organization.employees",          label: "Employees",                group: "Employment Management", link: "/organization/employees" },
+  { id: "organization.workforce-lens",          label: "Workforce Lens",                group: "Employment Management", link: "/organization/workforce-lens" },
   { id: "organization.employment-types",   label: "Employment Types",         group: "Employment Management", link: "/organization/employment-types" },
   { id: "organization.benefit-plans",      label: "Benefits",                 group: "Employment Management", link: "/organization/benefit-plans" },
   { id: "organization.eor",                 label: "Employer of Record",       group: "Employment Management", link: "/organization/eor" },

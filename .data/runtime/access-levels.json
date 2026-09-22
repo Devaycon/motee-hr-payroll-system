@@ -159,6 +159,19 @@
           ]
         },
         {
+          "module": "organization.workforce-lens",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "organization.employment-types",
           "access": true,
           "actions": [
@@ -787,6 +800,19 @@
           ]
         },
         {
+          "module": "organization.workforce-lens",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "organization.employment-types",
           "access": true,
           "actions": [
@@ -1367,6 +1393,16 @@
           ]
         },
         {
+          "module": "organization.workforce-lens",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "organization.employment-types",
           "access": true,
           "actions": [
@@ -1759,6 +1795,11 @@
           "actions": []
         },
         {
+          "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -2082,6 +2123,15 @@
           ]
         },
         {
+          "module": "organization.workforce-lens",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -2382,6 +2432,15 @@
           "actions": []
         },
         {
+          "module": "organization.workforce-lens",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -2670,6 +2729,11 @@
           ]
         },
         {
+          "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -2950,6 +3014,11 @@
         },
         {
           "module": "organization.employees",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.workforce-lens",
           "access": false,
           "actions": []
         },
@@ -3266,6 +3335,14 @@
         },
         {
           "module": "organization.employees",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.workforce-lens",
           "access": true,
           "actions": [
             "view",
@@ -3636,6 +3713,13 @@
           ]
         },
         {
+          "module": "organization.workforce-lens",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
           "module": "organization.employment-types",
           "access": true,
           "actions": [
@@ -3956,6 +4040,11 @@
           ]
         },
         {
+          "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": true,
           "actions": [
@@ -4271,6 +4360,11 @@
           ]
         },
         {
+          "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -4559,6 +4653,11 @@
           ]
         },
         {
+          "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -4843,6 +4942,11 @@
             "view",
             "export"
           ]
+        },
+        {
+          "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
         },
         {
           "module": "organization.employment-types",
@@ -5140,6 +5244,11 @@
           ]
         },
         {
+          "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -5407,6 +5516,11 @@
         },
         {
           "module": "organization.employees",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.workforce-lens",
           "access": false,
           "actions": []
         },
@@ -5683,6 +5797,11 @@
           "actions": []
         },
         {
+          "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -5952,6 +6071,11 @@
             "view",
             "export"
           ]
+        },
+        {
+          "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
         },
         {
           "module": "organization.employment-types",

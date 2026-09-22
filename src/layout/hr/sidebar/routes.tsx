@@ -47,6 +47,7 @@ import {
   CalendarClock,
   Gift,
   FileSignature,
+  LayoutGrid,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -143,6 +144,12 @@ export const routes: Route[] = [
     icon: Users,
     label: "Employees",
     link: "/organization/employees",
+  },
+  {
+    group: "Employee Management",
+    icon: LayoutGrid,
+    label: "Workforce Lens",
+    link: "/organization/workforce-lens",
   },
   {
     group: "Employee Management",

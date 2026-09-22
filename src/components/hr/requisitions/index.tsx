@@ -26,6 +26,10 @@ import {
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import {
+  APPROVAL_CHAIN_TAB_ITEM,
+  useHasApprovalChainTab,
+} from "@/src/components/hr/approvals/use-chain-tab";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { store } from "@/src/lib/stores/store";
 import { useCan } from "@/src/lib/permissions/use-can";
@@ -157,6 +161,7 @@ export function RequisitionsPage() {
 
   // Controlled so the KPI cards can drill into a tab, not just a filter.
   const [activeTab, setActiveTab] = useState("request");
+  const hasChainTab = useHasApprovalChainTab("job_requisition");
   /** Drill-down set by the KPI cards; "all" shows every requisition. */
   const [cardFilter, setCardFilter] = useState<CardFilter>("all");
 
@@ -467,7 +472,7 @@ export function RequisitionsPage() {
           tabs={[
             { value: "request", label: `Requested Requisition (${requestList.length})` },
             { value: "approved", label: `Approved Requisition (${approvedList.length})` },
-            { value: "approval_chain", label: "Approval Chain" },
+            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
 
@@ -495,9 +500,11 @@ export function RequisitionsPage() {
           />
         </TabsContent>
 
-        <TabsContent value="approval_chain" className="mt-5">
-          <ApprovalChainTab documentType="job_requisition" />
-        </TabsContent>
+        {hasChainTab && (
+          <TabsContent value="approval_chain" className="mt-5">
+            <ApprovalChainTab documentType="job_requisition" />
+          </TabsContent>
+        )}
       </Tabs>
 
       <RequisitionDetailModal

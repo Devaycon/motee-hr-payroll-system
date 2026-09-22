@@ -497,6 +497,8 @@ const approvalsSlice = createSlice({
         attachments?: AttachmentRules;
         signatures?: SignatureRules;
         steps: Omit<ApprovalChainStep, "id" | "order">[];
+        /** Make the new chain the active one for its module in the same step. */
+        makeActive?: boolean;
         actorName: string;
       }>,
     ) {
@@ -509,15 +511,21 @@ const approvalsSlice = createSlice({
         attachments,
         signatures,
         steps,
+        makeActive,
         actorName,
       } = action.payload;
       const id = uid("ACT");
+      if (makeActive) {
+        state.templates.forEach((t) => {
+          if (t.documentType === documentType) t.isDefault = false;
+        });
+      }
       state.templates.push({
         id,
         documentType,
         name,
         description,
-        isDefault: false,
+        isDefault: Boolean(makeActive),
         kind: "custom",
         startDesk: startDesk ?? DEFAULT_START,
         endDesk: endDesk ?? DEFAULT_END,

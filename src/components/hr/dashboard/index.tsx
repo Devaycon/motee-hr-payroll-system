@@ -31,18 +31,31 @@ const HrDashboard = () => {
   return (
     // `gap-2` throughout, matching the grid's gutter, so the spacing between
     // the header, the tab strip and the tiles is the same everywhere.
-    <div className="flex flex-col gap-2">
+    // `dashboard-corners` (globals.css) gives the cards and tab strip 5px
+    // corners on this page only.
+    <div className="dashboard-corners flex flex-col gap-2">
       <WelcomeBanner />
 
       {/* Self-service widgets ("My Profile Stats") used to sit here. They now
           live only in the employee portal, reachable via the Self-Service
           toggle in the navbar (client feedback §4.3). */}
-      <Tabs value={tab} onValueChange={(v) => setTab(v as DashboardTabKey)}>
+      {/* `-mx-4` trims HrLayout's 24px side padding down to 8px (the same as
+          the gutter between tiles) for the strip and the tiles together, so
+          they stay aligned with each other. Tied to that `p-6`, like the
+          banner's negative margins. */}
+      <Tabs
+        value={tab}
+        onValueChange={(v) => setTab(v as DashboardTabKey)}
+        className="-mx-4"
+      >
         <DashboardTabsList />
         {DASHBOARD_TABS.map((t) => {
           const Layout = TAB_LAYOUTS[t.key];
           return (
-            <TabsContent key={t.key} value={t.key} className="mt-2">
+            // No top margin: the Tabs container's own `gap-2` already puts 8px
+            // between the strip and the tiles, the same as between tiles. A
+            // `mt-2` here doubled it to 16px.
+            <TabsContent key={t.key} value={t.key}>
               <Layout />
             </TabsContent>
           );

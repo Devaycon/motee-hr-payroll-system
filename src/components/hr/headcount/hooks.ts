@@ -3,6 +3,7 @@
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { STATUS_LABELS } from "@/src/data/employees-demo";
 import { employmentTypeFromName } from "@/src/lib/constants/employment-types";
+import { ageBand, tenureYears } from "@/src/lib/utils/workforce-bands";
 import {
   riskLevelForScore,
   recommendedRetentionAction,
@@ -59,29 +60,6 @@ interface HeadcountData {
   eligibleForDeclaration: number;
   /** employeeId list, so declarations can be tallied without naming anyone. */
   employeeIds: string[];
-}
-
-/** §6.23 — standard reporting bands rather than raw ages. */
-function ageBand(dateOfBirth: string | undefined, now: Date): string | null {
-  if (!dateOfBirth) return null;
-  const dob = new Date(dateOfBirth);
-  if (Number.isNaN(dob.getTime())) return null;
-  const age = Math.floor(
-    (now.getTime() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25),
-  );
-  if (age < 25) return "Under 25";
-  if (age < 35) return "25–34";
-  if (age < 45) return "35–44";
-  if (age < 55) return "45–54";
-  if (age < 65) return "55–64";
-  return "65+";
-}
-
-function tenureYears(startDate: string): number {
-  const start = new Date(startDate);
-  if (Number.isNaN(start.getTime())) return 0;
-  const today = new Date();
-  return (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
 }
 
 function buildHeadcount(bundle: LocaleBundle): HeadcountData {

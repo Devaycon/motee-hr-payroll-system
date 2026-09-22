@@ -28,7 +28,10 @@ const STRIP =
 
 const SEGMENT = [
   // Beats the primitive's `h-[calc(100%-1px)]`, and the strip grows to match.
-  "h-14 flex-1 rounded-none border-0 px-3 text-base font-medium shadow-none",
+  // `text-lg` only from `xl`, with the icon: below that the seven segments
+  // have no spare width. `px-2` (was `px-3`) buys back the room the larger
+  // icon and label take, so the strip still fits at 1280px.
+  "h-14 flex-1 gap-2 rounded-none border-0 px-2 text-base font-medium shadow-none xl:text-lg",
   "text-muted-foreground",
   // Primary fill, opaque in both themes, in both attribute spellings the
   // primitive uses.
@@ -59,6 +62,11 @@ export function DashboardTabsList() {
             i === DASHBOARD_TABS.length - 1 && "rounded-r-xl",
           )}
         >
+          {/* Sits left of the label; takes the trigger's text colour, so it
+              turns white with the label on the active segment. Hidden below
+              `xl`: seven full-width segments leave no spare room for it, and
+              the strip would overflow its card. */}
+          <tab.icon aria-hidden className="hidden size-5 xl:block" />
           {tab.label}
         </TabsTrigger>
       ))}

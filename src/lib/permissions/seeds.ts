@@ -55,6 +55,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   "organization.departments":        ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.structure":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
   "organization.employees":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","RECRUITER","AUDITOR","READ-ONLY"],
+  // Same audience as Structure & Hierarchy: it is a picture of the workforce,
+  // and a line manager's data scope already narrows it to their own team.
+  "organization.workforce-lens":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","EXECUTIVE","AUDITOR","READ-ONLY"],
   "organization.employment-types":   ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.benefit-plans":      ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.eor":                ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FINANCE","AUDITOR","READ-ONLY"],

@@ -55,8 +55,12 @@ export function WelcomeBanner() {
   const greeting = useTimeGreeting();
 
   return (
+    // Full-bleed: `-mx-6 -mt-6` cancels the `p-6` on HrLayout's <main>, so the
+    // banner runs edge to edge and sits directly under the navbar. Square
+    // corners, since there is no gap left around it for a radius to show in.
+    // If that layout padding ever changes, change these to match.
     <div
-      className="relative flex min-h-45 items-center overflow-hidden rounded-xl"
+      className="relative -mx-6 -mt-6 flex min-h-45 items-center overflow-hidden"
       style={{
         backgroundColor: BASE_TINT,
         backgroundImage: `url('${BANNER_SRC}')`,

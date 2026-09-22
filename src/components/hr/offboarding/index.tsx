@@ -24,6 +24,11 @@ import { OFFBOARDING_TABS } from "./actions";
 import type { OffboardingRecord, NewOffboardingRecord } from "./types";
 import { buildClearanceItems } from "./instantiate";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import {
+  APPROVAL_CHAIN_TAB_ITEM,
+  useHasApprovalChainTab,
+} from "@/src/components/hr/approvals/use-chain-tab";
 import {
   addRecord,
   approveRecord,
@@ -46,6 +51,7 @@ export function OffboardingPage() {
   const records = useMemo(() => data ?? [], [data]);
 
   const [activeTab, setActiveTab] = useState("pending");
+  const hasChainTab = useHasApprovalChainTab("offboarding_clearance");
   /** Drill-down set by the KPI cards; "all" shows every record. */
   const [cardFilter, setCardFilter] = useState<OffboardingCardFilter>("all");
   const [search, setSearch] = useState("");
@@ -318,10 +324,13 @@ export function OffboardingPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <PageTabsList
-          tabs={rowsByTab.map((t) => ({
-            value: t.value,
-            label: `${t.label} (${t.rows.length})`,
-          }))}
+          tabs={[
+            ...rowsByTab.map((t) => ({
+              value: t.value,
+              label: `${t.label} (${t.rows.length})`,
+            })),
+            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
+          ]}
         />
         {rowsByTab.map((t) => (
           <TabsContent key={t.value} value={t.value} className="mt-4">
@@ -340,6 +349,12 @@ export function OffboardingPage() {
             />
           </TabsContent>
         ))}
+
+        {hasChainTab && (
+          <TabsContent value="approval_chain" className="mt-4">
+            <ApprovalChainTab documentType="offboarding_clearance" />
+          </TabsContent>
+        )}
       </Tabs>
 
       <OffboardingModal

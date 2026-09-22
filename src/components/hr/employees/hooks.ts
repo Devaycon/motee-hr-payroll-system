@@ -74,8 +74,10 @@ function toEmployeeRow(
     nationality: emp.nationality,
     maritalStatus: emp.maritalStatus,
     address: emp.address?.line1,
+    city: emp.address?.city,
     state: emp.address?.region,
     country: emp.address?.country,
+    skills: emp.skills,
     workMode:
       emp.workMode === "remote"
         ? "Remotely"

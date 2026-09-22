@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import {
@@ -23,17 +24,21 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { store } from "@/src/lib/stores/store";
 import {
   createTemplate,
   setDefaultTemplate,
   updateTemplate,
 } from "@/src/lib/stores/approvals-slice";
-import type {
-  ApprovalChainTemplate,
-  ApprovalDocumentType,
-  ApproverResolver,
-  OnLeaveAction,
+import {
+  APPROVAL_CHAIN_MODULES,
+  moduleForDocumentType,
+} from "@/src/lib/approvals/config";
+import {
+  categoryLabel,
+  type ApprovalChainTemplate,
+  type ApprovalDocumentType,
+  type ApproverResolver,
+  type OnLeaveAction,
 } from "@/src/lib/types/approvals";
 
 interface StageDraft {
@@ -56,10 +61,11 @@ const FALLBACK_OPTIONS: { value: FallbackKey; label: string }[] = [
 interface ApprovalChainBuilderModalProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  documentType: ApprovalDocumentType;
+  /** Pre-selects the module when creating. Ignored when a template is given. */
+  documentType?: ApprovalDocumentType;
   /** When set, the modal edits/views this chain; otherwise it creates a new one. */
   template?: ApprovalChainTemplate | null;
-  /** View-only (used for system chains). */
+  /** View-only (used for system chains, and for users who can't administer). */
   readOnly?: boolean;
 }
 
@@ -80,7 +86,9 @@ export function ApprovalChainBuilderModal({
   readOnly = false,
 }: ApprovalChainBuilderModalProps) {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
+  const categories = useAppSelector((s) => s.approvals.categories);
   const actorName = useAppSelector((s) => s.auth.user?.name) ?? "HR Admin";
 
   const approverOptions = useMemo(
@@ -125,15 +133,37 @@ export function ApprovalChainBuilderModal({
     return { kind: "reassign_to_role", approver };
   }
 
+  const [moduleType, setModuleType] = useState<ApprovalDocumentType>("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [stages, setStages] = useState<StageDraft[]>([emptyStage()]);
+  const [attachmentsAllowed, setAttachmentsAllowed] = useState(false);
+  const [attachmentsRequired, setAttachmentsRequired] = useState(false);
+  const [submitterSigns, setSubmitterSigns] = useState(false);
+  const [reviewerSigns, setReviewerSigns] = useState(false);
   const [setActive, setSetActive] = useState(true);
+
+  // Every module a chain can be set up for. A chain that already exists for a
+  // category outside that list (e.g. Onboarding) is still shown, just locked.
+  const moduleOptions = useMemo(() => {
+    const options = APPROVAL_CHAIN_MODULES.map((m) => ({
+      value: m.documentType,
+      label: m.label,
+    }));
+    if (template && !options.some((o) => o.value === template.documentType)) {
+      options.push({
+        value: template.documentType,
+        label: categoryLabel(template.documentType, categories),
+      });
+    }
+    return options;
+  }, [template, categories]);
 
   // Sync local form whenever the modal opens or the target chain changes.
   useEffect(() => {
     if (!open) return;
     if (template) {
+      setModuleType(template.documentType);
       setName(template.name);
       setDescription(template.description ?? "");
       setStages(
@@ -144,14 +174,23 @@ export function ApprovalChainBuilderModal({
           onLeaveAction: s.onLeaveAction ?? { kind: "skip" },
         })),
       );
+      setAttachmentsAllowed(template.attachments.allowed);
+      setAttachmentsRequired(template.attachments.required);
+      setSubmitterSigns(template.signatures.submitterSigns);
+      setReviewerSigns(template.signatures.reviewerSigns);
       setSetActive(template.isDefault);
     } else {
+      setModuleType(documentType ?? "");
       setName("");
       setDescription("");
       setStages([emptyStage()]);
+      setAttachmentsAllowed(false);
+      setAttachmentsRequired(false);
+      setSubmitterSigns(false);
+      setReviewerSigns(false);
       setSetActive(true);
     }
-  }, [open, template]);
+  }, [open, template, documentType]);
 
   const isEdit = Boolean(template) && !readOnly;
 
@@ -176,6 +215,10 @@ export function ApprovalChainBuilderModal({
   }
 
   function handleSave() {
+    if (!moduleType) {
+      toast.error("Choose the module this chain is for.");
+      return;
+    }
     const trimmedName = name.trim();
     if (trimmedName.length < 3) {
       toast.error("Give the chain a name (at least 3 characters).");
@@ -196,6 +239,7 @@ export function ApprovalChainBuilderModal({
       required: s.required,
       onLeaveAction: s.onLeaveAction,
     }));
+    const anySigner = submitterSigns || reviewerSigns;
 
     if (template) {
       dispatch(
@@ -204,35 +248,57 @@ export function ApprovalChainBuilderModal({
           name: trimmedName,
           description: description.trim() || undefined,
           steps,
+          // Spread the existing rules so fields this form doesn't expose
+          // (guidance text, place-on-document) survive an edit.
+          attachments: {
+            ...template.attachments,
+            allowed: attachmentsAllowed,
+            required: attachmentsAllowed && attachmentsRequired,
+          },
+          signatures: {
+            ...template.signatures,
+            submitterSigns,
+            reviewerSigns,
+            placeOnDocument: anySigner && template.signatures.placeOnDocument,
+          },
           actorName,
         }),
       );
       if (setActive && !template.isDefault) {
-        dispatch(setDefaultTemplate({ documentType, id: template.id }));
+        dispatch(
+          setDefaultTemplate({ documentType: template.documentType, id: template.id }),
+        );
       }
       toast.success("Approval chain updated");
     } else {
       dispatch(
         createTemplate({
-          documentType,
+          documentType: moduleType,
           name: trimmedName,
           description: description.trim() || undefined,
           steps,
+          attachments: {
+            allowed: attachmentsAllowed,
+            required: attachmentsAllowed && attachmentsRequired,
+          },
+          signatures: {
+            submitterSigns,
+            reviewerSigns,
+            placeOnDocument: false,
+          },
+          makeActive: setActive,
           actorName,
         }),
       );
-      if (setActive) {
-        // createTemplate appends the new chain; grab its id from the store.
-        const created = [...store.getState().approvals.templates]
-          .reverse()
-          .find(
-            (t) => t.documentType === documentType && t.name === trimmedName,
-          );
-        if (created) {
-          dispatch(setDefaultTemplate({ documentType, id: created.id }));
-        }
-      }
-      toast.success("Approval chain created");
+      const host = moduleForDocumentType(moduleType);
+      toast.success("Approval chain created", {
+        description: host
+          ? `An Approval Chain tab is now available in ${host.label}.`
+          : undefined,
+        action: host
+          ? { label: `Open ${host.label}`, onClick: () => router.push(host.href) }
+          : undefined,
+      });
     }
     onOpenChange(false);
   }
@@ -251,6 +317,35 @@ export function ApprovalChainBuilderModal({
         </DialogHeader>
 
         <div className="space-y-4 py-1">
+          <div className="space-y-1.5">
+            <Label>Module</Label>
+            <Select
+              value={moduleType}
+              // The module is fixed once the chain exists — its stages and
+              // requests all belong to it.
+              disabled={readOnly || Boolean(template)}
+              onValueChange={setModuleType}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select the module this chain is for" />
+              </SelectTrigger>
+              <SelectContent>
+                {moduleOptions.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!template && (
+              <p className="text-[11px] text-muted-foreground">
+                Once created, an Approval Chain tab is added to this module so
+                everyone can see how its requests are routed. It can only be
+                changed here.
+              </p>
+            )}
+          </div>
+
           <div className="space-y-1.5">
             <Label>Chain name</Label>
             <Input
@@ -431,6 +526,48 @@ export function ApprovalChainBuilderModal({
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Submission rules</Label>
+            <div className="grid gap-2 rounded-lg border border-border/60 p-3 sm:grid-cols-2">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={attachmentsAllowed}
+                  disabled={readOnly}
+                  onCheckedChange={(v) => {
+                    const on = Boolean(v);
+                    setAttachmentsAllowed(on);
+                    if (!on) setAttachmentsRequired(false);
+                  }}
+                />
+                Allow attachments
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={submitterSigns}
+                  disabled={readOnly}
+                  onCheckedChange={(v) => setSubmitterSigns(Boolean(v))}
+                />
+                Submitter must sign
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={attachmentsAllowed && attachmentsRequired}
+                  disabled={readOnly || !attachmentsAllowed}
+                  onCheckedChange={(v) => setAttachmentsRequired(Boolean(v))}
+                />
+                Require at least one attachment
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={reviewerSigns}
+                  disabled={readOnly}
+                  onCheckedChange={(v) => setReviewerSigns(Boolean(v))}
+                />
+                Every reviewer must sign
+              </label>
             </div>
           </div>
 
