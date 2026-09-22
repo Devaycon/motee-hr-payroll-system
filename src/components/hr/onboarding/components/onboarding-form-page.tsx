@@ -4,7 +4,7 @@ import { currentCurrencySymbol } from "@/src/lib/hooks/use-currency";
 import { useState } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Check, ChevronLeft } from "lucide-react";
+import { ChevronRight, Check, ChevronLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -23,7 +23,8 @@ import {
   type PickedEmployee,
 } from "@/src/components/shared/employee-picker";
 import { DEPARTMENT_OPTIONS } from "../data";
-import type { ManualOnboardingData, Guarantor } from "../types";
+import type { ManualOnboardingData, Guarantor, AssetDraft } from "../types";
+import { emptyAssetDraft } from "../types";
 import { guarantorsSchema, emptyGuarantor } from "@/src/lib/validation/guarantor";
 import { addRecord } from "@/src/lib/stores/onboarding-records-slice";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
@@ -179,11 +180,16 @@ const step6Schema = z.object({
 });
 
 const step7Schema = z.object({
-  assetTag: z.string().optional(),
-  assetName: z.string().optional(),
-  assetCategory: z.string().optional(),
-  assetSerialNumber: z.string().optional(),
-  assetAssignedDate: z.string().optional(),
+  // §3.1 — any number of assets, including none.
+  assets: z.array(
+    z.object({
+      tag: z.string().optional(),
+      name: z.string().optional(),
+      category: z.string().optional(),
+      serialNumber: z.string().optional(),
+      assignedDate: z.string().optional(),
+    }),
+  ),
 });
 
 const EMPTY_DATA: ManualOnboardingData = {
@@ -241,11 +247,7 @@ const EMPTY_DATA: ManualOnboardingData = {
   medications: "",
   dietaryRequirements: "",
   accessibilityNeeds: "",
-  assetTag: "",
-  assetName: "",
-  assetCategory: "",
-  assetSerialNumber: "",
-  assetAssignedDate: "",
+  assets: [emptyAssetDraft()],
   workflowTemplateId: "",
 };
 
@@ -316,6 +318,25 @@ export function OnboardingFormPage() {
       delete next[errKey];
       return next;
     });
+  }
+
+  /** §3.1 — one, several, or no assets can be assigned at onboarding. */
+  function updateAsset(index: number, field: keyof AssetDraft, value: string) {
+    setData((prev) => ({
+      ...prev,
+      assets: prev.assets.map((a, i) => (i === index ? { ...a, [field]: value } : a)),
+    }));
+  }
+
+  function addAsset() {
+    setData((prev) => ({ ...prev, assets: [...prev.assets, emptyAssetDraft()] }));
+  }
+
+  function removeAsset(index: number) {
+    setData((prev) => ({
+      ...prev,
+      assets: prev.assets.length > 1 ? prev.assets.filter((_, i) => i !== index) : prev.assets,
+    }));
   }
 
   function validateStep(s: number): boolean {
@@ -1421,60 +1442,90 @@ export function OnboardingFormPage() {
 
         {currentKey === "assets" && (
           <>
-            <h2 className="text-sm font-semibold text-foreground">
-              Assets to Assign
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">
+                Assets to Assign
+              </h2>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 text-xs"
+                onClick={addAsset}
+              >
+                <Plus className="w-3 h-3" /> Add asset
+              </Button>
+            </div>
             <Separator />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Asset Tag</Label>
-                <Input
-                  value={data.assetTag}
-                  onChange={(e) => update("assetTag", e.target.value)}
-                  className="h-9 text-sm"
-                  placeholder="e.g. AST-0142"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Asset Name</Label>
-                <Input
-                  value={data.assetName}
-                  onChange={(e) => update("assetName", e.target.value)}
-                  className="h-9 text-sm"
-                  placeholder="e.g. MacBook Pro 14&quot;"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Category</Label>
-                <Input
-                  value={data.assetCategory}
-                  onChange={(e) => update("assetCategory", e.target.value)}
-                  className="h-9 text-sm"
-                  placeholder="e.g. Laptop, Phone"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Serial Number</Label>
-                <Input
-                  value={data.assetSerialNumber}
-                  onChange={(e) =>
-                    update("assetSerialNumber", e.target.value)
-                  }
-                  className="h-9 text-sm"
-                  placeholder="Serial number"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Assigned Date</Label>
-                <Input
-                  type="date"
-                  value={data.assetAssignedDate}
-                  onChange={(e) =>
-                    update("assetAssignedDate", e.target.value)
-                  }
-                  className="h-9 text-sm"
-                />
-              </div>
+            {/* §3.1 — more than one asset can be assigned at onboarding. */}
+            <div className="flex flex-col gap-5">
+              {data.assets.map((asset, index) => (
+                <div key={index} className="flex flex-col gap-3 rounded-lg border border-border p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Asset {index + 1}
+                    </span>
+                    {data.assets.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 gap-1 text-xs text-destructive hover:text-destructive"
+                        onClick={() => removeAsset(index)}
+                      >
+                        <Trash2 className="w-3 h-3" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">Asset Tag</Label>
+                      <Input
+                        value={asset.tag}
+                        onChange={(e) => updateAsset(index, "tag", e.target.value)}
+                        className="h-9 text-sm"
+                        placeholder="e.g. AST-0142"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">Asset Name</Label>
+                      <Input
+                        value={asset.name}
+                        onChange={(e) => updateAsset(index, "name", e.target.value)}
+                        className="h-9 text-sm"
+                        placeholder="e.g. MacBook Pro 14&quot;"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">Category</Label>
+                      <Input
+                        value={asset.category}
+                        onChange={(e) => updateAsset(index, "category", e.target.value)}
+                        className="h-9 text-sm"
+                        placeholder="e.g. Laptop, Phone"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">Serial Number</Label>
+                      <Input
+                        value={asset.serialNumber}
+                        onChange={(e) => updateAsset(index, "serialNumber", e.target.value)}
+                        className="h-9 text-sm"
+                        placeholder="Serial number"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">Assigned Date</Label>
+                      <Input
+                        type="date"
+                        value={asset.assignedDate}
+                        onChange={(e) => updateAsset(index, "assignedDate", e.target.value)}
+                        className="h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
@@ -1606,17 +1657,21 @@ export function OnboardingFormPage() {
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                   Assets to Assign
                 </p>
-                <ReviewRow label="Asset Tag" value={data.assetTag} />
-                <ReviewRow label="Asset Name" value={data.assetName} />
-                <ReviewRow label="Category" value={data.assetCategory} />
-                <ReviewRow
-                  label="Serial Number"
-                  value={data.assetSerialNumber}
-                />
-                <ReviewRow
-                  label="Assigned Date"
-                  value={data.assetAssignedDate}
-                />
+                {data.assets.every((a) => !a.tag && !a.name) ? (
+                  <p className="text-xs text-muted-foreground">No assets assigned.</p>
+                ) : (
+                  data.assets.map((asset, i) =>
+                    asset.tag || asset.name ? (
+                      <div key={i} className={i > 0 ? "mt-3 pt-3 border-t border-border" : undefined}>
+                        <ReviewRow label={`Asset ${i + 1} — Tag`} value={asset.tag} />
+                        <ReviewRow label="Asset Name" value={asset.name} />
+                        <ReviewRow label="Category" value={asset.category} />
+                        <ReviewRow label="Serial Number" value={asset.serialNumber} />
+                        <ReviewRow label="Assigned Date" value={asset.assignedDate} />
+                      </div>
+                    ) : null,
+                  )
+                )}
               </div>
             </div>
           </>

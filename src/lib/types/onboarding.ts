@@ -397,13 +397,23 @@ export interface ManualOnboardingData {
   medications: string;
   dietaryRequirements: string;
   accessibilityNeeds: string;
-  // Asset to assign at onboarding
-  assetTag: string;
-  assetName: string;
-  assetCategory: string;
-  assetSerialNumber: string;
-  assetAssignedDate: string;
+  // §3.1 (Correction 2 feedback) — more than one asset can be assigned at
+  // onboarding time; previously this was a single flat set of fields.
+  assets: AssetDraft[];
   workflowTemplateId?: string;
+}
+
+/** One asset assigned during the manual onboarding wizard's Assets step. */
+export interface AssetDraft {
+  tag: string;
+  name: string;
+  category: string;
+  serialNumber: string;
+  assignedDate: string;
+}
+
+export function emptyAssetDraft(): AssetDraft {
+  return { tag: "", name: "", category: "", serialNumber: "", assignedDate: "" };
 }
 
 export interface InviteOnboardingData {

@@ -7,7 +7,9 @@ import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { Plus } from "lucide-react";
 import { TICKETS as SEED_TICKETS, computeHelpdeskStats, MY_INITIALS as DEMO_INITIALS } from "./components/data";
 import { useHelpdeskTickets } from "@/src/components/hr/helpdesk/hooks";
-import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
+import { caseRaised } from "@/src/lib/notifications/helpdesk";
 import type {
   HelpDeskTicket,
   TicketStatus,
@@ -23,6 +25,7 @@ import { TicketDetailModal } from "./components/ticket-detail-modal";
 import { NewCaseModal } from "./components/new-case-modal";
 
 export function EmployeeHelpdeskPage() {
+  const dispatch = useAppDispatch();
   const { data: localeTickets } = useHelpdeskTickets();
   const myInitials =
     useAppSelector((s) => s.auth.user?.initials) ?? DEMO_INITIALS;
@@ -46,6 +49,8 @@ export function EmployeeHelpdeskPage() {
   function handleCreated(ticket: HelpDeskTicket) {
     setTickets((prev) => [ticket, ...prev]);
     setActiveTab("my-cases");
+    // §9.1 — the requester gets their Ref # in the confirmation notification.
+    dispatch(pushNotification(caseRaised(ticket)));
   }
 
   function handleReply(ticketId: string, message: TicketMessage) {
