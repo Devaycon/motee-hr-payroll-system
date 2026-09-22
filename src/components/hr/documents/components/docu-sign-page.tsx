@@ -31,6 +31,9 @@ import {
 import { cn } from "@/src/lib/utils";
 import { useAppDispatch } from "@/src/lib/stores/hooks";
 import { queueSignedDocument } from "@/src/lib/stores/docu-sign-slice";
+import { recordOfferSigned } from "@/src/lib/stores/recruitment-slice";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
+import { offerSigned } from "@/src/lib/notifications/recruitment";
 
 const SignatureCanvas = dynamic(() => import("react-signature-canvas"), {
   ssr: false,
@@ -474,6 +477,13 @@ export function DocuSignPageContent() {
   const existingName = searchParams.get("name");
   const fileType = searchParams.get("fileType") ?? "pdf";
   const back = searchParams.get("back") ?? "/operations/documents";
+  // §15.2 — present when this sign link was generated for a recruitment
+  // offer letter, so completing the signature can be captured back onto
+  // that candidate's record rather than just downloaded and forgotten.
+  const offerCandidateId = searchParams.get("offerCandidateId");
+  const offerCountry = searchParams.get("offerCountry");
+  const offerCandidateName = searchParams.get("offerCandidateName") ?? "The candidate";
+  const offerRoleTitle = searchParams.get("offerRoleTitle") ?? "the role";
 
   // Opened from the sidebar with no document context — starts empty and lets
   // the user upload their own file. Opened from an existing document's "Sign"
@@ -687,7 +697,35 @@ export function DocuSignPageContent() {
             size="sm"
             className="h-8 text-xs gap-1.5"
             onClick={() => {
-              toast.success("Document signed and saved.");
+              // §15.2 — an offer-letter sign link captures the signature
+              // back onto the candidate's record and files it into
+              // Documents & Compliance, instead of the signing happening
+              // somewhere outside the system.
+              if (offerCandidateId && offerCountry) {
+                dispatch(
+                  recordOfferSigned({
+                    country: offerCountry,
+                    candidateId: offerCandidateId,
+                  }),
+                );
+                dispatch(
+                  queueSignedDocument({
+                    id: `DSF-${Date.now()}`,
+                    name: docName,
+                    fileType: (fileType as "pdf" | "png" | "jpg") ?? "pdf",
+                    fileSize: 0,
+                    fileUrl: "",
+                    createdAt: new Date().toISOString(),
+                    createdBy: offerCandidateName,
+                  }),
+                );
+                dispatch(
+                  pushNotification(offerSigned(offerCandidateName, offerRoleTitle)),
+                );
+                toast.success("Offer letter signed and filed into Documents & Compliance.");
+              } else {
+                toast.success("Document signed and saved.");
+              }
               router.push(back);
             }}
           >

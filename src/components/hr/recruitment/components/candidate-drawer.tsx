@@ -1083,6 +1083,24 @@ function OffersTab({
             >
               {STATUS_COPY[o.status]}
             </Badge>
+            {/* §15.2 — e-signature status, independent of the offer's
+                accept/decline outcome above. */}
+            {o.signatureStatus === "sent" && (
+              <Badge
+                variant="outline"
+                className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+              >
+                Awaiting signature
+              </Badge>
+            )}
+            {o.signatureStatus === "signed" && (
+              <Badge
+                variant="outline"
+                className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+              >
+                Signed{o.signedAt ? ` ${o.signedAt.slice(0, 10)}` : ""}
+              </Badge>
+            )}
             <span className="text-[10px] text-muted-foreground">
               Sent {o.at}
             </span>

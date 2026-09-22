@@ -23,6 +23,8 @@ import {
   MapPin,
   Phone,
   Users,
+  Paperclip,
+  PenLine,
 } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/src/components/ui/badge";
@@ -77,6 +79,7 @@ import {
   scheduleInterview,
   recordInterviewScores,
   sendOffer,
+  attachOfferDocument,
   respondToOffer,
   uid,
 } from "@/src/lib/stores/recruitment-slice";
@@ -672,6 +675,13 @@ export function StagePanel({
   const [offerSalary, setOfferSalary] = useState("");
   const [offerStartDate, setOfferStartDate] = useState("");
   const [offerNotes, setOfferNotes] = useState("");
+  // §15.1 — the offer letter attached at send time (editable Word doc, PDF...).
+  const [offerFile, setOfferFile] = useState<File | null>(null);
+  // §15.2 — preferred over a plain attachment: routes the candidate through
+  // the in-house e-sign tool so the signed document is captured back into
+  // the system automatically.
+  const [offerRequestSignature, setOfferRequestSignature] = useState(true);
+  const offerFileInputRef = useRef<HTMLInputElement>(null);
 
   function openOffer(c: Candidate) {
     setOfferFor(c);
@@ -679,12 +689,31 @@ export function StagePanel({
     setOfferSalary(requisition.salaryMax ? String(requisition.salaryMax) : "");
     setOfferStartDate(requisition.targetStartDate ?? "");
     setOfferNotes("");
+    setOfferFile(null);
+    setOfferRequestSignature(true);
   }
 
   function confirmOffer() {
     if (!offerFor) return;
     const salary = Number(offerSalary.replace(/,/g, ""));
     const amount = Number.isFinite(salary) && salary > 0 ? salary : undefined;
+
+    let attachmentId: string | undefined;
+    if (offerFile) {
+      attachmentId = `att-${Date.now()}`;
+      dispatch(
+        attachOfferDocument({
+          country,
+          candidateId: offerFor.id,
+          attachment: {
+            id: attachmentId,
+            name: offerFile.name,
+            url: URL.createObjectURL(offerFile),
+          },
+        }),
+      );
+    }
+
     dispatch(
       sendOffer({
         country,
@@ -692,20 +721,46 @@ export function StagePanel({
         salary: amount,
         startDate: offerStartDate || undefined,
         notes: offerNotes.trim() || undefined,
+        attachmentId,
+        requestSignature: offerRequestSignature,
       }),
     );
+
     const tpl = stageTemplates.find((t) => t.id === "tpl-offer");
     const vars = {
       ...templateVars([offerFor]),
       date: offerStartDate || requisition.targetStartDate,
       salary: amount ? amount.toLocaleString() : "",
     };
+
+    // §15.2 — the sign link the candidate follows; completing it there
+    // captures the signature back onto this candidate's offer.
+    const signUrl = offerRequestSignature
+      ? `${typeof window !== "undefined" ? window.location.origin : ""}/sign?${new URLSearchParams(
+          {
+            name: offerFile?.name ?? `Offer letter — ${requisition.positionTitle}`,
+            fileType: "pdf",
+            offerCandidateId: offerFor.id,
+            offerCountry: country,
+            offerCandidateName: offerFor.name,
+            offerRoleTitle: requisition.positionTitle,
+            back: `/talent/recruitment/${requisition.id}?candidate=${offerFor.id}`,
+          },
+        ).toString()}`
+      : null;
+
     openMailto({
       to: [offerFor.email],
       subject: tpl
         ? renderTemplate(tpl.subject, vars)
         : `Offer — ${requisition.positionTitle}`,
-      body: tpl ? renderTemplate(tpl.body, vars) : "",
+      body:
+        (tpl ? renderTemplate(tpl.body, vars) : "") +
+        (signUrl
+          ? `\n\nPlease review and sign your offer letter here: ${signUrl}`
+          : offerFile
+            ? `\n\n(Offer letter "${offerFile.name}" attached separately — mailto links can't carry attachments automatically.)`
+            : ""),
     });
     dispatch(
       pushNotification(
@@ -717,7 +772,11 @@ export function StagePanel({
         ),
       ),
     );
-    toast.success(`Offer sent to ${offerFor.name}`);
+    toast.success(
+      offerRequestSignature
+        ? `Offer sent to ${offerFor.name} for e-signature`
+        : `Offer sent to ${offerFor.name}`,
+    );
     setOfferFor(null);
   }
 
@@ -1483,6 +1542,65 @@ export function StagePanel({
                 onChange={(e) => setOfferNotes(e.target.value)}
               />
             </div>
+
+            {/* §15.1 — attach the offer letter, preferably an editable Word doc. */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Offer letter (optional)</Label>
+              <input
+                ref={offerFileInputRef}
+                type="file"
+                accept=".doc,.docx,.pdf"
+                className="hidden"
+                onChange={(e) => setOfferFile(e.target.files?.[0] ?? null)}
+              />
+              {offerFile ? (
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
+                  <span className="flex items-center gap-1.5 text-xs text-foreground truncate">
+                    <Paperclip className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                    {offerFile.name}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-1.5 text-xs text-muted-foreground"
+                    onClick={() => setOfferFile(null)}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs w-full"
+                  onClick={() => offerFileInputRef.current?.click()}
+                >
+                  <Paperclip className="w-3.5 h-3.5" />
+                  Attach editable Word doc or PDF
+                </Button>
+              )}
+            </div>
+
+            {/* §15.2 — the preferred option over a plain attachment. */}
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div className="space-y-0.5 pr-3">
+                <Label className="text-xs flex items-center gap-1.5">
+                  <PenLine className="w-3.5 h-3.5 text-primary" />
+                  Send for e-signature
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  The candidate signs electronically; the signed document is
+                  captured back into Documents &amp; Compliance automatically.
+                </p>
+              </div>
+              <Switch
+                checked={offerRequestSignature}
+                onCheckedChange={setOfferRequestSignature}
+              />
+            </div>
+
             <p className="text-[11px] text-muted-foreground">
               This records the offer and opens your mail client. Come back and
               mark the response once they reply.

@@ -460,13 +460,23 @@ export interface CandidateOffer {
   respondedBy?: string;
   /** What the candidate said — their words, not a status label. */
   responseNote?: string;
+  /** §15.1 — the offer letter attached at send time, if any. */
+  attachmentId?: string;
+  /**
+   * §15.2 — routed through the in-house e-sign tool rather than a plain
+   * emailed attachment. "sent" means a sign link went out; "signed" means
+   * the signed document was captured back into Documents & Compliance.
+   */
+  signatureStatus?: "not_sent" | "sent" | "signed";
+  signatureRequestedAt?: string;
+  signedAt?: string;
 }
 
 export interface CandidateAttachment {
   id: string;
   name: string;
   url: string;
-  kind: "cv" | "cover_letter" | "other";
+  kind: "cv" | "cover_letter" | "offer_letter" | "other";
 }
 
 export interface Candidate {

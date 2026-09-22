@@ -909,6 +909,11 @@ const recruitmentSlice = createSlice({
      * §7.18 — record an offer against a candidate. `Candidate.offers` already
      * existed but nothing ever wrote to it, so the offer/accept/decline round
      * trip happened entirely outside the system.
+     *
+     * §15.1/§15.2 — an offer can now carry an attached letter
+     * (`attachmentId`, already filed onto `candidate.attachments`) and be
+     * routed through the in-house e-sign tool instead of, or alongside, the
+     * plain emailed offer.
      */
     sendOffer(
       state,
@@ -918,6 +923,8 @@ const recruitmentSlice = createSlice({
         salary?: number;
         startDate?: string;
         notes?: string;
+        attachmentId?: string;
+        requestSignature?: boolean;
       }>,
     ) {
       const b = state.byCountry[action.payload.country];
@@ -932,8 +939,50 @@ const recruitmentSlice = createSlice({
         salary: action.payload.salary,
         startDate: action.payload.startDate,
         notes: action.payload.notes,
+        attachmentId: action.payload.attachmentId,
+        signatureStatus: action.payload.requestSignature ? "sent" : "not_sent",
+        signatureRequestedAt: action.payload.requestSignature
+          ? new Date().toISOString()
+          : undefined,
       });
       c.updatedAt = at;
+    },
+
+    /** §15.1 — file the offer letter onto the candidate before/while sending it. */
+    attachOfferDocument(
+      state,
+      action: PayloadAction<{
+        country: string;
+        candidateId: string;
+        attachment: { id: string; name: string; url: string };
+      }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      const c = b.candidates.find((x) => x.id === action.payload.candidateId);
+      if (!c) return;
+      c.attachments.push({ ...action.payload.attachment, kind: "offer_letter" });
+    },
+
+    /**
+     * §15.2 — the candidate (or HR, standing in for them in this demo)
+     * completed the sign flow at `/sign`. Marks the *latest* offer signed,
+     * capturing the signed document back into the system rather than the
+     * signing happening somewhere outside it.
+     */
+    recordOfferSigned(
+      state,
+      action: PayloadAction<{ country: string; candidateId: string }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      const c = b.candidates.find((x) => x.id === action.payload.candidateId);
+      if (!c) return;
+      const offer = c.offers.at(-1);
+      if (!offer) return;
+      offer.signatureStatus = "signed";
+      offer.signedAt = new Date().toISOString();
+      c.updatedAt = offer.signedAt.slice(0, 10);
     },
 
     /**
@@ -1170,6 +1219,8 @@ export const {
   moveStage,
   setCandidateStatus,
   sendOffer,
+  attachOfferDocument,
+  recordOfferSigned,
   respondToOffer,
   linkEmployeeRecord,
   setGateProgress,
