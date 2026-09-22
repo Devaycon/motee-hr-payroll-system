@@ -16,6 +16,16 @@ export type CompanyValue =
 
 export type ReactionType = "heart" | "fire" | "clap" | "star" | "rocket" | "celebrate";
 
+/**
+ * §5.1 (Correction 2 feedback) — the client asked why Kudos could only be
+ * sent to one colleague, recalling a department/team option that git
+ * history shows never actually existed in this codebase (there's no
+ * regression to restore, just a capability to add). "team" reuses the
+ * department roster as its source list — there is no separate team entity
+ * modelled anywhere else in the app.
+ */
+export type KudosRecipientType = "individual" | "department" | "team";
+
 export interface KudosReaction {
   type: ReactionType;
   users: string[];
@@ -40,6 +50,8 @@ export interface KudosPost {
   recipientName: string;
   recipientInitials: string;
   recipientDept: string;
+  /** Absent on older posts, which were always individual recipients. */
+  recipientType?: KudosRecipientType;
   kudosType: KudosType;
   companyValue: CompanyValue;
   message: string;
@@ -57,6 +69,7 @@ export interface NewKudos {
   recipientName: string;
   recipientInitials: string;
   recipientDept: string;
+  recipientType?: KudosRecipientType;
   kudosType: KudosType;
   companyValue: CompanyValue;
   message: string;

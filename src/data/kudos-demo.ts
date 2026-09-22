@@ -50,6 +50,21 @@ export const REACTION_ICONS: Record<ReactionType, LucideIcon> = {
   celebrate: PartyPopper,
 };
 
+/**
+ * §5.1 (Correction 2 feedback) — the department/team list Kudos can be sent
+ * to as a group, alongside the individual roster below. Derived from the
+ * same departments the roster already uses.
+ */
+export const KUDOS_DEPARTMENTS = [
+  "Engineering",
+  "Legal",
+  "Sales",
+  "Human Resources",
+  "Finance",
+  "Marketing",
+  "Operations",
+];
+
 export const EMPLOYEE_ROSTER: { name: string; initials: string; department: string; dept: string }[] = [
   { name: "Emeka Nwosu",      initials: "EN", department: "Engineering",    dept: "Engineering" },
   { name: "Aisha Garba",      initials: "AG", department: "Legal",          dept: "Legal" },
