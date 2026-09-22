@@ -217,6 +217,22 @@ export const routes: Route[] = [
     label: "Offboarding",
     link: "/talent/offboarding",
   },
+  // §7.1–7.2 (Correction 2 feedback) — moved here from "Knowledge &
+  // Resources", superseding that group's earlier placement (Batch 3
+  // §4.15–4.16): the client's later, more specific ask was for these two
+  // to sit alongside the rest of an employee's record.
+  {
+    group: "Employee Management",
+    icon: Package,
+    label: "Asset Management",
+    link: "/operations/assets",
+  },
+  {
+    group: "Employee Management",
+    icon: FileText,
+    label: "Contracts",
+    link: "/operations/contracts",
+  },
   {
     group: "Organization",
     icon: Building2,
@@ -309,8 +325,10 @@ export const routes: Route[] = [
     link: "/workspace/helpdesk",
   },
 
-  // §4.15 — the reference material and company property an employee needs
-  // access to, rather than a person-shaped record.
+  // §4.15 originally grouped Contracts and Asset Management here too, as
+  // reference material rather than person-shaped records. §7.1–7.2
+  // (Correction 2 feedback) moved both into "Employee Management" instead —
+  // see that group above.
   {
     group: "Knowledge & Resources",
     icon: BookOpen,
@@ -322,18 +340,6 @@ export const routes: Route[] = [
     icon: Library,
     label: "Documents & Compliance",
     link: "/operations/documents",
-  },
-  {
-    group: "Knowledge & Resources",
-    icon: FileText,
-    label: "Contracts",
-    link: "/operations/contracts",
-  },
-  {
-    group: "Knowledge & Resources",
-    icon: Package,
-    label: "Asset Management",
-    link: "/operations/assets",
   },
 
   {
