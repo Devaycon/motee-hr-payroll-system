@@ -55,7 +55,7 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 export function Step7Review() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { companyProfile, organizationConfig, accessControlConfig, enabledModules } =
+  const { companyProfile, organizationConfig, accessControlConfig, enabledModules, workflowConfig } =
     useAppSelector((s) => s.onboarding.companySetup);
   const isSubmitting = useAppSelector((s) => s.onboarding.isSubmitting);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -125,8 +125,47 @@ export function Step7Review() {
         <ReviewRow label="Active Modules" value={moduleLabels || "None selected"} />
       </ReviewSection>
 
+      {/* §4.1 — was previously omitted from the review step entirely,
+          consistent with the step itself not having been wired in. */}
+      <ReviewSection title="Workflow Configuration" step={5}>
+        <ReviewRow
+          label="Leave Approval"
+          value={
+            workflowConfig.leaveApproval === "manager"
+              ? "Direct Manager"
+              : workflowConfig.leaveApproval === "hr"
+                ? "HR Department"
+                : "Manager & HR"
+          }
+        />
+        <ReviewRow label="Multi-level Approval" value={workflowConfig.multiLevelApproval ? "Enabled" : "Disabled"} />
+        <ReviewRow label="Auto-approval Rules" value={workflowConfig.autoApproval ? "Enabled" : "Disabled"} />
+        <ReviewRow
+          label="Approval Delegation"
+          value={
+            workflowConfig.autoDelegate
+              ? `Auto-delegate to ${
+                  workflowConfig.delegateTo === "hr"
+                    ? "HR Department"
+                    : workflowConfig.delegateTo === "next_level_manager"
+                      ? "next-level manager"
+                      : "designated delegate"
+                }`
+              : "Off"
+          }
+        />
+        <ReviewRow
+          label="Escalation"
+          value={
+            workflowConfig.escalationEnabled
+              ? `After ${workflowConfig.escalationHours}h with no response`
+              : "Off"
+          }
+        />
+      </ReviewSection>
+
       <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={() => dispatch(setCurrentStep(4))}>
+        <Button type="button" variant="outline" onClick={() => dispatch(setCurrentStep(5))}>
           Back
         </Button>
         <Button

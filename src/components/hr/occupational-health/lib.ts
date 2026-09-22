@@ -1,5 +1,4 @@
 import { useEffectiveAccess } from "@/src/lib/permissions/use-can";
-import { allows } from "@/src/lib/permissions/resolve";
 import type { OHReferral } from "@/src/lib/types/occupational-health";
 
 /** Fixed "today" the demo data is authored against, matching the rest of the module. */
@@ -62,17 +61,21 @@ export function matchesTab(r: OHReferral, tab: OHTabValue): boolean {
 }
 
 /**
- * §10.8 — role-based confidentiality. HR/OH admins (anyone whose resolved
- * access grants `edit` on the Occupational Health module, or whose data
- * scope is org-wide) see full case detail; everyone else — the line-manager
- * case — gets the restricted view (fitness, adjustments, review date only,
- * no case notes/history). Falls open (full detail) when access hasn't
- * resolved yet, matching every other `useCan` call site's pre-login/demo
- * behaviour.
+ * §10.8 — role-based confidentiality, keyed off data scope rather than the
+ * module's `edit` action: `actionsFor()` in permissions/seeds.ts grants
+ * Line Manager "edit" too (for their own reports' records generally), so
+ * action-based gating would wrongly hand managers the confidential view.
+ * Data scope is the signal this codebase already uses to mean "a line
+ * manager looking at their own reports" (`direct_reports`) vs. HR staff
+ * (`all` / `business_unit` / `branch` / `department`) — see the doc comment
+ * on `DataScope` in src/lib/types/access-levels.ts. An individual viewing
+ * their own record (`self`) is equally not HR/OH staff.
+ *
+ * Falls open (full detail) when access hasn't resolved yet, matching every
+ * other `useCan` call site's pre-login/demo behaviour.
  */
 export function useCanViewConfidentialOH(): boolean {
   const access = useEffectiveAccess();
   if (access.unresolved) return true;
-  if (allows(access, "time-payroll.occupational-health", "edit")) return true;
-  return access.dataScope.kind === "all" || access.dataScope.kind === "business_unit";
+  return access.dataScope.kind !== "direct_reports" && access.dataScope.kind !== "self";
 }

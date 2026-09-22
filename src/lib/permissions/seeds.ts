@@ -81,6 +81,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   // Time & Payroll
   "time-payroll.attendance":         ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
   "time-payroll.leave":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
+  // §10.8 — Line Manager gets access (the restricted manager view is
+  // enforced by data scope, not by withholding the module entirely).
+  "time-payroll.occupational-health": ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
   // Finance sits on the expense chain's final (reimbursement) step, and the
   // executive is the resolved line manager for much of the org.
   "time-payroll.expenses":           ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","EXECUTIVE","AUDITOR","READ-ONLY"],

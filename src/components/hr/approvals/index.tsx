@@ -9,6 +9,7 @@ import {
   FileCheck2,
   Clock,
   SlidersHorizontal,
+  UserCog,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -39,6 +40,7 @@ import {
 import { QueueTable } from "./components/queue-table";
 import { IntakeModal } from "./components/intake-modal";
 import { ApprovalChainsTab } from "./components/chains-tab";
+import { MyDelegationPanel } from "./components/my-delegation-panel";
 import { currentApproverName, isCurrentApprover, isSubmitter } from "./utils";
 import { useDemoApprovalSeed } from "./use-demo-seed";
 import { useCan } from "@/src/lib/permissions/use-can";
@@ -129,6 +131,7 @@ export function ApprovalsPage({
   const [dateTo, setDateTo] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [intakeOpen, setIntakeOpen] = useState(false);
+  const [delegationOpen, setDelegationOpen] = useState(false);
   // Controlled so the KPI cards can drill into a tab, not just a filter — and
   // so a module's "Manage chains" link can land straight on `?tab=chains`.
   const [activeTab, setActiveTab] = useState(() => {
@@ -373,12 +376,20 @@ export function ApprovalsPage({
           <h1 className="text-4xl font-bold text-foreground">{headerTitle}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{headerSub}</p>
         </div>
-        {canSubmit && (
-          <Button className="mt-1 gap-1.5" onClick={() => setIntakeOpen(true)}>
-            <Plus className="w-4 h-4" />
-            New Submission
+        <div className="mt-1 flex items-center gap-2">
+          {/* §4.1 mechanism 1 — self-service delegation, open to anyone who
+              might be an approver, not gated behind canSubmit/canManage. */}
+          <Button variant="outline" className="gap-1.5" onClick={() => setDelegationOpen(true)}>
+            <UserCog className="w-4 h-4" />
+            My Delegation
           </Button>
-        )}
+          {canSubmit && (
+            <Button className="gap-1.5" onClick={() => setIntakeOpen(true)}>
+              <Plus className="w-4 h-4" />
+              New Submission
+            </Button>
+          )}
+        </div>
       </div>
 
       <HrStatCardsGrid stats={statCards} columns={4} />
@@ -660,6 +671,7 @@ export function ApprovalsPage({
         onOpenChange={setIntakeOpen}
         portal={variant === "hr" ? "admin" : "self_service"}
       />
+      <MyDelegationPanel open={delegationOpen} onClose={() => setDelegationOpen(false)} />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { Step1CompanyProfile } from "./steps/step-1-company-profile";
 import { Step2OrgStructure } from "./steps/step-2-org-structure";
 import { Step3RolePermissions } from "./steps/step-3-role-permissions";
 import { Step4ModulePreferences } from "./steps/step-4-module-preferences";
+import { Step5WorkflowConfig } from "./steps/step-5-workflow-config";
 import { Step7Review } from "./steps/step-7-review";
 import { Step8BulkUpload } from "./steps/step-8-bulk-upload";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
@@ -41,7 +42,16 @@ const STEPS = [
     description: "Choose which modules to activate",
   },
   {
+    // §4.1 (Correction 2 feedback) — this step existed as a complete,
+    // working component but was never wired into the live wizard (the
+    // StepContent switch below jumped straight from Modules to Review).
     number: 5,
+    label: "Workflow",
+    title: "Workflow Configuration",
+    description: "Set up approvals, delegation and escalation",
+  },
+  {
+    number: 6,
     label: "Review",
     title: "Review & Submit",
     description: "Confirm your configuration",
@@ -59,6 +69,8 @@ function StepContent({ step }: { step: number }) {
     case 4:
       return <Step4ModulePreferences />;
     case 5:
+      return <Step5WorkflowConfig />;
+    case 6:
       return <Step7Review />;
     case 8:
       return <Step8BulkUpload />;

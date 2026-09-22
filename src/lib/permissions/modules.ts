@@ -60,10 +60,10 @@ export const ALL_MODULES: ModuleEntry[] = [
   { id: "time-payroll.attendance",   label: "Attendance",     group: "Time & Payroll", link: "/time-payroll/attendance" },
   { id: "time-payroll.leave",        label: "Leave Management", group: "Time & Payroll", link: "/time-payroll/leave" },
   { id: "time-payroll.expenses",     label: "Expense Claims",   group: "Time & Payroll", link: "/time-payroll/expenses" },
-  // §10.8 — confidential-by-default: only roles with `edit`/`administer` on
-  // this module see full OH case detail; everyone else who can `view` it
-  // gets the restricted manager view (see `ohManagerView` in
-  // src/lib/types/occupational-health.ts).
+  // §10.8 — confidential-by-default: everyone granted this module can open
+  // the page, but the restricted manager view vs. full HR/OH admin detail
+  // is enforced by data scope (`useCanViewConfidentialOH` in
+  // src/components/hr/occupational-health/lib.ts), not by this grant alone.
   { id: "time-payroll.occupational-health", label: "Occupational Health", group: "Time & Payroll", link: "/time-payroll/occupational-health" },
 
   // Operations

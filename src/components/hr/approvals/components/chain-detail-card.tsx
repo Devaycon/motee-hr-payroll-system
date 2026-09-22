@@ -9,6 +9,7 @@ import type {
   ApprovalChainTemplate,
   ApproverResolver,
   OnLeaveAction,
+  FallbackHierarchyStep,
 } from "@/src/lib/types/approvals";
 import type { LocaleRole } from "@/src/lib/types/locale";
 
@@ -25,6 +26,12 @@ export function approverLabel(
   return resolver;
 }
 
+const FALLBACK_HIERARCHY_LABELS: Record<FallbackHierarchyStep, string> = {
+  delegate: "Designated delegate",
+  managers_manager: "Manager's manager",
+  hr: "HR",
+};
+
 function onLeaveLabel(action: OnLeaveAction, roles: LocaleRole[]): string {
   switch (action.kind) {
     case "skip":
@@ -33,6 +40,10 @@ function onLeaveLabel(action: OnLeaveAction, roles: LocaleRole[]): string {
       return "Reassign to their manager";
     case "reassign_to_role":
       return `Reassign to ${approverLabel(action.approver, roles)}`;
+    case "escalate_hierarchy":
+      // §4.1 mechanism 2 — a pre-configured delegation (mechanism 1) is
+      // always tried first; this is what happens when none is set.
+      return `Escalate: ${action.order.map((s) => FALLBACK_HIERARCHY_LABELS[s]).join(" → ")}`;
   }
 }
 
