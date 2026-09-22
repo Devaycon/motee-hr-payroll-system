@@ -60,6 +60,11 @@ export const ALL_MODULES: ModuleEntry[] = [
   { id: "time-payroll.attendance",   label: "Attendance",     group: "Time & Payroll", link: "/time-payroll/attendance" },
   { id: "time-payroll.leave",        label: "Leave Management", group: "Time & Payroll", link: "/time-payroll/leave" },
   { id: "time-payroll.expenses",     label: "Expense Claims",   group: "Time & Payroll", link: "/time-payroll/expenses" },
+  // §10.8 — confidential-by-default: only roles with `edit`/`administer` on
+  // this module see full OH case detail; everyone else who can `view` it
+  // gets the restricted manager view (see `ohManagerView` in
+  // src/lib/types/occupational-health.ts).
+  { id: "time-payroll.occupational-health", label: "Occupational Health", group: "Time & Payroll", link: "/time-payroll/occupational-health" },
 
   // Operations
   { id: "operations.assets",     label: "Asset Management",       group: "Operations", link: "/operations/assets" },

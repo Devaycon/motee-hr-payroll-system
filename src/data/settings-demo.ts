@@ -198,6 +198,10 @@ export const MODULE_SETTINGS: ModuleSetting[] = [
   { id: "mod-leave", name: "Leave & Time-Off", description: "Leave requests, balances and approvals.", enabled: true, showInSidebar: true },
   { id: "mod-attendance", name: "Attendance", description: "Clock-ins, timesheets and work schedules.", enabled: true, showInSidebar: true },
   { id: "mod-payroll", name: "Payroll", description: "Pay runs, payslips and compensation.", enabled: true, showInSidebar: true },
+  // §11.1 (Correction 2 feedback) — was missing here even though the tenant
+  // onboarding wizard's module picker and the permissions module list both
+  // already include Benefits; this was the one place it hadn't caught up.
+  { id: "mod-benefits", name: "Benefits", description: "Pension, insurance, allowances and employee wellbeing programmes.", enabled: true, showInSidebar: true },
   { id: "mod-recruitment", name: "Recruitment", description: "Requisitions, candidates and hiring pipeline.", enabled: true, showInSidebar: true },
   { id: "mod-onboarding", name: "Onboarding", description: "New-hire checklists and pre-boarding.", enabled: true, showInSidebar: true },
   { id: "mod-performance", name: "Performance", description: "Reviews, goals and appraisals.", enabled: true, showInSidebar: false },

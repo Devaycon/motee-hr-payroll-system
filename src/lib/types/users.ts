@@ -74,6 +74,12 @@ export interface UserAccount {
   changedBy?: string;
   passwordResetAt?: string;
   mustChangePassword?: boolean;
+  /**
+   * §13.1 (Correction 2 feedback) — sign-in activity, distinct from
+   * `changedAt` (which tracks account-state changes, not logins). Absent for
+   * an account that has never signed in.
+   */
+  lastLoginAt?: string;
 }
 
 /** Can this account currently sign in? */

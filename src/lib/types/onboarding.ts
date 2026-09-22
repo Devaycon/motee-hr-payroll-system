@@ -98,16 +98,18 @@ export interface JoinerDocumentSpec {
 
 export const JOINER_DOCUMENTS: JoinerDocumentSpec[] = [
   {
+    // §1.1 (Correction 2 feedback) — client asked that Passport, Right to
+    // Work evidence and Proof of Address not be made compulsory.
     kind: "passport",
     label: "Passport",
     hint: "Photo page showing your name, number and expiry",
-    required: true,
+    required: false,
   },
   {
     kind: "right_to_work",
     label: "Right to Work evidence",
     hint: "Share code, BRP or another accepted document",
-    required: true,
+    required: false,
     country: "uk",
   },
   {
@@ -127,7 +129,7 @@ export const JOINER_DOCUMENTS: JoinerDocumentSpec[] = [
     kind: "proof_of_address",
     label: "Proof of Address",
     hint: "Utility bill or bank statement from the last 3 months",
-    required: true,
+    required: false,
   },
   {
     kind: "qualifications",

@@ -1022,24 +1022,45 @@ export function OnboardingFormPage() {
             </h2>
             <Separator />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* §2.1 (Correction 2 feedback) — NIN/Pension ID (PFA)/NHF are
+                  Nigeria-specific identifiers and must not render for UK
+                  tenants. TIN doubles as the UK's UTR field (relabelled
+                  below), and NI Number is UK-only. */}
+              {!isUK && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">
+                    NIN (National Identification Number)
+                  </Label>
+                  <Input
+                    inputMode="numeric"
+                    value={data.ninNumber}
+                    onChange={(e) =>
+                      update("ninNumber", e.target.value.replace(/\D/g, ""))
+                    }
+                    className="h-9 text-sm"
+                    placeholder="11-digit NIN"
+                    maxLength={11}
+                  />
+                </div>
+              )}
+              {isUK && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">NI Number</Label>
+                  <Input
+                    value={data.niNumber}
+                    onChange={(e) =>
+                      update("niNumber", e.target.value.toUpperCase())
+                    }
+                    className="h-9 text-sm"
+                    placeholder="e.g. QQ 12 34 56 C"
+                  />
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
-                  NIN (National Identification Number)
-                </Label>
-                <Input
-                  inputMode="numeric"
-                  value={data.ninNumber}
-                  onChange={(e) =>
-                    update("ninNumber", e.target.value.replace(/\D/g, ""))
-                  }
-                  className="h-9 text-sm"
-                  placeholder="11-digit NIN"
-                  maxLength={11}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">
-                  TIN (Tax Identification Number)
+                  {isUK
+                    ? "UTR (Unique Taxpayer Reference)"
+                    : "TIN (Tax Identification Number)"}
                 </Label>
                 <Input
                   inputMode="numeric"
@@ -1048,33 +1069,38 @@ export function OnboardingFormPage() {
                     update("taxId", e.target.value.replace(/\D/g, ""))
                   }
                   className="h-9 text-sm"
-                  placeholder="Tax ID number"
+                  placeholder={isUK ? "10-digit UTR" : "Tax ID number"}
+                  maxLength={isUK ? 10 : undefined}
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Pension ID (PFA)</Label>
-                <Input
-                  inputMode="numeric"
-                  value={data.pensionId}
-                  onChange={(e) =>
-                    update("pensionId", e.target.value.replace(/\D/g, ""))
-                  }
-                  className="h-9 text-sm"
-                  placeholder="Pension account number"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">NHF Number</Label>
-                <Input
-                  inputMode="numeric"
-                  value={data.nhfNumber}
-                  onChange={(e) =>
-                    update("nhfNumber", e.target.value.replace(/\D/g, ""))
-                  }
-                  className="h-9 text-sm"
-                  placeholder="National Housing Fund number"
-                />
-              </div>
+              {!isUK && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">Pension ID (PFA)</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={data.pensionId}
+                    onChange={(e) =>
+                      update("pensionId", e.target.value.replace(/\D/g, ""))
+                    }
+                    className="h-9 text-sm"
+                    placeholder="Pension account number"
+                  />
+                </div>
+              )}
+              {!isUK && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">NHF Number</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={data.nhfNumber}
+                    onChange={(e) =>
+                      update("nhfNumber", e.target.value.replace(/\D/g, ""))
+                    }
+                    className="h-9 text-sm"
+                    placeholder="National Housing Fund number"
+                  />
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
                   {isUK ? "Driving Licence Number" : "Driver's License Number"}
@@ -1126,7 +1152,7 @@ export function OnboardingFormPage() {
                   value={data.passportCountry}
                   onChange={(e) => update("passportCountry", e.target.value)}
                   className="h-9 text-sm"
-                  placeholder="e.g. Nigeria"
+                  placeholder={isUK ? "e.g. United Kingdom" : "e.g. Nigeria"}
                 />
               </div>
             </div>
