@@ -1,7 +1,14 @@
 "use client";
 
+import { Heart } from "lucide-react";
 import { HeroRingCard, chartColor } from "@/src/components/shared/charts";
 import { ENGAGEMENT_TREND_DATA } from "@/src/components/hr/surveys/data";
+
+/** "a, b and c" — no Oxford comma; matches the other dashboard summary generators. */
+function joinAnd(parts: string[]): string {
+  if (parts.length <= 1) return parts.join("");
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
 
 const DEPT_LABELS = {
   engineering: "Engineering",
@@ -41,12 +48,15 @@ export function EngagementHeroRing() {
 
   const shown = [...segments].sort((a, b) => b.value - a.value).slice(0, SHOWN);
   const [top, ...rest] = shown;
-  const namedRest = rest.map((s) => `${s.label} at ${s.value}`).join(" and ");
+  const namedRest = joinAnd(rest.map((s) => `${s.label} at ${s.value}`));
 
+  // Plain sentences rather than "leads / ahead of" competitive framing
+  // (client feedback: read like a report, not a ranking).
   const summaryLines = [
-    `Each gauge shows a department's engagement score out of 100, from the latest (${latest.month}) survey cycle — the three highest-scoring teams.`,
-    `${top.label} leads at ${top.value}, ahead of ${namedRest}.`,
-    `Company-wide engagement stands at ${latest.companyWide}/100 this month.`,
+    `The latest employee engagement survey shows a company-wide score of ${latest.companyWide}/100.`,
+    rest.length > 0
+      ? `${top.label} recorded the highest departmental score at ${top.value}, followed by ${namedRest}.`
+      : `${top.label} recorded the highest departmental score at ${top.value}.`,
   ];
 
   return (
@@ -54,6 +64,8 @@ export function EngagementHeroRing() {
       title="Engagement Score by Department"
       description="Latest monthly survey score, out of 100"
       segments={segments}
+      summaryTitle="Employee Engagement Summary"
+      summaryIcon={Heart}
       summaryLines={summaryLines}
       variant="gauge"
     />
