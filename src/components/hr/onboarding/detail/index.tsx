@@ -17,6 +17,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Progress } from "@/src/components/ui/progress";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
+import { RecordRaciStrip } from "./record-raci-strip";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { approveTask } from "@/src/lib/stores/onboarding-records-slice";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
@@ -119,6 +120,8 @@ export function OnboardingDetailPage({ recordId }: { recordId: string }) {
         <ArrowLeft className="w-4 h-4" />
         Back to Onboarding
       </Button>
+
+      <RecordRaciStrip record={record} />
 
       {/* Header */}
       <Card>

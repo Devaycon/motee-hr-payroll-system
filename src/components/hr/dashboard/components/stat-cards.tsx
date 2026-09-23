@@ -50,7 +50,7 @@ const HEADINGS: Record<
   StatCardKey,
   { label: string; sub: string; link: string; icon: LucideIcon }
 > = {
-  total: { label: "Total Employees", sub: "Active", link: "View employees", icon: Users },
+  total: { label: "Active Employee", sub: "", link: "View employees", icon: Users },
   "new-hires": { label: "New Hires", sub: "This month", link: "View onboarding", icon: UserPlus },
   leavers: { label: "Leavers", sub: "This month", link: "View offboarding", icon: UserMinus },
   remote: { label: "Remote Today", sub: "Working remote", link: "View employees", icon: House },
@@ -97,7 +97,7 @@ export function StatTile({
             </div>
             <TileLabel>{heading.label}</TileLabel>
           </div>
-          <TileSub>{heading.sub}</TileSub>
+          {heading.sub && <TileSub>{heading.sub}</TileSub>}
           <TileNum>{stat.value}</TileNum>
           {/* One line either way, so a row of tiles stays level: a percentage
               change where one is meaningful, otherwise a plain fact about the

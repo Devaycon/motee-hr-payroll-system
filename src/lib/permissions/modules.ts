@@ -51,6 +51,7 @@ export const ALL_MODULES: ModuleEntry[] = [
   { id: "talent.workforce-requests", label: "Workforce Requests",  group: "Talent", link: "/talent/workforce-requests" },
   { id: "talent.requisition",  label: "Requisition",              group: "Talent", link: "/talent/requisition" },
   { id: "talent.recruitment",  label: "Recruitment",              group: "Talent", link: "/talent/recruitment" },
+  { id: "talent.hire-tracker", label: "Hire Tracker",             group: "Talent", link: "/talent/hire-tracker" },
   { id: "talent.onboarding",   label: "Onboarding",               group: "Talent", link: "/talent/onboarding" },
   { id: "talent.offboarding",  label: "Offboarding",              group: "Talent", link: "/talent/offboarding" },
   { id: "talent.performance",  label: "Performance",              group: "Talent", link: "/talent/performance" },

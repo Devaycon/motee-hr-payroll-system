@@ -12,6 +12,8 @@ import requisitionsReducer from "./requisitions-slice";
 import profileEditsReducer from "./profile-edits-slice";
 import collectionEditsReducer from "./collection-edits-slice";
 import workflowsReducer from "./workflows-slice";
+import workflowRunsReducer from "./workflow-runs-slice";
+import { workflowRunsListener } from "./workflow-runs-listener";
 import scenariosReducer from "./scenarios-slice";
 import usersReducer from "./users-slice";
 import auditReducer from "./audit-slice";
@@ -22,12 +24,14 @@ import notificationsReducer from "./notifications-slice";
 import employeesReducer from "./employees-slice";
 import offboardingReducer from "./offboarding-slice";
 import attendanceReducer from "./attendance-slice";
+import attendanceDeductionPolicyReducer from "./attendance-deduction-policy-slice";
 import presenceCheckReducer from "./presence-check-slice";
 import expensesReducer from "./expenses-slice";
 import shiftsReducer from "./shifts-slice";
 import benefitPlansReducer from "./benefit-plans-slice";
 import docuSignReducer from "./docu-sign-slice";
 import myDocumentsReducer from "./my-documents-slice";
+import erCasesReducer from "./er-cases-slice";
 
 export const store = configureStore({
   reducer: {
@@ -44,6 +48,7 @@ export const store = configureStore({
     profileEdits: profileEditsReducer,
     collectionEdits: collectionEditsReducer,
     workflows: workflowsReducer,
+    workflowRuns: workflowRunsReducer,
     scenarios: scenariosReducer,
     users: usersReducer,
     audit: auditReducer,
@@ -54,13 +59,19 @@ export const store = configureStore({
     employees: employeesReducer,
     offboarding: offboardingReducer,
     attendance: attendanceReducer,
+    attendanceDeductionPolicy: attendanceDeductionPolicyReducer,
     presenceCheck: presenceCheckReducer,
     expenses: expensesReducer,
     shifts: shiftsReducer,
     benefitPlans: benefitPlansReducer,
     docuSign: docuSignReducer,
     myDocuments: myDocumentsReducer,
+    erCases: erCasesReducer,
   },
+  // Prepend, never replace: replacing the stack drops serialisability and
+  // immutability checks along with thunk support.
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().prepend(workflowRunsListener.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

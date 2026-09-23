@@ -22785,6 +22785,211 @@
       "location": "150 Whiteladies Road, Bristol, BS8 2PH",
       "source": "biometric"
     }
+,
+    {
+      "id": "GB-ATT-1098",
+      "employeeId": "GB-EMP-0003",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T09:01:00Z",
+      "clockOut": "2025-11-15T17:32:00Z",
+      "hoursWorked": 7.85,
+      "status": "present",
+      "location": "24 Queen Square, Bristol, BS1 4ND",
+      "clockInCoords": "51.4536,-2.6014",
+      "clockOutCoords": "51.4536,-2.6014",
+      "source": "web"
+    },
+    {
+      "id": "GB-ATT-1099",
+      "employeeId": "GB-EMP-0004",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T08:58:00Z",
+      "clockOut": "2025-11-15T17:15:00Z",
+      "hoursWorked": 8.03,
+      "status": "present",
+      "location": "55 Broad Street, Birmingham, B1 2HL",
+      "source": "biometric"
+    },
+    {
+      "id": "GB-ATT-1100",
+      "employeeId": "GB-EMP-0005",
+      "date": "2025-11-15",
+      "clockIn": null,
+      "clockOut": null,
+      "hoursWorked": 0,
+      "status": "on_leave",
+      "location": "150 Whiteladies Road, Bristol, BS8 2PH",
+      "source": "web"
+    },
+    {
+      "id": "GB-ATT-1101",
+      "employeeId": "GB-EMP-0006",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T09:20:00Z",
+      "clockOut": "2025-11-15T17:40:00Z",
+      "hoursWorked": 7.83,
+      "status": "late",
+      "location": "8 Corn Street, Bristol, BS1 1HT",
+      "source": "web"
+    },
+    {
+      "id": "GB-ATT-1102",
+      "employeeId": "GB-EMP-0007",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T08:55:00Z",
+      "clockOut": "2025-11-15T17:20:00Z",
+      "hoursWorked": 7.92,
+      "status": "present",
+      "location": "1 Canary Wharf, London, E14 5AB",
+      "clockInCoords": "51.5054,-0.0235",
+      "clockOutCoords": "51.5054,-0.0235",
+      "source": "mobile"
+    },
+    {
+      "id": "GB-ATT-1103",
+      "employeeId": "GB-EMP-0008",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T09:00:00Z",
+      "clockOut": "2025-11-15T17:30:00Z",
+      "hoursWorked": 8,
+      "status": "present",
+      "location": "1 City Square, Leeds, LS1 2ES",
+      "source": "biometric"
+    },
+    {
+      "id": "GB-ATT-1104",
+      "employeeId": "GB-EMP-0009",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T08:50:00Z",
+      "clockOut": "2025-11-15T17:10:00Z",
+      "hoursWorked": 7.83,
+      "status": "present",
+      "location": "14 Elm Grove, Manchester, M14 5TG",
+      "source": "web"
+    },
+    {
+      "id": "GB-ATT-1105",
+      "employeeId": "GB-EMP-0010",
+      "date": "2025-11-15",
+      "clockIn": null,
+      "clockOut": null,
+      "hoursWorked": 0,
+      "status": "on_leave",
+      "location": "150 Whiteladies Road, Bristol, BS8 2PH",
+      "source": "web"
+    },
+    {
+      "id": "GB-ATT-1106",
+      "employeeId": "GB-EMP-0011",
+      "date": "2025-11-15",
+      "clockIn": null,
+      "clockOut": null,
+      "hoursWorked": 0,
+      "status": "on_leave",
+      "location": "150 Whiteladies Road, Bristol, BS8 2PH",
+      "source": "web"
+    },
+    {
+      "id": "GB-ATT-1107",
+      "employeeId": "GB-EMP-0012",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T09:28:00Z",
+      "clockOut": "2025-11-15T17:45:00Z",
+      "hoursWorked": 7.78,
+      "status": "late",
+      "location": "10 Fleet Street, London, EC4Y 1AA",
+      "source": "web"
+    },
+    {
+      "id": "GB-ATT-1108",
+      "employeeId": "GB-EMP-0013",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T08:52:00Z",
+      "clockOut": "2025-11-15T17:05:00Z",
+      "hoursWorked": 7.72,
+      "status": "present",
+      "location": "14 Elm Grove, Manchester, M14 5TG",
+      "source": "biometric"
+    },
+    {
+      "id": "GB-ATT-1109",
+      "employeeId": "GB-EMP-0014",
+      "date": "2025-11-15",
+      "clockIn": null,
+      "clockOut": null,
+      "hoursWorked": 0,
+      "status": "absent",
+      "location": "9 Maple Drive, Nottingham, NG7 2RD",
+      "source": "web"
+    },
+    {
+      "id": "GB-ATT-1110",
+      "employeeId": "GB-EMP-0015",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T09:00:00Z",
+      "clockOut": "2025-11-15T14:15:00Z",
+      "hoursWorked": 4.75,
+      "status": "early_departure",
+      "location": "45 George Street, Edinburgh, EH2 2HT",
+      "clockInCoords": "55.9533,-3.1958",
+      "clockOutCoords": "55.9533,-3.1958",
+      "source": "mobile"
+    },
+    {
+      "id": "GB-ATT-1111",
+      "employeeId": "GB-EMP-0016",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T08:59:00Z",
+      "clockOut": "2025-11-15T17:22:00Z",
+      "hoursWorked": 7.9,
+      "status": "present",
+      "location": "20 Livery Street, Birmingham, B3 2ND",
+      "source": "web"
+    },
+    {
+      "id": "GB-ATT-1112",
+      "employeeId": "GB-EMP-0017",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T09:02:00Z",
+      "clockOut": "2025-11-15T17:12:00Z",
+      "hoursWorked": 7.67,
+      "status": "present",
+      "location": "103 Colmore Row, Birmingham, B3 3AG",
+      "source": "biometric"
+    },
+    {
+      "id": "GB-ATT-1113",
+      "employeeId": "GB-EMP-0018",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T08:49:00Z",
+      "clockOut": "2025-11-15T17:00:00Z",
+      "hoursWorked": 7.68,
+      "status": "present",
+      "location": "1 Brindleyplace, Birmingham, B1 2JB",
+      "source": "mobile"
+    },
+    {
+      "id": "GB-ATT-1114",
+      "employeeId": "GB-EMP-0019",
+      "date": "2025-11-15",
+      "clockIn": null,
+      "clockOut": null,
+      "hoursWorked": 0,
+      "status": "not_clocked_in",
+      "location": "20 Castle Street, Edinburgh, EH2 3AT",
+      "source": "web"
+    },
+    {
+      "id": "GB-ATT-1115",
+      "employeeId": "GB-EMP-0020",
+      "date": "2025-11-15",
+      "clockIn": "2025-11-15T09:00:00Z",
+      "clockOut": "2025-11-15T17:30:00Z",
+      "hoursWorked": 8,
+      "status": "present",
+      "location": "12 Park Row, Leeds, LS1 5HD",
+      "source": "web"
+    }
   ],
   "leavePolicies": [
     {

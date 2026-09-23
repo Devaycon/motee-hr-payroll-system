@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   X,
   Bell,
@@ -15,6 +15,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import type { Notification, NotifType } from "@/src/data/notifications-demo";
+import { isForRecipient } from "@/src/data/notifications-demo";
+import { useCurrentUser } from "@/src/lib/auth/demo-identity";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import {
   markAllRead as markAllReadAction,
@@ -56,7 +58,14 @@ export function NotificationsPanel({
 }: NotificationsPanelProps) {
   // Backed by the store so features can raise notifications (§F11, §B7).
   const dispatch = useAppDispatch();
-  const notifications = useAppSelector((s) => s.notifications.items);
+  const all = useAppSelector((s) => s.notifications.items);
+  const user = useCurrentUser();
+  // Targeted notifications reach only their recipient; untargeted ones still
+  // reach everyone, so nothing that existed before changes behaviour.
+  const notifications = useMemo(
+    () => all.filter((n) => isForRecipient(n, user?.employeeId, user?.roleId)),
+    [all, user?.employeeId, user?.roleId],
+  );
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [view, setView] = useState<"list" | "detail">("list");
   const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);

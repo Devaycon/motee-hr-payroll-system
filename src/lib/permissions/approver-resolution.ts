@@ -85,6 +85,14 @@ export function resolveApprover(
     };
   }
 
+  // A named person beats every lookup: there is nothing to resolve.
+  if (resolver.startsWith("EMP:")) {
+    const employeeId = resolver.slice(4);
+    const emp = bundle.employees.find((e) => e.id === employeeId);
+    if (!emp) return { employeeId: null, employeeName: null };
+    return { employeeId: emp.id, employeeName: emp.fullName };
+  }
+
   if (resolver.startsWith("ROLE:")) {
     const roleId = resolver.slice(5);
     const role = bundle.roles.find((r) => r.id === roleId);
@@ -247,6 +255,9 @@ export function canActOnStep(
 ): boolean {
   if (!userEmployeeId) return false;
   if (resolvedEmployeeId && resolvedEmployeeId === userEmployeeId) return true;
+  // A step addressed to one person is actionable by that person only - a role
+  // match must not widen it, which is the whole point of naming someone.
+  if (resolver.startsWith("EMP:")) return resolver.slice(4) === userEmployeeId;
   if (resolver.startsWith("ROLE:") && userRoleId) {
     return resolver.slice(5) === userRoleId;
   }

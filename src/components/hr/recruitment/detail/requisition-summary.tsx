@@ -20,6 +20,7 @@ import {
 import type { JobRequisition } from "@/src/lib/types/recruitment";
 import { cn } from "@/src/lib/utils";
 import { AdvertDownloadMenu } from "./advert-download-menu";
+import { HiringTeamStrip } from "./hiring-team-strip";
 import { pct, type RequisitionMetrics } from "./metrics";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -71,7 +72,9 @@ export function RequisitionSummary({
   const widest = Math.max(1, ...metrics.funnel.map((f) => f.reached));
 
   return (
-    <Card className="border-border/60">
+    <div className="space-y-3">
+      <HiringTeamStrip requisition={requisition} />
+      <Card className="border-border/60">
       <CardContent className="p-4">
         <Collapsible open={open} onOpenChange={setOpen}>
           {/* The download action is a sibling of the trigger, not a child —
@@ -219,6 +222,7 @@ export function RequisitionSummary({
           </CollapsibleContent>
         </Collapsible>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }

@@ -42,10 +42,23 @@ export type ApprovalEventType =
   | "commented"
   | "cancelled";
 
+/**
+ * Who approves a step.
+ *
+ * `EMP:` names a specific person. Until it existed, a step could only point at
+ * a role, and a role resolves through a single `linkedEmployeeId` — so in a
+ * bundle where HR Admin, HR Manager and Recruiter all map to one employee, a
+ * three-step chain visibly landed on the same human three times with no way to
+ * say "no, this one is Adaeze".
+ *
+ * Adding a member to the union is backward compatible: chains already stored
+ * in `.data/runtime/approvals.json` keep their existing values untouched.
+ */
 export type ApproverResolver =
   | "LINE_MANAGER"
   | "DEPARTMENT_HEAD"
-  | `ROLE:${string}`;
+  | `ROLE:${string}`
+  | `EMP:${string}`;
 
 /** One step of the hierarchy-based fallback chain, in the order it's tried. */
 export type FallbackHierarchyStep = "delegate" | "managers_manager" | "hr";

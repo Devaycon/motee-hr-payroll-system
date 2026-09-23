@@ -129,10 +129,14 @@ const EXTRA_FIELDS: Record<ApprovalDocumentType, ExtraField[]> = {
 function isEligibleStarter(
   template: ApprovalChainTemplate,
   userRoleId: string | undefined,
+  userEmployeeId?: string,
 ): boolean {
   if (template.startDesk.kind === "submitter") return true;
   if (template.startDesk.kind === "resolver") {
     const a = template.startDesk.approver;
+    if (a.startsWith("EMP:")) {
+      return Boolean(userEmployeeId) && userEmployeeId === a.slice(4);
+    }
     if (a.startsWith("ROLE:")) {
       return userRoleId === a.slice(5);
     }

@@ -32,7 +32,7 @@ import type {
 import { latestOffer } from "@/src/lib/types/recruitment";
 import { cn } from "@/src/lib/utils";
 import { getFlow, enabledStages } from "../flow";
-import { canMoveTo, daysInStage } from "./advance";
+import { canMoveTo, daysInStage, hiredCount } from "./advance";
 
 interface PipelineBoardProps {
   country: string;
@@ -223,7 +223,10 @@ export function PipelineBoard({
     if (!candidate || !to) return;
     if (candidate.stage === to) return;
 
-    const verdict = canMoveTo(candidate, to, flow);
+    const verdict = canMoveTo(candidate, to, flow, {
+      openings: requisition.openings,
+      hired: hiredCount(candidates, requisition.id),
+    });
     if (!verdict.ok) {
       toast.error(verdict.reason ?? "Can't move this candidate.");
       return;

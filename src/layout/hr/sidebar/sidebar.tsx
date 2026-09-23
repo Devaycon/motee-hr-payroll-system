@@ -6,6 +6,7 @@ import { ChevronDown, ChevronRight, Zap, Search, Star, X } from "lucide-react";
 import { routes } from "./routes";
 import type { Route } from "./routes";
 import { useVisibleRoutes } from "./permissions";
+import { useSidebarBadges } from "./use-badges";
 import { useNavFavourites } from "@/src/lib/hooks/use-nav-favourites";
 import { cn } from "@/src/lib/utils";
 import {
@@ -18,6 +19,7 @@ import { SidebarBrand } from "@/src/layout/shared/sidebar-brand";
 const Sidebar = () => {
   const pathname = usePathname();
   const visibleRoutes = useVisibleRoutes(routes);
+  const badges = useSidebarBadges();
   const [query, setQuery] = useState("");
   const { collapsed, toggle, width } = useSidebarCollapse();
   const { favourites, toggle: toggleFavourite, isFavourite } =
@@ -65,7 +67,8 @@ const Sidebar = () => {
       href={route.link}
       label={route.label}
       icon={route.icon}
-      badge={route.badge}
+      // Zero renders nothing: an empty pipeline should show no badge at all.
+      badge={badges[route.link] || undefined}
       active={isActive(route.link, route.exact)}
       collapsed={collapsed}
       onClick={() => setQuery("")}

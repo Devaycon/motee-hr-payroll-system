@@ -34,6 +34,7 @@ import {
   ShieldCheck,
   ClipboardList,
   FileStack,
+  GitBranch,
   Scale,
   Settings,
   LucideIcon,
@@ -60,6 +61,10 @@ export interface Route {
   label: string;
   link: string;
   group: string;
+  /**
+   * Filled in at render time by `useSidebarBadges`, keyed on `link`. Never set
+   * here: a hardcoded count is wrong the moment anything happens.
+   */
   badge?: number;
   exact?: boolean;
   children?: RouteChild[];
@@ -90,7 +95,6 @@ export const routes: Route[] = [
     icon: CheckSquare,
     label: "Submissions & Approvals",
     link: "/hr-action-center/submissions",
-    badge: 5,
     exact: true,
   },
   {
@@ -106,13 +110,12 @@ export const routes: Route[] = [
     icon: BriefcaseBusiness,
     label: "HR Action Centre",
     link: "/hr-action-center",
-    badge: 54,
     exact: true,
   },
   {
     group: "Workspace",
     icon: ClipboardList,
-    label: "My Tasks",
+    label: "My Work",
     link: "/hr-action-center/tasks",
   },
   {
@@ -138,6 +141,51 @@ export const routes: Route[] = [
     icon: FileSignature,
     label: "Docu-Sign",
     link: "/sign",
+  },
+  // Employee Management now reads as one lifecycle, in order: plan the
+  // headcount, request and requisition it, recruit and track the pipeline,
+  // onboard the hire, manage them day to day, then offboard them.
+  {
+    group: "Employee Management",
+    icon: BarChart3,
+    label: "Workforce Planning",
+    link: "/operations/workforce",
+  },
+  {
+    group: "Employee Management",
+    icon: ClipboardList,
+    label: "Workforce Requests",
+    link: "/talent/workforce-requests",
+    exact: true,
+  },
+  {
+    group: "Employee Management",
+    icon: FileStack,
+    label: "Requisition",
+    link: "/talent/requisition",
+    exact: true,
+  },
+  {
+    group: "Employee Management",
+    icon: UserRoundPlus,
+    label: "Recruitment",
+    link: "/talent/recruitment",
+  },
+  {
+    // Sits right after Recruitment and before Onboarding — the consolidated
+    // view of where every hire from the four stages above currently stands,
+    // as the pipeline's last checkpoint before someone actually starts.
+    group: "Employee Management",
+    icon: GitBranch,
+    label: "Hire Tracker",
+    link: "/talent/hire-tracker",
+    exact: true,
+  },
+  {
+    group: "Employee Management",
+    icon: Timer,
+    label: "Onboarding",
+    link: "/talent/onboarding",
   },
   {
     group: "Employee Management",
@@ -169,54 +217,6 @@ export const routes: Route[] = [
     label: "Benefits",
     link: "/organization/benefit-plans",
   },
-    {
-    group: "Employee Management",
-    icon: Scale,
-    label: "Employee Relations Cases",
-    link: "/admin/grievance",
-  },
-  {
-    group: "Employee Management",
-    icon: BarChart3,
-    label: "Workforce Planning",
-    link: "/operations/workforce",
-  },
-  {
-    group: "Employee Management",
-    icon: ClipboardList,
-    label: "Workforce Requests",
-    link: "/talent/workforce-requests",
-    badge: 6,
-    exact: true,
-  },
-  {
-    group: "Employee Management",
-    icon: FileStack,
-    label: "Requisition",
-    link: "/talent/requisition",
-    badge: 4,
-    exact: true,
-  },
-  {
-    group: "Employee Management",
-    icon: UserRoundPlus,
-    label: "Recruitment",
-    link: "/talent/recruitment",
-    badge: 10,
-  },
-  {
-    group: "Employee Management",
-    icon: Timer,
-    label: "Onboarding",
-    link: "/talent/onboarding",
-    badge: 5,
-  },
-  {
-    group: "Employee Management",
-    icon: UserRoundMinus,
-    label: "Offboarding",
-    link: "/talent/offboarding",
-  },
   // §7.1–7.2 (Correction 2 feedback) — moved here from "Knowledge &
   // Resources", superseding that group's earlier placement (Batch 3
   // §4.15–4.16): the client's later, more specific ask was for these two
@@ -232,6 +232,18 @@ export const routes: Route[] = [
     icon: FileText,
     label: "Contracts",
     link: "/operations/contracts",
+  },
+  {
+    group: "Employee Management",
+    icon: Scale,
+    label: "Employee Relations Cases",
+    link: "/admin/grievance",
+  },
+  {
+    group: "Employee Management",
+    icon: UserRoundMinus,
+    label: "Offboarding",
+    link: "/talent/offboarding",
   },
   {
     group: "Organization",
@@ -301,7 +313,6 @@ export const routes: Route[] = [
     icon: CalendarDays,
     label: "Leave Management",
     link: "/time-payroll/leave",
-    badge: 3,
   },
   {
     group: "Employee Services",
@@ -347,7 +358,6 @@ export const routes: Route[] = [
     icon: Bell,
     label: "Announcements",
     link: "/workspace/announcements",
-    badge: 2,
   },
   {
     group: "Engagement",

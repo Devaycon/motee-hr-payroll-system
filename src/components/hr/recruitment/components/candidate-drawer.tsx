@@ -92,6 +92,10 @@ import type {
   Scorecard,
 } from "@/src/lib/types/recruitment";
 import {
+  RaciStrip,
+  type RaciPerson,
+} from "@/src/components/shared/raci-strip";
+import {
   icsDataUrl,
   googleCalUrl,
   outlookCalUrl,
@@ -99,7 +103,7 @@ import {
   interviewTitle,
 } from "./calendar-links";
 import { getFlow, enabledStages, synthResponse } from "../flow";
-import { canMoveTo } from "../detail/advance";
+import { canMoveTo, hiredCount } from "../detail/advance";
 import { useOnboardingInvite } from "../use-invite";
 import { cn } from "@/src/lib/utils";
 import { openMailto } from "./mailto";
@@ -154,6 +158,10 @@ export function CandidateDrawer({
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
+  // Needed to count how many seats on this requisition are already taken.
+  const allCandidates = useAppSelector(
+    (s) => s.recruitment.byCountry[country]?.candidates ?? [],
+  );
 
   // The onboarding templates/roles this used to read are now the invite hook's
   // problem, along with the record construction they fed.
@@ -172,7 +180,10 @@ export function CandidateDrawer({
   /** Same guard the stage table and the board use, so all three agree. */
   function changeStage(next: RecruitmentStageType) {
     if (flow) {
-      const verdict = canMoveTo(candidate, next, flow);
+      const verdict = canMoveTo(candidate, next, flow, {
+        openings: requisition?.openings ?? 1,
+        hired: hiredCount(allCandidates, candidate.requisitionId),
+      });
       if (!verdict.ok) {
         toast.error(verdict.reason ?? "Can't move this candidate.");
         return;
@@ -200,6 +211,40 @@ export function CandidateDrawer({
   }
 
   const applicationForm = requisition?.applicationForm ?? [];
+
+  /**
+   * Who is accountable for this one applicant. An unowned candidate is the one
+   * that goes quiet, so the gap is named rather than left blank.
+   */
+  const raciPeople: RaciPerson[] = [
+    {
+      slot: "Owner",
+      name: candidate.ownerName ?? "Unassigned",
+      employeeId: candidate.ownerEmployeeId,
+      note: "Moves this applicant along",
+    },
+    ...(requisition?.hiringManager
+      ? [
+          {
+            slot: "Hiring Manager" as const,
+            name: requisition.hiringManager,
+            employeeId: requisition.hiringManagerId,
+          },
+        ]
+      : []),
+    ...(requisition?.interviewPanelNames?.length
+      ? [
+          {
+            slot: "Approver" as const,
+            name: requisition.interviewPanelNames[0],
+            note:
+              requisition.interviewPanelNames.length > 1
+                ? `Panel of ${requisition.interviewPanelNames.length}`
+                : "Interview panel",
+          },
+        ]
+      : []),
+  ];
 
   // First few tabs render inline; the rest collapse into a "More" dropdown.
   const tabs = [
@@ -410,7 +455,8 @@ export function CandidateDrawer({
             )}
           </div>
 
-          <TabsContent value="profile" className="mt-5">
+          <TabsContent value="profile" className="mt-5 space-y-4">
+            <RaciStrip people={raciPeople} />
             <ProfileTab candidate={candidate} />
           </TabsContent>
           <TabsContent value="application" className="mt-5">

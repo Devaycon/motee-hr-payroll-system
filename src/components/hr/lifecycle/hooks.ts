@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { isOpenOffboardingStatus } from "@/src/lib/types/offboarding";
+import { isRecruitingVacancy } from "@/src/lib/types/recruitment";
 
 export interface LifecycleMetric {
   count: number;
@@ -36,7 +37,7 @@ export function useLifecycleMetrics(): LifecycleMetrics {
     if (openWorkforceRequests > 0) {
       metrics["workforce-planning"] = {
         count: openWorkforceRequests,
-        label: `${openWorkforceRequests} in progress`,
+        label: `${openWorkforceRequests} activities in progress`,
       };
     }
 
@@ -50,8 +51,8 @@ export function useLifecycleMetrics(): LifecycleMetrics {
       };
     }
 
-    const openVacancies = (recruitment?.requisitions ?? []).filter(
-      (r) => r.status === "open",
+    const openVacancies = (recruitment?.requisitions ?? []).filter((r) =>
+      isRecruitingVacancy(r.status),
     ).length;
     if (openVacancies > 0) {
       metrics["attract"] = {
@@ -66,7 +67,31 @@ export function useLifecycleMetrics(): LifecycleMetrics {
     if (candidatesInPipeline > 0) {
       metrics["select"] = {
         count: candidatesInPipeline,
-        label: `${candidatesInPipeline} in pipeline`,
+        label: `${candidatesInPipeline} candidates in selection`,
+      };
+    }
+
+    // Stage 5 had no data source at all, so its card always rendered blank.
+    // Pre-employment is everyone between "we want them" and "they have
+    // started": hires still awaiting an onboarding invite, plus those invited
+    // but not yet at their start date.
+    const awaitingInvite = (recruitment?.candidates ?? []).filter(
+      (c) =>
+        c.status === "active" &&
+        (c.stage === "offer" || c.stage === "hired") &&
+        !c.onboardingInvitedAt,
+    ).length;
+    const inPreBoarding = onboardingRecords.filter(
+      (r) => r.stage === "pre_boarding",
+    ).length;
+    const preEmployment = awaitingInvite + inPreBoarding;
+    if (preEmployment > 0) {
+      metrics["pre-employment"] = {
+        count: preEmployment,
+        label:
+          awaitingInvite > 0
+            ? `${preEmployment} in checks · ${awaitingInvite} awaiting invite`
+            : `${preEmployment} in checks`,
       };
     }
 
@@ -76,7 +101,7 @@ export function useLifecycleMetrics(): LifecycleMetrics {
     if (onboardingInProgress > 0) {
       metrics["onboard"] = {
         count: onboardingInProgress,
-        label: `${onboardingInProgress} onboarding`,
+        label: `${onboardingInProgress} new starter${onboardingInProgress === 1 ? "" : "s"} onboarding`,
       };
     }
 

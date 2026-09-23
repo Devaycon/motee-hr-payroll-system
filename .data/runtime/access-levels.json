@@ -315,6 +315,19 @@
           ]
         },
         {
+          "module": "talent.hire-tracker",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "talent.onboarding",
           "access": true,
           "actions": [
@@ -394,6 +407,19 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": true,
           "actions": [
             "view",
@@ -956,6 +982,19 @@
           ]
         },
         {
+          "module": "talent.hire-tracker",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "talent.onboarding",
           "access": true,
           "actions": [
@@ -1035,6 +1074,19 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": true,
           "actions": [
             "view",
@@ -1488,6 +1540,16 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "talent.onboarding",
           "access": true,
           "actions": [
@@ -1549,6 +1611,16 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": true,
           "actions": [
             "view",
@@ -1870,6 +1942,16 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -1913,6 +1995,11 @@
             "edit",
             "approve"
           ]
+        },
+        {
+          "module": "time-payroll.occupational-health",
+          "access": false,
+          "actions": []
         },
         {
           "module": "operations.assets",
@@ -2195,6 +2282,15 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -2238,6 +2334,15 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": true,
           "actions": [
             "view",
@@ -2500,6 +2605,15 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -2537,6 +2651,11 @@
             "approve",
             "export"
           ]
+        },
+        {
+          "module": "time-payroll.occupational-health",
+          "access": false,
+          "actions": []
         },
         {
           "module": "operations.assets",
@@ -2793,6 +2912,15 @@
           ]
         },
         {
+          "module": "talent.hire-tracker",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit"
+          ]
+        },
+        {
           "module": "talent.onboarding",
           "access": true,
           "actions": [
@@ -2828,6 +2956,11 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": false,
           "actions": []
         },
@@ -3078,6 +3211,11 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -3109,6 +3247,11 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": false,
           "actions": []
         },
@@ -3426,6 +3569,14 @@
           ]
         },
         {
+          "module": "talent.hire-tracker",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
           "module": "talent.onboarding",
           "access": true,
           "actions": [
@@ -3475,6 +3626,14 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": true,
           "actions": [
             "view",
@@ -3789,6 +3948,13 @@
           ]
         },
         {
+          "module": "talent.hire-tracker",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
           "module": "talent.onboarding",
           "access": true,
           "actions": [
@@ -3832,6 +3998,13 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": true,
           "actions": [
             "view"
@@ -4115,6 +4288,11 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -4163,6 +4341,11 @@
             "edit",
             "approve"
           ]
+        },
+        {
+          "module": "time-payroll.occupational-health",
+          "access": false,
+          "actions": []
         },
         {
           "module": "operations.assets",
@@ -4420,6 +4603,11 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -4459,6 +4647,11 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": false,
           "actions": []
         },
@@ -4717,6 +4910,11 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -4748,6 +4946,11 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": false,
           "actions": []
         },
@@ -5010,6 +5213,11 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -5041,6 +5249,11 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": false,
           "actions": []
         },
@@ -5304,6 +5517,11 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -5335,6 +5553,11 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": false,
           "actions": []
         },
@@ -5580,6 +5803,11 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -5611,6 +5839,11 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": false,
           "actions": []
         },
@@ -5857,6 +6090,11 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -5888,6 +6126,11 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": false,
           "actions": []
         },
@@ -6133,6 +6376,11 @@
           "actions": []
         },
         {
+          "module": "talent.hire-tracker",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "talent.onboarding",
           "access": false,
           "actions": []
@@ -6164,6 +6412,11 @@
         },
         {
           "module": "time-payroll.expenses",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.occupational-health",
           "access": false,
           "actions": []
         },

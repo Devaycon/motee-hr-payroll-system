@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
 import { addRecord } from "@/src/lib/stores/onboarding-records-slice";
 import { updateCandidate } from "@/src/lib/stores/recruitment-slice";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
@@ -20,18 +20,11 @@ import { candidateToOnboardingRecord } from "./to-onboarding";
  */
 export function useOnboardingInvite(country: string) {
   const dispatch = useAppDispatch();
-  const templates = useAppSelector((s) => s.approvals.templates);
-  const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
 
   return useCallback(
     (candidate: Candidate, requisition: JobRequisition | undefined) => {
       if (candidate.onboardingInvitedAt) return false;
-      const record = candidateToOnboardingRecord(
-        candidate,
-        requisition,
-        templates,
-        roles,
-      );
+      const record = candidateToOnboardingRecord(candidate, requisition);
       dispatch(addRecord(record));
       dispatch(
         updateCandidate({
@@ -48,6 +41,6 @@ export function useOnboardingInvite(country: string) {
       );
       return true;
     },
-    [country, dispatch, roles, templates],
+    [country, dispatch],
   );
 }

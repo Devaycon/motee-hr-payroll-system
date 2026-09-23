@@ -11,14 +11,19 @@ import type {
   OnLeaveAction,
   FallbackHierarchyStep,
 } from "@/src/lib/types/approvals";
-import type { LocaleRole } from "@/src/lib/types/locale";
+import type { LocaleEmployee, LocaleRole } from "@/src/lib/types/locale";
 
 export function approverLabel(
   resolver: ApproverResolver,
   roles: LocaleRole[],
+  employees: LocaleEmployee[] = [],
 ): string {
   if (resolver === "LINE_MANAGER") return "Line Manager";
   if (resolver === "DEPARTMENT_HEAD") return "Department Head";
+  if (resolver.startsWith("EMP:")) {
+    const employeeId = resolver.slice(4);
+    return employees.find((e) => e.id === employeeId)?.fullName ?? employeeId;
+  }
   if (resolver.startsWith("ROLE:")) {
     const roleId = resolver.slice(5);
     return roles.find((r) => r.id === roleId)?.name ?? roleId;

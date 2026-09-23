@@ -34,7 +34,6 @@ import { onboardingStarted } from "@/src/lib/notifications/onboarding";
 import {
   getOnboardingTemplates,
   getDefaultOnboardingTemplate,
-  buildTasksForSelection,
 } from "../instantiate";
 import { EMPLOYMENT_TYPE_OPTIONS } from "@/src/lib/constants/employment-types";
 import { titlesForGender } from "@/src/lib/constants/titles";
@@ -267,7 +266,6 @@ export function OnboardingFormPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const templates = useAppSelector((s) => s.approvals.templates);
-  const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
   // Sort code and driving-licence expiry are UK-shaped; NG uses NIN/TIN/PFA.
   const isUK = useAppSelector((s) => s.locale.country) === "uk";
   const branchOptions = useBranchOptions();
@@ -372,13 +370,6 @@ export function OnboardingFormPage() {
     const id = `onb-${Date.now()}`;
     const fullName = `${data.firstName} ${data.lastName}`;
     const initials = `${data.firstName[0]}${data.lastName[0]}`.toUpperCase();
-    const { tasks, template } = buildTasksForSelection(
-      id,
-      templates,
-      roles,
-      selectedWorkflowId,
-    );
-
     dispatch(
       addRecord({
         id,
@@ -391,11 +382,11 @@ export function OnboardingFormPage() {
         startDate: data.startDate,
         stage: "pre_boarding",
         status: "not_started",
-        workflowTemplateId: template?.id,
-        workflowName: template?.name,
-        tasks,
+        // Tasks come from the onboarding workflow run the listener starts for
+        // this record, which is the only place a real owner is known.
+        tasks: [],
         completedTasks: 0,
-        totalTasks: tasks.length,
+        totalTasks: 0,
         welcomeEmailSent: false,
         initiatedAt: new Date().toISOString().slice(0, 10),
         mode: "manual",

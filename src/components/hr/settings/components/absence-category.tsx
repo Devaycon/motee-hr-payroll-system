@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Plane, Radio } from "lucide-react";
+import { CalendarClock, Plane, Radio, Percent } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { SettingsLinkCard } from "./settings-link-card";
@@ -20,6 +20,7 @@ export function AbsenceCategory() {
           { value: "holidays", label: "Company Holidays" },
           { value: "blackout", label: "Company Blackout" },
           { value: "presence", label: "Presence Check-ins" },
+          { value: "deductions", label: "Deduction Policy" },
         ]}
       />
 
@@ -64,6 +65,20 @@ export function AbsenceCategory() {
             {
               label: "Open Attendance",
               href: "/time-payroll/attendance?tab=presence",
+            },
+          ]}
+        />
+      </TabsContent>
+
+      <TabsContent value="deductions" className="mt-6">
+        <SettingsLinkCard
+          icon={Percent}
+          title="Deduction Policy"
+          description="Configure the late-arrival grace period, and the late, absence and early-departure deduction rules, in the Attendance module."
+          actions={[
+            {
+              label: "Open Attendance",
+              href: "/time-payroll/attendance?tab=deductions",
             },
           ]}
         />

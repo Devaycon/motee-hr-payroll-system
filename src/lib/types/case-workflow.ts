@@ -125,7 +125,7 @@ export function stageGate(c: ERCase, stage: CaseStage): StageGate {
       if (!c.outcomeDate) blockers.push("Record the outcome date");
       break;
     case "appeal":
-      if (!c.appealGrounds?.trim())
+      if (c.hasAppeal && !c.appealGrounds?.trim())
         blockers.push("Record the grounds of appeal");
       break;
     case "closed":

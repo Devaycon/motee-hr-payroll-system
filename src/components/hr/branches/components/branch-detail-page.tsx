@@ -83,6 +83,7 @@ export function BranchDetailPage({ branchId }: { branchId: string }) {
         ? `target ${branch.headcountTarget}`
         : "no target set",
       tone: "blue",
+      link: `/organization/employees?branch=${encodeURIComponent(branch.id)}`,
     },
     {
       icon: Building2,

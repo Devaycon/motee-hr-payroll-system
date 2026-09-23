@@ -74,6 +74,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   "talent.workforce-requests":       ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","EXECUTIVE","FINANCE","AUDITOR","READ-ONLY"],
   "talent.requisition":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
   "talent.recruitment":              ["SUPER-ADMIN","HR-ADMIN","RECRUITER","AUDITOR","READ-ONLY"],
+  // The tracker is read-only and spans the whole chain, so everyone who owns
+  // any part of a hire can see where the rest of it has got to.
+  "talent.hire-tracker":             ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","EXECUTIVE","RECRUITER","FINANCE","AUDITOR","READ-ONLY"],
   "talent.onboarding":               ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","RECRUITER","AUDITOR","READ-ONLY"],
   "talent.offboarding":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "talent.performance":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],

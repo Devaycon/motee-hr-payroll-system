@@ -106,6 +106,7 @@ export function ApprovalChainBuilderModal({
   const dispatch = useAppDispatch();
   const router = useRouter();
   const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
+  const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
   const categories = useAppSelector((s) => s.approvals.categories);
   const actorName = useAppSelector((s) => s.auth.user?.name) ?? "HR Admin";
 
@@ -117,8 +118,16 @@ export function ApprovalChainBuilderModal({
         value: `ROLE:${r.id}` as ApproverResolver,
         label: r.name,
       })),
+      // Naming a person is the escape hatch from role collisions: several
+      // roles can resolve to the same employee, and sometimes the step really
+      // does belong to one named individual rather than to whoever holds a
+      // role this month.
+      ...employees.map((e) => ({
+        value: `EMP:${e.id}` as ApproverResolver,
+        label: `${e.fullName} (person)`,
+      })),
     ],
-    [roles],
+    [roles, employees],
   );
 
   // Resolve an HR role so the "Auto-assign to HR" fallback can target it.

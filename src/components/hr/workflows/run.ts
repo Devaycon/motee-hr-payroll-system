@@ -91,23 +91,69 @@ export function resolveAssignees(
   roles: LocaleRole[],
   employees: LocaleEmployee[],
 ): string[] {
-  const inScope = employeesForScope(workflow.scope, employees);
+  const resolved = resolveAssigneeIdentity(workflow, task, roles, employees);
+  return resolved.name ? [resolved.name] : [];
+}
 
+/**
+ * Who a task actually belongs to, as an id rather than a name.
+ *
+ * `resolveAssignees` returning display names only is precisely why no inbox
+ * could ever be built from it: you cannot filter "tasks assigned to me" by a
+ * string. `overrides` lets the record being run for win over the role table —
+ * a requisition that names Adaeze as its recruiter sends recruiter tasks to
+ * Adaeze, rather than to whoever `ROLE-RECRUIT.linkedEmployeeId` happens to
+ * point at globally. In the demo bundle three roles share one employee, so
+ * without this a three-step handover lands on one person three times.
+ */
+export function resolveAssigneeIdentity(
+  workflow: Workflow,
+  task: WorkflowTask,
+  roles: LocaleRole[],
+  employees: LocaleEmployee[],
+  overrides: Record<string, { employeeId: string; name: string }> = {},
+): { employeeId: string | null; name: string } {
   if (task.assignee.kind === "employee") {
     const { employeeId } = task.assignee;
     const match = employees.find((e) => e.id === employeeId);
-    return match ? [match.fullName] : [];
+    return match
+      ? { employeeId: match.id, name: match.fullName }
+      : { employeeId: null, name: "Unassigned" };
   }
 
   const roleId = task.assignee.roleId;
+  const override = overrides[roleId];
+  if (override) return { employeeId: override.employeeId, name: override.name };
+
   const role = roles.find((r) => r.id === roleId);
-  const holders = inScope.filter((e) =>
+  const inScope = employeesForScope(workflow.scope, employees);
+  const holder = inScope.find((e) =>
     roles.some((r) => r.id === roleId && r.linkedEmployeeId === e.id),
   );
-  if (holders.length > 0) return holders.map((e) => e.fullName);
-  // No mapped holder in scope — name the role so the notification still says
-  // something useful rather than silently going nowhere.
-  return role ? [role.name] : [];
+  if (holder) return { employeeId: holder.id, name: holder.fullName };
+  // No mapped holder in scope — name the role so the task still says something
+  // useful rather than silently going nowhere.
+  return { employeeId: null, name: role?.name ?? "Unassigned" };
+}
+
+/** The reviewer as an identity, resolved the same way as the assignee. */
+export function resolveReviewerIdentity(
+  task: WorkflowTask,
+  roles: LocaleRole[],
+  employees: LocaleEmployee[],
+  overrides: Record<string, { employeeId: string; name: string }> = {},
+): { employeeId: string | null; name: string } | null {
+  if (!task.reviewer) return null;
+  const { roleId } = task.reviewer;
+  const override = overrides[roleId];
+  if (override) return { employeeId: override.employeeId, name: override.name };
+  const role = roles.find((r) => r.id === roleId);
+  const holder = role?.linkedEmployeeId
+    ? employees.find((e) => e.id === role.linkedEmployeeId)
+    : undefined;
+  return holder
+    ? { employeeId: holder.id, name: holder.fullName }
+    : { employeeId: null, name: role?.name ?? "Reviewer" };
 }
 
 /** The reviewer role's name, or null when the task has no reviewer. */

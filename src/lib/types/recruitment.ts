@@ -261,6 +261,21 @@ export interface JobRequisition {
   departmentId?: string;
   hiringManager: string;
   hiringManagerId?: string;
+  /**
+   * The rest of the hiring team, carried over from the source Requisition.
+   *
+   * The Requisition module captures a recruiter, an HR business partner and an
+   * interview panel, and the hop into Recruitment used to forward only the
+   * hiring manager — so a published vacancy had no recruiter of record, and
+   * every interview was scheduled with an empty panel.
+   */
+  recruiter?: string;
+  recruiterId?: string;
+  hrBusinessPartner?: string;
+  hrBusinessPartnerId?: string;
+  /** Employee ids of the standing interview panel for this role. */
+  interviewPanel?: string[];
+  interviewPanelNames?: string[];
   employmentType: RequisitionEmploymentType;
   status: RequisitionStatus;
   hiringPriority: HiringPriority;
@@ -515,6 +530,15 @@ export interface Candidate {
    */
   createdEmployeeId?: string;
   /**
+   * Who is responsible for moving this applicant along.
+   *
+   * Without an owner the pipeline is a shared inbox, and shared inboxes are
+   * where candidates go quiet - nobody is answerable for a specific person, so
+   * "who is chasing Chidi?" has no answer. Defaults to the vacancy's recruiter.
+   */
+  ownerEmployeeId?: string;
+  ownerName?: string;
+  /**
    * When the onboarding invite was sent. Stored on the candidate rather than
    * held in component state so a page reload doesn't make every hire look
    * un-invited — and so the drawer and the stage table agree.
@@ -564,6 +588,61 @@ export function hasInterviewScore(candidate: Candidate): boolean {
  */
 export function stageShowsScore(stage: RecruitmentStageType): boolean {
   return stage === "interviewed" || stage === "offer" || stage === "hired";
+}
+
+/**
+ * The statuses that describe a *live* vacancy, and so may be re-derived from
+ * its pipeline. Everything else — draft, pending approval, cancelled, on hold,
+ * closed — describes the vacancy's own paperwork and is left alone: a draft is
+ * a draft however many people have applied to it.
+ */
+const PIPELINE_DRIVEN_STATUSES = new Set<RequisitionStatus>([
+  "open",
+  "interviewing",
+  "offer_stage",
+  "filled",
+]);
+
+/**
+ * A vacancy that is published and still recruiting.
+ *
+ * Callers used to test `status === "open"` for this, which was safe only while
+ * nothing ever advanced the status. Now that it tracks the pipeline, an
+ * interviewing role is still very much an open vacancy — but a filled one is
+ * not.
+ */
+export function isRecruitingVacancy(status: RequisitionStatus): boolean {
+  return status === "open" || status === "interviewing" || status === "offer_stage";
+}
+
+/**
+ * How far a live vacancy has got, read from its candidates rather than from a
+ * field someone has to remember to set.
+ *
+ * `setRequisitionStatus` existed but was never dispatched, so every vacancy sat
+ * on `draft` or `open` forever: the ten-value status enum, its label/tone map
+ * and the badge on the detail header were all decorative, and filling every
+ * opening never closed the role. Deriving it means the badge cannot drift from
+ * the pipeline it describes.
+ */
+export function deriveVacancyStage(
+  requisition: Pick<JobRequisition, "id" | "openings" | "status">,
+  candidates: Pick<Candidate, "requisitionId" | "stage" | "status">[],
+): RequisitionStatus {
+  if (!PIPELINE_DRIVEN_STATUSES.has(requisition.status)) return requisition.status;
+
+  const mine = candidates.filter((c) => c.requisitionId === requisition.id);
+  // A hire counts however they were later flagged — rejecting someone after
+  // they started is an offboarding question, not a vacancy one.
+  const hired = mine.filter((c) => c.stage === "hired").length;
+  if (hired >= Math.max(1, requisition.openings)) return "filled";
+
+  const active = mine.filter((c) => c.status === "active");
+  if (active.some((c) => c.stage === "offer")) return "offer_stage";
+  if (active.some((c) => c.stage === "interview" || c.stage === "interviewed")) {
+    return "interviewing";
+  }
+  return "open";
 }
 
 // ── Interviews ────────────────────────────────────────────────────────────--
