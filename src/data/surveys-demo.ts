@@ -38,6 +38,22 @@ export const SURVEY_TYPE_CONFIG = {
 		bg: "bg-emerald-500/10",
 		border: "border-emerald-500/20",
 	},
+	// §6.1 — the other end of the employee lifecycle from Onboarding.
+	exit: {
+		label: "Exit",
+		emoji: "🚪",
+		color: "text-orange-600 dark:text-orange-400",
+		bg: "bg-orange-500/10",
+		border: "border-orange-500/20",
+	},
+	// §6.2
+	manager_leadership: {
+		label: "Manager & Leadership",
+		emoji: "👥",
+		color: "text-violet-600 dark:text-violet-400",
+		bg: "bg-violet-500/10",
+		border: "border-violet-500/20",
+	},
 } as const satisfies Record<
 	SurveyType,
 	{ label: string; emoji: string; color: string; bg: string; border: string }
@@ -84,6 +100,8 @@ export const SURVEY_TYPE_OPTIONS: SurveyType[] = [
 	"pulse",
 	"enps",
 	"onboarding",
+	"exit",
+	"manager_leadership",
 ];
 
 export const SURVEY_STATUS_OPTIONS: SurveyStatus[] = [
@@ -205,6 +223,134 @@ export const SURVEY_TEMPLATES: SurveyTemplate[] = [
 				text: "Did you receive the equipment you needed on time?",
 				type: "yes_no",
 				required: true,
+			},
+		],
+	},
+	// §6.1 — "Join → Experience → Leave": the other end of the lifecycle from
+	// the onboarding template above. Questions are the client's own list.
+	{
+		id: "tmpl-exit",
+		name: "Exit Survey",
+		description: "Understand why employees leave and how the experience could improve.",
+		type: "exit",
+		questions: [
+			{
+				text: "What is your main reason for leaving?",
+				type: "multiple_choice",
+				required: true,
+				options: [
+					"New opportunity",
+					"Compensation",
+					"Career development",
+					"Management/leadership",
+					"Work-life balance",
+					"Relocation",
+					"Other",
+				],
+			},
+			{
+				text: "Overall, how would you rate your experience at this organisation?",
+				type: "rating",
+				required: true,
+				scaleMin: 1,
+				scaleMax: 5,
+			},
+			{
+				text: "I felt supported by my manager.",
+				type: "likert",
+				required: true,
+				options: [
+					"Strongly Agree",
+					"Agree",
+					"Neutral",
+					"Disagree",
+					"Strongly Disagree",
+				],
+			},
+			{
+				text: "I had opportunities for career development here.",
+				type: "likert",
+				required: true,
+				options: [
+					"Strongly Agree",
+					"Agree",
+					"Neutral",
+					"Disagree",
+					"Strongly Disagree",
+				],
+			},
+			{
+				text: "What could have been done differently to improve your experience?",
+				type: "open_text",
+				required: false,
+			},
+			{
+				text: "Would you recommend this organisation to others as a place to work?",
+				type: "yes_no",
+				required: true,
+			},
+		],
+	},
+	// §6.2 — anonymous by default, since it's evaluating the respondent's own
+	// manager.
+	{
+		id: "tmpl-manager-leadership",
+		name: "Manager & Leadership Survey",
+		description: "Gather feedback on direct managers and senior leadership.",
+		type: "manager_leadership",
+		questions: [
+			{
+				text: "My manager communicates expectations clearly.",
+				type: "likert",
+				required: true,
+				options: [
+					"Strongly Agree",
+					"Agree",
+					"Neutral",
+					"Disagree",
+					"Strongly Disagree",
+				],
+			},
+			{
+				text: "I receive useful feedback from my manager.",
+				type: "likert",
+				required: true,
+				options: [
+					"Strongly Agree",
+					"Agree",
+					"Neutral",
+					"Disagree",
+					"Strongly Disagree",
+				],
+			},
+			{
+				text: "My manager recognises my contributions.",
+				type: "likert",
+				required: true,
+				options: [
+					"Strongly Agree",
+					"Agree",
+					"Neutral",
+					"Disagree",
+					"Strongly Disagree",
+				],
+			},
+			{
+				text: "Leadership communicates important changes effectively.",
+				type: "likert",
+				required: true,
+				options: [
+					"Strongly Agree",
+					"Agree",
+					"Neutral",
+					"Disagree",
+					"Strongly Disagree",
+				],
+			},
+			{
+				text: "Any additional feedback for your manager or leadership?",
+				type: "open_text",
+				required: false,
 			},
 		],
 	},

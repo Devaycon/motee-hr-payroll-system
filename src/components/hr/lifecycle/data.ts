@@ -158,9 +158,9 @@ export const LIFECYCLE_STAGES: LifecycleStage[] = [
     id: "workforce-planning",
     step: 1,
     label: "Workforce Planning",
-    question: "What workforce do we need, now and next?",
+    question: "What people and skills do we need, now and next?",
     description:
-      "Headcount planning, skills-gap analysis and succession planning turn strategy into a position request.",
+      "Turn business strategy into workforce needs through headcount planning, skills-gap analysis, succession planning and workforce forecasting.",
     icon: BarChart3,
     color: "blue",
     href: "/talent/workforce-requests",
@@ -169,9 +169,9 @@ export const LIFECYCLE_STAGES: LifecycleStage[] = [
     id: "requisition",
     step: 2,
     label: "Requisition",
-    question: "We're authorised — start the process.",
+    question: "We're approved — ready to recruit.",
     description:
-      "An approved position becomes a requisition: job description drafted, approved and published.",
+      "Turn an approved position into a recruitment-ready requisition, with the role details, job description and required approvals in place.",
     icon: FileStack,
     color: "emerald",
     href: "/talent/requisition",
@@ -180,9 +180,9 @@ export const LIFECYCLE_STAGES: LifecycleStage[] = [
     id: "attract",
     step: 3,
     label: "Attract",
-    question: "Reach and engage the right talent.",
+    question: "How do we reach and engage the right talent?",
     description:
-      "The vacancy goes live, applications come in, and the field narrows to a shortlist.",
+      "Publish and promote the vacancy across the right channels to attract suitable candidates and build the applicant pipeline.",
     icon: Megaphone,
     color: "violet",
     href: "/talent/recruitment",
@@ -191,9 +191,9 @@ export const LIFECYCLE_STAGES: LifecycleStage[] = [
     id: "select",
     step: 4,
     label: "Select",
-    question: "Assess and choose the best fit.",
+    question: "Who is the best fit?",
     description:
-      "Structured interviews and scorecards build a defensible record of why a candidate was chosen.",
+      "Review, shortlist, interview and assess candidates using consistent criteria to make fair, evidence-based selection decisions.",
     icon: Search,
     color: "rose",
     href: "/talent/recruitment",
@@ -202,20 +202,22 @@ export const LIFECYCLE_STAGES: LifecycleStage[] = [
     id: "pre-employment",
     step: 5,
     label: "Pre-employment",
-    question: "Make the offer, then confirm it.",
+    question: "Secure the hire and confirm they're ready to join.",
     description:
-      "Offer, acceptance, references, guarantors and role-specific checks — rules-based, not one-size-fits-all.",
+      "Make the offer, capture acceptance and complete the required references, checks and approvals before onboarding begins.",
     icon: FileCheck2,
     color: "amber",
-    href: "/talent/onboarding",
+    // No dedicated page for this stage — Hire Tracker is where every hiring
+    // effort, including this one, is actually tracked.
+    href: "/talent/hire-tracker",
   },
   {
     id: "onboard",
     step: 6,
     label: "Onboard",
-    question: "Welcome them, and set them up to succeed.",
+    question: "Set them up for success from day one.",
     description:
-      "Candidate becomes New Starter. Employee details, HR setup, documents and induction, tracked to 100%.",
+      "Welcome the new starter, complete their employee setup, documents and induction, and make sure everything is ready for a successful start.",
     icon: DoorOpen,
     color: "cyan",
     href: "/talent/onboarding",
@@ -224,26 +226,25 @@ export const LIFECYCLE_STAGES: LifecycleStage[] = [
     id: "develop-perform-retain",
     step: 7,
     label: "Develop, Perform & Retain",
-    question: "Help people grow, and want to stay.",
+    question: "How do we help our people grow, perform and stay?",
     description:
-      "The lifecycle keeps running: assets, learning, performance and engagement, not a one-time step.",
+      "Support employees throughout their journey with continuous development, performance, recognition and engagement — helping people grow, succeed and stay.",
     icon: TrendingUp,
     color: "indigo",
     href: "/talent/performance",
     subLinks: [
       { label: "Performance", href: "/talent/performance", icon: Target },
       { label: "Learning & Development", href: "/talent/training", icon: GraduationCap },
-      { label: "Assets", href: "/operations/assets", icon: Package },
       { label: "Engagement", href: "/workspace/surveys", icon: Sparkles },
     ],
   },
   {
     id: "offboard",
     step: 8,
-    label: "Offboard",
-    question: "Manage the transition with care.",
+    label: "Offboarding",
+    question: "How do we manage a smooth and responsible transition?",
     description:
-      "Knowledge transfer, asset return and access removal — the same records, closed out with care.",
+      "Coordinate the employee's departure through handover, knowledge transfer, asset return, access removal and final exit activities — with every action tracked through to completion.",
     icon: LogOut,
     color: "slate",
     href: "/talent/offboarding",
@@ -268,13 +269,13 @@ export const ONGOING_MANAGEMENT_ITEMS: LifecycleBandItem[] = [
   { label: "Engagement", href: "/workspace/surveys", icon: BarChart2 },
 ];
 
-/** "Services Supporting Everything" — platform-level, not tied to one stage. */
+/** "Platform Foundations" — the shared capabilities that keep every stage connected, not tied to one stage. */
 export const SUPPORTING_SERVICES_ITEMS: LifecycleBandItem[] = [
   { label: "HR Action Centre", href: "/hr-action-center", icon: Inbox },
-  { label: "Workflows", href: "/hr-action-center/workflows", icon: Workflow },
-  { label: "Documents", href: "/operations/documents", icon: FolderOpen },
+  { label: "Workflows & Approvals", href: "/hr-action-center/workflows", icon: Workflow },
+  { label: "Documents & E-signatures", href: "/operations/documents", icon: FolderOpen },
   { label: "Assets", href: "/operations/assets", icon: Package },
   { label: "Compliance", href: "/operations/documents", icon: ShieldCheck },
-  { label: "Analytics", href: "/operations/analytics", icon: BarChart2 },
+  { label: "Analytics & Insights", href: "/operations/analytics", icon: BarChart2 },
   { label: "Audit Trail", href: "/admin/audit-trail", icon: ClipboardList },
 ];

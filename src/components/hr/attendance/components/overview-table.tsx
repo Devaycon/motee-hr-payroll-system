@@ -1,7 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, SlidersHorizontal, Plus, MoreHorizontal, Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Search,
+  SlidersHorizontal,
+  Plus,
+  MoreHorizontal,
+  Pencil,
+  Eye,
+  MapPin,
+} from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
@@ -30,6 +39,7 @@ import {
   ATTENDANCE_STATUS_STYLES,
   DEPARTMENT_OPTIONS,
 } from "../data";
+import { attendanceMapsUrl, openAttendanceLocation } from "../location";
 import type { AttendanceRecord, AttendanceStatus } from "../types";
 
 interface OverviewTableProps {
@@ -43,6 +53,7 @@ export function OverviewTable({
   onEdit,
   onLogAttendance,
 }: OverviewTableProps) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -174,26 +185,62 @@ export function OverviewTable({
           </div>
         ),
       },
-      actionsColumn<AttendanceRecord>((record) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7">
-              <MoreHorizontal className="w-3.5 h-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem
-              className="text-xs gap-2"
-              onClick={() => onEdit(record)}
+      {
+        id: "locationAddress",
+        header: "Location",
+        cell: ({ row }) =>
+          row.original.locationAddress ? (
+            <span
+              className="text-xs text-muted-foreground max-w-48 truncate block"
+              title={row.original.locationAddress}
             >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit Record
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )),
+              {row.original.locationAddress}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          ),
+      },
+      actionsColumn<AttendanceRecord>((record) => {
+        const hasLocation = Boolean(attendanceMapsUrl(record));
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <MoreHorizontal className="w-3.5 h-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                onClick={() =>
+                  router.push(`/time-payroll/attendance/${record.id}`)
+                }
+              >
+                <Eye className="w-3.5 h-3.5" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                onClick={() => onEdit(record)}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit Record
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                disabled={!hasLocation}
+                onClick={() => openAttendanceLocation(record)}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                Open Location
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      }),
     ],
-    [onEdit, identity],
+    [onEdit, identity, router],
   );
 
   const summaryBadges = [

@@ -5,6 +5,7 @@ import { ChevronRight, UserCheck } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tile, TileLabel, TileSub, MiniBars } from "./tiles";
 import { ChartCard, HeroRingCard } from "@/src/components/shared/charts";
+import { attendanceSummaryProps } from "@/src/components/shared/charts/attendance-summary";
 import { useWeeklyAttendance, type WeeklyAttendancePoint } from "../hooks";
 
 /**
@@ -140,6 +141,7 @@ export function AttendanceHeroRing() {
       description="Average employees per day, current week"
       segments={segments}
       totalNoun="employees per day"
+      {...attendanceSummaryProps(segments)}
     />
   );
 }

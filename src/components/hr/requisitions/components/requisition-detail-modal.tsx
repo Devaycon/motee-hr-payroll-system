@@ -9,6 +9,8 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { RaciStrip, type RaciPerson } from "@/src/components/shared/raci-strip";
+import { raciFromApproval } from "@/src/components/shared/raci/from-approval";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import { formatDate } from "@/src/lib/utils/format-date";
 import {
@@ -42,6 +44,21 @@ export function RequisitionDetailModal({
   if (!requisition) return null;
 
   const status: ApprovalStatus = approval?.status ?? "draft";
+
+  const raci = raciFromApproval(approval, requisition.createdByName);
+  // The requisition is where the hiring team is named, so it is the one record
+  // that can show all of them.
+  const team: RaciPerson[] = [
+    ...(requisition.hiringManager
+      ? [{ slot: "Hiring Manager" as const, name: requisition.hiringManager }]
+      : []),
+    ...(requisition.recruiter
+      ? [{ slot: "Recruiter" as const, name: requisition.recruiter }]
+      : []),
+    ...(requisition.hrBusinessPartner
+      ? [{ slot: "HR Partner" as const, name: requisition.hrBusinessPartner }]
+      : []),
+  ];
   const salary = `${formatMoneyLocale(requisition.salaryMin)} – ${formatMoneyLocale(requisition.salaryMax)}`;
 
   const facts: { label: string; value: string }[] = [
@@ -76,6 +93,11 @@ export function RequisitionDetailModal({
         </DialogHeader>
 
         <div className="space-y-4 py-1">
+          <RaciStrip
+            people={[...raci.people, ...team]}
+            waitingOn={raci.waitingOn}
+          />
+
           <p className="text-sm text-muted-foreground">{requisition.jobDescription}</p>
 
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg border border-border/60 p-4 text-sm sm:grid-cols-3">

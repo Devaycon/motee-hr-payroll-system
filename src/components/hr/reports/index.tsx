@@ -178,8 +178,8 @@ export function ReportsPage() {
     <div className="flex flex-col gap-6">
       <HubHero
         eyebrow="Export-ready"
-        title="Reports"
-        description="Filter, shape and export any dataset — or build your own report from scratch in a couple of clicks."
+        title="Reporting built around your organisation"
+        description="Get the answers you need from your HR data — without waiting for someone else to build the report."
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search datasets — employees, attendance, recruitment…"

@@ -26,6 +26,21 @@ export function offerSent(
   };
 }
 
+/** §15.2 — the candidate's signed offer letter has been captured back into the system. */
+export function offerSigned(
+  candidateName: string,
+  roleTitle: string,
+): PushNotificationPayload {
+  return {
+    title: `Offer signed — ${roleTitle}`,
+    description: `${candidateName} has signed their offer letter.`,
+    detail:
+      `${candidateName}'s signed offer letter for the ${roleTitle} role has been ` +
+      "captured and filed into Documents & Compliance.",
+    type: "success",
+  };
+}
+
 export function offerAccepted(
   candidateName: string,
   roleTitle: string,

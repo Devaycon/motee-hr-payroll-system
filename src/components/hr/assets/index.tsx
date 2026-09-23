@@ -19,6 +19,10 @@ import { DetailModal } from "./components/detail-modal";
 import { AssetFormModal } from "./components/asset-form-modal";
 import { AssignModal } from "./components/assign-modal";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import {
+  APPROVAL_CHAIN_TAB_ITEM,
+  useHasApprovalChainTab,
+} from "@/src/components/hr/approvals/use-chain-tab";
 import type { Asset, AssetCondition, AssetType, NewAsset } from "./types";
 
 export function AssetsPage() {
@@ -32,6 +36,7 @@ export function AssetsPage() {
     setAssets(data);
   }
   const [activeTab, setActiveTab] = useState("all");
+  const hasChainTab = useHasApprovalChainTab("asset_request");
   /** Drill-down set by the KPI cards; "all" shows every asset. */
   const [statusFilter, setStatusFilter] = useState<AssetCardFilter>("all");
 
@@ -414,7 +419,7 @@ export function AssetsPage() {
                   ? `Pending Returns (${pendingReturns.length})`
                   : "Pending Returns",
             },
-            { value: "approval_chain", label: "Approval Chain" },
+            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
 
@@ -452,9 +457,11 @@ export function AssetsPage() {
           />
         </TabsContent>
 
-        <TabsContent value="approval_chain" className="mt-5">
-          <ApprovalChainTab documentType="asset_request" />
-        </TabsContent>
+        {hasChainTab && (
+          <TabsContent value="approval_chain" className="mt-5">
+            <ApprovalChainTab documentType="asset_request" />
+          </TabsContent>
+        )}
       </Tabs>
 
       <DetailModal

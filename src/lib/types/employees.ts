@@ -52,8 +52,11 @@ export interface EmployeeRow {
   nationality?: string;
   maritalStatus?: string;
   address?: string;
+  city?: string;
   state?: string;
   country?: string;
+  /** Skills the person brings — one person can sit in several Workforce Lens groups. */
+  skills?: string[];
   workMode?: string;
   /** Site the person works out of. Resolved from `LocaleEmployee.branchId`. */
   branchId?: string;

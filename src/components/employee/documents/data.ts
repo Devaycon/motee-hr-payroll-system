@@ -234,6 +234,19 @@ export const DOC_TYPES = [
   "HR File",
 ];
 
+/**
+ * §8.3 (Correction 2 feedback) — the specific document kinds the client
+ * asked employees be able to self-serve upload, shown in the Upload modal's
+ * type picker ahead of the generic types above.
+ */
+export const SELF_SERVICE_DOC_TYPES = [
+  "Passport",
+  "Right to Work",
+  "Proof of Address",
+  "Driving Licence",
+  "Certificate",
+];
+
 export const EXT_OPTIONS: { label: string; value: FileExt }[] = [
   { label: "PDF (.pdf)", value: "pdf" },
   { label: "Word (.docx)", value: "docx" },

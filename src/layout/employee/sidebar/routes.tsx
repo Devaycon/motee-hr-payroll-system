@@ -17,6 +17,7 @@ import {
   HeartHandshake,
   CalendarClock,
   FileSignature,
+  ShieldAlert,
   LucideIcon,
 } from "lucide-react";
 
@@ -147,5 +148,14 @@ export const routes: Route[] = [
     icon: LifeBuoy,
     label: "HR Help Desk",
     link: "/company/helpdesk",
+  },
+  {
+    // Deliberately separate from HR Help Desk: grievance/harassment/
+    // disciplinary matters need confidentiality, witnesses/evidence and the
+    // ERCase workflow — a generic support ticket doesn't fit them.
+    group: "Company",
+    icon: ShieldAlert,
+    label: "Raise a Case",
+    link: "/company/relations",
   },
 ];

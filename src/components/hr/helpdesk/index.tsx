@@ -5,6 +5,9 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { useHelpdeskTickets } from "./hooks";
 import { HeadphonesIcon, Plus, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { pushNotification } from "@/src/lib/stores/notifications-slice";
+import { caseRaised, caseAssigned, caseStatusChanged } from "@/src/lib/notifications/helpdesk";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Progress } from "@/src/components/ui/progress";
@@ -47,6 +50,7 @@ import type {
 } from "./types";
 
 export function HelpdeskPage() {
+  const dispatch = useAppDispatch();
   const { data, loading } = useHelpdeskTickets();
   const [tickets, setTickets] = useState<HelpDeskTicket[]>([]);
   useEffect(() => {
@@ -101,10 +105,13 @@ export function HelpdeskPage() {
       isOverdue: false,
     };
     setTickets((prev) => [newTicket, ...prev]);
+    // §9.1 — the Ref # is now surfaced in the notification the requester sees.
+    dispatch(pushNotification(caseRaised(newTicket)));
   }
 
   function handleUpdateStatus(id: string, status: TicketStatus) {
     const now = "2026-04-04";
+    const previous = tickets.find((t) => t.id === id);
     setTickets((prev) =>
       prev.map((t) => {
         if (t.id !== id) return t;
@@ -118,6 +125,9 @@ export function HelpdeskPage() {
       }),
     );
     setDetailTicket((prev) => (prev?.id === id ? { ...prev, status } : prev));
+    if (previous && previous.status !== status) {
+      dispatch(pushNotification(caseStatusChanged({ ...previous, status }, previous.status)));
+    }
   }
 
   function handleUpdatePriority(id: string, priority: TicketPriority) {
@@ -128,12 +138,13 @@ export function HelpdeskPage() {
   }
 
   function handleAssign(id: string, agentName: string, agentInitials: string) {
+    let assignedTicket: HelpDeskTicket | undefined;
     setTickets((prev) =>
-      prev.map((t) =>
-        t.id === id
-          ? { ...t, assignedTo: agentName, assignedInitials: agentInitials }
-          : t,
-      ),
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        assignedTicket = { ...t, assignedTo: agentName, assignedInitials: agentInitials };
+        return assignedTicket;
+      }),
     );
     setDetailTicket((prev) =>
       prev?.id === id
@@ -141,6 +152,7 @@ export function HelpdeskPage() {
         : prev,
     );
     toast.success(`Case assigned to ${agentName}`);
+    if (assignedTicket) dispatch(pushNotification(caseAssigned(assignedTicket, agentName)));
   }
 
   function handleReply(id: string, content: string, isInternalNote: boolean) {

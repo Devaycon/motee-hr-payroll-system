@@ -9,6 +9,7 @@ import { OH_REFERRALS } from "@/src/data/occupational-health-demo";
 import { OH_FITNESS_LABELS } from "@/src/lib/types/occupational-health";
 import { Tile, TileLabel, TileSub, TileNum, HBars } from "./tiles";
 import { ChartCard, HeroRingCard, chartColor, NIVO_THEME } from "@/src/components/shared/charts";
+import { sicknessSummaryProps } from "@/src/components/shared/charts/sickness-summary";
 import { useSickness } from "../hooks";
 
 /**
@@ -209,6 +210,7 @@ export function SicknessHeroRing() {
       segments={segments}
       totalNoun="sick days"
       variant="gauge"
+      {...sicknessSummaryProps(segments)}
     />
   );
 }

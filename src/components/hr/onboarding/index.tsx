@@ -17,7 +17,6 @@ import {
   sendWelcomeEmail,
   resendInvitation,
 } from "@/src/lib/stores/onboarding-records-slice";
-import { buildTasksForSelection } from "./instantiate";
 import type {
   OnboardingRecord,
   InviteOnboardingData,
@@ -29,8 +28,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
   const router = useRouter();
   const dispatch = useAppDispatch();
   const records = useAppSelector((s) => s.onboardingRecords.records);
-  const templates = useAppSelector((s) => s.approvals.templates);
-  const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
 
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
@@ -80,12 +77,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
 
   const handleInviteSend = (data: InviteOnboardingData) => {
     const id = `onb-${Date.now()}`;
-    const { tasks, template } = buildTasksForSelection(
-      id,
-      templates,
-      roles,
-      data.workflowTemplateId,
-    );
     const fullName = `${data.firstName} ${data.lastName}`;
     const initials = `${data.firstName[0]}${data.lastName[0]}`.toUpperCase();
     dispatch(
@@ -99,11 +90,11 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         startDate: data.startDate,
         stage: "pre_boarding",
         status: "not_started",
-        workflowTemplateId: template?.id,
-        workflowName: template?.name,
-        tasks,
+        // Tasks arrive from the onboarding workflow run the listener starts
+        // for this record; nothing here knows who does what.
+        tasks: [],
         completedTasks: 0,
-        totalTasks: tasks.length,
+        totalTasks: 0,
         welcomeEmailSent: true,
         initiatedAt: new Date().toISOString().slice(0, 10),
         mode: "invited",
@@ -126,12 +117,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
   const handleBulkImport = (rows: BulkOnboardingRow[]) => {
     const newRecords: OnboardingRecord[] = rows.map((row, idx) => {
       const id = `onb-bulk-${Date.now()}-${idx}`;
-      const { tasks, template } = buildTasksForSelection(
-        id,
-        templates,
-        roles,
-        row.workflowTemplateId,
-      );
       const fullName = `${row.firstName} ${row.lastName}`;
       const initials = `${row.firstName[0]}${row.lastName[0]}`.toUpperCase();
       return {
@@ -145,11 +130,9 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
         startDate: row.startDate,
         stage: "pre_boarding" as const,
         status: "not_started" as const,
-        workflowTemplateId: template?.id,
-        workflowName: template?.name,
-        tasks,
+        tasks: [],
         completedTasks: 0,
-        totalTasks: tasks.length,
+        totalTasks: 0,
         welcomeEmailSent: false,
         initiatedAt: new Date().toISOString().slice(0, 10),
         mode: "bulk" as const,

@@ -32,6 +32,10 @@ import {
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { submitApproval } from "@/src/lib/stores/approvals-slice";
 import {
+  canSubmitFromPortal,
+  type SubmissionPortal,
+} from "@/src/lib/approvals/config";
+import {
   DEPARTMENTS,
   URGENCY_LEVELS,
   LEAVE_TYPES,
@@ -44,6 +48,12 @@ import {
 interface IntakeModalProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /**
+   * Which portal the form is opened from. The admin portal and self-service
+   * portal raise different submission types, so only that portal's types are
+   * offered.
+   */
+  portal: SubmissionPortal;
   defaultType?: ApprovalDocumentType;
 }
 
@@ -119,10 +129,14 @@ const EXTRA_FIELDS: Record<ApprovalDocumentType, ExtraField[]> = {
 function isEligibleStarter(
   template: ApprovalChainTemplate,
   userRoleId: string | undefined,
+  userEmployeeId?: string,
 ): boolean {
   if (template.startDesk.kind === "submitter") return true;
   if (template.startDesk.kind === "resolver") {
     const a = template.startDesk.approver;
+    if (a.startsWith("EMP:")) {
+      return Boolean(userEmployeeId) && userEmployeeId === a.slice(4);
+    }
     if (a.startsWith("ROLE:")) {
       return userRoleId === a.slice(5);
     }
@@ -135,6 +149,7 @@ function isEligibleStarter(
 export function IntakeModal({
   open,
   onOpenChange,
+  portal,
   defaultType,
 }: IntakeModalProps) {
   const dispatch = useAppDispatch();
@@ -143,17 +158,19 @@ export function IntakeModal({
   const templates = useAppSelector((s) => s.approvals.templates);
   const categories = useAppSelector((s) => s.approvals.categories);
 
-  // Build the list of eligible (documentType, workflow) pairs
+  // Build the list of eligible (documentType, workflow) pairs — only types this
+  // portal raises, and only workflows the current user may start.
   const eligibleWorkflowsByType = useMemo(() => {
     const out = new Map<ApprovalDocumentType, ApprovalChainTemplate[]>();
     for (const t of templates) {
+      if (!canSubmitFromPortal(t.documentType, portal)) continue;
       if (!isEligibleStarter(t, user?.roleId)) continue;
       const arr = out.get(t.documentType) ?? [];
       arr.push(t);
       out.set(t.documentType, arr);
     }
     return out;
-  }, [templates, user?.roleId]);
+  }, [templates, user?.roleId, portal]);
 
   // Category ids that have at least one eligible workflow, ordered by the
   // category registry (built-ins + custom) so new categories appear too.
@@ -283,7 +300,7 @@ export function IntakeModal({
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border pr-14">
           <DialogTitle>New submission</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Pick a document type and submit it through the central approval hub.
+            Pick a submission type and send it through the central approval hub.
           </p>
         </DialogHeader>
 
@@ -296,7 +313,7 @@ export function IntakeModal({
           ) : (
             <>
               <div className="space-y-1.5">
-                <Label>Document type</Label>
+                <Label>Submission type</Label>
                 <Select
                   value={documentType}
                   onValueChange={(v) => {

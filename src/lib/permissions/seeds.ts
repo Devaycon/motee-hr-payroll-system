@@ -55,6 +55,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   "organization.departments":        ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.structure":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
   "organization.employees":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","RECRUITER","AUDITOR","READ-ONLY"],
+  // Same audience as Structure & Hierarchy: it is a picture of the workforce,
+  // and a line manager's data scope already narrows it to their own team.
+  "organization.workforce-lens":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","EXECUTIVE","AUDITOR","READ-ONLY"],
   "organization.employment-types":   ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.benefit-plans":      ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.eor":                ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
@@ -71,6 +74,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   "talent.workforce-requests":       ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","EXECUTIVE","FINANCE","AUDITOR","READ-ONLY"],
   "talent.requisition":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
   "talent.recruitment":              ["SUPER-ADMIN","HR-ADMIN","RECRUITER","AUDITOR","READ-ONLY"],
+  // The tracker is read-only and spans the whole chain, so everyone who owns
+  // any part of a hire can see where the rest of it has got to.
+  "talent.hire-tracker":             ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","EXECUTIVE","RECRUITER","FINANCE","AUDITOR","READ-ONLY"],
   "talent.onboarding":               ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","RECRUITER","AUDITOR","READ-ONLY"],
   "talent.offboarding":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "talent.performance":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
@@ -78,6 +84,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   // Time & Payroll
   "time-payroll.attendance":         ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
   "time-payroll.leave":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
+  // §10.8 — Line Manager gets access (the restricted manager view is
+  // enforced by data scope, not by withholding the module entirely).
+  "time-payroll.occupational-health": ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","AUDITOR","READ-ONLY"],
   // Finance sits on the expense chain's final (reimbursement) step, and the
   // executive is the resolved line manager for much of the org.
   "time-payroll.expenses":           ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","FINANCE","EXECUTIVE","AUDITOR","READ-ONLY"],

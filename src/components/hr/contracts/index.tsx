@@ -10,6 +10,10 @@ import { Button } from "@/src/components/ui/button";
 import { StatCards } from "./components/stat-cards";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import {
+  APPROVAL_CHAIN_TAB_ITEM,
+  useHasApprovalChainTab,
+} from "@/src/components/hr/approvals/use-chain-tab";
 import { ContractsTable } from "./components/contracts-table";
 import { ContractFormModal } from "./components/contract-form-modal";
 import { ContractDetailModal } from "./components/contract-detail-modal";
@@ -22,6 +26,7 @@ export function ContractsPage() {
   const { data, loading } = useContracts();
   const [contracts, setContracts] = useState<Contract[]>(() => data ?? []);
   const [activeTab, setActiveTab] = useState("all");
+  const hasChainTab = useHasApprovalChainTab("contract");
 
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
@@ -221,7 +226,7 @@ export function ContractsPage() {
               value: "drafts",
               label: drafts.length > 0 ? `Drafts (${drafts.length})` : "Drafts",
             },
-            { value: "approval_chain", label: "Approval Chain" },
+            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
 
@@ -290,9 +295,11 @@ export function ContractsPage() {
           />
         </TabsContent>
 
-        <TabsContent value="approval_chain" className="mt-4">
-          <ApprovalChainTab documentType="contract" />
-        </TabsContent>
+        {hasChainTab && (
+          <TabsContent value="approval_chain" className="mt-4">
+            <ApprovalChainTab documentType="contract" />
+          </TabsContent>
+        )}
       </Tabs>
 
       <ContractFormModal

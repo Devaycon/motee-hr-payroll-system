@@ -73,7 +73,9 @@ export type WorkflowTaskStatus =
   | "awaiting_approval"
   | "completed"
   | "blocked"
-  | "overdue";
+  | "overdue"
+  /** Its condition did not hold for this run, so it never applied. */
+  | "skipped";
 
 export const TASK_STATUS_LABELS: Record<WorkflowTaskStatus, string> = {
   not_started: "Not Started",
@@ -82,6 +84,7 @@ export const TASK_STATUS_LABELS: Record<WorkflowTaskStatus, string> = {
   completed: "Completed",
   blocked: "Blocked",
   overdue: "Overdue",
+  skipped: "Not Applicable",
 };
 
 export const TASK_STATUS_STYLES: Record<WorkflowTaskStatus, string> = {
@@ -95,6 +98,9 @@ export const TASK_STATUS_STYLES: Record<WorkflowTaskStatus, string> = {
   blocked:
     "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-400",
   overdue: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
+  // Deliberately muted: a task that did not apply is not an achievement, and
+  // showing it like a completed one is a lie a RACI strip gets caught in.
+  skipped: "border-dashed border-border bg-transparent text-muted-foreground",
 };
 
 /**

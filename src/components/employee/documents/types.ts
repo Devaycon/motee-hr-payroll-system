@@ -22,4 +22,10 @@ export interface EmployeeDocument {
   acknowledged: boolean;
   isTrashed?: boolean;
   isShared?: boolean;
+  /**
+   * §8.3 (Correction 2 feedback) — a self-service upload is routed to HR
+   * for review/approval rather than filed automatically. Absent for
+   * documents HR uploaded directly, which need no review.
+   */
+  reviewStatus?: "awaiting_review" | "approved" | "rejected";
 }

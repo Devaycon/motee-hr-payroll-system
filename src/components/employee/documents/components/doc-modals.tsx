@@ -26,7 +26,7 @@ import {
 } from "@/src/components/ui/select";
 import { Textarea } from "@/src/components/ui/textarea";
 import { cn } from "@/src/lib/utils";
-import { FOLDER_COLORS, EXT_OPTIONS, formatDate } from "../data";
+import { FOLDER_COLORS, EXT_OPTIONS, formatDate, SELF_SERVICE_DOC_TYPES } from "../data";
 import { FileIcon } from "./file-icon";
 import type { DocFolder, EmployeeDocument, FileExt } from "../types";
 
@@ -196,19 +196,15 @@ export function UploadModal({
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {[
-                      "Contract",
-                      "Offer Letter",
-                      "Policy",
-                      "Certificate",
-                      "Identity",
-                      "HR File",
-                      "Other",
-                    ].map((t) => (
-                      <SelectItem key={t} value={t} className="text-xs">
-                        {t}
-                      </SelectItem>
-                    ))}
+                    {/* §8.3 — the specific kinds the client asked for, ahead
+                        of the generic HR-file-shaped types. */}
+                    {[...SELF_SERVICE_DOC_TYPES, "Contract", "Offer Letter", "Policy", "HR File", "Other"].map(
+                      (t) => (
+                        <SelectItem key={t} value={t} className="text-xs">
+                          {t}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
               </div>

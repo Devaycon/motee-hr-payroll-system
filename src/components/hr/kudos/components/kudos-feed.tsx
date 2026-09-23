@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, Search, Megaphone, Pin, Star, Trash2 } from "lucide-react";
+import { MessageCircle, Search, Megaphone, Pin, Star, Trash2, Users2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Badge } from "@/src/components/ui/badge";
@@ -202,12 +202,20 @@ export function KudosFeed({
                     >
                       <cfg.icon className={`size-3.5 ${cfg.color}`} />
                     </div>
-                    <PersonAvatar
-                      name={post.recipientName}
-                      initials={post.recipientInitials}
-                      className="size-10 ring-2 ring-background -ml-1"
-                      fallbackClassName="text-xs font-bold bg-primary/10 text-primary"
-                    />
+                    {/* §5.1 — a department/team recipient gets a group icon,
+                        not a person's initials. */}
+                    {post.recipientType && post.recipientType !== "individual" ? (
+                      <div className="flex items-center justify-center size-10 rounded-full ring-2 ring-background -ml-1 bg-primary/10">
+                        <Users2 className="size-4 text-primary" />
+                      </div>
+                    ) : (
+                      <PersonAvatar
+                        name={post.recipientName}
+                        initials={post.recipientInitials}
+                        className="size-10 ring-2 ring-background -ml-1"
+                        fallbackClassName="text-xs font-bold bg-primary/10 text-primary"
+                      />
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -218,6 +226,12 @@ export function KudosFeed({
                         gave kudos to{" "}
                       </span>
                       <span className="text-primary">{post.recipientName}</span>
+                      {post.recipientType && post.recipientType !== "individual" && (
+                        <span className="text-muted-foreground font-normal text-xs">
+                          {" "}
+                          ({post.recipientType === "department" ? "Department" : "Team"})
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {post.senderDept} → {post.recipientDept}

@@ -49,9 +49,12 @@ export function NewCaseModal({
 
   function submit() {
     if (!newSubject.trim() || !newDesc.trim()) return;
+    // §9.1 — same Ref # format the HR admin table uses, so the number an
+    // employee is given actually matches what HR sees against the case.
+    const id = `HD-${String(ticketCount + 1).padStart(3, "0")}`;
     const ticketNumber = `TKT-${String(ticketCount + 1).padStart(4, "0")}`;
     const newTicket: HelpDeskTicket = {
-      id: `t-new-${Date.now()}`,
+      id,
       ticketNumber,
       subject: newSubject,
       description: newDesc,

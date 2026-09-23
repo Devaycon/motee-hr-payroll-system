@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useCasesData } from "./hooks";
 import { toast } from "sonner";
-import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import {
   caseAssigned,
@@ -14,6 +15,12 @@ import {
   caseStageChanged,
 } from "@/src/lib/notifications/er-cases";
 import { slaState } from "@/src/lib/types/grievance";
+import {
+  seedCountry,
+  addCase,
+  updateCase,
+  deleteCase,
+} from "@/src/lib/stores/er-cases-slice";
 import { Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
@@ -21,27 +28,31 @@ import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { GrievanceStatCards } from "./components/stat-cards";
 import { CasesTable } from "./components/cases-table";
 import { CaseFormModal } from "./components/case-form-modal";
-import { CaseDetailModal } from "./components/case-detail-modal";
-import type { ERCase, CaseNote, NewERCase } from "./types";
+import type { ERCase, NewERCase } from "./types";
 
 export function GrievancePage() {
+  const router = useRouter();
   const dispatch = useAppDispatch();
+  // Locale demo data still supplies the initial seed; the shared slice below
+  // is now the actual store, so an employee's self-service submission (and
+  // anything HR does here) persists across navigation and reaches both
+  // portals instead of vanishing on the next render.
   const { data, loading } = useCasesData();
-  const [cases, setCases] = useState<ERCase[]>([]);
-  // Seed (and re-seed on country switch) from locale data without an effect,
-  // using the "adjust state during render" pattern.
-  const [seededData, setSeededData] = useState<ERCase[] | null>(null);
-  if (data && data !== seededData) {
-    setSeededData(data);
-    setCases(data);
-  }
+  const country = useAppSelector((s) => s.locale.country);
+  const casesByCountry = useAppSelector((s) => s.erCases.byCountry[country]);
+
+  useEffect(() => {
+    if (data && !casesByCountry) {
+      dispatch(seedCountry({ country, cases: data }));
+    }
+  }, [data, casesByCountry, country, dispatch]);
+
+  const cases = useMemo(() => casesByCountry ?? [], [casesByCountry]);
 
   // Controlled so the KPI cards can drill into a tab (client feedback §5.x).
   const [activeTab, setActiveTab] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editingCase, setEditingCase] = useState<ERCase | null>(null);
-  const [detailCase, setDetailCase] = useState<ERCase | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
 
   /**
    * §5.9 — cases already notified as overdue. Without this the SLA sweep below
@@ -108,7 +119,7 @@ export function GrievancePage() {
       createdAt: today,
       updatedAt: today,
     };
-    setCases((prev) => [newCase, ...prev]);
+    dispatch(addCase({ country, case: newCase }));
 
     // §5.9 — a case that nobody is told about sits untouched until its SLA
     // expires, which is the exact failure the client described.
@@ -121,16 +132,7 @@ export function GrievancePage() {
   function handleUpdateCase(id: string, patch: Partial<ERCase>) {
     const today = new Date().toISOString().split("T")[0];
     const before = cases.find((c) => c.id === id);
-    setCases((prev) =>
-      prev.map((c) =>
-        c.id === id ? ({ ...c, ...patch, updatedAt: today } as ERCase) : c,
-      ),
-    );
-    setDetailCase((prev) =>
-      prev && prev.id === id
-        ? ({ ...prev, ...patch, updatedAt: today } as ERCase)
-        : prev,
-    );
+    dispatch(updateCase({ country, id, patch: { ...patch, updatedAt: today } }));
 
     // §5.9 — notify on the three transitions people actually need to know
     // about, comparing against the pre-update case so an unchanged field
@@ -152,34 +154,12 @@ export function GrievancePage() {
   }
 
   function handleDelete(id: string) {
-    setCases((prev) => prev.filter((c) => c.id !== id));
+    dispatch(deleteCase({ country, id }));
     toast.success("Case deleted.");
-    if (detailCase?.id === id) {
-      setDetailOpen(false);
-      setDetailCase(null);
-    }
-  }
-
-  function handleAddNote(id: string, note: Omit<CaseNote, "id">) {
-    const newNote: CaseNote = { id: generateId(), ...note };
-    const today = new Date().toISOString().split("T")[0];
-    setCases((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, notes: [...c.notes, newNote], updatedAt: today }
-          : c,
-      ),
-    );
-    setDetailCase((prev) =>
-      prev && prev.id === id
-        ? { ...prev, notes: [...prev.notes, newNote], updatedAt: today }
-        : prev,
-    );
   }
 
   function handleView(c: ERCase) {
-    setDetailCase(c);
-    setDetailOpen(true);
+    router.push(`/admin/grievance/${c.id}`);
   }
 
   function handleEdit(c: ERCase) {
@@ -304,17 +284,6 @@ export function GrievancePage() {
         }}
         onCreate={handleCreate}
         onUpdate={handleUpdateCase}
-      />
-
-      <CaseDetailModal
-        open={detailOpen}
-        caseData={detailCase}
-        onClose={() => {
-          setDetailOpen(false);
-          setDetailCase(null);
-        }}
-        onAddNote={handleAddNote}
-        onUpdateCase={handleUpdateCase}
       />
     </div>
   );

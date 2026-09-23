@@ -150,6 +150,8 @@ export interface ERCase {
   confidentialityLevel: ConfidentialityLevel;
   assignedTo?: string;
   assignedInitials?: string;
+  /** Employee id backing `assignedTo`, when the investigator was picked from the directory. */
+  assignedToId?: string;
   /** §5.12 — the person accountable for the case, distinct from the investigator. */
   caseOwner?: string;
   /** §5.7 — links the case to the employee record it concerns. */
@@ -174,6 +176,8 @@ export interface ERCase {
   hasAppeal: boolean;
   appealCaseId?: string;
   appealReviewer?: string;
+  /** Employee id backing `appealReviewer`, when picked from the directory. */
+  appealReviewerId?: string;
   appealGrounds?: string;
   // Closure
   retentionPeriod?: string;
@@ -246,6 +250,7 @@ export interface NewERCase {
   priority: CasePriority;
   confidentialityLevel: ConfidentialityLevel;
   assignedTo?: string;
+  assignedToId?: string;
   witnesses?: CaseWitness[];
   evidence?: CaseEvidence[];
 }

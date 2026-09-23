@@ -1,213 +1,281 @@
 {
-  "runs": [
-    {
-      "id": "RUN-SEED-ONB-1",
-      "templateId": "LCW-DEFAULT-ONBOARDING",
-      "templateName": "Standard Onboarding",
-      "kind": "onboarding",
-      "subjectId": "emp-006",
-      "subjectName": "Emeka Nwosu",
-      "anchorDate": "2026-06-01",
-      "status": "active",
-      "trigger": "automatic",
-      "startedBy": "System",
-      "startedAt": "2026-05-20T09:00:00.000Z",
-      "tasks": [
-        {
-          "id": "RUN-SEED-ONB-1-t1",
-          "title": "Send & sign offer letter",
-          "assignment": {
-            "type": "role",
-            "role": "hr"
-          },
-          "dueDayOffset": -7,
-          "isRequired": true,
-          "status": "done",
-          "description": "Issue the offer letter and collect signed acceptance."
+  "byCountry": {
+    "uk": [
+      {
+        "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11",
+        "workflowId": "WF-DEFAULT-ONBOARDING",
+        "workflowTitle": "Standard Onboarding",
+        "workflowVersion": 2,
+        "trigger": "onboarding_initiated",
+        "subject": {
+          "kind": "onboarding_record",
+          "id": "onb-GB-JOB-0006-SC11",
+          "name": "Sani Mohammed",
+          "href": "/talent/onboarding/onb-GB-JOB-0006-SC11"
         },
-        {
-          "id": "RUN-SEED-ONB-1-t2",
-          "title": "Collect ID + right-to-work documents",
-          "assignment": {
-            "type": "role",
-            "role": "employee"
+        "anchorDate": "2025-11-06",
+        "context": {},
+        "status": "active",
+        "startedAt": "2026-09-23T19:30:05.501Z",
+        "startedBy": "William Jones",
+        "tasks": [
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T1",
+            "templateTaskId": "WF-ONBOARDING-T1",
+            "order": 1,
+            "title": "Employee completes onboarding forms",
+            "description": "Personal, bank, emergency contact and tax details submitted.",
+            "priority": "critical",
+            "status": "not_started",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-HRADMIN"
+            },
+            "assigneeEmployeeId": "GB-EMP-0016",
+            "assigneeName": "William Jones",
+            "reviewer": null,
+            "reviewerEmployeeId": null,
+            "reviewerName": null,
+            "dueDate": "2025-11-07",
+            "escalateAfterDays": 2,
+            "dependsOn": []
           },
-          "dueDayOffset": -5,
-          "isRequired": true,
-          "status": "in_progress",
-          "description": "Government-issued ID, NIN, proof of address."
-        },
-        {
-          "id": "RUN-SEED-ONB-1-t3",
-          "title": "Order & set up laptop",
-          "assignment": {
-            "type": "role",
-            "role": "it"
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T2",
+            "templateTaskId": "WF-ONBOARDING-T2",
+            "order": 2,
+            "title": "HR verifies documentation",
+            "description": "Check the submitted pack and request changes if needed.",
+            "priority": "high",
+            "status": "blocked",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-HRADMIN"
+            },
+            "assigneeEmployeeId": "GB-EMP-0016",
+            "assigneeName": "William Jones",
+            "reviewer": {
+              "kind": "role",
+              "roleId": "ROLE-HRMGR"
+            },
+            "reviewerEmployeeId": "GB-EMP-0016",
+            "reviewerName": "William Jones",
+            "dueDate": "2025-11-08",
+            "dependsOn": [
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T1"
+            ]
           },
-          "dueDayOffset": -1,
-          "isRequired": true,
-          "status": "pending",
-          "description": "Standard hardware kit, OS image, baseline apps."
-        },
-        {
-          "id": "RUN-SEED-ONB-1-t4",
-          "title": "Day-one welcome meeting",
-          "assignment": {
-            "type": "role",
-            "role": "manager"
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T3",
+            "templateTaskId": "WF-ONBOARDING-T3",
+            "order": 3,
+            "title": "Payroll approval",
+            "description": "Payroll confirms bank and tax details and sets up the record.",
+            "priority": "critical",
+            "status": "blocked",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-FIN"
+            },
+            "assigneeEmployeeId": "GB-EMP-0013",
+            "assigneeName": "Thomas Thomas",
+            "reviewer": null,
+            "reviewerEmployeeId": null,
+            "reviewerName": null,
+            "dueDate": "2025-11-09",
+            "escalateAfterDays": 2,
+            "dependsOn": [
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T2"
+            ],
+            "parallelGroup": "day-one-setup"
           },
-          "dueDayOffset": 0,
-          "isRequired": true,
-          "status": "pending",
-          "description": "60-minute kickoff with the line manager."
-        },
-        {
-          "id": "RUN-SEED-ONB-1-t5",
-          "title": "Compliance training",
-          "assignment": {
-            "type": "role",
-            "role": "employee"
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T4",
+            "templateTaskId": "WF-ONBOARDING-T4",
+            "order": 4,
+            "title": "IT account activation",
+            "description": "Enable email, system and building access.",
+            "priority": "critical",
+            "status": "blocked",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-IT"
+            },
+            "assigneeEmployeeId": "GB-EMP-0010",
+            "assigneeName": "Harry Patel",
+            "reviewer": null,
+            "reviewerEmployeeId": null,
+            "reviewerName": null,
+            "dueDate": "2025-11-07",
+            "dependsOn": [
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T2"
+            ],
+            "parallelGroup": "day-one-setup"
           },
-          "dueDayOffset": 3,
-          "isRequired": true,
-          "status": "pending",
-          "description": "Annual security + code of conduct."
-        },
-        {
-          "id": "RUN-SEED-ONB-1-t6",
-          "title": "Submit bank + tax details",
-          "assignment": {
-            "type": "role",
-            "role": "employee"
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T5",
+            "templateTaskId": "WF-ONBOARDING-T5",
+            "order": 5,
+            "title": "Equipment issued",
+            "description": "Hand over laptop, phone and access card.",
+            "priority": "high",
+            "status": "blocked",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-IT"
+            },
+            "assigneeEmployeeId": "GB-EMP-0010",
+            "assigneeName": "Harry Patel",
+            "reviewer": null,
+            "reviewerEmployeeId": null,
+            "reviewerName": null,
+            "dueDate": "2025-11-07",
+            "dependsOn": [
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T4"
+            ]
           },
-          "dueDayOffset": 5,
-          "isRequired": true,
-          "status": "pending",
-          "description": "Required for first payroll cycle."
-        },
-        {
-          "id": "RUN-SEED-ONB-1-t7",
-          "title": "30-day check-in",
-          "assignment": {
-            "type": "role",
-            "role": "manager"
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T6",
+            "templateTaskId": "WF-ONBOARDING-T6",
+            "order": 6,
+            "title": "Manager induction",
+            "description": "Team introductions, role expectations and first objectives.",
+            "priority": "high",
+            "status": "blocked",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-MGR"
+            },
+            "assigneeEmployeeId": "GB-EMP-0003",
+            "assigneeName": "Jack Thomas",
+            "reviewer": null,
+            "reviewerEmployeeId": null,
+            "reviewerName": null,
+            "dueDate": "2025-11-08",
+            "dependsOn": [
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T4"
+            ],
+            "parallelGroup": "induction"
           },
-          "dueDayOffset": 30,
-          "isRequired": false,
-          "status": "pending",
-          "description": "Pulse on settling in, blockers, support needed."
-        },
-        {
-          "id": "RUN-SEED-ONB-1-t8",
-          "title": "90-day probation review",
-          "assignment": {
-            "type": "role",
-            "role": "manager"
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T7",
+            "templateTaskId": "WF-ONBOARDING-T7",
+            "order": 7,
+            "title": "Health & Safety induction",
+            "description": "Site safety briefing, fire procedure and DSE assessment.",
+            "priority": "critical",
+            "status": "not_started",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-HRADMIN"
+            },
+            "assigneeEmployeeId": "GB-EMP-0016",
+            "assigneeName": "William Jones",
+            "reviewer": null,
+            "reviewerEmployeeId": null,
+            "reviewerName": null,
+            "dueDate": "2025-11-09",
+            "escalateAfterDays": 2,
+            "dependsOn": [],
+            "parallelGroup": "induction"
           },
-          "dueDayOffset": 90,
-          "isRequired": true,
-          "status": "pending",
-          "description": "Formal review and confirm-or-extend decision."
-        }
-      ]
-    },
-    {
-      "id": "RUN-SEED-OFF-1",
-      "templateId": "LCW-DEFAULT-OFFBOARDING",
-      "templateName": "Standard Offboarding",
-      "kind": "offboarding",
-      "subjectId": "emp-013",
-      "subjectName": "Ifeoma Nwachukwu",
-      "anchorDate": "2026-06-15",
-      "status": "active",
-      "trigger": "manual",
-      "startedBy": "Chidinma Okeke",
-      "startedAt": "2026-05-22T11:30:00.000Z",
-      "tasks": [
-        {
-          "id": "RUN-SEED-OFF-1-t1",
-          "title": "Acknowledge resignation",
-          "assignment": {
-            "type": "role",
-            "role": "hr"
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T8",
+            "templateTaskId": "WF-ONBOARDING-T8",
+            "order": 8,
+            "title": "Mandatory training assigned",
+            "description": "Assign the compliance courses required for the role.",
+            "priority": "normal",
+            "status": "blocked",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-HRADMIN"
+            },
+            "assigneeEmployeeId": "GB-EMP-0016",
+            "assigneeName": "William Jones",
+            "reviewer": null,
+            "reviewerEmployeeId": null,
+            "reviewerName": null,
+            "dueDate": "2025-11-11",
+            "dependsOn": [
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T6"
+            ]
           },
-          "dueDayOffset": -30,
-          "isRequired": true,
-          "status": "done",
-          "description": "Confirm last day, notice period, and next steps."
-        },
-        {
-          "id": "RUN-SEED-OFF-1-t2",
-          "title": "Handover document",
-          "assignment": {
-            "type": "role",
-            "role": "employee"
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T9",
+            "templateTaskId": "WF-ONBOARDING-T9",
+            "order": 9,
+            "title": "Benefits enrolment",
+            "description": "Pension, healthcare and any role-specific benefits.",
+            "priority": "normal",
+            "status": "skipped",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-FIN"
+            },
+            "assigneeEmployeeId": "GB-EMP-0013",
+            "assigneeName": "Thomas Thomas",
+            "reviewer": null,
+            "reviewerEmployeeId": null,
+            "reviewerName": null,
+            "dueDate": "2025-11-16",
+            "dependsOn": [
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T3"
+            ],
+            "condition": "contractor"
           },
-          "dueDayOffset": -14,
-          "isRequired": true,
-          "status": "pending",
-          "description": "Open projects, contacts, where things live."
-        },
-        {
-          "id": "RUN-SEED-OFF-1-t3",
-          "title": "Knowledge transfer meeting",
-          "assignment": {
-            "type": "role",
-            "role": "manager"
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T10",
+            "templateTaskId": "WF-ONBOARDING-T10",
+            "order": 10,
+            "title": "HR compliance sign-off",
+            "description": "Final HR review that onboarding is complete and compliant.",
+            "priority": "high",
+            "status": "blocked",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-HRADMIN"
+            },
+            "assigneeEmployeeId": "GB-EMP-0016",
+            "assigneeName": "William Jones",
+            "reviewer": {
+              "kind": "role",
+              "roleId": "ROLE-HRMGR"
+            },
+            "reviewerEmployeeId": "GB-EMP-0016",
+            "reviewerName": "William Jones",
+            "dueDate": "2025-11-26",
+            "dependsOn": [
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T3",
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T5",
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T7",
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T8"
+            ]
           },
-          "dueDayOffset": -10,
-          "isRequired": true,
-          "status": "pending",
-          "description": "With the successor and direct manager."
-        },
-        {
-          "id": "RUN-SEED-OFF-1-t4",
-          "title": "Return company laptop & badge",
-          "assignment": {
-            "type": "role",
-            "role": "employee"
-          },
-          "dueDayOffset": -1,
-          "isRequired": true,
-          "status": "pending"
-        },
-        {
-          "id": "RUN-SEED-OFF-1-t5",
-          "title": "Revoke system access",
-          "assignment": {
-            "type": "role",
-            "role": "it"
-          },
-          "dueDayOffset": 0,
-          "isRequired": true,
-          "status": "pending",
-          "description": "Email, Slack, Github, internal tools — deactivate or archive."
-        },
-        {
-          "id": "RUN-SEED-OFF-1-t6",
-          "title": "Exit interview",
-          "assignment": {
-            "type": "role",
-            "role": "hr"
-          },
-          "dueDayOffset": -1,
-          "isRequired": false,
-          "status": "pending",
-          "description": "Reason for leaving, what we could improve."
-        },
-        {
-          "id": "RUN-SEED-OFF-1-t7",
-          "title": "Final-pay processed",
-          "assignment": {
-            "type": "role",
-            "role": "finance"
-          },
-          "dueDayOffset": 5,
-          "isRequired": true,
-          "status": "pending",
-          "description": "Last salary, accrued leave payout, any pending claims."
-        }
-      ]
-    }
-  ]
+          {
+            "id": "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T11",
+            "templateTaskId": "WF-ONBOARDING-T11",
+            "order": 11,
+            "title": "Manager confirms onboarding complete",
+            "description": "The hiring manager signs off that the new starter is settled.",
+            "priority": "normal",
+            "status": "blocked",
+            "assignee": {
+              "kind": "role",
+              "roleId": "ROLE-MGR"
+            },
+            "assigneeEmployeeId": "GB-EMP-0003",
+            "assigneeName": "Jack Thomas",
+            "reviewer": null,
+            "reviewerEmployeeId": null,
+            "reviewerName": null,
+            "dueDate": "2025-12-06",
+            "dependsOn": [
+              "RUN-WF-DEFAULT-ONBOARDING-onb-GB-JOB-0006-SC11::WF-ONBOARDING-T10"
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }

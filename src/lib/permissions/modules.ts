@@ -35,6 +35,7 @@ export const ALL_MODULES: ModuleEntry[] = [
 
   // Employment Management
   { id: "organization.employees",          label: "Employees",                group: "Employment Management", link: "/organization/employees" },
+  { id: "organization.workforce-lens",          label: "Workforce Lens",                group: "Employment Management", link: "/organization/workforce-lens" },
   { id: "organization.employment-types",   label: "Employment Types",         group: "Employment Management", link: "/organization/employment-types" },
   { id: "organization.benefit-plans",      label: "Benefits",                 group: "Employment Management", link: "/organization/benefit-plans" },
   { id: "organization.eor",                 label: "Employer of Record",       group: "Employment Management", link: "/organization/eor" },
@@ -50,6 +51,7 @@ export const ALL_MODULES: ModuleEntry[] = [
   { id: "talent.workforce-requests", label: "Workforce Requests",  group: "Talent", link: "/talent/workforce-requests" },
   { id: "talent.requisition",  label: "Requisition",              group: "Talent", link: "/talent/requisition" },
   { id: "talent.recruitment",  label: "Recruitment",              group: "Talent", link: "/talent/recruitment" },
+  { id: "talent.hire-tracker", label: "Hire Tracker",             group: "Talent", link: "/talent/hire-tracker" },
   { id: "talent.onboarding",   label: "Onboarding",               group: "Talent", link: "/talent/onboarding" },
   { id: "talent.offboarding",  label: "Offboarding",              group: "Talent", link: "/talent/offboarding" },
   { id: "talent.performance",  label: "Performance",              group: "Talent", link: "/talent/performance" },
@@ -59,6 +61,11 @@ export const ALL_MODULES: ModuleEntry[] = [
   { id: "time-payroll.attendance",   label: "Attendance",     group: "Time & Payroll", link: "/time-payroll/attendance" },
   { id: "time-payroll.leave",        label: "Leave Management", group: "Time & Payroll", link: "/time-payroll/leave" },
   { id: "time-payroll.expenses",     label: "Expense Claims",   group: "Time & Payroll", link: "/time-payroll/expenses" },
+  // §10.8 — confidential-by-default: everyone granted this module can open
+  // the page, but the restricted manager view vs. full HR/OH admin detail
+  // is enforced by data scope (`useCanViewConfidentialOH` in
+  // src/components/hr/occupational-health/lib.ts), not by this grant alone.
+  { id: "time-payroll.occupational-health", label: "Occupational Health", group: "Time & Payroll", link: "/time-payroll/occupational-health" },
 
   // Operations
   { id: "operations.assets",     label: "Asset Management",       group: "Operations", link: "/operations/assets" },

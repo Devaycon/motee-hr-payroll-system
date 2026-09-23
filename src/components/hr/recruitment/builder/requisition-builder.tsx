@@ -230,6 +230,20 @@ export function RequisitionBuilder({
   const [hiringManagerId, setHiringManagerId] = useState<string>(
     editing?.hiringManagerId ?? "",
   );
+  /**
+   * The rest of the hiring team, inherited from the approved requisition.
+   * These were captured on the Requisition and then dropped at this hop, so a
+   * published vacancy had no recruiter of record and no interview panel.
+   */
+  const [sourceTeam, setSourceTeam] = useState<{
+    recruiter?: string;
+    hrBusinessPartner?: string;
+    interviewPanel?: string[];
+  }>({
+    recruiter: editing?.recruiter,
+    hrBusinessPartner: editing?.hrBusinessPartner,
+    interviewPanel: editing?.interviewPanelNames,
+  });
   const [interviewPlan, setInterviewPlan] = useState<InterviewPlanRound[]>([
     { round: "Recruiter Screen", mode: "phone", durationMins: 30 },
   ]);
@@ -348,6 +362,19 @@ export function RequisitionBuilder({
       reportingManager: r.reportingManager,
       budgetAllocation: r.budgetAllocation,
     });
+    setSourceTeam({
+      recruiter: r.recruiter,
+      hrBusinessPartner: r.hrBusinessPartner,
+      interviewPanel: r.interviewPanel,
+    });
+    // The requisition names its hiring manager as free text; match it to a real
+    // employee so the vacancy carries an id the rest of the app can act on.
+    if (!hiringManagerId && r.hiringManager) {
+      const match = employees.find(
+        (e) => e.fullName.toLowerCase() === r.hiringManager!.trim().toLowerCase(),
+      );
+      if (match) setHiringManagerId(match.id);
+    }
     // The approved requisition already knows the term length; the advert needs
     // it too, and it was previously only used to infer the employment type.
     if (r.durationMonths) patchAdvert({ contractMonths: r.durationMonths });
@@ -416,6 +443,30 @@ export function RequisitionBuilder({
       }
     }
 
+    // Names resolve to ids where they can: `Interview.panel` is built from ids,
+    // and `findConflicts` compares panels by id - fed empty arrays it could
+    // never detect a double-booking.
+    const byName = (name?: string) =>
+      name
+        ? employees.find(
+            (e) => e.fullName.toLowerCase() === name.trim().toLowerCase(),
+          )
+        : undefined;
+    const panelNames = sourceTeam.interviewPanel ?? [];
+    const hiringTeam = {
+      recruiter: sourceTeam.recruiter,
+      recruiterId: byName(sourceTeam.recruiter)?.id,
+      hrBusinessPartner: sourceTeam.hrBusinessPartner,
+      hrBusinessPartnerId: byName(sourceTeam.hrBusinessPartner)?.id,
+      interviewPanelNames: panelNames.length > 0 ? panelNames : undefined,
+      interviewPanel:
+        panelNames.length > 0
+          ? panelNames
+              .map((n) => byName(n)?.id)
+              .filter((id): id is string => Boolean(id))
+          : undefined,
+    };
+
     if (editing) {
       dispatch(
         updateRequisition({
@@ -429,6 +480,7 @@ export function RequisitionBuilder({
             flow: editing.flow ?? defaultFlow(),
             hiringManager: mgr?.fullName ?? editing.hiringManager,
             hiringManagerId: hiringManagerId || editing.hiringManagerId,
+            ...hiringTeam,
             hiringPriority,
             requiredSkills,
             // §7.15 — the edit path used to drop these, so re-saving a
@@ -455,6 +507,7 @@ export function RequisitionBuilder({
       department: role.department,
       hiringManager: mgr?.fullName ?? "—",
       hiringManagerId: hiringManagerId || undefined,
+      ...hiringTeam,
       employmentType: role.employmentType,
       status,
       hiringPriority,

@@ -60,7 +60,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const uploadSchema = z.object({
   name: z.string().min(2, { message: "Document name is required." }),
   category: z.enum(
-    ["id_card", "contract", "policy", "certificate", "report", "other"],
+    ["id_card", "contract", "policy", "certificate", "right_to_work", "report", "other"],
     { message: "Category is required." },
   ),
   folderId: z.string().min(1, { message: "Folder is required." }),

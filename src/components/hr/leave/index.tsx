@@ -32,6 +32,10 @@ import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import {
+  APPROVAL_CHAIN_TAB_ITEM,
+  useHasApprovalChainTab,
+} from "@/src/components/hr/approvals/use-chain-tab";
 import { StatCards } from "./components/stat-cards";
 import { RequestsTable } from "./components/requests-table";
 import { BalancesTable } from "./components/balances-table";
@@ -74,6 +78,7 @@ export function LeaveManagementPage() {
   const [editingPolicy, setEditingPolicy] = useState<LeavePolicy | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [onLeaveOpen, setOnLeaveOpen] = useState(false);
+  const hasChainTab = useHasApprovalChainTab("leave_request");
 
   // `?request=` opens a specific request straight into review, so the People's
   // time off page can hand a decision back to the flow that owns it.
@@ -354,7 +359,7 @@ export function LeaveManagementPage() {
             { value: "calendar", label: "Calendar" },
             { value: "balances", label: "Balances" },
             { value: "policies", label: "Policies" },
-            { value: "approval_chain", label: "Approval Chain" },
+            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
 
@@ -400,9 +405,11 @@ export function LeaveManagementPage() {
           />
         </TabsContent>
 
-        <TabsContent value="approval_chain" className="mt-4 space-y-4">
-          <ApprovalChainTab documentType="leave_request" />
-        </TabsContent>
+        {hasChainTab && (
+          <TabsContent value="approval_chain" className="mt-4 space-y-4">
+            <ApprovalChainTab documentType="leave_request" />
+          </TabsContent>
+        )}
       </Tabs>
 
       <RequestModal

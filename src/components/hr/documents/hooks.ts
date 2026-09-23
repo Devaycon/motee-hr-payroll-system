@@ -38,6 +38,9 @@ function mapCategory(s?: string): DocumentCategory {
       return "id_card";
     case "certificate":
       return "certificate";
+    case "right_to_work":
+    case "right to work":
+      return "right_to_work";
     case "contract":
     case "offer letter":
       return "contract";

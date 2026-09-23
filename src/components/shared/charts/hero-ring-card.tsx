@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, type LucideIcon } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { RingStat } from "@/src/components/hr/analytics/components/ring-stat";
@@ -66,23 +66,24 @@ function pctOf(segment: RingSegmentData, sharedTotal: number): number {
 }
 
 /**
- * Plain-language read of a ring breakdown — every segment named, how far
- * ahead the leader is, and which group is easy to lose in a list of
- * percentages. Kept factual (no "good"/"bad" judgement calls): there's no
- * generic way to know whether a given segment is the desirable one without
- * knowing the card's own semantics.
+ * Plain-language read of a ring breakdown, as two short paragraphs: the
+ * makeup (every segment named), then how the groups compare — how far ahead
+ * the leader is, and which group is easy to lose in a list of percentages.
+ * Kept factual (no "good"/"bad" judgement calls): there's no generic way to
+ * know whether a given segment is the desirable one without knowing the
+ * card's own semantics.
+ *
+ * The card's subtitle is not repeated here — it is already on the card.
+ * Exported for tests.
  */
-function summarizeSegments(
+export function summarizeSegments(
   segments: RingSegmentData[],
   totalNoun: string,
-  description?: string,
 ): string[] {
   const total = segments.reduce((s, x) => s + x.value, 0) || 1;
   const pct = (s: RingSegmentData) => pctOf(s, total);
   const sorted = [...segments].sort((a, b) => b.value - a.value);
   const lines: string[] = [];
-
-  if (description) lines.push(description);
 
   const parts = sorted.map(
     (s) => `${s.label} at ${s.value.toLocaleString()} (${pct(s)}%)`,
@@ -113,7 +114,9 @@ function summarizeSegments(
     );
   }
 
-  return lines;
+  // Makeup first, then everything that compares the groups, as one paragraph.
+  const [makeup, ...comparison] = lines;
+  return comparison.length > 0 ? [makeup, comparison.join(" ")] : [makeup];
 }
 
 /** Numbered ranking with an inline proportion bar per segment — a different lens on the same data than the dials or the prose summary. */
@@ -296,6 +299,8 @@ export function HeroRingCard({
   segments,
   totalNoun = "total",
   summaryLines,
+  summaryTitle = "Analytics Summary",
+  summaryIcon: SummaryIcon = Sparkles,
   variant = "ring",
   className,
   viewMoreHref,
@@ -305,8 +310,12 @@ export function HeroRingCard({
   segments: RingSegmentData[];
   /** Noun used in the auto-generated summary, e.g. "employees", "alerts". */
   totalNoun?: string;
-  /** Override the auto-generated summary prose entirely. */
+  /** Override the auto-generated summary prose entirely — one paragraph per entry. */
   summaryLines?: string[];
+  /** Heading of the middle section. Defaults to "Analytics Summary". */
+  summaryTitle?: string;
+  /** Icon beside the summary heading. Defaults to the sparkles. */
+  summaryIcon?: LucideIcon;
   /** Full rings (default) or half-circle "speedometer" dials — vary this across a page of several hero cards. */
   variant?: "ring" | "gauge";
   className?: string;
@@ -315,7 +324,7 @@ export function HeroRingCard({
 }) {
   const display = capSegments(segments);
   const single = display.length === 1;
-  const summary = summaryLines ?? summarizeSegments(display, totalNoun, description);
+  const summary = summaryLines ?? summarizeSegments(display, totalNoun);
   const total = display.reduce((s, x) => s + x.value, 0);
 
   return (
@@ -378,10 +387,15 @@ export function HeroRingCard({
 
         <div className="flex flex-1 flex-col justify-center gap-2 py-1">
           <h4 className="flex items-center gap-1.5 text-base font-bold text-foreground">
-            <Sparkles className="h-4 w-4 text-primary" />
-            Analytics Summary
+            <SummaryIcon className="h-5 w-5 text-blue-500" />
+            {summaryTitle}
           </h4>
-          <p className="text-sm leading-relaxed text-muted-foreground">{summary.join(" ")}</p>
+          {/* A blue-tinted panel, one paragraph per summary line. */}
+          <div className="flex flex-col gap-3 rounded-xl border border-blue-500/25 bg-blue-500/10 p-4 text-sm leading-relaxed text-foreground/80">
+            {summary.map((line, i) => (
+              <p key={i}>{line}</p>
+            ))}
+          </div>
         </div>
 
         {!single && (

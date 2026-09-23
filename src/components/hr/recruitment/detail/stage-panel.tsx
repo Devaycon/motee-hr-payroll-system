@@ -23,6 +23,8 @@ import {
   MapPin,
   Phone,
   Users,
+  Paperclip,
+  PenLine,
 } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/src/components/ui/badge";
@@ -70,6 +72,7 @@ import {
   actionsColumn,
 } from "@/src/components/shared/data-table";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useCurrentUser } from "@/src/lib/auth/demo-identity";
 import {
   moveStage,
   setCandidateStatus,
@@ -77,6 +80,7 @@ import {
   scheduleInterview,
   recordInterviewScores,
   sendOffer,
+  attachOfferDocument,
   respondToOffer,
   uid,
 } from "@/src/lib/stores/recruitment-slice";
@@ -107,7 +111,7 @@ import type {
 } from "@/src/lib/types/recruitment";
 import { latestOffer, stageShowsScore } from "@/src/lib/types/recruitment";
 import { getFlow, nextEnabledStage, matchesConstraint } from "../flow";
-import { canMoveTo, daysInStage } from "./advance";
+import { canMoveTo, daysInStage, hiredCount } from "./advance";
 import {
   findConflicts,
   interviewWhen,
@@ -247,7 +251,10 @@ export function StagePanel({
   const nextStage = nextEnabledStage(flow, stage);
   const nextLabel = nextStage ? STAGE_TYPE_LABELS[nextStage] : null;
 
+  const myEmployeeId = useCurrentUser()?.employeeId;
   const [showRejected, setShowRejected] = useState(false);
+  /** §"My candidates" - narrows the shared inbox to the ones you own. */
+  const [mineOnly, setMineOnly] = useState(false);
   const [filterId, setFilterId] = useState<string>("");
   /** Ids checked in the table — bulk actions run on these when non-empty. */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -303,12 +310,34 @@ export function StagePanel({
 
   const rows = useMemo(() => {
     const inStage = candidates.filter((c) => c.stage === stage);
-    const visible = showRejected
+    let visible = showRejected
       ? inStage
       : inStage.filter((c) => c.status !== "rejected");
+    if (mineOnly && myEmployeeId) {
+      visible = visible.filter((c) => c.ownerEmployeeId === myEmployeeId);
+    }
     const fc = constraints.find((x) => x.id === filterId);
     return fc ? visible.filter((c) => matchesConstraint(c, fc, form)) : visible;
-  }, [candidates, stage, showRejected, constraints, filterId, form]);
+  }, [
+    candidates,
+    stage,
+    showRejected,
+    mineOnly,
+    myEmployeeId,
+    constraints,
+    filterId,
+    form,
+  ]);
+
+  const mineInStage = useMemo(
+    () =>
+      myEmployeeId
+        ? candidates.filter(
+            (c) => c.stage === stage && c.ownerEmployeeId === myEmployeeId,
+          ).length
+        : 0,
+    [candidates, stage, myEmployeeId],
+  );
 
   const activeInStage = useMemo(
     () => candidates.filter((c) => c.stage === stage && c.status === "active"),
@@ -506,10 +535,20 @@ export function StagePanel({
       toast.error("No applicants to advance.");
       return;
     }
-    // Refuse the whole batch rather than half-advancing it.
+    // Refuse the whole batch rather than half-advancing it. Seats are counted
+    // as the batch is checked, so advancing three people into one opening is
+    // refused on the second rather than letting all three through.
+    let seats = hiredCount(candidates, requisition.id);
     const blocked = nextStage
       ? recipients
-          .map((c) => ({ c, v: canMoveTo(c, nextStage, flow) }))
+          .map((c) => {
+            const v = canMoveTo(c, nextStage, flow, {
+              openings: requisition.openings,
+              hired: seats,
+            });
+            if (v.ok && nextStage === "hired") seats += 1;
+            return { c, v };
+          })
           .filter((x) => !x.v.ok)
       : [];
     if (blocked.length > 0) {
@@ -557,8 +596,12 @@ export function StagePanel({
             scheduledAt,
             durationMins,
             mode,
-            panel: [],
-            panelNames: [],
+            // The requisition's standing panel, rather than nobody. Every
+            // interview used to be created with an empty panel, which meant
+            // `findConflicts` - which compares panels to spot a double-booked
+            // interviewer - could never fire.
+            panel: requisition.interviewPanel ?? [],
+            panelNames: requisition.interviewPanelNames ?? [],
             location: location || undefined,
             status: "scheduled",
           },
@@ -650,7 +693,10 @@ export function StagePanel({
       openScoring([c]);
       return;
     }
-    const verdict = canMoveTo(c, nextStage, flow);
+    const verdict = canMoveTo(c, nextStage, flow, {
+      openings: requisition.openings,
+      hired: hiredCount(candidates, requisition.id),
+    });
     if (!verdict.ok) {
       toast.error(verdict.reason ?? "Can't advance this candidate.", {
         description:
@@ -672,6 +718,13 @@ export function StagePanel({
   const [offerSalary, setOfferSalary] = useState("");
   const [offerStartDate, setOfferStartDate] = useState("");
   const [offerNotes, setOfferNotes] = useState("");
+  // §15.1 — the offer letter attached at send time (editable Word doc, PDF...).
+  const [offerFile, setOfferFile] = useState<File | null>(null);
+  // §15.2 — preferred over a plain attachment: routes the candidate through
+  // the in-house e-sign tool so the signed document is captured back into
+  // the system automatically.
+  const [offerRequestSignature, setOfferRequestSignature] = useState(true);
+  const offerFileInputRef = useRef<HTMLInputElement>(null);
 
   function openOffer(c: Candidate) {
     setOfferFor(c);
@@ -679,12 +732,31 @@ export function StagePanel({
     setOfferSalary(requisition.salaryMax ? String(requisition.salaryMax) : "");
     setOfferStartDate(requisition.targetStartDate ?? "");
     setOfferNotes("");
+    setOfferFile(null);
+    setOfferRequestSignature(true);
   }
 
   function confirmOffer() {
     if (!offerFor) return;
     const salary = Number(offerSalary.replace(/,/g, ""));
     const amount = Number.isFinite(salary) && salary > 0 ? salary : undefined;
+
+    let attachmentId: string | undefined;
+    if (offerFile) {
+      attachmentId = `att-${Date.now()}`;
+      dispatch(
+        attachOfferDocument({
+          country,
+          candidateId: offerFor.id,
+          attachment: {
+            id: attachmentId,
+            name: offerFile.name,
+            url: URL.createObjectURL(offerFile),
+          },
+        }),
+      );
+    }
+
     dispatch(
       sendOffer({
         country,
@@ -692,20 +764,46 @@ export function StagePanel({
         salary: amount,
         startDate: offerStartDate || undefined,
         notes: offerNotes.trim() || undefined,
+        attachmentId,
+        requestSignature: offerRequestSignature,
       }),
     );
+
     const tpl = stageTemplates.find((t) => t.id === "tpl-offer");
     const vars = {
       ...templateVars([offerFor]),
       date: offerStartDate || requisition.targetStartDate,
       salary: amount ? amount.toLocaleString() : "",
     };
+
+    // §15.2 — the sign link the candidate follows; completing it there
+    // captures the signature back onto this candidate's offer.
+    const signUrl = offerRequestSignature
+      ? `${typeof window !== "undefined" ? window.location.origin : ""}/sign?${new URLSearchParams(
+          {
+            name: offerFile?.name ?? `Offer letter — ${requisition.positionTitle}`,
+            fileType: "pdf",
+            offerCandidateId: offerFor.id,
+            offerCountry: country,
+            offerCandidateName: offerFor.name,
+            offerRoleTitle: requisition.positionTitle,
+            back: `/talent/recruitment/${requisition.id}?candidate=${offerFor.id}`,
+          },
+        ).toString()}`
+      : null;
+
     openMailto({
       to: [offerFor.email],
       subject: tpl
         ? renderTemplate(tpl.subject, vars)
         : `Offer — ${requisition.positionTitle}`,
-      body: tpl ? renderTemplate(tpl.body, vars) : "",
+      body:
+        (tpl ? renderTemplate(tpl.body, vars) : "") +
+        (signUrl
+          ? `\n\nPlease review and sign your offer letter here: ${signUrl}`
+          : offerFile
+            ? `\n\n(Offer letter "${offerFile.name}" attached separately — mailto links can't carry attachments automatically.)`
+            : ""),
     });
     dispatch(
       pushNotification(
@@ -717,7 +815,11 @@ export function StagePanel({
         ),
       ),
     );
-    toast.success(`Offer sent to ${offerFor.name}`);
+    toast.success(
+      offerRequestSignature
+        ? `Offer sent to ${offerFor.name} for e-signature`
+        : `Offer sent to ${offerFor.name}`,
+    );
     setOfferFor(null);
   }
 
@@ -755,12 +857,24 @@ export function StagePanel({
     );
     if (accepted) {
       const hiredStage = nextEnabledStage(flow, "offer") ?? "hired";
-      dispatch(moveStage({ country, ids: [c.id], stage: hiredStage }));
+      // Acceptance is recorded either way - it is a fact about the candidate.
+      // Seating them is what depends on there being a seat: an acceptance on a
+      // role whose openings are full is an over-hire someone has to resolve,
+      // not something to wave through.
+      const seats = hiredCount(candidates, requisition.id);
+      if (hiredStage === "hired" && seats >= requisition.openings) {
+        toast.warning(`${c.name} accepted, but this role is fully hired`, {
+          description:
+            "Their acceptance is recorded. Raise the headcount or withdraw another hire before seating them.",
+        });
+      } else {
+        dispatch(moveStage({ country, ids: [c.id], stage: hiredStage }));
+        toast.success(
+          `${c.name} accepted — moved to ${STAGE_TYPE_LABELS[hiredStage]}`,
+        );
+      }
       dispatch(
         pushNotification(offerAccepted(c.name, requisition.positionTitle)),
-      );
-      toast.success(
-        `${c.name} accepted — moved to ${STAGE_TYPE_LABELS[hiredStage]}`,
       );
     } else {
       dispatch(
@@ -896,6 +1010,34 @@ export function StagePanel({
             } as ColumnDef<Candidate>,
           ]
         : []),
+      {
+        id: "owner",
+        header: sortableHeader("Owner"),
+        accessorFn: (c) => c.ownerName ?? "",
+        cell: ({ row }) => {
+          const { ownerName, ownerEmployeeId } = row.original;
+          if (!ownerName) {
+            // Naming the gap is the point: an unowned candidate is the one
+            // that goes quiet.
+            return (
+              <span className="text-sm text-amber-600 dark:text-amber-400">
+                Unassigned
+              </span>
+            );
+          }
+          return (
+            <span
+              className={
+                ownerEmployeeId && ownerEmployeeId === myEmployeeId
+                  ? "text-sm font-medium text-foreground"
+                  : "text-sm text-muted-foreground"
+              }
+            >
+              {ownerName}
+            </span>
+          );
+        },
+      },
       {
         id: "ageInStage",
         header: sortableHeader("In stage"),
@@ -1121,41 +1263,70 @@ export function StagePanel({
     showsInterview,
     interviewByCandidate,
     conflicts,
+    myEmployeeId,
   ]);
 
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Switch
-            checked={showRejected}
-            onCheckedChange={(v) => setShowRejected(Boolean(v))}
-          />
-          Show rejected
-        </label>
+  /**
+   * The filters, as the rest of the system draws them: dropdowns in the
+   * table's own toolbar rather than a second row of switches above it.
+   *
+   * This panel had a toolbar of its own sitting on top of the one `DataTable`
+   * already renders, so search, filters and export ended up spread across
+   * three rows in two different visual languages. Everything now goes through
+   * `toolbarActions`, which puts it on one line beside the search box.
+   */
+  const toolbar = (
+    <>
+      {myEmployeeId && (
+        <Select
+          value={mineOnly ? "mine" : "all"}
+          onValueChange={(v) => setMineOnly(v === "mine")}
+        >
+          <SelectTrigger className="h-9 w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All owners</SelectItem>
+            <SelectItem value="mine">My candidates ({mineInStage})</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          {/* Filter dropdown */}
-          <Select
-            value={filterId || "all"}
-            onValueChange={(v) => setFilterId(v === "all" ? "" : v)}
-          >
-            <SelectTrigger className="h-9 gap-1.5">
-              <Filter className="w-3.5 h-3.5" />
-              <SelectValue placeholder="Filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All applicants</SelectItem>
-              {constraints.map((fc) => (
-                <SelectItem key={fc.id} value={fc.id}>
-                  {fc.name || "(untitled)"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <Select
+        value={showRejected ? "all" : "active"}
+        onValueChange={(v) => setShowRejected(v === "all")}
+      >
+        <SelectTrigger className="h-9 w-40">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="active">Active only</SelectItem>
+          <SelectItem value="all">Include rejected</SelectItem>
+        </SelectContent>
+      </Select>
 
-          {/* Bulk action dropdown */}
-          <DropdownMenu>
+      {/* Only worth a control when the requisition actually defines some. */}
+      {constraints.length > 0 && (
+        <Select
+          value={filterId || "all"}
+          onValueChange={(v) => setFilterId(v === "all" ? "" : v)}
+        >
+          <SelectTrigger className="h-9 w-44">
+            <Filter className="w-3.5 h-3.5" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All applicants</SelectItem>
+            {constraints.map((fc) => (
+              <SelectItem key={fc.id} value={fc.id}>
+                {fc.name || "(untitled)"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-9 gap-1.5">
                 <ListChecks className="w-4 h-4" />
@@ -1220,9 +1391,11 @@ export function StagePanel({
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      </div>
+    </>
+  );
 
+  return (
+    <div className="space-y-3">
       {/* A panellist booked in two places at once only ever surfaces when
           somebody fails to turn up, so it is called out above the rows. */}
       {showsInterview && visibleConflicts.length > 0 && (
@@ -1245,6 +1418,7 @@ export function StagePanel({
         onSelectionChange={setSelectedIds}
         onRowClick={(c) => openCandidate(c)}
         searchPlaceholder="Search applicants…"
+        toolbarActions={toolbar}
         emptyMessage="No applicants in this stage."
       />
 
@@ -1483,6 +1657,65 @@ export function StagePanel({
                 onChange={(e) => setOfferNotes(e.target.value)}
               />
             </div>
+
+            {/* §15.1 — attach the offer letter, preferably an editable Word doc. */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Offer letter (optional)</Label>
+              <input
+                ref={offerFileInputRef}
+                type="file"
+                accept=".doc,.docx,.pdf"
+                className="hidden"
+                onChange={(e) => setOfferFile(e.target.files?.[0] ?? null)}
+              />
+              {offerFile ? (
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
+                  <span className="flex items-center gap-1.5 text-xs text-foreground truncate">
+                    <Paperclip className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                    {offerFile.name}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-1.5 text-xs text-muted-foreground"
+                    onClick={() => setOfferFile(null)}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs w-full"
+                  onClick={() => offerFileInputRef.current?.click()}
+                >
+                  <Paperclip className="w-3.5 h-3.5" />
+                  Attach editable Word doc or PDF
+                </Button>
+              )}
+            </div>
+
+            {/* §15.2 — the preferred option over a plain attachment. */}
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div className="space-y-0.5 pr-3">
+                <Label className="text-xs flex items-center gap-1.5">
+                  <PenLine className="w-3.5 h-3.5 text-primary" />
+                  Send for e-signature
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  The candidate signs electronically; the signed document is
+                  captured back into Documents &amp; Compliance automatically.
+                </p>
+              </div>
+              <Switch
+                checked={offerRequestSignature}
+                onCheckedChange={setOfferRequestSignature}
+              />
+            </div>
+
             <p className="text-[11px] text-muted-foreground">
               This records the offer and opens your mail client. Come back and
               mark the response once they reply.

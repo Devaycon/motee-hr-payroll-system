@@ -4,6 +4,7 @@ import { VenusAndMars } from "lucide-react";
 import { ResponsivePie } from "@nivo/pie";
 import type { ReportAnalytics, ReportChartSpec, ReportStat } from "@/src/lib/reports/types";
 import { HeroRingCard, type RingSegmentData } from "@/src/components/shared/charts";
+import { genderSummaryProps } from "@/src/components/shared/charts/gender-summary";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import { ReportChartCard, useNivoTheme } from "./report-chart-card";
 
@@ -400,6 +401,7 @@ export function GenderSplitLayout({ analytics }: { analytics: ReportAnalytics })
         description="Headcount by gender, across the active roster."
         segments={genderSegments}
         totalNoun="employees"
+        {...genderSummaryProps(genderSegments)}
       />
 
       {/* Left column (tenure/pay gap meters, each paired with the raw

@@ -27,6 +27,12 @@ interface FolderSidebarProps {
   onCreateFolder: () => void;
   sharedCount: number;
   trashCount: number;
+  /**
+   * §8 redesign — root folders to leave out entirely (e.g. Personnel Files
+   * and Archive, which now have their own top-level areas instead of
+   * sitting in this tree alongside Company Documents).
+   */
+  hideRootIds?: string[];
 }
 
 const FOLDER_TYPE_ICONS: Record<
@@ -155,6 +161,7 @@ export function FolderSidebar({
   onCreateFolder,
   sharedCount,
   trashCount,
+  hideRootIds = [],
 }: FolderSidebarProps) {
   const [expanded, setExpanded] = useState<Set<string>>(
     new Set(["sys", "per"]),
@@ -170,7 +177,11 @@ export function FolderSidebar({
   }
 
   const rootFolders = folders.filter(
-    (f) => !f.parentId && f.type !== "shared" && f.type !== "trash",
+    (f) =>
+      !f.parentId &&
+      f.type !== "shared" &&
+      f.type !== "trash" &&
+      !hideRootIds.includes(f.id),
   );
   const totalNonArchived = documents.filter(
     (d) => !d.isArchived && !d.isTrashed,

@@ -45,8 +45,10 @@ export function TicketCard({ ticket, onClick }: Props) {
               {ticket.isOverdue && (
                 <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
               )}
+              {/* §9.1 — the same Ref # HR sees in the admin table, so a
+                  follow-up call/email can be matched to the right case. */}
               <span className="text-xs text-muted-foreground font-mono ml-auto">
-                {ticket.ticketNumber}
+                Ref: {ticket.id}
               </span>
             </div>
             <p className="text-xs text-muted-foreground line-clamp-1">

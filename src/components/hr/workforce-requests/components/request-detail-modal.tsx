@@ -9,6 +9,8 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { RaciStrip } from "@/src/components/shared/raci-strip";
+import { raciFromApproval } from "@/src/components/shared/raci/from-approval";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import {
   STATUS_LABELS,
@@ -42,6 +44,8 @@ export function RequestDetailModal({
 
   const status: ApprovalStatus = approval?.status ?? "draft";
 
+  const raci = raciFromApproval(approval, request.createdByName);
+
   const facts: { label: string; value: string }[] = [
     { label: "Department", value: request.department },
     { label: "Number of hires", value: String(request.numberOfHires) },
@@ -68,6 +72,8 @@ export function RequestDetailModal({
         </DialogHeader>
 
         <div className="space-y-4 py-1">
+          <RaciStrip people={raci.people} waitingOn={raci.waitingOn} />
+
           <p className="text-sm text-muted-foreground">{request.reason}</p>
 
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg border border-border/60 p-4 text-sm sm:grid-cols-3">

@@ -15,6 +15,10 @@ interface StatCardsProps {
   templates: ShiftTemplate[];
   assignments: ShiftAssignment[];
   weekStart: string;
+  /** The tab currently open. */
+  activeTab: string;
+  /** Drill-down: opens the tab that backs this number. */
+  onTabChange: (tab: string) => void;
 }
 
 export function StatCards({
@@ -22,6 +26,8 @@ export function StatCards({
   templates,
   assignments,
   weekStart,
+  activeTab,
+  onTabChange,
 }: StatCardsProps) {
   const todayIso = isoDateOf(new Date());
 
@@ -58,6 +64,8 @@ export function StatCards({
       sub: "active shift patterns",
       icon: ListChecks,
       tone: "violet",
+      active: activeTab === "templates",
+      onClick: () => onTabChange("templates"),
     },
     {
       label: "On Shift Today",
@@ -65,6 +73,8 @@ export function StatCards({
       sub: `out of ${employees.length} employees`,
       icon: Users,
       tone: "emerald",
+      active: activeTab === "roster",
+      onClick: () => onTabChange("roster"),
     },
     {
       label: "Night Shift Today",
@@ -72,6 +82,8 @@ export function StatCards({
       sub: "employees on the night shift",
       icon: Moon,
       tone: "blue",
+      active: activeTab === "roster",
+      onClick: () => onTabChange("roster"),
     },
     {
       label: "Manually Rostered",
@@ -79,6 +91,8 @@ export function StatCards({
       sub: "employees with an explicit shift this week",
       icon: CalendarClock,
       tone: "amber",
+      active: activeTab === "roster",
+      onClick: () => onTabChange("roster"),
     },
   ];
 

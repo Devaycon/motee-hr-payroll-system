@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { seedRequestsForType } from "@/src/lib/stores/approvals-slice";
 import type {
@@ -940,17 +940,31 @@ function buildSeedRequests(bundle: LocaleBundle): ApprovalRequest[] {
  * page rendered its real "0 / nothing here" empty copy the whole time,
  * reading as broken until a refresh (which usually hits a warm cache) papered
  * over it.
+ *
+ * No `tried`/`hasRun` ref guarding the effect body: React's dev-only Strict
+ * Mode double-invokes an effect around mount (run → cleanup → run again)
+ * without resetting refs in between. A `tried.current = true` set on the
+ * first pass survives into the second, so it short-circuits before a
+ * replacement timer is scheduled — and because the real work (the dispatch
+ * and `setSeeding(false)`) lives inside the timer callback, not the effect
+ * body, the discarded first timer never fires either. Net effect: `seeding`
+ * gets stuck at `true` forever, but *only* when `bundle` is already loaded at
+ * the moment this hook first mounts (e.g. navigating here client-side after
+ * the shell layout already resolved locale data) — a cold/full page load
+ * mounts before `bundle` resolves, so the double-invoke is a harmless no-op
+ * both times and the bug never shows, which is why a refresh always "fixed"
+ * it. Dropping the ref guard is safe: the effect is naturally idempotent —
+ * cleanup cancels the discarded pass's timer before it can fire, so Strict
+ * Mode's extra pass just replaces one pending timer with another instead of
+ * seeding twice.
  */
 export function useDemoApprovalSeed(): boolean {
   const dispatch = useAppDispatch();
   const bundle = useAppSelector((s) => s.locale.data);
-  const tried = useRef(false);
   const [seeding, setSeeding] = useState(true);
 
   useEffect(() => {
-    if (tried.current) return;
     if (!bundle) return;
-    tried.current = true;
     const timer = setTimeout(() => {
       const seeds = buildSeedRequests(bundle);
       const byType = new Map<ApprovalDocumentType, ApprovalRequest[]>();

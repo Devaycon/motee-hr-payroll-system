@@ -74,6 +74,7 @@ export function KudosPage() {
       recipientName: data.recipientName,
       recipientInitials: data.recipientInitials,
       recipientDept: data.recipientDept,
+      recipientType: data.recipientType,
       kudosType: data.kudosType,
       customTypeName: data.customTypeName,
       companyValue: data.companyValue,

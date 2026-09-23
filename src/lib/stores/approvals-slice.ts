@@ -17,6 +17,7 @@ import type {
   WorkflowStartDesk,
   ApproverResolver,
   ApprovalCategory,
+  ApprovalDelegation,
 } from "@/src/lib/types/approvals";
 import { BUILTIN_CATEGORIES } from "@/src/lib/types/approvals";
 import { DEFAULT_APPROVAL_TEMPLATES } from "@/src/lib/permissions/approval-seeds";
@@ -28,6 +29,8 @@ interface ApprovalsState {
   templates: ApprovalChainTemplate[];
   requests: ApprovalRequest[];
   categories: ApprovalCategory[];
+  /** §4.1 mechanism 1 — self-service, date-ranged approval delegations. */
+  delegations: ApprovalDelegation[];
   status: "idle" | "ready";
 }
 
@@ -35,6 +38,7 @@ const initialState: ApprovalsState = {
   templates: DEFAULT_APPROVAL_TEMPLATES,
   requests: [],
   categories: BUILTIN_CATEGORIES,
+  delegations: [],
   status: "ready",
 };
 
@@ -93,9 +97,10 @@ function buildStepsForTemplate(
   template: ApprovalChainTemplate,
   submitter: ApprovalSubmitter,
   bundle: LocaleBundle | null,
+  delegations: ApprovalDelegation[] = [],
 ): ApprovalStepInstance[] {
   return template.steps.map((s, i) => {
-    const resolved = resolveStepWithOnLeave(s, submitter, bundle);
+    const resolved = resolveStepWithOnLeave(s, submitter, bundle, delegations);
     const base: ApprovalStepInstance = {
       id: uid(`STEP-${i + 1}`),
       order: s.order,
@@ -113,6 +118,10 @@ function buildStepsForTemplate(
     if (resolved.reassignedFromEmployeeId) {
       base.reassignedFromEmployeeId = resolved.reassignedFromEmployeeId;
       base.reassignedFromName = resolved.reassignedFromName;
+    }
+    if (resolved.delegationReason) {
+      base.delegationReason = resolved.delegationReason;
+      base.delegationPeriod = resolved.delegationPeriod;
     }
     return base;
   });
@@ -497,6 +506,8 @@ const approvalsSlice = createSlice({
         attachments?: AttachmentRules;
         signatures?: SignatureRules;
         steps: Omit<ApprovalChainStep, "id" | "order">[];
+        /** Make the new chain the active one for its module in the same step. */
+        makeActive?: boolean;
         actorName: string;
       }>,
     ) {
@@ -509,15 +520,21 @@ const approvalsSlice = createSlice({
         attachments,
         signatures,
         steps,
+        makeActive,
         actorName,
       } = action.payload;
       const id = uid("ACT");
+      if (makeActive) {
+        state.templates.forEach((t) => {
+          if (t.documentType === documentType) t.isDefault = false;
+        });
+      }
       state.templates.push({
         id,
         documentType,
         name,
         description,
-        isDefault: false,
+        isDefault: Boolean(makeActive),
         kind: "custom",
         startDesk: startDesk ?? DEFAULT_START,
         endDesk: endDesk ?? DEFAULT_END,
@@ -598,6 +615,22 @@ const approvalsSlice = createSlice({
         }
       });
     },
+
+    // ── §4.1 mechanism 1 — self-service, date-ranged delegation ──
+    addDelegation(
+      state,
+      action: PayloadAction<Omit<ApprovalDelegation, "id" | "createdAt">>,
+    ) {
+      state.delegations.unshift({
+        ...action.payload,
+        id: uid("DEL"),
+        createdAt: nowIso(),
+      });
+    },
+
+    removeDelegation(state, action: PayloadAction<string>) {
+      state.delegations = state.delegations.filter((d) => d.id !== action.payload);
+    },
   },
 });
 
@@ -620,6 +653,8 @@ export const {
   addCategory,
   renameCategory,
   deleteCategory,
+  addDelegation,
+  removeDelegation,
 } = approvalsSlice.actions;
 export default approvalsSlice.reducer;
 
@@ -650,7 +685,12 @@ export const submitApproval = createAsyncThunk<
       `No approval chain template for documentType '${submission.documentType}'`,
     );
   }
-  const steps = buildStepsForTemplate(template, submission.submitter, bundle);
+  const steps = buildStepsForTemplate(
+    template,
+    submission.submitter,
+    bundle,
+    state.approvals.delegations,
+  );
   dispatch(
     submitApprovalInternal({
       submission,

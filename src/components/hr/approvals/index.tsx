@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Inbox,
@@ -8,6 +9,7 @@ import {
   FileCheck2,
   Clock,
   SlidersHorizontal,
+  UserCog,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -37,6 +39,8 @@ import {
 } from "@/src/lib/types/approvals";
 import { QueueTable } from "./components/queue-table";
 import { IntakeModal } from "./components/intake-modal";
+import { ApprovalChainsTab } from "./components/chains-tab";
+import { MyDelegationPanel } from "./components/my-delegation-panel";
 import { currentApproverName, isCurrentApprover, isSubmitter } from "./utils";
 import { useDemoApprovalSeed } from "./use-demo-seed";
 import { useCan } from "@/src/lib/permissions/use-can";
@@ -73,6 +77,18 @@ function matchesApprovalCardFilter(
   }
 }
 
+/**
+ * Tab order per variant, matching the KPI cards above left to right: your own
+ * submissions first, then what's waiting on you, then the wider queues, with
+ * the catch-all after them and chain setup — configuration, not a queue — last.
+ * The first tab is also the one the page opens on, so what you land on is
+ * always the leftmost tab and the leftmost card.
+ */
+const TAB_ORDER: Record<"hr" | "employee", string[]> = {
+  hr: ["mine", "inbox", "inprogress", "approved", "all", "chains"],
+  employee: ["mine", "inbox", "approved"],
+};
+
 interface ApprovalsPageProps {
   /**
    * Controls page chrome: the HR variant gets the wider "All submissions"
@@ -92,6 +108,9 @@ export function ApprovalsPage({
   const user = useAppSelector((s) => s.auth.user);
   const requests = useAppSelector((s) => s.approvals.requests);
   const canSubmit = useCan("submissions.queue", "create");
+  // Creating, editing and activating approval chains is module configuration.
+  const canAdminister = useCan("submissions.queue", "administer");
+  const searchParams = useSearchParams();
   // Only while genuinely empty — once anything is seeded (or this isn't the
   // first mount of the session), never re-show the skeleton on top of data
   // that's already there.
@@ -112,10 +131,14 @@ export function ApprovalsPage({
   const [dateTo, setDateTo] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [intakeOpen, setIntakeOpen] = useState(false);
-  // Controlled so the KPI cards can drill into a tab, not just a filter.
-  const [activeTab, setActiveTab] = useState(
-    variant === "employee" ? "mine" : "inbox",
-  );
+  const [delegationOpen, setDelegationOpen] = useState(false);
+  // Controlled so the KPI cards can drill into a tab, not just a filter — and
+  // so a module's "Manage chains" link can land straight on `?tab=chains`.
+  const [activeTab, setActiveTab] = useState(() => {
+    const order = TAB_ORDER[variant];
+    const requested = searchParams.get("tab");
+    return requested && order.includes(requested) ? requested : order[0];
+  });
   /** Drill-down set by the KPI cards; "all" shows every submission. */
   const [cardFilter, setCardFilter] = useState<ApprovalCardFilter>("all");
 
@@ -276,7 +299,7 @@ export function ApprovalsPage({
     setCardFilter(filter);
   }
 
-  const statCards: HrStatCardItem[] = [
+  const queueCards: HrStatCardItem[] = [
     {
       icon: Inbox,
       // "Waiting on my desk" — younger users don't associate digital work with
@@ -329,6 +352,14 @@ export function ApprovalsPage({
     },
   ];
 
+  // The cards follow the tab order (TAB_ORDER): "Submitted by Me" leads, then
+  // "Pending My Approval". queueCards is built [pending, mine, ...rest].
+  const statCards: HrStatCardItem[] = [
+    queueCards[1],
+    queueCards[0],
+    ...queueCards.slice(2),
+  ];
+
   const headerTitle =
     variant === "employee"
       ? "My Submissions"
@@ -336,7 +367,7 @@ export function ApprovalsPage({
   const headerSub =
     variant === "employee"
       ? "Submit new requests and track exactly who they're waiting on."
-      : "Every formal submission across the system — your inbox, what you've sent, and the full org queue.";
+      : "Every formal submission across the system — your inbox, what you've sent, the full org queue, and the approval chains that route them.";
 
   return (
     <div className="flex flex-col gap-6">
@@ -345,17 +376,25 @@ export function ApprovalsPage({
           <h1 className="text-4xl font-bold text-foreground">{headerTitle}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{headerSub}</p>
         </div>
-        {canSubmit && (
-          <Button className="mt-1 gap-1.5" onClick={() => setIntakeOpen(true)}>
-            <Plus className="w-4 h-4" />
-            New Submission
+        <div className="mt-1 flex items-center gap-2">
+          {/* §4.1 mechanism 1 — self-service delegation, open to anyone who
+              might be an approver, not gated behind canSubmit/canManage. */}
+          <Button variant="outline" className="gap-1.5" onClick={() => setDelegationOpen(true)}>
+            <UserCog className="w-4 h-4" />
+            My Delegation
           </Button>
-        )}
+          {canSubmit && (
+            <Button className="gap-1.5" onClick={() => setIntakeOpen(true)}>
+              <Plus className="w-4 h-4" />
+              New Submission
+            </Button>
+          )}
+        </div>
       </div>
 
       <HrStatCardsGrid stats={statCards} columns={4} />
 
-      {cardFilter !== "all" && (
+      {cardFilter !== "all" && activeTab !== "chains" && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-foreground">
             {APPROVAL_CARD_FILTER_LABELS[cardFilter]}{" "}
@@ -372,7 +411,14 @@ export function ApprovalsPage({
         </div>
       )}
 
-      <div className="flex flex-col gap-3">
+      {/* Search and filters narrow the submission queues; they mean nothing on
+          the Approval Chains tab, so they step aside there. */}
+      <div
+        className={cn(
+          "flex flex-col gap-3",
+          activeTab === "chains" && "hidden",
+        )}
+      >
         {/* Search stays put while the rest of the filter row scrolls away on a
             phone (client feedback — mobile considerations). */}
         {/* Solid while stuck: the rows scrolling underneath must be occluded,
@@ -512,18 +558,19 @@ export function ApprovalsPage({
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         {/* Every KPI card has a tab that means the same thing, in the same
             order (client feedback — "replicate everything in the card above").
-            "All submissions" trails as the catch-all. */}
+            "All submissions" trails as the catch-all, and Approval Chains —
+            setup, not a queue — sits last behind a divider. Order is TAB_ORDER. */}
         <PageTabsList
           tabs={
             variant === "hr"
               ? [
                   {
-                    value: "inbox",
-                    label: `Pending My Approval (${inbox.length})`,
-                  },
-                  {
                     value: "mine",
                     label: `Submitted by Me (${submittedByMe.length})`,
+                  },
+                  {
+                    value: "inbox",
+                    label: `Pending My Approval (${inbox.length})`,
                   },
                   {
                     value: "inprogress",
@@ -537,15 +584,20 @@ export function ApprovalsPage({
                     value: "all",
                     label: `All submissions (${filtered.length})`,
                   },
+                  {
+                    value: "chains",
+                    label: "Approval Chains",
+                    dividerBefore: true,
+                  },
                 ]
               : [
                   {
-                    value: "inbox",
-                    label: `Pending My Approval (${inbox.length})`,
-                  },
-                  {
                     value: "mine",
                     label: `Submitted by Me (${submittedByMe.length})`,
+                  },
+                  {
+                    value: "inbox",
+                    label: `Pending My Approval (${inbox.length})`,
                   },
                   {
                     value: "approved",
@@ -606,9 +658,20 @@ export function ApprovalsPage({
             }
           />
         </TabsContent>
+
+        {variant === "hr" && (
+          <TabsContent value="chains" className="mt-5">
+            <ApprovalChainsTab canManage={canAdminister} />
+          </TabsContent>
+        )}
       </Tabs>
 
-      <IntakeModal open={intakeOpen} onOpenChange={setIntakeOpen} />
+      <IntakeModal
+        open={intakeOpen}
+        onOpenChange={setIntakeOpen}
+        portal={variant === "hr" ? "admin" : "self_service"}
+      />
+      <MyDelegationPanel open={delegationOpen} onClose={() => setDelegationOpen(false)} />
     </div>
   );
 }

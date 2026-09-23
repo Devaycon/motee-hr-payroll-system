@@ -28,6 +28,13 @@ export interface PushNotificationPayload {
   description: string;
   detail?: string;
   type?: NotifType;
+  /**
+   * Who should see it. Optional on purpose: every existing caller keeps
+   * broadcasting exactly as before, and only new senders need to target.
+   */
+  recipientEmployeeIds?: string[];
+  recipientRoleIds?: string[];
+  href?: string;
 }
 
 const notificationsSlice = createSlice({
@@ -52,6 +59,9 @@ const notificationsSlice = createSlice({
         }),
         read: false,
         type: action.payload.type ?? "info",
+        recipientEmployeeIds: action.payload.recipientEmployeeIds,
+        recipientRoleIds: action.payload.recipientRoleIds,
+        href: action.payload.href,
       });
     },
 

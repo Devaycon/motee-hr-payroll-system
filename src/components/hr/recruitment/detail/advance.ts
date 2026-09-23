@@ -18,6 +18,20 @@ export interface MoveVerdict {
   reason?: string;
 }
 
+/**
+ * How much room is left on the requisition.
+ *
+ * Passed in rather than derived here so this stays a pure function of the
+ * candidate and the rules, and so a bulk advance can count the people it is
+ * about to hire as it goes instead of re-reading a store mid-loop.
+ */
+export interface HiringCapacity {
+  /** Positions the requisition was approved for. */
+  openings: number;
+  /** Candidates already sitting in `hired`. */
+  hired: number;
+}
+
 const OK: MoveVerdict = { ok: true };
 
 /**
@@ -33,6 +47,7 @@ export function canMoveTo(
   candidate: Candidate,
   to: RecruitmentStageType,
   flow: RequisitionFlow,
+  capacity?: HiringCapacity,
 ): MoveVerdict {
   const from = candidate.stage;
   if (from === to) return { ok: false, reason: "Already in this stage." };
@@ -92,7 +107,31 @@ export function canMoveTo(
     };
   }
 
+  // A requisition approved for two people cannot hire three. Nothing enforced
+  // this, so the pipeline would happily seat more hires than the role was
+  // funded for - and the vacancy's own "filled" status would then be reporting
+  // a number that overshot what Finance signed off.
+  if (to === "hired" && capacity && capacity.hired >= capacity.openings) {
+    return {
+      ok: false,
+      reason:
+        capacity.openings === 1
+          ? "This role has one opening and it is already filled. Close the vacancy or raise the headcount first."
+          : `All ${capacity.openings} openings on this role are filled. Raise the headcount before hiring anyone else.`,
+    };
+  }
+
   return OK;
+}
+
+/** Candidates already occupying a place on this requisition. */
+export function hiredCount(
+  candidates: Candidate[],
+  requisitionId: string,
+): number {
+  return candidates.filter(
+    (c) => c.requisitionId === requisitionId && c.stage === "hired",
+  ).length;
 }
 
 /** How long a candidate has sat where they are, in whole days. */

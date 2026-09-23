@@ -68,6 +68,8 @@ export interface LocaleEmployee {
   departmentId: string;
   departmentName: string;
   jobTitle: string;
+  /** Skills the person brings, used to group the Workforce Lens. */
+  skills?: string[];
   grade?: string;
   level?: number;
   employmentTypeId: string;

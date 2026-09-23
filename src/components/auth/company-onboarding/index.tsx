@@ -42,10 +42,13 @@ const STEPS = [
     description: "Choose which modules to activate",
   },
   {
+    // §4.1 (Correction 2 feedback) — this step existed as a complete,
+    // working component but was never wired into the live wizard (the
+    // StepContent switch below jumped straight from Modules to Review).
     number: 5,
     label: "Workflow",
     title: "Workflow Configuration",
-    description: "Set up approval workflows",
+    description: "Set up approvals, delegation and escalation",
   },
   {
     number: 6,

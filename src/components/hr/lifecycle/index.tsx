@@ -37,11 +37,10 @@ export function LifecyclePage() {
           The complete employee journey
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Motee doesn&apos;t stop once you&apos;ve hired someone. A
-          recruitment record becomes an employee record, which then drives
-          onboarding, assets, learning, performance, engagement and
-          eventually offboarding — {LIFECYCLE_STAGES.length} connected
-          stages, one roadmap.
+          From workforce planning to offboarding, Motee connects every stage
+          of the employee lifecycle — carrying information forward,
+          triggering the right actions and creating one continuous employee
+          journey.
         </p>
       </div>
 
@@ -87,19 +86,19 @@ export function LifecyclePage() {
               <Map className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
               <div>
                 <p className="text-sm font-semibold text-foreground">
-                  Stage-by-stage detail
+                  Lifecycle Overview
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {totalOpen > 0 ? (
                     <>
                       <span className="font-medium text-foreground">
-                        {totalOpen} item{totalOpen === 1 ? "" : "s"}
+                        {totalOpen} people and activities
                       </span>{" "}
-                      {totalOpen === 1 ? "is" : "are"} moving through the
-                      pipeline. Click any stage to open its workflow.
+                      across the employee lifecycle. Select any stage to view
+                      its workflow, actions and progress.
                     </>
                   ) : (
-                    "Click any stage to open its workflow."
+                    "Select any stage to view its workflow, actions and progress."
                   )}
                 </p>
               </div>
@@ -110,14 +109,14 @@ export function LifecyclePage() {
             <div className="flex flex-col gap-4">
               <SupportingBand
                 title="Ongoing People Management"
-                description="Support, enable and empower — running throughout the journey, not tied to a single stage."
+                description="The ongoing people processes that support employees throughout their working journey."
                 icon={Users2}
                 items={ONGOING_MANAGEMENT_ITEMS}
                 tone="muted"
               />
               <SupportingBand
-                title="Services Supporting Everything"
-                description="The foundation that keeps every stage connected, compliant and proactive."
+                title="Platform Foundations"
+                description="The shared capabilities that keep every stage connected, automated, compliant and actionable."
                 icon={Cog}
                 items={SUPPORTING_SERVICES_ITEMS}
                 tone="accent"

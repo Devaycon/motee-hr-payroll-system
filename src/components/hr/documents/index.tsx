@@ -18,12 +18,28 @@ import { UploadModal } from "./components/upload-modal";
 import { DocumentDetailModal } from "./components/document-detail-modal";
 import { ShareModal } from "./components/share-modal";
 import { CreateFolderModal } from "./components/create-folder-modal";
+import { EmployeeDocumentsTab } from "./components/employee-documents-tab";
+import { MyDocumentsTab } from "./components/my-documents-tab";
+import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { FOLDERS as SEED_FOLDERS } from "./data";
 import { useAppSelector, useAppDispatch } from "@/src/lib/stores/hooks";
 import { dequeueSignedDocument } from "@/src/lib/stores/docu-sign-slice";
-import type { HRDocument, Folder, NewDocument, NewShare } from "./types";
+import type { SelfServiceDocumentSubmission } from "@/src/lib/stores/my-documents-slice";
+import type { HRDocument, Folder, NewDocument, NewShare, DocumentCategory } from "./types";
 
 const DOCU_SIGN_FOLDER_ID = "docu-sign-file";
+
+/** §8 redesign — root folders that now have their own top-level area
+ *  instead of sitting in the Company Documents tree. */
+const COMPANY_DOCS_HIDDEN_ROOTS = ["per", "arch"];
+
+/** §8.3 — maps a self-service submission's document kind to a document category. */
+function categoryForDocType(docType: string): DocumentCategory {
+  if (docType === "Right to Work") return "right_to_work";
+  if (docType === "Certificate") return "certificate";
+  return "id_card";
+}
 
 function getDocumentsForFolder(
   folderId: string | null,
@@ -54,6 +70,11 @@ export function DocumentsPage() {
   const { data, loading } = useDocuments();
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
   const signedQueue = useAppSelector((s) => s.docuSign.queue);
+  const selfServiceSubmissions = useAppSelector((s) => s.myDocuments.submissions);
+  const pendingSelfServiceCount = selfServiceSubmissions.filter(
+    (s) => s.status === "awaiting_review",
+  ).length;
+  const [activeArea, setActiveArea] = useState("company");
 
   const [documents, setDocuments] = useState<HRDocument[]>([]);
   const [folders, setFolders] = useState<Folder[]>(SEED_FOLDERS);
@@ -199,6 +220,42 @@ export function DocumentsPage() {
     setUploadModalOpen(false);
   }
 
+  /** §8.3 — HR approving a self-service submission files it onto the
+   *  employee's own folder, the same place their other documents live. */
+  function handleApproveSelfServiceDoc(submission: SelfServiceDocumentSubmission) {
+    if (!submission.employeeId) return;
+    const id = `DOC-SSD-${submission.id}`;
+    const now = new Date().toISOString().split("T")[0];
+    const fileType = /^(pdf|doc|docx|png|jpg|jpeg)$/.test(submission.ext)
+      ? (submission.ext as HRDocument["fileType"])
+      : "pdf";
+    const newDoc: HRDocument = {
+      id,
+      name: submission.name,
+      fileType,
+      category: categoryForDocType(submission.docType),
+      folderId: `emp-${submission.employeeId}`,
+      fileSize: 0,
+      expiryDate: submission.expiryDate,
+      uploadedAt: now,
+      uploadedBy: submission.employeeName,
+      isArchived: false,
+      versions: [
+        {
+          id: `V-${id}-1`,
+          version: 1,
+          uploadedAt: now,
+          uploadedBy: submission.employeeName,
+          fileSize: 0,
+          notes: "Submitted via employee self-service, approved by HR.",
+        },
+      ],
+      shares: [],
+      acknowledgements: [],
+    };
+    setDocuments((prev) => [newDoc, ...prev]);
+  }
+
   function handleViewDocument(doc: HRDocument) {
     setViewingDocument(doc);
     setDetailModalOpen(true);
@@ -336,20 +393,22 @@ export function DocumentsPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => setCreateFolderModalOpen(true)}
-          >
-            <FolderPlus className="mr-2 size-4" />
-            New Folder
-          </Button>
-          <Button size="lg" onClick={() => setUploadModalOpen(true)}>
-            <Upload className="mr-2 size-4" />
-            Upload
-          </Button>
-        </div>
+        {activeArea === "company" && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setCreateFolderModalOpen(true)}
+            >
+              <FolderPlus className="mr-2 size-4" />
+              New Folder
+            </Button>
+            <Button size="lg" onClick={() => setUploadModalOpen(true)}>
+              <Upload className="mr-2 size-4" />
+              Upload
+            </Button>
+          </div>
+        )}
       </div>
 
       <StatCards
@@ -362,7 +421,7 @@ export function DocumentsPage() {
         }}
       />
 
-      {cardFilter !== "all" && (
+      {cardFilter !== "all" && activeArea === "company" && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-foreground">
             {DOCUMENT_CARD_FILTER_LABELS[cardFilter]}{" "}
@@ -381,37 +440,100 @@ export function DocumentsPage() {
         </div>
       )}
 
-      <div
-        className="flex overflow-hidden rounded-xl border border-border/60 bg-background"
-        style={{ height: "calc(100vh - 310px)", minHeight: "480px" }}
-      >
-        <FolderSidebar
-          folders={folders}
-          documents={documents}
-          selectedFolderId={selectedFolderId}
-          onSelectFolder={setSelectedFolderId}
-          onCreateFolder={() => setCreateFolderModalOpen(true)}
-          sharedCount={
-            documents.filter((d) => !d.isTrashed && d.shares.length > 0).length
-          }
-          trashCount={documents.filter((d) => d.isTrashed === true).length}
+      {/* §8 redesign — "feels quite busy... duplication between Company
+          Documents, Personnel/Employee Files, Contracts, Policies, and
+          Certificates" reorganised by ownership/purpose: Company Documents,
+          Employee Documents (search-first), My Documents (self-service
+          review queue) and Archive each get one clear home. */}
+      <Tabs value={activeArea} onValueChange={setActiveArea}>
+        <PageTabsList
+          tabs={[
+            { value: "company", label: "Company Documents" },
+            { value: "employee", label: "Employee Documents" },
+            {
+              value: "my-documents",
+              label:
+                pendingSelfServiceCount > 0
+                  ? `My Documents (${pendingSelfServiceCount})`
+                  : "My Documents",
+            },
+            { value: "archive", label: "Archive" },
+          ]}
         />
-        <DocumentGrid
-          documents={filteredDocuments}
-          folders={folders}
-          selectedFolderId={selectedFolderId}
-          onSelectFolder={setSelectedFolderId}
-          onView={handleViewDocument}
-          onShare={handleShareDocument}
-          onSign={handleSign}
-          onArchive={handleArchive}
-          onDelete={handleDelete}
-          onRestore={handleRestore}
-          onPermanentDelete={handlePermanentDelete}
-          isTrashView={selectedFolderId === "trash"}
-          isSharedView={selectedFolderId === "shared"}
-        />
-      </div>
+
+        <TabsContent value="company" className="mt-4">
+          <div
+            className="flex overflow-hidden rounded-xl border border-border/60 bg-background"
+            style={{ height: "calc(100vh - 380px)", minHeight: "440px" }}
+          >
+            <FolderSidebar
+              folders={folders}
+              documents={documents}
+              selectedFolderId={selectedFolderId}
+              onSelectFolder={setSelectedFolderId}
+              onCreateFolder={() => setCreateFolderModalOpen(true)}
+              hideRootIds={COMPANY_DOCS_HIDDEN_ROOTS}
+              sharedCount={
+                documents.filter((d) => !d.isTrashed && d.shares.length > 0).length
+              }
+              trashCount={documents.filter((d) => d.isTrashed === true).length}
+            />
+            <DocumentGrid
+              documents={filteredDocuments}
+              folders={folders}
+              selectedFolderId={selectedFolderId}
+              onSelectFolder={setSelectedFolderId}
+              onView={handleViewDocument}
+              onShare={handleShareDocument}
+              onSign={handleSign}
+              onArchive={handleArchive}
+              onDelete={handleDelete}
+              onRestore={handleRestore}
+              onPermanentDelete={handlePermanentDelete}
+              isTrashView={selectedFolderId === "trash"}
+              isSharedView={selectedFolderId === "shared"}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="employee" className="mt-4">
+          <EmployeeDocumentsTab
+            documents={documents}
+            onView={handleViewDocument}
+            onShare={handleShareDocument}
+            onSign={handleSign}
+            onArchive={handleArchive}
+            onDelete={handleDelete}
+          />
+        </TabsContent>
+
+        <TabsContent value="my-documents" className="mt-4">
+          <MyDocumentsTab onApprove={handleApproveSelfServiceDoc} />
+        </TabsContent>
+
+        <TabsContent value="archive" className="mt-4">
+          <div
+            className="flex overflow-hidden rounded-xl border border-border/60 bg-background"
+            style={{ height: "calc(100vh - 380px)", minHeight: "440px" }}
+          >
+            <DocumentGrid
+              documents={documents.filter((d) => d.isArchived && !d.isTrashed)}
+              folders={folders}
+              selectedFolderId={null}
+              onSelectFolder={() => {}}
+              onView={handleViewDocument}
+              onShare={handleShareDocument}
+              onSign={handleSign}
+              onArchive={handleArchive}
+              onDelete={handleDelete}
+              onRestore={handleRestore}
+              onPermanentDelete={handlePermanentDelete}
+              isTrashView={false}
+              isSharedView={false}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <UploadModal
         open={uploadModalOpen}

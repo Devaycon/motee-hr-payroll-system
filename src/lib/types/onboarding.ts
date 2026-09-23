@@ -1,6 +1,7 @@
 ﻿import type { StarterTaxRecord } from "./starter-tax";
 import type { FileAttachment } from "@/src/lib/utils/file-attachments";
 import type { CountryKey } from "./locale";
+import type { ResponsibleParty } from "./employee-checklist";
 
 export type OnboardingStage =
   | "pre_boarding"
@@ -11,11 +12,70 @@ export type OnboardingStage =
   | "ninety_day"
   | "completed";
 
+/**
+ * Whole days between a hire's start date and today — negative before they
+ * join. `null` when the start date can't be read.
+ */
+export function daysSinceStart(
+  startDate: string | undefined,
+  now: Date = new Date(),
+): number | null {
+  if (!startDate) return null;
+  const start = new Date(`${startDate}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return null;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((today.getTime() - start.getTime()) / 86_400_000);
+}
+
+/**
+ * A hire's stage is a *function* of where they sit relative to their start
+ * date — not a value someone has to remember to advance.
+ *
+ * Every record was created with `stage: "pre_boarding"` and the only line that
+ * ever wrote the field again set it to `"completed"`, so the whole cohort read
+ * "Pre-Boarding" for its entire life and then vanished into Employees. The
+ * five milestone stages in between were unreachable, which made the stage
+ * column a constant and the stage filter six dead options.
+ *
+ * Finishing the required tasks still wins over the calendar: a hire who has
+ * cleared everything is completed even on day one.
+ */
+export function deriveOnboardingStage(
+  record: Pick<OnboardingRecord, "startDate" | "tasks">,
+  now: Date = new Date(),
+): OnboardingStage {
+  // Deliberately the same predicate the record's `status` uses, so stage and
+  // status can never disagree about whether a hire is finished. A record whose
+  // tasks have not been attached yet has completed nothing — without this a
+  // freshly created record briefly reads as done, because `every` on an empty
+  // list is true.
+  const allRequiredDone =
+    record.tasks.length > 0 &&
+    record.tasks
+      .filter((t) => t.isRequired)
+      .every((t) => t.status === "completed");
+  if (allRequiredDone) return "completed";
+  const days = daysSinceStart(record.startDate, now);
+  if (days === null || days < 0) return "pre_boarding";
+  if (days === 0) return "day_one";
+  if (days <= 7) return "first_week";
+  if (days <= 30) return "thirty_day";
+  if (days <= 60) return "sixty_day";
+  return "ninety_day";
+}
+
 export type OnboardingStatus = "not_started" | "in_progress" | "completed" | "overdue";
 
 export type OnboardingTaskStatus = "pending" | "completed" | "overdue";
 
-export type OnboardingTaskAssignee = "hr" | "manager" | "employee" | "it";
+/**
+ * Who does an onboarding task.
+ *
+ * Reuses `ResponsibleParty` from the employee-checklist module, which is the
+ * same idea with one more value that matters here: payroll work belongs to
+ * `finance`, and without it every payroll task was filed under HR.
+ */
+export type OnboardingTaskAssignee = ResponsibleParty;
 
 export type OnboardingMode = "manual" | "invited" | "bulk";
 
@@ -98,16 +158,18 @@ export interface JoinerDocumentSpec {
 
 export const JOINER_DOCUMENTS: JoinerDocumentSpec[] = [
   {
+    // §1.1 (Correction 2 feedback) — client asked that Passport, Right to
+    // Work evidence and Proof of Address not be made compulsory.
     kind: "passport",
     label: "Passport",
     hint: "Photo page showing your name, number and expiry",
-    required: true,
+    required: false,
   },
   {
     kind: "right_to_work",
     label: "Right to Work evidence",
     hint: "Share code, BRP or another accepted document",
-    required: true,
+    required: false,
     country: "uk",
   },
   {
@@ -127,7 +189,7 @@ export const JOINER_DOCUMENTS: JoinerDocumentSpec[] = [
     kind: "proof_of_address",
     label: "Proof of Address",
     hint: "Utility bill or bank statement from the last 3 months",
-    required: true,
+    required: false,
   },
   {
     kind: "qualifications",
@@ -231,15 +293,30 @@ export const HR_CHECKLIST_ITEMS: { key: HrChecklistKey; label: string }[] = [
 export interface OnboardingTask {
   id: string;
   taskName: string;
+  /** Which function owns the task — drives the badge, not the routing. */
   assignee: OnboardingTaskAssignee;
   /** Resolved reviewer who approves this task (e.g. "Line Manager", "IT Admin"). */
   reviewer: string;
-  dueDay: number;
+  /**
+   * Days from the hire's start date. Kept for the records seeded with it;
+   * `dueDate` is what anything new should read.
+   */
+  dueDay?: number;
   status: OnboardingTaskStatus;
   isRequired: boolean;
   /** Set when the task was approved by its reviewer. */
   approvedAt?: string;
   note?: string;
+  // ── Supplied by the workflow run that owns this task ──
+  /** The named doer. Absent on records seeded before runs existed. */
+  assigneeEmployeeId?: string;
+  assigneeName?: string;
+  reviewerEmployeeId?: string;
+  /** A real date, not an offset. */
+  dueDate?: string;
+  /** The run and run-task this projects, so approving one approves both. */
+  runId?: string;
+  runTaskId?: string;
 }
 
 export interface OnboardingHistoryEvent {
@@ -281,6 +358,8 @@ export interface OnboardingRecord {
   /** The onboarding workflow (ApprovalChainTemplate) driving this record. */
   workflowTemplateId?: string;
   workflowName?: string;
+  /** The workflow run that owns this record's tasks. */
+  runId?: string;
   /** Items the hire has submitted (docs / form values). */
   submissions?: OnboardingSubmission[];
   history?: OnboardingHistoryEvent[];
@@ -395,13 +474,23 @@ export interface ManualOnboardingData {
   medications: string;
   dietaryRequirements: string;
   accessibilityNeeds: string;
-  // Asset to assign at onboarding
-  assetTag: string;
-  assetName: string;
-  assetCategory: string;
-  assetSerialNumber: string;
-  assetAssignedDate: string;
+  // §3.1 (Correction 2 feedback) — more than one asset can be assigned at
+  // onboarding time; previously this was a single flat set of fields.
+  assets: AssetDraft[];
   workflowTemplateId?: string;
+}
+
+/** One asset assigned during the manual onboarding wizard's Assets step. */
+export interface AssetDraft {
+  tag: string;
+  name: string;
+  category: string;
+  serialNumber: string;
+  assignedDate: string;
+}
+
+export function emptyAssetDraft(): AssetDraft {
+  return { tag: "", name: "", category: "", serialNumber: "", assignedDate: "" };
 }
 
 export interface InviteOnboardingData {

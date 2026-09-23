@@ -78,8 +78,9 @@ export function TicketDetailModal({
         </DialogHeader>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* §9.1 — same Ref # shown in HR's admin table. */}
           <span className="text-xs font-mono text-muted-foreground">
-            {ticket.ticketNumber}
+            Ref: {ticket.id}
           </span>
           <Badge
             variant="outline"

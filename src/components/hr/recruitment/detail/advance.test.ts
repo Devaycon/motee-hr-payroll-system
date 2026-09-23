@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canMoveTo } from "./advance";
+import { canMoveTo, hiredCount } from "./advance";
 import { defaultFlow } from "@/src/data/recruitment-demo";
 import type {
   Candidate,
@@ -169,5 +169,63 @@ describe("stage ordering", () => {
     const verdict = canMoveTo(scored(), "interviewed", noInterviewed);
     expect(verdict.ok).toBe(false);
     expect(verdict.reason).toMatch(/not enabled/i);
+  });
+});
+
+describe("openings capacity", () => {
+  function accepted(id = "C-1"): Candidate {
+    return candidate({
+      id,
+      stage: "offer",
+      offers: [offer("accepted")],
+      scorecards: [scorecard()],
+      score: 4,
+    });
+  }
+
+  it("refuses a hire when every opening is filled", () => {
+    const verdict = canMoveTo(accepted(), "hired", flow, {
+      openings: 1,
+      hired: 1,
+    });
+    expect(verdict.ok).toBe(false);
+    expect(verdict.reason).toMatch(/already filled/i);
+  });
+
+  it("names the headcount when a role has several openings", () => {
+    const verdict = canMoveTo(accepted(), "hired", flow, {
+      openings: 3,
+      hired: 3,
+    });
+    expect(verdict.ok).toBe(false);
+    expect(verdict.reason).toContain("All 3 openings");
+  });
+
+  it("allows a hire while a seat is left", () => {
+    expect(canMoveTo(accepted(), "hired", flow, { openings: 2, hired: 1 }).ok).toBe(
+      true,
+    );
+  });
+
+  it("leaves moves other than hiring alone", () => {
+    const c = candidate({ stage: "interview", scorecards: [scorecard()], score: 4 });
+    expect(canMoveTo(c, "interviewed", flow, { openings: 1, hired: 1 }).ok).toBe(true);
+  });
+
+  it("still checks the offer gate before the capacity gate", () => {
+    // An unaccepted candidate should be told about the offer, not the seats -
+    // the message has to name the problem the user can actually act on.
+    const c = candidate({ stage: "offer", offers: [] });
+    const verdict = canMoveTo(c, "hired", flow, { openings: 1, hired: 1 });
+    expect(verdict.reason).toMatch(/offer/i);
+  });
+
+  it("counts only hires on the requisition being asked about", () => {
+    const candidates = [
+      candidate({ id: "A", requisitionId: "REC-1", stage: "hired" }),
+      candidate({ id: "B", requisitionId: "REC-1", stage: "offer" }),
+      candidate({ id: "C", requisitionId: "REC-2", stage: "hired" }),
+    ];
+    expect(hiredCount(candidates, "REC-1")).toBe(1);
   });
 });

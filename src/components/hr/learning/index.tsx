@@ -6,6 +6,11 @@ import { useLearning } from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import {
+  APPROVAL_CHAIN_TAB_ITEM,
+  useHasApprovalChainTab,
+} from "@/src/components/hr/approvals/use-chain-tab";
 import {
   StatCards,
   matchesCourseCardFilter,
@@ -42,6 +47,7 @@ export function LearningPage() {
 
   // Controlled so the KPI cards can drill into a tab, not just a filter.
   const [activeTab, setActiveTab] = useState("courses");
+  const hasChainTab = useHasApprovalChainTab("training_request");
   /** Drill-down set by the KPI cards; "all" shows every row. */
   const [cardFilter, setCardFilter] = useState<LearningCardFilter>("all");
 
@@ -196,6 +202,7 @@ export function LearningPage() {
               label: `Enrollments (${visibleEnrollments.length})`,
             },
             { value: "results", label: "Results" },
+            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
 
@@ -221,6 +228,12 @@ export function LearningPage() {
         <TabsContent value="results" className="mt-4">
           <ResultsTable courses={courses} enrollments={enrollments} />
         </TabsContent>
+
+        {hasChainTab && (
+          <TabsContent value="approval_chain" className="mt-4">
+            <ApprovalChainTab documentType="training_request" />
+          </TabsContent>
+        )}
       </Tabs>
 
       <CourseModal

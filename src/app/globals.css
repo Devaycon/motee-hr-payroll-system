@@ -127,3 +127,33 @@
     @apply font-sans;
   }
 }
+/*
+ * Dashboard page only: cards and the tab strip get 5px corners instead of the
+ * app-wide `rounded-xl` / `rounded-2xl` (the shared HeroRingCard uses the
+ * latter). Scoped to `.dashboard-corners` (set on the HR
+ * dashboard root) so no other page changes.
+ *
+ * Deliberately outside any @layer: it has to beat Tailwind's layered `rounded-*`
+ * utilities on the shared Card and on the dashboard's hand-built tiles alike,
+ * and unlayered rules win regardless of specificity. To change the radius,
+ * change the one variable below.
+ */
+.dashboard-corners {
+  --dashboard-card-radius: 5px;
+}
+.dashboard-corners :is([data-slot="card"], .rounded-xl, .rounded-2xl) {
+  border-radius: var(--dashboard-card-radius);
+}
+/* Partial-corner variants: a card header's top edge and the tab strip's end caps. */
+.dashboard-corners .rounded-t-xl {
+  border-top-left-radius: var(--dashboard-card-radius);
+  border-top-right-radius: var(--dashboard-card-radius);
+}
+.dashboard-corners .rounded-l-xl {
+  border-top-left-radius: var(--dashboard-card-radius);
+  border-bottom-left-radius: var(--dashboard-card-radius);
+}
+.dashboard-corners .rounded-r-xl {
+  border-top-right-radius: var(--dashboard-card-radius);
+  border-bottom-right-radius: var(--dashboard-card-radius);
+}

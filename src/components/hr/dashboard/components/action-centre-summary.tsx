@@ -16,6 +16,7 @@ import {
 } from "@/src/data/hr-alerts-demo";
 import { cn } from "@/src/lib/utils";
 import { HeroRingCard } from "@/src/components/shared/charts";
+import { hrActionsSummaryProps } from "@/src/components/shared/charts/hr-actions-summary";
 import { Tile, TileLabel, TileSub, TileNum, TileLink } from "./tiles";
 
 /**
@@ -141,6 +142,7 @@ export function PriorityHeroRing() {
       segments={segments}
       totalNoun="open items"
       variant="gauge"
+      {...hrActionsSummaryProps(segments)}
     />
   );
 }
