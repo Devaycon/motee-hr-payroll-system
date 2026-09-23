@@ -20,6 +20,7 @@ import { LogModal } from "./components/log-modal";
 import { TimesheetModal } from "./components/timesheet-modal";
 import { ScheduleModal } from "./components/schedule-modal";
 import { PresenceCheckPanel } from "./components/presence-check-panel";
+import { DeductionPolicyPanel } from "./components/deduction-policy-panel";
 import { WORK_SCHEDULES } from "./data";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import {
@@ -233,6 +234,7 @@ export function AttendancePage() {
               label: `Timesheets (${visibleTimesheets.length})`,
             },
             { value: "schedules", label: "Schedules" },
+            { value: "deductions", label: "Deduction Policy" },
             { value: "presence", label: "Presence Checks" },
           ]}
         />
@@ -261,6 +263,10 @@ export function AttendancePage() {
             onDelete={handleDeleteSchedule}
             onAddSchedule={handleAddSchedule}
           />
+        </TabsContent>
+
+        <TabsContent value="deductions" className="mt-4 space-y-4">
+          <DeductionPolicyPanel />
         </TabsContent>
 
         <TabsContent value="presence" className="mt-4 space-y-4">

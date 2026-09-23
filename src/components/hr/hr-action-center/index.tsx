@@ -8,6 +8,7 @@ import { MyTasks } from "./components/my-tasks";
 import { RecentActivity } from "./components/recent-activity";
 import { HrAlertsCard } from "@/src/components/hr/hr-alerts";
 import { UpcomingEventsCard } from "./components/upcoming-events-card";
+import { MyWorkCard } from "@/src/components/hr/my-work";
 
 export function MyWorkspacePage() {
   const [tasks, setTasks] = useState(MY_TASKS);
@@ -43,7 +44,9 @@ export function MyWorkspacePage() {
 
       <div className="grid grid-cols-2 gap-4">
         <UpcomingEventsCard />
-        <div id="tasks" className="scroll-mt-24">
+        <div id="tasks" className="flex flex-col gap-4 scroll-mt-24">
+          {/* Real, per-person work first; the static checklist below it. */}
+          <MyWorkCard />
           <MyTasks tasks={tasks} setTasks={setTasks} />
         </div>
       </div>

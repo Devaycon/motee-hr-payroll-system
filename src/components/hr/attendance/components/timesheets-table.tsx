@@ -32,11 +32,13 @@ import {
   HIDE_SYSTEM_ID,
 } from "@/src/components/shared/employee-id-columns";
 import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   TIMESHEET_STATUS_LABELS,
   TIMESHEET_STATUS_STYLES,
   DEPARTMENT_OPTIONS,
 } from "../data";
+import { computeDeduction, DEMO_DAILY_RATE } from "../types";
 import type { TimesheetRecord, TimesheetStatus } from "../types";
 
 interface TimesheetsTableProps {
@@ -55,6 +57,9 @@ export function TimesheetsTable({
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const deductionPolicy = useAppSelector(
+    (s) => s.attendanceDeductionPolicy.policy,
+  );
 
   const filtered = timesheets.filter((t) => {
     const q = search.toLowerCase();
@@ -171,6 +176,24 @@ export function TimesheetsTable({
         ),
       },
       {
+        id: "deductions",
+        header: "Deductions",
+        cell: ({ row }) => {
+          const { total } = computeDeduction(
+            row.original,
+            deductionPolicy,
+            DEMO_DAILY_RATE,
+          );
+          return total > 0 ? (
+            <span className="text-xs font-medium text-red-600 dark:text-red-400">
+              -{deductionPolicy.currency} {total.toLocaleString()}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          );
+        },
+      },
+      {
         accessorKey: "status",
         header: sortableHeader("Status"),
         cell: ({ row }) => (
@@ -219,7 +242,7 @@ export function TimesheetsTable({
         </DropdownMenu>
       )),
     ],
-    [onView, onApprove, onRejectClick, identity],
+    [onView, onApprove, onRejectClick, identity, deductionPolicy],
   );
 
   return (

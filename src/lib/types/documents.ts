@@ -11,6 +11,9 @@ export type DocumentCategory =
 	| "contract"
 	| "policy"
 	| "certificate"
+	// §8.2 (Correction 2 feedback) — its own category so Employee Documents
+	// can group it separately, rather than folding it into "id_card".
+	| "right_to_work"
 	| "report"
 	| "other";
 

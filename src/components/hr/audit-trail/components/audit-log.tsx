@@ -7,6 +7,7 @@ import { Button } from "@/src/components/ui/button";
 import { ACTION_TYPE_CONFIG, MODULE_LABELS } from "../data";
 import type { AuditEntry } from "../types";
 import { ActivityDetailModal } from "./activity-detail-modal";
+import { MapsLink } from "@/src/components/shared/maps-link";
 
 const PAGE_SIZE = 15;
 
@@ -69,6 +70,10 @@ export function AuditLog({ entries }: AuditLogProps) {
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">
                   IP Address
+                </th>
+                {/* §12.1 — approximate location, next to IP Address. */}
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">
+                  Approximate Location
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap">
                   Status
@@ -141,6 +146,16 @@ export function AuditLog({ entries }: AuditLogProps) {
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground font-mono whitespace-nowrap">
                       {entry.ipAddress}
+                    </td>
+                    <td
+                      className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {entry.location ? (
+                        <MapsLink address={entry.location} />
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <span

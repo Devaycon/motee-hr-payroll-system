@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import type {
   AttendanceRecord,
@@ -39,6 +40,11 @@ function toRecord(
     overtimeHours: hours > 8 ? Math.round((hours - 8) * 10) / 10 : 0,
     status: mapStatus(entry.status),
     location: emp?.workLocation,
+    // The seed's per-entry `location` is already a full street address (the
+    // office/site the punch came from); `locationCoords` rides along when the
+    // demo data captured one. Both feed the Location column / map link.
+    locationAddress: entry.location ?? undefined,
+    locationCoords: entry.clockInCoords ?? entry.clockOutCoords ?? undefined,
     notes: bundle.tenant.timezone,
   };
 }
@@ -52,4 +58,14 @@ export function useAttendanceRecords() {
       .filter((r) => r.date === refDate)
       .map((r) => toRecord(r, bundle, employeesById));
   });
+}
+
+/** A single Today record by id, for the read-only detail page. */
+export function useAttendanceRecord(id: string) {
+  const { data, loading, error } = useAttendanceRecords();
+  const record = useMemo(
+    () => data?.find((r) => r.id === id) ?? null,
+    [data, id],
+  );
+  return { record, loading, error };
 }

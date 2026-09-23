@@ -119,6 +119,30 @@ export function EmploymentTypeTable({
           ),
       },
       {
+        // §14.1 (Correction 2 feedback) — the `benefits` field already
+        // existed and is editable in the create/edit form and detail modal;
+        // it just wasn't surfaced as a table column.
+        id: "benefits",
+        header: "Benefits",
+        cell: ({ row }) =>
+          row.original.benefits.enabled &&
+          row.original.benefits.available.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {row.original.benefits.available.map((b) => (
+                <Badge
+                  key={b}
+                  variant="outline"
+                  className="text-[10px] font-medium border-violet-500/30 bg-violet-500/10 text-violet-600"
+                >
+                  {b}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          ),
+      },
+      {
         accessorKey: "employeeCount",
         header: sortableHeader("Employees"),
         cell: ({ row }) => (

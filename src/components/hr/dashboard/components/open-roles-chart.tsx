@@ -5,6 +5,7 @@ import { ResponsiveScatterPlot } from "@nivo/scatterplot";
 import { Briefcase } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ChartCard, HeroRingCard, chartColor, NIVO_THEME } from "@/src/components/shared/charts";
+import { resourcingSummaryProps } from "@/src/components/shared/charts/resourcing-summary";
 import { useRecruitment } from "@/src/components/hr/recruitment/hooks";
 import type { RequisitionStatus } from "@/src/lib/types/recruitment";
 
@@ -106,6 +107,7 @@ export function ResourcingHeroRing() {
       segments={segments}
       totalNoun="open roles"
       variant="gauge"
+      {...resourcingSummaryProps(segments)}
     />
   );
 }

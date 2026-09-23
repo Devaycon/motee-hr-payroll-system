@@ -5,7 +5,19 @@
 	| "closed"
 	| "archived";
 
-export type SurveyType = "engagement" | "pulse" | "enps" | "onboarding";
+// §6 (Correction 2 feedback) — "Exit" and "Manager & Leadership" added to
+// give the employee lifecycle a Join → Experience → Leave arc (onboarding
+// already covered "join"; exit was the missing "leave" bookend). No
+// separate "Satisfaction" category per §6.3 — the client's own reasoning:
+// it would duplicate what Engagement/Pulse/Benefits/Onboarding already
+// measure and confuse HR admins choosing between near-identical types.
+export type SurveyType =
+	| "engagement"
+	| "pulse"
+	| "enps"
+	| "onboarding"
+	| "exit"
+	| "manager_leadership";
 
 export type QuestionType =
 	| "multiple_choice"

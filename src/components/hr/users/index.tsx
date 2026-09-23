@@ -350,6 +350,20 @@ export function UsersPage() {
             <span className="text-xs text-muted-foreground">—</span>
           ),
       },
+      {
+        // §13.1 (Correction 2 feedback) — sign-in activity, distinct from
+        // "Last change" above (which tracks account-state edits, not logins).
+        id: "lastLoginAt",
+        header: "Last Login",
+        cell: ({ row }) =>
+          row.original.lastLoginAt ? (
+            <span className="text-[11px] text-muted-foreground">
+              {formatDateTime(row.original.lastLoginAt)}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">Never</span>
+          ),
+      },
       actionsColumn<UserAccount>((account) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

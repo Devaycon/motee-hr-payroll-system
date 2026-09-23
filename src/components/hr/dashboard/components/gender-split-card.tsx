@@ -2,6 +2,7 @@
 
 import { VenusAndMars } from "lucide-react";
 import { HeroRingCard } from "@/src/components/shared/charts";
+import { genderSummaryProps } from "@/src/components/shared/charts/gender-summary";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useGenderSplit } from "../hooks";
 
@@ -53,6 +54,7 @@ export function PeopleHeroRing() {
       segments={segments}
       totalNoun="employees"
       viewMoreHref="/operations/analytics/gender"
+      {...genderSummaryProps(data.series)}
     />
   );
 }

@@ -18,7 +18,9 @@ import type {
   ScorecardRecommendation,
   WorkMode,
 } from "@/src/lib/types/recruitment";
+import { deriveVacancyStage } from "@/src/lib/types/recruitment";
 import { defaultFlow } from "@/src/data/recruitment-demo";
+import { buildHiringChain } from "@/src/lib/demo/hiring-chain";
 
 /**
  * Bump to force a one-time reseed of recruitment demo data on next load.
@@ -34,8 +36,25 @@ import { defaultFlow } from "@/src/data/recruitment-demo";
  * v7 adds the §7.19 job advert. The bundles' `workMode` and salary currency
  * were being read past and dropped, so buckets seeded at v6 have no advert at
  * all and would export a job listing missing its most important fields.
+ *
+ * v8 derives each vacancy's status from its pipeline (`deriveVacancyStage`).
+ * Buckets seeded at v7 hold a status nothing ever advanced, so every role
+ * reads "Open" no matter who is in it — indistinguishable from a genuinely
+ * open vacancy, hence a reseed rather than a migration.
+ *
+ * v9 links every vacancy to a back-filled requisition and workforce request
+ * (`buildHiringChain`). Buckets seeded at v8 have no `sourceRequisitionId`, so
+ * the Hire Tracker shows their first four stages as skipped.
+ *
+ * v10 caps hires at the number of openings and stops seeding a hire onto every
+ * requisition. Buckets at v9 report more hires than headcount (17 across 10
+ * openings) and show zero open roles, because one hire against one opening
+ * marks a vacancy filled.
+ *
+ * v11 gives bundle-sourced applicants an owner. Only the synthetic ones had
+ * one, so almost every candidate in a v10 bucket reads "Unassigned".
  */
-export const SEED_VERSION = 7;
+export const SEED_VERSION = 11;
 
 export interface RecruitmentBucket {
   requisitions: JobRequisition[];
@@ -391,6 +410,10 @@ function makeSyntheticCandidate(
     id,
     requisitionId: req.id,
     requisitionTitle: req.positionTitle,
+    // The vacancy's recruiter owns its applicants by default, falling back to
+    // the hiring manager - an unowned candidate is one nobody chases.
+    ownerEmployeeId: req.recruiterId ?? req.hiringManagerId,
+    ownerName: req.recruiter ?? req.hiringManager,
     name,
     initials: initialsFor(name),
     email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
@@ -420,6 +443,43 @@ function makeSyntheticCandidate(
 }
 
 /** A spread of synthetic applicants across a requisition's enabled stages. */
+/**
+ * No requisition may seat more hires than it has openings.
+ *
+ * The bundle and the synthetic generator each produce hires independently, and
+ * neither knew what the other had done - so a role approved for one person
+ * could end up with three, and the dashboard reported more hires than
+ * headcount. Surplus hires are walked back to `offer` with their offer left as
+ * "sent": they are people the role was interested in, which is true, rather
+ * than people it employed, which was not.
+ */
+function capHiresToOpenings(
+  candidates: Candidate[],
+  requisitions: JobRequisition[],
+): Candidate[] {
+  const seats = new Map(
+    requisitions.map((r) => [r.id, Math.max(0, r.openings)]),
+  );
+  return candidates.map((c) => {
+    if (c.stage !== "hired") return c;
+    const left = seats.get(c.requisitionId);
+    if (left === undefined) return c;
+    if (left > 0) {
+      seats.set(c.requisitionId, left - 1);
+      return c;
+    }
+    return {
+      ...c,
+      stage: "offer" as const,
+      offers: c.offers.map((o) =>
+        o.status === "accepted"
+          ? { ...o, status: "sent" as const, respondedAt: undefined }
+          : o,
+      ),
+    };
+  });
+}
+
 function syntheticForRequisition(
   req: JobRequisition,
   createdAt: string,
@@ -443,7 +503,10 @@ function syntheticForRequisition(
     // missing entry as enabled rather than as switched off.
     interviewed: enabled.has("interviewed") || !enabled.size ? base.interviewed : 0,
     offer: enabled.has("offer") || !enabled.size ? base.offer : 0,
-    hired: base.hired,
+    // Only some roles have been filled. Seeding a hire onto every requisition
+    // left the board with zero open roles, because a role with one opening and
+    // one hire is by definition filled.
+    hired: hash(req.id) % 3 === 0 ? Math.min(base.hired, req.openings) : 0,
   };
 
   const out: Candidate[] = [];
@@ -575,6 +638,15 @@ export function seedBucketFromBundle(bundle: LocaleBundle): RecruitmentBucket {
     };
   }).companyProfile?.headquarters;
 
+  // Job postings name a hiring manager but never a recruiter, so nobody was
+  // running any pipeline. The recruiter role's holder takes them by default:
+  // it makes ownership real rather than notional, and gives the Recruiter
+  // persona an inbox that is not empty.
+  const recruiterRole = bundle.roles.find((r) => r.id === "ROLE-RECRUIT");
+  const defaultRecruiter = recruiterRole?.linkedEmployeeId
+    ? employeesById.get(recruiterRole.linkedEmployeeId)
+    : undefined;
+
   const requisitions: JobRequisition[] = postings.map((p, i) => {
     const dept = p.departmentId ? departmentsById.get(p.departmentId) : null;
     const mgr = p.hiringManagerId ? employeesById.get(p.hiringManagerId) : null;
@@ -586,6 +658,8 @@ export function seedBucketFromBundle(bundle: LocaleBundle): RecruitmentBucket {
       departmentId: p.departmentId,
       hiringManager: mgr?.fullName ?? "—",
       hiringManagerId: p.hiringManagerId,
+      recruiter: defaultRecruiter?.fullName,
+      recruiterId: defaultRecruiter?.id,
       employmentType: employmentTypeFromName(p.employmentType),
       status: mapReqStatus(p.status),
       hiringPriority: priorities[hash(id) % priorities.length],
@@ -697,6 +771,12 @@ export function seedBucketFromBundle(bundle: LocaleBundle): RecruitmentBucket {
       id,
       requisitionId: reqId,
       requisitionTitle: req?.positionTitle ?? "—",
+      // Bundle-sourced applicants were the only ones created without an owner,
+      // so most of the pipeline read "Unassigned" while the synthetic few did
+      // not. The vacancy's recruiter owns its applicants, falling back to the
+      // hiring manager.
+      ownerEmployeeId: req?.recruiterId ?? req?.hiringManagerId,
+      ownerName: req?.recruiter ?? req?.hiringManager,
       name,
       initials: initialsFor(name),
       email: c.email ?? `candidate${i + 1}@example.com`,
@@ -754,13 +834,44 @@ export function seedBucketFromBundle(bundle: LocaleBundle): RecruitmentBucket {
     };
   });
 
+  const allCandidates = capHiresToOpenings([...candidates, ...synthetic], requisitions);
+  // Every vacancy gets the requisition and workforce request that should sit
+  // behind it, so the chain is complete from stage 1 rather than starting at
+  // stage 3 with four stages rendered as skipped.
+  const linked = buildHiringChain(requisitions).vacancies;
   return {
-    requisitions,
-    candidates: [...candidates, ...synthetic],
+    // Seeded vacancies carry a hardcoded status, so they get the same
+    // derivation every pipeline change gets — otherwise the demo opens on a
+    // list where every role reads "Open" regardless of who is in it.
+    requisitions: linked.map((r) => ({
+      ...r,
+      status: deriveVacancyStage(r, allCandidates),
+    })),
+    candidates: allCandidates,
     interviews,
     templates: DEFAULT_TEMPLATES,
     seedVersion: SEED_VERSION,
   };
+}
+
+/**
+ * Re-derive the stored status of every vacancy the given candidates belong to.
+ *
+ * Called from the reducers that change what a pipeline contains, so a vacancy's
+ * badge follows its candidates without anyone dispatching anything. Scoped to
+ * the touched requisitions rather than the whole bucket — a bulk advance
+ * shouldn't walk every vacancy in the country.
+ */
+function resyncVacancyStages(bucket: RecruitmentBucket, candidateIds: string[]) {
+  const touched = new Set(
+    bucket.candidates
+      .filter((c) => candidateIds.includes(c.id))
+      .map((c) => c.requisitionId),
+  );
+  for (const requisition of bucket.requisitions) {
+    if (!touched.has(requisition.id)) continue;
+    requisition.status = deriveVacancyStage(requisition, bucket.candidates);
+  }
 }
 
 const recruitmentSlice = createSlice({
@@ -868,6 +979,28 @@ const recruitmentSlice = createSlice({
       const c = b?.candidates.find((x) => x.id === action.payload.id);
       if (c) Object.assign(c, action.payload.patch);
     },
+    /**
+     * Hand an applicant to a different recruiter. The counterpart of the "My
+     * candidates" filter: a filter is only useful if what it filters on can be
+     * corrected.
+     */
+    reassignCandidate(
+      state,
+      action: PayloadAction<{
+        country: string;
+        ids: string[];
+        employeeId: string;
+        name: string;
+      }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      for (const c of b.candidates) {
+        if (!action.payload.ids.includes(c.id)) continue;
+        c.ownerEmployeeId = action.payload.employeeId;
+        c.ownerName = action.payload.name;
+      }
+    },
     moveStage(
       state,
       action: PayloadAction<{
@@ -886,6 +1019,7 @@ const recruitmentSlice = createSlice({
           c.updatedAt = at;
         }
       }
+      resyncVacancyStages(b, action.payload.ids);
     },
     setCandidateStatus(
       state,
@@ -904,11 +1038,19 @@ const recruitmentSlice = createSlice({
           c.updatedAt = at;
         }
       }
+      // Rejecting the only candidate at offer walks the vacancy back to
+      // "Interviewing"; restoring them walks it forward again.
+      resyncVacancyStages(b, action.payload.ids);
     },
     /**
      * §7.18 — record an offer against a candidate. `Candidate.offers` already
      * existed but nothing ever wrote to it, so the offer/accept/decline round
      * trip happened entirely outside the system.
+     *
+     * §15.1/§15.2 — an offer can now carry an attached letter
+     * (`attachmentId`, already filed onto `candidate.attachments`) and be
+     * routed through the in-house e-sign tool instead of, or alongside, the
+     * plain emailed offer.
      */
     sendOffer(
       state,
@@ -918,6 +1060,8 @@ const recruitmentSlice = createSlice({
         salary?: number;
         startDate?: string;
         notes?: string;
+        attachmentId?: string;
+        requestSignature?: boolean;
       }>,
     ) {
       const b = state.byCountry[action.payload.country];
@@ -932,8 +1076,50 @@ const recruitmentSlice = createSlice({
         salary: action.payload.salary,
         startDate: action.payload.startDate,
         notes: action.payload.notes,
+        attachmentId: action.payload.attachmentId,
+        signatureStatus: action.payload.requestSignature ? "sent" : "not_sent",
+        signatureRequestedAt: action.payload.requestSignature
+          ? new Date().toISOString()
+          : undefined,
       });
       c.updatedAt = at;
+    },
+
+    /** §15.1 — file the offer letter onto the candidate before/while sending it. */
+    attachOfferDocument(
+      state,
+      action: PayloadAction<{
+        country: string;
+        candidateId: string;
+        attachment: { id: string; name: string; url: string };
+      }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      const c = b.candidates.find((x) => x.id === action.payload.candidateId);
+      if (!c) return;
+      c.attachments.push({ ...action.payload.attachment, kind: "offer_letter" });
+    },
+
+    /**
+     * §15.2 — the candidate (or HR, standing in for them in this demo)
+     * completed the sign flow at `/sign`. Marks the *latest* offer signed,
+     * capturing the signed document back into the system rather than the
+     * signing happening somewhere outside it.
+     */
+    recordOfferSigned(
+      state,
+      action: PayloadAction<{ country: string; candidateId: string }>,
+    ) {
+      const b = state.byCountry[action.payload.country];
+      if (!b) return;
+      const c = b.candidates.find((x) => x.id === action.payload.candidateId);
+      if (!c) return;
+      const offer = c.offers.at(-1);
+      if (!offer) return;
+      offer.signatureStatus = "signed";
+      offer.signedAt = new Date().toISOString();
+      c.updatedAt = offer.signedAt.slice(0, 10);
     },
 
     /**
@@ -1168,8 +1354,11 @@ export const {
   addCandidate,
   updateCandidate,
   moveStage,
+  reassignCandidate,
   setCandidateStatus,
   sendOffer,
+  attachOfferDocument,
+  recordOfferSigned,
   respondToOffer,
   linkEmployeeRecord,
   setGateProgress,

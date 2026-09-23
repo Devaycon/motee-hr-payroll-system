@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { UserPlus } from "lucide-react";
+import { LayoutGrid, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import type { EmployeeRow } from "./types";
 import type { EmployeeStatus } from "@/src/lib/types/employees";
@@ -52,6 +53,17 @@ const TABS: { value: string; label: string; status?: EmployeeStatus }[] = [
   { value: "deleted", label: "Deleted", status: "deleted" },
   { value: "all", label: "All" },
 ];
+
+/** Employees tab → Workforce Lens lifecycle filter. Absent tabs open on the default. */
+const LENS_LIFECYCLE_BY_TAB: Record<string, string> = {
+  active: "active",
+  on_leave: "on_leave",
+  probation: "probation",
+  offboarding: "offboarding",
+  onboarded: "onboarded",
+  inactive: "inactive",
+  all: "all",
+};
 
 export function EmployeesPage() {
   const router = useRouter();
@@ -121,6 +133,17 @@ export function EmployeesPage() {
       );
     });
   }, [employees, search, deptFilter, typeFilter, workModeFilter, branchFilter]);
+
+  // Hand the current view to the Workforce Lens. Only non-default filters travel,
+  // and the pending / deleted tabs have no Workforce Lens equivalent.
+  const lensQuery = {
+    ...(LENS_LIFECYCLE_BY_TAB[activeTab] && {
+      lifecycle: LENS_LIFECYCLE_BY_TAB[activeTab],
+    }),
+    ...(deptFilter !== "all" && { department: deptFilter }),
+    ...(typeFilter !== "all" && { employmentType: typeFilter }),
+    ...(branchFilter !== "all" && { branch: branchFilter }),
+  };
 
   const rowsByTab = useMemo(
     () =>
@@ -296,15 +319,25 @@ export function EmployeesPage() {
             Manage your workforce, track employee details and reporting lines.
           </p>
         </div>
-        <PermissionGate module="organization.employees" action="create">
-          <Button
-            className="mt-1 gap-1.5"
-            onClick={() => router.push("/talent/onboarding")}
-          >
-            <UserPlus className="w-4 h-4" />
-            Onboard Employee
-          </Button>
-        </PermissionGate>
+        <div className="mt-1 flex items-center gap-2">
+          <PermissionGate module="organization.workforce-lens" action="view">
+            <Button variant="secondary" className="gap-1.5" asChild>
+              <Link href={{ pathname: "/organization/workforce-lens", query: lensQuery }}>
+                <LayoutGrid className="w-4 h-4" />
+                Workforce Lens
+              </Link>
+            </Button>
+          </PermissionGate>
+          <PermissionGate module="organization.employees" action="create">
+            <Button
+              className="gap-1.5"
+              onClick={() => router.push("/talent/onboarding")}
+            >
+              <UserPlus className="w-4 h-4" />
+              Onboard Employee
+            </Button>
+          </PermissionGate>
+        </div>
       </div>
 
       <StatCards

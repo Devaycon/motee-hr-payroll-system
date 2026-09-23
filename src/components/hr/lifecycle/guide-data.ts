@@ -148,9 +148,10 @@ export const LIFECYCLE_STAGE_GUIDES: LifecycleStageGuide[] = [
       "Between \"we want this candidate\" and \"this person is now an employee,\" a surprising amount happens — enough that it earns its own stage rather than being buried inside Select or Onboarding. The moment an offer is accepted, the right checks should trigger automatically.",
     flow: [
       "Offer Generated",
-      "Offer Sent",
-      "Candidate Accepts",
-      "Pre-employment Checks",
+      "Sent for E-signature",
+      "Candidate Signs",
+      "References / Guarantor",
+      "Role-specific Checks",
       "Ready to Onboard",
     ],
     sections: [
@@ -237,7 +238,7 @@ export const LIFECYCLE_STAGE_GUIDES: LifecycleStageGuide[] = [
     stageId: "develop-perform-retain",
     overview:
       "The lifecycle doesn't end at hire — the recruitment record becomes the employee record, and it keeps driving four things that run continuously rather than as one-off steps: what they're equipped with, what they learn, how they perform, and whether they stay.",
-    flow: ["Probation Review", "Objectives", "Check-ins", "Performance Reviews", "Development Plans"],
+    flow: ["Learning", "Objectives", "Probation", "Performance", "Career Development", "Recognition", "Engagement", "Retention"],
     sections: [
       {
         heading: "Assets",

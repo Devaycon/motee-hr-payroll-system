@@ -42,6 +42,10 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { HrStatCardsGrid } from "@/src/components/shared/hr-stat-card";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import {
+  APPROVAL_CHAIN_TAB_ITEM,
+  useHasApprovalChainTab,
+} from "@/src/components/hr/approvals/use-chain-tab";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { store } from "@/src/lib/stores/store";
 import { useCan } from "@/src/lib/permissions/use-can";
@@ -187,6 +191,7 @@ export function WorkforceRequestsPage() {
   // Approved tab = fully approved (and already converted) requests.
   // Tab + status filter are driven by the KPI cards (client feedback §7.1).
   const [activeTab, setActiveTab] = useState("request");
+  const hasChainTab = useHasApprovalChainTab("workforce_request");
   const [statusFilter, setStatusFilter] = useState<DisplayStatus | "all">("all");
 
   const requestList = useMemo(
@@ -569,7 +574,7 @@ export function WorkforceRequestsPage() {
           tabs={[
             { value: "request", label: `Request (${requestList.length})` },
             { value: "approved", label: `Approved (${approvedList.length})` },
-            { value: "approval_chain", label: "Approval Chain" },
+            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
 
@@ -597,9 +602,11 @@ export function WorkforceRequestsPage() {
           />
         </TabsContent>
 
-        <TabsContent value="approval_chain" className="mt-5">
-          <ApprovalChainTab documentType="workforce_request" />
-        </TabsContent>
+        {hasChainTab && (
+          <TabsContent value="approval_chain" className="mt-5">
+            <ApprovalChainTab documentType="workforce_request" />
+          </TabsContent>
+        )}
       </Tabs>
 
       <RequestDetailModal

@@ -17,6 +17,35 @@ import type { AuthUser } from "@/src/lib/types/locale";
  */
 export const DEMO_IDENTITY_ROLE_ID = "ROLE-HRADMIN";
 
+/**
+ * The persona chosen with the navbar's "View as" switch.
+ *
+ * `auth` is deliberately not persisted, so only the *choice* is stored here -
+ * a role id, resolved to a user from the locale bundle exactly as a login
+ * would be. Without it every refresh snaps back to HR Admin, and a per-person
+ * inbox looks like one person owning everything, which is the impression the
+ * whole change exists to remove.
+ */
+const DEMO_ROLE_KEY = "motee:demoRole";
+
+export function readDemoRoleId(): string {
+  if (typeof window === "undefined") return DEMO_IDENTITY_ROLE_ID;
+  try {
+    return window.localStorage.getItem(DEMO_ROLE_KEY) ?? DEMO_IDENTITY_ROLE_ID;
+  } catch {
+    return DEMO_IDENTITY_ROLE_ID;
+  }
+}
+
+export function writeDemoRoleId(roleId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(DEMO_ROLE_KEY, roleId);
+  } catch {
+    // ignore
+  }
+}
+
 /** Shown for the instant before the locale bundle resolves the real record. */
 export const DEMO_IDENTITY_PLACEHOLDER = {
   name: "Motee User",
@@ -39,7 +68,7 @@ export function useCurrentUser(): AuthUser | null {
   const country = useAppSelector((s) => s.locale.country);
 
   const fallback =
-    !user && bundle ? buildAuthUser(bundle, DEMO_IDENTITY_ROLE_ID) : null;
+    !user && bundle ? buildAuthUser(bundle, readDemoRoleId()) : null;
 
   useEffect(() => {
     if (!user && !bundle && status === "idle") dispatch(loadLocale(country));

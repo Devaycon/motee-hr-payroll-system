@@ -11,6 +11,10 @@ import {
   type HrStatCardItem,
 } from "@/src/components/shared/hr-stat-card";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import {
+  APPROVAL_CHAIN_TAB_ITEM,
+  useHasApprovalChainTab,
+} from "@/src/components/hr/approvals/use-chain-tab";
 import { useCurrency } from "@/src/lib/hooks/use-currency";
 import { isClaimOpen } from "@/src/lib/expenses/stages";
 import type { ExpenseClaim } from "@/src/data/employee-expenses-demo";
@@ -45,6 +49,7 @@ export function ExpenseClaimsPage() {
   const [tab, setTab] = useState<string | null>(null);
   const [cardFilter, setCardFilter] = useState<CardFilter>("all");
   const [query, setQuery] = useState("");
+  const hasChainTab = useHasApprovalChainTab("expense_claim");
 
   // Claims never submitted are the employee's private business.
   const visible = useMemo(
@@ -133,7 +138,12 @@ export function ExpenseClaimsPage() {
   }, [filtered, onMyDesk]);
 
   // Land on the desk when there's something to decide, otherwise the full list.
-  const activeTab = tab ?? (onMyDesk.length > 0 ? "desk" : "all");
+  const activeTab =
+    tab && (tab !== APPROVAL_CHAIN_TAB_ITEM.value || hasChainTab)
+      ? tab
+      : onMyDesk.length > 0
+        ? "desk"
+        : "all";
 
   if (!ready) {
     return (
@@ -166,11 +176,11 @@ export function ExpenseClaimsPage() {
               label: `Pending My Approval (${deskFiltered.length})`,
             },
             { value: "all", label: `All claims (${filtered.length})` },
-            { value: "chain", label: "Approval chain" },
+            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
 
-        {activeTab !== "chain" && (
+        {activeTab !== APPROVAL_CHAIN_TAB_ITEM.value && (
           <div className="mt-4">
             <Input
               placeholder="Search by employee, claim, merchant or reference…"
@@ -197,11 +207,13 @@ export function ExpenseClaimsPage() {
           />
         </TabsContent>
 
-        <TabsContent value="chain" className="mt-5">
-          {/* The generic chain editor — the same one the Submissions hub uses,
-              so HR edits expense approvals where they review them. */}
-          <ApprovalChainTab documentType="expense_claim" />
-        </TabsContent>
+        {hasChainTab && (
+          <TabsContent value={APPROVAL_CHAIN_TAB_ITEM.value} className="mt-5">
+            {/* Read-only — chains are created and changed in Submissions &
+                Approvals, and shown here once one exists for expenses. */}
+            <ApprovalChainTab documentType="expense_claim" />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

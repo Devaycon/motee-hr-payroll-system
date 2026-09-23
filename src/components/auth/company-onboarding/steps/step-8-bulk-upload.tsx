@@ -11,6 +11,7 @@ import { prefillFromUpload, setCurrentStep } from "@/src/lib/stores/onboarding-s
 import {
   CompanySetup,
   AVAILABLE_MODULES,
+  DEFAULT_COMPANY_SETUP,
 } from "@/src/lib/types/onboarding-setup.types";
 import { UploadCloud, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
@@ -80,6 +81,13 @@ function mapRowToSetup(row: UploadRow): Partial<CompanySetup> {
       leaveApproval: row.leaveApproval ?? "manager",
       multiLevelApproval: row.multiLevelApproval?.toLowerCase() === "true",
       autoApproval: false,
+      // §4.1 — bulk upload doesn't have delegation/escalation columns; the
+      // wizard's own defaults (DEFAULT_COMPANY_SETUP) apply instead.
+      autoDelegate: DEFAULT_COMPANY_SETUP.workflowConfig.autoDelegate,
+      delegateTo: DEFAULT_COMPANY_SETUP.workflowConfig.delegateTo,
+      escalationEnabled: DEFAULT_COMPANY_SETUP.workflowConfig.escalationEnabled,
+      escalationHours: DEFAULT_COMPANY_SETUP.workflowConfig.escalationHours,
+      fallbackOrder: DEFAULT_COMPANY_SETUP.workflowConfig.fallbackOrder,
     };
   }
 

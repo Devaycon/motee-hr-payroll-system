@@ -15,7 +15,32 @@ export type Notification = {
   time: string;
   read: boolean;
   type: NotifType;
+  /**
+   * Who this is for. Both absent means a broadcast, which is what every
+   * notification used to be - "Amara, you have a task" landed in everybody's
+   * panel because there was nowhere to say who it belonged to.
+   */
+  recipientEmployeeIds?: string[];
+  recipientRoleIds?: string[];
+  /** Deep link to the thing the notification is about. */
+  href?: string;
 };
+
+/**
+ * Whether a notification should reach a given viewer. Broadcasts reach
+ * everyone, so existing callers keep working untouched.
+ */
+export function isForRecipient(
+  notification: Notification,
+  employeeId: string | undefined,
+  roleId: string | undefined,
+): boolean {
+  const { recipientEmployeeIds, recipientRoleIds } = notification;
+  if (!recipientEmployeeIds?.length && !recipientRoleIds?.length) return true;
+  if (employeeId && recipientEmployeeIds?.includes(employeeId)) return true;
+  if (roleId && recipientRoleIds?.includes(roleId)) return true;
+  return false;
+}
 
 export const DEMO_NOTIFICATIONS: Notification[] = [
   {

@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "My Submissions — Motee",
@@ -13,5 +14,9 @@ const MySubmissionsPage = dynamic(() =>
 );
 
 export default function EmployeeSubmissionsRoute() {
-  return <MySubmissionsPage />;
+  return (
+    <Suspense>
+      <MySubmissionsPage />
+    </Suspense>
+  );
 }

@@ -35,6 +35,8 @@ interface ExportMenuProps<T> {
   rows: T[];
   /** Menu heading, e.g. "Export 42 employees". Defaults to "Export {n} rows". */
   label?: string;
+  /** Trigger button text. Defaults to "Export" — set this when a page offers more than one export target (e.g. "Summary" / "Roster"). */
+  buttonLabel?: string;
   buttonClassName?: string;
   variant?: "default" | "outline";
 }
@@ -49,6 +51,7 @@ export function ExportMenu<T>({
   columns,
   rows,
   label,
+  buttonLabel = "Export",
   buttonClassName,
   variant = "default",
 }: ExportMenuProps<T>) {
@@ -67,7 +70,7 @@ export function ExportMenu<T>({
       <DropdownMenuTrigger asChild>
         <Button variant={variant} size="lg" className={buttonClassName}>
           <Download className="w-3.5 h-3.5" />
-          Export
+          {buttonLabel}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">

@@ -115,6 +115,24 @@ const slice = createSlice({
       if (action.payload.byCountry) state.byCountry = action.payload.byCountry;
       state.status = "ready";
     },
+    /**
+     * Add records that are not already present, leaving existing ones alone.
+     *
+     * `seedCountry` only fires when a country has nothing at all, so it cannot
+     * be used to back-fill the ancestors of a vacancy into a list that the
+     * approvals demo has already populated.
+     */
+    mergeSeed(
+      state,
+      action: PayloadAction<{ country: string; requests: WorkforceRequest[] }>,
+    ) {
+      const bucket = (state.byCountry[action.payload.country] ??= []);
+      const known = new Set(bucket.map((r) => r.id));
+      for (const request of action.payload.requests) {
+        if (!known.has(request.id)) bucket.push(request);
+      }
+      state.status = "ready";
+    },
     seedCountry(
       state,
       action: PayloadAction<{ country: string; requests: WorkforceRequest[] }>,
@@ -175,6 +193,7 @@ const slice = createSlice({
 export const {
   hydrate,
   seedCountry,
+  mergeSeed,
   addRequest,
   updateRequest,
   setApproval,

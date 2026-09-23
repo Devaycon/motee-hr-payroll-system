@@ -60,6 +60,10 @@ export interface AttendanceRecord {
   status: AttendanceStatus;
   notes?: string;
   location?: string;
+  /** Full street address of the punch, for the Location column / map link. */
+  locationAddress?: string;
+  /** "lat,lng" — preferred over `locationAddress` for the Google Maps link when present. */
+  locationCoords?: string;
 }
 
 export interface NewAttendanceRecord {
@@ -76,6 +80,8 @@ export interface NewAttendanceRecord {
   status: AttendanceStatus;
   notes?: string;
   location?: string;
+  locationAddress?: string;
+  locationCoords?: string;
 }
 
 export interface TimesheetRecord {
@@ -385,4 +391,123 @@ export function weekStartOf(iso: string): string {
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+// ── deduction policy ────────────────────────────────────────────────────────
+//
+// Demo-scoped attendance deduction configuration (§ Deduction Policy). This is
+// not wired to a real payroll run — there is no salary figure flowing through
+// this app yet, so callers pass a stand-in `dailyRate`. See
+// `DEMO_DAILY_RATE` below and the HR report for what would need to change to
+// make this a real payroll integration.
+
+export type DeductionBasis = "flat" | "percent_of_daily_rate";
+
+export interface DeductionRule {
+  enabled: boolean;
+  basis: DeductionBasis;
+  /**
+   * A flat currency amount when `basis` is "flat", or a percentage (0-100) of
+   * the daily rate when `basis` is "percent_of_daily_rate". Charged once per
+   * instance (one late arrival, one absence day, one early departure) — not
+   * per minute, since minutes-late isn't tracked at the timesheet level.
+   */
+  amount: number;
+}
+
+export interface DeductionPolicy {
+  /** Minutes of leeway after the scheduled start before a clock-in counts as late. */
+  graceMinutes: number;
+  /** Label only — flat amounts are demo currency units, not tied to a real ledger. */
+  currency: string;
+  lateDeduction: DeductionRule;
+  absenceDeduction: DeductionRule;
+  earlyDepartureDeduction: DeductionRule;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export const DEFAULT_DEDUCTION_POLICY: DeductionPolicy = {
+  graceMinutes: 10,
+  currency: "NGN",
+  lateDeduction: { enabled: true, basis: "flat", amount: 2000 },
+  absenceDeduction: { enabled: true, basis: "percent_of_daily_rate", amount: 100 },
+  earlyDepartureDeduction: { enabled: true, basis: "flat", amount: 1500 },
+};
+
+/**
+ * Stand-in daily pay rate used wherever a deduction figure needs one and no
+ * real salary is wired through. Nothing in this codebase currently connects
+ * an employee's contracted salary to the attendance module.
+ */
+export const DEMO_DAILY_RATE = 15000;
+
+export interface DeductionBreakdown {
+  lateAmount: number;
+  absenceAmount: number;
+  earlyDepartureAmount: number;
+  total: number;
+}
+
+function ruleAmount(
+  rule: DeductionRule,
+  instances: number,
+  dailyRate: number,
+): number {
+  if (!rule.enabled || instances <= 0) return 0;
+  const perInstance =
+    rule.basis === "flat" ? rule.amount : dailyRate * (rule.amount / 100);
+  return round2(perInstance * instances);
+}
+
+/**
+ * The deduction one day's status implies on its own — used on the per-record
+ * detail page, where there is no weekly `daysLate`/`daysAbsent` tally to work
+ * from, only the single day's status.
+ */
+export function deductionForStatus(
+  status: AttendanceStatus,
+  policy: DeductionPolicy,
+  dailyRate: number,
+): number {
+  if (status === "late") return ruleAmount(policy.lateDeduction, 1, dailyRate);
+  if (status === "absent") return ruleAmount(policy.absenceDeduction, 1, dailyRate);
+  if (status === "early_departure") {
+    return ruleAmount(policy.earlyDepartureDeduction, 1, dailyRate);
+  }
+  return 0;
+}
+
+/** Rolls a week's daysLate/daysAbsent/early-departures into a deduction total. */
+export function computeDeduction(
+  timesheet: TimesheetRecord,
+  policy: DeductionPolicy,
+  dailyRate: number,
+): DeductionBreakdown {
+  const earlyDepartureDays = timesheet.dailyEntries.filter(
+    (e) => e.status === "early_departure",
+  ).length;
+
+  const lateAmount = ruleAmount(
+    policy.lateDeduction,
+    timesheet.daysLate,
+    dailyRate,
+  );
+  const absenceAmount = ruleAmount(
+    policy.absenceDeduction,
+    timesheet.daysAbsent,
+    dailyRate,
+  );
+  const earlyDepartureAmount = ruleAmount(
+    policy.earlyDepartureDeduction,
+    earlyDepartureDays,
+    dailyRate,
+  );
+
+  return {
+    lateAmount,
+    absenceAmount,
+    earlyDepartureAmount,
+    total: round2(lateAmount + absenceAmount + earlyDepartureAmount),
+  };
 }

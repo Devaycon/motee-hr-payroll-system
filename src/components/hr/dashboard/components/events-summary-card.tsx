@@ -4,6 +4,7 @@ import { ResponsiveBar } from "@nivo/bar";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tile, TileLabel, TileSub, TileNum, TileLink, MiniBars } from "./tiles";
 import { ChartCard, HeroRingCard, NIVO_THEME } from "@/src/components/shared/charts";
+import { eventsSummaryProps } from "@/src/components/shared/charts/events-summary";
 import {
   useUpcomingEvents,
   EVENT_TYPE_HEX,
@@ -175,6 +176,7 @@ export function EventsHeroRing() {
       description="What's on the calendar over the next 7 days"
       segments={segments}
       totalNoun="events"
+      {...eventsSummaryProps(segments)}
     />
   );
 }

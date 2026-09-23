@@ -14,6 +14,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
 import type { ApprovalRequest } from "@/src/lib/types/approvals";
 import { formatRelativeDate, STEP_STATUS_STYLES } from "../utils";
+import { formatDate as formatShortDate } from "@/src/lib/utils/format-date";
 
 /** The chronological activity log (who did what, with notes). */
 export function ApprovalActivityLog({ request }: { request: ApprovalRequest }) {
@@ -147,11 +148,37 @@ export function ApprovalChainTimeline({
                         ? "Not reached — workflow stopped earlier"
                         : `Reviewer: ${step.resolvedEmployeeName ?? "Unassigned"}`}
                   </span>
-                  {step.reassignedFromName && step.status !== "skipped" && (
+                  {step.reassignedFromName && step.status !== "skipped" && !step.delegationReason && (
                     <span className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-0.5">
                       <CalendarOff className="w-3 h-3" />
                       Rerouted from {step.reassignedFromName} (on leave)
                     </span>
+                  )}
+                  {/* §4.1 audit trail — makes clear the delegate didn't
+                      permanently become the employee's manager, only
+                      temporarily authorised for this delegation window. */}
+                  {step.reassignedFromName && step.delegationReason && (
+                    <div className="mt-1 rounded-md border border-amber-500/20 bg-amber-500/5 px-2 py-1.5 text-[11px] text-foreground">
+                      {step.status === "approved" && (
+                        <p>
+                          <span className="font-medium">Approved by:</span>{" "}
+                          {step.resolvedEmployeeName ?? "Delegate"}
+                        </p>
+                      )}
+                      <p>
+                        <span className="font-medium">On behalf of:</span> {step.reassignedFromName}
+                      </p>
+                      <p>
+                        <span className="font-medium">Reason:</span> {step.delegationReason}
+                      </p>
+                      {step.delegationPeriod && (
+                        <p>
+                          <span className="font-medium">Delegation period:</span>{" "}
+                          {formatShortDate(step.delegationPeriod.start)} –{" "}
+                          {formatShortDate(step.delegationPeriod.end)}
+                        </p>
+                      )}
+                    </div>
                   )}
                   <Badge
                     variant="outline"

@@ -30,8 +30,10 @@ import {
   KUDOS_TYPE_OPTIONS,
   COMPANY_VALUE_CONFIG,
   EMPLOYEE_ROSTER,
+  KUDOS_DEPARTMENTS,
 } from "../data";
-import type { KudosType, CompanyValue, NewKudos } from "../types";
+import type { KudosType, CompanyValue, NewKudos, KudosRecipientType } from "../types";
+import { Users2 } from "lucide-react";
 
 const schema = z.object({
   recipientName: z.string().min(1, { message: "Please select a recipient" }),
@@ -44,6 +46,7 @@ const schema = z.object({
 });
 
 type FormValues = {
+  recipientType: KudosRecipientType;
   recipientName: string;
   recipientInitials: string;
   recipientDept: string;
@@ -57,6 +60,7 @@ type FormValues = {
 
 function getDefaults(recipient?: KudosRecipient): FormValues {
   return {
+    recipientType: "individual",
     recipientName: recipient?.name ?? "",
     recipientInitials: recipient?.initials ?? "",
     recipientDept: recipient?.department ?? "",
@@ -68,6 +72,12 @@ function getDefaults(recipient?: KudosRecipient): FormValues {
     isBroadcast: false,
   };
 }
+
+const RECIPIENT_TYPE_OPTIONS: { value: KudosRecipientType; label: string }[] = [
+  { value: "individual", label: "Colleague" },
+  { value: "department", label: "Department" },
+  { value: "team", label: "Team" },
+];
 
 /** Pre-selects the recipient, e.g. when opened from an employee row. */
 export interface KudosRecipient {
@@ -119,6 +129,29 @@ export function SendKudosModal({
     }
   }
 
+  /** §5.1 — a department/team recipient has no single avatar, so the
+      department name doubles as both name and "department" for display. */
+  function handleGroupSelect(department: string) {
+    setForm((prev) => ({
+      ...prev,
+      recipientName: department,
+      recipientInitials: department.slice(0, 2).toUpperCase(),
+      recipientDept: department,
+    }));
+    setErrors((prev) => ({ ...prev, recipientName: undefined }));
+  }
+
+  function handleRecipientTypeChange(type: KudosRecipientType) {
+    setForm((prev) => ({
+      ...prev,
+      recipientType: type,
+      recipientName: "",
+      recipientInitials: "",
+      recipientDept: "",
+    }));
+    setErrors((prev) => ({ ...prev, recipientName: undefined }));
+  }
+
   function handleSave() {
     const result = schema.safeParse({
       recipientName: form.recipientName,
@@ -141,6 +174,7 @@ export function SendKudosModal({
       recipientName: form.recipientName,
       recipientInitials: form.recipientInitials,
       recipientDept: form.recipientDept,
+      recipientType: form.recipientType,
       kudosType: form.kudosType as KudosType,
       customTypeName:
         form.kudosType === "custom"
@@ -176,48 +210,99 @@ export function SendKudosModal({
         <div className="flex-1 min-h-0 overflow-y-auto px-6">
           <div className="space-y-5 pb-4">
             <div className="space-y-1.5">
-              <Label>Recipient</Label>
-              <Select
-                value={form.recipientName}
-                onValueChange={handleRecipientSelect}
-              >
-                <SelectTrigger>
-                  {selectedEmployee ? (
-                    <div className="flex items-center gap-2">
-                      <PersonAvatar
-                        name={selectedEmployee.name}
-                        initials={selectedEmployee.initials}
-                        className="size-5"
-                        fallbackClassName="text-[9px] font-bold bg-primary/10 text-primary"
-                      />
-                      <span className="text-sm">{selectedEmployee.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        · {selectedEmployee.dept}
-                      </span>
-                    </div>
-                  ) : (
-                    <SelectValue placeholder="Select a colleague..." />
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  {EMPLOYEE_ROSTER.map((e) => (
-                    <SelectItem key={e.name} value={e.name}>
+              <div className="flex items-center justify-between">
+                <Label>Recipient</Label>
+                {/* §5.1 — recipient is no longer limited to one colleague. */}
+                <div className="flex rounded-lg border border-border p-0.5">
+                  {RECIPIENT_TYPE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => handleRecipientTypeChange(opt.value)}
+                      className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${
+                        form.recipientType === opt.value
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {form.recipientType === "individual" ? (
+                <Select
+                  value={form.recipientName}
+                  onValueChange={handleRecipientSelect}
+                >
+                  <SelectTrigger>
+                    {selectedEmployee ? (
                       <div className="flex items-center gap-2">
                         <PersonAvatar
-                          name={e.name}
-                          initials={e.initials}
+                          name={selectedEmployee.name}
+                          initials={selectedEmployee.initials}
                           className="size-5"
                           fallbackClassName="text-[9px] font-bold bg-primary/10 text-primary"
                         />
-                        <span>{e.name}</span>
+                        <span className="text-sm">{selectedEmployee.name}</span>
                         <span className="text-xs text-muted-foreground">
-                          · {e.dept}
+                          · {selectedEmployee.dept}
                         </span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    ) : (
+                      <SelectValue placeholder="Select a colleague..." />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EMPLOYEE_ROSTER.map((e) => (
+                      <SelectItem key={e.name} value={e.name}>
+                        <div className="flex items-center gap-2">
+                          <PersonAvatar
+                            name={e.name}
+                            initials={e.initials}
+                            className="size-5"
+                            fallbackClassName="text-[9px] font-bold bg-primary/10 text-primary"
+                          />
+                          <span>{e.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            · {e.dept}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Select value={form.recipientName} onValueChange={handleGroupSelect}>
+                  <SelectTrigger>
+                    {form.recipientName ? (
+                      <div className="flex items-center gap-2">
+                        <Users2 className="size-4 text-muted-foreground" />
+                        <span className="text-sm">{form.recipientName}</span>
+                      </div>
+                    ) : (
+                      <SelectValue
+                        placeholder={
+                          form.recipientType === "department"
+                            ? "Select a department..."
+                            : "Select a team..."
+                        }
+                      />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KUDOS_DEPARTMENTS.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        <div className="flex items-center gap-2">
+                          <Users2 className="size-4 text-muted-foreground" />
+                          <span>{d}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               {errors.recipientName && (
                 <p className="text-xs text-destructive">
                   {errors.recipientName}

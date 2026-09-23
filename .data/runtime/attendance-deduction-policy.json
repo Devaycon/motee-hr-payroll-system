@@ -1,0 +1,21 @@
+{
+  "policy": {
+    "graceMinutes": 10,
+    "currency": "NGN",
+    "lateDeduction": {
+      "enabled": true,
+      "basis": "flat",
+      "amount": 2000
+    },
+    "absenceDeduction": {
+      "enabled": true,
+      "basis": "percent_of_daily_rate",
+      "amount": 100
+    },
+    "earlyDepartureDeduction": {
+      "enabled": true,
+      "basis": "flat",
+      "amount": 1500
+    }
+  }
+}

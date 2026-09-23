@@ -4,7 +4,7 @@ import { currentCurrencySymbol } from "@/src/lib/hooks/use-currency";
 import { useState } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Check, ChevronLeft } from "lucide-react";
+import { ChevronRight, Check, ChevronLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -23,7 +23,8 @@ import {
   type PickedEmployee,
 } from "@/src/components/shared/employee-picker";
 import { DEPARTMENT_OPTIONS } from "../data";
-import type { ManualOnboardingData, Guarantor } from "../types";
+import type { ManualOnboardingData, Guarantor, AssetDraft } from "../types";
+import { emptyAssetDraft } from "../types";
 import { guarantorsSchema, emptyGuarantor } from "@/src/lib/validation/guarantor";
 import { addRecord } from "@/src/lib/stores/onboarding-records-slice";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
@@ -33,7 +34,6 @@ import { onboardingStarted } from "@/src/lib/notifications/onboarding";
 import {
   getOnboardingTemplates,
   getDefaultOnboardingTemplate,
-  buildTasksForSelection,
 } from "../instantiate";
 import { EMPLOYMENT_TYPE_OPTIONS } from "@/src/lib/constants/employment-types";
 import { titlesForGender } from "@/src/lib/constants/titles";
@@ -179,11 +179,16 @@ const step6Schema = z.object({
 });
 
 const step7Schema = z.object({
-  assetTag: z.string().optional(),
-  assetName: z.string().optional(),
-  assetCategory: z.string().optional(),
-  assetSerialNumber: z.string().optional(),
-  assetAssignedDate: z.string().optional(),
+  // §3.1 — any number of assets, including none.
+  assets: z.array(
+    z.object({
+      tag: z.string().optional(),
+      name: z.string().optional(),
+      category: z.string().optional(),
+      serialNumber: z.string().optional(),
+      assignedDate: z.string().optional(),
+    }),
+  ),
 });
 
 const EMPTY_DATA: ManualOnboardingData = {
@@ -241,11 +246,7 @@ const EMPTY_DATA: ManualOnboardingData = {
   medications: "",
   dietaryRequirements: "",
   accessibilityNeeds: "",
-  assetTag: "",
-  assetName: "",
-  assetCategory: "",
-  assetSerialNumber: "",
-  assetAssignedDate: "",
+  assets: [emptyAssetDraft()],
   workflowTemplateId: "",
 };
 
@@ -265,7 +266,6 @@ export function OnboardingFormPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const templates = useAppSelector((s) => s.approvals.templates);
-  const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
   // Sort code and driving-licence expiry are UK-shaped; NG uses NIN/TIN/PFA.
   const isUK = useAppSelector((s) => s.locale.country) === "uk";
   const branchOptions = useBranchOptions();
@@ -318,6 +318,25 @@ export function OnboardingFormPage() {
     });
   }
 
+  /** §3.1 — one, several, or no assets can be assigned at onboarding. */
+  function updateAsset(index: number, field: keyof AssetDraft, value: string) {
+    setData((prev) => ({
+      ...prev,
+      assets: prev.assets.map((a, i) => (i === index ? { ...a, [field]: value } : a)),
+    }));
+  }
+
+  function addAsset() {
+    setData((prev) => ({ ...prev, assets: [...prev.assets, emptyAssetDraft()] }));
+  }
+
+  function removeAsset(index: number) {
+    setData((prev) => ({
+      ...prev,
+      assets: prev.assets.length > 1 ? prev.assets.filter((_, i) => i !== index) : prev.assets,
+    }));
+  }
+
   function validateStep(s: number): boolean {
     const schema = stepSchemas[stepKeys[s]];
     if (!schema) return true;
@@ -351,13 +370,6 @@ export function OnboardingFormPage() {
     const id = `onb-${Date.now()}`;
     const fullName = `${data.firstName} ${data.lastName}`;
     const initials = `${data.firstName[0]}${data.lastName[0]}`.toUpperCase();
-    const { tasks, template } = buildTasksForSelection(
-      id,
-      templates,
-      roles,
-      selectedWorkflowId,
-    );
-
     dispatch(
       addRecord({
         id,
@@ -370,11 +382,11 @@ export function OnboardingFormPage() {
         startDate: data.startDate,
         stage: "pre_boarding",
         status: "not_started",
-        workflowTemplateId: template?.id,
-        workflowName: template?.name,
-        tasks,
+        // Tasks come from the onboarding workflow run the listener starts for
+        // this record, which is the only place a real owner is known.
+        tasks: [],
         completedTasks: 0,
-        totalTasks: tasks.length,
+        totalTasks: 0,
         welcomeEmailSent: false,
         initiatedAt: new Date().toISOString().slice(0, 10),
         mode: "manual",
@@ -1022,24 +1034,45 @@ export function OnboardingFormPage() {
             </h2>
             <Separator />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* §2.1 (Correction 2 feedback) — NIN/Pension ID (PFA)/NHF are
+                  Nigeria-specific identifiers and must not render for UK
+                  tenants. TIN doubles as the UK's UTR field (relabelled
+                  below), and NI Number is UK-only. */}
+              {!isUK && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">
+                    NIN (National Identification Number)
+                  </Label>
+                  <Input
+                    inputMode="numeric"
+                    value={data.ninNumber}
+                    onChange={(e) =>
+                      update("ninNumber", e.target.value.replace(/\D/g, ""))
+                    }
+                    className="h-9 text-sm"
+                    placeholder="11-digit NIN"
+                    maxLength={11}
+                  />
+                </div>
+              )}
+              {isUK && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">NI Number</Label>
+                  <Input
+                    value={data.niNumber}
+                    onChange={(e) =>
+                      update("niNumber", e.target.value.toUpperCase())
+                    }
+                    className="h-9 text-sm"
+                    placeholder="e.g. QQ 12 34 56 C"
+                  />
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
-                  NIN (National Identification Number)
-                </Label>
-                <Input
-                  inputMode="numeric"
-                  value={data.ninNumber}
-                  onChange={(e) =>
-                    update("ninNumber", e.target.value.replace(/\D/g, ""))
-                  }
-                  className="h-9 text-sm"
-                  placeholder="11-digit NIN"
-                  maxLength={11}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">
-                  TIN (Tax Identification Number)
+                  {isUK
+                    ? "UTR (Unique Taxpayer Reference)"
+                    : "TIN (Tax Identification Number)"}
                 </Label>
                 <Input
                   inputMode="numeric"
@@ -1048,33 +1081,38 @@ export function OnboardingFormPage() {
                     update("taxId", e.target.value.replace(/\D/g, ""))
                   }
                   className="h-9 text-sm"
-                  placeholder="Tax ID number"
+                  placeholder={isUK ? "10-digit UTR" : "Tax ID number"}
+                  maxLength={isUK ? 10 : undefined}
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Pension ID (PFA)</Label>
-                <Input
-                  inputMode="numeric"
-                  value={data.pensionId}
-                  onChange={(e) =>
-                    update("pensionId", e.target.value.replace(/\D/g, ""))
-                  }
-                  className="h-9 text-sm"
-                  placeholder="Pension account number"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">NHF Number</Label>
-                <Input
-                  inputMode="numeric"
-                  value={data.nhfNumber}
-                  onChange={(e) =>
-                    update("nhfNumber", e.target.value.replace(/\D/g, ""))
-                  }
-                  className="h-9 text-sm"
-                  placeholder="National Housing Fund number"
-                />
-              </div>
+              {!isUK && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">Pension ID (PFA)</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={data.pensionId}
+                    onChange={(e) =>
+                      update("pensionId", e.target.value.replace(/\D/g, ""))
+                    }
+                    className="h-9 text-sm"
+                    placeholder="Pension account number"
+                  />
+                </div>
+              )}
+              {!isUK && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">NHF Number</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={data.nhfNumber}
+                    onChange={(e) =>
+                      update("nhfNumber", e.target.value.replace(/\D/g, ""))
+                    }
+                    className="h-9 text-sm"
+                    placeholder="National Housing Fund number"
+                  />
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
                   {isUK ? "Driving Licence Number" : "Driver's License Number"}
@@ -1126,7 +1164,7 @@ export function OnboardingFormPage() {
                   value={data.passportCountry}
                   onChange={(e) => update("passportCountry", e.target.value)}
                   className="h-9 text-sm"
-                  placeholder="e.g. Nigeria"
+                  placeholder={isUK ? "e.g. United Kingdom" : "e.g. Nigeria"}
                 />
               </div>
             </div>
@@ -1395,60 +1433,90 @@ export function OnboardingFormPage() {
 
         {currentKey === "assets" && (
           <>
-            <h2 className="text-sm font-semibold text-foreground">
-              Assets to Assign
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">
+                Assets to Assign
+              </h2>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 text-xs"
+                onClick={addAsset}
+              >
+                <Plus className="w-3 h-3" /> Add asset
+              </Button>
+            </div>
             <Separator />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Asset Tag</Label>
-                <Input
-                  value={data.assetTag}
-                  onChange={(e) => update("assetTag", e.target.value)}
-                  className="h-9 text-sm"
-                  placeholder="e.g. AST-0142"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Asset Name</Label>
-                <Input
-                  value={data.assetName}
-                  onChange={(e) => update("assetName", e.target.value)}
-                  className="h-9 text-sm"
-                  placeholder="e.g. MacBook Pro 14&quot;"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Category</Label>
-                <Input
-                  value={data.assetCategory}
-                  onChange={(e) => update("assetCategory", e.target.value)}
-                  className="h-9 text-sm"
-                  placeholder="e.g. Laptop, Phone"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Serial Number</Label>
-                <Input
-                  value={data.assetSerialNumber}
-                  onChange={(e) =>
-                    update("assetSerialNumber", e.target.value)
-                  }
-                  className="h-9 text-sm"
-                  placeholder="Serial number"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Assigned Date</Label>
-                <Input
-                  type="date"
-                  value={data.assetAssignedDate}
-                  onChange={(e) =>
-                    update("assetAssignedDate", e.target.value)
-                  }
-                  className="h-9 text-sm"
-                />
-              </div>
+            {/* §3.1 — more than one asset can be assigned at onboarding. */}
+            <div className="flex flex-col gap-5">
+              {data.assets.map((asset, index) => (
+                <div key={index} className="flex flex-col gap-3 rounded-lg border border-border p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Asset {index + 1}
+                    </span>
+                    {data.assets.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 gap-1 text-xs text-destructive hover:text-destructive"
+                        onClick={() => removeAsset(index)}
+                      >
+                        <Trash2 className="w-3 h-3" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">Asset Tag</Label>
+                      <Input
+                        value={asset.tag}
+                        onChange={(e) => updateAsset(index, "tag", e.target.value)}
+                        className="h-9 text-sm"
+                        placeholder="e.g. AST-0142"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">Asset Name</Label>
+                      <Input
+                        value={asset.name}
+                        onChange={(e) => updateAsset(index, "name", e.target.value)}
+                        className="h-9 text-sm"
+                        placeholder="e.g. MacBook Pro 14&quot;"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">Category</Label>
+                      <Input
+                        value={asset.category}
+                        onChange={(e) => updateAsset(index, "category", e.target.value)}
+                        className="h-9 text-sm"
+                        placeholder="e.g. Laptop, Phone"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">Serial Number</Label>
+                      <Input
+                        value={asset.serialNumber}
+                        onChange={(e) => updateAsset(index, "serialNumber", e.target.value)}
+                        className="h-9 text-sm"
+                        placeholder="Serial number"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs">Assigned Date</Label>
+                      <Input
+                        type="date"
+                        value={asset.assignedDate}
+                        onChange={(e) => updateAsset(index, "assignedDate", e.target.value)}
+                        className="h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
@@ -1580,17 +1648,21 @@ export function OnboardingFormPage() {
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                   Assets to Assign
                 </p>
-                <ReviewRow label="Asset Tag" value={data.assetTag} />
-                <ReviewRow label="Asset Name" value={data.assetName} />
-                <ReviewRow label="Category" value={data.assetCategory} />
-                <ReviewRow
-                  label="Serial Number"
-                  value={data.assetSerialNumber}
-                />
-                <ReviewRow
-                  label="Assigned Date"
-                  value={data.assetAssignedDate}
-                />
+                {data.assets.every((a) => !a.tag && !a.name) ? (
+                  <p className="text-xs text-muted-foreground">No assets assigned.</p>
+                ) : (
+                  data.assets.map((asset, i) =>
+                    asset.tag || asset.name ? (
+                      <div key={i} className={i > 0 ? "mt-3 pt-3 border-t border-border" : undefined}>
+                        <ReviewRow label={`Asset ${i + 1} — Tag`} value={asset.tag} />
+                        <ReviewRow label="Asset Name" value={asset.name} />
+                        <ReviewRow label="Category" value={asset.category} />
+                        <ReviewRow label="Serial Number" value={asset.serialNumber} />
+                        <ReviewRow label="Assigned Date" value={asset.assignedDate} />
+                      </div>
+                    ) : null,
+                  )
+                )}
               </div>
             </div>
           </>

@@ -28,10 +28,36 @@ export interface AccessControlConfig {
   permissions: string[];
 }
 
+/**
+ * §4.1 (Correction 2 feedback) — "Approval Delegation & Escalation".
+ * Continues the open question from the earlier xlsx feedback round
+ * ("PLEASE DO WE CURRENTLY HAVE APPROVAL DELEGATION"). Two distinct
+ * mechanisms, per the client's spec:
+ *  1. Pre-configured delegation — a manager sets a date range and their
+ *     approvals route to someone else during it (self-service; see
+ *     src/components/hr/approvals/components/my-delegation-panel.tsx).
+ *  2. Hierarchy-based fallback — when no delegate is configured, walks
+ *     `fallbackOrder` instead of dumping everything on HR.
+ */
+export type DelegateTarget = "hr" | "next_level_manager" | "specific";
+
+/** One step of the hierarchy-based fallback chain, in the order it's tried. */
+export type FallbackStep = "delegate" | "managers_manager" | "hr";
+
 export interface WorkflowConfig {
   leaveApproval: "manager" | "hr" | "both";
   multiLevelApproval: boolean;
   autoApproval: boolean;
+  /** Automatically delegate if the direct manager is unavailable/on leave. */
+  autoDelegate: boolean;
+  delegateTo: DelegateTarget;
+  /** Escalate if the approver doesn't respond within `escalationHours`. */
+  escalationEnabled: boolean;
+  escalationHours: number;
+  /** Configurable per company — client's stated rationale: "more robust
+   *  than simply sending everything to HR, because it preserves the
+   *  organisational approval hierarchy." */
+  fallbackOrder: FallbackStep[];
 }
 
 export interface UILabels {
@@ -89,6 +115,11 @@ export const DEFAULT_COMPANY_SETUP: CompanySetup = {
     leaveApproval: "manager",
     multiLevelApproval: false,
     autoApproval: false,
+    autoDelegate: true,
+    delegateTo: "next_level_manager",
+    escalationEnabled: false,
+    escalationHours: 48,
+    fallbackOrder: ["delegate", "managers_manager", "hr"],
   },
   uiLabels: {
     manager: "Manager",

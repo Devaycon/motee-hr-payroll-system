@@ -77,6 +77,8 @@ export function ShiftsPage() {
         templates={templates}
         assignments={assignments}
         weekStart={weekStart}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

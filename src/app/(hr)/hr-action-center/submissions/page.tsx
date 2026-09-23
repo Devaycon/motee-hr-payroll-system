@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Submissions & Approvals — Motee HR",
@@ -11,5 +12,9 @@ const SubmissionsPage = dynamic(() =>
 );
 
 export default function HrSubmissionsRoute() {
-  return <SubmissionsPage basePath="/hr-action-center/submissions" />;
+  return (
+    <Suspense>
+      <SubmissionsPage basePath="/hr-action-center/submissions" />
+    </Suspense>
+  );
 }

@@ -7,6 +7,7 @@ import type {
   OnboardingReviewStatus,
   PrivacyConsent,
 } from "@/src/lib/types/onboarding";
+import { deriveOnboardingStage } from "@/src/lib/types/onboarding";
 import type { StarterTaxRecord } from "@/src/lib/types/starter-tax";
 import type { EmployeeRow } from "@/src/lib/types/employees";
 import { ONBOARDING_RECORDS } from "@/src/data/onboarding-demo";
@@ -19,7 +20,10 @@ interface OnboardingRecordsState {
 }
 
 const initialState: OnboardingRecordsState = {
-  records: ONBOARDING_RECORDS,
+  // Seeded records carry a hardcoded `stage`, so they need the same derivation
+  // every mutation gets — otherwise the demo opens on a list that all reads
+  // "Pre-Boarding" regardless of start date.
+  records: ONBOARDING_RECORDS.map(recompute),
   cleared: [],
 };
 
@@ -36,9 +40,11 @@ function recompute(record: OnboardingRecord): OnboardingRecord {
   const completedTasks = record.tasks.filter(
     (t) => t.status === "completed",
   ).length;
-  const allRequiredDone = record.tasks
-    .filter((t) => t.isRequired)
-    .every((t) => t.status === "completed");
+  const allRequiredDone =
+    record.tasks.length > 0 &&
+    record.tasks
+      .filter((t) => t.isRequired)
+      .every((t) => t.status === "completed");
   const status: OnboardingRecord["status"] = allRequiredDone
     ? "completed"
     : completedTasks > 0
@@ -51,7 +57,9 @@ function recompute(record: OnboardingRecord): OnboardingRecord {
     completedTasks,
     totalTasks: record.tasks.length,
     status,
-    stage: allRequiredDone ? "completed" : record.stage,
+    // Derived, never remembered — see `deriveOnboardingStage`. The stored value
+    // is a cache for display; the function is the truth.
+    stage: deriveOnboardingStage(record),
   };
 }
 
@@ -73,6 +81,31 @@ const onboardingRecordsSlice = createSlice({
     },
     removeRecord(state, action: PayloadAction<string>) {
       state.records = state.records.filter((r) => r.id !== action.payload);
+    },
+    /**
+     * Fill a record's task list from the workflow run started for it.
+     *
+     * The run owns assignment, due dates and dependency state; `record.tasks`
+     * is a projection of it kept here because `approveTask` — the app's only
+     * automatic hire-to-employee bridge — reads this array.
+     */
+    attachRun(
+      state,
+      action: PayloadAction<{
+        recordId: string;
+        runId: string;
+        tasks: OnboardingRecord["tasks"];
+      }>,
+    ) {
+      const idx = state.records.findIndex(
+        (r) => r.id === action.payload.recordId,
+      );
+      if (idx < 0) return;
+      state.records[idx] = recompute({
+        ...state.records[idx],
+        runId: action.payload.runId,
+        tasks: action.payload.tasks,
+      });
     },
     sendWelcomeEmail(state, action: PayloadAction<string>) {
       const r = state.records.find((x) => x.id === action.payload);
@@ -310,6 +343,7 @@ export const {
   addRecord,
   addRecords,
   removeRecord,
+  attachRun,
   sendWelcomeEmail,
   resendInvitation,
   markInvitationOpened,

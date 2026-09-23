@@ -56,6 +56,7 @@ export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategory, string> = {
 	contract: "Contract",
 	policy: "Policy",
 	certificate: "Certificate",
+	right_to_work: "Right to Work",
 	report: "Report",
 	other: "Other",
 };
@@ -65,6 +66,7 @@ export const DOCUMENT_CATEGORY_STYLES: Record<DocumentCategory, string> = {
 	contract: "bg-blue-500/10 text-blue-600 border-blue-500/20",
 	policy: "bg-amber-500/10 text-amber-600 border-amber-500/20",
 	certificate: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+	right_to_work: "bg-pink-500/10 text-pink-600 border-pink-500/20",
 	report: "bg-sky-500/10 text-sky-600 border-sky-500/20",
 	other: "bg-slate-500/10 text-slate-600 border-slate-500/20",
 };
@@ -74,6 +76,7 @@ export const DOCUMENT_CATEGORY_OPTIONS: DocumentCategory[] = [
 	"contract",
 	"policy",
 	"certificate",
+	"right_to_work",
 	"report",
 	"other",
 ];

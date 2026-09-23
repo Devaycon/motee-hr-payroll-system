@@ -42,16 +42,58 @@ export type ApprovalEventType =
   | "commented"
   | "cancelled";
 
+/**
+ * Who approves a step.
+ *
+ * `EMP:` names a specific person. Until it existed, a step could only point at
+ * a role, and a role resolves through a single `linkedEmployeeId` — so in a
+ * bundle where HR Admin, HR Manager and Recruiter all map to one employee, a
+ * three-step chain visibly landed on the same human three times with no way to
+ * say "no, this one is Adaeze".
+ *
+ * Adding a member to the union is backward compatible: chains already stored
+ * in `.data/runtime/approvals.json` keep their existing values untouched.
+ */
 export type ApproverResolver =
   | "LINE_MANAGER"
   | "DEPARTMENT_HEAD"
-  | `ROLE:${string}`;
+  | `ROLE:${string}`
+  | `EMP:${string}`;
+
+/** One step of the hierarchy-based fallback chain, in the order it's tried. */
+export type FallbackHierarchyStep = "delegate" | "managers_manager" | "hr";
 
 // On-leave fallback actions (admin picks one per step)
 export type OnLeaveAction =
   | { kind: "skip" }
   | { kind: "reassign_to_manager" }
-  | { kind: "reassign_to_role"; approver: ApproverResolver };
+  | { kind: "reassign_to_role"; approver: ApproverResolver }
+  /**
+   * §4.1 (Correction 2 feedback) — mechanism 2, "hierarchy-based fallback":
+   * walks `order` until one resolves, rather than a single fixed action.
+   * Client's stated rationale: "more robust than simply sending everything
+   * to HR, because it preserves the organisational approval hierarchy."
+   */
+  | { kind: "escalate_hierarchy"; order: FallbackHierarchyStep[] };
+
+/**
+ * §4.1 mechanism 1, "pre-configured delegation" — a manager sets a date
+ * range and their approvals route to someone else during it. Checked ahead
+ * of a step's `onLeaveAction` fallback whenever the resolved approver is on
+ * leave, regardless of which fallback that step has configured.
+ */
+export interface ApprovalDelegation {
+  id: string;
+  delegatorEmployeeId: string;
+  delegatorName: string;
+  delegateEmployeeId: string;
+  delegateName: string;
+  /** ISO dates (yyyy-mm-dd), inclusive. */
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  createdAt: string;
+}
 
 // Workflow desks (start + end)
 export type WorkflowStartDesk =
@@ -116,6 +158,16 @@ export interface ApprovalStepInstance {
   skippedReason?: "on_leave" | "manual";
   reassignedFromEmployeeId?: string;
   reassignedFromName?: string;
+  /**
+   * §4.1 audit trail — present when the reassignment above came from a
+   * pre-configured delegation, so approving-on-behalf-of can be shown as
+   * "Approved by: {resolvedEmployeeName} / On behalf of:
+   * {reassignedFromName} / Reason: {delegationReason} / Delegation period:
+   * {delegationPeriod}" — making clear the delegate didn't permanently
+   * become the employee's manager, only temporarily authorised.
+   */
+  delegationReason?: string;
+  delegationPeriod?: { start: string; end: string };
 }
 
 export interface ApprovalEvent {

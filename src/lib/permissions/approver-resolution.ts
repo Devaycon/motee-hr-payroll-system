@@ -2,8 +2,54 @@ import type {
   ApprovalChainStep,
   ApproverResolver,
   ApprovalSubmitter,
+  ApprovalDelegation,
 } from "@/src/lib/types/approvals";
 import type { LocaleBundle } from "@/src/lib/types/locale";
+
+/** §4.1 — the delegation covering `employeeId` on `today`, if any. */
+export function findActiveDelegation(
+  employeeId: string,
+  delegations: ApprovalDelegation[],
+  today: string,
+): ApprovalDelegation | null {
+  return (
+    delegations.find(
+      (d) =>
+        d.delegatorEmployeeId === employeeId &&
+        d.startDate <= today &&
+        today <= d.endDate,
+    ) ?? null
+  );
+}
+
+function resolveManagersManager(
+  onLeaveEmployeeId: string,
+  bundle: LocaleBundle | null,
+): ResolvedApprover {
+  if (!bundle) return { employeeId: null, employeeName: null };
+  const onLeaveEmp = bundle.employees.find((e) => e.id === onLeaveEmployeeId);
+  if (!onLeaveEmp?.managerId) return { employeeId: null, employeeName: null };
+  const manager = bundle.employees.find((e) => e.id === onLeaveEmp.managerId);
+  if (!manager?.managerId) return { employeeId: null, employeeName: null };
+  const managersManager = bundle.employees.find((e) => e.id === manager.managerId);
+  return {
+    employeeId: manager.managerId,
+    employeeName: managersManager?.fullName ?? null,
+  };
+}
+
+function resolveHRHead(bundle: LocaleBundle | null): ResolvedApprover {
+  if (!bundle) return { employeeId: null, employeeName: null };
+  const hrDept = bundle.departments.find((d) =>
+    d.name.toLowerCase().includes("human resources"),
+  );
+  if (!hrDept?.headEmployeeId) return { employeeId: null, employeeName: null };
+  const head = bundle.employees.find((e) => e.id === hrDept.headEmployeeId);
+  return {
+    employeeId: hrDept.headEmployeeId,
+    employeeName: head?.fullName ?? null,
+  };
+}
 
 export interface ResolvedApprover {
   employeeId: string | null;
@@ -39,6 +85,14 @@ export function resolveApprover(
     };
   }
 
+  // A named person beats every lookup: there is nothing to resolve.
+  if (resolver.startsWith("EMP:")) {
+    const employeeId = resolver.slice(4);
+    const emp = bundle.employees.find((e) => e.id === employeeId);
+    if (!emp) return { employeeId: null, employeeName: null };
+    return { employeeId: emp.id, employeeName: emp.fullName };
+  }
+
   if (resolver.startsWith("ROLE:")) {
     const roleId = resolver.slice(5);
     const role = bundle.roles.find((r) => r.id === roleId);
@@ -70,16 +124,25 @@ export interface ResolvedStep {
   skipped: boolean;
   reassignedFromEmployeeId?: string;
   reassignedFromName?: string;
+  /** §4.1 — set when the reassignment came from a pre-configured delegation. */
+  delegationReason?: string;
+  delegationPeriod?: { start: string; end: string };
 }
 
 /**
  * Resolve a chain step's effective approver, applying the configured
  * on-leave fallback if the primary approver is currently on leave.
+ *
+ * §4.1 — an active pre-configured delegation (mechanism 1) is checked first,
+ * ahead of the step's own `onLeaveAction` fallback (mechanism 2), regardless
+ * of which fallback kind that step has configured.
  */
 export function resolveStepWithOnLeave(
   step: ApprovalChainStep,
   submitter: ApprovalSubmitter,
   bundle: LocaleBundle | null,
+  delegations: ApprovalDelegation[] = [],
+  today: string = new Date().toISOString().slice(0, 10),
 ): ResolvedStep {
   const primary = resolveApprover(step.approver, submitter, bundle);
   if (!primary.employeeId || !isOnLeave(primary.employeeId, bundle)) {
@@ -92,6 +155,20 @@ export function resolveStepWithOnLeave(
 
   const originalName = primary.employeeName ?? undefined;
   const originalId = primary.employeeId;
+
+  const activeDelegation = findActiveDelegation(originalId, delegations, today);
+  if (activeDelegation) {
+    return {
+      approverEmployeeId: activeDelegation.delegateEmployeeId,
+      approverName: activeDelegation.delegateName,
+      skipped: false,
+      reassignedFromEmployeeId: originalId,
+      reassignedFromName: originalName,
+      delegationReason:
+        activeDelegation.reason ?? `${originalName ?? "The approver"} was on leave`,
+      delegationPeriod: { start: activeDelegation.startDate, end: activeDelegation.endDate },
+    };
+  }
 
   if (step.onLeaveAction.kind === "skip") {
     return {
@@ -114,6 +191,34 @@ export function resolveStepWithOnLeave(
         reassignedFromEmployeeId: originalId,
         reassignedFromName: originalName,
       };
+    }
+    return {
+      approverEmployeeId: null,
+      approverName: null,
+      skipped: true,
+      reassignedFromEmployeeId: originalId,
+      reassignedFromName: originalName,
+    };
+  }
+
+  if (step.onLeaveAction.kind === "escalate_hierarchy") {
+    for (const hop of step.onLeaveAction.order) {
+      // "delegate" was already tried above (and was absent, or we wouldn't
+      // be here) — skip straight to the hierarchy hops.
+      if (hop === "delegate") continue;
+      const resolved =
+        hop === "managers_manager"
+          ? resolveManagersManager(originalId, bundle)
+          : resolveHRHead(bundle);
+      if (resolved.employeeId) {
+        return {
+          approverEmployeeId: resolved.employeeId,
+          approverName: resolved.employeeName,
+          skipped: false,
+          reassignedFromEmployeeId: originalId,
+          reassignedFromName: originalName,
+        };
+      }
     }
     return {
       approverEmployeeId: null,
@@ -150,6 +255,9 @@ export function canActOnStep(
 ): boolean {
   if (!userEmployeeId) return false;
   if (resolvedEmployeeId && resolvedEmployeeId === userEmployeeId) return true;
+  // A step addressed to one person is actionable by that person only - a role
+  // match must not widen it, which is the whole point of naming someone.
+  if (resolver.startsWith("EMP:")) return resolver.slice(4) === userEmployeeId;
   if (resolver.startsWith("ROLE:") && userRoleId) {
     return resolver.slice(5) === userRoleId;
   }

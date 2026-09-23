@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Building2 } from "lucide-react";
@@ -9,6 +9,14 @@ import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { COUNTRY_NAMES } from "@/src/config/system-data";
 
 const registerSchema = z
   .object({
@@ -19,6 +27,7 @@ const registerSchema = z
     companyName: z
       .string()
       .min(2, "Company name must be at least 2 characters"),
+    country: z.string().min(1, "Select a country"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
   })
@@ -36,10 +45,12 @@ export function RegisterForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
+    defaultValues: { country: "" },
   });
 
   const onSubmit = async (_data: RegisterFormValues) => {
@@ -120,26 +131,55 @@ export function RegisterForm() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="companyName">Company Name</Label>
-          <div className="relative">
-            <Building2
-              size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              id="companyName"
-              type="text"
-              placeholder="Acme Corporation"
-              className="pl-9"
-              {...register("companyName")}
-            />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="companyName">Company Name</Label>
+            <div className="relative">
+              <Building2
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                id="companyName"
+                type="text"
+                placeholder="Acme Corporation"
+                className="pl-9"
+                {...register("companyName")}
+              />
+            </div>
+            {errors.companyName && (
+              <span className="text-xs text-destructive">
+                {errors.companyName.message}
+              </span>
+            )}
           </div>
-          {errors.companyName && (
-            <span className="text-xs text-destructive">
-              {errors.companyName.message}
-            </span>
-          )}
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="country">Country</Label>
+            <Controller
+              name="country"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="country" className="w-full">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRY_NAMES.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.country && (
+              <span className="text-xs text-destructive">
+                {errors.country.message}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

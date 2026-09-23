@@ -89,6 +89,12 @@ export function MyAttendancePage() {
     employeeId ? s.attendance.sessions[employeeId] : undefined,
   );
   const timesheets = useAppSelector((s) => s.attendance.timesheets);
+  // HR's Deduction Policy (Attendance module) owns the grace period now — the
+  // constant stays as the fallback default so this still works before the
+  // slice has hydrated.
+  const graceMinutes = useAppSelector(
+    (s) => s.attendanceDeductionPolicy.policy.graceMinutes ?? LATE_GRACE_MINUTES,
+  );
 
   const { data: logs } = useMyTimeLogs(employeeId);
   const { openDay, closeDay } = useTimeLogWriter();
@@ -136,12 +142,11 @@ export function MyAttendancePage() {
       : null;
 
   const todayStatus = clockInTime
-    ? punchStatus(clockInTime, schedule?.start ?? "09:00", LATE_GRACE_MINUTES)
+    ? punchStatus(clockInTime, schedule?.start ?? "09:00", graceMinutes)
     : "not_clocked_in";
 
   const isLateNow = Boolean(
-    schedule &&
-      punchStatus(now, schedule.start, LATE_GRACE_MINUTES) === "late",
+    schedule && punchStatus(now, schedule.start, graceMinutes) === "late",
   );
 
   const compliance = breakCompliance(
@@ -239,11 +244,7 @@ export function MyAttendancePage() {
     }
 
     const at = new Date();
-    const status = punchStatus(
-      at,
-      schedule?.start ?? "09:00",
-      LATE_GRACE_MINUTES,
-    );
+    const status = punchStatus(at, schedule?.start ?? "09:00", graceMinutes);
     // Open the day on the shared collection straight away, so an in-progress
     // day is visible on the profile's Time Logs tab rather than only at close.
     const logId = openDay({
