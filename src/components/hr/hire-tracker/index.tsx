@@ -3,7 +3,14 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertTriangle, GitBranch, UserCheck, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  Eye,
+  GitBranch,
+  MoreHorizontal,
+  UserCheck,
+  Users,
+} from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -13,7 +20,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { DataTable, sortableHeader } from "@/src/components/shared/data-table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import {
+  DataTable,
+  sortableHeader,
+  actionsColumn,
+} from "@/src/components/shared/data-table";
 import {
   HrStatCardsGrid,
   type HrStatCardItem,
@@ -180,8 +197,32 @@ export function HireTrackerPage() {
           </span>
         ),
       },
+      // The row itself opens the detail page too; this makes it discoverable.
+      actionsColumn<HiringRow>((r) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              aria-label={`Actions for ${r.title}`}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => router.push(`/talent/hire-tracker/${r.id}`)}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              View Details
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )),
     ],
-    [],
+    [router],
   );
 
   const toolbar = (

@@ -30,7 +30,6 @@ import {
 import {
   GOAL_CATEGORY_LABELS,
   GOAL_STATUS_LABELS,
-  DEPARTMENT_OPTIONS,
 } from "../data";
 import type {
   PerformanceGoal,
@@ -62,6 +61,8 @@ const createSchema = z.object({
 interface GoalModalProps {
   open: boolean;
   onClose: () => void;
+  /** The company's departments, for the department select. */
+  departments: string[];
   editingGoal: PerformanceGoal | null;
   onSave: (data: NewGoal) => void;
   onUpdate: (
@@ -84,6 +85,7 @@ const defaultForm = {
 export function GoalModal({
   open,
   onClose,
+  departments,
   editingGoal,
   onSave,
   onUpdate,
@@ -211,7 +213,7 @@ export function GoalModal({
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      {DEPARTMENT_OPTIONS.map((d) => (
+                      {departments.map((d) => (
                         <SelectItem key={d} value={d} className="text-xs">
                           {d}
                         </SelectItem>

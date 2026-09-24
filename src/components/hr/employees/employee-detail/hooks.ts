@@ -25,6 +25,12 @@ import type {
   LocaleEmployeeNote,
   LocalePayChange,
   LocaleExpense,
+  LocaleEducation,
+  LocaleProfessionalMembership,
+  LocaleEmployeeLanguage,
+  LocaleEmployeeSkill,
+  LocaleCareerAspiration,
+  LocaleLoan,
 } from "@/src/lib/types/locale";
 import type {
   EmployeeStats,
@@ -190,11 +196,15 @@ export interface RawEnrollment {
 export interface RawCertification {
   id: string;
   employeeId: string;
-  courseId: string;
+  courseId: string | null;
   title: string;
   issuedAt: string;
   expiresAt?: string | null;
   certificateUrl: string;
+  kind?: "professional" | "course";
+  issuingBody?: string;
+  category?: string;
+  credentialId?: string;
 }
 export interface RawJobPosting {
   id: string;
@@ -277,6 +287,13 @@ export function useIsHiddenByScope(id: string): boolean {
   return !loading && !data && existsInTenant;
 }
 
+/** Whole years (one decimal) from an ISO date to today; 0 when absent or in the future. */
+function yearsSince(iso?: string): number {
+  if (!iso) return 0;
+  const ms = Date.now() - new Date(iso).getTime();
+  return ms > 0 ? Math.round((ms / (365.25 * 86_400_000)) * 10) / 10 : 0;
+}
+
 // ── stats strip ───────────────────────────────────────────────────────────--
 export function useEmployeeStats(id: string) {
   const edits = useAppSelector((s) => s.collectionEdits);
@@ -296,6 +313,11 @@ export function useEmployeeStats(id: string) {
     const tasks = applyCollection((b.tasks as unknown as RawTask[]) ?? [], "tasks", edits);
     const assets = applyCollection((b.assets as unknown as RawAsset[]) ?? [], "assets", edits);
     const kudos = applyCollection((b.kudos as unknown as RawKudos[]) ?? [], "kudos", edits);
+    const docs = applyCollection((b.documents as unknown as RawDocument[]) ?? [], "documents", edits);
+    const emp = b.employees.find((e) => e.id === id) as
+      | (LocaleEmployee & { continuousServiceDate?: string })
+      | undefined;
+    const serviceFrom = emp?.continuousServiceDate ?? emp?.startDate;
     return {
       leaveRemaining: balances
         .filter((x) => x.employeeId === id)
@@ -306,6 +328,10 @@ export function useEmployeeStats(id: string) {
       pendingApprovals,
       assignedAssets: assets.filter((a) => a.assignedTo === id).length,
       kudosReceived: kudos.filter((k) => k.toEmployeeId === id).length,
+      documentsUploaded: docs.filter(
+        (d) => d.employeeId === id && d.status !== "rejected",
+      ).length,
+      yearsOfService: yearsSince(serviceFrom),
     };
   }, [bundle, edits, id, pendingApprovals]);
   return { data, loading, error };
@@ -447,6 +473,38 @@ export function useEmployeeTraining(id: string) {
     (b) => (b.learning as { certifications?: RawCertification[] })?.certifications ?? [],
   );
 }
+// ── qualifications, skills & loans ──────────────────────────────────────────
+export function useEmployeeEducation(id: string) {
+  return useEmployeeCollection<LocaleEducation>("education", id, (b) => b.education ?? []);
+}
+export function useEmployeeMemberships(id: string) {
+  return useEmployeeCollection<LocaleProfessionalMembership>(
+    "professionalMemberships",
+    id,
+    (b) => b.professionalMemberships ?? [],
+  );
+}
+export function useEmployeeLanguages(id: string) {
+  return useEmployeeCollection<LocaleEmployeeLanguage>(
+    "employeeLanguages",
+    id,
+    (b) => b.employeeLanguages ?? [],
+  );
+}
+export function useEmployeeSkills(id: string) {
+  return useEmployeeCollection<LocaleEmployeeSkill>("employeeSkills", id, (b) => b.employeeSkills ?? []);
+}
+export function useEmployeeAspirations(id: string) {
+  return useEmployeeCollection<LocaleCareerAspiration>(
+    "careerAspirations",
+    id,
+    (b) => b.careerAspirations ?? [],
+  );
+}
+export function useEmployeeLoans(id: string) {
+  return useEmployeeCollection<LocaleLoan>("loans", id, (b) => b.loans ?? []);
+}
+
 export interface EmployeePerformanceData {
   goals: RawGoal[];
   reviews: RawReview[];

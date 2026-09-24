@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Users, Award, TrendingUp } from "lucide-react";
+import { BookOpen, Users, ShieldCheck, TrendingUp } from "lucide-react";
 import {
   HrStatCardsGrid,
   type HrStatCardItem,
@@ -49,6 +49,9 @@ export function matchesEnrollmentCardFilter(
 interface StatCardsProps {
   courses: Course[];
   enrollments: Enrollment[];
+  /** Mandatory-training completion %, and the tab showing its breakdown. */
+  mandatoryRate: number;
+  mandatoryActive: boolean;
   /** The card drill-down currently applied. */
   cardFilter: LearningCardFilter;
   /** Drill-down: opens the tab holding these rows and filters to them. */
@@ -58,6 +61,8 @@ interface StatCardsProps {
 export function StatCards({
   courses,
   enrollments,
+  mandatoryRate,
+  mandatoryActive,
   cardFilter,
   onDrillDown,
 }: StatCardsProps) {
@@ -105,15 +110,13 @@ export function StatCards({
       ...card("completed", "enrollments"),
     },
     {
-      // Certifications come out of the results view, which is where the
-      // completions and scores are recorded.
-      label: "Certifications",
-      value: completedEnrollments,
-      sub: "Courses completed",
-      icon: Award,
-      tone: "amber",
-      active: false,
-      onClick: () => onDrillDown("results", "all"),
+      label: "Mandatory Training",
+      value: `${mandatoryRate}%`,
+      sub: "Completion across mandatory courses",
+      icon: ShieldCheck,
+      tone: mandatoryRate >= 90 ? "emerald" : "amber",
+      active: mandatoryActive,
+      onClick: () => onDrillDown("mandatory", "all"),
     },
   ];
 

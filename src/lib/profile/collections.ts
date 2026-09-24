@@ -20,11 +20,25 @@ export interface CollectionSchema {
    */
   source: string;
   fields: ProfileField[];
+  /**
+   * The profile itself owns these records (education, skills…) — no other
+   * module manages them, so adding or editing skips the override warning.
+   */
+  profileOwned?: boolean;
   /** System fields seeded on create (employee linkage, currency, defaults). */
   defaults?: (employeeId: string) => Record<string, unknown>;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+/** 1–5 proficiency scale shared by skills and competencies. */
+export const PROFICIENCY_LEVEL_LABELS: Record<string, string> = {
+  "1": "1 · Novice",
+  "2": "2 · Beginner",
+  "3": "3 · Intermediate",
+  "4": "4 · Advanced",
+  "5": "5 · Expert",
+};
 
 /**
  * Plural of a collection's `singular`, for copy that talks about the set
@@ -213,7 +227,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
       f("title", "Title"),
       f("type", "Type", "select", ["SMART", "OKR"]),
       f("progress", "Progress %", "number"),
-      f("status", "Status", "select", ["on_track", "at_risk", "completed", "overdue"]),
+      f("status", "Status", "select", ["on_track", "at_risk", "completed", "overdue", "cancelled"]),
       f("cycleId", "Cycle"),
     ],
     defaults: (employeeId) => ({ employeeId, progress: 0, status: "on_track" }),
@@ -277,12 +291,116 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
     source: "Learning & Development",
     idPrefix: "CERT",
     fields: [
-      f("title", "Title"),
+      f("title", "Certification"),
+      f("issuingBody", "Issuing body"),
+      f("category", "Category", "select", [
+        "hr", "finance", "it", "health_safety", "project_management", "compliance", "training",
+      ]),
+      f("credentialId", "Credential ID"),
       f("issuedAt", "Issued", "date"),
       f("expiresAt", "Expires", "date"),
       f("certificateUrl", "Certificate URL"),
     ],
-    defaults: (employeeId) => ({ employeeId, issuedAt: today() }),
+    defaults: (employeeId) => ({
+      employeeId,
+      issuedAt: today(),
+      kind: "professional",
+      courseId: null,
+    }),
+  },
+  education: {
+    key: "education",
+    profileOwned: true,
+    singular: "qualification",
+    source: "Qualifications & Education",
+    idPrefix: "EDU",
+    fields: [
+      f("level", "Level", "select", [
+        "Secondary", "Diploma", "HND", "Bachelor's", "Master's", "Doctorate", "Professional",
+      ]),
+      f("qualification", "Qualification (e.g. BSc, MBA)"),
+      f("fieldOfStudy", "Field of study"),
+      f("institution", "Institution"),
+      f("grade", "Grade / class"),
+      f("startYear", "Start year", "number"),
+      f("endYear", "Year completed", "number"),
+    ],
+    defaults: (employeeId) => ({ employeeId }),
+  },
+  professionalMemberships: {
+    key: "professionalMemberships",
+    profileOwned: true,
+    singular: "professional membership",
+    source: "Qualifications & Education",
+    idPrefix: "MEM",
+    fields: [
+      f("body", "Professional body"),
+      f("grade", "Membership grade", "select", ["Student", "Associate", "Member", "Chartered", "Fellow"]),
+      f("membershipNumber", "Membership number"),
+      f("since", "Member since", "date"),
+      f("renewalDate", "Renewal date", "date"),
+      f("status", "Status", "select", ["active", "lapsed"]),
+    ],
+    defaults: (employeeId) => ({ employeeId, status: "active" }),
+  },
+  employeeLanguages: {
+    key: "employeeLanguages",
+    profileOwned: true,
+    singular: "language",
+    source: "Qualifications & Education",
+    idPrefix: "LANG",
+    fields: [
+      f("language", "Language"),
+      f("proficiency", "Proficiency", "select", [
+        "Native", "Fluent", "Professional", "Conversational", "Basic",
+      ]),
+    ],
+    defaults: (employeeId) => ({ employeeId, proficiency: "Professional" }),
+  },
+  employeeSkills: {
+    key: "employeeSkills",
+    profileOwned: true,
+    singular: "skill",
+    source: "Skills & Competencies",
+    idPrefix: "SKL",
+    fields: [
+      f("name", "Skill / competency"),
+      f("type", "Type", "select", ["skill", "competency"]),
+      f("category", "Category", "select", ["Technical", "Functional", "Leadership", "Behavioural"]),
+      { ...f("level", "Current level", "select", ["1", "2", "3", "4", "5"]), optionLabels: PROFICIENCY_LEVEL_LABELS },
+      {
+        ...f("requiredLevel", "Level the role requires", "select", ["1", "2", "3", "4", "5"]),
+        optionLabels: PROFICIENCY_LEVEL_LABELS,
+      },
+      f("assessedBy", "Assessed by", "select", ["Self", "Line manager", "HR", "External assessor"]),
+      f("lastAssessedAt", "Last assessed", "date"),
+    ],
+    defaults: (employeeId) => ({
+      employeeId,
+      type: "skill",
+      category: "Technical",
+      level: 3,
+      requiredLevel: 3,
+      assessedBy: "Line manager",
+      lastAssessedAt: today(),
+    }),
+  },
+  careerAspirations: {
+    key: "careerAspirations",
+    profileOwned: true,
+    singular: "career aspiration",
+    source: "Skills & Competencies",
+    idPrefix: "ASP",
+    fields: [
+      f("aspiration", "Aspiration"),
+      f("targetRole", "Target role"),
+      f("timeframe", "Timeframe", "select", ["Within 1 year", "1–2 years", "2–3 years", "3–5 years"]),
+      f("mobility", "Mobility", "select", [
+        "Open to relocation", "Current location only", "Remote / hybrid only",
+      ]),
+      f("developmentNeeds", "Development needs", "textarea"),
+    ],
+    defaults: (employeeId) => ({ employeeId, updatedAt: today() }),
   },
   kudos: {
     key: "kudos",

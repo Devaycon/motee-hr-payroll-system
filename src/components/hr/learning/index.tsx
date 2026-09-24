@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useLearning } from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
@@ -25,6 +25,15 @@ import { ResultsTable } from "./components/results-table";
 import { CourseModal } from "./components/course-modal";
 import { EnrollModal } from "./components/enroll-modal";
 import { QuizBuilderModal } from "./components/quiz-builder-modal";
+import {
+  CertificationRegister,
+  type RegisterFilter,
+} from "./components/certification-register";
+import { CertComplianceCards } from "./components/compliance-cards";
+import { MandatoryCompliancePanel } from "./components/mandatory-compliance-panel";
+import { applyCollection } from "@/src/lib/profile/collection-edits";
+import { summariseCertifications } from "@/src/lib/certifications/status";
+import { mandatoryCompliance } from "@/src/lib/learning/mandatory-compliance";
 import type {
   Course,
   CourseQuiz,
@@ -50,6 +59,35 @@ export function LearningPage() {
   const hasChainTab = useHasApprovalChainTab("training_request");
   /** Drill-down set by the KPI cards; "all" shows every row. */
   const [cardFilter, setCardFilter] = useState<LearningCardFilter>("all");
+  const [registerFilter, setRegisterFilter] = useState<RegisterFilter>("all");
+
+  // Certificates added from a profile live in the collection-edit layer, so
+  // the register reads the same merged list the profile does.
+  const collectionEdits = useAppSelector((s) => s.collectionEdits);
+  const people = useMemo(() => data?.people ?? [], [data]);
+  const certifications = useMemo(
+    () =>
+      applyCollection(
+        data?.certifications ?? [],
+        "learning.certifications",
+        collectionEdits,
+      ),
+    [data, collectionEdits],
+  );
+  const certSummary = useMemo(() => {
+    const inScope = new Set(people.map((p) => p.id));
+    return summariseCertifications(
+      certifications.filter((c) => inScope.has(c.employeeId)),
+    );
+  }, [certifications, people]);
+  const mandatoryCourses = useMemo(
+    () => courses.filter((c) => c.mandatory && c.status !== "archived"),
+    [courses],
+  );
+  const mandatory = useMemo(
+    () => mandatoryCompliance(people, mandatoryCourses, enrollments),
+    [people, mandatoryCourses, enrollments],
+  );
 
   const visibleCourses = courses.filter((c) =>
     matchesCourseCardFilter(c, cardFilter),
@@ -109,7 +147,12 @@ export function LearningPage() {
   function handleAssign(input: {
     courseId: string;
     dueDate: string;
-    trainees: { employeeName: string; employeeInitials: string; employeeDept: string }[];
+    trainees: {
+      employeeId: string;
+      employeeName: string;
+      employeeInitials: string;
+      employeeDept: string;
+    }[];
   }) {
     const course = courses.find((c) => c.id === input.courseId);
     if (!course) return;
@@ -118,6 +161,7 @@ export function LearningPage() {
       id: `enr-${Date.now()}-${i}`,
       courseId: input.courseId,
       courseTitle: course.title,
+      employeeId: t.employeeId,
       employeeName: t.employeeName,
       employeeInitials: t.employeeInitials,
       employeeDept: t.employeeDept,
@@ -163,12 +207,28 @@ export function LearningPage() {
       <StatCards
         courses={courses}
         enrollments={enrollments}
+        mandatoryRate={mandatory.completionRate}
+        mandatoryActive={activeTab === "mandatory"}
         cardFilter={cardFilter}
         onDrillDown={(tab, filter) => {
           setActiveTab(tab);
           setCardFilter(filter);
         }}
       />
+
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Certification compliance
+        </p>
+        <CertComplianceCards
+          summary={certSummary}
+          active={activeTab === "register" ? registerFilter : null}
+          onDrillDown={(f) => {
+            setActiveTab("register");
+            setRegisterFilter(f);
+          }}
+        />
+      </div>
 
       {cardFilter !== "all" && (
         <div className="flex items-center gap-2">
@@ -202,6 +262,11 @@ export function LearningPage() {
               label: `Enrollments (${visibleEnrollments.length})`,
             },
             { value: "results", label: "Results" },
+            {
+              value: "register",
+              label: `Certification Register (${certSummary.total})`,
+            },
+            { value: "mandatory", label: "Mandatory Compliance" },
             ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
@@ -227,6 +292,22 @@ export function LearningPage() {
 
         <TabsContent value="results" className="mt-4">
           <ResultsTable courses={courses} enrollments={enrollments} />
+        </TabsContent>
+
+        <TabsContent value="register" className="mt-4">
+          <CertificationRegister
+            certifications={certifications}
+            people={people}
+            statusFilter={registerFilter}
+            onStatusFilterChange={setRegisterFilter}
+          />
+        </TabsContent>
+
+        <TabsContent value="mandatory" className="mt-4">
+          <MandatoryCompliancePanel
+            summary={mandatory}
+            mandatoryCourseTitles={mandatoryCourses.map((c) => c.title)}
+          />
         </TabsContent>
 
         {hasChainTab && (

@@ -63,6 +63,7 @@ export function CoursesTable({
       !q ||
       c.title.toLowerCase().includes(q) ||
       (c.instructor ?? "").toLowerCase().includes(q) ||
+      (c.provider ?? "").toLowerCase().includes(q) ||
       c.description.toLowerCase().includes(q);
     const matchCat = categoryFilter === "all" || c.category === categoryFilter;
     const matchMode = modeFilter === "all" || c.deliveryMode === modeFilter;
@@ -77,7 +78,14 @@ export function CoursesTable({
         header: sortableHeader("Course"),
         cell: ({ row }) => (
           <div className="max-w-56">
-            <p className="text-xs font-medium truncate">{row.original.title}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs font-medium truncate">{row.original.title}</p>
+              {row.original.mandatory && (
+                <span className="shrink-0 rounded-full border border-rose-500/30 bg-rose-500/10 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-rose-600">
+                  Mandatory
+                </span>
+              )}
+            </div>
             <p className="text-[10px] text-muted-foreground truncate mt-0.5">
               {row.original.description}
             </p>
@@ -96,13 +104,30 @@ export function CoursesTable({
         ),
       },
       {
-        accessorKey: "instructor",
-        header: "Provider",
-        cell: ({ row }) => (
-          <span className="text-xs text-muted-foreground">
-            {row.original.instructor}
-          </span>
-        ),
+        // The issuing / accrediting body is what gives the certificate its
+        // credibility at audit; the internal facilitator is secondary.
+        id: "provider",
+        accessorFn: (c) => c.provider ?? "",
+        header: sortableHeader("Provider"),
+        cell: ({ row }) => {
+          const { provider, instructor, validityMonths } = row.original;
+          const facilitator =
+            instructor && instructor !== "—" && instructor !== provider ? instructor : null;
+          return (
+            <div className="max-w-40">
+              <p className="text-xs font-medium truncate">
+                {provider ?? facilitator ?? "—"}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">
+                {validityMonths
+                  ? `Certificate valid ${validityMonths} months`
+                  : provider && facilitator
+                    ? facilitator
+                    : "No expiry"}
+              </p>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "durationHours",

@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
-  DEPARTMENT_OPTIONS,
   GOAL_CATEGORY_LABELS,
   GOAL_STATUS_LABELS,
 } from "../data";
@@ -29,6 +28,7 @@ interface GoalsToolbarProps {
   statusFilter: string;
   onStatusFilterChange: (v: string) => void;
   onAddGoal: () => void;
+  departments: string[];
 }
 
 export function GoalsToolbar({
@@ -41,6 +41,7 @@ export function GoalsToolbar({
   statusFilter,
   onStatusFilterChange,
   onAddGoal,
+  departments,
 }: GoalsToolbarProps) {
   const activeFilters = [
     deptFilter !== "all",
@@ -83,7 +84,7 @@ export function GoalsToolbar({
               <DropdownMenuRadioItem value="all" className="text-xs">
                 All Departments
               </DropdownMenuRadioItem>
-              {DEPARTMENT_OPTIONS.map((d) => (
+              {departments.map((d) => (
                 <DropdownMenuRadioItem key={d} value={d} className="text-xs">
                   {d}
                 </DropdownMenuRadioItem>

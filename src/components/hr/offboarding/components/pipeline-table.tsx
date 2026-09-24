@@ -54,6 +54,12 @@ import {
 } from "../data";
 import { isActionEnabled, type OffboardingAction } from "../actions";
 import type { OffboardingRecord } from "../types";
+import { RehireBadge } from "./offboarding-modal";
+import { KnowledgeTransferBadge } from "./knowledge-transfer";
+import {
+  KNOWLEDGE_TRANSFER_STATUS_LABELS,
+  knowledgeTransferStatus,
+} from "@/src/lib/offboarding/knowledge-transfer";
 
 export interface PipelineHandlers {
   onViewDetails: (record: OffboardingRecord) => void;
@@ -186,6 +192,20 @@ export function PipelineTable({
           ) : (
             <span className="text-xs text-muted-foreground">Pending</span>
           ),
+      },
+      {
+        id: "knowledgeTransfer",
+        accessorFn: (r) =>
+          KNOWLEDGE_TRANSFER_STATUS_LABELS[knowledgeTransferStatus(r)],
+        header: sortableHeader("Knowledge Transfer"),
+        cell: ({ row }) => <KnowledgeTransferBadge record={row.original} />,
+      },
+      {
+        id: "rehireEligible",
+        accessorFn: (r) =>
+          r.rehireEligible === undefined ? "" : r.rehireEligible ? "Yes" : "No",
+        header: sortableHeader("Rehire Eligible"),
+        cell: ({ row }) => <RehireBadge value={row.original.rehireEligible} />,
       },
       {
         accessorKey: "status",

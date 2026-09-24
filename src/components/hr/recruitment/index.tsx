@@ -50,6 +50,11 @@ import type {
   JobRequisition,
 } from "@/src/lib/types/recruitment";
 import { useRecruitment } from "./hooks";
+import { WorkflowTab } from "@/src/components/hr/workflows/components/workflow-tab";
+import {
+  WORKFLOW_TAB_ITEM,
+  useHasWorkflowTab,
+} from "@/src/components/hr/workflows/use-workflow-tab";
 
 /**
  * The slice a KPI card drills the recruitment tabs down to. Applicants and
@@ -70,6 +75,9 @@ const RECRUITMENT_CARD_FILTER_LABELS: Record<
   with_applicants: "Openings with applicants",
   with_hires: "Openings with hires",
 };
+
+/** The workflows this page starts — shown read-only on its Workflow tab. */
+const RECRUITMENT_WORKFLOW_EVENTS = ["recruitment_initiated"] as const;
 
 export function RecruitmentPage() {
   const router = useRouter();
@@ -100,6 +108,7 @@ export function RecruitmentPage() {
   const [cardFilter, setCardFilter] = useState<RecruitmentCardFilter>("all");
   // Controlled so the KPI cards can drill into a tab, not just a filter.
   const [activeTab, setActiveTab] = useState("approved");
+  const hasWorkflowTab = useHasWorkflowTab(RECRUITMENT_WORKFLOW_EVENTS);
 
   // Toolbar filters. These compose with the KPI drill-down rather than
   // replacing it — the cards narrow to a slice, these narrow within it.
@@ -471,6 +480,7 @@ export function RecruitmentPage() {
           tabs={[
             { value: "requested", label: `Requested Recruitment (${requestedList.length})` },
             { value: "approved", label: `Approved Recruitment (${approvedList.length})` },
+            ...(hasWorkflowTab ? [WORKFLOW_TAB_ITEM] : []),
           ]}
         />
 
@@ -499,6 +509,12 @@ export function RecruitmentPage() {
             emptyMessage="No published recruitments yet."
           />
         </TabsContent>
+
+        {hasWorkflowTab && (
+          <TabsContent value="workflow" className="mt-5">
+            <WorkflowTab events={RECRUITMENT_WORKFLOW_EVENTS} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

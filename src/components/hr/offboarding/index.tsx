@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Button } from "@/src/components/ui/button";
@@ -13,9 +13,16 @@ import {
   OFFBOARDING_CARD_FILTER_LABELS,
   type OffboardingCardFilter,
 } from "./components/stat-cards";
+import { ClearanceBreakdown } from "./components/clearance-breakdown";
+import { AssetRecovery } from "./components/asset-recovery";
+import { KnowledgeTransferTab } from "./components/knowledge-transfer";
 import { PipelineToolbar } from "./components/pipeline-toolbar";
 import { PipelineTable } from "./components/pipeline-table";
-import { OffboardingModal } from "./components/offboarding-modal";
+import {
+  OffboardingModal,
+  type KnowledgeTransferHandlers,
+  type OffboardingModalTab,
+} from "./components/offboarding-modal";
 import {
   DisapproveDialog,
   ScheduleInterviewDialog,
@@ -23,8 +30,15 @@ import {
 import { OFFBOARDING_TABS } from "./actions";
 import type { OffboardingRecord, NewOffboardingRecord } from "./types";
 import { buildClearanceItems } from "./instantiate";
+import { buildAssets } from "@/src/lib/offboarding/assets";
+import { buildKnowledgeTransfer } from "@/src/lib/offboarding/knowledge-transfer";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import { WorkflowTab } from "@/src/components/hr/workflows/components/workflow-tab";
+import {
+  WORKFLOW_TAB_ITEM,
+  useHasWorkflowTab,
+} from "@/src/components/hr/workflows/use-workflow-tab";
 import {
   APPROVAL_CHAIN_TAB_ITEM,
   useHasApprovalChainTab,
@@ -38,11 +52,25 @@ import {
   removeRecord,
   revokeSystemAccess,
   scheduleExitInterview,
+  setKnowledgeTransferNotes,
+  setKnowledgeTransferRequired,
+  setKnowledgeTransferSuccessor,
+  toggleAssetReturned,
   toggleClearanceItem,
+  toggleKnowledgeTransferItem,
   updateExitInterview,
   updateRecord,
 } from "@/src/lib/stores/offboarding-slice";
 import { setEmployeeStatus } from "@/src/lib/stores/employees-slice";
+
+/** The workflows this page starts — shown read-only on its Workflow tab. */
+const OFFBOARDING_WORKFLOW_EVENTS = ["offboarding_initiated"] as const;
+
+/** Tabs that sit after the lifecycle tabs. */
+const EXTRA_TABS = [
+  { value: "assets", label: "Asset Recovery", dividerBefore: true },
+  { value: "knowledge_transfer", label: "Knowledge Transfer" },
+];
 
 export function OffboardingPage() {
   const { data, loading } = useOffboardingRecords();
@@ -52,6 +80,7 @@ export function OffboardingPage() {
 
   const [activeTab, setActiveTab] = useState("pending");
   const hasChainTab = useHasApprovalChainTab("offboarding_clearance");
+  const hasWorkflowTab = useHasWorkflowTab(OFFBOARDING_WORKFLOW_EVENTS);
   /** Drill-down set by the KPI cards; "all" shows every record. */
   const [cardFilter, setCardFilter] = useState<OffboardingCardFilter>("all");
   const [search, setSearch] = useState("");
@@ -68,6 +97,34 @@ export function OffboardingPage() {
     null,
   );
   const [scheduling, setScheduling] = useState<OffboardingRecord | null>(null);
+  const [modalTab, setModalTab] = useState<OffboardingModalTab>("clearance");
+
+  // Mark the employee inactive the moment their exit completes (§3.5). The
+  // exit can finish from several places — a clearance tick, an asset return,
+  // the exit interview, the last handover step — so this watches the result
+  // rather than mirroring the slice's completion rule in each handler.
+  const lastStatus = useRef<Map<string, OffboardingRecord["status"]> | null>(
+    null,
+  );
+  useEffect(() => {
+    const prev = lastStatus.current;
+    if (prev) {
+      for (const r of records) {
+        const before = prev.get(r.id);
+        if (
+          before &&
+          before !== "completed" &&
+          r.status === "completed" &&
+          r.employeeId
+        ) {
+          dispatch(
+            setEmployeeStatus({ employeeId: r.employeeId, status: "inactive" }),
+          );
+        }
+      }
+    }
+    lastStatus.current = new Map(records.map((r) => [r.id, r.status]));
+  }, [records, dispatch]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -120,6 +177,7 @@ export function OffboardingPage() {
   };
 
   const handleViewDetails = useCallback((record: OffboardingRecord) => {
+    setModalTab("clearance");
     setEditingRecord(null);
     setViewingRecord(record);
     setModalOpen(true);
@@ -150,6 +208,8 @@ export function OffboardingPage() {
       id,
       exitInterviewCompleted: false,
       clearanceItems: buildClearanceItems(id),
+      assets: buildAssets(id, data.jobTitle, data.department),
+      knowledgeTransfer: buildKnowledgeTransfer(id, data.jobTitle),
       status: "pending",
       initiatedAt: new Date().toISOString().slice(0, 10),
     };
@@ -219,34 +279,49 @@ export function OffboardingPage() {
 
   const handleToggleClearance = useCallback(
     (recordId: string, itemId: string) => {
+      // The modal reads the live record, so the store update is enough.
       dispatch(toggleClearanceItem({ id: recordId, itemId }));
-
-      const record = records.find((r) => r.id === recordId);
-      if (record) {
-        // Mirror the slice's completion rule so the employee is marked
-        // inactive the moment the exit finishes (§3.5).
-        const nextItems = record.clearanceItems.map((c) =>
-          c.id === itemId ? { ...c, completed: !c.completed } : c,
-        );
-        if (
-          nextItems.every((c) => c.completed) &&
-          record.exitInterviewCompleted
-        ) {
-          syncEmployee(record, "inactive");
-        }
-      }
-
-      setViewingRecord((prev) => {
-        if (!prev || prev.id !== recordId) return prev;
-        return {
-          ...prev,
-          clearanceItems: prev.clearanceItems.map((c) =>
-            c.id === itemId ? { ...c, completed: !c.completed } : c,
-          ),
-        };
-      });
     },
-    [dispatch, records, syncEmployee],
+    [dispatch],
+  );
+
+  const handleManageKnowledgeTransfer = useCallback(
+    (record: OffboardingRecord) => {
+      setModalTab("knowledge");
+      setEditingRecord(null);
+      setViewingRecord(record);
+      setModalOpen(true);
+    },
+    [],
+  );
+
+  const knowledgeTransferHandlers = useMemo<KnowledgeTransferHandlers>(
+    () => ({
+      onSetRequired: (id, required) =>
+        dispatch(setKnowledgeTransferRequired({ id, required })),
+      onToggleItem: (id, itemId) =>
+        dispatch(toggleKnowledgeTransferItem({ id, itemId })),
+      onSetSuccessor: (id, successorId, successorName) =>
+        dispatch(setKnowledgeTransferSuccessor({ id, successorId, successorName })),
+      onSaveNotes: (id, notes) => {
+        dispatch(setKnowledgeTransferNotes({ id, notes }));
+        toast.success("Handover notes saved");
+      },
+    }),
+    [dispatch],
+  );
+
+  const handleToggleAsset = useCallback(
+    (record: OffboardingRecord, assetId: string) => {
+      const asset = record.assets?.find((a) => a.id === assetId);
+      dispatch(toggleAssetReturned({ id: record.id, assetId }));
+      if (asset && !asset.returned) {
+        toast.success(`${asset.label} marked as returned`, {
+          description: record.employeeName,
+        });
+      }
+    },
+    [dispatch],
   );
 
   const handleUpdateExitInterview = useCallback(
@@ -270,6 +345,12 @@ export function OffboardingPage() {
     [dispatch],
   );
 
+  // Read the open record from the store so knock-on changes (an asset return
+  // completing its clearance step, and vice versa) show in the modal at once.
+  const liveViewingRecord = viewingRecord
+    ? (records.find((r) => r.id === viewingRecord.id) ?? viewingRecord)
+    : null;
+
   if (loading && !records.length) {
     return (
       <div className="flex flex-col gap-5">
@@ -290,6 +371,12 @@ export function OffboardingPage() {
       </div>
 
       <StatCards
+        records={records}
+        cardFilter={cardFilter}
+        onDrillDown={drillDown}
+      />
+
+      <ClearanceBreakdown
         records={records}
         cardFilter={cardFilter}
         onDrillDown={drillDown}
@@ -329,8 +416,14 @@ export function OffboardingPage() {
               value: t.value,
               label: `${t.label} (${t.rows.length})`,
             })),
-            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
+            ...EXTRA_TABS,
+            ...(hasWorkflowTab ? [{ ...WORKFLOW_TAB_ITEM, inMore: true }] : []),
+            ...(hasChainTab
+              ? [{ ...APPROVAL_CHAIN_TAB_ITEM, inMore: true }]
+              : []),
           ]}
+          value={activeTab}
+          onValueChange={setActiveTab}
         />
         {rowsByTab.map((t) => (
           <TabsContent key={t.value} value={t.value} className="mt-4">
@@ -350,6 +443,26 @@ export function OffboardingPage() {
           </TabsContent>
         ))}
 
+        <TabsContent value="assets" className="mt-4">
+          <AssetRecovery
+            records={filtered}
+            onToggleReturned={handleToggleAsset}
+          />
+        </TabsContent>
+
+        <TabsContent value="knowledge_transfer" className="mt-4">
+          <KnowledgeTransferTab
+            records={filtered}
+            onManage={handleManageKnowledgeTransfer}
+          />
+        </TabsContent>
+
+        {hasWorkflowTab && (
+          <TabsContent value="workflow" className="mt-4">
+            <WorkflowTab events={OFFBOARDING_WORKFLOW_EVENTS} />
+          </TabsContent>
+        )}
+
         {hasChainTab && (
           <TabsContent value="approval_chain" className="mt-4">
             <ApprovalChainTab documentType="offboarding_clearance" />
@@ -360,10 +473,13 @@ export function OffboardingPage() {
       <OffboardingModal
         open={modalOpen}
         onClose={closeModal}
-        viewingRecord={viewingRecord}
+        viewingRecord={liveViewingRecord}
         editingRecord={editingRecord}
         onSave={handleSave}
         onToggleClearance={handleToggleClearance}
+        onToggleAsset={handleToggleAsset}
+        knowledgeTransfer={knowledgeTransferHandlers}
+        initialTab={modalTab}
         onUpdateExitInterview={handleUpdateExitInterview}
       />
 

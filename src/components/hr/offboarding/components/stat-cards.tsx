@@ -6,6 +6,12 @@ import {
   type HrStatCardItem,
 } from "@/src/components/shared/hr-stat-card";
 import type { OffboardingRecord } from "../types";
+import {
+  CLEARANCE_BOTTLENECK_CATEGORIES,
+  CLEARANCE_CATEGORY_LABELS,
+  hasPendingClearance,
+  type ClearanceBottleneckCategory,
+} from "@/src/lib/offboarding/clearance";
 
 /**
  * The slice a KPI card drills into. The lifecycle tabs group several statuses
@@ -15,7 +21,15 @@ export type OffboardingCardFilter =
   | "all"
   | "in_progress"
   | "completed"
-  | "clearance_pending";
+  | "clearance_pending"
+  /** One stage of the clearance bottleneck breakdown (Offboarding §1). */
+  | `clearance_${ClearanceBottleneckCategory}`;
+
+export function clearanceStageFilter(
+  category: ClearanceBottleneckCategory,
+): OffboardingCardFilter {
+  return `clearance_${category}`;
+}
 
 export const OFFBOARDING_CARD_FILTER_LABELS: Record<
   Exclude<OffboardingCardFilter, "all">,
@@ -24,6 +38,12 @@ export const OFFBOARDING_CARD_FILTER_LABELS: Record<
   in_progress: "In progress",
   completed: "Completed",
   clearance_pending: "Clearance pending",
+  ...(Object.fromEntries(
+    CLEARANCE_BOTTLENECK_CATEGORIES.map((c) => [
+      clearanceStageFilter(c),
+      CLEARANCE_CATEGORY_LABELS[c],
+    ]),
+  ) as Record<`clearance_${ClearanceBottleneckCategory}`, string>),
 };
 
 /** Single source of truth for what each card counts and the table then shows. */
@@ -37,12 +57,14 @@ export function matchesOffboardingCardFilter(
     case "completed":
       return record.status === "completed";
     case "clearance_pending":
-      return (
-        record.status !== "completed" &&
-        record.clearanceItems.some((c) => !c.completed)
-      );
-    default:
+      return hasPendingClearance(record);
+    case "all":
       return true;
+    default:
+      return hasPendingClearance(
+        record,
+        filter.slice("clearance_".length) as ClearanceBottleneckCategory,
+      );
   }
 }
 
@@ -94,7 +116,7 @@ export function StatCards({
     {
       label: "Clearance Pending",
       value: count("clearance_pending"),
-      sub: "Outstanding items",
+      sub: "Leavers with outstanding items",
       icon: ClipboardList,
       tone: "red",
       // Outstanding clearance spans several statuses, so it lands on "All".

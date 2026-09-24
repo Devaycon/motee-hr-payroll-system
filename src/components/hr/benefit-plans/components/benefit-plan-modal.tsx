@@ -27,6 +27,8 @@ import {
   BENEFIT_CATEGORY_LABELS,
   BENEFIT_CATEGORY_OPTIONS,
   BENEFIT_PLAN_STATUS_LABELS,
+  BENEFIT_ENROLLMENT_LABELS,
+  type BenefitEnrollment,
   type BenefitPlan,
   type NewBenefitPlan,
 } from "../types";
@@ -59,6 +61,7 @@ function emptyForm(): NewBenefitPlan {
     waitingPeriodDays: undefined,
     scope: { kind: "all" },
     status: "draft",
+    enrollment: "core",
   };
 }
 
@@ -97,6 +100,8 @@ export function BenefitPlanModal({
                   ? { kind: "employmentType", types: [...editingPlan.scope.types] }
                   : { kind: "all" },
               status: editingPlan.status,
+              enrollment: editingPlan.enrollment ?? "core",
+              country: editingPlan.country,
             }
           : emptyForm(),
       );
@@ -302,6 +307,27 @@ export function BenefitPlanModal({
                   }
                   className="h-8 text-sm"
                 />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Enrolment</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.keys(BENEFIT_ENROLLMENT_LABELS) as BenefitEnrollment[]).map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setField("enrollment", e)}
+                    className={cn(
+                      "rounded-md border px-3 py-2 text-left text-xs transition-colors",
+                      (form.enrollment ?? "core") === e
+                        ? "border-primary bg-primary/5 font-medium text-foreground"
+                        : "border-border text-muted-foreground hover:bg-muted/50",
+                    )}
+                  >
+                    {BENEFIT_ENROLLMENT_LABELS[e]}
+                  </button>
+                ))}
               </div>
             </div>
 

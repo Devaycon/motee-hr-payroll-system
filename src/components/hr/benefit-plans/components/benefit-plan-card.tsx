@@ -78,6 +78,14 @@ export function BenefitPlanRow({
           >
             {BENEFIT_PLAN_STATUS_LABELS[plan.status]}
           </span>
+          {plan.enrollment === "optional" && (
+            <span
+              className="inline-flex items-center rounded-full border border-sky-500/30 bg-sky-500/10 px-1.5 py-0 text-[10px] font-medium leading-4 text-sky-600"
+              title="Employees opt in to this benefit"
+            >
+              Optional
+            </span>
+          )}
           {plan.kind === "system" && (
             <Lock
               className="h-3 w-3 text-muted-foreground/60"

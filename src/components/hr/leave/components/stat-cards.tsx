@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Clock,
   Users,
@@ -17,6 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { cn } from "@/src/lib/utils";
 import { isOpenLeaveStatus } from "@/src/lib/types/leave";
+import { departmentLeaveReport } from "@/src/lib/leave/department-ranking";
 import type { LeaveRequest } from "../types";
 
 function isoToday(): string {
@@ -47,7 +49,11 @@ export interface LeaveMetrics {
   upcoming30: number;
   returningToday: number;
   avgApprovalDays: number | null;
-  topDepartment: { name: string; days: number } | null;
+  /**
+   * Every department sharing the most approved days this year — more than one
+   * on a tie, so the card never crowns one department on sort order alone.
+   */
+  topDepartments: { names: string[]; days: number } | null;
   monthName: string;
   year: string;
 }
@@ -67,14 +73,7 @@ export function useLeaveMetrics(requests: LeaveRequest[]): LeaveMetrics {
 
     const approved = requests.filter((r) => r.status === "approved");
 
-    const daysByDept = new Map<string, number>();
-    for (const r of approved) {
-      if (r.startDate.slice(0, 4) !== thisYear) continue;
-      daysByDept.set(r.department, (daysByDept.get(r.department) ?? 0) + r.totalDays);
-    }
-    const topDepartmentEntry = [...daysByDept.entries()].sort(
-      (a, b) => b[1] - a[1],
-    )[0];
+    const deptReport = departmentLeaveReport(requests, thisYear);
 
     // Mean days from submission to approval, over requests we can date.
     const turnarounds = approved
@@ -115,8 +114,8 @@ export function useLeaveMetrics(requests: LeaveRequest[]): LeaveMetrics {
             (turnarounds.reduce((a, b) => a + b, 0) / turnarounds.length) * 10,
           ) / 10
         : null,
-      topDepartment: topDepartmentEntry
-        ? { name: topDepartmentEntry[0], days: topDepartmentEntry[1] }
+      topDepartments: deptReport.leaders.length
+        ? { names: deptReport.leaders, days: deptReport.leaderDays }
         : null,
       monthName: new Date().toLocaleString("en-GB", { month: "long" }),
       year: thisYear,
@@ -124,7 +123,83 @@ export function useLeaveMetrics(requests: LeaveRequest[]): LeaveMetrics {
   }, [requests]);
 }
 
+/** The slice of requests a KPI card drills into. "all" shows every row. */
+export type LeaveCardFilter =
+  | "all"
+  | "pending"
+  | "on_leave"
+  | "approved_month"
+  | "approved_year"
+  | "upcoming"
+  | "returning"
+  | "rejected"
+  | "cancelled"
+  | "approved"
+  | "department";
+
+export const LEAVE_CARD_FILTER_LABELS: Record<Exclude<LeaveCardFilter, "all">, string> = {
+  pending: "Pending requests",
+  on_leave: "Currently on leave",
+  approved_month: "Approved this month",
+  approved_year: "Approved leave this year",
+  upcoming: "Starting in the next 7 days",
+  returning: "Returning today",
+  rejected: "Rejected requests",
+  cancelled: "Cancelled leave",
+  approved: "Approved requests",
+  department: "Approved leave for department",
+};
+
+/**
+ * The rows behind each card — the same rules `useLeaveMetrics` counts with,
+ * so the list a card opens always has as many rows as the card says.
+ */
+export function matchesLeaveCardFilter(
+  r: LeaveRequest,
+  filter: LeaveCardFilter,
+  m: Pick<LeaveMetrics, "year"> & { department?: string | null },
+): boolean {
+  const today = isoToday();
+  const approved = r.status === "approved";
+  switch (filter) {
+    case "all":
+      return true;
+    case "pending":
+      return isOpenLeaveStatus(r.status);
+    case "on_leave":
+      return approved && r.startDate <= today && r.endDate >= today;
+    case "approved_month":
+      return (
+        approved &&
+        (r.approvedAt?.slice(0, 7) === today.slice(0, 7) ||
+          (!r.approvedAt && r.submittedAt.slice(0, 7) === today.slice(0, 7)))
+      );
+    case "approved_year":
+      return approved && r.startDate.slice(0, 4) === m.year;
+    case "upcoming":
+      return approved && r.startDate > today && r.startDate <= addDays(today, 7);
+    case "returning":
+      return approved && r.endDate === addDays(today, -1);
+    case "rejected":
+      return r.status === "rejected";
+    case "cancelled":
+      return r.status === "cancelled";
+    case "approved":
+      return approved;
+    case "department":
+      return approved && r.startDate.slice(0, 4) === m.year && r.department === m.department;
+  }
+}
+
+/** The department leave ranking — the report behind "Most Leave Taken". */
+export const LEAVE_DEPARTMENTS_HREF = "/time-payroll/leave/departments";
+
 interface StatCard {
+  filter: Exclude<LeaveCardFilter, "all">;
+  /** Opens a report page instead of filtering the Requests table. */
+  href?: string;
+  /** Full text for the tooltip when the value is truncated. */
+  valueTitle?: string;
   label: string;
   value: string | number;
   sub: string;
@@ -135,19 +210,27 @@ interface StatCard {
 
 interface StatCardsProps {
   requests: LeaveRequest[];
-  /**
-   * Opens the "who is off today" drill-down (§F2). Currently unused — the
-   * tiles are deliberately not clickable; the prop and its wiring stay so the
-   * drill-down can be switched back on without re-plumbing the page.
-   */
+  /** The card drill-down currently applied. */
+  cardFilter: LeaveCardFilter;
+  /** Drill-down: filters the Requests tab to the rows a card counts. */
+  onDrillDown: (filter: LeaveCardFilter) => void;
+  /** Opens the "who is off today" panel (§F2). */
   onShowOnLeave?: () => void;
 }
 
-export function StatCards({ requests }: StatCardsProps) {
+export function StatCards({
+  requests,
+  cardFilter,
+  onDrillDown,
+  onShowOnLeave,
+}: StatCardsProps) {
   const m = useLeaveMetrics(requests);
+  const router = useRouter();
+  const leaders = m.topDepartments?.names ?? [];
 
   const cards: StatCard[] = [
     {
+      filter: "pending",
       label: "Pending Requests",
       value: m.pending,
       sub: "Awaiting approval",
@@ -156,6 +239,7 @@ export function StatCards({ requests }: StatCardsProps) {
       bgClass: "bg-amber-500/10",
     },
     {
+      filter: "on_leave",
       label: "Currently on Leave",
       value: m.currentlyOnLeave,
       sub:
@@ -167,6 +251,7 @@ export function StatCards({ requests }: StatCardsProps) {
       bgClass: "bg-blue-500/10",
     },
     {
+      filter: "approved_month",
       label: `Approved in ${m.monthName}`,
       value: m.approvedThisMonth,
       sub: `Requests approved this month`,
@@ -175,6 +260,7 @@ export function StatCards({ requests }: StatCardsProps) {
       bgClass: "bg-emerald-500/10",
     },
     {
+      filter: "approved_year",
       label: "Total Days Approved",
       value: m.totalDaysApprovedThisYear,
       sub: `Across all leave types in ${m.year}`,
@@ -183,6 +269,7 @@ export function StatCards({ requests }: StatCardsProps) {
       bgClass: "bg-violet-500/10",
     },
     {
+      filter: "upcoming",
       label: "Upcoming Leave",
       value: m.upcoming7,
       sub: `Starting in the next 7 days · ${m.upcoming30} in 30`,
@@ -191,6 +278,7 @@ export function StatCards({ requests }: StatCardsProps) {
       bgClass: "bg-sky-500/10",
     },
     {
+      filter: "returning",
       label: "Returning Today",
       value: m.returningToday,
       sub: "Back at work today",
@@ -199,6 +287,7 @@ export function StatCards({ requests }: StatCardsProps) {
       bgClass: "bg-teal-500/10",
     },
     {
+      filter: "rejected",
       label: "Rejected Requests",
       value: m.rejected,
       sub: `${m.cancelled} cancelled`,
@@ -207,6 +296,7 @@ export function StatCards({ requests }: StatCardsProps) {
       bgClass: "bg-rose-500/10",
     },
     {
+      filter: "cancelled",
       label: "Cancelled Leave",
       value: m.cancelled,
       sub: "Withdrawn after submission",
@@ -215,6 +305,7 @@ export function StatCards({ requests }: StatCardsProps) {
       bgClass: "bg-slate-500/10",
     },
     {
+      filter: "approved",
       label: "Average Approval Time",
       value: m.avgApprovalDays == null ? "—" : `${m.avgApprovalDays}d`,
       sub: "From submission to decision",
@@ -223,10 +314,20 @@ export function StatCards({ requests }: StatCardsProps) {
       bgClass: "bg-indigo-500/10",
     },
     {
+      filter: "department",
+      href: `${LEAVE_DEPARTMENTS_HREF}?year=${m.year}`,
       label: "Most Leave Taken",
-      value: m.topDepartment?.name ?? "—",
-      sub: m.topDepartment
-        ? `${m.topDepartment.days} days approved in ${m.year}`
+      value:
+        leaders.length === 0
+          ? "—"
+          : leaders.length === 1
+            ? leaders[0]
+            : `${leaders.length} departments tied`,
+      valueTitle: leaders.join(", "),
+      sub: m.topDepartments
+        ? leaders.length > 1
+          ? `${leaders.join(", ")} · ${m.topDepartments.days} days each`
+          : `${m.topDepartments.days} days approved in ${m.year}`
         : "No approved leave yet",
       icon: Building2,
       iconClass: "text-fuchsia-500",
@@ -234,12 +335,45 @@ export function StatCards({ requests }: StatCardsProps) {
     },
   ];
 
-  // Every tile is inert for now — `Card`'s own `py-6` is dropped so the row
-  // reads as a compact figure strip rather than ten full-height cards.
+  // Every tile is a drill-down (client feedback §F2, and the KPI-card rule
+  // used across the app). `Card`'s own `py-6` is dropped so the row reads as
+  // a compact figure strip rather than ten full-height cards.
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-      {cards.map((card) => (
-        <Card key={card.label} className="py-0">
+      {cards.map((card) => {
+        const active = !card.href && cardFilter === card.filter;
+        const activate = () => {
+          if (card.href) {
+            router.push(card.href);
+            return;
+          }
+          // Re-clicking the selected card clears back to the full list.
+          onDrillDown(active ? "all" : card.filter);
+          if (card.filter === "on_leave" && !active) onShowOnLeave?.();
+        };
+        return (
+        <Card
+          key={card.label}
+          role="button"
+          tabIndex={0}
+          aria-pressed={active}
+          title={
+            card.href
+              ? "Open the department leave ranking"
+              : `Show ${LEAVE_CARD_FILTER_LABELS[card.filter].toLowerCase()}`
+          }
+          onClick={activate}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              activate();
+            }
+          }}
+          className={cn(
+            "py-0 cursor-pointer transition-shadow hover:shadow-md hover:ring-1 hover:ring-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            active && "ring-2 ring-primary border-primary",
+          )}
+        >
           <CardContent className="px-3 py-2.5">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
@@ -251,7 +385,7 @@ export function StatCards({ requests }: StatCardsProps) {
                     "font-bold mt-0.5 truncate leading-tight",
                     typeof card.value === "number" ? "text-xl" : "text-base",
                   )}
-                  title={String(card.value)}
+                  title={card.valueTitle || String(card.value)}
                 >
                   {card.value}
                 </p>
@@ -270,7 +404,8 @@ export function StatCards({ requests }: StatCardsProps) {
             </div>
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
     </div>
   );
 }

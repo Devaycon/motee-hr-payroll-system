@@ -9,8 +9,14 @@ import {
   GOAL_STATUS_LABELS,
   RATING_LABELS,
 } from "@/src/data/performance-demo";
-import type { PerformanceGoal, GoalStatus } from "@/src/lib/types/performance";
-import { PAST_REVIEWS, MY_REVIEW } from "./data";
+import type {
+  FeedbackRequest,
+  FeedbackType,
+  GoalStatus,
+  PerformanceFeedback,
+  PerformanceGoal,
+  PerformanceReview,
+} from "@/src/lib/types/performance";
 import { ProgressBar, StarRating, formatDate } from "./helpers";
 
 const STATUS_COLORS: Record<GoalStatus, string> = {
@@ -21,8 +27,19 @@ const STATUS_COLORS: Record<GoalStatus, string> = {
   cancelled: "#6B7280",
 };
 
+const FEEDBACK_TYPE_LABELS: Record<FeedbackType, string> = {
+  peer: "Peer",
+  upward: "From a report",
+  downward: "From a manager",
+  manager: "Manager",
+};
+
 interface OverviewTabProps {
   goals: PerformanceGoal[];
+  currentReview: PerformanceReview | null;
+  lastReview: PerformanceReview | null;
+  feedback: PerformanceFeedback[];
+  feedbackRequests: FeedbackRequest[];
   onGoToGoals: () => void;
   onGoalDetail: (g: PerformanceGoal) => void;
   onPeerModal: () => void;
@@ -30,6 +47,10 @@ interface OverviewTabProps {
 
 export function OverviewTab({
   goals,
+  currentReview,
+  lastReview,
+  feedback,
+  feedbackRequests,
   onGoToGoals,
   onGoalDetail,
   onPeerModal,
@@ -41,6 +62,11 @@ export function OverviewTab({
           Goal Progress Snapshot
         </p>
         <div className="flex flex-col gap-3">
+          {goals.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              You have no goals yet.
+            </p>
+          )}
           {goals.slice(0, 5).map((g) => (
             <Card
               key={g.id}
@@ -95,7 +121,7 @@ export function OverviewTab({
       </div>
 
       <div className="flex flex-col gap-4">
-        {PAST_REVIEWS[0]?.rating && (
+        {lastReview?.rating && (
           <Card>
             <CardContent className="p-4 flex flex-col gap-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -107,26 +133,26 @@ export function OverviewTab({
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 mb-1">
-                    <StarRating rating={PAST_REVIEWS[0].rating} />
+                    <StarRating rating={lastReview.rating} />
                     <span className="text-sm font-bold text-foreground">
-                      {PAST_REVIEWS[0].rating}/5
+                      {lastReview.rating}/5
                     </span>
                   </div>
                   <p className="text-[11px] text-foreground font-medium">
-                    {RATING_LABELS[PAST_REVIEWS[0].rating]}
+                    {RATING_LABELS[lastReview.rating]}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    {PAST_REVIEWS[0].period} · by {PAST_REVIEWS[0].reviewer}
+                    {lastReview.period} · by {lastReview.reviewer}
                   </p>
                 </div>
               </div>
-              {PAST_REVIEWS[0].strengths && (
+              {(lastReview.strengths || lastReview.comments) && (
                 <div className="rounded-lg bg-muted/40 border border-border p-3">
                   <p className="text-[10px] text-muted-foreground mb-1">
                     Manager&apos;s highlights
                   </p>
                   <p className="text-[11px] text-foreground leading-relaxed">
-                    {PAST_REVIEWS[0].strengths}
+                    {lastReview.strengths ?? lastReview.comments}
                   </p>
                 </div>
               )}
@@ -137,12 +163,46 @@ export function OverviewTab({
         <Card>
           <CardContent className="p-4 flex flex-col gap-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Peer Feedback
+              Feedback
             </p>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Request feedback from a colleague to strengthen your
-              self-assessment.
-            </p>
+            {feedback.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                No feedback yet. Request some from a colleague to strengthen
+                your self-assessment.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {feedback.slice(0, 3).map((f) => (
+                  <div
+                    key={f.id}
+                    className="rounded-lg bg-muted/40 border border-border p-2.5"
+                  >
+                    <p className="text-[11px] text-foreground leading-relaxed">
+                      {f.message}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {f.fromName ?? FEEDBACK_TYPE_LABELS[f.type]} ·{" "}
+                      {formatDate(f.createdAt)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {feedbackRequests.length > 0 && (
+              <div className="flex flex-col gap-1">
+                <p className="text-[10px] font-medium text-muted-foreground">
+                  Requested
+                </p>
+                {feedbackRequests.slice(0, 3).map((r) => (
+                  <p key={r.id} className="text-[11px] text-foreground">
+                    {r.fromName}{" "}
+                    <span className="text-muted-foreground">
+                      · {formatDate(r.createdAt)}
+                    </span>
+                  </p>
+                ))}
+              </div>
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -154,59 +214,66 @@ export function OverviewTab({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4 flex flex-col gap-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Review Timeline
-            </p>
-            <div className="flex flex-col gap-3 relative pl-4">
-              <div className="absolute left-1.5 top-1 bottom-1 w-px bg-border" />
-              {[
-                {
-                  label: "H1 2026 Review opened",
-                  date: "2026-04-01",
-                  done: true,
-                },
-                {
-                  label: "Self-assessment due",
-                  date: MY_REVIEW.dueDate,
-                  done: false,
-                },
-                { label: "Manager review", date: "2026-05-10", done: false },
-                { label: "Review discussion", date: "2026-05-20", done: false },
-                { label: "Review finalised", date: "2026-05-31", done: false },
-              ].map((e, i) => (
-                <div key={i} className="relative flex items-start gap-2.5">
-                  <div
-                    className={cn(
-                      "w-3 h-3 rounded-full border-2 shrink-0 mt-0.5 -ml-5",
-                      e.done
-                        ? "bg-[#1D9E75] border-[#1D9E75]"
-                        : "bg-background border-border",
-                    )}
-                  />
-                  <div>
-                    <p
+        {currentReview && (
+          <Card>
+            <CardContent className="p-4 flex flex-col gap-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                {currentReview.period} Review
+              </p>
+              <div className="flex flex-col gap-3 relative pl-4">
+                <div className="absolute left-1.5 top-1 bottom-1 w-px bg-border" />
+                {[
+                  {
+                    label: "Self-assessment",
+                    sub: currentReview.selfSubmittedAt
+                      ? `Submitted ${formatDate(currentReview.selfSubmittedAt)}`
+                      : `Due ${formatDate(currentReview.dueDate)}`,
+                    done: Boolean(currentReview.selfSubmittedAt),
+                  },
+                  {
+                    label: `Manager review · ${currentReview.reviewer}`,
+                    sub: currentReview.managerRating
+                      ? "Rated"
+                      : "Waiting on your manager",
+                    done: Boolean(currentReview.managerRating),
+                  },
+                  {
+                    label: "Review finalised",
+                    sub: "Rating confirmed and shared with you",
+                    done: false,
+                  },
+                ].map((e) => (
+                  <div key={e.label} className="relative flex items-start gap-2.5">
+                    <div
                       className={cn(
-                        "text-[11px] font-medium",
+                        "w-3 h-3 rounded-full border-2 shrink-0 mt-0.5 -ml-5",
                         e.done
-                          ? "text-muted-foreground line-through"
-                          : "text-foreground",
+                          ? "bg-[#1D9E75] border-[#1D9E75]"
+                          : "bg-background border-border",
                       )}
-                    >
-                      {e.label}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {formatDate(e.date)}
-                    </p>
+                    />
+                    <div>
+                      <p
+                        className={cn(
+                          "text-[11px] font-medium",
+                          e.done
+                            ? "text-muted-foreground line-through"
+                            : "text-foreground",
+                        )}
+                      >
+                        {e.label}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {e.sub}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
 }
-

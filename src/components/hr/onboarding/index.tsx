@@ -23,6 +23,27 @@ import type {
   BulkOnboardingRow,
 } from "./types";
 import type { OnboardingMethod } from "./components/method-selector";
+import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import {
+  APPROVAL_CHAIN_TAB_ITEM,
+  useHasApprovalChainTab,
+} from "@/src/components/hr/approvals/use-chain-tab";
+import { WorkflowTab } from "@/src/components/hr/workflows/components/workflow-tab";
+import {
+  WORKFLOW_TAB_ITEM,
+  useHasWorkflowTab,
+} from "@/src/components/hr/workflows/use-workflow-tab";
+
+/**
+ * The workflows this page starts — preboarding runs from the hire, onboarding
+ * from day one, and both move a record through this pipeline.
+ */
+const ONBOARDING_WORKFLOW_EVENTS = [
+  "preboarding_initiated",
+  "onboarding_initiated",
+] as const;
 
 export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}) {
   const router = useRouter();
@@ -36,6 +57,9 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
   const [methodSelectorOpen, setMethodSelectorOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("pipeline");
+  const hasWorkflowTab = useHasWorkflowTab(ONBOARDING_WORKFLOW_EVENTS);
+  const hasChainTab = useHasApprovalChainTab("onboarding");
 
   // Records handed over by the recruitment "send to onboarding" action are
   // dispatched straight into this slice at invite time, so there is nothing to
@@ -195,28 +219,56 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
       <StatCards
         records={records}
         statusFilter={statusFilter}
-        onFilterChange={setStatusFilter}
+        // A card filters the pipeline, so bring it into view.
+        onFilterChange={(v) => {
+          setStatusFilter(v);
+          setActiveTab("pipeline");
+        }}
       />
 
-      <PipelineToolbar
-        search={search}
-        onSearchChange={setSearch}
-        deptFilter={deptFilter}
-        onDeptFilterChange={setDeptFilter}
-        stageFilter={stageFilter}
-        onStageFilterChange={setStageFilter}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        onOpenMethodSelector={() => setMethodSelectorOpen(true)}
-      />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <PageTabsList
+          tabs={[
+            { value: "pipeline", label: `Pipeline (${filtered.length})` },
+            ...(hasWorkflowTab ? [WORKFLOW_TAB_ITEM] : []),
+            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
+          ]}
+        />
 
-      <PipelineTable
-        records={filtered}
-        onViewTasks={handleViewTasks}
-        onSendWelcomeEmail={handleSendWelcomeEmail}
-        onResendInvitation={handleResendInvitation}
-        onDelete={handleDelete}
-      />
+        <TabsContent value="pipeline" className="mt-4 flex flex-col gap-5">
+          <PipelineToolbar
+            search={search}
+            onSearchChange={setSearch}
+            deptFilter={deptFilter}
+            onDeptFilterChange={setDeptFilter}
+            stageFilter={stageFilter}
+            onStageFilterChange={setStageFilter}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            onOpenMethodSelector={() => setMethodSelectorOpen(true)}
+          />
+
+          <PipelineTable
+            records={filtered}
+            onViewTasks={handleViewTasks}
+            onSendWelcomeEmail={handleSendWelcomeEmail}
+            onResendInvitation={handleResendInvitation}
+            onDelete={handleDelete}
+          />
+        </TabsContent>
+
+        {hasWorkflowTab && (
+          <TabsContent value="workflow" className="mt-4">
+            <WorkflowTab events={ONBOARDING_WORKFLOW_EVENTS} />
+          </TabsContent>
+        )}
+
+        {hasChainTab && (
+          <TabsContent value="approval_chain" className="mt-4">
+            <ApprovalChainTab documentType="onboarding" />
+          </TabsContent>
+        )}
+      </Tabs>
 
       <MethodSelector
         open={methodSelectorOpen}

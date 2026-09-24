@@ -10,15 +10,18 @@ import {
   RATING_LABELS,
 } from "@/src/data/performance-demo";
 import type { PerformanceReview } from "@/src/lib/types/performance";
-import { MY_REVIEW, PAST_REVIEWS } from "./data";
 import { StarRating, formatDate } from "./helpers";
 
 interface ReviewsTabProps {
+  currentReview: PerformanceReview | null;
+  pastReviews: PerformanceReview[];
   onGoToAssessment: () => void;
   onViewReview: (r: PerformanceReview) => void;
 }
 
 export function ReviewsTab({
+  currentReview,
+  pastReviews,
   onGoToAssessment,
   onViewReview,
 }: ReviewsTabProps) {
@@ -28,6 +31,14 @@ export function ReviewsTab({
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
           Active Review
         </p>
+        {!currentReview ? (
+          <Card>
+            <CardContent className="p-4 text-xs text-muted-foreground">
+              No review is open for you right now. HR will let you know when
+              the next cycle starts.
+            </CardContent>
+          </Card>
+        ) : (
         <Card className="border-[#4361ee]/20">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-[#4361ee]/10 flex items-center justify-center shrink-0">
@@ -38,26 +49,26 @@ export function ReviewsTab({
                 <span
                   className={cn(
                     "text-[9px] px-1.5 py-0.5 rounded-full font-bold border",
-                    REVIEW_TYPE_STYLES[MY_REVIEW.reviewType],
+                    REVIEW_TYPE_STYLES[currentReview.reviewType],
                   )}
                 >
-                  {REVIEW_TYPE_LABELS[MY_REVIEW.reviewType]}
+                  {REVIEW_TYPE_LABELS[currentReview.reviewType]}
                 </span>
                 <span
                   className={cn(
                     "text-[9px] px-1.5 py-0.5 rounded-full font-bold border",
-                    REVIEW_STATUS_STYLES[MY_REVIEW.status],
+                    REVIEW_STATUS_STYLES[currentReview.status],
                   )}
                 >
-                  {REVIEW_STATUS_LABELS[MY_REVIEW.status]}
+                  {REVIEW_STATUS_LABELS[currentReview.status]}
                 </span>
               </div>
               <p className="text-sm font-semibold text-foreground">
-                {MY_REVIEW.period} Performance Review
+                {currentReview.period} Performance Review
               </p>
               <p className="text-[11px] text-muted-foreground">
-                Reviewer: {MY_REVIEW.reviewer} · Due{" "}
-                {formatDate(MY_REVIEW.dueDate)}
+                Reviewer: {currentReview.reviewer} · Due{" "}
+                {formatDate(currentReview.dueDate)}
               </p>
             </div>
             <Button
@@ -65,10 +76,14 @@ export function ReviewsTab({
               className="h-8 text-xs bg-[#4361ee] hover:bg-[#3451d1] text-white gap-1.5 shrink-0"
               onClick={onGoToAssessment}
             >
-              <Pencil className="w-3.5 h-3.5" /> Self-Assessment
+              <Pencil className="w-3.5 h-3.5" />{" "}
+              {currentReview.selfSubmittedAt
+                ? "View Self-Assessment"
+                : "Self-Assessment"}
             </Button>
           </CardContent>
         </Card>
+        )}
       </div>
 
       <div>
@@ -76,7 +91,12 @@ export function ReviewsTab({
           Review History
         </p>
         <div className="flex flex-col gap-3">
-          {PAST_REVIEWS.map((r) => (
+          {pastReviews.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              No completed reviews yet.
+            </p>
+          )}
+          {pastReviews.map((r) => (
             <Card
               key={r.id}
               className="cursor-pointer hover:shadow-sm transition-shadow"

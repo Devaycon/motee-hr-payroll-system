@@ -5,7 +5,7 @@ import { REVIEW_TYPE_LABELS } from "@/src/data/performance-demo";
 import type { PerformanceReview } from "@/src/lib/types/performance";
 
 interface ReviewBannerProps {
-  review: PerformanceReview;
+  review: PerformanceReview | null;
   reviewDueIn: number;
   onStart: () => void;
 }
@@ -15,7 +15,9 @@ export function ReviewBanner({
   reviewDueIn,
   onStart,
 }: ReviewBannerProps) {
-  if (review.status === "completed") return null;
+  // Nothing to prompt once the employee has done their part.
+  if (!review || review.status === "completed" || review.selfSubmittedAt)
+    return null;
 
   return (
     <div

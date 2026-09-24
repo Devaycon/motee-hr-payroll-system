@@ -18,23 +18,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { PEER_SUGGESTIONS } from "./data";
+import type { Colleague } from "../hooks";
 
 interface PeerFeedbackModalProps {
   open: boolean;
   onClose: () => void;
+  colleagues: Colleague[];
+  onSend: (fromEmployeeId: string, context: string) => void;
 }
 
-export function PeerFeedbackModal({ open, onClose }: PeerFeedbackModalProps) {
-  const [peerName, setPeerName] = useState("");
+export function PeerFeedbackModal({
+  open,
+  onClose,
+  colleagues,
+  onSend,
+}: PeerFeedbackModalProps) {
+  const [peerId, setPeerId] = useState("");
   const [peerContext, setPeerContext] = useState("");
   const [sent, setSent] = useState(false);
 
   function handleSend() {
+    if (!peerId) return;
+    onSend(peerId, peerContext);
     setSent(true);
     setTimeout(() => {
       setSent(false);
-      setPeerName("");
+      setPeerId("");
       setPeerContext("");
       onClose();
     }, 1500);
@@ -69,13 +78,18 @@ export function PeerFeedbackModal({ open, onClose }: PeerFeedbackModalProps) {
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
               <p className="text-xs font-medium">Select colleague</p>
-              <Select value={peerName} onValueChange={setPeerName}>
+              <Select value={peerId} onValueChange={setPeerId}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Choose a colleague" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PEER_SUGGESTIONS.map((p) => (
-                    <SelectItem key={p.name} value={p.name} className="text-xs">
+                  {colleagues.length === 0 && (
+                    <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                      No colleagues found.
+                    </p>
+                  )}
+                  {colleagues.map((p) => (
+                    <SelectItem key={p.id} value={p.id} className="text-xs">
                       <span className="flex items-center gap-2">
                         <span className="w-5 h-5 rounded-full bg-[#4361ee]/20 text-[#4361ee] text-[9px] font-bold flex items-center justify-center">
                           {p.initials}
@@ -117,7 +131,7 @@ export function PeerFeedbackModal({ open, onClose }: PeerFeedbackModalProps) {
               size="sm"
               className="text-xs h-8 bg-[#4361ee] hover:bg-[#3451d1] text-white gap-1.5"
               onClick={handleSend}
-              disabled={!peerName}
+              disabled={!peerId}
             >
               <Send className="w-3.5 h-3.5" /> Send Request
             </Button>

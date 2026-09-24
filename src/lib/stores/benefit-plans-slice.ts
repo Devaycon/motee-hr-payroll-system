@@ -27,7 +27,19 @@ const benefitPlansSlice = createSlice({
       const seedExtras = DEFAULT_BENEFIT_PLANS.filter(
         (d) => !incomingIds.has(d.id),
       );
-      state.plans = [...incoming, ...seedExtras];
+      // System plans persisted before plans carried a country/enrollment would
+      // otherwise show a Nigerian HMO to a UK tenant — take those from the seed.
+      const seedById = new Map(DEFAULT_BENEFIT_PLANS.map((d) => [d.id, d]));
+      const backfilled = incoming.map((p) => {
+        const seed = seedById.get(p.id);
+        if (!seed || p.kind !== "system") return p;
+        return {
+          ...p,
+          country: "country" in p ? p.country : seed.country,
+          enrollment: p.enrollment ?? seed.enrollment,
+        };
+      });
+      state.plans = [...backfilled, ...seedExtras];
       state.status = "ready";
     },
 

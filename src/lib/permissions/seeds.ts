@@ -60,6 +60,8 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   "organization.workforce-lens":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","EXECUTIVE","AUDITOR","READ-ONLY"],
   "organization.employment-types":   ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.benefit-plans":      ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
+  // Finance approves disbursement on the loan chain, so it reads the register.
+  "organization.loans":              ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
   "organization.eor":                ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FINANCE","AUDITOR","READ-ONLY"],
   "organization.employee-checklist": ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.roles":              ["SUPER-ADMIN","HR-ADMIN","RECRUITER","AUDITOR","READ-ONLY"],
@@ -127,6 +129,7 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
     "organization.employees",
     "organization.employment-types",
     "organization.benefit-plans",
+    "organization.loans",
     "organization.eor",
     "time-payroll.attendance",
     "time-payroll.leave",
