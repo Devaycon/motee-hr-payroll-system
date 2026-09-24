@@ -1,30 +1,33 @@
 "use client";
 
-import { CheckCircle2, CircleAlert } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleAlert } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { Progress } from "@/src/components/ui/progress";
-import { COMPLETION_TARGET } from "@/src/lib/profile/completion";
 import { useProfileCompletion } from "@/src/lib/profile/use-completion";
+import { scoreTone } from "./completion-module";
 
 const MAX_CHIPS = 4;
 
 /**
  * Profile Completion — how complete this record is against what HR requires,
- * with each missing item a shortcut to the module that fills it.
+ * with each missing item a shortcut to the module that fills it. The full
+ * checklist lives in the Profile Completion module.
  */
 export function ProfileCompletionCard({
   employeeId,
   onOpenModule,
+  onViewAll,
 }: {
   employeeId: string;
   onOpenModule: (module: string) => void;
+  /** Opens the Profile Completion module. */
+  onViewAll: () => void;
 }) {
   const completion = useProfileCompletion(employeeId);
   if (!completion) return null;
 
   const { score, missing, checks } = completion;
-  const tone =
-    score >= 90 ? "text-emerald-600" : score >= COMPLETION_TARGET ? "text-amber-600" : "text-rose-600";
+  const tone = scoreTone(score);
   const shown = missing.slice(0, MAX_CHIPS);
 
   return (
@@ -34,9 +37,15 @@ export function ProfileCompletionCard({
           <p className={cn("text-xl font-bold leading-none tabular-nums", tone)}>{score}%</p>
           <p className="text-[11px] text-muted-foreground">Profile completion</p>
         </div>
-        <p className="text-[10px] text-muted-foreground">
-          {checks.length - missing.length} of {checks.length} items
-        </p>
+        <button
+          type="button"
+          onClick={onViewAll}
+          className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:underline"
+          title="See everything that's done and what remains"
+        >
+          {checks.length - missing.length} of {checks.length} items · View checklist
+          <ArrowRight className="h-2.5 w-2.5" />
+        </button>
       </div>
       <Progress value={score} className="h-1.5" />
       {missing.length === 0 ? (
@@ -62,12 +71,14 @@ export function ProfileCompletionCard({
               </button>
             ))}
             {missing.length > MAX_CHIPS && (
-              <span
-                className="px-1 py-0.5 text-[10px] text-muted-foreground"
+              <button
+                type="button"
+                onClick={onViewAll}
+                className="px-1 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
                 title={missing.slice(MAX_CHIPS).map((m) => m.label).join(", ")}
               >
                 +{missing.length - MAX_CHIPS} more
-              </span>
+              </button>
             )}
           </div>
         </div>

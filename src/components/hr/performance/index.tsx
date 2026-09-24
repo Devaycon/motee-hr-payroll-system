@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { usePerformance } from "./hooks";
+import { usePerformance, usePerformanceActions } from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import {
@@ -28,14 +29,10 @@ import type {
 
 export function PerformancePage() {
   const { data, loading } = usePerformance();
-  const [reviews, setReviews] = useState<PerformanceReview[]>([]);
-  const [goals, setGoals] = useState<PerformanceGoal[]>([]);
-  useEffect(() => {
-    if (data) {
-      setReviews(data.reviews);
-      setGoals(data.goals);
-    }
-  }, [data]);
+  const actions = usePerformanceActions();
+  const reviews = data?.reviews ?? [];
+  const goals = data?.goals ?? [];
+  const departments = data?.departments ?? [];
 
   // Controlled so the KPI cards can drill into a tab, not just a filter.
   const [activeTab, setActiveTab] = useState("reviews");
@@ -50,60 +47,46 @@ export function PerformancePage() {
   );
 
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [viewingReview, setViewingReview] = useState<PerformanceReview | null>(
-    null,
-  );
+  const [viewingId, setViewingId] = useState<string | null>(null);
+  // Read from the live list so the modal reflects edits made while it's open.
+  const viewingReview = viewingId
+    ? (reviews.find((r) => r.id === viewingId) ?? null)
+    : null;
 
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<PerformanceGoal | null>(null);
 
   function handleAddReview() {
-    setViewingReview(null);
+    setViewingId(null);
     setReviewModalOpen(true);
   }
 
   function handleViewReview(review: PerformanceReview) {
-    setViewingReview(review);
+    setViewingId(review.id);
     setReviewModalOpen(true);
   }
 
-  function handleSaveReview(data: NewReview) {
-    const newReview: PerformanceReview = {
-      ...data,
-      id: `pr-${Date.now()}`,
-      status: "not_started",
-    };
-    setReviews((prev) => [newReview, ...prev]);
+  function handleSaveReview(input: NewReview) {
+    actions.createReview(input);
+    toast.success(`Review created for ${input.employeeName}.`);
   }
 
   function handleCompleteReview(
     id: string,
-    data: {
+    input: {
       rating: PerformanceRating;
       strengths?: string;
       improvements?: string;
       comments?: string;
     },
   ) {
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              status: "completed",
-              rating: data.rating,
-              strengths: data.strengths,
-              improvements: data.improvements,
-              comments: data.comments,
-              completedDate: new Date().toISOString().split("T")[0],
-            }
-          : r,
-      ),
-    );
+    actions.completeReview(id, input);
+    toast.success("Review marked as complete.");
   }
 
   function handleDeleteReview(id: string) {
-    setReviews((prev) => prev.filter((r) => r.id !== id));
+    actions.deleteReview(id);
+    toast.success("Review deleted.");
   }
 
   function handleAddGoal() {
@@ -116,32 +99,27 @@ export function PerformancePage() {
     setGoalModalOpen(true);
   }
 
-  function handleSaveGoal(data: NewGoal) {
-    const today = new Date().toISOString().split("T")[0];
-    const newGoal: PerformanceGoal = {
-      ...data,
-      id: `pg-${Date.now()}`,
-      progress: 0,
-      status: "on_track",
-      createdAt: today,
-    };
-    setGoals((prev) => [newGoal, ...prev]);
+  function handleSaveGoal(input: NewGoal) {
+    actions.createGoal(input);
+    toast.success(`Goal added for ${input.employeeName}.`);
   }
 
   function handleUpdateGoal(
     id: string,
     updates: { progress: number; status: GoalStatus },
   ) {
-    setGoals((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, ...updates } : g)),
-    );
+    const goal = goals.find((g) => g.id === id);
+    if (!goal) return;
+    actions.updateGoalProgress(goal, updates);
+    toast.success("Goal updated.");
   }
 
   function handleDeleteGoal(id: string) {
-    setGoals((prev) => prev.filter((g) => g.id !== id));
+    actions.deleteGoal(id);
+    toast.success("Goal deleted.");
   }
 
-  if (loading && !reviews.length && !goals.length) {
+  if (loading) {
     return (
       <div className="flex flex-col gap-6">
         <Skeleton className="h-16 w-72" />
@@ -204,6 +182,7 @@ export function PerformancePage() {
         <TabsContent value="reviews" className="mt-4">
           <ReviewsTable
             reviews={visibleReviews}
+            departments={departments}
             onView={handleViewReview}
             onDelete={handleDeleteReview}
             onAddReview={handleAddReview}
@@ -213,6 +192,7 @@ export function PerformancePage() {
         <TabsContent value="goals" className="mt-4">
           <GoalsTable
             goals={visibleGoals}
+            departments={departments}
             onEdit={handleEditGoal}
             onDelete={handleDeleteGoal}
             onAddGoal={handleAddGoal}
@@ -224,6 +204,7 @@ export function PerformancePage() {
         open={reviewModalOpen}
         onClose={() => setReviewModalOpen(false)}
         viewingReview={viewingReview}
+        departments={departments}
         onSave={handleSaveReview}
         onComplete={handleCompleteReview}
       />
@@ -232,6 +213,7 @@ export function PerformancePage() {
         open={goalModalOpen}
         onClose={() => setGoalModalOpen(false)}
         editingGoal={editingGoal}
+        departments={departments}
         onSave={handleSaveGoal}
         onUpdate={handleUpdateGoal}
       />

@@ -6,7 +6,8 @@
     "historyDays": 90,
     "seed": 84,
     "employeeCount": 20,
-    "coreHrAugmentedAt": "2026-09-24"
+    "coreHrAugmentedAt": "2026-09-24",
+    "performanceAugmentedAt": "2026-09-24"
   },
   "tenant": {
     "id": "tenant_ng_001",
@@ -30816,6 +30817,12 @@
         "completedAt": "2025-10-15",
         "wouldRecommend": true,
         "primaryReason": "Career growth"
+      },
+      "knowledgeTransfer": {
+        "stepsCompletedOn": [
+          "2025-09-19"
+        ],
+        "notes": "Stakeholder map, open decisions and budget ownership handed to the incoming owner. Team informed of the new reporting line. Successor still being confirmed by the line manager."
       }
     },
     {
@@ -30833,6 +30840,16 @@
         "completedAt": "2025-09-27",
         "wouldRecommend": true,
         "primaryReason": "Career growth"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0006",
+        "successorName": "Yusuf Nwosu",
+        "stepsCompletedOn": [
+          "2025-09-01",
+          "2025-09-03",
+          "2025-09-05"
+        ],
+        "notes": "Runbooks moved to the engineering wiki and on-call rota handed to Yusuf Nwosu. Deploy keys and CI secrets rotated after the last walkthrough."
       }
     },
     {
@@ -30850,6 +30867,17 @@
         "completedAt": "2025-08-20",
         "wouldRecommend": true,
         "primaryReason": "Management"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0011",
+        "successorName": "Adaeze Okonkwo",
+        "stepsCompletedOn": [
+          "2025-07-25",
+          "2025-07-27",
+          "2025-07-29",
+          "2025-07-31"
+        ],
+        "notes": "Roadmap, open discovery work and design files handed to Adaeze Okonkwo; stakeholder map shared with the team."
       }
     },
     {
@@ -30867,6 +30895,18 @@
         "completedAt": "2025-07-16",
         "wouldRecommend": false,
         "primaryReason": "Workload"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0007",
+        "successorName": "Ibrahim Adeyemi",
+        "stepsCompletedOn": [
+          "2025-06-20",
+          "2025-06-22",
+          "2025-06-24",
+          "2025-06-26",
+          "2025-06-28"
+        ],
+        "notes": "Runbooks moved to the engineering wiki and on-call rota handed to Ibrahim Adeyemi. Deploy keys and CI secrets rotated after the last walkthrough."
       }
     },
     {
@@ -30884,6 +30924,9 @@
         "completedAt": "2025-06-15",
         "wouldRecommend": true,
         "primaryReason": "Management"
+      },
+      "knowledgeTransfer": {
+        "stepsCompletedOn": []
       }
     },
     {
@@ -30901,6 +30944,19 @@
         "completedAt": "2025-05-17",
         "wouldRecommend": false,
         "primaryReason": "Personal"
+      },
+      "knowledgeTransfer": {
+        "required": true,
+        "successorId": "NG-EMP-0018",
+        "successorName": "Femi Ogundimu",
+        "stepsCompletedOn": [
+          "2025-04-21",
+          "2025-04-23",
+          "2025-04-25",
+          "2025-04-27",
+          "2025-04-29"
+        ],
+        "notes": "Client list and live pipeline reassigned to Femi Ogundimu; introduction emails sent to the top ten accounts."
       }
     },
     {
@@ -30918,6 +30974,16 @@
         "completedAt": "2025-05-03",
         "wouldRecommend": false,
         "primaryReason": "Personal"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0014",
+        "successorName": "Amaka Afolayan",
+        "stepsCompletedOn": [
+          "2025-04-07",
+          "2025-04-09",
+          "2025-04-11"
+        ],
+        "notes": "Open cases, regulator correspondence and the monitoring rules log handed to Amaka Afolayan in the handover pack."
       }
     },
     {
@@ -30935,6 +31001,18 @@
         "completedAt": "2025-04-02",
         "wouldRecommend": true,
         "primaryReason": "Workload"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0007",
+        "successorName": "Ibrahim Adeyemi",
+        "stepsCompletedOn": [
+          "2025-03-07",
+          "2025-03-09",
+          "2025-03-11",
+          "2025-03-13",
+          "2025-03-15"
+        ],
+        "notes": "Runbooks moved to the engineering wiki and on-call rota handed to Ibrahim Adeyemi. Deploy keys and CI secrets rotated after the last walkthrough."
       }
     },
     {
@@ -30952,6 +31030,18 @@
         "completedAt": "2025-02-26",
         "wouldRecommend": true,
         "primaryReason": "Workload"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0014",
+        "successorName": "Amaka Afolayan",
+        "stepsCompletedOn": [
+          "2025-01-31",
+          "2025-02-02",
+          "2025-02-04",
+          "2025-02-06",
+          "2025-02-08"
+        ],
+        "notes": "Open cases, regulator correspondence and the monitoring rules log handed to Amaka Afolayan in the handover pack."
       }
     },
     {
@@ -30969,6 +31059,16 @@
         "completedAt": "2025-01-23",
         "wouldRecommend": true,
         "primaryReason": "Workload"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0019",
+        "successorName": "Folake Ibrahim",
+        "stepsCompletedOn": [
+          "2024-12-28",
+          "2024-12-30",
+          "2025-01-01"
+        ],
+        "notes": "Client list and live pipeline reassigned to Folake Ibrahim; introduction emails sent to the top ten accounts."
       }
     },
     {
@@ -30986,6 +31086,18 @@
         "completedAt": "2025-01-06",
         "wouldRecommend": false,
         "primaryReason": "Personal"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0010",
+        "successorName": "Emeka Abubakar",
+        "stepsCompletedOn": [
+          "2024-12-11",
+          "2024-12-13",
+          "2024-12-15",
+          "2024-12-17",
+          "2024-12-19"
+        ],
+        "notes": "Roadmap, open discovery work and design files handed to Emeka Abubakar; stakeholder map shared with the team."
       }
     },
     {
@@ -31003,6 +31115,9 @@
         "completedAt": "2024-11-20",
         "wouldRecommend": true,
         "primaryReason": "Personal"
+      },
+      "knowledgeTransfer": {
+        "stepsCompletedOn": []
       }
     },
     {
@@ -31020,6 +31135,15 @@
         "completedAt": "2025-10-15",
         "wouldRecommend": false,
         "primaryReason": "Personal"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0015",
+        "successorName": "Nneka Sanusi",
+        "stepsCompletedOn": [
+          "2025-09-19",
+          "2025-09-21"
+        ],
+        "notes": "Month-end close checklist walked through twice with Nneka Sanusi. Bank portal approvals and supplier payment runs reassigned."
       }
     },
     {
@@ -31037,6 +31161,16 @@
         "completedAt": "2025-09-17",
         "wouldRecommend": false,
         "primaryReason": "Career growth"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0011",
+        "successorName": "Adaeze Okonkwo",
+        "stepsCompletedOn": [
+          "2025-08-22",
+          "2025-08-24",
+          "2025-08-26"
+        ],
+        "notes": "Roadmap, open discovery work and design files handed to Adaeze Okonkwo; stakeholder map shared with the team."
       }
     },
     {
@@ -31054,6 +31188,14 @@
         "completedAt": "2025-08-26",
         "wouldRecommend": false,
         "primaryReason": "Career growth"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0011",
+        "successorName": "Adaeze Okonkwo",
+        "stepsCompletedOn": [
+          "2025-07-31"
+        ],
+        "notes": "Roadmap, open discovery work and design files handed to Adaeze Okonkwo; stakeholder map shared with the team."
       }
     },
     {
@@ -31071,6 +31213,15 @@
         "completedAt": "2025-08-03",
         "wouldRecommend": true,
         "primaryReason": "Workload"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0014",
+        "successorName": "Amaka Afolayan",
+        "stepsCompletedOn": [
+          "2025-07-08",
+          "2025-07-10"
+        ],
+        "notes": "Open cases, regulator correspondence and the monitoring rules log handed to Amaka Afolayan in the handover pack."
       }
     },
     {
@@ -31088,6 +31239,18 @@
         "completedAt": "2025-06-24",
         "wouldRecommend": true,
         "primaryReason": "Workload"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0003",
+        "successorName": "Chinedu Olawale",
+        "stepsCompletedOn": [
+          "2025-05-29",
+          "2025-05-31",
+          "2025-06-02",
+          "2025-06-04",
+          "2025-06-06"
+        ],
+        "notes": "Stakeholder map, open decisions and budget ownership handed to Chinedu Olawale. Team informed of the new reporting line."
       }
     },
     {
@@ -31105,6 +31268,17 @@
         "completedAt": "2025-05-28",
         "wouldRecommend": true,
         "primaryReason": "Management"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0003",
+        "successorName": "Chinedu Olawale",
+        "stepsCompletedOn": [
+          "2025-05-02",
+          "2025-05-04",
+          "2025-05-06",
+          "2025-05-08"
+        ],
+        "notes": "Employee case files and draft policy updates transferred to Chinedu Olawale; open ER cases briefed one by one."
       }
     },
     {
@@ -31122,6 +31296,9 @@
         "completedAt": "2025-04-17",
         "wouldRecommend": true,
         "primaryReason": "Career growth"
+      },
+      "knowledgeTransfer": {
+        "stepsCompletedOn": []
       }
     },
     {
@@ -31139,6 +31316,15 @@
         "completedAt": "2025-03-30",
         "wouldRecommend": true,
         "primaryReason": "Career growth"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0014",
+        "successorName": "Amaka Afolayan",
+        "stepsCompletedOn": [
+          "2025-03-04",
+          "2025-03-06"
+        ],
+        "notes": "Open cases, regulator correspondence and the monitoring rules log handed to Amaka Afolayan in the handover pack."
       }
     },
     {
@@ -31156,6 +31342,16 @@
         "completedAt": "2025-03-12",
         "wouldRecommend": false,
         "primaryReason": "Workload"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0005",
+        "successorName": "Ngozi Mohammed",
+        "stepsCompletedOn": [
+          "2025-02-14",
+          "2025-02-16",
+          "2025-02-18"
+        ],
+        "notes": "Runbooks moved to the engineering wiki and on-call rota handed to Ngozi Mohammed. Deploy keys and CI secrets rotated after the last walkthrough."
       }
     },
     {
@@ -31173,6 +31369,14 @@
         "completedAt": "2025-01-25",
         "wouldRecommend": true,
         "primaryReason": "Workload"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0003",
+        "successorName": "Chinedu Olawale",
+        "stepsCompletedOn": [
+          "2024-12-30"
+        ],
+        "notes": "Stakeholder map, open decisions and budget ownership handed to Chinedu Olawale. Team informed of the new reporting line."
       }
     },
     {
@@ -31190,6 +31394,15 @@
         "completedAt": "2024-12-31",
         "wouldRecommend": false,
         "primaryReason": "Compensation"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0011",
+        "successorName": "Adaeze Okonkwo",
+        "stepsCompletedOn": [
+          "2024-12-05",
+          "2024-12-07"
+        ],
+        "notes": "Roadmap, open discovery work and design files handed to Adaeze Okonkwo; stakeholder map shared with the team."
       }
     },
     {
@@ -31207,6 +31420,16 @@
         "completedAt": "2024-11-28",
         "wouldRecommend": true,
         "primaryReason": "Management"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0009",
+        "successorName": "Femi Sanusi",
+        "stepsCompletedOn": [
+          "2024-11-02",
+          "2024-11-04",
+          "2024-11-06"
+        ],
+        "notes": "Month-end close checklist walked through twice with Femi Sanusi. Bank portal approvals and supplier payment runs reassigned."
       }
     },
     {
@@ -31224,6 +31447,18 @@
         "completedAt": "2025-10-24",
         "wouldRecommend": true,
         "primaryReason": "Compensation"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0013",
+        "successorName": "Ngozi Adebayo",
+        "stepsCompletedOn": [
+          "2025-09-28",
+          "2025-09-30",
+          "2025-10-02",
+          "2025-10-04",
+          "2025-10-06"
+        ],
+        "notes": "Open cases, regulator correspondence and the monitoring rules log handed to Ngozi Adebayo in the handover pack."
       }
     },
     {
@@ -31241,6 +31476,18 @@
         "completedAt": "2025-09-17",
         "wouldRecommend": false,
         "primaryReason": "Career growth"
+      },
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0015",
+        "successorName": "Nneka Sanusi",
+        "stepsCompletedOn": [
+          "2025-08-22",
+          "2025-08-24",
+          "2025-08-26",
+          "2025-08-28",
+          "2025-08-30"
+        ],
+        "notes": "Open cases, regulator correspondence and the monitoring rules log handed to Nneka Sanusi in the handover pack."
       }
     },
     {
@@ -31258,7 +31505,10 @@
         "manager": "not_started",
         "hr": "not_started"
       },
-      "initiatedAt": "2025-11-10"
+      "initiatedAt": "2025-11-10",
+      "knowledgeTransfer": {
+        "stepsCompletedOn": []
+      }
     },
     {
       "id": "NG-OFB-0028",
@@ -31275,7 +31525,12 @@
         "manager": "not_started",
         "hr": "not_started"
       },
-      "initiatedAt": "2025-11-10"
+      "initiatedAt": "2025-11-10",
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0011",
+        "successorName": "Adaeze Okonkwo",
+        "stepsCompletedOn": []
+      }
     },
     {
       "id": "NG-OFB-0029",
@@ -31292,7 +31547,10 @@
         "manager": "not_started",
         "hr": "not_started"
       },
-      "initiatedAt": "2025-11-10"
+      "initiatedAt": "2025-11-10",
+      "knowledgeTransfer": {
+        "stepsCompletedOn": []
+      }
     },
     {
       "id": "NG-OFB-0030",
@@ -31312,7 +31570,16 @@
       "initiatedAt": "2025-10-01",
       "disapprovedAt": "2025-10-05",
       "disapprovedBy": "NG-EMP-0017",
-      "disapprovalReason": "Counter-offer accepted — employee has withdrawn resignation."
+      "disapprovalReason": "Counter-offer accepted — employee has withdrawn resignation.",
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0009",
+        "successorName": "Femi Sanusi",
+        "stepsCompletedOn": [
+          "2025-10-03",
+          "2025-10-05"
+        ],
+        "notes": "Runbooks moved to the engineering wiki and on-call rota handed to Femi Sanusi. Deploy keys and CI secrets rotated after the last walkthrough."
+      }
     },
     {
       "id": "NG-OFB-0031",
@@ -31332,7 +31599,15 @@
       "initiatedAt": "2025-10-01",
       "disapprovedAt": "2025-10-05",
       "disapprovedBy": "NG-EMP-0017",
-      "disapprovalReason": "Business need changed — role is being retained."
+      "disapprovalReason": "Business need changed — role is being retained.",
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0013",
+        "successorName": "Ngozi Adebayo",
+        "stepsCompletedOn": [
+          "2025-10-03"
+        ],
+        "notes": "Open cases, regulator correspondence and the monitoring rules log handed to Ngozi Adebayo in the handover pack."
+      }
     },
     {
       "id": "NG-OFB-0032",
@@ -31352,7 +31627,16 @@
       "initiatedAt": "2025-10-01",
       "disapprovedAt": "2025-10-05",
       "disapprovedBy": "NG-EMP-0017",
-      "disapprovalReason": "Departure date renegotiated pending handover completion."
+      "disapprovalReason": "Departure date renegotiated pending handover completion.",
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0018",
+        "successorName": "Femi Ogundimu",
+        "stepsCompletedOn": [
+          "2025-10-03",
+          "2025-10-05"
+        ],
+        "notes": "Client list and live pipeline reassigned to Femi Ogundimu; introduction emails sent to the top ten accounts."
+      }
     },
     {
       "id": "NG-OFB-0033",
@@ -31371,7 +31655,17 @@
       },
       "initiatedAt": "2025-09-10",
       "reactivatedAt": "2025-09-20",
-      "reactivatedBy": "NG-EMP-0017"
+      "reactivatedBy": "NG-EMP-0017",
+      "knowledgeTransfer": {
+        "required": false,
+        "successorId": "NG-EMP-0006",
+        "successorName": "Yusuf Nwosu",
+        "stepsCompletedOn": [
+          "2025-09-18",
+          "2025-09-20"
+        ],
+        "notes": "Waived by HR — returning to the same team on reactivation."
+      }
     },
     {
       "id": "NG-OFB-0034",
@@ -31390,7 +31684,17 @@
       },
       "initiatedAt": "2025-09-10",
       "reactivatedAt": "2025-09-20",
-      "reactivatedBy": "NG-EMP-0017"
+      "reactivatedBy": "NG-EMP-0017",
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0014",
+        "successorName": "Amaka Afolayan",
+        "stepsCompletedOn": [
+          "2025-09-18",
+          "2025-09-20",
+          "2025-09-22"
+        ],
+        "notes": "Open cases, regulator correspondence and the monitoring rules log handed to Amaka Afolayan in the handover pack."
+      }
     },
     {
       "id": "NG-OFB-0035",
@@ -31409,7 +31713,16 @@
       },
       "initiatedAt": "2025-09-10",
       "reactivatedAt": "2025-09-20",
-      "reactivatedBy": "NG-EMP-0017"
+      "reactivatedBy": "NG-EMP-0017",
+      "knowledgeTransfer": {
+        "successorId": "NG-EMP-0003",
+        "successorName": "Chinedu Olawale",
+        "stepsCompletedOn": [
+          "2025-09-18",
+          "2025-09-20"
+        ],
+        "notes": "Stakeholder map, open decisions and budget ownership handed to Chinedu Olawale. Team informed of the new reporting line."
+      }
     }
   ],
   "performance": {
@@ -31426,6 +31739,20 @@
         "name": "H2 2025 Review",
         "startDate": "2025-11-01",
         "endDate": "2025-11-30",
+        "status": "completed"
+      },
+      {
+        "id": "RC-2026-H1",
+        "name": "H1 2026 Review",
+        "startDate": "2026-06-01",
+        "endDate": "2026-06-30",
+        "status": "completed"
+      },
+      {
+        "id": "RC-2026-H2",
+        "name": "H2 2026 Review",
+        "startDate": "2026-08-31",
+        "endDate": "2026-10-31",
         "status": "in_progress"
       }
     ],
@@ -31437,7 +31764,7 @@
         "title": "Complete leadership training",
         "type": "SMART",
         "progress": 53,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0002",
@@ -31445,8 +31772,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Ship Q-flagship feature on time",
         "type": "OKR",
-        "progress": 82,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0003",
@@ -31464,7 +31792,7 @@
         "title": "Reduce ticket resolution time by 20%",
         "type": "SMART",
         "progress": 26,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0005",
@@ -31473,7 +31801,7 @@
         "title": "Complete leadership training",
         "type": "OKR",
         "progress": 53,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0006",
@@ -31482,7 +31810,7 @@
         "title": "Increase product adoption in mid-market segment",
         "type": "SMART",
         "progress": 52,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0007",
@@ -31499,8 +31827,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Reduce ticket resolution time by 20%",
         "type": "OKR",
-        "progress": 90,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0009",
@@ -31509,7 +31838,7 @@
         "title": "Ship Q-flagship feature on time",
         "type": "OKR",
         "progress": 40,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0010",
@@ -31518,7 +31847,7 @@
         "title": "Ship Q-flagship feature on time",
         "type": "OKR",
         "progress": 59,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0011",
@@ -31536,7 +31865,7 @@
         "title": "Improve customer NPS by 5 points",
         "type": "SMART",
         "progress": 46,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0013",
@@ -31545,7 +31874,7 @@
         "title": "Reduce ticket resolution time by 20%",
         "type": "OKR",
         "progress": 43,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0014",
@@ -31554,7 +31883,7 @@
         "title": "Pass compliance certification",
         "type": "OKR",
         "progress": 40,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0015",
@@ -31571,8 +31900,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Increase product adoption in mid-market segment",
         "type": "OKR",
-        "progress": 75,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0017",
@@ -31581,7 +31911,7 @@
         "title": "Ship Q-flagship feature on time",
         "type": "SMART",
         "progress": 48,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0018",
@@ -31589,8 +31919,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Increase product adoption in mid-market segment",
         "type": "SMART",
-        "progress": 95,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0019",
@@ -31608,7 +31939,7 @@
         "title": "Complete leadership training",
         "type": "SMART",
         "progress": 34,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0021",
@@ -31616,8 +31947,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Pass compliance certification",
         "type": "SMART",
-        "progress": 61,
-        "status": "on_track"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0022",
@@ -31625,8 +31957,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Reduce ticket resolution time by 20%",
         "type": "SMART",
-        "progress": 63,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0023",
@@ -31643,8 +31976,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Hire 2 senior engineers",
         "type": "OKR",
-        "progress": 87,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0025",
@@ -31652,8 +31986,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Hire 2 senior engineers",
         "type": "OKR",
-        "progress": 88,
-        "status": "on_track"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0026",
@@ -31661,8 +31996,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Improve customer NPS by 5 points",
         "type": "OKR",
-        "progress": 67,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0027",
@@ -31680,7 +32016,7 @@
         "title": "Increase product adoption in mid-market segment",
         "type": "SMART",
         "progress": 28,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0029",
@@ -31689,7 +32025,7 @@
         "title": "Ship Q-flagship feature on time",
         "type": "OKR",
         "progress": 48,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0030",
@@ -31698,7 +32034,7 @@
         "title": "Pass compliance certification",
         "type": "SMART",
         "progress": 51,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0031",
@@ -31716,7 +32052,7 @@
         "title": "Improve customer NPS by 5 points",
         "type": "OKR",
         "progress": 56,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0033",
@@ -31724,8 +32060,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Improve customer NPS by 5 points",
         "type": "OKR",
-        "progress": 65,
-        "status": "on_track"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0034",
@@ -31733,8 +32070,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Increase product adoption in mid-market segment",
         "type": "OKR",
-        "progress": 82,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0035",
@@ -31752,7 +32090,7 @@
         "title": "Complete leadership training",
         "type": "SMART",
         "progress": 40,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0037",
@@ -31761,7 +32099,7 @@
         "title": "Increase product adoption in mid-market segment",
         "type": "SMART",
         "progress": 27,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0038",
@@ -31770,7 +32108,7 @@
         "title": "Complete leadership training",
         "type": "SMART",
         "progress": 49,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0039",
@@ -31787,8 +32125,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Hire 2 senior engineers",
         "type": "OKR",
-        "progress": 79,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0041",
@@ -31797,7 +32136,7 @@
         "title": "Ship Q-flagship feature on time",
         "type": "SMART",
         "progress": 52,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0042",
@@ -31805,8 +32144,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Complete leadership training",
         "type": "OKR",
-        "progress": 85,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0043",
@@ -31823,8 +32163,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Complete leadership training",
         "type": "SMART",
-        "progress": 62,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0045",
@@ -31833,7 +32174,7 @@
         "title": "Complete leadership training",
         "type": "OKR",
         "progress": 43,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0046",
@@ -31842,7 +32183,7 @@
         "title": "Ship Q-flagship feature on time",
         "type": "OKR",
         "progress": 44,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0047",
@@ -31859,8 +32200,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Improve customer NPS by 5 points",
         "type": "SMART",
-        "progress": 94,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0049",
@@ -31869,7 +32211,7 @@
         "title": "Increase product adoption in mid-market segment",
         "type": "OKR",
         "progress": 28,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0050",
@@ -31877,8 +32219,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Increase product adoption in mid-market segment",
         "type": "SMART",
-        "progress": 74,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0051",
@@ -31895,8 +32238,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Pass compliance certification",
         "type": "OKR",
-        "progress": 74,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0053",
@@ -31905,7 +32249,7 @@
         "title": "Ship Q-flagship feature on time",
         "type": "SMART",
         "progress": 31,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0054",
@@ -31913,8 +32257,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Increase product adoption in mid-market segment",
         "type": "SMART",
-        "progress": 81,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0055",
@@ -31931,8 +32276,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Ship Q-flagship feature on time",
         "type": "SMART",
-        "progress": 90,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0057",
@@ -31941,7 +32287,7 @@
         "title": "Reduce ticket resolution time by 20%",
         "type": "SMART",
         "progress": 41,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0058",
@@ -31949,8 +32295,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Increase product adoption in mid-market segment",
         "type": "OKR",
-        "progress": 85,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0059",
@@ -31968,7 +32315,7 @@
         "title": "Hire 2 senior engineers",
         "type": "OKR",
         "progress": 39,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0061",
@@ -31976,8 +32323,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Improve customer NPS by 5 points",
         "type": "OKR",
-        "progress": 93,
-        "status": "on_track"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0062",
@@ -31986,7 +32334,7 @@
         "title": "Pass compliance certification",
         "type": "OKR",
         "progress": 25,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0063",
@@ -32003,8 +32351,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Hire 2 senior engineers",
         "type": "OKR",
-        "progress": 95,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0065",
@@ -32012,8 +32361,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Pass compliance certification",
         "type": "SMART",
-        "progress": 90,
-        "status": "on_track"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0066",
@@ -32021,8 +32371,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Ship Q-flagship feature on time",
         "type": "SMART",
-        "progress": 62,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0067",
@@ -32040,7 +32391,7 @@
         "title": "Increase product adoption in mid-market segment",
         "type": "OKR",
         "progress": 58,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0069",
@@ -32049,7 +32400,7 @@
         "title": "Hire 2 senior engineers",
         "type": "OKR",
         "progress": 47,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0070",
@@ -32058,7 +32409,7 @@
         "title": "Ship Q-flagship feature on time",
         "type": "OKR",
         "progress": 25,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0071",
@@ -32075,8 +32426,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Complete leadership training",
         "type": "SMART",
-        "progress": 95,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0073",
@@ -32084,8 +32436,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Reduce ticket resolution time by 20%",
         "type": "SMART",
-        "progress": 96,
-        "status": "on_track"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0074",
@@ -32093,8 +32446,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Reduce ticket resolution time by 20%",
         "type": "OKR",
-        "progress": 94,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0075",
@@ -32111,8 +32465,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Complete leadership training",
         "type": "OKR",
-        "progress": 94,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0077",
@@ -32121,7 +32476,7 @@
         "title": "Pass compliance certification",
         "type": "OKR",
         "progress": 31,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0078",
@@ -32129,8 +32484,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Increase product adoption in mid-market segment",
         "type": "OKR",
-        "progress": 61,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0079",
@@ -32147,8 +32503,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Pass compliance certification",
         "type": "OKR",
-        "progress": 71,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0081",
@@ -32157,7 +32514,7 @@
         "title": "Improve customer NPS by 5 points",
         "type": "SMART",
         "progress": 51,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0082",
@@ -32166,7 +32523,7 @@
         "title": "Hire 2 senior engineers",
         "type": "SMART",
         "progress": 58,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0083",
@@ -32183,8 +32540,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Reduce ticket resolution time by 20%",
         "type": "OKR",
-        "progress": 87,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0085",
@@ -32193,7 +32551,7 @@
         "title": "Reduce ticket resolution time by 20%",
         "type": "SMART",
         "progress": 40,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0086",
@@ -32201,8 +32559,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Hire 2 senior engineers",
         "type": "OKR",
-        "progress": 63,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0087",
@@ -32219,8 +32578,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Hire 2 senior engineers",
         "type": "SMART",
-        "progress": 91,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0089",
@@ -32229,7 +32589,7 @@
         "title": "Complete leadership training",
         "type": "OKR",
         "progress": 22,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0090",
@@ -32238,7 +32598,7 @@
         "title": "Improve customer NPS by 5 points",
         "type": "OKR",
         "progress": 55,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0091",
@@ -32255,8 +32615,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Hire 2 senior engineers",
         "type": "SMART",
-        "progress": 97,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0093",
@@ -32265,7 +32626,7 @@
         "title": "Complete leadership training",
         "type": "SMART",
         "progress": 39,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0094",
@@ -32273,8 +32634,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Pass compliance certification",
         "type": "SMART",
-        "progress": 65,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0095",
@@ -32292,7 +32654,7 @@
         "title": "Ship Q-flagship feature on time",
         "type": "OKR",
         "progress": 25,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0097",
@@ -32300,8 +32662,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Ship Q-flagship feature on time",
         "type": "SMART",
-        "progress": 68,
-        "status": "on_track"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0098",
@@ -32309,8 +32672,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Pass compliance certification",
         "type": "OKR",
-        "progress": 97,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0099",
@@ -32328,7 +32692,7 @@
         "title": "Hire 2 senior engineers",
         "type": "OKR",
         "progress": 53,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0101",
@@ -32337,7 +32701,7 @@
         "title": "Reduce ticket resolution time by 20%",
         "type": "SMART",
         "progress": 25,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0102",
@@ -32345,8 +32709,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Reduce ticket resolution time by 20%",
         "type": "SMART",
-        "progress": 96,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0103",
@@ -32363,8 +32728,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Ship Q-flagship feature on time",
         "type": "OKR",
-        "progress": 97,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0105",
@@ -32372,8 +32738,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Increase product adoption in mid-market segment",
         "type": "OKR",
-        "progress": 67,
-        "status": "on_track"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0106",
@@ -32381,8 +32748,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Increase product adoption in mid-market segment",
         "type": "SMART",
-        "progress": 85,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0107",
@@ -32399,8 +32767,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Hire 2 senior engineers",
         "type": "SMART",
-        "progress": 92,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0109",
@@ -32409,7 +32778,7 @@
         "title": "Improve customer NPS by 5 points",
         "type": "SMART",
         "progress": 31,
-        "status": "on_track"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0110",
@@ -32418,7 +32787,7 @@
         "title": "Pass compliance certification",
         "type": "SMART",
         "progress": 34,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0111",
@@ -32435,8 +32804,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Increase product adoption in mid-market segment",
         "type": "SMART",
-        "progress": 75,
-        "status": "overdue"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0113",
@@ -32444,8 +32814,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Improve customer NPS by 5 points",
         "type": "SMART",
-        "progress": 69,
-        "status": "on_track"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0114",
@@ -32453,8 +32824,9 @@
         "cycleId": "RC-2025-H2",
         "title": "Ship Q-flagship feature on time",
         "type": "OKR",
-        "progress": 68,
-        "status": "at_risk"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-11-30"
       },
       {
         "id": "NG-GOAL-0115",
@@ -32472,7 +32844,7 @@
         "title": "Hire 2 senior engineers",
         "type": "OKR",
         "progress": 27,
-        "status": "overdue"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0117",
@@ -32480,8 +32852,9 @@
         "cycleId": "RC-2025-H1",
         "title": "Hire 2 senior engineers",
         "type": "SMART",
-        "progress": 71,
-        "status": "on_track"
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2025-06-30"
       },
       {
         "id": "NG-GOAL-0118",
@@ -32490,7 +32863,7 @@
         "title": "Complete leadership training",
         "type": "OKR",
         "progress": 47,
-        "status": "at_risk"
+        "status": "cancelled"
       },
       {
         "id": "NG-GOAL-0119",
@@ -32508,7 +32881,2046 @@
         "title": "Ship Q-flagship feature on time",
         "type": "SMART",
         "progress": 33,
+        "status": "cancelled"
+      },
+      {
+        "id": "NG-GOAL-PRF-0063",
+        "employeeId": "NG-EMP-0001",
+        "cycleId": "RC-2026-H1",
+        "title": "Agree next year's company strategy",
+        "category": "leadership",
+        "description": "Lead the leadership offsite and publish the strategy and its measures.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 38,
         "status": "overdue"
+      },
+      {
+        "id": "NG-GOAL-PRF-0064",
+        "employeeId": "NG-EMP-0001",
+        "cycleId": "RC-2026-H1",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 34,
+        "status": "overdue"
+      },
+      {
+        "id": "NG-GOAL-PRF-0065",
+        "employeeId": "NG-EMP-0001",
+        "cycleId": "RC-2026-H2",
+        "title": "Build a succession plan for key roles",
+        "category": "leadership",
+        "description": "Identify successors for every leadership role and agree development plans.",
+        "type": "OKR",
+        "createdAt": "2026-08-28",
+        "dueDate": "2026-12-31",
+        "progress": 25,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 20,
+            "note": "Good progress this sprint; remaining work is scoped."
+          },
+          {
+            "date": "2026-09-11",
+            "progress": 15,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-04",
+            "progress": 5,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0066",
+        "employeeId": "NG-EMP-0001",
+        "cycleId": "RC-2026-H2",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "OKR",
+        "createdAt": "2026-08-28",
+        "dueDate": "2026-11-18",
+        "progress": 100,
+        "status": "completed",
+        "updates": [
+          {
+            "date": "2026-09-15",
+            "progress": 65,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-06",
+            "progress": 35,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ],
+        "completedAt": "2026-09-23"
+      },
+      {
+        "id": "NG-GOAL-PRF-0067",
+        "employeeId": "NG-EMP-0001",
+        "cycleId": "RC-2026-H2",
+        "title": "Improve cross-team communication",
+        "category": "communication",
+        "description": "Introduce a monthly all-hands and a written weekly update.",
+        "type": "SMART",
+        "createdAt": "2026-09-04",
+        "dueDate": "2026-12-13",
+        "progress": 5,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 5,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          },
+          {
+            "date": "2026-09-11",
+            "progress": 0,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0068",
+        "employeeId": "NG-EMP-0002",
+        "cycleId": "RC-2026-H1",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 49,
+        "status": "overdue"
+      },
+      {
+        "id": "NG-GOAL-PRF-0069",
+        "employeeId": "NG-EMP-0002",
+        "cycleId": "RC-2026-H1",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-15"
+      },
+      {
+        "id": "NG-GOAL-PRF-0070",
+        "employeeId": "NG-EMP-0002",
+        "cycleId": "RC-2026-H2",
+        "title": "Improve cross-team communication",
+        "category": "communication",
+        "description": "Introduce a monthly all-hands and a written weekly update.",
+        "type": "OKR",
+        "createdAt": "2026-09-03",
+        "dueDate": "2026-12-31",
+        "progress": 20,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 15,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-10",
+            "progress": 5,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0071",
+        "employeeId": "NG-EMP-0002",
+        "cycleId": "RC-2026-H2",
+        "title": "Build a succession plan for key roles",
+        "category": "leadership",
+        "description": "Identify successors for every leadership role and agree development plans.",
+        "type": "SMART",
+        "createdAt": "2026-09-02",
+        "dueDate": "2026-11-04",
+        "progress": 40,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-13",
+            "progress": 20,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0072",
+        "employeeId": "NG-EMP-0002",
+        "cycleId": "RC-2026-H2",
+        "title": "Agree next year's company strategy",
+        "category": "leadership",
+        "description": "Lead the leadership offsite and publish the strategy and its measures.",
+        "type": "SMART",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-11-01",
+        "progress": 10,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-18",
+            "progress": 10,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          },
+          {
+            "date": "2026-09-12",
+            "progress": 5,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-05",
+            "progress": 5,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0073",
+        "employeeId": "NG-EMP-0003",
+        "cycleId": "RC-2026-H1",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-10"
+      },
+      {
+        "id": "NG-GOAL-PRF-0074",
+        "employeeId": "NG-EMP-0003",
+        "cycleId": "RC-2026-H1",
+        "title": "Build a succession plan for key roles",
+        "category": "leadership",
+        "description": "Identify successors for every leadership role and agree development plans.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-25"
+      },
+      {
+        "id": "NG-GOAL-PRF-0075",
+        "employeeId": "NG-EMP-0003",
+        "cycleId": "RC-2026-H2",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "SMART",
+        "createdAt": "2026-08-31",
+        "dueDate": "2026-12-31",
+        "progress": 25,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-16",
+            "progress": 15,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-08",
+            "progress": 10,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0076",
+        "employeeId": "NG-EMP-0003",
+        "cycleId": "RC-2026-H2",
+        "title": "Agree next year's company strategy",
+        "category": "leadership",
+        "description": "Lead the leadership offsite and publish the strategy and its measures.",
+        "type": "OKR",
+        "createdAt": "2026-08-28",
+        "dueDate": "2026-10-24",
+        "progress": 100,
+        "status": "completed",
+        "updates": [
+          {
+            "date": "2026-09-11",
+            "progress": 50,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ],
+        "completedAt": "2026-09-17"
+      },
+      {
+        "id": "NG-GOAL-PRF-0077",
+        "employeeId": "NG-EMP-0003",
+        "cycleId": "RC-2026-H2",
+        "title": "Improve cross-team communication",
+        "category": "communication",
+        "description": "Introduce a monthly all-hands and a written weekly update.",
+        "type": "SMART",
+        "createdAt": "2026-08-29",
+        "dueDate": "2026-09-15",
+        "progress": 45,
+        "status": "overdue",
+        "updates": [
+          {
+            "date": "2026-09-11",
+            "progress": 25,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0078",
+        "employeeId": "NG-EMP-0004",
+        "cycleId": "RC-2026-H1",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-28"
+      },
+      {
+        "id": "NG-GOAL-PRF-0079",
+        "employeeId": "NG-EMP-0004",
+        "cycleId": "RC-2026-H1",
+        "title": "Raise automated test coverage to 80%",
+        "category": "technical",
+        "description": "Add unit and integration tests to owned services and gate merges on coverage.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-15"
+      },
+      {
+        "id": "NG-GOAL-PRF-0080",
+        "employeeId": "NG-EMP-0004",
+        "cycleId": "RC-2026-H2",
+        "title": "Mentor a junior engineer through their first release",
+        "category": "leadership",
+        "description": "Pair weekly and review their pull requests until they ship a feature end to end.",
+        "type": "OKR",
+        "createdAt": "2026-08-28",
+        "dueDate": "2026-12-31",
+        "progress": 15,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 10,
+            "note": "Good progress this sprint; remaining work is scoped."
+          },
+          {
+            "date": "2026-09-11",
+            "progress": 10,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-04",
+            "progress": 5,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0081",
+        "employeeId": "NG-EMP-0004",
+        "cycleId": "RC-2026-H2",
+        "title": "Cut p95 API latency by 30%",
+        "category": "technical",
+        "description": "Profile the hottest endpoints, add caching where safe and bring p95 latency under 300ms.",
+        "type": "SMART",
+        "createdAt": "2026-09-05",
+        "dueDate": "2026-11-14",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-18",
+            "progress": 20,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-11",
+            "progress": 10,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0082",
+        "employeeId": "NG-EMP-0004",
+        "cycleId": "RC-2026-H2",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "SMART",
+        "createdAt": "2026-08-31",
+        "dueDate": "2026-11-15",
+        "progress": 40,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-18",
+            "progress": 30,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-12",
+            "progress": 20,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-06",
+            "progress": 10,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0083",
+        "employeeId": "NG-EMP-0005",
+        "cycleId": "RC-2026-H1",
+        "title": "Mentor a junior engineer through their first release",
+        "category": "leadership",
+        "description": "Pair weekly and review their pull requests until they ship a feature end to end.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-30"
+      },
+      {
+        "id": "NG-GOAL-PRF-0084",
+        "employeeId": "NG-EMP-0005",
+        "cycleId": "RC-2026-H1",
+        "title": "Migrate the payments service to the new platform",
+        "category": "technical",
+        "description": "Move the remaining payment flows off the legacy stack with zero customer-facing downtime.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 42,
+        "status": "overdue"
+      },
+      {
+        "id": "NG-GOAL-PRF-0085",
+        "employeeId": "NG-EMP-0005",
+        "cycleId": "RC-2026-H2",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "SMART",
+        "createdAt": "2026-09-05",
+        "dueDate": "2026-12-31",
+        "progress": 5,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-15",
+            "progress": 5,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0086",
+        "employeeId": "NG-EMP-0005",
+        "cycleId": "RC-2026-H2",
+        "title": "Cut p95 API latency by 30%",
+        "category": "technical",
+        "description": "Profile the hottest endpoints, add caching where safe and bring p95 latency under 300ms.",
+        "type": "OKR",
+        "createdAt": "2026-08-31",
+        "dueDate": "2026-10-25",
+        "progress": 65,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-18",
+            "progress": 50,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-12",
+            "progress": 35,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-06",
+            "progress": 15,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0087",
+        "employeeId": "NG-EMP-0005",
+        "cycleId": "RC-2026-H2",
+        "title": "Raise automated test coverage to 80%",
+        "category": "technical",
+        "description": "Add unit and integration tests to owned services and gate merges on coverage.",
+        "type": "OKR",
+        "createdAt": "2026-09-01",
+        "dueDate": "2026-09-15",
+        "progress": 45,
+        "status": "overdue",
+        "updates": [
+          {
+            "date": "2026-09-16",
+            "progress": 30,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-09",
+            "progress": 15,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0088",
+        "employeeId": "NG-EMP-0006",
+        "cycleId": "RC-2026-H1",
+        "title": "Mentor a junior engineer through their first release",
+        "category": "leadership",
+        "description": "Pair weekly and review their pull requests until they ship a feature end to end.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-28"
+      },
+      {
+        "id": "NG-GOAL-PRF-0089",
+        "employeeId": "NG-EMP-0006",
+        "cycleId": "RC-2026-H1",
+        "title": "Raise automated test coverage to 80%",
+        "category": "technical",
+        "description": "Add unit and integration tests to owned services and gate merges on coverage.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-23"
+      },
+      {
+        "id": "NG-GOAL-PRF-0090",
+        "employeeId": "NG-EMP-0006",
+        "cycleId": "RC-2026-H2",
+        "title": "Cut p95 API latency by 30%",
+        "category": "technical",
+        "description": "Profile the hottest endpoints, add caching where safe and bring p95 latency under 300ms.",
+        "type": "OKR",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-12-31",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-16",
+            "progress": 20,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-07",
+            "progress": 10,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0091",
+        "employeeId": "NG-EMP-0006",
+        "cycleId": "RC-2026-H2",
+        "title": "Reduce production incidents by 25%",
+        "category": "operational",
+        "description": "Tighten alerting, write runbooks for the top five failure modes and run a game day.",
+        "type": "OKR",
+        "createdAt": "2026-09-03",
+        "dueDate": "2026-11-20",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 20,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-10",
+            "progress": 10,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0092",
+        "employeeId": "NG-EMP-0006",
+        "cycleId": "RC-2026-H2",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "OKR",
+        "createdAt": "2026-09-03",
+        "dueDate": "2026-11-27",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 20,
+            "note": "Good progress this sprint; remaining work is scoped."
+          },
+          {
+            "date": "2026-09-10",
+            "progress": 10,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0093",
+        "employeeId": "NG-EMP-0007",
+        "cycleId": "RC-2026-H1",
+        "title": "Reduce production incidents by 25%",
+        "category": "operational",
+        "description": "Tighten alerting, write runbooks for the top five failure modes and run a game day.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-12"
+      },
+      {
+        "id": "NG-GOAL-PRF-0094",
+        "employeeId": "NG-EMP-0007",
+        "cycleId": "RC-2026-H1",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-22"
+      },
+      {
+        "id": "NG-GOAL-PRF-0095",
+        "employeeId": "NG-EMP-0007",
+        "cycleId": "RC-2026-H2",
+        "title": "Mentor a junior engineer through their first release",
+        "category": "leadership",
+        "description": "Pair weekly and review their pull requests until they ship a feature end to end.",
+        "type": "SMART",
+        "createdAt": "2026-08-28",
+        "dueDate": "2026-12-31",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 25,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-11",
+            "progress": 15,
+            "note": "Good progress this sprint; remaining work is scoped."
+          },
+          {
+            "date": "2026-09-04",
+            "progress": 10,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0096",
+        "employeeId": "NG-EMP-0007",
+        "cycleId": "RC-2026-H2",
+        "title": "Migrate the payments service to the new platform",
+        "category": "technical",
+        "description": "Move the remaining payment flows off the legacy stack with zero customer-facing downtime.",
+        "type": "SMART",
+        "createdAt": "2026-09-05",
+        "dueDate": "2026-11-01",
+        "progress": 10,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-19",
+            "progress": 10,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          },
+          {
+            "date": "2026-09-15",
+            "progress": 5,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-10",
+            "progress": 5,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0097",
+        "employeeId": "NG-EMP-0007",
+        "cycleId": "RC-2026-H2",
+        "title": "Cut p95 API latency by 30%",
+        "category": "technical",
+        "description": "Profile the hottest endpoints, add caching where safe and bring p95 latency under 300ms.",
+        "type": "OKR",
+        "createdAt": "2026-09-05",
+        "dueDate": "2026-09-16",
+        "progress": 50,
+        "status": "overdue",
+        "updates": [
+          {
+            "date": "2026-09-19",
+            "progress": 40,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-15",
+            "progress": 25,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-10",
+            "progress": 15,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0098",
+        "employeeId": "NG-EMP-0008",
+        "cycleId": "RC-2026-H1",
+        "title": "Reduce production incidents by 25%",
+        "category": "operational",
+        "description": "Tighten alerting, write runbooks for the top five failure modes and run a game day.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-18"
+      },
+      {
+        "id": "NG-GOAL-PRF-0099",
+        "employeeId": "NG-EMP-0008",
+        "cycleId": "RC-2026-H1",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-14"
+      },
+      {
+        "id": "NG-GOAL-PRF-0100",
+        "employeeId": "NG-EMP-0008",
+        "cycleId": "RC-2026-H2",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "SMART",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-12-31",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-12",
+            "progress": 15,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0101",
+        "employeeId": "NG-EMP-0008",
+        "cycleId": "RC-2026-H2",
+        "title": "Migrate the payments service to the new platform",
+        "category": "technical",
+        "description": "Move the remaining payment flows off the legacy stack with zero customer-facing downtime.",
+        "type": "OKR",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-12-06",
+        "progress": 40,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-18",
+            "progress": 30,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-12",
+            "progress": 20,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-05",
+            "progress": 10,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0102",
+        "employeeId": "NG-EMP-0008",
+        "cycleId": "RC-2026-H2",
+        "title": "Raise automated test coverage to 80%",
+        "category": "technical",
+        "description": "Add unit and integration tests to owned services and gate merges on coverage.",
+        "type": "SMART",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-12-12",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-18",
+            "progress": 25,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-12",
+            "progress": 15,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-05",
+            "progress": 10,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0103",
+        "employeeId": "NG-EMP-0009",
+        "cycleId": "RC-2026-H1",
+        "title": "Mentor a junior engineer through their first release",
+        "category": "leadership",
+        "description": "Pair weekly and review their pull requests until they ship a feature end to end.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-27"
+      },
+      {
+        "id": "NG-GOAL-PRF-0104",
+        "employeeId": "NG-EMP-0009",
+        "cycleId": "RC-2026-H1",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-14"
+      },
+      {
+        "id": "NG-GOAL-PRF-0105",
+        "employeeId": "NG-EMP-0009",
+        "cycleId": "RC-2026-H2",
+        "title": "Migrate the payments service to the new platform",
+        "category": "technical",
+        "description": "Move the remaining payment flows off the legacy stack with zero customer-facing downtime.",
+        "type": "SMART",
+        "createdAt": "2026-09-01",
+        "dueDate": "2026-12-31",
+        "progress": 40,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-13",
+            "progress": 20,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0106",
+        "employeeId": "NG-EMP-0009",
+        "cycleId": "RC-2026-H2",
+        "title": "Cut p95 API latency by 30%",
+        "category": "technical",
+        "description": "Profile the hottest endpoints, add caching where safe and bring p95 latency under 300ms.",
+        "type": "SMART",
+        "createdAt": "2026-08-31",
+        "dueDate": "2026-11-14",
+        "progress": 45,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-16",
+            "progress": 30,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-08",
+            "progress": 15,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0107",
+        "employeeId": "NG-EMP-0009",
+        "cycleId": "RC-2026-H2",
+        "title": "Raise automated test coverage to 80%",
+        "category": "technical",
+        "description": "Add unit and integration tests to owned services and gate merges on coverage.",
+        "type": "SMART",
+        "createdAt": "2026-09-01",
+        "dueDate": "2026-12-10",
+        "progress": 40,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-16",
+            "progress": 25,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-09",
+            "progress": 15,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0108",
+        "employeeId": "NG-EMP-0010",
+        "cycleId": "RC-2026-H1",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-11"
+      },
+      {
+        "id": "NG-GOAL-PRF-0109",
+        "employeeId": "NG-EMP-0010",
+        "cycleId": "RC-2026-H1",
+        "title": "Publish a 2-quarter product roadmap",
+        "category": "leadership",
+        "description": "Agree priorities with engineering and commercial leads and publish the roadmap.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-18"
+      },
+      {
+        "id": "NG-GOAL-PRF-0110",
+        "employeeId": "NG-EMP-0010",
+        "cycleId": "RC-2026-H2",
+        "title": "Build a reusable design system library",
+        "category": "technical",
+        "description": "Document core components so every squad ships consistent UI.",
+        "type": "OKR",
+        "createdAt": "2026-09-03",
+        "dueDate": "2026-12-31",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 20,
+            "note": "Good progress this sprint; remaining work is scoped."
+          },
+          {
+            "date": "2026-09-10",
+            "progress": 10,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0111",
+        "employeeId": "NG-EMP-0010",
+        "cycleId": "RC-2026-H2",
+        "title": "Ship the redesigned onboarding flow",
+        "category": "technical",
+        "description": "Launch the new onboarding journey and lift day-7 activation by 10 points.",
+        "type": "OKR",
+        "createdAt": "2026-09-01",
+        "dueDate": "2026-11-09",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-16",
+            "progress": 20,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-09",
+            "progress": 10,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0112",
+        "employeeId": "NG-EMP-0010",
+        "cycleId": "RC-2026-H2",
+        "title": "Run 12 customer discovery interviews",
+        "category": "communication",
+        "description": "Talk to customers in each segment and share a synthesis with the wider team.",
+        "type": "SMART",
+        "createdAt": "2026-09-04",
+        "dueDate": "2026-10-25",
+        "progress": 60,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-14",
+            "progress": 30,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0113",
+        "employeeId": "NG-EMP-0011",
+        "cycleId": "RC-2026-H1",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-12"
+      },
+      {
+        "id": "NG-GOAL-PRF-0114",
+        "employeeId": "NG-EMP-0011",
+        "cycleId": "RC-2026-H1",
+        "title": "Run 12 customer discovery interviews",
+        "category": "communication",
+        "description": "Talk to customers in each segment and share a synthesis with the wider team.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-18"
+      },
+      {
+        "id": "NG-GOAL-PRF-0115",
+        "employeeId": "NG-EMP-0011",
+        "cycleId": "RC-2026-H2",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "SMART",
+        "createdAt": "2026-08-29",
+        "dueDate": "2026-12-31",
+        "progress": 25,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-11",
+            "progress": 15,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0116",
+        "employeeId": "NG-EMP-0011",
+        "cycleId": "RC-2026-H2",
+        "title": "Ship the redesigned onboarding flow",
+        "category": "technical",
+        "description": "Launch the new onboarding journey and lift day-7 activation by 10 points.",
+        "type": "OKR",
+        "createdAt": "2026-08-28",
+        "dueDate": "2026-11-24",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-15",
+            "progress": 20,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-06",
+            "progress": 10,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0117",
+        "employeeId": "NG-EMP-0011",
+        "cycleId": "RC-2026-H2",
+        "title": "Build a reusable design system library",
+        "category": "technical",
+        "description": "Document core components so every squad ships consistent UI.",
+        "type": "OKR",
+        "createdAt": "2026-08-28",
+        "dueDate": "2026-11-21",
+        "progress": 45,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-15",
+            "progress": 30,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-06",
+            "progress": 15,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0118",
+        "employeeId": "NG-EMP-0012",
+        "cycleId": "RC-2026-H1",
+        "title": "Build a reusable design system library",
+        "category": "technical",
+        "description": "Document core components so every squad ships consistent UI.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 54,
+        "status": "overdue"
+      },
+      {
+        "id": "NG-GOAL-PRF-0119",
+        "employeeId": "NG-EMP-0012",
+        "cycleId": "RC-2026-H1",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-17"
+      },
+      {
+        "id": "NG-GOAL-PRF-0120",
+        "employeeId": "NG-EMP-0012",
+        "cycleId": "RC-2026-H2",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "OKR",
+        "createdAt": "2026-08-31",
+        "dueDate": "2026-12-31",
+        "progress": 15,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-12",
+            "progress": 10,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0121",
+        "employeeId": "NG-EMP-0012",
+        "cycleId": "RC-2026-H2",
+        "title": "Ship the redesigned onboarding flow",
+        "category": "technical",
+        "description": "Launch the new onboarding journey and lift day-7 activation by 10 points.",
+        "type": "SMART",
+        "createdAt": "2026-09-03",
+        "dueDate": "2026-11-16",
+        "progress": 5,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-14",
+            "progress": 5,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0122",
+        "employeeId": "NG-EMP-0012",
+        "cycleId": "RC-2026-H2",
+        "title": "Publish a 2-quarter product roadmap",
+        "category": "leadership",
+        "description": "Agree priorities with engineering and commercial leads and publish the roadmap.",
+        "type": "OKR",
+        "createdAt": "2026-09-02",
+        "dueDate": "2026-11-03",
+        "progress": 50,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 35,
+            "note": "Good progress this sprint; remaining work is scoped."
+          },
+          {
+            "date": "2026-09-09",
+            "progress": 15,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0123",
+        "employeeId": "NG-EMP-0013",
+        "cycleId": "RC-2026-H1",
+        "title": "Close all open audit findings",
+        "category": "operational",
+        "description": "Remediate outstanding internal audit actions before the next audit cycle.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-29"
+      },
+      {
+        "id": "NG-GOAL-PRF-0124",
+        "employeeId": "NG-EMP-0013",
+        "cycleId": "RC-2026-H1",
+        "title": "Deliver compliance training to every team",
+        "category": "communication",
+        "description": "Run refresher sessions and reach 100% completion of mandatory modules.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-16"
+      },
+      {
+        "id": "NG-GOAL-PRF-0125",
+        "employeeId": "NG-EMP-0013",
+        "cycleId": "RC-2026-H2",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "SMART",
+        "createdAt": "2026-08-28",
+        "dueDate": "2026-12-31",
+        "progress": 35,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-15",
+            "progress": 25,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-06",
+            "progress": 10,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0126",
+        "employeeId": "NG-EMP-0013",
+        "cycleId": "RC-2026-H2",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "OKR",
+        "createdAt": "2026-09-04",
+        "dueDate": "2026-11-19",
+        "progress": 40,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-14",
+            "progress": 20,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0127",
+        "employeeId": "NG-EMP-0013",
+        "cycleId": "RC-2026-H2",
+        "title": "Complete the annual AML risk assessment",
+        "category": "operational",
+        "description": "Refresh the enterprise-wide risk assessment and present findings to the board.",
+        "type": "SMART",
+        "createdAt": "2026-09-04",
+        "dueDate": "2026-09-13",
+        "progress": 35,
+        "status": "overdue",
+        "updates": [
+          {
+            "date": "2026-09-19",
+            "progress": 25,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-14",
+            "progress": 20,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-09",
+            "progress": 10,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0128",
+        "employeeId": "NG-EMP-0014",
+        "cycleId": "RC-2026-H1",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-11"
+      },
+      {
+        "id": "NG-GOAL-PRF-0129",
+        "employeeId": "NG-EMP-0014",
+        "cycleId": "RC-2026-H1",
+        "title": "Complete the annual AML risk assessment",
+        "category": "operational",
+        "description": "Refresh the enterprise-wide risk assessment and present findings to the board.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 42,
+        "status": "overdue"
+      },
+      {
+        "id": "NG-GOAL-PRF-0130",
+        "employeeId": "NG-EMP-0014",
+        "cycleId": "RC-2026-H2",
+        "title": "Earn a professional compliance certification",
+        "category": "growth",
+        "description": "Study for and pass the next available certification sitting.",
+        "type": "SMART",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-12-31",
+        "progress": 5,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-12",
+            "progress": 5,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0131",
+        "employeeId": "NG-EMP-0014",
+        "cycleId": "RC-2026-H2",
+        "title": "Close all open audit findings",
+        "category": "operational",
+        "description": "Remediate outstanding internal audit actions before the next audit cycle.",
+        "type": "OKR",
+        "createdAt": "2026-09-05",
+        "dueDate": "2026-10-26",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-18",
+            "progress": 20,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-11",
+            "progress": 10,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0132",
+        "employeeId": "NG-EMP-0014",
+        "cycleId": "RC-2026-H2",
+        "title": "Deliver compliance training to every team",
+        "category": "communication",
+        "description": "Run refresher sessions and reach 100% completion of mandatory modules.",
+        "type": "OKR",
+        "createdAt": "2026-09-03",
+        "dueDate": "2026-11-24",
+        "progress": 20,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-19",
+            "progress": 15,
+            "note": "Good progress this sprint; remaining work is scoped."
+          },
+          {
+            "date": "2026-09-14",
+            "progress": 10,
+            "note": "Good progress this sprint; remaining work is scoped."
+          },
+          {
+            "date": "2026-09-08",
+            "progress": 5,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0133",
+        "employeeId": "NG-EMP-0015",
+        "cycleId": "RC-2026-H1",
+        "title": "Earn a professional compliance certification",
+        "category": "growth",
+        "description": "Study for and pass the next available certification sitting.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-26"
+      },
+      {
+        "id": "NG-GOAL-PRF-0134",
+        "employeeId": "NG-EMP-0015",
+        "cycleId": "RC-2026-H1",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-10"
+      },
+      {
+        "id": "NG-GOAL-PRF-0135",
+        "employeeId": "NG-EMP-0015",
+        "cycleId": "RC-2026-H2",
+        "title": "Deliver compliance training to every team",
+        "category": "communication",
+        "description": "Run refresher sessions and reach 100% completion of mandatory modules.",
+        "type": "OKR",
+        "createdAt": "2026-09-01",
+        "dueDate": "2026-12-31",
+        "progress": 5,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-13",
+            "progress": 5,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0136",
+        "employeeId": "NG-EMP-0015",
+        "cycleId": "RC-2026-H2",
+        "title": "Close all open audit findings",
+        "category": "operational",
+        "description": "Remediate outstanding internal audit actions before the next audit cycle.",
+        "type": "OKR",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-11-30",
+        "progress": 5,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-16",
+            "progress": 5,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          },
+          {
+            "date": "2026-09-07",
+            "progress": 0,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0137",
+        "employeeId": "NG-EMP-0015",
+        "cycleId": "RC-2026-H2",
+        "title": "Complete the annual AML risk assessment",
+        "category": "operational",
+        "description": "Refresh the enterprise-wide risk assessment and present findings to the board.",
+        "type": "OKR",
+        "createdAt": "2026-08-31",
+        "dueDate": "2026-11-23",
+        "progress": 5,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-16",
+            "progress": 5,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          },
+          {
+            "date": "2026-09-08",
+            "progress": 0,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0138",
+        "employeeId": "NG-EMP-0016",
+        "cycleId": "RC-2026-H1",
+        "title": "Close the books in 5 working days",
+        "category": "operational",
+        "description": "Automate reconciliations so month-end close finishes within five working days.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 31,
+        "status": "overdue"
+      },
+      {
+        "id": "NG-GOAL-PRF-0139",
+        "employeeId": "NG-EMP-0016",
+        "cycleId": "RC-2026-H1",
+        "title": "Deliver the next-year budget on time",
+        "category": "leadership",
+        "description": "Coordinate department submissions and present the consolidated budget.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-14"
+      },
+      {
+        "id": "NG-GOAL-PRF-0140",
+        "employeeId": "NG-EMP-0016",
+        "cycleId": "RC-2026-H2",
+        "title": "Automate the monthly management report",
+        "category": "technical",
+        "description": "Replace the manual spreadsheet pack with an automated report.",
+        "type": "OKR",
+        "createdAt": "2026-09-04",
+        "dueDate": "2026-12-31",
+        "progress": 25,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 15,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-11",
+            "progress": 10,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0141",
+        "employeeId": "NG-EMP-0016",
+        "cycleId": "RC-2026-H2",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "OKR",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-11-06",
+        "progress": 35,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-12",
+            "progress": 20,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0142",
+        "employeeId": "NG-EMP-0016",
+        "cycleId": "RC-2026-H2",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "SMART",
+        "createdAt": "2026-09-03",
+        "dueDate": "2026-11-30",
+        "progress": 40,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-19",
+            "progress": 30,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-14",
+            "progress": 20,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-08",
+            "progress": 10,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0143",
+        "employeeId": "NG-EMP-0017",
+        "cycleId": "RC-2026-H1",
+        "title": "Launch the manager development programme",
+        "category": "leadership",
+        "description": "Design and run a 6-session programme for first-time managers.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 49,
+        "status": "overdue"
+      },
+      {
+        "id": "NG-GOAL-PRF-0144",
+        "employeeId": "NG-EMP-0017",
+        "cycleId": "RC-2026-H1",
+        "title": "Lift engagement survey participation to 85%",
+        "category": "communication",
+        "description": "Promote the survey and share results transparently to raise participation.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-24"
+      },
+      {
+        "id": "NG-GOAL-PRF-0145",
+        "employeeId": "NG-EMP-0017",
+        "cycleId": "RC-2026-H2",
+        "title": "Refresh the employee handbook",
+        "category": "operational",
+        "description": "Update policies to reflect current legislation and publish the new handbook.",
+        "type": "SMART",
+        "createdAt": "2026-08-31",
+        "dueDate": "2026-12-31",
+        "progress": 20,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-12",
+            "progress": 10,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0146",
+        "employeeId": "NG-EMP-0017",
+        "cycleId": "RC-2026-H2",
+        "title": "Reduce time-to-hire to under 30 days",
+        "category": "operational",
+        "description": "Tighten the interview process and shortlist faster to bring time-to-hire under 30 days.",
+        "type": "OKR",
+        "createdAt": "2026-09-04",
+        "dueDate": "2026-12-03",
+        "progress": 40,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 25,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-11",
+            "progress": 15,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0147",
+        "employeeId": "NG-EMP-0017",
+        "cycleId": "RC-2026-H2",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "SMART",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-11-02",
+        "progress": 50,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-16",
+            "progress": 35,
+            "note": "Good progress this sprint; remaining work is scoped."
+          },
+          {
+            "date": "2026-09-07",
+            "progress": 15,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0148",
+        "employeeId": "NG-EMP-0018",
+        "cycleId": "RC-2026-H1",
+        "title": "Lower customer acquisition cost by 15%",
+        "category": "operational",
+        "description": "Shift spend to the best-performing channels and cut CAC by 15%.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-11"
+      },
+      {
+        "id": "NG-GOAL-PRF-0149",
+        "employeeId": "NG-EMP-0018",
+        "cycleId": "RC-2026-H1",
+        "title": "Close three new enterprise accounts",
+        "category": "operational",
+        "description": "Progress the top enterprise prospects to signed contracts.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-24"
+      },
+      {
+        "id": "NG-GOAL-PRF-0150",
+        "employeeId": "NG-EMP-0018",
+        "cycleId": "RC-2026-H2",
+        "title": "Grow qualified pipeline by 20%",
+        "category": "operational",
+        "description": "Run targeted campaigns that add 20% more qualified opportunities.",
+        "type": "SMART",
+        "createdAt": "2026-08-31",
+        "dueDate": "2026-12-31",
+        "progress": 30,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-18",
+            "progress": 25,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-12",
+            "progress": 15,
+            "note": "Blocked for a week on a dependency — now resolved."
+          },
+          {
+            "date": "2026-09-06",
+            "progress": 10,
+            "note": "Blocked for a week on a dependency — now resolved."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0151",
+        "employeeId": "NG-EMP-0018",
+        "cycleId": "RC-2026-H2",
+        "title": "Launch two partner co-marketing campaigns",
+        "category": "communication",
+        "description": "Agree and deliver joint campaigns with two strategic partners.",
+        "type": "SMART",
+        "createdAt": "2026-09-04",
+        "dueDate": "2026-11-22",
+        "progress": 100,
+        "status": "completed",
+        "updates": [
+          {
+            "date": "2026-09-19",
+            "progress": 75,
+            "note": "Good progress this sprint; remaining work is scoped."
+          },
+          {
+            "date": "2026-09-14",
+            "progress": 50,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-09",
+            "progress": 25,
+            "note": "First milestone done; on track for the next one."
+          }
+        ],
+        "completedAt": "2026-09-21"
+      },
+      {
+        "id": "NG-GOAL-PRF-0152",
+        "employeeId": "NG-EMP-0018",
+        "cycleId": "RC-2026-H2",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "SMART",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-09-14",
+        "progress": 40,
+        "status": "overdue",
+        "updates": [
+          {
+            "date": "2026-09-12",
+            "progress": 20,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0153",
+        "employeeId": "NG-EMP-0019",
+        "cycleId": "RC-2026-H1",
+        "title": "Launch two partner co-marketing campaigns",
+        "category": "communication",
+        "description": "Agree and deliver joint campaigns with two strategic partners.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-23"
+      },
+      {
+        "id": "NG-GOAL-PRF-0154",
+        "employeeId": "NG-EMP-0019",
+        "cycleId": "RC-2026-H1",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "OKR",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-14"
+      },
+      {
+        "id": "NG-GOAL-PRF-0155",
+        "employeeId": "NG-EMP-0019",
+        "cycleId": "RC-2026-H2",
+        "title": "Close three new enterprise accounts",
+        "category": "operational",
+        "description": "Progress the top enterprise prospects to signed contracts.",
+        "type": "SMART",
+        "createdAt": "2026-08-29",
+        "dueDate": "2026-12-31",
+        "progress": 20,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-18",
+            "progress": 15,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-11",
+            "progress": 10,
+            "note": "First milestone done; on track for the next one."
+          },
+          {
+            "date": "2026-09-05",
+            "progress": 5,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0156",
+        "employeeId": "NG-EMP-0019",
+        "cycleId": "RC-2026-H2",
+        "title": "Grow qualified pipeline by 20%",
+        "category": "operational",
+        "description": "Run targeted campaigns that add 20% more qualified opportunities.",
+        "type": "OKR",
+        "createdAt": "2026-08-28",
+        "dueDate": "2026-12-10",
+        "progress": 5,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-17",
+            "progress": 5,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          },
+          {
+            "date": "2026-09-11",
+            "progress": 5,
+            "note": "Kicked off and agreed the plan with stakeholders."
+          },
+          {
+            "date": "2026-09-04",
+            "progress": 0,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0157",
+        "employeeId": "NG-EMP-0019",
+        "cycleId": "RC-2026-H2",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "OKR",
+        "createdAt": "2026-09-02",
+        "dueDate": "2026-12-11",
+        "progress": 15,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-13",
+            "progress": 10,
+            "note": "First milestone done; on track for the next one."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0158",
+        "employeeId": "NG-EMP-0020",
+        "cycleId": "RC-2026-H1",
+        "title": "Cut first-response time to under 1 hour",
+        "category": "operational",
+        "description": "Rebalance rotas and triage rules to answer every ticket within an hour.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 100,
+        "status": "completed",
+        "completedAt": "2026-06-22"
+      },
+      {
+        "id": "NG-GOAL-PRF-0159",
+        "employeeId": "NG-EMP-0020",
+        "cycleId": "RC-2026-H1",
+        "title": "Improve customer satisfaction to 90%",
+        "category": "communication",
+        "description": "Coach the team on tone and follow-up to lift CSAT to 90%.",
+        "type": "SMART",
+        "createdAt": "2026-02-01",
+        "dueDate": "2026-06-30",
+        "progress": 31,
+        "status": "overdue"
+      },
+      {
+        "id": "NG-GOAL-PRF-0160",
+        "employeeId": "NG-EMP-0020",
+        "cycleId": "RC-2026-H2",
+        "title": "Share knowledge in two internal sessions",
+        "category": "communication",
+        "description": "Run two lunch-and-learn sessions on your area of expertise.",
+        "type": "OKR",
+        "createdAt": "2026-09-05",
+        "dueDate": "2026-12-31",
+        "progress": 5,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-15",
+            "progress": 5,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0161",
+        "employeeId": "NG-EMP-0020",
+        "cycleId": "RC-2026-H2",
+        "title": "Train two team leads in coaching skills",
+        "category": "leadership",
+        "description": "Put two senior agents through coaching training and hand them QA reviews.",
+        "type": "OKR",
+        "createdAt": "2026-08-30",
+        "dueDate": "2026-11-20",
+        "progress": 35,
+        "status": "on_track",
+        "updates": [
+          {
+            "date": "2026-09-12",
+            "progress": 20,
+            "note": "Good progress this sprint; remaining work is scoped."
+          }
+        ]
+      },
+      {
+        "id": "NG-GOAL-PRF-0162",
+        "employeeId": "NG-EMP-0020",
+        "cycleId": "RC-2026-H2",
+        "title": "Complete a leadership or management course",
+        "category": "growth",
+        "description": "Finish an accredited course and apply one new practice with the team.",
+        "type": "SMART",
+        "createdAt": "2026-09-03",
+        "dueDate": "2026-10-29",
+        "progress": 10,
+        "status": "at_risk",
+        "updates": [
+          {
+            "date": "2026-09-14",
+            "progress": 5,
+            "note": "Behind plan after priorities shifted; agreed a catch-up plan with my manager."
+          }
+        ]
       }
     ],
     "reviews": [
@@ -33111,6 +35523,1125 @@
         "calibratedRating": 4,
         "summary": "Performance review summary for the cycle.",
         "completedAt": "2025-06-28"
+      },
+      {
+        "id": "NG-REV-PRF-0001",
+        "employeeId": "NG-EMP-0001",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 5,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Brings calm judgement to difficult situations and keeps the team focused.",
+        "improvements": "Push back earlier when scope grows beyond what is realistic.",
+        "selfAssessment": {
+          "achievements": "Built stronger relationships with the teams we depend on, which cut hand-off delays. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I want to build my people-leadership skills ahead of a lead role.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2025-11-21",
+        "completedAt": "2025-11-29"
+      },
+      {
+        "id": "NG-REV-PRF-0002",
+        "employeeId": "NG-EMP-0002",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 5,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Builds strong relationships with customers and stakeholders.",
+        "improvements": "Document decisions so the wider team can follow the reasoning.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Coached a newer colleague who is now working independently.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfSubmittedAt": "2025-11-17",
+        "completedAt": "2025-12-07"
+      },
+      {
+        "id": "NG-REV-PRF-0003",
+        "employeeId": "NG-EMP-0003",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 5,
+        "managerRating": 5,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Clear, structured communicator in writing and in meetings.",
+        "improvements": "Build confidence presenting to senior audiences.",
+        "selfAssessment": {
+          "achievements": "Coached a newer colleague who is now working independently. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Learning a new area quickly. I paired with an expert for the first few weeks.",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfSubmittedAt": "2025-11-17",
+        "completedAt": "2025-11-29"
+      },
+      {
+        "id": "NG-REV-PRF-0004",
+        "employeeId": "NG-EMP-0004",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Consistently delivers high-quality work on time and raises risks early.",
+        "improvements": "Build confidence presenting to senior audiences.",
+        "selfAssessment": {
+          "achievements": "Delivered my main project ahead of schedule and handed it over with full documentation. Took on extra scope when the team was short and still hit my core goals.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfSubmittedAt": "2025-11-19",
+        "completedAt": "2025-11-30"
+      },
+      {
+        "id": "NG-REV-PRF-0005",
+        "employeeId": "NG-EMP-0005",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 5,
+        "managerRating": 5,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Strong ownership — takes problems end to end without needing to be chased.",
+        "improvements": "Share progress more proactively with stakeholders.",
+        "selfAssessment": {
+          "achievements": "Built stronger relationships with the teams we depend on, which cut hand-off delays. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2025-11-17",
+        "completedAt": "2025-12-04"
+      },
+      {
+        "id": "NG-REV-PRF-0006",
+        "employeeId": "NG-EMP-0006",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 3,
+        "managerRating": 3,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Clear, structured communicator in writing and in meetings.",
+        "improvements": "Share progress more proactively with stakeholders.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Coached a newer colleague who is now working independently.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfSubmittedAt": "2025-11-22",
+        "completedAt": "2025-12-08"
+      },
+      {
+        "id": "NG-REV-PRF-0007",
+        "employeeId": "NG-EMP-0007",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 5,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Strong ownership — takes problems end to end without needing to be chased.",
+        "improvements": "Plan capacity more carefully ahead of busy periods.",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2025-11-16",
+        "completedAt": "2025-11-29"
+      },
+      {
+        "id": "NG-REV-PRF-0008",
+        "employeeId": "NG-EMP-0008",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Collaborates well across teams and is generous with their time.",
+        "improvements": "Build confidence presenting to senior audiences.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Coached a newer colleague who is now working independently.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2025-11-16",
+        "completedAt": "2025-11-26"
+      },
+      {
+        "id": "NG-REV-PRF-0009",
+        "employeeId": "NG-EMP-0009",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 3,
+        "managerRating": 3,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Brings calm judgement to difficult situations and keeps the team focused.",
+        "improvements": "Share progress more proactively with stakeholders.",
+        "selfAssessment": {
+          "achievements": "Coached a newer colleague who is now working independently. Coached a newer colleague who is now working independently.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2025-11-20",
+        "completedAt": "2025-11-26"
+      },
+      {
+        "id": "NG-REV-PRF-0010",
+        "employeeId": "NG-EMP-0010",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 4,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Strong ownership — takes problems end to end without needing to be chased.",
+        "improvements": "Document decisions so the wider team can follow the reasoning.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Learning a new area quickly. I paired with an expert for the first few weeks.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "A stretch assignment leading a small cross-team project."
+        },
+        "selfSubmittedAt": "2025-11-21",
+        "completedAt": "2025-12-05"
+      },
+      {
+        "id": "NG-REV-PRF-0011",
+        "employeeId": "NG-EMP-0011",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0010",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Builds strong relationships with customers and stakeholders.",
+        "improvements": "Push back earlier when scope grows beyond what is realistic.",
+        "selfAssessment": {
+          "achievements": "Delivered my main project ahead of schedule and handed it over with full documentation. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2025-11-21",
+        "completedAt": "2025-11-26"
+      },
+      {
+        "id": "NG-REV-PRF-0012",
+        "employeeId": "NG-EMP-0012",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0010",
+        "selfRating": 3,
+        "managerRating": 3,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Clear, structured communicator in writing and in meetings.",
+        "improvements": "Plan capacity more carefully ahead of busy periods.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Coached a newer colleague who is now working independently.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2025-11-17",
+        "completedAt": "2025-12-08"
+      },
+      {
+        "id": "NG-REV-PRF-0013",
+        "employeeId": "NG-EMP-0013",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Builds strong relationships with customers and stakeholders.",
+        "improvements": "Build confidence presenting to senior audiences.",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Coached a newer colleague who is now working independently.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A stretch assignment leading a small cross-team project."
+        },
+        "selfSubmittedAt": "2025-11-18",
+        "completedAt": "2025-12-02"
+      },
+      {
+        "id": "NG-REV-PRF-0014",
+        "employeeId": "NG-EMP-0014",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0013",
+        "selfRating": 5,
+        "managerRating": 5,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Brings calm judgement to difficult situations and keeps the team focused.",
+        "improvements": "Document decisions so the wider team can follow the reasoning.",
+        "selfAssessment": {
+          "achievements": "Delivered my main project ahead of schedule and handed it over with full documentation. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I want to build my people-leadership skills ahead of a lead role.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfSubmittedAt": "2025-11-16",
+        "completedAt": "2025-11-24"
+      },
+      {
+        "id": "NG-REV-PRF-0015",
+        "employeeId": "NG-EMP-0015",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0013",
+        "selfRating": 3,
+        "managerRating": 3,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Collaborates well across teams and is generous with their time.",
+        "improvements": "Document decisions so the wider team can follow the reasoning.",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2025-11-16",
+        "completedAt": "2025-11-27"
+      },
+      {
+        "id": "NG-REV-PRF-0016",
+        "employeeId": "NG-EMP-0016",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 3,
+        "managerRating": 3,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Collaborates well across teams and is generous with their time.",
+        "improvements": "Delegate more so they can focus on the highest-impact work.",
+        "selfAssessment": {
+          "achievements": "Delivered my main project ahead of schedule and handed it over with full documentation. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfSubmittedAt": "2025-11-19",
+        "completedAt": "2025-11-29"
+      },
+      {
+        "id": "NG-REV-PRF-0017",
+        "employeeId": "NG-EMP-0017",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 5,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Collaborates well across teams and is generous with their time.",
+        "improvements": "Build confidence presenting to senior audiences.",
+        "selfAssessment": {
+          "achievements": "Coached a newer colleague who is now working independently. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "Learning a new area quickly. I paired with an expert for the first few weeks.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfSubmittedAt": "2025-11-16",
+        "completedAt": "2025-11-24"
+      },
+      {
+        "id": "NG-REV-PRF-0018",
+        "employeeId": "NG-EMP-0018",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 5,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Clear, structured communicator in writing and in meetings.",
+        "improvements": "Delegate more so they can focus on the highest-impact work.",
+        "selfAssessment": {
+          "achievements": "Coached a newer colleague who is now working independently. Coached a newer colleague who is now working independently.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "A stretch assignment leading a small cross-team project."
+        },
+        "selfSubmittedAt": "2025-11-20",
+        "completedAt": "2025-12-08"
+      },
+      {
+        "id": "NG-REV-PRF-0019",
+        "employeeId": "NG-EMP-0019",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0018",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Clear, structured communicator in writing and in meetings.",
+        "improvements": "Delegate more so they can focus on the highest-impact work.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2025-11-17",
+        "completedAt": "2025-11-29"
+      },
+      {
+        "id": "NG-REV-PRF-0020",
+        "employeeId": "NG-EMP-0020",
+        "cycleId": "RC-2025-H2",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Consistently delivers high-quality work on time and raises risks early.",
+        "improvements": "Document decisions so the wider team can follow the reasoning.",
+        "selfAssessment": {
+          "achievements": "Built stronger relationships with the teams we depend on, which cut hand-off delays. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfSubmittedAt": "2025-11-21",
+        "completedAt": "2025-11-24"
+      },
+      {
+        "id": "NG-REV-PRF-0021",
+        "employeeId": "NG-EMP-0001",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Clear, structured communicator in writing and in meetings.",
+        "improvements": "Plan capacity more carefully ahead of busy periods.",
+        "selfAssessment": {
+          "achievements": "Coached a newer colleague who is now working independently. Built stronger relationships with the teams we depend on, which cut hand-off delays.",
+          "challenges": "Learning a new area quickly. I paired with an expert for the first few weeks.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2026-06-17",
+        "completedAt": "2026-07-04"
+      },
+      {
+        "id": "NG-REV-PRF-0022",
+        "employeeId": "NG-EMP-0002",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 5,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Brings calm judgement to difficult situations and keeps the team focused.",
+        "improvements": "Delegate more so they can focus on the highest-impact work.",
+        "selfAssessment": {
+          "achievements": "Delivered my main project ahead of schedule and handed it over with full documentation. Took on extra scope when the team was short and still hit my core goals.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2026-06-16",
+        "completedAt": "2026-06-27"
+      },
+      {
+        "id": "NG-REV-PRF-0023",
+        "employeeId": "NG-EMP-0003",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 5,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Builds strong relationships with customers and stakeholders.",
+        "improvements": "Push back earlier when scope grows beyond what is realistic.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "Learning a new area quickly. I paired with an expert for the first few weeks.",
+          "developmentAreas": "I want to build my people-leadership skills ahead of a lead role.",
+          "managerFeedback": "A stretch assignment leading a small cross-team project."
+        },
+        "selfSubmittedAt": "2026-06-21",
+        "completedAt": "2026-07-01"
+      },
+      {
+        "id": "NG-REV-PRF-0024",
+        "employeeId": "NG-EMP-0004",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Collaborates well across teams and is generous with their time.",
+        "improvements": "Build confidence presenting to senior audiences.",
+        "selfAssessment": {
+          "achievements": "Built stronger relationships with the teams we depend on, which cut hand-off delays. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfSubmittedAt": "2026-06-22",
+        "completedAt": "2026-06-29"
+      },
+      {
+        "id": "NG-REV-PRF-0025",
+        "employeeId": "NG-EMP-0005",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Builds strong relationships with customers and stakeholders.",
+        "improvements": "Push back earlier when scope grows beyond what is realistic.",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfSubmittedAt": "2026-06-22",
+        "completedAt": "2026-07-05"
+      },
+      {
+        "id": "NG-REV-PRF-0026",
+        "employeeId": "NG-EMP-0006",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 3,
+        "managerRating": 3,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Clear, structured communicator in writing and in meetings.",
+        "improvements": "Push back earlier when scope grows beyond what is realistic.",
+        "selfAssessment": {
+          "achievements": "Built stronger relationships with the teams we depend on, which cut hand-off delays. Built stronger relationships with the teams we depend on, which cut hand-off delays.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I want to build my people-leadership skills ahead of a lead role.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfSubmittedAt": "2026-06-22",
+        "completedAt": "2026-06-25"
+      },
+      {
+        "id": "NG-REV-PRF-0027",
+        "employeeId": "NG-EMP-0007",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Consistently delivers high-quality work on time and raises risks early.",
+        "improvements": "Share progress more proactively with stakeholders.",
+        "selfAssessment": {
+          "achievements": "Built stronger relationships with the teams we depend on, which cut hand-off delays. Coached a newer colleague who is now working independently.",
+          "challenges": "Learning a new area quickly. I paired with an expert for the first few weeks.",
+          "developmentAreas": "I want to build my people-leadership skills ahead of a lead role.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfSubmittedAt": "2026-06-17",
+        "completedAt": "2026-07-02"
+      },
+      {
+        "id": "NG-REV-PRF-0028",
+        "employeeId": "NG-EMP-0008",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Collaborates well across teams and is generous with their time.",
+        "improvements": "Push back earlier when scope grows beyond what is realistic.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfSubmittedAt": "2026-06-21",
+        "completedAt": "2026-07-03"
+      },
+      {
+        "id": "NG-REV-PRF-0029",
+        "employeeId": "NG-EMP-0009",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0004",
+        "selfRating": 3,
+        "managerRating": 3,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Excellent technical depth and a reliable reviewer for others.",
+        "improvements": "Share progress more proactively with stakeholders.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2026-06-16",
+        "completedAt": "2026-07-05"
+      },
+      {
+        "id": "NG-REV-PRF-0030",
+        "employeeId": "NG-EMP-0010",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 4,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Collaborates well across teams and is generous with their time.",
+        "improvements": "Push back earlier when scope grows beyond what is realistic.",
+        "selfAssessment": {
+          "achievements": "Coached a newer colleague who is now working independently. Coached a newer colleague who is now working independently.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I want to build my people-leadership skills ahead of a lead role.",
+          "managerFeedback": "A stretch assignment leading a small cross-team project."
+        },
+        "selfSubmittedAt": "2026-06-17",
+        "completedAt": "2026-06-26"
+      },
+      {
+        "id": "NG-REV-PRF-0031",
+        "employeeId": "NG-EMP-0011",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0010",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Excellent technical depth and a reliable reviewer for others.",
+        "improvements": "Build confidence presenting to senior audiences.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Took on extra scope when the team was short and still hit my core goals.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2026-06-21",
+        "completedAt": "2026-06-27"
+      },
+      {
+        "id": "NG-REV-PRF-0032",
+        "employeeId": "NG-EMP-0012",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0010",
+        "selfRating": 5,
+        "managerRating": 4,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Collaborates well across teams and is generous with their time.",
+        "improvements": "Delegate more so they can focus on the highest-impact work.",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Built stronger relationships with the teams we depend on, which cut hand-off delays.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "A stretch assignment leading a small cross-team project."
+        },
+        "selfSubmittedAt": "2026-06-16",
+        "completedAt": "2026-07-07"
+      },
+      {
+        "id": "NG-REV-PRF-0033",
+        "employeeId": "NG-EMP-0013",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Strong ownership — takes problems end to end without needing to be chased.",
+        "improvements": "Build confidence presenting to senior audiences.",
+        "selfAssessment": {
+          "achievements": "Delivered my main project ahead of schedule and handed it over with full documentation. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfSubmittedAt": "2026-06-16",
+        "completedAt": "2026-06-30"
+      },
+      {
+        "id": "NG-REV-PRF-0034",
+        "employeeId": "NG-EMP-0014",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0013",
+        "selfRating": 5,
+        "managerRating": 5,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Clear, structured communicator in writing and in meetings.",
+        "improvements": "Document decisions so the wider team can follow the reasoning.",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Took on extra scope when the team was short and still hit my core goals.",
+          "challenges": "Balancing project work with a heavy meeting load. I blocked focus time and it helped.",
+          "developmentAreas": "I want to build my people-leadership skills ahead of a lead role.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2026-06-21",
+        "completedAt": "2026-07-01"
+      },
+      {
+        "id": "NG-REV-PRF-0035",
+        "employeeId": "NG-EMP-0015",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0013",
+        "selfRating": 3,
+        "managerRating": 3,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Strong ownership — takes problems end to end without needing to be chased.",
+        "improvements": "Delegate more so they can focus on the highest-impact work.",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfSubmittedAt": "2026-06-16",
+        "completedAt": "2026-06-24"
+      },
+      {
+        "id": "NG-REV-PRF-0036",
+        "employeeId": "NG-EMP-0016",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Brings calm judgement to difficult situations and keeps the team focused.",
+        "improvements": "Delegate more so they can focus on the highest-impact work.",
+        "selfAssessment": {
+          "achievements": "Coached a newer colleague who is now working independently. Coached a newer colleague who is now working independently.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2026-06-22",
+        "completedAt": "2026-07-07"
+      },
+      {
+        "id": "NG-REV-PRF-0037",
+        "employeeId": "NG-EMP-0017",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 5,
+        "managerRating": 5,
+        "calibratedRating": 5,
+        "summary": "An outstanding period. Well ahead of expectations on every goal and a role model for the team.",
+        "strengths": "Collaborates well across teams and is generous with their time.",
+        "improvements": "Build confidence presenting to senior audiences.",
+        "selfAssessment": {
+          "achievements": "Delivered my main project ahead of schedule and handed it over with full documentation. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "Learning a new area quickly. I paired with an expert for the first few weeks.",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": "A stretch assignment leading a small cross-team project."
+        },
+        "selfSubmittedAt": "2026-06-18",
+        "completedAt": "2026-07-04"
+      },
+      {
+        "id": "NG-REV-PRF-0038",
+        "employeeId": "NG-EMP-0018",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Consistently delivers high-quality work on time and raises risks early.",
+        "improvements": "Share progress more proactively with stakeholders.",
+        "selfAssessment": {
+          "achievements": "Built stronger relationships with the teams we depend on, which cut hand-off delays. Took on extra scope when the team was short and still hit my core goals.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2026-06-21",
+        "completedAt": "2026-06-28"
+      },
+      {
+        "id": "NG-REV-PRF-0039",
+        "employeeId": "NG-EMP-0019",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0018",
+        "selfRating": 4,
+        "managerRating": 3,
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "strengths": "Strong ownership — takes problems end to end without needing to be chased.",
+        "improvements": "Document decisions so the wider team can follow the reasoning.",
+        "selfAssessment": {
+          "achievements": "Built stronger relationships with the teams we depend on, which cut hand-off delays. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfSubmittedAt": "2026-06-18",
+        "completedAt": "2026-06-30"
+      },
+      {
+        "id": "NG-REV-PRF-0040",
+        "employeeId": "NG-EMP-0020",
+        "cycleId": "RC-2026-H1",
+        "reviewerId": "NG-EMP-0003",
+        "selfRating": 4,
+        "managerRating": 4,
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "strengths": "Strong ownership — takes problems end to end without needing to be chased.",
+        "improvements": "Push back earlier when scope grows beyond what is realistic.",
+        "selfAssessment": {
+          "achievements": "Delivered my main project ahead of schedule and handed it over with full documentation. Built stronger relationships with the teams we depend on, which cut hand-off delays.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfSubmittedAt": "2026-06-22",
+        "completedAt": "2026-07-05"
+      },
+      {
+        "id": "NG-REV-PRF-0041",
+        "employeeId": "NG-EMP-0001",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0003",
+        "dueDate": "2026-10-31"
+      },
+      {
+        "id": "NG-REV-PRF-0042",
+        "employeeId": "NG-EMP-0002",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0003",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Delivered my main project ahead of schedule and handed it over with full documentation. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": ""
+        },
+        "status": "in_progress"
+      },
+      {
+        "id": "NG-REV-PRF-0043",
+        "employeeId": "NG-EMP-0003",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0004",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfRating": 5,
+        "selfSubmittedAt": "2026-09-23",
+        "status": "in_progress"
+      },
+      {
+        "id": "NG-REV-PRF-0044",
+        "employeeId": "NG-EMP-0004",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0003",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Took on extra scope when the team was short and still hit my core goals.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfRating": 3,
+        "selfSubmittedAt": "2026-09-12",
+        "status": "in_progress"
+      },
+      {
+        "id": "NG-REV-PRF-0045",
+        "employeeId": "NG-EMP-0005",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0004",
+        "dueDate": "2026-10-31"
+      },
+      {
+        "id": "NG-REV-PRF-0046",
+        "employeeId": "NG-EMP-0006",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0004",
+        "dueDate": "2026-10-31"
+      },
+      {
+        "id": "NG-REV-PRF-0047",
+        "employeeId": "NG-EMP-0007",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0004",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Built stronger relationships with the teams we depend on, which cut hand-off delays. Coached a newer colleague who is now working independently.",
+          "challenges": "Learning a new area quickly. I paired with an expert for the first few weeks.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "A stretch assignment leading a small cross-team project."
+        },
+        "selfRating": 4,
+        "selfSubmittedAt": "2026-09-14",
+        "status": "in_progress",
+        "managerRating": 4,
+        "strengths": "Brings calm judgement to difficult situations and keeps the team focused.",
+        "improvements": "Build confidence presenting to senior audiences."
+      },
+      {
+        "id": "NG-REV-PRF-0048",
+        "employeeId": "NG-EMP-0008",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0004",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I want to build my people-leadership skills ahead of a lead role.",
+          "managerFeedback": "A stretch assignment leading a small cross-team project."
+        },
+        "selfRating": 3,
+        "selfSubmittedAt": "2026-09-18",
+        "status": "in_progress",
+        "managerRating": 3,
+        "strengths": "Strong ownership — takes problems end to end without needing to be chased.",
+        "improvements": "Delegate more so they can focus on the highest-impact work."
+      },
+      {
+        "id": "NG-REV-PRF-0049",
+        "employeeId": "NG-EMP-0009",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0004",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Coached a newer colleague who is now working independently.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfRating": 4,
+        "selfSubmittedAt": "2026-09-23",
+        "status": "in_progress"
+      },
+      {
+        "id": "NG-REV-PRF-0050",
+        "employeeId": "NG-EMP-0010",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0003",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfRating": 4,
+        "selfSubmittedAt": "2026-09-22",
+        "status": "in_progress",
+        "managerRating": 4,
+        "strengths": "Collaborates well across teams and is generous with their time.",
+        "improvements": "Document decisions so the wider team can follow the reasoning."
+      },
+      {
+        "id": "NG-REV-PRF-0051",
+        "employeeId": "NG-EMP-0011",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0010",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Improved our process so the team spends less time on repetitive work. Took on extra scope when the team was short and still hit my core goals.",
+          "challenges": "",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": ""
+        },
+        "status": "in_progress"
+      },
+      {
+        "id": "NG-REV-PRF-0052",
+        "employeeId": "NG-EMP-0012",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0010",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Coached a newer colleague who is now working independently. Coached a newer colleague who is now working independently.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I want to build my people-leadership skills ahead of a lead role.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfRating": 3,
+        "selfSubmittedAt": "2026-09-21",
+        "status": "completed",
+        "managerRating": 4,
+        "strengths": "Brings calm judgement to difficult situations and keeps the team focused.",
+        "improvements": "Document decisions so the wider team can follow the reasoning.",
+        "calibratedRating": 4,
+        "summary": "A strong period. Exceeded expectations on most goals and grew noticeably in the role.",
+        "completedAt": "2026-09-22"
+      },
+      {
+        "id": "NG-REV-PRF-0053",
+        "employeeId": "NG-EMP-0013",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0003",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Delivered my main project ahead of schedule and handed it over with full documentation. Coached a newer colleague who is now working independently.",
+          "challenges": "",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": ""
+        },
+        "status": "in_progress"
+      },
+      {
+        "id": "NG-REV-PRF-0054",
+        "employeeId": "NG-EMP-0014",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0013",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": ""
+        },
+        "status": "in_progress"
+      },
+      {
+        "id": "NG-REV-PRF-0055",
+        "employeeId": "NG-EMP-0015",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0013",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfRating": 2,
+        "selfSubmittedAt": "2026-09-19",
+        "status": "completed",
+        "managerRating": 3,
+        "strengths": "Brings calm judgement to difficult situations and keeps the team focused.",
+        "improvements": "Delegate more so they can focus on the highest-impact work.",
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "completedAt": "2026-09-22"
+      },
+      {
+        "id": "NG-REV-PRF-0056",
+        "employeeId": "NG-EMP-0016",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0003",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Coached a newer colleague who is now working independently. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I want to get better at presenting to senior stakeholders.",
+          "managerFeedback": "A training budget for a relevant course this half."
+        },
+        "selfRating": 3,
+        "selfSubmittedAt": "2026-09-21",
+        "status": "in_progress"
+      },
+      {
+        "id": "NG-REV-PRF-0057",
+        "employeeId": "NG-EMP-0017",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0003",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "A key dependency slipped; I escalated earlier the second time and we recovered.",
+          "developmentAreas": "I'd like to improve how I plan and estimate larger pieces of work.",
+          "managerFeedback": "More regular 1:1s during busy periods."
+        },
+        "selfRating": 4,
+        "selfSubmittedAt": "2026-09-16",
+        "status": "in_progress"
+      },
+      {
+        "id": "NG-REV-PRF-0058",
+        "employeeId": "NG-EMP-0018",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0003",
+        "dueDate": "2026-10-31"
+      },
+      {
+        "id": "NG-REV-PRF-0059",
+        "employeeId": "NG-EMP-0019",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0018",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Took on extra scope when the team was short and still hit my core goals. Delivered my main project ahead of schedule and handed it over with full documentation.",
+          "challenges": "",
+          "developmentAreas": "I want to build my people-leadership skills ahead of a lead role.",
+          "managerFeedback": ""
+        },
+        "status": "in_progress"
+      },
+      {
+        "id": "NG-REV-PRF-0060",
+        "employeeId": "NG-EMP-0020",
+        "cycleId": "RC-2026-H2",
+        "reviewerId": "NG-EMP-0003",
+        "dueDate": "2026-10-31",
+        "selfAssessment": {
+          "achievements": "Built stronger relationships with the teams we depend on, which cut hand-off delays. Improved our process so the team spends less time on repetitive work.",
+          "challenges": "Shifting priorities mid-quarter. I now confirm scope in writing before starting.",
+          "developmentAreas": "I'd like to deepen my technical knowledge in our core platform.",
+          "managerFeedback": "Clearer priorities when requests come from several directions."
+        },
+        "selfRating": 4,
+        "selfSubmittedAt": "2026-09-20",
+        "status": "completed",
+        "managerRating": 3,
+        "strengths": "Strong ownership — takes problems end to end without needing to be chased.",
+        "improvements": "Plan capacity more carefully ahead of busy periods.",
+        "calibratedRating": 3,
+        "summary": "A solid period. Met expectations and delivered what was agreed.",
+        "completedAt": "2026-09-23"
+      },
+      {
+        "id": "NG-REV-PRF-0061",
+        "employeeId": "NG-EMP-0008",
+        "type": "probation",
+        "period": "Probation 2026",
+        "reviewerId": "NG-EMP-0004",
+        "dueDate": "2026-10-08",
+        "status": "not_started"
+      },
+      {
+        "id": "NG-REV-PRF-0062",
+        "employeeId": "NG-EMP-0015",
+        "type": "pip",
+        "period": "PIP H2 2026",
+        "reviewerId": "NG-EMP-0013",
+        "dueDate": "2026-09-19",
+        "status": "not_started"
       }
     ],
     "oneOnOnes": [
@@ -33421,6 +36952,286 @@
         "managerId": "NG-EMP-0001",
         "date": "2025-11-08",
         "notes": "Discussed current projects, blockers, and career development goals."
+      },
+      {
+        "id": "NG-ONE-PRF-0197",
+        "employeeId": "NG-EMP-0001",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-20",
+        "notes": "Discussed workload, upcoming leave and a stretch opportunity."
+      },
+      {
+        "id": "NG-ONE-PRF-0198",
+        "employeeId": "NG-EMP-0001",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-07",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0199",
+        "employeeId": "NG-EMP-0002",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-19",
+        "notes": "Went through recent feedback and set one development action."
+      },
+      {
+        "id": "NG-ONE-PRF-0200",
+        "employeeId": "NG-EMP-0002",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-05",
+        "notes": "Went through recent feedback and set one development action."
+      },
+      {
+        "id": "NG-ONE-PRF-0201",
+        "employeeId": "NG-EMP-0003",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-21",
+        "notes": "Discussed workload, upcoming leave and a stretch opportunity."
+      },
+      {
+        "id": "NG-ONE-PRF-0202",
+        "employeeId": "NG-EMP-0003",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-09",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0203",
+        "employeeId": "NG-EMP-0004",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-23",
+        "notes": "Went through recent feedback and set one development action."
+      },
+      {
+        "id": "NG-ONE-PRF-0204",
+        "employeeId": "NG-EMP-0004",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-09",
+        "notes": "Went through recent feedback and set one development action."
+      },
+      {
+        "id": "NG-ONE-PRF-0205",
+        "employeeId": "NG-EMP-0005",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-18",
+        "notes": "Went through recent feedback and set one development action."
+      },
+      {
+        "id": "NG-ONE-PRF-0206",
+        "employeeId": "NG-EMP-0005",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-08",
+        "notes": "Discussed workload, upcoming leave and a stretch opportunity."
+      },
+      {
+        "id": "NG-ONE-PRF-0207",
+        "employeeId": "NG-EMP-0006",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-21",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0208",
+        "employeeId": "NG-EMP-0006",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-05",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0209",
+        "employeeId": "NG-EMP-0007",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-21",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0210",
+        "employeeId": "NG-EMP-0007",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-08",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0211",
+        "employeeId": "NG-EMP-0008",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-19",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0212",
+        "employeeId": "NG-EMP-0008",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-09",
+        "notes": "Went through recent feedback and set one development action."
+      },
+      {
+        "id": "NG-ONE-PRF-0213",
+        "employeeId": "NG-EMP-0009",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-19",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0214",
+        "employeeId": "NG-EMP-0009",
+        "managerId": "NG-EMP-0004",
+        "date": "2026-09-05",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0215",
+        "employeeId": "NG-EMP-0010",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-19",
+        "notes": "Went through recent feedback and set one development action."
+      },
+      {
+        "id": "NG-ONE-PRF-0216",
+        "employeeId": "NG-EMP-0010",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-09",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0217",
+        "employeeId": "NG-EMP-0011",
+        "managerId": "NG-EMP-0010",
+        "date": "2026-09-20",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0218",
+        "employeeId": "NG-EMP-0011",
+        "managerId": "NG-EMP-0010",
+        "date": "2026-09-04",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0219",
+        "employeeId": "NG-EMP-0012",
+        "managerId": "NG-EMP-0010",
+        "date": "2026-09-18",
+        "notes": "Discussed workload, upcoming leave and a stretch opportunity."
+      },
+      {
+        "id": "NG-ONE-PRF-0220",
+        "employeeId": "NG-EMP-0012",
+        "managerId": "NG-EMP-0010",
+        "date": "2026-09-09",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0221",
+        "employeeId": "NG-EMP-0013",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-18",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0222",
+        "employeeId": "NG-EMP-0013",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-07",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0223",
+        "employeeId": "NG-EMP-0014",
+        "managerId": "NG-EMP-0013",
+        "date": "2026-09-22",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0224",
+        "employeeId": "NG-EMP-0014",
+        "managerId": "NG-EMP-0013",
+        "date": "2026-09-08",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0225",
+        "employeeId": "NG-EMP-0015",
+        "managerId": "NG-EMP-0013",
+        "date": "2026-09-19",
+        "notes": "Discussed workload, upcoming leave and a stretch opportunity."
+      },
+      {
+        "id": "NG-ONE-PRF-0226",
+        "employeeId": "NG-EMP-0015",
+        "managerId": "NG-EMP-0013",
+        "date": "2026-09-05",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0227",
+        "employeeId": "NG-EMP-0016",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-22",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0228",
+        "employeeId": "NG-EMP-0016",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-08",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0229",
+        "employeeId": "NG-EMP-0017",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-21",
+        "notes": "Discussed workload, upcoming leave and a stretch opportunity."
+      },
+      {
+        "id": "NG-ONE-PRF-0230",
+        "employeeId": "NG-EMP-0017",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-04",
+        "notes": "Discussed workload, upcoming leave and a stretch opportunity."
+      },
+      {
+        "id": "NG-ONE-PRF-0231",
+        "employeeId": "NG-EMP-0018",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-23",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0232",
+        "employeeId": "NG-EMP-0018",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-08",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
+      },
+      {
+        "id": "NG-ONE-PRF-0233",
+        "employeeId": "NG-EMP-0019",
+        "managerId": "NG-EMP-0018",
+        "date": "2026-09-22",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0234",
+        "employeeId": "NG-EMP-0019",
+        "managerId": "NG-EMP-0018",
+        "date": "2026-09-06",
+        "notes": "Went through recent feedback and set one development action."
+      },
+      {
+        "id": "NG-ONE-PRF-0235",
+        "employeeId": "NG-EMP-0020",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-19",
+        "notes": "Talked through the self-assessment and the support needed this half."
+      },
+      {
+        "id": "NG-ONE-PRF-0236",
+        "employeeId": "NG-EMP-0020",
+        "managerId": "NG-EMP-0003",
+        "date": "2026-09-06",
+        "notes": "Reviewed goal progress and agreed priorities for the next two weeks."
       }
     ],
     "feedback": [
@@ -33903,6 +37714,275 @@
         "type": "manager",
         "message": "Consistently meets expectations; keep building on stakeholder communication.",
         "createdAt": "2025-10-16"
+      },
+      {
+        "id": "NG-FB-PRF-0163",
+        "toEmployeeId": "NG-EMP-0001",
+        "fromEmployeeId": "NG-EMP-0003",
+        "type": "upward",
+        "message": "Gives clear direction and trusts the team to deliver.",
+        "createdAt": "2026-09-09"
+      },
+      {
+        "id": "NG-FB-PRF-0164",
+        "toEmployeeId": "NG-EMP-0001",
+        "fromEmployeeId": "NG-EMP-0020",
+        "type": "upward",
+        "message": "Very supportive in 1:1s — I always leave with a clear next step.",
+        "createdAt": "2026-08-27"
+      },
+      {
+        "id": "NG-FB-PRF-0165",
+        "toEmployeeId": "NG-EMP-0002",
+        "fromEmployeeId": "NG-EMP-0003",
+        "type": "peer",
+        "message": "Your reviews are thorough and genuinely improve the work.",
+        "createdAt": "2026-08-13"
+      },
+      {
+        "id": "NG-FB-PRF-0166",
+        "toEmployeeId": "NG-EMP-0004",
+        "fromEmployeeId": "NG-EMP-0009",
+        "type": "upward",
+        "message": "Very supportive in 1:1s — I always leave with a clear next step.",
+        "createdAt": "2026-08-28"
+      },
+      {
+        "id": "NG-FB-PRF-0167",
+        "toEmployeeId": "NG-EMP-0004",
+        "fromEmployeeId": "NG-EMP-0007",
+        "type": "upward",
+        "message": "Very supportive in 1:1s — I always leave with a clear next step.",
+        "createdAt": "2026-09-17"
+      },
+      {
+        "id": "NG-FB-PRF-0168",
+        "toEmployeeId": "NG-EMP-0005",
+        "fromEmployeeId": "NG-EMP-0004",
+        "type": "downward",
+        "message": "Strong delivery; next step is taking the lead in stakeholder meetings.",
+        "createdAt": "2026-09-18"
+      },
+      {
+        "id": "NG-FB-PRF-0169",
+        "toEmployeeId": "NG-EMP-0005",
+        "fromEmployeeId": "NG-EMP-0006",
+        "type": "peer",
+        "message": "Great to work with on the last project — reliable and thoughtful.",
+        "createdAt": "2026-08-20"
+      },
+      {
+        "id": "NG-FB-PRF-0170",
+        "toEmployeeId": "NG-EMP-0006",
+        "fromEmployeeId": "NG-EMP-0009",
+        "type": "peer",
+        "message": "Would love to see more of your ideas in planning sessions.",
+        "createdAt": "2026-08-11"
+      },
+      {
+        "id": "NG-FB-PRF-0171",
+        "toEmployeeId": "NG-EMP-0006",
+        "fromEmployeeId": "NG-EMP-0008",
+        "type": "peer",
+        "message": "Always willing to help and explains things clearly.",
+        "createdAt": "2026-08-16"
+      },
+      {
+        "id": "NG-FB-PRF-0172",
+        "toEmployeeId": "NG-EMP-0007",
+        "fromEmployeeId": "NG-EMP-0006",
+        "type": "peer",
+        "message": "Would love to see more of your ideas in planning sessions.",
+        "createdAt": "2026-08-02"
+      },
+      {
+        "id": "NG-FB-PRF-0173",
+        "toEmployeeId": "NG-EMP-0007",
+        "fromEmployeeId": "NG-EMP-0009",
+        "type": "peer",
+        "message": "Always willing to help and explains things clearly.",
+        "createdAt": "2026-09-21"
+      },
+      {
+        "id": "NG-FB-PRF-0174",
+        "toEmployeeId": "NG-EMP-0008",
+        "fromEmployeeId": "NG-EMP-0009",
+        "type": "peer",
+        "message": "Always willing to help and explains things clearly.",
+        "createdAt": "2026-08-24"
+      },
+      {
+        "id": "NG-FB-PRF-0175",
+        "toEmployeeId": "NG-EMP-0008",
+        "fromEmployeeId": "NG-EMP-0004",
+        "type": "downward",
+        "message": "Excellent progress this quarter — keep raising risks early like you did.",
+        "createdAt": "2026-07-31"
+      },
+      {
+        "id": "NG-FB-PRF-0176",
+        "toEmployeeId": "NG-EMP-0009",
+        "fromEmployeeId": "NG-EMP-0005",
+        "type": "peer",
+        "message": "Your reviews are thorough and genuinely improve the work.",
+        "createdAt": "2026-09-11"
+      },
+      {
+        "id": "NG-FB-PRF-0177",
+        "toEmployeeId": "NG-EMP-0009",
+        "fromEmployeeId": "NG-EMP-0007",
+        "type": "peer",
+        "message": "Always willing to help and explains things clearly.",
+        "createdAt": "2026-08-26"
+      },
+      {
+        "id": "NG-FB-PRF-0178",
+        "toEmployeeId": "NG-EMP-0010",
+        "fromEmployeeId": "NG-EMP-0011",
+        "type": "upward",
+        "message": "Very supportive in 1:1s — I always leave with a clear next step.",
+        "createdAt": "2026-09-20"
+      },
+      {
+        "id": "NG-FB-PRF-0179",
+        "toEmployeeId": "NG-EMP-0010",
+        "fromEmployeeId": "NG-EMP-0012",
+        "type": "upward",
+        "message": "Gives clear direction and trusts the team to deliver.",
+        "createdAt": "2026-08-11"
+      },
+      {
+        "id": "NG-FB-PRF-0180",
+        "toEmployeeId": "NG-EMP-0011",
+        "fromEmployeeId": "NG-EMP-0010",
+        "type": "downward",
+        "message": "Please keep documentation current so others can pick up your work.",
+        "createdAt": "2026-08-07"
+      },
+      {
+        "id": "NG-FB-PRF-0181",
+        "toEmployeeId": "NG-EMP-0011",
+        "fromEmployeeId": "NG-EMP-0012",
+        "type": "peer",
+        "message": "Great to work with on the last project — reliable and thoughtful.",
+        "createdAt": "2026-09-16"
+      },
+      {
+        "id": "NG-FB-PRF-0182",
+        "toEmployeeId": "NG-EMP-0012",
+        "fromEmployeeId": "NG-EMP-0011",
+        "type": "peer",
+        "message": "Your reviews are thorough and genuinely improve the work.",
+        "createdAt": "2026-07-31"
+      },
+      {
+        "id": "NG-FB-PRF-0183",
+        "toEmployeeId": "NG-EMP-0012",
+        "fromEmployeeId": "NG-EMP-0010",
+        "type": "downward",
+        "message": "Excellent progress this quarter — keep raising risks early like you did.",
+        "createdAt": "2026-09-05"
+      },
+      {
+        "id": "NG-FB-PRF-0184",
+        "toEmployeeId": "NG-EMP-0013",
+        "fromEmployeeId": "NG-EMP-0015",
+        "type": "upward",
+        "message": "Very supportive in 1:1s — I always leave with a clear next step.",
+        "createdAt": "2026-09-13"
+      },
+      {
+        "id": "NG-FB-PRF-0185",
+        "toEmployeeId": "NG-EMP-0013",
+        "fromEmployeeId": "NG-EMP-0014",
+        "type": "upward",
+        "message": "Could share context on priority changes a little earlier.",
+        "createdAt": "2026-09-03"
+      },
+      {
+        "id": "NG-FB-PRF-0186",
+        "toEmployeeId": "NG-EMP-0014",
+        "fromEmployeeId": "NG-EMP-0015",
+        "type": "peer",
+        "message": "Great to work with on the last project — reliable and thoughtful.",
+        "createdAt": "2026-09-07"
+      },
+      {
+        "id": "NG-FB-PRF-0187",
+        "toEmployeeId": "NG-EMP-0014",
+        "fromEmployeeId": "NG-EMP-0013",
+        "type": "downward",
+        "message": "Excellent progress this quarter — keep raising risks early like you did.",
+        "createdAt": "2026-08-28"
+      },
+      {
+        "id": "NG-FB-PRF-0188",
+        "toEmployeeId": "NG-EMP-0015",
+        "fromEmployeeId": "NG-EMP-0013",
+        "type": "downward",
+        "message": "Please keep documentation current so others can pick up your work.",
+        "createdAt": "2026-08-07"
+      },
+      {
+        "id": "NG-FB-PRF-0189",
+        "toEmployeeId": "NG-EMP-0015",
+        "fromEmployeeId": "NG-EMP-0014",
+        "type": "peer",
+        "message": "Your reviews are thorough and genuinely improve the work.",
+        "createdAt": "2026-08-11"
+      },
+      {
+        "id": "NG-FB-PRF-0190",
+        "toEmployeeId": "NG-EMP-0018",
+        "fromEmployeeId": "NG-EMP-0019",
+        "type": "upward",
+        "message": "Very supportive in 1:1s — I always leave with a clear next step.",
+        "createdAt": "2026-09-22"
+      },
+      {
+        "id": "NG-FB-PRF-0191",
+        "toEmployeeId": "NG-EMP-0019",
+        "fromEmployeeId": "NG-EMP-0018",
+        "type": "downward",
+        "message": "Strong delivery; next step is taking the lead in stakeholder meetings.",
+        "createdAt": "2026-08-01"
+      }
+    ],
+    "feedbackRequests": [
+      {
+        "id": "NG-FBR-PRF-0192",
+        "toEmployeeId": "NG-EMP-0009",
+        "fromEmployeeId": "NG-EMP-0004",
+        "context": "We worked together this half — your view on my communication would help my self-assessment.",
+        "createdAt": "2026-09-19"
+      },
+      {
+        "id": "NG-FBR-PRF-0193",
+        "toEmployeeId": "NG-EMP-0010",
+        "fromEmployeeId": "NG-EMP-0011",
+        "context": "We worked together this half — your view on my collaboration would help my self-assessment.",
+        "createdAt": "2026-09-19"
+      },
+      {
+        "id": "NG-FBR-PRF-0194",
+        "toEmployeeId": "NG-EMP-0015",
+        "fromEmployeeId": "NG-EMP-0013",
+        "context": "We worked together this half — your view on my collaboration would help my self-assessment.",
+        "createdAt": "2026-09-20"
+      },
+      {
+        "id": "NG-FBR-PRF-0195",
+        "toEmployeeId": "NG-EMP-0018",
+        "fromEmployeeId": "NG-EMP-0019",
+        "context": "We worked together this half — your view on my communication would help my self-assessment.",
+        "createdAt": "2026-09-17"
+      },
+      {
+        "id": "NG-FBR-PRF-0196",
+        "toEmployeeId": "NG-EMP-0014",
+        "fromEmployeeId": "NG-EMP-0013",
+        "context": "We worked together this half — your view on my delivery would help my self-assessment.",
+        "createdAt": "2026-09-22"
       }
     ]
   },

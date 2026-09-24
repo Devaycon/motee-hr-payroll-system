@@ -66,6 +66,29 @@ export interface OffboardingAsset {
   returnedAt?: string;
 }
 
+/** One handover step in a leaver's knowledge transfer (Offboarding §3). */
+export interface KnowledgeTransferItem {
+  id: string;
+  label: string;
+  completed: boolean;
+  completedAt?: string;
+}
+
+/**
+ * Knowledge transfer for one exit (Offboarding feedback §3). Tracked as its
+ * own checklist with a named successor; when `required`, the exit can't be
+ * marked complete until every step is done.
+ */
+export interface KnowledgeTransfer {
+  /** Defaults on for leadership and specialist roles; HR can override. */
+  required: boolean;
+  successorId?: string;
+  successorName?: string;
+  items: KnowledgeTransferItem[];
+  notes?: string;
+  completedAt?: string;
+}
+
 export interface OffboardingRecord {
   id: string;
   /** Links the record back to the employee row so both tables stay in sync. */
@@ -102,6 +125,8 @@ export interface OffboardingRecord {
    * means HR has not decided yet.
    */
   rehireEligible?: boolean;
+  /** Handover of the leaver's know-how to a successor (§3). */
+  knowledgeTransfer?: KnowledgeTransfer;
 }
 
 export interface NewOffboardingRecord {

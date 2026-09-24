@@ -39,7 +39,6 @@ import {
   REVIEW_STATUS_LABELS,
   REVIEW_STATUS_STYLES,
   RATING_LABELS,
-  DEPARTMENT_OPTIONS,
 } from "../data";
 import type {
   PerformanceReview,
@@ -48,6 +47,7 @@ import type {
   PerformanceRating,
 } from "../types";
 import { toast } from "sonner";
+import { formatDate } from "@/src/lib/utils/format-date";
 
 const createSchema = z.object({
   employeeId: z.string().min(1, { message: "Employee is required" }),
@@ -70,6 +70,8 @@ const createSchema = z.object({
 interface ReviewModalProps {
   open: boolean;
   onClose: () => void;
+  /** The company's departments, for the department select. */
+  departments: string[];
   viewingReview: PerformanceReview | null;
   onSave: (data: NewReview) => void;
   onComplete: (
@@ -99,6 +101,7 @@ const defaultForm = {
 export function ReviewModal({
   open,
   onClose,
+  departments,
   viewingReview,
   onSave,
   onComplete,
@@ -298,6 +301,74 @@ export function ReviewModal({
                     </div>
                   </div>
                 )}
+                {(viewingReview.selfRating ||
+                  viewingReview.managerRating ||
+                  viewingReview.calibratedRating) && (
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: "Self", value: viewingReview.selfRating },
+                      { label: "Manager", value: viewingReview.managerRating },
+                      {
+                        label: "Calibrated",
+                        value: viewingReview.calibratedRating,
+                      },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="p-3 rounded-lg border bg-card">
+                        <p className="text-[10px] text-muted-foreground mb-0.5">
+                          {label} rating
+                        </p>
+                        <p className="text-xs font-medium">
+                          {value ? `${value}/5` : "—"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {viewingReview.comments && (
+                  <div className="p-3 rounded-lg border">
+                    <p className="text-[10px] text-muted-foreground mb-1">
+                      Comments
+                    </p>
+                    <p className="text-xs">{viewingReview.comments}</p>
+                  </div>
+                )}
+                {viewingReview.selfAssessment && (
+                  <div className="p-3 rounded-lg border space-y-2">
+                    <p className="text-[10px] text-muted-foreground">
+                      Employee self-assessment
+                      {viewingReview.selfSubmittedAt
+                        ? ` · submitted ${formatDate(viewingReview.selfSubmittedAt)}`
+                        : " · draft, not yet submitted"}
+                    </p>
+                    {[
+                      {
+                        label: "Key achievements",
+                        value: viewingReview.selfAssessment.achievements,
+                      },
+                      {
+                        label: "Challenges",
+                        value: viewingReview.selfAssessment.challenges,
+                      },
+                      {
+                        label: "Development areas",
+                        value: viewingReview.selfAssessment.developmentAreas,
+                      },
+                      {
+                        label: "Support needed from manager",
+                        value: viewingReview.selfAssessment.managerFeedback,
+                      },
+                    ]
+                      .filter((s) => s.value?.trim())
+                      .map((s) => (
+                        <div key={s.label}>
+                          <p className="text-[10px] font-medium">{s.label}</p>
+                          <p className="text-xs whitespace-pre-line">
+                            {s.value}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="assessment" className="mt-4">
@@ -444,7 +515,7 @@ export function ReviewModal({
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      {DEPARTMENT_OPTIONS.map((d) => (
+                      {departments.map((d) => (
                         <SelectItem key={d} value={d} className="text-xs">
                           {d}
                         </SelectItem>

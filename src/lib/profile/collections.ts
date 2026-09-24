@@ -227,7 +227,7 @@ export const COLLECTION_SCHEMAS: Record<string, CollectionSchema> = {
       f("title", "Title"),
       f("type", "Type", "select", ["SMART", "OKR"]),
       f("progress", "Progress %", "number"),
-      f("status", "Status", "select", ["on_track", "at_risk", "completed", "overdue"]),
+      f("status", "Status", "select", ["on_track", "at_risk", "completed", "overdue", "cancelled"]),
       f("cycleId", "Cycle"),
     ],
     defaults: (employeeId) => ({ employeeId, progress: 0, status: "on_track" }),

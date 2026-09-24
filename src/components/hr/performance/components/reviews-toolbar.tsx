@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
-  DEPARTMENT_OPTIONS,
   REVIEW_TYPE_LABELS,
   REVIEW_STATUS_LABELS,
 } from "../data";
@@ -29,6 +28,7 @@ interface ReviewsToolbarProps {
   statusFilter: string;
   onStatusFilterChange: (v: string) => void;
   onAddReview: () => void;
+  departments: string[];
 }
 
 export function ReviewsToolbar({
@@ -41,6 +41,7 @@ export function ReviewsToolbar({
   statusFilter,
   onStatusFilterChange,
   onAddReview,
+  departments,
 }: ReviewsToolbarProps) {
   const activeFilters = [
     deptFilter !== "all",
@@ -83,7 +84,7 @@ export function ReviewsToolbar({
               <DropdownMenuRadioItem value="all" className="text-xs">
                 All Departments
               </DropdownMenuRadioItem>
-              {DEPARTMENT_OPTIONS.map((d) => (
+              {departments.map((d) => (
                 <DropdownMenuRadioItem key={d} value={d} className="text-xs">
                   {d}
                 </DropdownMenuRadioItem>

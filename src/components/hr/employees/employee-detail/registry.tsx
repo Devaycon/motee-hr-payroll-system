@@ -41,6 +41,7 @@ import {
   School,
   Sparkles,
   HandCoins,
+  ListChecks,
 } from "lucide-react";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { useAppSelector } from "@/src/lib/stores/hooks";
@@ -56,6 +57,7 @@ import { BenefitsModule } from "./benefits-module";
 import { QualificationsModule } from "./qualifications-module";
 import { SkillsModule } from "./skills-module";
 import { LoansModule } from "./loans-module";
+import { CompletionModule } from "./completion-module";
 
 export interface ModuleEntry {
   key: string;
@@ -79,8 +81,9 @@ export const MODULE_GROUP_ORDER = [
 
 export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "profile", label: "Profile", group: "Profile", icon: User, Component: Mod.ProfileModule },
-  // First in the nav, so the file opens on the journey overview rather than a
-  // single record — it is the only view that spans every other module.
+  // First in the nav, so the file opens on what the record still needs.
+  { key: "completion", label: "Profile Completion", group: "Profile", icon: ListChecks, Component: CompletionModule },
+  // The journey overview — the only view that spans every other module.
   { key: "timeline", label: "Timeline", group: "Profile", icon: Milestone, Component: TimelineModule },
   { key: "job", label: "Job", group: "Profile", icon: BriefcaseBusiness, Component: Mod.JobModule },
   { key: "compensation", label: "Compensation", group: "Profile", icon: Coins, Component: Mod.CompensationModule },
@@ -134,6 +137,7 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
  */
 export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
   "timeline",
+  "completion",
   "job",
   "preferences",
   "documents",

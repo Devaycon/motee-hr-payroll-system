@@ -57,6 +57,25 @@ describe("profileCompletion", () => {
     expect(missing).toContain("guarantors");
     expect(missing).not.toContain("doc-rtw");
   });
+
+  it("says exactly what each item has or still needs", () => {
+    const r = profileCompletion({
+      employee: { ...complete, maritalStatus: "" } as LocaleEmployee,
+      country: "uk",
+      documents: docs.map((d) =>
+        d.category === "education" ? { ...d, status: "rejected" } : d,
+      ),
+      ...counts,
+      skillCount: 2,
+    });
+    const by = (key: string) => r.checks.find((c) => c.key === key)!;
+    expect(by("personal").detail).toBe("Missing marital status");
+    expect(by("doc-degree").detail).toMatch(/rejected/);
+    expect(by("doc-identity").detail).toBe("Passport on file · verified");
+    expect(by("skills").detail).toBe("2 of 3 skills assessed");
+    expect(by("education").detail).toBe("1 education entry recorded");
+    expect(new Set(r.checks.map((c) => c.group)).size).toBe(3);
+  });
 });
 
 describe("summariseDataQuality", () => {
@@ -65,7 +84,9 @@ describe("summariseDataQuality", () => {
       score,
       checks: [],
       missing:
-        score < 100 ? [{ key: "k", label: "l", module: "m", done: false, isDocument }] : [],
+        score < 100
+          ? [{ key: "k", label: "l", module: "m", done: false, isDocument, group: "Documents" as const, detail: "d" }]
+          : [],
     });
     expect(summariseDataQuality([mk(100), mk(70, true), mk(85)])).toEqual({
       profiles: 3,

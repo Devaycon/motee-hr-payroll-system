@@ -109,6 +109,8 @@ import { CertStatusBadge } from "@/src/components/shared/cert-status-badge";
 export interface ModuleProps {
   employeeId: string;
   employee: LocaleEmployee;
+  /** Switches the workspace to another module — for cross-module shortcuts. */
+  onOpenModule?: (key: string) => void;
 }
 
 const money = (n?: number | null) => (n == null ? "—" : formatMoneyLocale(n));

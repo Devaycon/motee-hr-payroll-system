@@ -53,6 +53,32 @@ import type {
 import type { EmployeeRow } from "@/src/lib/types/employees";
 import { ASSET_TYPE_LABELS, recordAssets } from "@/src/lib/offboarding/assets";
 import { ASSET_TYPE_ICONS } from "./asset-recovery";
+import { KnowledgeTransferBadge } from "./knowledge-transfer";
+import { Switch } from "@/src/components/ui/switch";
+import {
+  buildKnowledgeTransfer,
+  isKnowledgeTransferClearanceLabel,
+  knowledgeTransferCleared,
+  requiresKnowledgeTransfer,
+} from "@/src/lib/offboarding/knowledge-transfer";
+
+/** Knowledge-transfer edits made from the record modal (§3). */
+export interface KnowledgeTransferHandlers {
+  onSetRequired: (recordId: string, required: boolean) => void;
+  onToggleItem: (recordId: string, itemId: string) => void;
+  onSetSuccessor: (
+    recordId: string,
+    successorId?: string,
+    successorName?: string,
+  ) => void;
+  onSaveNotes: (recordId: string, notes: string) => void;
+}
+
+export type OffboardingModalTab =
+  | "clearance"
+  | "assets"
+  | "knowledge"
+  | "interview";
 
 type RehireChoice = "yes" | "no" | "undecided";
 
@@ -127,6 +153,9 @@ interface OffboardingModalProps {
   onSave: (data: NewOffboardingRecord) => void;
   onToggleClearance: (recordId: string, itemId: string) => void;
   onToggleAsset: (record: OffboardingRecord, assetId: string) => void;
+  knowledgeTransfer: KnowledgeTransferHandlers;
+  /** Tab the details view opens on — e.g. "knowledge" from the KT dashboard. */
+  initialTab?: OffboardingModalTab;
   onUpdateExitInterview: (
     recordId: string,
     notes: string,
@@ -142,6 +171,8 @@ export function OffboardingModal({
   onSave,
   onToggleClearance,
   onToggleAsset,
+  knowledgeTransfer,
+  initialTab = "clearance",
   onUpdateExitInterview,
 }: OffboardingModalProps) {
   const { data: employees } = useEmployees();
@@ -163,6 +194,7 @@ export function OffboardingModal({
   const [touched, setTouched] = useState<TouchedFields>({});
   const [interviewNotes, setInterviewNotes] = useState("");
   const [interviewCompleted, setInterviewCompleted] = useState(false);
+  const [ktNotes, setKtNotes] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeRow | null>(
     null,
@@ -177,6 +209,7 @@ export function OffboardingModal({
       if (viewingRecord) {
         setInterviewNotes(viewingRecord.exitInterviewNotes ?? "");
         setInterviewCompleted(viewingRecord.exitInterviewCompleted);
+        setKtNotes(viewingRecord.knowledgeTransfer?.notes ?? "");
       } else if (editingRecord) {
         setFields({
           employeeName: editingRecord.employeeName,
@@ -289,10 +322,28 @@ export function OffboardingModal({
   const isViewing = !!viewingRecord;
   const viewingAssets = viewingRecord ? recordAssets(viewingRecord) : [];
   const returnedAssetCount = viewingAssets.filter((a) => a.returned).length;
+  // Older records predate knowledge transfer — show the default until the
+  // first edit writes it to the store.
+  const viewingKt = viewingRecord
+    ? (viewingRecord.knowledgeTransfer ??
+      buildKnowledgeTransfer(viewingRecord.id, viewingRecord.jobTitle))
+    : null;
+  const ktDone = viewingKt?.items.filter((i) => i.completed).length ?? 0;
+  // Colleagues who could take the work on — same department first.
+  const successorOptions = viewingRecord
+    ? allEmployees
+        .filter((e) => e.id !== viewingRecord.employeeId)
+        .sort(
+          (a, b) =>
+            Number(b.department === viewingRecord.department) -
+              Number(a.department === viewingRecord.department) ||
+            a.name.localeCompare(b.name),
+        )
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg p-0 gap-0 flex flex-col max-h-[90vh] overflowy-scroll">
+      <DialogContent className="sm:max-w-xl p-0 gap-0 flex flex-col max-h-[90vh] overflowy-scroll">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <DialogTitle className="text-base font-semibold">
             {isViewing
@@ -332,16 +383,19 @@ export function OffboardingModal({
 
         {isViewing ? (
           <Tabs
-            defaultValue="clearance"
+            defaultValue={initialTab}
             className="flex flex-col min-h-0 flex-1"
           >
             <div className="px-6 pt-4 shrink-0">
               <TabsList className="w-full">
                 <TabsTrigger value="clearance" className="flex-1 text-xs">
-                  Clearance Checklist
+                  Clearance
                 </TabsTrigger>
                 <TabsTrigger value="assets" className="flex-1 text-xs">
                   Assets ({returnedAssetCount}/{viewingAssets.length})
+                </TabsTrigger>
+                <TabsTrigger value="knowledge" className="flex-1 text-xs">
+                  Knowledge Transfer
                 </TabsTrigger>
                 <TabsTrigger value="interview" className="flex-1 text-xs">
                   Exit Interview
@@ -359,11 +413,21 @@ export function OffboardingModal({
                     All items must be confirmed before offboarding can be marked
                     complete.
                   </p>
-                  {viewingRecord.clearanceItems.map((item: ClearanceItem) => (
+                  {viewingRecord.clearanceItems.map((item: ClearanceItem) => {
+                    const drivenByKt =
+                      !!viewingKt?.required &&
+                      isKnowledgeTransferClearanceLabel(item.label);
+                    return (
                     <button
                       key={item.id}
                       type="button"
-                      className="flex items-center gap-3 py-2.5 border-b border-border last:border-0 w-full text-left"
+                      disabled={drivenByKt}
+                      title={
+                        drivenByKt
+                          ? "Completes automatically when the handover on the Knowledge Transfer tab is done"
+                          : undefined
+                      }
+                      className="flex items-center gap-3 py-2.5 border-b border-border last:border-0 w-full text-left disabled:cursor-default"
                       onClick={() =>
                         onToggleClearance(viewingRecord.id, item.id)
                       }
@@ -383,17 +447,21 @@ export function OffboardingModal({
                       >
                         {item.label}
                       </span>
+                      {drivenByKt && (
+                        <span className="ml-auto text-[11px] text-muted-foreground">
+                          Via Knowledge Transfer
+                        </span>
+                      )}
                     </button>
-                  ))}
-                  <div className="flex items-center gap-3 py-2.5 opacity-70">
-                    <BookOpenCheck className="w-4 h-4 shrink-0 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      Knowledge transfer sign-off
-                    </span>
-                    <span className="ml-auto rounded-full bg-[#FE8F44]/15 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-[#E0701F]">
-                      Soon
-                    </span>
-                  </div>
+                    );
+                  })}
+                  {viewingKt?.required && !knowledgeTransferCleared(viewingRecord) && (
+                    <div className="mt-2 flex items-center gap-2 rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                      <BookOpenCheck className="w-3.5 h-3.5 shrink-0" />
+                      Knowledge transfer must be complete before this exit can
+                      be signed off.
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
               <div className="px-6 py-4 border-t border-border shrink-0">
@@ -475,6 +543,154 @@ export function OffboardingModal({
                   })}
                 </div>
               </ScrollArea>
+              <div className="px-6 py-4 border-t border-border shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={onClose}
+                >
+                  Close
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent
+              value="knowledge"
+              className="mt-0 flex flex-col min-h-0 flex-1"
+            >
+              {viewingKt && (
+                <ScrollArea className="flex-1 min-h-0 max-h-[50vh]">
+                  <div className="px-6 py-4 flex flex-col gap-4">
+                    <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium text-foreground">
+                          Required before sign-off
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {requiresKnowledgeTransfer(viewingRecord.jobTitle)
+                            ? "Recommended — leadership or specialist role."
+                            : "Optional for this role. Turn on to block completion until the handover is done."}
+                        </span>
+                      </div>
+                      <Switch
+                        checked={viewingKt.required}
+                        onCheckedChange={(v) =>
+                          knowledgeTransfer.onSetRequired(viewingRecord.id, v)
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        {ktDone}/{viewingKt.items.length} handover steps done
+                      </span>
+                      <KnowledgeTransferBadge
+                        record={{ ...viewingRecord, knowledgeTransfer: viewingKt }}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs font-medium">Successor</Label>
+                      <Select
+                        value={viewingKt.successorId ?? "none"}
+                        onValueChange={(v) => {
+                          const person = successorOptions.find((e) => e.id === v);
+                          knowledgeTransfer.onSetSuccessor(
+                            viewingRecord.id,
+                            person?.id,
+                            person?.name,
+                          );
+                        }}
+                      >
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue placeholder="Choose who takes over" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-64">
+                          <SelectItem value="none" className="text-sm">
+                            No successor yet
+                          </SelectItem>
+                          {/* Keep a named successor visible even if they've
+                              since left the eligible list. */}
+                          {viewingKt.successorId &&
+                            !successorOptions.some(
+                              (e) => e.id === viewingKt.successorId,
+                            ) && (
+                              <SelectItem
+                                value={viewingKt.successorId}
+                                className="text-sm"
+                              >
+                                {viewingKt.successorName}
+                              </SelectItem>
+                            )}
+                          {successorOptions.map((e) => (
+                            <SelectItem key={e.id} value={e.id} className="text-sm">
+                              {e.name}
+                              <span className="text-muted-foreground">
+                                {" "}
+                                · {e.jobTitle}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <Label className="text-xs font-medium mb-1">
+                        Handover checklist
+                      </Label>
+                      {viewingKt.items.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className="flex items-center gap-3 py-2.5 border-b border-border last:border-0 w-full text-left"
+                          onClick={() =>
+                            knowledgeTransfer.onToggleItem(viewingRecord.id, item.id)
+                          }
+                        >
+                          {item.completed ? (
+                            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                          ) : (
+                            <Circle className="w-4 h-4 shrink-0 text-muted-foreground" />
+                          )}
+                          <span
+                            className={cn(
+                              "text-sm",
+                              item.completed
+                                ? "line-through text-muted-foreground"
+                                : "text-foreground",
+                            )}
+                          >
+                            {item.label}
+                          </span>
+                          {item.completed && item.completedAt && (
+                            <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                              {item.completedAt}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-xs font-medium">Handover notes</Label>
+                      <Textarea
+                        placeholder="Where the handover document lives, open risks, who to ask about what..."
+                        value={ktNotes}
+                        onChange={(e) => setKtNotes(e.target.value)}
+                        onBlur={() => {
+                          if (ktNotes !== (viewingKt.notes ?? "")) {
+                            knowledgeTransfer.onSaveNotes(viewingRecord.id, ktNotes);
+                          }
+                        }}
+                        rows={3}
+                        className="text-sm resize-none"
+                      />
+                    </div>
+                  </div>
+                </ScrollArea>
+              )}
               <div className="px-6 py-4 border-t border-border shrink-0">
                 <Button
                   variant="outline"

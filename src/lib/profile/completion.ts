@@ -15,7 +15,19 @@ export interface CompletionCheck {
   done: boolean;
   /** Missing document evidence rather than missing data. */
   isDocument?: boolean;
+  /** Which part of the record this belongs to, for grouping the checklist. */
+  group: CompletionGroup;
+  /** What was found, or exactly what's still needed. */
+  detail: string;
 }
+
+export type CompletionGroup = "Personal information" | "Documents" | "Qualifications & skills";
+
+export const COMPLETION_GROUPS: CompletionGroup[] = [
+  "Personal information",
+  "Documents",
+  "Qualifications & skills",
+];
 
 export interface ProfileCompletion {
   /** 0–100. */
@@ -40,51 +52,134 @@ export const COMPLETION_TARGET = 80;
 
 const filled = (v: unknown) => typeof v === "string" ? v.trim().length > 0 : v != null;
 
+/** "a, b and c" — for naming exactly which fields are still missing. */
+function listOf(items: string[]): string {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
+}
+
+/** Names the fields that are empty, or confirms all are recorded. */
+function fieldsDetail(fields: [string, unknown][]): { done: boolean; detail: string } {
+  const missing = fields.filter(([, v]) => !filled(v)).map(([name]) => name);
+  return missing.length
+    ? { done: false, detail: `Missing ${listOf(missing)}` }
+    : { done: true, detail: `${listOf(fields.map(([name]) => name))} recorded` };
+}
+
+const plural = (n: number, one: string, many = `${one}s`) =>
+  `${n} ${n === 1 ? one : many}`;
+
 export function profileCompletion(input: CompletionInput): ProfileCompletion {
   const { employee: e, country, documents } = input;
   const docs = documents.filter((d) => d.status !== "rejected");
-  const hasDoc = (pred: (d: { category?: string; name?: string }) => boolean) => docs.some(pred);
+  const rejected = documents.filter((d) => d.status === "rejected");
   const ids = e.identifiers ?? {};
+
+  /** A document check: done with verified evidence, else says why not. */
+  const docCheck = (
+    key: string,
+    label: string,
+    pred: (d: { category?: string; name?: string }) => boolean,
+  ): CompletionCheck => {
+    const found = docs.find(pred);
+    return {
+      key,
+      label,
+      module: "documents",
+      group: "Documents",
+      isDocument: true,
+      done: Boolean(found),
+      detail: found
+        ? `${found.name ?? "Document"} on file${found.status ? ` · ${found.status}` : ""}`
+        : rejected.some(pred)
+          ? "Last upload was rejected — a new copy is needed"
+          : "Not uploaded yet",
+    };
+  };
+
+  const countCheck = (
+    key: string,
+    label: string,
+    count: number,
+    one: string,
+    many: string,
+  ): CompletionCheck => ({
+    key,
+    label,
+    module: "qualifications",
+    group: "Qualifications & skills",
+    done: count > 0,
+    detail: count > 0 ? `${plural(count, one, many)} recorded` : `No ${many} recorded`,
+  });
+
+  const emergencyCount = e.emergencyContacts?.length || (e.emergencyContact?.name ? 1 : 0);
+  const guarantorCount = e.guarantors?.length ?? 0;
 
   const checks: CompletionCheck[] = [
     {
       key: "personal",
       label: "Personal details",
       module: "profile",
-      done: [e.dateOfBirth, e.gender, e.nationality, e.maritalStatus].every(filled),
+      group: "Personal information",
+      ...fieldsDetail([
+        ["Date of birth", e.dateOfBirth],
+        ["gender", e.gender],
+        ["nationality", e.nationality],
+        ["marital status", e.maritalStatus],
+      ]),
     },
     {
       key: "contact",
       label: "Personal email & phone",
       module: "profile",
-      done: filled((e as { personalEmail?: string }).personalEmail) && filled(e.phone),
+      group: "Personal information",
+      ...fieldsDetail([
+        ["Personal email", (e as { personalEmail?: string }).personalEmail],
+        ["phone", e.phone],
+      ]),
     },
     {
       key: "address",
       label: "Home address",
       module: "profile",
-      done: filled(e.address?.line1) && filled(e.address?.city),
+      group: "Personal information",
+      ...fieldsDetail([
+        ["Street address", e.address?.line1],
+        ["city", e.address?.city],
+      ]),
     },
     {
       key: "emergency",
       label: "Emergency contact",
       module: "emergency",
-      done: Boolean(e.emergencyContacts?.length || e.emergencyContact?.name),
+      group: "Personal information",
+      done: emergencyCount > 0,
+      detail: emergencyCount > 0 ? `${plural(emergencyCount, "contact")} on file` : "No emergency contact added",
     },
     {
       key: "bank",
       label: "Bank details",
       module: "profile",
+      group: "Personal information",
       done: filled(e.bankDetails?.accountNumber),
+      detail: filled(e.bankDetails?.accountNumber) ? "Account number recorded" : "No account number",
     },
     {
       key: "tax-ids",
       label: country === "ng" ? "NIN, BVN, TIN & pension ID" : "NI number & tax code",
       module: "profile",
-      done:
-        country === "ng"
-          ? [ids.nin, ids.bvn, ids.tin, ids.pensionId].every(filled)
-          : [ids.nationalInsuranceNumber, ids.taxCode].every(filled),
+      group: "Personal information",
+      ...(country === "ng"
+        ? fieldsDetail([
+            ["NIN", ids.nin],
+            ["BVN", ids.bvn],
+            ["TIN", ids.tin],
+            ["pension ID", ids.pensionId],
+          ])
+        : fieldsDetail([
+            ["NI number", ids.nationalInsuranceNumber],
+            ["tax code", ids.taxCode],
+          ])),
     },
     ...(country === "ng"
       ? [
@@ -92,65 +187,35 @@ export function profileCompletion(input: CompletionInput): ProfileCompletion {
             key: "guarantors",
             label: "Two guarantors",
             module: "guarantors",
-            done: (e.guarantors?.length ?? 0) >= 2,
+            group: "Personal information" as const,
+            done: guarantorCount >= 2,
+            detail: `${guarantorCount} of 2 guarantors added`,
           },
         ]
       : []),
-    {
-      key: "doc-identity",
-      label: "Identity document",
-      module: "documents",
-      isDocument: true,
-      done: hasDoc((d) => d.category === "identity"),
-    },
+    docCheck("doc-identity", "Identity document", (d) => d.category === "identity"),
     ...(country === "uk"
-      ? [
-          {
-            key: "doc-rtw",
-            label: "Right to work evidence",
-            module: "documents",
-            isDocument: true,
-            done: hasDoc((d) => d.category === "right_to_work"),
-          },
-        ]
+      ? [docCheck("doc-rtw", "Right to work evidence", (d) => d.category === "right_to_work")]
       : []),
-    {
-      key: "doc-address",
-      label: "Proof of address",
-      module: "documents",
-      isDocument: true,
-      done: hasDoc((d) => d.category === "proof_of_address"),
-    },
-    {
-      key: "doc-degree",
-      label: "Degree certificate",
-      module: "documents",
-      isDocument: true,
-      done: hasDoc((d) => d.category === "education" && /degree/i.test(d.name ?? "")),
-    },
-    {
-      key: "education",
-      label: "Education history",
-      module: "qualifications",
-      done: input.educationCount > 0,
-    },
-    {
-      key: "membership",
-      label: "Professional membership",
-      module: "qualifications",
-      done: input.membershipCount > 0,
-    },
-    {
-      key: "languages",
-      label: "Languages",
-      module: "qualifications",
-      done: input.languageCount > 0,
-    },
+    docCheck("doc-address", "Proof of address", (d) => d.category === "proof_of_address"),
+    docCheck(
+      "doc-degree",
+      "Degree certificate",
+      (d) => d.category === "education" && /degree/i.test(d.name ?? ""),
+    ),
+    countCheck("education", "Education history", input.educationCount, "education entry", "education entries"),
+    countCheck("membership", "Professional membership", input.membershipCount, "membership", "memberships"),
+    countCheck("languages", "Languages", input.languageCount, "language", "languages"),
     {
       key: "skills",
       label: "Skills assessment (3+ skills)",
       module: "skills",
+      group: "Qualifications & skills",
       done: input.skillCount >= 3,
+      detail:
+        input.skillCount >= 3
+          ? `${input.skillCount} skills assessed`
+          : `${input.skillCount} of 3 skills assessed`,
     },
   ];
 

@@ -29,7 +29,6 @@ import { ProfileModule } from "./modules";
 import { StatStrip } from "./ui";
 import { ProfileVariantProvider, type ProfileVariant } from "./variant";
 import { ModuleNavigationProvider } from "./module-navigation";
-import { ProfileCompletionCard } from "./profile-completion-card";
 
 const VARIANTS: Record<"hr" | "self", ProfileVariant> = {
   hr: { mode: "edit", audience: "hr" },
@@ -362,22 +361,17 @@ export function EmployeeProfileWorkspace({
           </div>
 
           {/* Stats strip — each tile is a CTA into the matching module (§B1). */}
-          <div className="flex flex-col gap-3 lg:flex-row">
-            <ProfileCompletionCard employeeId={id} onOpenModule={openCompletionItem} />
-            {stats && (
-              <div className="flex-1">
-                <StatStrip
-                  items={STAT_TILES.map(({ label, module, accent, value, describe }) => ({
-                    label,
-                    accent,
-                    value: value(stats),
-                    onClick: () => goToModule(module),
-                    ariaLabel: describe(stats),
-                  }))}
-                />
-              </div>
-            )}
-          </div>
+          {stats && (
+            <StatStrip
+              items={STAT_TILES.map(({ label, module, accent, value, describe }) => ({
+                label,
+                accent,
+                value: value(stats),
+                onClick: () => goToModule(module),
+                ariaLabel: describe(stats),
+              }))}
+            />
+          )}
 
           {/* Module sidebar + content — fixed, equal height with internal scroll */}
           <div
@@ -392,7 +386,11 @@ export function EmployeeProfileWorkspace({
             <Card className="min-w-0 flex flex-col lg:h-full">
               <CardContent className="px-5 py-5 flex-1 min-h-0 overflow-y-auto [&_[data-slot=tabs-trigger][data-state=active]]:bg-[#FE8F44]! [&_[data-slot=tabs-trigger][data-state=active]]:text-white! [&_[data-slot=tabs-trigger][data-state=active]]:shadow-none!">
                 {ActiveComponent && (
-                  <ActiveComponent employeeId={id} employee={emp} />
+                  <ActiveComponent
+                    employeeId={id}
+                    employee={emp}
+                    onOpenModule={openCompletionItem}
+                  />
                 )}
               </CardContent>
             </Card>

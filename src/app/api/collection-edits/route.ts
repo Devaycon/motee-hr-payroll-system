@@ -8,6 +8,7 @@ const FILE = path.join(DATA_DIR, "collection-edits.json");
 interface Snapshot {
   added: Record<string, unknown[]>;
   edits: Record<string, Record<string, unknown>>;
+  removed?: Record<string, string[]>;
 }
 
 async function ensureDir() {
@@ -44,7 +45,15 @@ export async function PUT(request: Request) {
     await ensureDir();
     await fs.writeFile(
       FILE,
-      JSON.stringify({ added: body.added, edits: body.edits }, null, 2),
+      JSON.stringify(
+        {
+          added: body.added,
+          edits: body.edits,
+          removed: typeof body.removed === "object" && body.removed ? body.removed : {},
+        },
+        null,
+        2,
+      ),
       "utf8",
     );
     return NextResponse.json({ ok: true });

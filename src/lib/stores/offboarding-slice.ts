@@ -1,6 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { ClearanceItem, OffboardingRecord } from "@/src/lib/types/offboarding";
 import { clearanceCategory } from "@/src/lib/offboarding/clearance";
+import {
+  buildKnowledgeTransfer,
+  isKnowledgeTransferClearanceLabel,
+  knowledgeTransferCleared,
+} from "@/src/lib/offboarding/knowledge-transfer";
 
 /**
  * Offboarding pipeline state (client feedback §2).
@@ -45,10 +50,39 @@ function isAssetClearanceItem(item: ClearanceItem): boolean {
  */
 function recomputeOffboardingStatus(record: OffboardingRecord) {
   const allDone = record.clearanceItems.every((c) => c.completed);
-  if (allDone && record.exitInterviewCompleted) {
+  // A required knowledge transfer must be signed off before the exit can
+  // complete (Offboarding feedback §3).
+  if (
+    allDone &&
+    record.exitInterviewCompleted &&
+    knowledgeTransferCleared(record)
+  ) {
     record.status = "completed";
   } else if (record.status === "approved") {
     record.status = "in_progress";
+  }
+}
+
+/** Older records predate knowledge transfer — give them the default. */
+function ensureKnowledgeTransfer(record: OffboardingRecord) {
+  record.knowledgeTransfer ??= buildKnowledgeTransfer(record.id, record.jobTitle);
+  return record.knowledgeTransfer;
+}
+
+/**
+ * While knowledge transfer is required, the matching clearance step is driven
+ * by it — ticked only once the whole handover is complete.
+ */
+function syncKnowledgeTransferStep(record: OffboardingRecord) {
+  const kt = ensureKnowledgeTransfer(record);
+  if (!kt.required) return;
+  const complete = kt.items.every((i) => i.completed);
+  kt.completedAt = complete ? (kt.completedAt ?? today()) : undefined;
+  for (const step of record.clearanceItems) {
+    if (!isKnowledgeTransferClearanceLabel(step.label)) continue;
+    if (step.completed === complete) continue;
+    step.completed = complete;
+    step.completedAt = complete ? today() : undefined;
   }
 }
 
@@ -170,6 +204,13 @@ const offboardingSlice = createSlice({
         (c) => c.id === action.payload.itemId,
       );
       if (!item) return;
+      // Driven by the Knowledge Transfer tab while a handover is required.
+      if (
+        record.knowledgeTransfer?.required &&
+        isKnowledgeTransferClearanceLabel(item.label)
+      ) {
+        return;
+      }
       item.completed = !item.completed;
       item.completedAt = item.completed ? today() : undefined;
 
@@ -218,6 +259,57 @@ const offboardingSlice = createSlice({
       recomputeOffboardingStatus(record);
     },
 
+    setKnowledgeTransferRequired(
+      state,
+      action: PayloadAction<{ id: string; required: boolean }>,
+    ) {
+      const record = find(state, action.payload.id);
+      if (!record) return;
+      ensureKnowledgeTransfer(record).required = action.payload.required;
+      syncKnowledgeTransferStep(record);
+      recomputeOffboardingStatus(record);
+    },
+
+    toggleKnowledgeTransferItem(
+      state,
+      action: PayloadAction<{ id: string; itemId: string }>,
+    ) {
+      const record = find(state, action.payload.id);
+      if (!record) return;
+      const item = ensureKnowledgeTransfer(record).items.find(
+        (i) => i.id === action.payload.itemId,
+      );
+      if (!item) return;
+      item.completed = !item.completed;
+      item.completedAt = item.completed ? today() : undefined;
+      syncKnowledgeTransferStep(record);
+      recomputeOffboardingStatus(record);
+    },
+
+    setKnowledgeTransferSuccessor(
+      state,
+      action: PayloadAction<{
+        id: string;
+        successorId?: string;
+        successorName?: string;
+      }>,
+    ) {
+      const record = find(state, action.payload.id);
+      if (!record) return;
+      const kt = ensureKnowledgeTransfer(record);
+      kt.successorId = action.payload.successorId;
+      kt.successorName = action.payload.successorName;
+    },
+
+    setKnowledgeTransferNotes(
+      state,
+      action: PayloadAction<{ id: string; notes: string }>,
+    ) {
+      const record = find(state, action.payload.id);
+      if (!record) return;
+      ensureKnowledgeTransfer(record).notes = action.payload.notes;
+    },
+
     updateExitInterview(
       state,
       action: PayloadAction<{ id: string; notes: string; completed: boolean }>,
@@ -259,6 +351,10 @@ export const {
   generateExitDocuments,
   toggleClearanceItem,
   toggleAssetReturned,
+  setKnowledgeTransferRequired,
+  toggleKnowledgeTransferItem,
+  setKnowledgeTransferSuccessor,
+  setKnowledgeTransferNotes,
   updateExitInterview,
   completeRecord,
 } = offboardingSlice.actions;

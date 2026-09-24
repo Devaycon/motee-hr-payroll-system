@@ -13,6 +13,11 @@ import {
 } from "@/src/lib/types/offboarding";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import { buildAssets } from "@/src/lib/offboarding/assets";
+import {
+  buildKnowledgeTransfer,
+  knowledgeTransferCleared,
+  KNOWLEDGE_TRANSFER_STEPS,
+} from "@/src/lib/offboarding/knowledge-transfer";
 
 /** The fixture's `clearance` is a per-department status map, not a list. */
 interface RawClearanceMap {
@@ -32,6 +37,16 @@ interface RawExitInterview {
   scheduledAt?: string;
   wouldRecommend?: boolean;
   primaryReason?: string;
+  notes?: string;
+}
+/** Fixture shape for a leaver's handover (Offboarding §3). */
+interface RawKnowledgeTransfer {
+  /** Only present when HR overrode the role-based default. */
+  required?: boolean;
+  successorId?: string;
+  successorName?: string;
+  /** Sign-off date of each handover step done so far, in step order. */
+  stepsCompletedOn?: string[];
   notes?: string;
 }
 interface RawOffboarding {
@@ -58,6 +73,7 @@ interface RawOffboarding {
   reactivatedAt?: string;
   reactivatedBy?: string;
   systemAccessRevokedAt?: string;
+  knowledgeTransfer?: RawKnowledgeTransfer;
 }
 
 function mapReason(r?: string): ExitReason {
@@ -190,9 +206,29 @@ function buildOffboarding(bundle: LocaleBundle): OffboardingRecord[] {
       raw.exitInterviewCompleted ?? !!raw.exitInterview?.completedAt;
     const lastWorkingDate =
       raw.lastWorkingDate ?? raw.lastDay ?? bundle.tenant.createdAt.slice(0, 10);
-    const status = deriveStatus(raw, clearanceItems, exitInterviewCompleted);
     const jobTitle = raw.jobTitle ?? emp?.jobTitle ?? "";
     const department = raw.department ?? emp?.departmentName ?? "—";
+    const derivedStatus = deriveStatus(raw, clearanceItems, exitInterviewCompleted);
+    const knowledgeTransfer = raw.knowledgeTransfer
+      ? fromRawKnowledgeTransfer(recordId, jobTitle, raw.knowledgeTransfer)
+      : seedKnowledgeTransfer(
+          recordId,
+          jobTitle,
+          derivedStatus,
+          i,
+          lastWorkingDate,
+          bundle.employees.filter(
+            (e) => e.departmentName === department && e.id !== emp?.id,
+          ),
+        );
+    // A required handover that isn't finished holds the exit open, exactly as
+    // the slice does once the page is live (§3).
+    const status =
+      !raw.status &&
+      derivedStatus === "completed" &&
+      !knowledgeTransferCleared({ knowledgeTransfer } as OffboardingRecord)
+        ? "in_progress"
+        : derivedStatus;
     const clearanceMap =
       raw.clearance && !Array.isArray(raw.clearance) ? raw.clearance : undefined;
     const done = status === "completed";
@@ -239,6 +275,7 @@ function buildOffboarding(bundle: LocaleBundle): OffboardingRecord[] {
         lastWorkingDate,
       ),
       rehireEligible: deriveRehireEligible(raw, status, i),
+      knowledgeTransfer,
     };
   });
 }
@@ -257,6 +294,60 @@ function deriveRehireEligible(
   if (mapReason(raw.reason) === "termination") return false;
   if (raw.exitInterview?.wouldRecommend === false) return false;
   return index % 7 !== 3;
+}
+
+/** Builds a record's handover from the fixture's `knowledgeTransfer` block. */
+function fromRawKnowledgeTransfer(
+  recordId: string,
+  jobTitle: string,
+  raw: RawKnowledgeTransfer,
+) {
+  const dates = raw.stepsCompletedOn ?? [];
+  const kt = buildKnowledgeTransfer(recordId, jobTitle, {
+    completedSteps: dates.length,
+    successorId: raw.successorId,
+    successorName: raw.successorName,
+  });
+  kt.items = kt.items.map((item, j) =>
+    j < dates.length ? { ...item, completedAt: dates[j] } : item,
+  );
+  if (typeof raw.required === "boolean") kt.required = raw.required;
+  kt.notes = raw.notes;
+  kt.completedAt =
+    dates.length >= kt.items.length ? dates[dates.length - 1] : undefined;
+  return kt;
+}
+
+/**
+ * Fallback for fixture rows without a `knowledgeTransfer` block (§3): finished exits are fully handed over,
+ * live ones are part-way through, and a successor from the same department is
+ * named once work has started.
+ */
+function seedKnowledgeTransfer(
+  recordId: string,
+  jobTitle: string,
+  status: OffboardingStatus,
+  index: number,
+  lastWorkingDate: string,
+  colleagues: { id: string; fullName: string }[],
+) {
+  const steps = KNOWLEDGE_TRANSFER_STEPS.length;
+  const completedSteps =
+    status === "completed"
+      ? steps
+      : status === "pending"
+        ? 0
+        : index % (steps + 1);
+  const successor =
+    completedSteps > 0 || index % 2 === 0
+      ? colleagues[index % Math.max(colleagues.length, 1)]
+      : undefined;
+  return buildKnowledgeTransfer(recordId, jobTitle, {
+    completedSteps,
+    completedAt: shiftIso(lastWorkingDate, -3),
+    successorId: successor?.id,
+    successorName: successor?.fullName,
+  });
 }
 
 function shiftIso(dateStr: string, days: number): string {
