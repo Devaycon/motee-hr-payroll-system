@@ -44,6 +44,28 @@ export interface ClearanceItem {
   notes?: string;
 }
 
+/**
+ * Company property the leaver has to hand back (Offboarding feedback §4).
+ * Tracked per item so the Asset Recovery tab can show what is still out.
+ */
+export type OffboardingAssetType =
+  | "laptop"
+  | "phone"
+  | "id_card"
+  | "vehicle"
+  | "access_card";
+
+export interface OffboardingAsset {
+  id: string;
+  type: OffboardingAssetType;
+  /** Human description, e.g. "Dell Latitude 5440". */
+  label: string;
+  /** Asset register tag / serial. */
+  tag: string;
+  returned: boolean;
+  returnedAt?: string;
+}
+
 export interface OffboardingRecord {
   id: string;
   /** Links the record back to the employee row so both tables stay in sync. */
@@ -73,6 +95,13 @@ export interface OffboardingRecord {
   exitInterviewScheduledAt?: string;
   /** Set by "Generate Exit Documents". */
   exitDocumentsGeneratedAt?: string;
+  /** Company property issued to the leaver (§4). */
+  assets?: OffboardingAsset[];
+  /**
+   * Whether the organisation would re-employ this person (§5). `undefined`
+   * means HR has not decided yet.
+   */
+  rehireEligible?: boolean;
 }
 
 export interface NewOffboardingRecord {
@@ -85,4 +114,5 @@ export interface NewOffboardingRecord {
   exitReason: ExitReason;
   exitInterviewNotes?: string;
   workflowTemplateId?: string;
+  rehireEligible?: boolean;
 }

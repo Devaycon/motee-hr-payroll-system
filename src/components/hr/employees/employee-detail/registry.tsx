@@ -38,6 +38,9 @@ import {
   Milestone,
   Gift,
   UserCheck,
+  School,
+  Sparkles,
+  HandCoins,
 } from "lucide-react";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { useAppSelector } from "@/src/lib/stores/hooks";
@@ -50,6 +53,9 @@ import { TeamModule } from "./team-module";
 import { ChangeLogModule } from "./change-log-module";
 import { TimelineModule } from "./timeline-module";
 import { BenefitsModule } from "./benefits-module";
+import { QualificationsModule } from "./qualifications-module";
+import { SkillsModule } from "./skills-module";
+import { LoansModule } from "./loans-module";
 
 export interface ModuleEntry {
   key: string;
@@ -79,6 +85,7 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "job", label: "Job", group: "Profile", icon: BriefcaseBusiness, Component: Mod.JobModule },
   { key: "compensation", label: "Compensation", group: "Profile", icon: Coins, Component: Mod.CompensationModule },
   { key: "benefits", label: "Benefits", group: "Profile", icon: Gift, Component: BenefitsModule },
+  { key: "loans", label: "Loans", group: "Profile", icon: HandCoins, Component: LoansModule },
   { key: "payslips", label: "Payslips", group: "Profile", icon: Banknote, Component: Mod.PayslipsModule },
   { key: "preferences", label: "Preferences", group: "Profile", icon: Settings2, Component: Mod.PreferencesModule },
   { key: "documents", label: "Employee Documents", group: "Profile", icon: FileText, Component: EmployeeDocumentsModule },
@@ -97,6 +104,8 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "learn", label: "Learning", group: "Growth", icon: BookOpen, Component: Mod.LearnModule },
   { key: "training-videos", label: "Training", group: "Growth", icon: MonitorPlay, Component: Mod.TrainingDashboardModule },
   { key: "training", label: "Certifications", group: "Growth", icon: GraduationCap, Component: Mod.TrainingModule },
+  { key: "qualifications", label: "Qualifications & Education", group: "Growth", icon: School, Component: QualificationsModule },
+  { key: "skills", label: "Skills & Competencies", group: "Growth", icon: Sparkles, Component: SkillsModule },
   { key: "kudos", label: "Kudos", group: "Growth", icon: Award, Component: Mod.KudosModule },
   { key: "jobs", label: "Internal Moves", group: "Growth", icon: Briefcase, Component: Mod.JobsModule },
 
@@ -141,11 +150,14 @@ export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
   "learn",
   "training-videos",
   "training",
+  "qualifications",
+  "skills",
   "kudos",
   "jobs",
   "pay",
   "compensation",
   "benefits",
+  "loans",
   "payslips",
   "assets",
   "dbs",

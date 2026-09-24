@@ -61,6 +61,11 @@ const DEFAULT_STEPS: Record<ApprovalDocumentType, SeedStep[]> = {
     { label: "Validate expense", approver: "LINE_MANAGER" },
     { label: "Reimburse claim", approver: "ROLE:ROLE-FIN" },
   ],
+  loan_request: [
+    { label: "Endorse request", approver: "LINE_MANAGER" },
+    { label: "Check eligibility & loan policy", approver: "ROLE:ROLE-HRMGR" },
+    { label: "Approve disbursement", approver: "ROLE:ROLE-FIN" },
+  ],
 };
 
 const DOCUMENT_TEMPLATE_NAMES: Record<ApprovalDocumentType, string> = {
@@ -74,6 +79,7 @@ const DOCUMENT_TEMPLATE_NAMES: Record<ApprovalDocumentType, string> = {
   training_request: "Standard Training Request",
   asset_request: "Standard Asset Request",
   expense_claim: "Standard Expense Claim",
+  loan_request: "Standard Staff Loan / Salary Advance",
 };
 
 const ATTACHMENTS_BY_TYPE: Record<ApprovalDocumentType, AttachmentRules> = {
@@ -114,6 +120,11 @@ const ATTACHMENTS_BY_TYPE: Record<ApprovalDocumentType, AttachmentRules> = {
     allowed: true,
     required: true,
     description: "Attach receipts / invoices.",
+  },
+  loan_request: {
+    allowed: true,
+    required: false,
+    description: "Attach supporting evidence, e.g. a quote or invoice (optional).",
   },
 };
 
@@ -168,6 +179,12 @@ const SIGNATURES_BY_TYPE: Record<ApprovalDocumentType, SignatureRules> = {
     reviewerSigns: true,
     placeOnDocument: false,
   },
+  // The employee signs the repayment undertaking; approvers sign it off.
+  loan_request: {
+    submitterSigns: true,
+    reviewerSigns: true,
+    placeOnDocument: false,
+  },
 };
 
 function buildTemplate(
@@ -209,6 +226,7 @@ export const DEFAULT_APPROVAL_TEMPLATES: ApprovalChainTemplate[] = [
   buildTemplate("training_request"),
   buildTemplate("asset_request"),
   buildTemplate("expense_claim"),
+  buildTemplate("loan_request"),
 ];
 
 export const DEFAULT_TEMPLATE_IDS = new Set(

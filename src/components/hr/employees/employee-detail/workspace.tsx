@@ -29,6 +29,7 @@ import { ProfileModule } from "./modules";
 import { StatStrip } from "./ui";
 import { ProfileVariantProvider, type ProfileVariant } from "./variant";
 import { ModuleNavigationProvider } from "./module-navigation";
+import { ProfileCompletionCard } from "./profile-completion-card";
 
 const VARIANTS: Record<"hr" | "self", ProfileVariant> = {
   hr: { mode: "edit", audience: "hr" },
@@ -53,26 +54,41 @@ const STAT_TILES: {
   value: (s: EmployeeStats) => ReactNode;
   describe: (s: EmployeeStats) => string;
 }[] = [
+  // Employee Summary Widget (change request): documents, service, leave and
+  // pending requests lead; the completion score sits in its own card beside.
   {
-    label: "Available",
+    label: "Documents uploaded",
+    module: "documents",
+    value: (s) => s.documentsUploaded,
+    describe: (s) =>
+      `${s.documentsUploaded} documents on file — open Employee Documents`,
+  },
+  {
+    label: "Years of service",
+    module: "job",
+    value: (s) => s.yearsOfService.toFixed(1),
+    describe: (s) => `${s.yearsOfService} years of service — open the Job module`,
+  },
+  {
+    label: "Leave balance",
     module: "leave",
     accent: "text-emerald-600",
-    value: (s) => `${s.leaveRemaining} Leave days`,
+    value: (s) => `${s.leaveRemaining} days`,
     describe: (s) =>
       `${s.leaveRemaining} days of leave available — open the Leave module`,
+  },
+  {
+    label: "Pending requests",
+    module: "change-log",
+    value: (s) => s.pendingApprovals,
+    describe: (s) =>
+      `${s.pendingApprovals} pending requests — open the Profile Change Request Log`,
   },
   {
     label: "Open tasks",
     module: "tasks",
     value: (s) => s.openTasks,
     describe: (s) => `${s.openTasks} open tasks — open the Tasks module`,
-  },
-  {
-    label: "Pending approvals",
-    module: "change-log",
-    value: (s) => s.pendingApprovals,
-    describe: (s) =>
-      `${s.pendingApprovals} pending approvals — open the Profile Change Request Log`,
   },
   {
     label: "Assets",
@@ -175,6 +191,16 @@ export function EmployeeProfileWorkspace({
     });
   };
 
+  const topRef = useRef<HTMLDivElement>(null);
+  /** Missing-item shortcuts: the Profile card lives at the top, not in the nav. */
+  const openCompletionItem = (key: string) => {
+    if (key === "profile") {
+      topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    goToModule(key);
+  };
+
   const photoUrl =
     (emp as { photoUrl?: string }).photoUrl ??
     personPhotoUrl(emp.fullName, (emp as { gender?: string }).gender);
@@ -209,7 +235,10 @@ export function EmployeeProfileWorkspace({
       <ModuleNavigationProvider value={goToModule}>
         <div className="flex flex-col gap-5">
           {/* Top: profile image + the employee's "file" (Profile module) */}
-          <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5 lg:items-stretch">
+          <div
+            ref={topRef}
+            className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5 lg:items-stretch scroll-mt-4"
+          >
             <Card className="lg:h-full">
               <CardContent className="px-5 py-6 flex flex-col items-center gap-4 h-full overflow-y-auto">
                 <div className="relative w-full shrink-0">
@@ -333,17 +362,22 @@ export function EmployeeProfileWorkspace({
           </div>
 
           {/* Stats strip — each tile is a CTA into the matching module (§B1). */}
-          {stats && (
-            <StatStrip
-              items={STAT_TILES.map(({ label, module, accent, value, describe }) => ({
-                label,
-                accent,
-                value: value(stats),
-                onClick: () => goToModule(module),
-                ariaLabel: describe(stats),
-              }))}
-            />
-          )}
+          <div className="flex flex-col gap-3 lg:flex-row">
+            <ProfileCompletionCard employeeId={id} onOpenModule={openCompletionItem} />
+            {stats && (
+              <div className="flex-1">
+                <StatStrip
+                  items={STAT_TILES.map(({ label, module, accent, value, describe }) => ({
+                    label,
+                    accent,
+                    value: value(stats),
+                    onClick: () => goToModule(module),
+                    ariaLabel: describe(stats),
+                  }))}
+                />
+              </div>
+            )}
+          </div>
 
           {/* Module sidebar + content — fixed, equal height with internal scroll */}
           <div

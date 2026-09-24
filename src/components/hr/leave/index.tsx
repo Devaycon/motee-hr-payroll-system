@@ -36,7 +36,13 @@ import {
   APPROVAL_CHAIN_TAB_ITEM,
   useHasApprovalChainTab,
 } from "@/src/components/hr/approvals/use-chain-tab";
-import { StatCards } from "./components/stat-cards";
+import {
+  StatCards,
+  LEAVE_CARD_FILTER_LABELS,
+  matchesLeaveCardFilter,
+  useLeaveMetrics,
+  type LeaveCardFilter,
+} from "./components/stat-cards";
 import { RequestsTable } from "./components/requests-table";
 import { BalancesTable } from "./components/balances-table";
 import { PoliciesTable } from "./components/policies-table";
@@ -80,9 +86,37 @@ export function LeaveManagementPage() {
   const [onLeaveOpen, setOnLeaveOpen] = useState(false);
   const hasChainTab = useHasApprovalChainTab("leave_request");
 
+  // KPI-card drill-down: a card switches to Requests and narrows it to the
+  // rows it counts.
+  const [activeTab, setActiveTab] = useState("requests");
+  const [cardFilter, setCardFilter] = useState<LeaveCardFilter>("all");
+  const metrics = useLeaveMetrics(requests);
+
+  // `?department=&year=` comes from the department leave ranking: a row there
+  // opens that department's approved leave here.
+  const params = useSearchParams();
+  const departmentParam = params.get("department");
+  const yearParam = params.get("year") ?? metrics.year;
+  const [appliedDepartment, setAppliedDepartment] = useState<string | null>(null);
+  if (departmentParam && departmentParam !== appliedDepartment) {
+    setAppliedDepartment(departmentParam);
+    setCardFilter("department");
+    setActiveTab("requests");
+  }
+  const visibleRequests = useMemo(
+    () =>
+      requests.filter((r) =>
+        matchesLeaveCardFilter(r, cardFilter, {
+          year: cardFilter === "department" ? yearParam : metrics.year,
+          department: appliedDepartment,
+        }),
+      ),
+    [requests, cardFilter, metrics.year, yearParam, appliedDepartment],
+  );
+
   // `?request=` opens a specific request straight into review, so the People's
   // time off page can hand a decision back to the flow that owns it.
-  const requestParam = useSearchParams().get("request");
+  const requestParam = params.get("request");
   const [openedParam, setOpenedParam] = useState<string | null>(null);
   if (requestParam && requestParam !== openedParam && requests.length) {
     const match = requests.find((r) => r.id === requestParam);
@@ -350,9 +384,36 @@ export function LeaveManagementPage() {
         </Button>
       </div>
 
-      <StatCards requests={requests} onShowOnLeave={() => setOnLeaveOpen(true)} />
+      <StatCards
+        requests={requests}
+        cardFilter={cardFilter}
+        onDrillDown={(f) => {
+          setCardFilter(f);
+          setActiveTab("requests");
+        }}
+        onShowOnLeave={() => setOnLeaveOpen(true)}
+      />
 
-      <Tabs defaultValue="requests">
+      {cardFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            {cardFilter === "department"
+              ? `Approved leave · ${appliedDepartment} · ${yearParam}`
+              : LEAVE_CARD_FILTER_LABELS[cardFilter]}{" "}
+            <span className="text-muted-foreground">({visibleRequests.length})</span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setCardFilter("all")}
+          >
+            ← Show all
+          </Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <PageTabsList
           tabs={[
             { value: "requests", label: "Requests" },
@@ -365,7 +426,7 @@ export function LeaveManagementPage() {
 
         <TabsContent value="requests" className="mt-4 space-y-4">
           <RequestsTable
-            requests={requests}
+            requests={visibleRequests}
             onView={handleViewRequest}
             onApprove={handleApproveRequest}
             onRejectClick={handleViewRequest}

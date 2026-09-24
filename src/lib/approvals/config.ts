@@ -31,6 +31,7 @@ const SUBMISSION_PORTAL_BY_TYPE: Record<BuiltinCategoryId, SubmissionPortal> = {
   expense_claim: "self_service",
   asset_request: "self_service",
   training_request: "self_service",
+  loan_request: "self_service",
 };
 
 /** Can this portal raise a submission of this type? Unknown (custom) types default to admin. */
@@ -54,18 +55,20 @@ export interface ApprovalChainModule {
 
 /**
  * Every module an approval chain can be set up for. Each one has a tabbed page
- * that renders the read-only Approval Chain tab once a chain exists, so every
+ * that renders the read-only Approval Chain tab, so every
  * option in the create-chain dropdown is guaranteed a place to show up.
  */
 export const APPROVAL_CHAIN_MODULES: ApprovalChainModule[] = [
   { documentType: "workforce_request", label: "Workforce Requests", href: "/talent/workforce-requests" },
   { documentType: "job_requisition", label: "Requisitions", href: "/talent/requisition" },
+  { documentType: "onboarding", label: "Onboarding", href: "/talent/onboarding" },
   { documentType: "leave_request", label: "Leave", href: "/time-payroll/leave" },
   { documentType: "expense_claim", label: "Expenses", href: "/time-payroll/expenses" },
   { documentType: "contract", label: "Contracts", href: "/operations/contracts" },
   { documentType: "asset_request", label: "Assets", href: "/operations/assets" },
   { documentType: "offboarding_clearance", label: "Offboarding", href: "/talent/offboarding" },
   { documentType: "training_request", label: "Training", href: "/talent/training" },
+  { documentType: "loan_request", label: "Employee Loans", href: "/organization/loans" },
 ];
 
 export function moduleForDocumentType(

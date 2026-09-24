@@ -13,6 +13,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
+import { Switch } from "@/src/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -57,6 +58,11 @@ const courseSchema = z.object({
     .string()
     .min(10, { message: "Description must be at least 10 characters" }),
   status: z.string().min(1, { message: "Status is required" }),
+  validityMonths: z.coerce
+    .number({ error: "Validity must be a number of months" })
+    .int()
+    .min(1, { message: "Validity must be at least 1 month" })
+    .or(z.literal("")),
 });
 
 interface CourseModalProps {
@@ -74,6 +80,9 @@ const defaultForm = {
   deliveryMode: "",
   description: "",
   status: "active",
+  provider: "",
+  validityMonths: "",
+  mandatory: false,
 };
 
 export function CourseModal({
@@ -105,6 +114,12 @@ export function CourseModal({
           deliveryMode: editingCourse.deliveryMode,
           description: editingCourse.description,
           status: editingCourse.status,
+          provider: editingCourse.provider ?? "",
+          validityMonths:
+            editingCourse.validityMonths != null
+              ? String(editingCourse.validityMonths)
+              : "",
+          mandatory: editingCourse.mandatory ?? false,
         });
       } else {
         setForm(defaultForm);
@@ -146,6 +161,9 @@ export function CourseModal({
       description: form.description,
       status: form.status as CourseStatus,
       instructor: editingCourse?.instructor ?? "",
+      provider: form.provider.trim() || undefined,
+      mandatory: form.mandatory,
+      validityMonths: form.validityMonths ? Number(form.validityMonths) : null,
       tags: editingCourse?.tags ?? [],
       quiz,
     });
@@ -281,6 +299,50 @@ export function CourseModal({
                   </p>
                 )}
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Issuing body / provider</Label>
+                <Input
+                  placeholder="e.g. ICO, FCA, IOSH, CompTIA"
+                  value={form.provider}
+                  onChange={(e) => handleField("provider", e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Certificate validity (months)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="Leave blank if it never expires"
+                  value={form.validityMonths}
+                  onChange={(e) => handleField("validityMonths", e.target.value)}
+                  className="h-8 text-xs"
+                />
+                {errors.validityMonths && (
+                  <p className="text-[10px] text-destructive">
+                    {errors.validityMonths}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+              <div>
+                <p className="text-xs font-medium">Mandatory training</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Every current employee must complete it — tracked in the
+                  compliance cards.
+                </p>
+              </div>
+              <Switch
+                checked={form.mandatory}
+                onCheckedChange={(v) =>
+                  setForm((prev) => ({ ...prev, mandatory: v }))
+                }
+              />
             </div>
 
             <div className="space-y-1.5">

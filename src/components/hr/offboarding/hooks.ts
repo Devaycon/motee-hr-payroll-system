@@ -12,6 +12,7 @@ import {
   type OffboardingStatus,
 } from "@/src/lib/types/offboarding";
 import type { LocaleBundle } from "@/src/lib/types/locale";
+import { buildAssets } from "@/src/lib/offboarding/assets";
 
 /** The fixture's `clearance` is a per-department status map, not a list. */
 interface RawClearanceMap {
@@ -123,7 +124,7 @@ function buildClearanceItems(raw: RawOffboarding, recordId: string): ClearanceIt
   if (c && typeof c === "object") {
     // The fixture's real shape: a per-department status map, e.g.
     // { it: "completed", finance: "in_progress", manager: "not_started" }.
-    return Object.entries(c).map(([dept, value], j) => {
+    const items: ClearanceItem[] = Object.entries(c).map(([dept, value], j) => {
       const known = CLEARANCE_DEPT_LABELS[dept];
       return {
         id: `${recordId}-c${j}`,
@@ -132,6 +133,19 @@ function buildClearanceItems(raw: RawOffboarding, recordId: string): ClearanceIt
         completed: value === "completed",
       };
     });
+    // The map has no access step of its own. IT revokes access last, once
+    // HR has closed the file, so it is done only when both are.
+    if ("it" in c) {
+      items.push({
+        id: `${recordId}-c${items.length}`,
+        label: "Revoke system access",
+        department: "IT",
+        completed:
+          raw.status === "completed" ||
+          (c.it === "completed" && c.hr === "completed"),
+      });
+    }
+    return items;
   }
   return DEFAULT_CLEARANCE.map((label, j) => ({
     id: `${recordId}-c${j}`,
@@ -176,17 +190,23 @@ function buildOffboarding(bundle: LocaleBundle): OffboardingRecord[] {
       raw.exitInterviewCompleted ?? !!raw.exitInterview?.completedAt;
     const lastWorkingDate =
       raw.lastWorkingDate ?? raw.lastDay ?? bundle.tenant.createdAt.slice(0, 10);
+    const status = deriveStatus(raw, clearanceItems, exitInterviewCompleted);
+    const jobTitle = raw.jobTitle ?? emp?.jobTitle ?? "";
+    const department = raw.department ?? emp?.departmentName ?? "—";
+    const clearanceMap =
+      raw.clearance && !Array.isArray(raw.clearance) ? raw.clearance : undefined;
+    const done = status === "completed";
 
     return {
       id: recordId,
       employeeId: raw.employeeId ?? emp?.id,
       employeeName,
       employeeInitials: emp?.initials ?? initialsFrom(employeeName),
-      jobTitle: raw.jobTitle ?? emp?.jobTitle ?? "",
-      department: raw.department ?? emp?.departmentName ?? "—",
+      jobTitle,
+      department,
       lastWorkingDate,
       exitReason: mapReason(raw.reason),
-      status: deriveStatus(raw, clearanceItems, exitInterviewCompleted),
+      status,
       clearanceItems,
       exitInterviewCompleted,
       exitInterviewNotes:
@@ -205,8 +225,38 @@ function buildOffboarding(bundle: LocaleBundle): OffboardingRecord[] {
       reactivatedBy: raw.reactivatedBy,
       systemAccessRevokedAt: raw.systemAccessRevokedAt,
       exitInterviewScheduledAt: raw.exitInterview?.scheduledAt,
+      // Kit comes back through the same owners as the clearance map: devices
+      // to IT, cards to HR, vehicles signed in by the manager (§4).
+      assets: buildAssets(
+        recordId,
+        jobTitle,
+        department,
+        {
+          devices: done || clearanceMap?.it === "completed",
+          cards: done || clearanceMap?.hr === "completed",
+          vehicle: done || clearanceMap?.manager === "completed",
+        },
+        lastWorkingDate,
+      ),
+      rehireEligible: deriveRehireEligible(raw, status, i),
     };
   });
+}
+
+/**
+ * Demo value for "Rehire Eligible" (§5). Undecided while the exit is still
+ * awaiting approval; never for a termination or a leaver who said they
+ * wouldn't recommend the company; otherwise most leavers are eligible.
+ */
+function deriveRehireEligible(
+  raw: RawOffboarding,
+  status: OffboardingStatus,
+  index: number,
+): boolean | undefined {
+  if (status === "pending") return undefined;
+  if (mapReason(raw.reason) === "termination") return false;
+  if (raw.exitInterview?.wouldRecommend === false) return false;
+  return index % 7 !== 3;
 }
 
 function shiftIso(dateStr: string, days: number): string {

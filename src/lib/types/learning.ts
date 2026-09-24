@@ -57,6 +57,15 @@ export interface Course {
   status: CourseStatus;
   deliveryMode: CourseDeliveryMode;
   instructor: string;
+  /**
+   * Issuing / accrediting body (ICO, FCA, IOSH, CompTIA…) — what makes a
+   * completion certificate credible to an auditor. Shown as "Provider".
+   */
+  provider?: string;
+  /** Every current employee must complete it (mandatory training compliance). */
+  mandatory?: boolean;
+  /** How long a completion certificate stays valid; null/absent = never expires. */
+  validityMonths?: number | null;
   courseUrl?: string;
   /** Direct URL to a watchable training video (MP4/WebM). */
   videoUrl?: string;
@@ -80,6 +89,9 @@ export interface NewCourse {
   status: CourseStatus;
   deliveryMode: CourseDeliveryMode;
   instructor: string;
+  provider?: string;
+  mandatory?: boolean;
+  validityMonths?: number | null;
   courseUrl?: string;
   durationHours: number;
   capacity?: number;
@@ -94,6 +106,7 @@ export interface NewCourse {
 export interface Enrollment {
   id: string;
   courseId: string;
+  employeeId?: string;
   courseName?: string;
   courseTitle?: string;
   employeeName: string;

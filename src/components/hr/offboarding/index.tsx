@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+import { BookOpenCheck, HeartHandshake } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
@@ -13,6 +14,9 @@ import {
   OFFBOARDING_CARD_FILTER_LABELS,
   type OffboardingCardFilter,
 } from "./components/stat-cards";
+import { ClearanceBreakdown } from "./components/clearance-breakdown";
+import { AssetRecovery } from "./components/asset-recovery";
+import { ComingSoonPanel } from "@/src/components/shared/coming-soon-panel";
 import { PipelineToolbar } from "./components/pipeline-toolbar";
 import { PipelineTable } from "./components/pipeline-table";
 import { OffboardingModal } from "./components/offboarding-modal";
@@ -23,8 +27,14 @@ import {
 import { OFFBOARDING_TABS } from "./actions";
 import type { OffboardingRecord, NewOffboardingRecord } from "./types";
 import { buildClearanceItems } from "./instantiate";
+import { buildAssets } from "@/src/lib/offboarding/assets";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import { WorkflowTab } from "@/src/components/hr/workflows/components/workflow-tab";
+import {
+  WORKFLOW_TAB_ITEM,
+  useHasWorkflowTab,
+} from "@/src/components/hr/workflows/use-workflow-tab";
 import {
   APPROVAL_CHAIN_TAB_ITEM,
   useHasApprovalChainTab,
@@ -38,11 +48,32 @@ import {
   removeRecord,
   revokeSystemAccess,
   scheduleExitInterview,
+  toggleAssetReturned,
   toggleClearanceItem,
   updateExitInterview,
   updateRecord,
 } from "@/src/lib/stores/offboarding-slice";
 import { setEmployeeStatus } from "@/src/lib/stores/employees-slice";
+
+/** The workflows this page starts — shown read-only on its Workflow tab. */
+const OFFBOARDING_WORKFLOW_EVENTS = ["offboarding_initiated"] as const;
+
+/**
+ * Tabs that sit after the lifecycle tabs. Knowledge Transfer and Retention
+ * are agreed for a later phase, so they show a coming-soon panel for now;
+ * they sit in the "More" dropdown with Workflow / Approval Chain so the tab
+ * row fits the screen.
+ */
+const EXTRA_TABS = [
+  { value: "assets", label: "Asset Recovery", dividerBefore: true },
+  {
+    value: "knowledge_transfer",
+    label: "Knowledge Transfer",
+    badge: "Soon",
+    inMore: true,
+  },
+  { value: "retention", label: "Retention", badge: "Soon", inMore: true },
+];
 
 export function OffboardingPage() {
   const { data, loading } = useOffboardingRecords();
@@ -52,6 +83,7 @@ export function OffboardingPage() {
 
   const [activeTab, setActiveTab] = useState("pending");
   const hasChainTab = useHasApprovalChainTab("offboarding_clearance");
+  const hasWorkflowTab = useHasWorkflowTab(OFFBOARDING_WORKFLOW_EVENTS);
   /** Drill-down set by the KPI cards; "all" shows every record. */
   const [cardFilter, setCardFilter] = useState<OffboardingCardFilter>("all");
   const [search, setSearch] = useState("");
@@ -150,6 +182,7 @@ export function OffboardingPage() {
       id,
       exitInterviewCompleted: false,
       clearanceItems: buildClearanceItems(id),
+      assets: buildAssets(id, data.jobTitle, data.department),
       status: "pending",
       initiatedAt: new Date().toISOString().slice(0, 10),
     };
@@ -249,6 +282,19 @@ export function OffboardingPage() {
     [dispatch, records, syncEmployee],
   );
 
+  const handleToggleAsset = useCallback(
+    (record: OffboardingRecord, assetId: string) => {
+      const asset = record.assets?.find((a) => a.id === assetId);
+      dispatch(toggleAssetReturned({ id: record.id, assetId }));
+      if (asset && !asset.returned) {
+        toast.success(`${asset.label} marked as returned`, {
+          description: record.employeeName,
+        });
+      }
+    },
+    [dispatch],
+  );
+
   const handleUpdateExitInterview = useCallback(
     (recordId: string, notes: string, completed: boolean) => {
       dispatch(updateExitInterview({ id: recordId, notes, completed }));
@@ -270,6 +316,12 @@ export function OffboardingPage() {
     [dispatch],
   );
 
+  // Read the open record from the store so knock-on changes (an asset return
+  // completing its clearance step, and vice versa) show in the modal at once.
+  const liveViewingRecord = viewingRecord
+    ? (records.find((r) => r.id === viewingRecord.id) ?? viewingRecord)
+    : null;
+
   if (loading && !records.length) {
     return (
       <div className="flex flex-col gap-5">
@@ -290,6 +342,12 @@ export function OffboardingPage() {
       </div>
 
       <StatCards
+        records={records}
+        cardFilter={cardFilter}
+        onDrillDown={drillDown}
+      />
+
+      <ClearanceBreakdown
         records={records}
         cardFilter={cardFilter}
         onDrillDown={drillDown}
@@ -329,8 +387,14 @@ export function OffboardingPage() {
               value: t.value,
               label: `${t.label} (${t.rows.length})`,
             })),
-            ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
+            ...EXTRA_TABS,
+            ...(hasWorkflowTab ? [{ ...WORKFLOW_TAB_ITEM, inMore: true }] : []),
+            ...(hasChainTab
+              ? [{ ...APPROVAL_CHAIN_TAB_ITEM, inMore: true }]
+              : []),
           ]}
+          value={activeTab}
+          onValueChange={setActiveTab}
         />
         {rowsByTab.map((t) => (
           <TabsContent key={t.value} value={t.value} className="mt-4">
@@ -350,6 +414,47 @@ export function OffboardingPage() {
           </TabsContent>
         ))}
 
+        <TabsContent value="assets" className="mt-4">
+          <AssetRecovery
+            records={filtered}
+            onToggleReturned={handleToggleAsset}
+          />
+        </TabsContent>
+
+        <TabsContent value="knowledge_transfer" className="mt-4">
+          <ComingSoonPanel
+            icon={BookOpenCheck}
+            title="Knowledge Transfer Tracking"
+            description="Make sure a leaver's know-how is handed over before their exit is signed off — especially for leadership and specialist roles."
+            planned={[
+              "Knowledge Transfer: Pending / Complete on every exit",
+              "Required before final approval for flagged roles",
+              "Named successor or handover owner per leaver",
+              "Handover documents and sessions logged in one place",
+            ]}
+          />
+        </TabsContent>
+
+        <TabsContent value="retention" className="mt-4">
+          <ComingSoonPanel
+            icon={HeartHandshake}
+            title="Retention"
+            description="Spot flight risks early and record counter-offers and stay conversations before a resignation turns into an exit."
+            planned={[
+              "Flight-risk flags from tenure, reviews and exit trends",
+              "Counter-offers and outcomes tracked per employee",
+              "Stay interviews scheduled and recorded",
+              "Withdrawn resignations linked back to the exit record",
+            ]}
+          />
+        </TabsContent>
+
+        {hasWorkflowTab && (
+          <TabsContent value="workflow" className="mt-4">
+            <WorkflowTab events={OFFBOARDING_WORKFLOW_EVENTS} />
+          </TabsContent>
+        )}
+
         {hasChainTab && (
           <TabsContent value="approval_chain" className="mt-4">
             <ApprovalChainTab documentType="offboarding_clearance" />
@@ -360,10 +465,11 @@ export function OffboardingPage() {
       <OffboardingModal
         open={modalOpen}
         onClose={closeModal}
-        viewingRecord={viewingRecord}
+        viewingRecord={liveViewingRecord}
         editingRecord={editingRecord}
         onSave={handleSave}
         onToggleClearance={handleToggleClearance}
+        onToggleAsset={handleToggleAsset}
         onUpdateExitInterview={handleUpdateExitInterview}
       />
 

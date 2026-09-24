@@ -69,10 +69,23 @@ export function useRecordForm(schema: CollectionSchema, employeeId: string) {
     null,
   );
 
-  const openCreate = useCallback(() => setWarn({ mode: "create", record: null }), []);
+  // Records the profile owns outright have nothing to override, so they open
+  // the form straight away instead of behind the warning.
+  const direct = schema.profileOwned ?? false;
+  const openCreate = useCallback(
+    () =>
+      direct
+        ? setState({ open: true, mode: "create", record: null })
+        : setWarn({ mode: "create", record: null }),
+    [direct],
+  );
   const openEdit = useCallback(
-    (record: object) => setWarn({ mode: "edit", record: record as Record<string, unknown> }),
-    [],
+    (record: object) => {
+      const r = record as Record<string, unknown>;
+      if (direct) setState({ open: true, mode: "edit", record: r });
+      else setWarn({ mode: "edit", record: r });
+    },
+    [direct],
   );
   const proceed = useCallback(() => {
     setWarn((w) => {
@@ -239,7 +252,7 @@ function RecordFormDialog({
                   <SelectContent>
                     {f.options.map((o) => (
                       <SelectItem key={o} value={o} className="text-sm">
-                        {optionLabel(o)}
+                        {f.optionLabels?.[o] ?? optionLabel(o)}
                       </SelectItem>
                     ))}
                   </SelectContent>

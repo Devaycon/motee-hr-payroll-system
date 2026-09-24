@@ -54,6 +54,7 @@ import {
 } from "../data";
 import { isActionEnabled, type OffboardingAction } from "../actions";
 import type { OffboardingRecord } from "../types";
+import { RehireBadge } from "./offboarding-modal";
 
 export interface PipelineHandlers {
   onViewDetails: (record: OffboardingRecord) => void;
@@ -186,6 +187,13 @@ export function PipelineTable({
           ) : (
             <span className="text-xs text-muted-foreground">Pending</span>
           ),
+      },
+      {
+        id: "rehireEligible",
+        accessorFn: (r) =>
+          r.rehireEligible === undefined ? "" : r.rehireEligible ? "Yes" : "No",
+        header: sortableHeader("Rehire Eligible"),
+        cell: ({ row }) => <RehireBadge value={row.original.rehireEligible} />,
       },
       {
         accessorKey: "status",

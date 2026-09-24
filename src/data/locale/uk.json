@@ -5,7 +5,8 @@
     "referenceDate": "2025-11-15",
     "historyDays": 90,
     "seed": 42,
-    "employeeCount": 20
+    "employeeCount": 20,
+    "coreHrAugmentedAt": "2026-09-24"
   },
   "tenant": {
     "id": "tenant_uk_001",
@@ -329,70 +330,103 @@
       "name": "Full-time",
       "defaultLeaveDays": 28,
       "eligibleForBenefits": true,
-      "probationMonths": 3
+      "probationMonths": 3,
+      "benefits": [
+        "Workplace Pension",
+        "Private Medical Insurance",
+        "Life Assurance",
+        "Income Protection",
+        "Cycle to Work"
+      ]
     },
     {
       "id": "ET-PT",
       "name": "Part-time",
       "defaultLeaveDays": 14,
       "eligibleForBenefits": true,
-      "probationMonths": 3
+      "probationMonths": 3,
+      "benefits": [
+        "Workplace Pension",
+        "Pro-rated Benefits"
+      ]
     },
     {
       "id": "ET-CT",
       "name": "Contract",
       "defaultLeaveDays": 0,
       "eligibleForBenefits": false,
-      "probationMonths": 0
+      "probationMonths": 0,
+      "benefits": []
     },
     {
       "id": "ET-IN",
       "name": "Intern",
       "defaultLeaveDays": 5,
       "eligibleForBenefits": false,
-      "probationMonths": 1
+      "probationMonths": 1,
+      "benefits": [
+        "Travel Allowance"
+      ]
     },
     {
       "id": "ET-AP",
       "name": "Apprentice",
       "defaultLeaveDays": 20,
       "eligibleForBenefits": true,
-      "probationMonths": 6
+      "probationMonths": 6,
+      "benefits": [
+        "Workplace Pension",
+        "Learning Sponsorship"
+      ]
     },
     {
       "id": "ET-TEMP",
       "name": "Temporary",
       "defaultLeaveDays": 0,
       "eligibleForBenefits": false,
-      "probationMonths": 0
+      "probationMonths": 0,
+      "benefits": [
+        "Workplace Pension"
+      ]
     },
     {
       "id": "ET-FL",
       "name": "Freelance / Self-employed",
       "defaultLeaveDays": 0,
       "eligibleForBenefits": false,
-      "probationMonths": 0
+      "probationMonths": 0,
+      "benefits": []
     },
     {
       "id": "ET-CAS",
       "name": "Casual",
       "defaultLeaveDays": 0,
       "eligibleForBenefits": false,
-      "probationMonths": 0
+      "probationMonths": 0,
+      "benefits": []
     },
     {
       "id": "ET-SEA",
       "name": "Seasonal",
       "defaultLeaveDays": 0,
       "eligibleForBenefits": false,
-      "probationMonths": 0
+      "probationMonths": 0,
+      "benefits": [
+        "Workplace Pension"
+      ]
     },
     {
       "id": "ET-REM",
       "name": "Remote / Telecommuting",
       "defaultLeaveDays": 28,
       "eligibleForBenefits": true,
-      "probationMonths": 3
+      "probationMonths": 3,
+      "benefits": [
+        "Workplace Pension",
+        "Private Medical Insurance",
+        "Life Assurance",
+        "Home Office Allowance"
+      ]
     }
   ],
   "roles": [
@@ -598,7 +632,11 @@
       "departmentId": "DEPT-EXEC",
       "departmentName": "Executive Office",
       "jobTitle": "Chief Executive Officer",
-      "skills": ["Leadership", "Strategy", "Fundraising"],
+      "skills": [
+        "Leadership",
+        "Strategy",
+        "Fundraising"
+      ],
       "grade": "L8",
       "level": 1,
       "employmentTypeId": "ET-FT",
@@ -812,7 +850,11 @@
       "departmentId": "DEPT-EXEC",
       "departmentName": "Executive Office",
       "jobTitle": "Chief Operating Officer",
-      "skills": ["Leadership", "Operations", "Strategy"],
+      "skills": [
+        "Leadership",
+        "Operations",
+        "Strategy"
+      ],
       "grade": "L8",
       "level": 1,
       "employmentTypeId": "ET-FT",
@@ -1026,7 +1068,11 @@
       "departmentId": "DEPT-OPS",
       "departmentName": "Operations & Fleet",
       "jobTitle": "Head of Operations",
-      "skills": ["Leadership", "Operations", "Logistics"],
+      "skills": [
+        "Leadership",
+        "Operations",
+        "Logistics"
+      ],
       "grade": "L7",
       "level": 2,
       "employmentTypeId": "ET-FT",
@@ -1234,7 +1280,11 @@
       "departmentId": "DEPT-OPS",
       "departmentName": "Operations & Fleet",
       "jobTitle": "Fleet Manager",
-      "skills": ["Logistics", "Operations", "Compliance"],
+      "skills": [
+        "Logistics",
+        "Operations",
+        "Compliance"
+      ],
       "grade": "L6",
       "level": 3,
       "employmentTypeId": "ET-FT",
@@ -1436,7 +1486,10 @@
       "departmentId": "DEPT-OPS",
       "departmentName": "Operations & Fleet",
       "jobTitle": "Logistics Coordinator",
-      "skills": ["Logistics", "Data Analysis"],
+      "skills": [
+        "Logistics",
+        "Data Analysis"
+      ],
       "grade": "L4",
       "level": 5,
       "employmentTypeId": "ET-FT",
@@ -1643,7 +1696,11 @@
       "departmentId": "DEPT-OPS",
       "departmentName": "Operations & Fleet",
       "jobTitle": "Warehouse Supervisor",
-      "skills": ["Logistics", "Operations", "Health & Safety"],
+      "skills": [
+        "Logistics",
+        "Operations",
+        "Health & Safety"
+      ],
       "grade": "L5",
       "level": 4,
       "employmentTypeId": "ET-IN",
@@ -1844,7 +1901,11 @@
       "departmentId": "DEPT-OPS",
       "departmentName": "Operations & Fleet",
       "jobTitle": "Driver Lead",
-      "skills": ["Logistics", "Leadership", "Health & Safety"],
+      "skills": [
+        "Logistics",
+        "Leadership",
+        "Health & Safety"
+      ],
       "grade": "L4",
       "level": 5,
       "employmentTypeId": "ET-FT",
@@ -2051,7 +2112,10 @@
       "departmentId": "DEPT-OPS",
       "departmentName": "Operations & Fleet",
       "jobTitle": "Route Planner",
-      "skills": ["Logistics", "Data Analysis"],
+      "skills": [
+        "Logistics",
+        "Data Analysis"
+      ],
       "grade": "L4",
       "level": 5,
       "employmentTypeId": "ET-FT",
@@ -2258,7 +2322,11 @@
       "departmentId": "DEPT-ENG",
       "departmentName": "Engineering & Platform",
       "jobTitle": "VP Engineering",
-      "skills": ["Leadership", "Backend Engineering", "Cloud Infrastructure"],
+      "skills": [
+        "Leadership",
+        "Backend Engineering",
+        "Cloud Infrastructure"
+      ],
       "grade": "L7",
       "level": 2,
       "employmentTypeId": "ET-FT",
@@ -2466,7 +2534,11 @@
       "departmentId": "DEPT-ENG",
       "departmentName": "Engineering & Platform",
       "jobTitle": "Senior Backend Engineer",
-      "skills": ["Backend Engineering", "Cloud Infrastructure", "Data Analysis"],
+      "skills": [
+        "Backend Engineering",
+        "Cloud Infrastructure",
+        "Data Analysis"
+      ],
       "grade": "L5",
       "level": 4,
       "employmentTypeId": "ET-CT",
@@ -2679,7 +2751,11 @@
       "departmentId": "DEPT-ENG",
       "departmentName": "Engineering & Platform",
       "jobTitle": "Senior Frontend Engineer",
-      "skills": ["Frontend Engineering", "UX Design", "Agile Delivery"],
+      "skills": [
+        "Frontend Engineering",
+        "UX Design",
+        "Agile Delivery"
+      ],
       "grade": "L5",
       "level": 4,
       "employmentTypeId": "ET-FT",
@@ -2886,7 +2962,10 @@
       "departmentId": "DEPT-ENG",
       "departmentName": "Engineering & Platform",
       "jobTitle": "DevOps Engineer",
-      "skills": ["Cloud Infrastructure", "Backend Engineering"],
+      "skills": [
+        "Cloud Infrastructure",
+        "Backend Engineering"
+      ],
       "grade": "L5",
       "level": 4,
       "employmentTypeId": "ET-PT",
@@ -3093,7 +3172,11 @@
       "departmentId": "DEPT-FIN",
       "departmentName": "Finance & Accounting",
       "jobTitle": "Finance Director",
-      "skills": ["Financial Planning", "Leadership", "Compliance"],
+      "skills": [
+        "Financial Planning",
+        "Leadership",
+        "Compliance"
+      ],
       "grade": "L7",
       "level": 2,
       "employmentTypeId": "ET-IN",
@@ -3301,7 +3384,10 @@
       "departmentId": "DEPT-FIN",
       "departmentName": "Finance & Accounting",
       "jobTitle": "Senior Accountant",
-      "skills": ["Financial Planning", "Data Analysis"],
+      "skills": [
+        "Financial Planning",
+        "Data Analysis"
+      ],
       "grade": "L5",
       "level": 4,
       "employmentTypeId": "ET-FT",
@@ -3514,7 +3600,10 @@
       "departmentId": "DEPT-FIN",
       "departmentName": "Finance & Accounting",
       "jobTitle": "Payroll Specialist",
-      "skills": ["Financial Planning", "Compliance"],
+      "skills": [
+        "Financial Planning",
+        "Compliance"
+      ],
       "grade": "L4",
       "level": 5,
       "employmentTypeId": "ET-FT",
@@ -3721,7 +3810,11 @@
       "departmentId": "DEPT-PEOPLE",
       "departmentName": "People & Culture",
       "jobTitle": "HR Admin",
-      "skills": ["Recruitment", "Compliance", "Operations"],
+      "skills": [
+        "Recruitment",
+        "Compliance",
+        "Operations"
+      ],
       "grade": "L7",
       "level": 2,
       "employmentTypeId": "ET-FT",
@@ -3923,7 +4016,11 @@
       "departmentId": "DEPT-PEOPLE",
       "departmentName": "People & Culture",
       "jobTitle": "HR Business Partner",
-      "skills": ["Recruitment", "Leadership", "Compliance"],
+      "skills": [
+        "Recruitment",
+        "Leadership",
+        "Compliance"
+      ],
       "grade": "L5",
       "level": 4,
       "employmentTypeId": "ET-FT",
@@ -4136,7 +4233,11 @@
       "departmentId": "DEPT-SALES",
       "departmentName": "Sales & Partnerships",
       "jobTitle": "Head of Sales",
-      "skills": ["Leadership", "Sales", "Strategy"],
+      "skills": [
+        "Leadership",
+        "Sales",
+        "Strategy"
+      ],
       "grade": "L7",
       "level": 2,
       "employmentTypeId": "ET-IN",
@@ -4350,7 +4451,10 @@
       "departmentId": "DEPT-SALES",
       "departmentName": "Sales & Partnerships",
       "jobTitle": "Account Executive",
-      "skills": ["Sales", "Digital Marketing"],
+      "skills": [
+        "Sales",
+        "Digital Marketing"
+      ],
       "grade": "L5",
       "level": 4,
       "employmentTypeId": "ET-FT",
@@ -4563,7 +4667,11 @@
       "departmentId": "DEPT-CX",
       "departmentName": "Customer Experience",
       "jobTitle": "CX Manager",
-      "skills": ["Customer Service", "Leadership", "Operations"],
+      "skills": [
+        "Customer Service",
+        "Leadership",
+        "Operations"
+      ],
       "grade": "L6",
       "level": 3,
       "employmentTypeId": "ET-FT",
@@ -22784,8 +22892,7 @@
       "status": "present",
       "location": "150 Whiteladies Road, Bristol, BS8 2PH",
       "source": "biometric"
-    }
-,
+    },
     {
       "id": "GB-ATT-1098",
       "employeeId": "GB-EMP-0003",
@@ -32782,84 +32889,150 @@
         "title": "Anti-Money Laundering Fundamentals",
         "category": "Compliance",
         "duration": "2h",
-        "format": "online"
+        "format": "online",
+        "provider": "FCA",
+        "mandatory": true,
+        "validityMonths": 12
       },
       {
         "id": "CRS-002",
         "title": "GDPR / Data Protection Essentials",
         "category": "Compliance",
         "duration": "1.5h",
-        "format": "online"
+        "format": "online",
+        "provider": "ICO",
+        "mandatory": false,
+        "validityMonths": 24
       },
       {
         "id": "CRS-003",
         "title": "Effective Leadership",
         "category": "Leadership",
         "duration": "6h",
-        "format": "blended"
+        "format": "blended",
+        "provider": "CMI",
+        "mandatory": false,
+        "validityMonths": null
       },
       {
         "id": "CRS-004",
         "title": "Public Speaking & Communication",
         "category": "Soft Skills",
         "duration": "4h",
-        "format": "in_person"
+        "format": "in_person",
+        "provider": "Toastmasters International",
+        "mandatory": false,
+        "validityMonths": null
       },
       {
         "id": "CRS-005",
         "title": "Advanced TypeScript",
         "category": "Technical",
         "duration": "8h",
-        "format": "online"
+        "format": "online",
+        "provider": "Microsoft",
+        "mandatory": false,
+        "validityMonths": null
       },
       {
         "id": "CRS-006",
         "title": "SQL for Analysts",
         "category": "Technical",
         "duration": "5h",
-        "format": "online"
+        "format": "online",
+        "provider": "Microsoft",
+        "mandatory": false,
+        "validityMonths": null
       },
       {
         "id": "CRS-007",
         "title": "Inclusive Hiring Practices",
         "category": "People",
         "duration": "2h",
-        "format": "online"
+        "format": "online",
+        "provider": "CIPD",
+        "mandatory": false,
+        "validityMonths": null
       },
       {
         "id": "CRS-008",
         "title": "Cybersecurity Awareness",
         "category": "Security",
         "duration": "1h",
-        "format": "online"
+        "format": "online",
+        "provider": "CompTIA",
+        "mandatory": true,
+        "validityMonths": 12
       },
       {
         "id": "CRS-009",
         "title": "Project Management Foundations",
         "category": "Leadership",
         "duration": "10h",
-        "format": "blended"
+        "format": "blended",
+        "provider": "APM",
+        "mandatory": false,
+        "validityMonths": 36
       },
       {
         "id": "CRS-010",
         "title": "Financial Modelling with Excel",
         "category": "Technical",
         "duration": "8h",
-        "format": "online"
+        "format": "online",
+        "provider": "ICAEW",
+        "mandatory": false,
+        "validityMonths": null
       },
       {
         "id": "CRS-011",
         "title": "Negotiation Skills",
         "category": "Soft Skills",
         "duration": "3h",
-        "format": "in_person"
+        "format": "in_person",
+        "provider": "Internal L&D",
+        "mandatory": false,
+        "validityMonths": null
       },
       {
         "id": "CRS-012",
         "title": "Customer-Centric Mindset",
         "category": "Customer",
         "duration": "2h",
-        "format": "online"
+        "format": "online",
+        "provider": "Institute of Customer Service",
+        "mandatory": false,
+        "validityMonths": null
+      },
+      {
+        "id": "CRS-101",
+        "title": "Health & Safety Fundamentals",
+        "category": "Compliance",
+        "duration": "3h",
+        "format": "online",
+        "provider": "IOSH",
+        "mandatory": true,
+        "validityMonths": 36
+      },
+      {
+        "id": "CRS-102",
+        "title": "Data Protection Essentials",
+        "category": "Compliance",
+        "duration": "1.5h",
+        "format": "online",
+        "provider": "ICO",
+        "mandatory": true,
+        "validityMonths": 12
+      },
+      {
+        "id": "CRS-103",
+        "title": "Leadership Skills",
+        "category": "Leadership",
+        "duration": "6h",
+        "format": "blended",
+        "provider": "CMI",
+        "mandatory": false,
+        "validityMonths": null
       }
     ],
     "enrollments": [
@@ -33038,10 +33211,12 @@
         "employeeId": "GB-EMP-0004",
         "courseId": "CRS-008",
         "courseTitle": "Cybersecurity Awareness",
-        "progress": 82,
+        "progress": 37,
         "status": "in_progress",
         "enrolledAt": "2025-10-27",
-        "completedAt": null
+        "completedAt": null,
+        "dueDate": "2026-08-26",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0019",
@@ -33078,20 +33253,26 @@
         "employeeId": "GB-EMP-0005",
         "courseId": "CRS-001",
         "courseTitle": "Anti-Money Laundering Fundamentals",
-        "progress": 5,
-        "status": "in_progress",
+        "progress": 100,
+        "status": "completed",
         "enrolledAt": "2025-07-04",
-        "completedAt": null
+        "completedAt": "2026-06-05",
+        "score": 76,
+        "dueDate": "2027-03-24",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0023",
         "employeeId": "GB-EMP-0006",
         "courseId": "CRS-001",
         "courseTitle": "Anti-Money Laundering Fundamentals",
-        "progress": 77,
-        "status": "in_progress",
+        "progress": 100,
+        "status": "completed",
         "enrolledAt": "2025-08-21",
-        "completedAt": null
+        "completedAt": "2026-05-08",
+        "score": 92,
+        "dueDate": "2026-12-27",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0024",
@@ -33148,10 +33329,13 @@
         "employeeId": "GB-EMP-0008",
         "courseId": "CRS-008",
         "courseTitle": "Cybersecurity Awareness",
-        "progress": 42,
-        "status": "in_progress",
+        "progress": 100,
+        "status": "completed",
         "enrolledAt": "2025-06-09",
-        "completedAt": null
+        "completedAt": "2026-02-28",
+        "score": 80,
+        "dueDate": "2027-02-11",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0030",
@@ -33218,10 +33402,13 @@
         "employeeId": "GB-EMP-0009",
         "courseId": "CRS-008",
         "courseTitle": "Cybersecurity Awareness",
-        "progress": 68,
-        "status": "in_progress",
+        "progress": 100,
+        "status": "completed",
         "enrolledAt": "2025-08-02",
-        "completedAt": null
+        "completedAt": "2026-07-24",
+        "score": 86,
+        "dueDate": "2026-12-23",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0037",
@@ -33258,10 +33445,13 @@
         "employeeId": "GB-EMP-0010",
         "courseId": "CRS-008",
         "courseTitle": "Cybersecurity Awareness",
-        "progress": 39,
-        "status": "in_progress",
+        "progress": 100,
+        "status": "completed",
         "enrolledAt": "2025-10-31",
-        "completedAt": null
+        "completedAt": "2026-06-20",
+        "score": 85,
+        "dueDate": "2026-12-29",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0041",
@@ -33338,10 +33528,12 @@
         "employeeId": "GB-EMP-0012",
         "courseId": "CRS-008",
         "courseTitle": "Cybersecurity Awareness",
-        "progress": 38,
+        "progress": 79,
         "status": "in_progress",
         "enrolledAt": "2025-10-13",
-        "completedAt": null
+        "completedAt": null,
+        "dueDate": "2026-10-12",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0049",
@@ -33378,20 +33570,26 @@
         "employeeId": "GB-EMP-0013",
         "courseId": "CRS-008",
         "courseTitle": "Cybersecurity Awareness",
-        "progress": 35,
-        "status": "in_progress",
+        "progress": 100,
+        "status": "completed",
         "enrolledAt": "2025-10-16",
-        "completedAt": null
+        "completedAt": "2026-02-05",
+        "score": 99,
+        "dueDate": "2027-01-12",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0053",
         "employeeId": "GB-EMP-0014",
         "courseId": "CRS-008",
         "courseTitle": "Cybersecurity Awareness",
-        "progress": 20,
-        "status": "in_progress",
+        "progress": 100,
+        "status": "completed",
         "enrolledAt": "2025-08-31",
-        "completedAt": null
+        "completedAt": "2026-08-17",
+        "score": 90,
+        "dueDate": "2027-03-27",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0054",
@@ -33528,10 +33726,13 @@
         "employeeId": "GB-EMP-0017",
         "courseId": "CRS-008",
         "courseTitle": "Cybersecurity Awareness",
-        "progress": 41,
-        "status": "in_progress",
+        "progress": 100,
+        "status": "completed",
         "enrolledAt": "2025-08-25",
-        "completedAt": null
+        "completedAt": "2026-01-11",
+        "score": 87,
+        "dueDate": "2027-03-19",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0068",
@@ -33578,10 +33779,13 @@
         "employeeId": "GB-EMP-0018",
         "courseId": "CRS-001",
         "courseTitle": "Anti-Money Laundering Fundamentals",
-        "progress": 11,
-        "status": "in_progress",
+        "progress": 100,
+        "status": "completed",
         "enrolledAt": "2025-07-10",
-        "completedAt": null
+        "completedAt": "2025-12-12",
+        "score": 88,
+        "dueDate": "2027-02-15",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0073",
@@ -33698,10 +33902,13 @@
         "employeeId": "GB-EMP-0020",
         "courseId": "CRS-008",
         "courseTitle": "Cybersecurity Awareness",
-        "progress": 27,
-        "status": "in_progress",
+        "progress": 100,
+        "status": "completed",
         "enrolledAt": "2025-08-25",
-        "completedAt": null
+        "completedAt": "2026-08-28",
+        "score": 73,
+        "dueDate": "2026-12-28",
+        "mandatory": true
       },
       {
         "id": "GB-ENR-0085",
@@ -33712,6 +33919,781 @@
         "status": "in_progress",
         "enrolledAt": "2025-09-18",
         "completedAt": null
+      },
+      {
+        "id": "GB-CHR-ENR-0001",
+        "employeeId": "GB-EMP-0003",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2026-07-01",
+        "dueDate": "2027-01-05",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-06-24",
+        "score": 91
+      },
+      {
+        "id": "GB-CHR-ENR-0002",
+        "employeeId": "GB-EMP-0003",
+        "courseId": "CRS-008",
+        "courseTitle": "Cybersecurity Awareness",
+        "enrolledAt": "2026-03-12",
+        "dueDate": "2026-12-28",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-03-12",
+        "score": 81
+      },
+      {
+        "id": "GB-CHR-ENR-0003",
+        "employeeId": "GB-EMP-0003",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-06-18",
+        "dueDate": "2027-02-20",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-17",
+        "score": 82
+      },
+      {
+        "id": "GB-CHR-ENR-0004",
+        "employeeId": "GB-EMP-0003",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-07-10",
+        "dueDate": "2027-03-16",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-09",
+        "score": 93
+      },
+      {
+        "id": "GB-CHR-ENR-0005",
+        "employeeId": "GB-EMP-0004",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2026-04-04",
+        "dueDate": "2027-04-10",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-02-06",
+        "score": 86
+      },
+      {
+        "id": "GB-CHR-ENR-0006",
+        "employeeId": "GB-EMP-0004",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-03-25",
+        "dueDate": "2026-12-01",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-07",
+        "score": 85
+      },
+      {
+        "id": "GB-CHR-ENR-0007",
+        "employeeId": "GB-EMP-0004",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-06-27",
+        "dueDate": "2027-01-02",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-04",
+        "score": 81
+      },
+      {
+        "id": "GB-CHR-ENR-0008",
+        "employeeId": "GB-EMP-0005",
+        "courseId": "CRS-008",
+        "courseTitle": "Cybersecurity Awareness",
+        "enrolledAt": "2026-04-04",
+        "dueDate": "2027-02-09",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-02-15",
+        "score": 72
+      },
+      {
+        "id": "GB-CHR-ENR-0009",
+        "employeeId": "GB-EMP-0005",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-03-21",
+        "dueDate": "2026-08-26",
+        "mandatory": true,
+        "status": "in_progress",
+        "progress": 40,
+        "completedAt": null
+      },
+      {
+        "id": "GB-CHR-ENR-0010",
+        "employeeId": "GB-EMP-0005",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-02-07",
+        "dueDate": "2026-11-23",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-05-13",
+        "score": 88
+      },
+      {
+        "id": "GB-CHR-ENR-0011",
+        "employeeId": "GB-EMP-0006",
+        "courseId": "CRS-008",
+        "courseTitle": "Cybersecurity Awareness",
+        "enrolledAt": "2026-06-08",
+        "dueDate": "2026-10-25",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-01-18",
+        "score": 96
+      },
+      {
+        "id": "GB-CHR-ENR-0012",
+        "employeeId": "GB-EMP-0006",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-03-17",
+        "dueDate": "2026-12-13",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-05",
+        "score": 93
+      },
+      {
+        "id": "GB-CHR-ENR-0013",
+        "employeeId": "GB-EMP-0006",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-04-04",
+        "dueDate": "2026-10-24",
+        "mandatory": true,
+        "status": "in_progress",
+        "progress": 55,
+        "completedAt": null
+      },
+      {
+        "id": "GB-CHR-ENR-0014",
+        "employeeId": "GB-EMP-0007",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2025-12-25",
+        "dueDate": "2027-01-23",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-07-14",
+        "score": 73
+      },
+      {
+        "id": "GB-CHR-ENR-0015",
+        "employeeId": "GB-EMP-0007",
+        "courseId": "CRS-008",
+        "courseTitle": "Cybersecurity Awareness",
+        "enrolledAt": "2026-05-24",
+        "dueDate": "2026-11-28",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-07-16",
+        "score": 88
+      },
+      {
+        "id": "GB-CHR-ENR-0016",
+        "employeeId": "GB-EMP-0007",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-05-19",
+        "dueDate": "2027-02-15",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-06-11",
+        "score": 89
+      },
+      {
+        "id": "GB-CHR-ENR-0017",
+        "employeeId": "GB-EMP-0007",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-01-10",
+        "dueDate": "2027-02-10",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-03-04",
+        "score": 86
+      },
+      {
+        "id": "GB-CHR-ENR-0018",
+        "employeeId": "GB-EMP-0008",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2025-11-04",
+        "dueDate": "2026-09-16",
+        "mandatory": true,
+        "status": "in_progress",
+        "progress": 49,
+        "completedAt": null
+      },
+      {
+        "id": "GB-CHR-ENR-0019",
+        "employeeId": "GB-EMP-0008",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2025-11-22",
+        "dueDate": "2026-09-09",
+        "mandatory": true,
+        "status": "in_progress",
+        "progress": 20,
+        "completedAt": null
+      },
+      {
+        "id": "GB-CHR-ENR-0020",
+        "employeeId": "GB-EMP-0008",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-05-11",
+        "dueDate": "2027-02-04",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-06-07",
+        "score": 90
+      },
+      {
+        "id": "GB-CHR-ENR-0021",
+        "employeeId": "GB-EMP-0009",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2025-11-10",
+        "dueDate": "2027-01-14",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-07-10",
+        "score": 78
+      },
+      {
+        "id": "GB-CHR-ENR-0022",
+        "employeeId": "GB-EMP-0009",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-03-19",
+        "dueDate": "2027-01-07",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-03-27",
+        "score": 95
+      },
+      {
+        "id": "GB-CHR-ENR-0023",
+        "employeeId": "GB-EMP-0009",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-02-12",
+        "dueDate": "2027-04-06",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-14",
+        "score": 76
+      },
+      {
+        "id": "GB-CHR-ENR-0024",
+        "employeeId": "GB-EMP-0010",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2026-06-10",
+        "dueDate": "2027-01-28",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-04-02",
+        "score": 91
+      },
+      {
+        "id": "GB-CHR-ENR-0025",
+        "employeeId": "GB-EMP-0010",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-07-07",
+        "dueDate": "2026-12-11",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-03-09",
+        "score": 82
+      },
+      {
+        "id": "GB-CHR-ENR-0026",
+        "employeeId": "GB-EMP-0010",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-06-16",
+        "dueDate": "2027-01-04",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-07-01",
+        "score": 95
+      },
+      {
+        "id": "GB-CHR-ENR-0027",
+        "employeeId": "GB-EMP-0011",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2026-06-13",
+        "dueDate": "2026-11-15",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-01-19",
+        "score": 84
+      },
+      {
+        "id": "GB-CHR-ENR-0028",
+        "employeeId": "GB-EMP-0011",
+        "courseId": "CRS-008",
+        "courseTitle": "Cybersecurity Awareness",
+        "enrolledAt": "2026-01-02",
+        "dueDate": "2026-11-04",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2025-12-24",
+        "score": 99
+      },
+      {
+        "id": "GB-CHR-ENR-0029",
+        "employeeId": "GB-EMP-0011",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-03-14",
+        "dueDate": "2027-02-01",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-03-22",
+        "score": 83
+      },
+      {
+        "id": "GB-CHR-ENR-0030",
+        "employeeId": "GB-EMP-0011",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-01-22",
+        "dueDate": "2027-01-17",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-18",
+        "score": 92
+      },
+      {
+        "id": "GB-CHR-ENR-0031",
+        "employeeId": "GB-EMP-0012",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2025-11-30",
+        "dueDate": "2027-02-25",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-01-25",
+        "score": 91
+      },
+      {
+        "id": "GB-CHR-ENR-0032",
+        "employeeId": "GB-EMP-0012",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-01-03",
+        "dueDate": "2027-02-20",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-08",
+        "score": 87
+      },
+      {
+        "id": "GB-CHR-ENR-0033",
+        "employeeId": "GB-EMP-0012",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-07-15",
+        "dueDate": "2027-03-02",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-01-20",
+        "score": 75
+      },
+      {
+        "id": "GB-CHR-ENR-0034",
+        "employeeId": "GB-EMP-0013",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2026-02-01",
+        "dueDate": "2027-04-01",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-07-08",
+        "score": 72
+      },
+      {
+        "id": "GB-CHR-ENR-0035",
+        "employeeId": "GB-EMP-0013",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-01-26",
+        "dueDate": "2026-12-06",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-06-26",
+        "score": 84
+      },
+      {
+        "id": "GB-CHR-ENR-0036",
+        "employeeId": "GB-EMP-0013",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-07-24",
+        "dueDate": "2027-03-29",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-03-11",
+        "score": 86
+      },
+      {
+        "id": "GB-CHR-ENR-0037",
+        "employeeId": "GB-EMP-0014",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2026-03-06",
+        "dueDate": "2027-01-31",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-07-13",
+        "score": 88
+      },
+      {
+        "id": "GB-CHR-ENR-0038",
+        "employeeId": "GB-EMP-0014",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2025-12-01",
+        "dueDate": "2027-03-13",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-01-10",
+        "score": 82
+      },
+      {
+        "id": "GB-CHR-ENR-0039",
+        "employeeId": "GB-EMP-0014",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2025-12-20",
+        "dueDate": "2027-04-02",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-04",
+        "score": 93
+      },
+      {
+        "id": "GB-CHR-ENR-0040",
+        "employeeId": "GB-EMP-0015",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2026-01-15",
+        "dueDate": "2027-03-26",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-05-01",
+        "score": 88
+      },
+      {
+        "id": "GB-CHR-ENR-0041",
+        "employeeId": "GB-EMP-0015",
+        "courseId": "CRS-008",
+        "courseTitle": "Cybersecurity Awareness",
+        "enrolledAt": "2026-02-11",
+        "dueDate": "2026-11-06",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-04-11",
+        "score": 99
+      },
+      {
+        "id": "GB-CHR-ENR-0042",
+        "employeeId": "GB-EMP-0015",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2025-11-05",
+        "dueDate": "2027-01-27",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-03-23",
+        "score": 73
+      },
+      {
+        "id": "GB-CHR-ENR-0043",
+        "employeeId": "GB-EMP-0015",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-06-13",
+        "dueDate": "2027-03-26",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-02-06",
+        "score": 74
+      },
+      {
+        "id": "GB-CHR-ENR-0044",
+        "employeeId": "GB-EMP-0016",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2026-05-16",
+        "dueDate": "2027-02-06",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2025-12-16",
+        "score": 88
+      },
+      {
+        "id": "GB-CHR-ENR-0045",
+        "employeeId": "GB-EMP-0016",
+        "courseId": "CRS-008",
+        "courseTitle": "Cybersecurity Awareness",
+        "enrolledAt": "2026-01-17",
+        "dueDate": "2027-03-14",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-28",
+        "score": 85
+      },
+      {
+        "id": "GB-CHR-ENR-0046",
+        "employeeId": "GB-EMP-0016",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2025-11-06",
+        "dueDate": "2027-01-24",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-06-06",
+        "score": 89
+      },
+      {
+        "id": "GB-CHR-ENR-0047",
+        "employeeId": "GB-EMP-0016",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-06-04",
+        "dueDate": "2026-11-27",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-22",
+        "score": 80
+      },
+      {
+        "id": "GB-CHR-ENR-0048",
+        "employeeId": "GB-EMP-0017",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2026-04-15",
+        "dueDate": "2027-04-09",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-08-29",
+        "score": 80
+      },
+      {
+        "id": "GB-CHR-ENR-0049",
+        "employeeId": "GB-EMP-0017",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-05-06",
+        "dueDate": "2026-10-30",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-04-19",
+        "score": 72
+      },
+      {
+        "id": "GB-CHR-ENR-0050",
+        "employeeId": "GB-EMP-0017",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2025-12-21",
+        "dueDate": "2027-01-11",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-06-28",
+        "score": 95
+      },
+      {
+        "id": "GB-CHR-ENR-0051",
+        "employeeId": "GB-EMP-0018",
+        "courseId": "CRS-008",
+        "courseTitle": "Cybersecurity Awareness",
+        "enrolledAt": "2025-12-15",
+        "dueDate": "2027-03-19",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-06-18",
+        "score": 75
+      },
+      {
+        "id": "GB-CHR-ENR-0052",
+        "employeeId": "GB-EMP-0018",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-01-04",
+        "dueDate": "2027-02-12",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-01-11",
+        "score": 87
+      },
+      {
+        "id": "GB-CHR-ENR-0053",
+        "employeeId": "GB-EMP-0018",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2025-11-25",
+        "dueDate": "2027-03-22",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-02-13",
+        "score": 78
+      },
+      {
+        "id": "GB-CHR-ENR-0054",
+        "employeeId": "GB-EMP-0019",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2025-12-21",
+        "dueDate": "2026-11-19",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-05-03",
+        "score": 78
+      },
+      {
+        "id": "GB-CHR-ENR-0055",
+        "employeeId": "GB-EMP-0019",
+        "courseId": "CRS-008",
+        "courseTitle": "Cybersecurity Awareness",
+        "enrolledAt": "2025-11-09",
+        "dueDate": "2027-01-11",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-02-28",
+        "score": 91
+      },
+      {
+        "id": "GB-CHR-ENR-0056",
+        "employeeId": "GB-EMP-0019",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-02-24",
+        "dueDate": "2027-02-02",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-06-03",
+        "score": 90
+      },
+      {
+        "id": "GB-CHR-ENR-0057",
+        "employeeId": "GB-EMP-0019",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2026-03-03",
+        "dueDate": "2026-12-23",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-04-11",
+        "score": 100
+      },
+      {
+        "id": "GB-CHR-ENR-0058",
+        "employeeId": "GB-EMP-0020",
+        "courseId": "CRS-001",
+        "courseTitle": "Anti-Money Laundering Fundamentals",
+        "enrolledAt": "2025-12-09",
+        "dueDate": "2026-12-02",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2026-07-29",
+        "score": 84
+      },
+      {
+        "id": "GB-CHR-ENR-0059",
+        "employeeId": "GB-EMP-0020",
+        "courseId": "CRS-101",
+        "courseTitle": "Health & Safety Fundamentals",
+        "enrolledAt": "2026-06-07",
+        "dueDate": "2027-01-05",
+        "mandatory": true,
+        "status": "completed",
+        "progress": 100,
+        "completedAt": "2025-12-31",
+        "score": 97
+      },
+      {
+        "id": "GB-CHR-ENR-0060",
+        "employeeId": "GB-EMP-0020",
+        "courseId": "CRS-102",
+        "courseTitle": "Data Protection Essentials",
+        "enrolledAt": "2025-12-24",
+        "dueDate": "2026-10-20",
+        "mandatory": true,
+        "status": "in_progress",
+        "progress": 64,
+        "completedAt": null
       }
     ],
     "certifications": [
@@ -33721,8 +34703,12 @@
         "courseId": "CRS-009",
         "title": "Project Management Foundations - Certificate",
         "issuedAt": "2025-10-30",
-        "expiresAt": "2026-11-15",
-        "certificateUrl": "/files/certs/GB-EMP-0010-CRS-009.pdf"
+        "expiresAt": "2028-10-30",
+        "certificateUrl": "/files/certs/GB-EMP-0010-CRS-009.pdf",
+        "kind": "course",
+        "issuingBody": "APM",
+        "category": "training",
+        "credentialId": "APM-342367"
       },
       {
         "id": "GB-CERT-0002",
@@ -33730,8 +34716,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0001-CRS-101.pdf"
+        "expiresAt": "2026-08-20",
+        "certificateUrl": "/files/certs/GB-EMP-0001-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-919986"
       },
       {
         "id": "GB-CERT-0003",
@@ -33739,8 +34729,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0001-CRS-102.pdf"
+        "expiresAt": "2029-03-02",
+        "certificateUrl": "/files/certs/GB-EMP-0001-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-597605"
       },
       {
         "id": "GB-CERT-0004",
@@ -33748,8 +34742,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0001-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0001-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-154272"
       },
       {
         "id": "GB-CERT-0005",
@@ -33757,8 +34755,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0002-CRS-102.pdf"
+        "expiresAt": "2027-04-13",
+        "certificateUrl": "/files/certs/GB-EMP-0002-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-731891"
       },
       {
         "id": "GB-CERT-0006",
@@ -33766,8 +34768,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0002-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0002-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-409510"
       },
       {
         "id": "GB-CERT-0007",
@@ -33775,8 +34781,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0002-CRS-101.pdf"
+        "expiresAt": "2027-10-11",
+        "certificateUrl": "/files/certs/GB-EMP-0002-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-987129"
       },
       {
         "id": "GB-CERT-0008",
@@ -33784,8 +34794,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0003-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0003-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-785700"
       },
       {
         "id": "GB-CERT-0009",
@@ -33793,8 +34807,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0003-CRS-101.pdf"
+        "expiresAt": "2028-01-19",
+        "certificateUrl": "/files/certs/GB-EMP-0003-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-463319"
       },
       {
         "id": "GB-CERT-0010",
@@ -33802,8 +34820,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0003-CRS-102.pdf"
+        "expiresAt": "2028-01-16",
+        "certificateUrl": "/files/certs/GB-EMP-0003-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-645493"
       },
       {
         "id": "GB-CERT-0011",
@@ -33811,8 +34833,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0004-CRS-101.pdf"
+        "expiresAt": "2028-04-29",
+        "certificateUrl": "/files/certs/GB-EMP-0004-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-967874"
       },
       {
         "id": "GB-CERT-0012",
@@ -33820,8 +34846,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0004-CRS-102.pdf"
+        "expiresAt": "2026-08-10",
+        "certificateUrl": "/files/certs/GB-EMP-0004-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-390255"
       },
       {
         "id": "GB-CERT-0013",
@@ -33829,8 +34859,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0004-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0004-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-712636"
       },
       {
         "id": "GB-CERT-0014",
@@ -33838,8 +34872,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0005-CRS-102.pdf"
+        "expiresAt": "2028-10-09",
+        "certificateUrl": "/files/certs/GB-EMP-0005-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-135017"
       },
       {
         "id": "GB-CERT-0015",
@@ -33847,8 +34885,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0005-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0005-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-457398"
       },
       {
         "id": "GB-CERT-0016",
@@ -33856,8 +34898,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0005-CRS-101.pdf"
+        "expiresAt": "2027-10-11",
+        "certificateUrl": "/files/certs/GB-EMP-0005-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-779779"
       },
       {
         "id": "GB-CERT-0017",
@@ -33865,8 +34911,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0006-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0006-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-202160"
       },
       {
         "id": "GB-CERT-0018",
@@ -33874,8 +34924,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0006-CRS-101.pdf"
+        "expiresAt": "2028-01-19",
+        "certificateUrl": "/files/certs/GB-EMP-0006-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-766445"
       },
       {
         "id": "GB-CERT-0019",
@@ -33883,8 +34937,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0006-CRS-102.pdf"
+        "expiresAt": "2028-05-13",
+        "certificateUrl": "/files/certs/GB-EMP-0006-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-188826"
       },
       {
         "id": "GB-CERT-0020",
@@ -33892,8 +34950,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0007-CRS-101.pdf"
+        "expiresAt": "2026-11-27",
+        "certificateUrl": "/files/certs/GB-EMP-0007-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-658302"
       },
       {
         "id": "GB-CERT-0021",
@@ -33901,8 +34963,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0007-CRS-102.pdf"
+        "expiresAt": "2026-09-05",
+        "certificateUrl": "/files/certs/GB-EMP-0007-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-335921"
       },
       {
         "id": "GB-CERT-0022",
@@ -33910,8 +34976,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0007-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0007-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-403064"
       },
       {
         "id": "GB-CERT-0023",
@@ -33919,8 +34989,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0008-CRS-102.pdf"
+        "expiresAt": "2026-11-17",
+        "certificateUrl": "/files/certs/GB-EMP-0008-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-980683"
       },
       {
         "id": "GB-CERT-0024",
@@ -33928,8 +35002,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0008-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0008-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-268778"
       },
       {
         "id": "GB-CERT-0025",
@@ -33937,8 +35015,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0008-CRS-101.pdf"
+        "expiresAt": "2027-10-11",
+        "certificateUrl": "/files/certs/GB-EMP-0008-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-846397"
       },
       {
         "id": "GB-CERT-0026",
@@ -33946,8 +35028,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0009-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0009-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-913540"
       },
       {
         "id": "GB-CERT-0027",
@@ -33955,8 +35041,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0009-CRS-101.pdf"
+        "expiresAt": "2028-01-19",
+        "certificateUrl": "/files/certs/GB-EMP-0009-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-591159"
       },
       {
         "id": "GB-CERT-0028",
@@ -33964,8 +35054,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0009-CRS-102.pdf"
+        "expiresAt": "2027-10-04",
+        "certificateUrl": "/files/certs/GB-EMP-0009-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-537350"
       },
       {
         "id": "GB-CERT-0029",
@@ -33973,8 +35067,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0010-CRS-101.pdf"
+        "expiresAt": "2028-04-29",
+        "certificateUrl": "/files/certs/GB-EMP-0010-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-214969"
       },
       {
         "id": "GB-CERT-0030",
@@ -33982,8 +35080,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0010-CRS-102.pdf"
+        "expiresAt": "2027-03-30",
+        "certificateUrl": "/files/certs/GB-EMP-0010-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-671111"
       },
       {
         "id": "GB-CERT-0031",
@@ -33991,8 +35093,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0011-CRS-102.pdf"
+        "expiresAt": "2027-06-09",
+        "certificateUrl": "/files/certs/GB-EMP-0011-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-993492"
       },
       {
         "id": "GB-CERT-0032",
@@ -34000,8 +35106,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0011-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0011-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-926349"
       },
       {
         "id": "GB-CERT-0033",
@@ -34009,8 +35119,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0011-CRS-101.pdf"
+        "expiresAt": "2026-10-31",
+        "certificateUrl": "/files/certs/GB-EMP-0011-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-348730"
       },
       {
         "id": "GB-CERT-0034",
@@ -34018,8 +35132,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0012-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0012-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-160635"
       },
       {
         "id": "GB-CERT-0035",
@@ -34027,8 +35145,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0012-CRS-101.pdf"
+        "expiresAt": "2028-01-19",
+        "certificateUrl": "/files/certs/GB-EMP-0012-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-483016"
       },
       {
         "id": "GB-CERT-0036",
@@ -34036,8 +35158,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0012-CRS-102.pdf"
+        "expiresAt": "2028-09-07",
+        "certificateUrl": "/files/certs/GB-EMP-0012-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-415873"
       },
       {
         "id": "GB-CERT-0037",
@@ -34045,8 +35171,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0013-CRS-101.pdf"
+        "expiresAt": "2026-07-04",
+        "certificateUrl": "/files/certs/GB-EMP-0013-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-738254"
       },
       {
         "id": "GB-CERT-0038",
@@ -34054,8 +35184,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0013-CRS-102.pdf"
+        "expiresAt": "2027-10-19",
+        "certificateUrl": "/files/certs/GB-EMP-0013-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-550159"
       },
       {
         "id": "GB-CERT-0039",
@@ -34063,8 +35197,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0013-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0013-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-872540"
       },
       {
         "id": "GB-CERT-0040",
@@ -34072,8 +35210,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0014-CRS-102.pdf"
+        "expiresAt": "2026-09-17",
+        "certificateUrl": "/files/certs/GB-EMP-0014-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-962088"
       },
       {
         "id": "GB-CERT-0041",
@@ -34081,8 +35223,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0014-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0014-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-639707"
       },
       {
         "id": "GB-CERT-0042",
@@ -34090,8 +35236,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0014-CRS-101.pdf"
+        "expiresAt": "2027-10-11",
+        "certificateUrl": "/files/certs/GB-EMP-0014-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-317326"
       },
       {
         "id": "GB-CERT-0043",
@@ -34099,8 +35249,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0015-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0015-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-894945"
       },
       {
         "id": "GB-CERT-0044",
@@ -34108,8 +35262,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0015-CRS-101.pdf"
+        "expiresAt": "2028-01-19",
+        "certificateUrl": "/files/certs/GB-EMP-0015-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-572564"
       },
       {
         "id": "GB-CERT-0045",
@@ -34117,8 +35275,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0015-CRS-102.pdf"
+        "expiresAt": "2028-05-22",
+        "certificateUrl": "/files/certs/GB-EMP-0015-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-250183"
       },
       {
         "id": "GB-CERT-0046",
@@ -34126,8 +35288,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0016-CRS-101.pdf"
+        "expiresAt": "2026-12-07",
+        "certificateUrl": "/files/certs/GB-EMP-0016-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-827802"
       },
       {
         "id": "GB-CERT-0047",
@@ -34135,8 +35301,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0016-CRS-102.pdf"
+        "expiresAt": "2026-10-09",
+        "certificateUrl": "/files/certs/GB-EMP-0016-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-505421"
       },
       {
         "id": "GB-CERT-0048",
@@ -34144,8 +35314,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0016-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0016-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-841136"
       },
       {
         "id": "GB-CERT-0049",
@@ -34153,8 +35327,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0017-CRS-102.pdf"
+        "expiresAt": "2028-01-03",
+        "certificateUrl": "/files/certs/GB-EMP-0017-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-518755"
       },
       {
         "id": "GB-CERT-0050",
@@ -34162,8 +35340,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0017-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0017-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-974897"
       },
       {
         "id": "GB-CERT-0051",
@@ -34171,8 +35353,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0017-CRS-101.pdf"
+        "expiresAt": "2027-10-11",
+        "certificateUrl": "/files/certs/GB-EMP-0017-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-397278"
       },
       {
         "id": "GB-CERT-0052",
@@ -34180,8 +35366,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0018-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0018-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-719659"
       },
       {
         "id": "GB-CERT-0053",
@@ -34189,8 +35379,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0018-CRS-101.pdf"
+        "expiresAt": "2028-01-19",
+        "certificateUrl": "/files/certs/GB-EMP-0018-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-142040"
       },
       {
         "id": "GB-CERT-0054",
@@ -34198,8 +35392,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0018-CRS-102.pdf"
+        "expiresAt": "2028-06-26",
+        "certificateUrl": "/files/certs/GB-EMP-0018-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-585373"
       },
       {
         "id": "GB-CERT-0055",
@@ -34207,8 +35405,12 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0019-CRS-101.pdf"
+        "expiresAt": "2026-10-20",
+        "certificateUrl": "/files/certs/GB-EMP-0019-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-907754"
       },
       {
         "id": "GB-CERT-0056",
@@ -34216,8 +35418,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0019-CRS-102.pdf"
+        "expiresAt": "2028-09-28",
+        "certificateUrl": "/files/certs/GB-EMP-0019-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-330135"
       },
       {
         "id": "GB-CERT-0057",
@@ -34225,8 +35431,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0019-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0019-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-652516"
       },
       {
         "id": "GB-CERT-0058",
@@ -34234,8 +35444,12 @@
         "courseId": "CRS-102",
         "title": "Data Protection Essentials - Certificate",
         "issuedAt": "2025-04-29",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0020-CRS-102.pdf"
+        "expiresAt": "2026-11-16",
+        "certificateUrl": "/files/certs/GB-EMP-0020-CRS-102.pdf",
+        "kind": "course",
+        "issuingBody": "ICO",
+        "category": "compliance",
+        "credentialId": "ICO-853945"
       },
       {
         "id": "GB-CERT-0059",
@@ -34243,8 +35457,12 @@
         "courseId": "CRS-103",
         "title": "Leadership Skills - Certificate",
         "issuedAt": "2025-01-19",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0020-CRS-103.pdf"
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0020-CRS-103.pdf",
+        "kind": "course",
+        "issuingBody": "CMI",
+        "category": "training",
+        "credentialId": "CMI-276326"
       },
       {
         "id": "GB-CERT-0060",
@@ -34252,8 +35470,337 @@
         "courseId": "CRS-101",
         "title": "Health & Safety Fundamentals - Certificate",
         "issuedAt": "2024-10-11",
-        "expiresAt": "2026-12-20",
-        "certificateUrl": "/files/certs/GB-EMP-0020-CRS-101.pdf"
+        "expiresAt": "2026-09-27",
+        "certificateUrl": "/files/certs/GB-EMP-0020-CRS-101.pdf",
+        "kind": "course",
+        "issuingBody": "IOSH",
+        "category": "compliance",
+        "credentialId": "IOSH-222938"
+      },
+      {
+        "id": "GB-CHR-CERT-0001",
+        "employeeId": "GB-EMP-0001",
+        "courseId": null,
+        "kind": "professional",
+        "title": "PRINCE2 Practitioner",
+        "issuingBody": "PeopleCert / AXELOS",
+        "category": "project_management",
+        "credentialId": "PRINCE2-1749122",
+        "issuedAt": "2023-12-22",
+        "expiresAt": "2027-02-23",
+        "certificateUrl": "/files/certs/GB-EMP-0001-PRINCE2.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0002",
+        "employeeId": "GB-EMP-0003",
+        "courseId": null,
+        "kind": "professional",
+        "title": "NEBOSH National General Certificate",
+        "issuingBody": "NEBOSH",
+        "category": "health_safety",
+        "credentialId": "NEBOSH-4517530",
+        "issuedAt": "2025-03-07",
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0003-NEBOSH.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0003",
+        "employeeId": "GB-EMP-0004",
+        "courseId": null,
+        "kind": "professional",
+        "title": "NEBOSH National General Certificate",
+        "issuingBody": "NEBOSH",
+        "category": "health_safety",
+        "credentialId": "NEBOSH-5838703",
+        "issuedAt": "2025-06-27",
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0004-NEBOSH.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0004",
+        "employeeId": "GB-EMP-0005",
+        "courseId": null,
+        "kind": "professional",
+        "title": "NEBOSH National General Certificate",
+        "issuingBody": "NEBOSH",
+        "category": "health_safety",
+        "credentialId": "NEBOSH-2597932",
+        "issuedAt": "2023-06-25",
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0005-NEBOSH.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0005",
+        "employeeId": "GB-EMP-0005",
+        "courseId": null,
+        "kind": "professional",
+        "title": "First Aid at Work",
+        "issuingBody": "St John Ambulance",
+        "category": "health_safety",
+        "credentialId": "FIRSTAID-1462972",
+        "issuedAt": "2025-11-07",
+        "expiresAt": "2028-11-07",
+        "certificateUrl": "/files/certs/GB-EMP-0005-FIRST_AID.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0006",
+        "employeeId": "GB-EMP-0006",
+        "courseId": null,
+        "kind": "professional",
+        "title": "First Aid at Work",
+        "issuingBody": "St John Ambulance",
+        "category": "health_safety",
+        "credentialId": "FIRSTAID-7212583",
+        "issuedAt": "2025-04-16",
+        "expiresAt": "2028-04-16",
+        "certificateUrl": "/files/certs/GB-EMP-0006-FIRST_AID.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0007",
+        "employeeId": "GB-EMP-0007",
+        "courseId": null,
+        "kind": "professional",
+        "title": "Driver CPC",
+        "issuingBody": "DVSA",
+        "category": "health_safety",
+        "credentialId": "DRIVERCPC-3710762",
+        "issuedAt": "2026-01-20",
+        "expiresAt": "2026-10-09",
+        "certificateUrl": "/files/certs/GB-EMP-0007-DRIVER_CPC.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0008",
+        "employeeId": "GB-EMP-0007",
+        "courseId": null,
+        "kind": "professional",
+        "title": "IOSH Managing Safely",
+        "issuingBody": "IOSH",
+        "category": "health_safety",
+        "credentialId": "IOSH-3671652",
+        "issuedAt": "2023-01-14",
+        "expiresAt": "2028-08-31",
+        "certificateUrl": "/files/certs/GB-EMP-0007-IOSH.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0009",
+        "employeeId": "GB-EMP-0008",
+        "courseId": null,
+        "kind": "professional",
+        "title": "IOSH Managing Safely",
+        "issuingBody": "IOSH",
+        "category": "health_safety",
+        "credentialId": "IOSH-6117349",
+        "issuedAt": "2024-02-14",
+        "expiresAt": "2027-02-14",
+        "certificateUrl": "/files/certs/GB-EMP-0008-IOSH.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0010",
+        "employeeId": "GB-EMP-0009",
+        "courseId": null,
+        "kind": "professional",
+        "title": "CompTIA Security+",
+        "issuingBody": "CompTIA",
+        "category": "it",
+        "credentialId": "SECPLUS-5926986",
+        "issuedAt": "2022-11-26",
+        "expiresAt": "2027-04-29",
+        "certificateUrl": "/files/certs/GB-EMP-0009-SECPLUS.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0011",
+        "employeeId": "GB-EMP-0010",
+        "courseId": null,
+        "kind": "professional",
+        "title": "AWS Certified Solutions Architect – Associate",
+        "issuingBody": "Amazon Web Services",
+        "category": "it",
+        "credentialId": "AWS-1578196",
+        "issuedAt": "2026-03-19",
+        "expiresAt": "2026-11-23",
+        "certificateUrl": "/files/certs/GB-EMP-0010-AWS.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0012",
+        "employeeId": "GB-EMP-0010",
+        "courseId": null,
+        "kind": "professional",
+        "title": "Microsoft Certified: Azure Administrator Associate",
+        "issuingBody": "Microsoft",
+        "category": "it",
+        "credentialId": "AZURE-5532254",
+        "issuedAt": "2025-04-20",
+        "expiresAt": "2026-11-23",
+        "certificateUrl": "/files/certs/GB-EMP-0010-AZURE.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0013",
+        "employeeId": "GB-EMP-0011",
+        "courseId": null,
+        "kind": "professional",
+        "title": "Cisco CCNA",
+        "issuingBody": "Cisco",
+        "category": "it",
+        "credentialId": "CCNA-2157455",
+        "issuedAt": "2024-09-30",
+        "expiresAt": "2026-06-14",
+        "certificateUrl": "/files/certs/GB-EMP-0011-CCNA.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0014",
+        "employeeId": "GB-EMP-0012",
+        "courseId": null,
+        "kind": "professional",
+        "title": "Cisco CCNA",
+        "issuingBody": "Cisco",
+        "category": "it",
+        "credentialId": "CCNA-4681450",
+        "issuedAt": "2023-11-26",
+        "expiresAt": "2027-04-10",
+        "certificateUrl": "/files/certs/GB-EMP-0012-CCNA.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0015",
+        "employeeId": "GB-EMP-0012",
+        "courseId": null,
+        "kind": "professional",
+        "title": "CompTIA Security+",
+        "issuingBody": "CompTIA",
+        "category": "it",
+        "credentialId": "SECPLUS-5966494",
+        "issuedAt": "2024-06-20",
+        "expiresAt": "2026-06-20",
+        "certificateUrl": "/files/certs/GB-EMP-0012-SECPLUS.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0016",
+        "employeeId": "GB-EMP-0013",
+        "courseId": null,
+        "kind": "professional",
+        "title": "ACA Chartered Accountant",
+        "issuingBody": "ICAEW",
+        "category": "finance",
+        "credentialId": "ICAEW-6300237",
+        "issuedAt": "2023-08-13",
+        "expiresAt": "2026-11-05",
+        "certificateUrl": "/files/certs/GB-EMP-0013-ICAEW.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0017",
+        "employeeId": "GB-EMP-0014",
+        "courseId": null,
+        "kind": "professional",
+        "title": "ACA Chartered Accountant",
+        "issuingBody": "ICAEW",
+        "category": "finance",
+        "credentialId": "ICAEW-4793230",
+        "issuedAt": "2025-09-04",
+        "expiresAt": "2026-12-10",
+        "certificateUrl": "/files/certs/GB-EMP-0014-ICAEW.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0018",
+        "employeeId": "GB-EMP-0015",
+        "courseId": null,
+        "kind": "professional",
+        "title": "ACA Chartered Accountant",
+        "issuingBody": "ICAEW",
+        "category": "finance",
+        "credentialId": "ICAEW-9900975",
+        "issuedAt": "2024-09-04",
+        "expiresAt": "2027-09-22",
+        "certificateUrl": "/files/certs/GB-EMP-0015-ICAEW.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0019",
+        "employeeId": "GB-EMP-0015",
+        "courseId": null,
+        "kind": "professional",
+        "title": "ACCA Qualification",
+        "issuingBody": "ACCA",
+        "category": "finance",
+        "credentialId": "ACCA-8984048",
+        "issuedAt": "2025-10-26",
+        "expiresAt": "2029-02-18",
+        "certificateUrl": "/files/certs/GB-EMP-0015-ACCA.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0020",
+        "employeeId": "GB-EMP-0016",
+        "courseId": null,
+        "kind": "professional",
+        "title": "CIPD Level 7 Advanced Diploma",
+        "issuingBody": "CIPD",
+        "category": "hr",
+        "credentialId": "CIPD-9445017",
+        "issuedAt": "2025-06-21",
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0016-CIPD.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0021",
+        "employeeId": "GB-EMP-0018",
+        "courseId": null,
+        "kind": "professional",
+        "title": "Google Ads Search Certification",
+        "issuingBody": "Google",
+        "category": "it",
+        "credentialId": "GOOGLEADS-9416825",
+        "issuedAt": "2023-12-21",
+        "expiresAt": "2027-08-30",
+        "certificateUrl": "/files/certs/GB-EMP-0018-GOOGLE_ADS.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0022",
+        "employeeId": "GB-EMP-0018",
+        "courseId": null,
+        "kind": "professional",
+        "title": "PRINCE2 Practitioner",
+        "issuingBody": "PeopleCert / AXELOS",
+        "category": "project_management",
+        "credentialId": "PRINCE2-5409476",
+        "issuedAt": "2024-06-27",
+        "expiresAt": "2027-06-27",
+        "certificateUrl": "/files/certs/GB-EMP-0018-PRINCE2.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0023",
+        "employeeId": "GB-EMP-0019",
+        "courseId": null,
+        "kind": "professional",
+        "title": "CPA",
+        "issuingBody": "AICPA",
+        "category": "finance",
+        "credentialId": "CPA-2149442",
+        "issuedAt": "2025-06-23",
+        "expiresAt": "2027-06-23",
+        "certificateUrl": "/files/certs/GB-EMP-0019-CPA.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0024",
+        "employeeId": "GB-EMP-0020",
+        "courseId": null,
+        "kind": "professional",
+        "title": "Professional Scrum Master I",
+        "issuingBody": "Scrum.org",
+        "category": "project_management",
+        "credentialId": "PSM-6089480",
+        "issuedAt": "2024-05-08",
+        "expiresAt": null,
+        "certificateUrl": "/files/certs/GB-EMP-0020-PSM.pdf"
+      },
+      {
+        "id": "GB-CHR-CERT-0025",
+        "employeeId": "GB-EMP-0020",
+        "courseId": null,
+        "kind": "professional",
+        "title": "First Aid at Work",
+        "issuingBody": "St John Ambulance",
+        "category": "health_safety",
+        "credentialId": "FIRSTAID-5361743",
+        "issuedAt": "2025-07-21",
+        "expiresAt": "2028-07-21",
+        "certificateUrl": "/files/certs/GB-EMP-0020-FIRST_AID.pdf"
       }
     ]
   },
@@ -71175,6 +72722,2598 @@
         "derivationSource": "p45_current_year"
       },
       "retainUntil": "2030-04-05"
+    }
+  ],
+  "education": [
+    {
+      "id": "GB-CHR-EDU-0001",
+      "employeeId": "GB-EMP-0001",
+      "level": "Bachelor's",
+      "qualification": "BA",
+      "fieldOfStudy": "Business Administration",
+      "institution": "University of Birmingham",
+      "grade": "2:1",
+      "startYear": 2004,
+      "endYear": 2007
+    },
+    {
+      "id": "GB-CHR-EDU-0002",
+      "employeeId": "GB-EMP-0001",
+      "level": "Master's",
+      "qualification": "MSc",
+      "fieldOfStudy": "Business Administration",
+      "institution": "London School of Economics",
+      "grade": "Distinction",
+      "startYear": 2011,
+      "endYear": 2012
+    },
+    {
+      "id": "GB-CHR-EDU-0003",
+      "employeeId": "GB-EMP-0002",
+      "level": "Bachelor's",
+      "qualification": "BA",
+      "fieldOfStudy": "Business Administration",
+      "institution": "University of Leeds",
+      "grade": "First Class Honours",
+      "startYear": 1997,
+      "endYear": 2000
+    },
+    {
+      "id": "GB-CHR-EDU-0004",
+      "employeeId": "GB-EMP-0002",
+      "level": "Master's",
+      "qualification": "MSc",
+      "fieldOfStudy": "Business Administration",
+      "institution": "Warwick Business School",
+      "grade": "Distinction",
+      "startYear": 2004,
+      "endYear": 2005
+    },
+    {
+      "id": "GB-CHR-EDU-0005",
+      "employeeId": "GB-EMP-0003",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Logistics & Supply Chain Management",
+      "institution": "University of Manchester",
+      "grade": "2:2",
+      "startYear": 2017,
+      "endYear": 2020
+    },
+    {
+      "id": "GB-CHR-EDU-0006",
+      "employeeId": "GB-EMP-0004",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Logistics & Supply Chain Management",
+      "institution": "University of Manchester",
+      "grade": "2:1",
+      "startYear": 1997,
+      "endYear": 2000
+    },
+    {
+      "id": "GB-CHR-EDU-0007",
+      "employeeId": "GB-EMP-0004",
+      "level": "Master's",
+      "qualification": "MBA",
+      "fieldOfStudy": "Business Administration",
+      "institution": "London School of Economics",
+      "grade": "Merit",
+      "startYear": 2004,
+      "endYear": 2005
+    },
+    {
+      "id": "GB-CHR-EDU-0008",
+      "employeeId": "GB-EMP-0005",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Logistics & Supply Chain Management",
+      "institution": "University of Birmingham",
+      "grade": "2:2",
+      "startYear": 2010,
+      "endYear": 2013
+    },
+    {
+      "id": "GB-CHR-EDU-0009",
+      "employeeId": "GB-EMP-0006",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Logistics & Supply Chain Management",
+      "institution": "King's College London",
+      "grade": "First Class Honours",
+      "startYear": 2011,
+      "endYear": 2014
+    },
+    {
+      "id": "GB-CHR-EDU-0010",
+      "employeeId": "GB-EMP-0007",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Logistics & Supply Chain Management",
+      "institution": "University of Birmingham",
+      "grade": "2:1",
+      "startYear": 2013,
+      "endYear": 2016
+    },
+    {
+      "id": "GB-CHR-EDU-0011",
+      "employeeId": "GB-EMP-0008",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Logistics & Supply Chain Management",
+      "institution": "King's College London",
+      "grade": "2:2",
+      "startYear": 1997,
+      "endYear": 2000
+    },
+    {
+      "id": "GB-CHR-EDU-0012",
+      "employeeId": "GB-EMP-0010",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Computer Science",
+      "institution": "University of Birmingham",
+      "grade": "2:1",
+      "startYear": 2005,
+      "endYear": 2008
+    },
+    {
+      "id": "GB-CHR-EDU-0013",
+      "employeeId": "GB-EMP-0011",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Computer Science",
+      "institution": "University of Birmingham",
+      "grade": "2:1",
+      "startYear": 2018,
+      "endYear": 2021
+    },
+    {
+      "id": "GB-CHR-EDU-0014",
+      "employeeId": "GB-EMP-0012",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Computer Science",
+      "institution": "University of Edinburgh",
+      "grade": "2:2",
+      "startYear": 1997,
+      "endYear": 2000
+    },
+    {
+      "id": "GB-CHR-EDU-0015",
+      "employeeId": "GB-EMP-0013",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Accounting",
+      "institution": "University of Birmingham",
+      "grade": "2:2",
+      "startYear": 2004,
+      "endYear": 2007
+    },
+    {
+      "id": "GB-CHR-EDU-0016",
+      "employeeId": "GB-EMP-0014",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Accounting",
+      "institution": "University of Bristol",
+      "grade": "First Class Honours",
+      "startYear": 2014,
+      "endYear": 2017
+    },
+    {
+      "id": "GB-CHR-EDU-0017",
+      "employeeId": "GB-EMP-0015",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Accounting",
+      "institution": "University of Birmingham",
+      "grade": "2:1",
+      "startYear": 2000,
+      "endYear": 2003
+    },
+    {
+      "id": "GB-CHR-EDU-0018",
+      "employeeId": "GB-EMP-0016",
+      "level": "Bachelor's",
+      "qualification": "BA",
+      "fieldOfStudy": "Human Resource Management",
+      "institution": "King's College London",
+      "grade": "2:2",
+      "startYear": 2014,
+      "endYear": 2017
+    },
+    {
+      "id": "GB-CHR-EDU-0019",
+      "employeeId": "GB-EMP-0016",
+      "level": "Master's",
+      "qualification": "MSc",
+      "fieldOfStudy": "Human Resource Management",
+      "institution": "Warwick Business School",
+      "grade": "Distinction",
+      "startYear": 2021,
+      "endYear": 2022
+    },
+    {
+      "id": "GB-CHR-EDU-0020",
+      "employeeId": "GB-EMP-0018",
+      "level": "Bachelor's",
+      "qualification": "BA",
+      "fieldOfStudy": "Marketing",
+      "institution": "University of Nottingham",
+      "grade": "2:1",
+      "startYear": 1997,
+      "endYear": 2000
+    },
+    {
+      "id": "GB-CHR-EDU-0021",
+      "employeeId": "GB-EMP-0019",
+      "level": "Bachelor's",
+      "qualification": "BSc",
+      "fieldOfStudy": "Accounting",
+      "institution": "University of Leeds",
+      "grade": "2:1",
+      "startYear": 2019,
+      "endYear": 2022
+    },
+    {
+      "id": "GB-CHR-EDU-0022",
+      "employeeId": "GB-EMP-0020",
+      "level": "Bachelor's",
+      "qualification": "BA",
+      "fieldOfStudy": "Mass Communication",
+      "institution": "University of Leeds",
+      "grade": "2:2",
+      "startYear": 2006,
+      "endYear": 2009
+    },
+    {
+      "id": "GB-CHR-EDU-0023",
+      "employeeId": "GB-EMP-0020",
+      "level": "Master's",
+      "qualification": "MBA",
+      "fieldOfStudy": "Business Administration",
+      "institution": "London School of Economics",
+      "grade": "Merit",
+      "startYear": 2013,
+      "endYear": 2014
+    }
+  ],
+  "professionalMemberships": [
+    {
+      "id": "GB-CHR-MEM-0001",
+      "employeeId": "GB-EMP-0001",
+      "body": "Chartered Management Institute (CMI)",
+      "grade": "Fellow",
+      "membershipNumber": "CMI-30653",
+      "since": "2023-01-07",
+      "renewalDate": "2027-07-31",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0002",
+      "employeeId": "GB-EMP-0002",
+      "body": "Chartered Management Institute (CMI)",
+      "grade": "Fellow",
+      "membershipNumber": "CMI-77864",
+      "since": "2019-03-31",
+      "renewalDate": "2027-06-26",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0003",
+      "employeeId": "GB-EMP-0003",
+      "body": "Chartered Institute of Logistics and Transport (CILT)",
+      "grade": "Fellow",
+      "membershipNumber": "CILT-80473",
+      "since": "2018-12-14",
+      "renewalDate": "2026-08-26",
+      "status": "lapsed"
+    },
+    {
+      "id": "GB-CHR-MEM-0004",
+      "employeeId": "GB-EMP-0004",
+      "body": "Chartered Institute of Logistics and Transport (CILT)",
+      "grade": "Member",
+      "membershipNumber": "CILT-57482",
+      "since": "2021-11-26",
+      "renewalDate": "2027-09-01",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0005",
+      "employeeId": "GB-EMP-0005",
+      "body": "Chartered Institute of Logistics and Transport (CILT)",
+      "grade": "Associate",
+      "membershipNumber": "CILT-62347",
+      "since": "2023-07-27",
+      "renewalDate": "2026-11-11",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0006",
+      "employeeId": "GB-EMP-0007",
+      "body": "Chartered Institute of Logistics and Transport (CILT)",
+      "grade": "Associate",
+      "membershipNumber": "CILT-44765",
+      "since": "2023-07-03",
+      "renewalDate": "2027-07-28",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0007",
+      "employeeId": "GB-EMP-0008",
+      "body": "Chartered Institute of Logistics and Transport (CILT)",
+      "grade": "Associate",
+      "membershipNumber": "CILT-63582",
+      "since": "2021-10-07",
+      "renewalDate": "2027-07-04",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0008",
+      "employeeId": "GB-EMP-0009",
+      "body": "BCS, The Chartered Institute for IT",
+      "grade": "Fellow",
+      "membershipNumber": "BCS-39529",
+      "since": "2020-01-16",
+      "renewalDate": "2026-09-12",
+      "status": "lapsed"
+    },
+    {
+      "id": "GB-CHR-MEM-0009",
+      "employeeId": "GB-EMP-0010",
+      "body": "BCS, The Chartered Institute for IT",
+      "grade": "Member",
+      "membershipNumber": "BCS-85263",
+      "since": "2020-03-04",
+      "renewalDate": "2027-03-11",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0010",
+      "employeeId": "GB-EMP-0011",
+      "body": "BCS, The Chartered Institute for IT",
+      "grade": "Member",
+      "membershipNumber": "BCS-37778",
+      "since": "2024-07-18",
+      "renewalDate": "2027-04-15",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0011",
+      "employeeId": "GB-EMP-0013",
+      "body": "Institute of Chartered Accountants in England and Wales (ICAEW)",
+      "grade": "Fellow",
+      "membershipNumber": "ICAEW-93634",
+      "since": "2021-09-14",
+      "renewalDate": "2027-06-07",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0012",
+      "employeeId": "GB-EMP-0015",
+      "body": "Institute of Chartered Accountants in England and Wales (ICAEW)",
+      "grade": "Associate",
+      "membershipNumber": "ICAEW-58164",
+      "since": "2020-09-07",
+      "renewalDate": "2027-05-27",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0013",
+      "employeeId": "GB-EMP-0017",
+      "body": "Chartered Institute of Personnel and Development (CIPD)",
+      "grade": "Member",
+      "membershipNumber": "CIPD-37543",
+      "since": "2019-03-09",
+      "renewalDate": "2026-10-31",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0014",
+      "employeeId": "GB-EMP-0018",
+      "body": "Chartered Institute of Marketing (CIM)",
+      "grade": "Fellow",
+      "membershipNumber": "CIM-25447",
+      "since": "2019-05-15",
+      "renewalDate": "2026-12-22",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0015",
+      "employeeId": "GB-EMP-0019",
+      "body": "Institute of Chartered Accountants in England and Wales (ICAEW)",
+      "grade": "Member",
+      "membershipNumber": "ICAEW-96832",
+      "since": "2023-11-02",
+      "renewalDate": "2027-03-25",
+      "status": "active"
+    },
+    {
+      "id": "GB-CHR-MEM-0016",
+      "employeeId": "GB-EMP-0020",
+      "body": "Chartered Management Institute (CMI)",
+      "grade": "Member",
+      "membershipNumber": "CMI-95668",
+      "since": "2020-12-31",
+      "renewalDate": "2026-11-11",
+      "status": "active"
+    }
+  ],
+  "employeeLanguages": [
+    {
+      "id": "GB-CHR-LANG-0001",
+      "employeeId": "GB-EMP-0001",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0002",
+      "employeeId": "GB-EMP-0001",
+      "language": "Punjabi",
+      "proficiency": "Basic"
+    },
+    {
+      "id": "GB-CHR-LANG-0003",
+      "employeeId": "GB-EMP-0002",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0004",
+      "employeeId": "GB-EMP-0003",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0005",
+      "employeeId": "GB-EMP-0003",
+      "language": "Italian",
+      "proficiency": "Conversational"
+    },
+    {
+      "id": "GB-CHR-LANG-0006",
+      "employeeId": "GB-EMP-0004",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0007",
+      "employeeId": "GB-EMP-0005",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0008",
+      "employeeId": "GB-EMP-0006",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0009",
+      "employeeId": "GB-EMP-0007",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0010",
+      "employeeId": "GB-EMP-0008",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0011",
+      "employeeId": "GB-EMP-0009",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0012",
+      "employeeId": "GB-EMP-0009",
+      "language": "Urdu",
+      "proficiency": "Professional"
+    },
+    {
+      "id": "GB-CHR-LANG-0013",
+      "employeeId": "GB-EMP-0010",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0014",
+      "employeeId": "GB-EMP-0011",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0015",
+      "employeeId": "GB-EMP-0011",
+      "language": "Polish",
+      "proficiency": "Professional"
+    },
+    {
+      "id": "GB-CHR-LANG-0016",
+      "employeeId": "GB-EMP-0012",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0017",
+      "employeeId": "GB-EMP-0012",
+      "language": "Spanish",
+      "proficiency": "Professional"
+    },
+    {
+      "id": "GB-CHR-LANG-0018",
+      "employeeId": "GB-EMP-0013",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0019",
+      "employeeId": "GB-EMP-0013",
+      "language": "Urdu",
+      "proficiency": "Conversational"
+    },
+    {
+      "id": "GB-CHR-LANG-0020",
+      "employeeId": "GB-EMP-0014",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0021",
+      "employeeId": "GB-EMP-0015",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0022",
+      "employeeId": "GB-EMP-0015",
+      "language": "French",
+      "proficiency": "Basic"
+    },
+    {
+      "id": "GB-CHR-LANG-0023",
+      "employeeId": "GB-EMP-0016",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0024",
+      "employeeId": "GB-EMP-0017",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0025",
+      "employeeId": "GB-EMP-0017",
+      "language": "Punjabi",
+      "proficiency": "Basic"
+    },
+    {
+      "id": "GB-CHR-LANG-0026",
+      "employeeId": "GB-EMP-0018",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0027",
+      "employeeId": "GB-EMP-0018",
+      "language": "Punjabi",
+      "proficiency": "Professional"
+    },
+    {
+      "id": "GB-CHR-LANG-0028",
+      "employeeId": "GB-EMP-0019",
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "id": "GB-CHR-LANG-0029",
+      "employeeId": "GB-EMP-0020",
+      "language": "English",
+      "proficiency": "Native"
+    }
+  ],
+  "employeeSkills": [
+    {
+      "id": "GB-CHR-SKL-0001",
+      "employeeId": "GB-EMP-0001",
+      "name": "Leadership",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-21"
+    },
+    {
+      "id": "GB-CHR-SKL-0002",
+      "employeeId": "GB-EMP-0001",
+      "name": "Strategy",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-09"
+    },
+    {
+      "id": "GB-CHR-SKL-0003",
+      "employeeId": "GB-EMP-0001",
+      "name": "Fundraising",
+      "type": "skill",
+      "category": "Functional",
+      "level": 3,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-22"
+    },
+    {
+      "id": "GB-CHR-SKL-0004",
+      "employeeId": "GB-EMP-0001",
+      "name": "Project Management",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-06-30"
+    },
+    {
+      "id": "GB-CHR-SKL-0005",
+      "employeeId": "GB-EMP-0001",
+      "name": "SQL",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-07-19"
+    },
+    {
+      "id": "GB-CHR-SKL-0006",
+      "employeeId": "GB-EMP-0001",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-29"
+    },
+    {
+      "id": "GB-CHR-SKL-0007",
+      "employeeId": "GB-EMP-0001",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0008",
+      "employeeId": "GB-EMP-0001",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-01-28"
+    },
+    {
+      "id": "GB-CHR-SKL-0009",
+      "employeeId": "GB-EMP-0001",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-25"
+    },
+    {
+      "id": "GB-CHR-SKL-0010",
+      "employeeId": "GB-EMP-0001",
+      "name": "Leadership",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-10"
+    },
+    {
+      "id": "GB-CHR-SKL-0011",
+      "employeeId": "GB-EMP-0002",
+      "name": "Leadership",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-22"
+    },
+    {
+      "id": "GB-CHR-SKL-0012",
+      "employeeId": "GB-EMP-0002",
+      "name": "Operations",
+      "type": "skill",
+      "category": "Functional",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-23"
+    },
+    {
+      "id": "GB-CHR-SKL-0013",
+      "employeeId": "GB-EMP-0002",
+      "name": "Strategy",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 3,
+      "requiredLevel": 5,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-06-02"
+    },
+    {
+      "id": "GB-CHR-SKL-0014",
+      "employeeId": "GB-EMP-0002",
+      "name": "Excel",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-18"
+    },
+    {
+      "id": "GB-CHR-SKL-0015",
+      "employeeId": "GB-EMP-0002",
+      "name": "SQL",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-16"
+    },
+    {
+      "id": "GB-CHR-SKL-0016",
+      "employeeId": "GB-EMP-0002",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-24"
+    },
+    {
+      "id": "GB-CHR-SKL-0017",
+      "employeeId": "GB-EMP-0002",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-07"
+    },
+    {
+      "id": "GB-CHR-SKL-0018",
+      "employeeId": "GB-EMP-0002",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-16"
+    },
+    {
+      "id": "GB-CHR-SKL-0019",
+      "employeeId": "GB-EMP-0002",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-14"
+    },
+    {
+      "id": "GB-CHR-SKL-0020",
+      "employeeId": "GB-EMP-0002",
+      "name": "Leadership",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-26"
+    },
+    {
+      "id": "GB-CHR-SKL-0021",
+      "employeeId": "GB-EMP-0003",
+      "name": "Leadership",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-29"
+    },
+    {
+      "id": "GB-CHR-SKL-0022",
+      "employeeId": "GB-EMP-0003",
+      "name": "Operations",
+      "type": "skill",
+      "category": "Functional",
+      "level": 3,
+      "requiredLevel": 5,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-03-01"
+    },
+    {
+      "id": "GB-CHR-SKL-0023",
+      "employeeId": "GB-EMP-0003",
+      "name": "Logistics",
+      "type": "skill",
+      "category": "Functional",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-10"
+    },
+    {
+      "id": "GB-CHR-SKL-0024",
+      "employeeId": "GB-EMP-0003",
+      "name": "Excel",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-17"
+    },
+    {
+      "id": "GB-CHR-SKL-0025",
+      "employeeId": "GB-EMP-0003",
+      "name": "SQL",
+      "type": "skill",
+      "category": "Technical",
+      "level": 3,
+      "requiredLevel": 3,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-01-28"
+    },
+    {
+      "id": "GB-CHR-SKL-0026",
+      "employeeId": "GB-EMP-0003",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-13"
+    },
+    {
+      "id": "GB-CHR-SKL-0027",
+      "employeeId": "GB-EMP-0003",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-08"
+    },
+    {
+      "id": "GB-CHR-SKL-0028",
+      "employeeId": "GB-EMP-0003",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-28"
+    },
+    {
+      "id": "GB-CHR-SKL-0029",
+      "employeeId": "GB-EMP-0003",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-09-08"
+    },
+    {
+      "id": "GB-CHR-SKL-0030",
+      "employeeId": "GB-EMP-0003",
+      "name": "Leadership",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-09-08"
+    },
+    {
+      "id": "GB-CHR-SKL-0031",
+      "employeeId": "GB-EMP-0004",
+      "name": "Logistics",
+      "type": "skill",
+      "category": "Functional",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-21"
+    },
+    {
+      "id": "GB-CHR-SKL-0032",
+      "employeeId": "GB-EMP-0004",
+      "name": "Operations",
+      "type": "skill",
+      "category": "Functional",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-24"
+    },
+    {
+      "id": "GB-CHR-SKL-0033",
+      "employeeId": "GB-EMP-0004",
+      "name": "Compliance",
+      "type": "skill",
+      "category": "Functional",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-04-04"
+    },
+    {
+      "id": "GB-CHR-SKL-0034",
+      "employeeId": "GB-EMP-0004",
+      "name": "Payroll",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-01"
+    },
+    {
+      "id": "GB-CHR-SKL-0035",
+      "employeeId": "GB-EMP-0004",
+      "name": "Negotiation",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-06"
+    },
+    {
+      "id": "GB-CHR-SKL-0036",
+      "employeeId": "GB-EMP-0004",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-28"
+    },
+    {
+      "id": "GB-CHR-SKL-0037",
+      "employeeId": "GB-EMP-0004",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-25"
+    },
+    {
+      "id": "GB-CHR-SKL-0038",
+      "employeeId": "GB-EMP-0004",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0039",
+      "employeeId": "GB-EMP-0004",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-13"
+    },
+    {
+      "id": "GB-CHR-SKL-0040",
+      "employeeId": "GB-EMP-0004",
+      "name": "Leadership",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-18"
+    },
+    {
+      "id": "GB-CHR-SKL-0041",
+      "employeeId": "GB-EMP-0005",
+      "name": "Logistics",
+      "type": "skill",
+      "category": "Functional",
+      "level": 4,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-03"
+    },
+    {
+      "id": "GB-CHR-SKL-0042",
+      "employeeId": "GB-EMP-0005",
+      "name": "Data Analysis",
+      "type": "skill",
+      "category": "Technical",
+      "level": 4,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-09-07"
+    },
+    {
+      "id": "GB-CHR-SKL-0043",
+      "employeeId": "GB-EMP-0005",
+      "name": "SQL",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-04-17"
+    },
+    {
+      "id": "GB-CHR-SKL-0044",
+      "employeeId": "GB-EMP-0005",
+      "name": "Negotiation",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-22"
+    },
+    {
+      "id": "GB-CHR-SKL-0045",
+      "employeeId": "GB-EMP-0005",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-29"
+    },
+    {
+      "id": "GB-CHR-SKL-0046",
+      "employeeId": "GB-EMP-0005",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-06"
+    },
+    {
+      "id": "GB-CHR-SKL-0047",
+      "employeeId": "GB-EMP-0005",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-09"
+    },
+    {
+      "id": "GB-CHR-SKL-0048",
+      "employeeId": "GB-EMP-0005",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-07"
+    },
+    {
+      "id": "GB-CHR-SKL-0049",
+      "employeeId": "GB-EMP-0006",
+      "name": "Logistics",
+      "type": "skill",
+      "category": "Functional",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-11"
+    },
+    {
+      "id": "GB-CHR-SKL-0050",
+      "employeeId": "GB-EMP-0006",
+      "name": "Operations",
+      "type": "skill",
+      "category": "Functional",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-08"
+    },
+    {
+      "id": "GB-CHR-SKL-0051",
+      "employeeId": "GB-EMP-0006",
+      "name": "Health & Safety",
+      "type": "skill",
+      "category": "Functional",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-08-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0052",
+      "employeeId": "GB-EMP-0006",
+      "name": "Negotiation",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0053",
+      "employeeId": "GB-EMP-0006",
+      "name": "Project Management",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-02"
+    },
+    {
+      "id": "GB-CHR-SKL-0054",
+      "employeeId": "GB-EMP-0006",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-12"
+    },
+    {
+      "id": "GB-CHR-SKL-0055",
+      "employeeId": "GB-EMP-0006",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-01"
+    },
+    {
+      "id": "GB-CHR-SKL-0056",
+      "employeeId": "GB-EMP-0006",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-06"
+    },
+    {
+      "id": "GB-CHR-SKL-0057",
+      "employeeId": "GB-EMP-0006",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-31"
+    },
+    {
+      "id": "GB-CHR-SKL-0058",
+      "employeeId": "GB-EMP-0007",
+      "name": "Logistics",
+      "type": "skill",
+      "category": "Functional",
+      "level": 3,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-06"
+    },
+    {
+      "id": "GB-CHR-SKL-0059",
+      "employeeId": "GB-EMP-0007",
+      "name": "Leadership",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-07-19"
+    },
+    {
+      "id": "GB-CHR-SKL-0060",
+      "employeeId": "GB-EMP-0007",
+      "name": "Health & Safety",
+      "type": "skill",
+      "category": "Functional",
+      "level": 1,
+      "requiredLevel": 3,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-05-13"
+    },
+    {
+      "id": "GB-CHR-SKL-0061",
+      "employeeId": "GB-EMP-0007",
+      "name": "Presentation Skills",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-05-14"
+    },
+    {
+      "id": "GB-CHR-SKL-0062",
+      "employeeId": "GB-EMP-0007",
+      "name": "Negotiation",
+      "type": "skill",
+      "category": "Technical",
+      "level": 3,
+      "requiredLevel": 2,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-02-10"
+    },
+    {
+      "id": "GB-CHR-SKL-0063",
+      "employeeId": "GB-EMP-0007",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 1,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-14"
+    },
+    {
+      "id": "GB-CHR-SKL-0064",
+      "employeeId": "GB-EMP-0007",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-19"
+    },
+    {
+      "id": "GB-CHR-SKL-0065",
+      "employeeId": "GB-EMP-0007",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-16"
+    },
+    {
+      "id": "GB-CHR-SKL-0066",
+      "employeeId": "GB-EMP-0007",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-19"
+    },
+    {
+      "id": "GB-CHR-SKL-0067",
+      "employeeId": "GB-EMP-0008",
+      "name": "Logistics",
+      "type": "skill",
+      "category": "Functional",
+      "level": 4,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-03"
+    },
+    {
+      "id": "GB-CHR-SKL-0068",
+      "employeeId": "GB-EMP-0008",
+      "name": "Data Analysis",
+      "type": "skill",
+      "category": "Technical",
+      "level": 3,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-12"
+    },
+    {
+      "id": "GB-CHR-SKL-0069",
+      "employeeId": "GB-EMP-0008",
+      "name": "Excel",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-09-01"
+    },
+    {
+      "id": "GB-CHR-SKL-0070",
+      "employeeId": "GB-EMP-0008",
+      "name": "Presentation Skills",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-04-03"
+    },
+    {
+      "id": "GB-CHR-SKL-0071",
+      "employeeId": "GB-EMP-0008",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-11"
+    },
+    {
+      "id": "GB-CHR-SKL-0072",
+      "employeeId": "GB-EMP-0008",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 1,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-11"
+    },
+    {
+      "id": "GB-CHR-SKL-0073",
+      "employeeId": "GB-EMP-0008",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-24"
+    },
+    {
+      "id": "GB-CHR-SKL-0074",
+      "employeeId": "GB-EMP-0008",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-28"
+    },
+    {
+      "id": "GB-CHR-SKL-0075",
+      "employeeId": "GB-EMP-0009",
+      "name": "Leadership",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 3,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-02"
+    },
+    {
+      "id": "GB-CHR-SKL-0076",
+      "employeeId": "GB-EMP-0009",
+      "name": "Backend Engineering",
+      "type": "skill",
+      "category": "Technical",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-02-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0077",
+      "employeeId": "GB-EMP-0009",
+      "name": "Cloud Infrastructure",
+      "type": "skill",
+      "category": "Technical",
+      "level": 3,
+      "requiredLevel": 5,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-08-09"
+    },
+    {
+      "id": "GB-CHR-SKL-0078",
+      "employeeId": "GB-EMP-0009",
+      "name": "Negotiation",
+      "type": "skill",
+      "category": "Technical",
+      "level": 3,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-08"
+    },
+    {
+      "id": "GB-CHR-SKL-0079",
+      "employeeId": "GB-EMP-0009",
+      "name": "SQL",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-17"
+    },
+    {
+      "id": "GB-CHR-SKL-0080",
+      "employeeId": "GB-EMP-0009",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-12"
+    },
+    {
+      "id": "GB-CHR-SKL-0081",
+      "employeeId": "GB-EMP-0009",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0082",
+      "employeeId": "GB-EMP-0009",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-03"
+    },
+    {
+      "id": "GB-CHR-SKL-0083",
+      "employeeId": "GB-EMP-0009",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-10"
+    },
+    {
+      "id": "GB-CHR-SKL-0084",
+      "employeeId": "GB-EMP-0009",
+      "name": "Leadership",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-01"
+    },
+    {
+      "id": "GB-CHR-SKL-0085",
+      "employeeId": "GB-EMP-0012",
+      "name": "Cloud Infrastructure",
+      "type": "skill",
+      "category": "Technical",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-30"
+    },
+    {
+      "id": "GB-CHR-SKL-0086",
+      "employeeId": "GB-EMP-0012",
+      "name": "Backend Engineering",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-06-01"
+    },
+    {
+      "id": "GB-CHR-SKL-0087",
+      "employeeId": "GB-EMP-0012",
+      "name": "Excel",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-19"
+    },
+    {
+      "id": "GB-CHR-SKL-0088",
+      "employeeId": "GB-EMP-0012",
+      "name": "SQL",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-09-10"
+    },
+    {
+      "id": "GB-CHR-SKL-0089",
+      "employeeId": "GB-EMP-0012",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-21"
+    },
+    {
+      "id": "GB-CHR-SKL-0090",
+      "employeeId": "GB-EMP-0012",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-11"
+    },
+    {
+      "id": "GB-CHR-SKL-0091",
+      "employeeId": "GB-EMP-0012",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0092",
+      "employeeId": "GB-EMP-0012",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-06"
+    },
+    {
+      "id": "GB-CHR-SKL-0093",
+      "employeeId": "GB-EMP-0013",
+      "name": "Financial Planning",
+      "type": "skill",
+      "category": "Functional",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-10"
+    },
+    {
+      "id": "GB-CHR-SKL-0094",
+      "employeeId": "GB-EMP-0013",
+      "name": "Leadership",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-08"
+    },
+    {
+      "id": "GB-CHR-SKL-0095",
+      "employeeId": "GB-EMP-0013",
+      "name": "Compliance",
+      "type": "skill",
+      "category": "Functional",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-14"
+    },
+    {
+      "id": "GB-CHR-SKL-0096",
+      "employeeId": "GB-EMP-0013",
+      "name": "Presentation Skills",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-09-04"
+    },
+    {
+      "id": "GB-CHR-SKL-0097",
+      "employeeId": "GB-EMP-0013",
+      "name": "Payroll",
+      "type": "skill",
+      "category": "Technical",
+      "level": 3,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-21"
+    },
+    {
+      "id": "GB-CHR-SKL-0098",
+      "employeeId": "GB-EMP-0013",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-08"
+    },
+    {
+      "id": "GB-CHR-SKL-0099",
+      "employeeId": "GB-EMP-0013",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-28"
+    },
+    {
+      "id": "GB-CHR-SKL-0100",
+      "employeeId": "GB-EMP-0013",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-18"
+    },
+    {
+      "id": "GB-CHR-SKL-0101",
+      "employeeId": "GB-EMP-0013",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-08"
+    },
+    {
+      "id": "GB-CHR-SKL-0102",
+      "employeeId": "GB-EMP-0013",
+      "name": "Leadership",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-05"
+    },
+    {
+      "id": "GB-CHR-SKL-0103",
+      "employeeId": "GB-EMP-0014",
+      "name": "Financial Planning",
+      "type": "skill",
+      "category": "Functional",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-03-01"
+    },
+    {
+      "id": "GB-CHR-SKL-0104",
+      "employeeId": "GB-EMP-0014",
+      "name": "Data Analysis",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-19"
+    },
+    {
+      "id": "GB-CHR-SKL-0105",
+      "employeeId": "GB-EMP-0014",
+      "name": "SQL",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-11"
+    },
+    {
+      "id": "GB-CHR-SKL-0106",
+      "employeeId": "GB-EMP-0014",
+      "name": "Payroll",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-12"
+    },
+    {
+      "id": "GB-CHR-SKL-0107",
+      "employeeId": "GB-EMP-0014",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-22"
+    },
+    {
+      "id": "GB-CHR-SKL-0108",
+      "employeeId": "GB-EMP-0014",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-21"
+    },
+    {
+      "id": "GB-CHR-SKL-0109",
+      "employeeId": "GB-EMP-0014",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-07"
+    },
+    {
+      "id": "GB-CHR-SKL-0110",
+      "employeeId": "GB-EMP-0014",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0111",
+      "employeeId": "GB-EMP-0015",
+      "name": "Financial Planning",
+      "type": "skill",
+      "category": "Functional",
+      "level": 4,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-08"
+    },
+    {
+      "id": "GB-CHR-SKL-0112",
+      "employeeId": "GB-EMP-0015",
+      "name": "Compliance",
+      "type": "skill",
+      "category": "Functional",
+      "level": 4,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-12"
+    },
+    {
+      "id": "GB-CHR-SKL-0113",
+      "employeeId": "GB-EMP-0015",
+      "name": "Excel",
+      "type": "skill",
+      "category": "Technical",
+      "level": 3,
+      "requiredLevel": 2,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-02-15"
+    },
+    {
+      "id": "GB-CHR-SKL-0114",
+      "employeeId": "GB-EMP-0015",
+      "name": "SQL",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-27"
+    },
+    {
+      "id": "GB-CHR-SKL-0115",
+      "employeeId": "GB-EMP-0015",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-03"
+    },
+    {
+      "id": "GB-CHR-SKL-0116",
+      "employeeId": "GB-EMP-0015",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-02"
+    },
+    {
+      "id": "GB-CHR-SKL-0117",
+      "employeeId": "GB-EMP-0015",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 1,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-02"
+    },
+    {
+      "id": "GB-CHR-SKL-0118",
+      "employeeId": "GB-EMP-0015",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-21"
+    },
+    {
+      "id": "GB-CHR-SKL-0119",
+      "employeeId": "GB-EMP-0017",
+      "name": "Recruitment",
+      "type": "skill",
+      "category": "Functional",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-03-31"
+    },
+    {
+      "id": "GB-CHR-SKL-0120",
+      "employeeId": "GB-EMP-0017",
+      "name": "Leadership",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-01"
+    },
+    {
+      "id": "GB-CHR-SKL-0121",
+      "employeeId": "GB-EMP-0017",
+      "name": "Compliance",
+      "type": "skill",
+      "category": "Functional",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-03"
+    },
+    {
+      "id": "GB-CHR-SKL-0122",
+      "employeeId": "GB-EMP-0017",
+      "name": "Payroll",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-03-15"
+    },
+    {
+      "id": "GB-CHR-SKL-0123",
+      "employeeId": "GB-EMP-0017",
+      "name": "Project Management",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-08-27"
+    },
+    {
+      "id": "GB-CHR-SKL-0124",
+      "employeeId": "GB-EMP-0017",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-04"
+    },
+    {
+      "id": "GB-CHR-SKL-0125",
+      "employeeId": "GB-EMP-0017",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-21"
+    },
+    {
+      "id": "GB-CHR-SKL-0126",
+      "employeeId": "GB-EMP-0017",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-22"
+    },
+    {
+      "id": "GB-CHR-SKL-0127",
+      "employeeId": "GB-EMP-0017",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-07"
+    },
+    {
+      "id": "GB-CHR-SKL-0128",
+      "employeeId": "GB-EMP-0018",
+      "name": "Leadership",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-15"
+    },
+    {
+      "id": "GB-CHR-SKL-0129",
+      "employeeId": "GB-EMP-0018",
+      "name": "Sales",
+      "type": "skill",
+      "category": "Functional",
+      "level": 3,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-27"
+    },
+    {
+      "id": "GB-CHR-SKL-0130",
+      "employeeId": "GB-EMP-0018",
+      "name": "Strategy",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 3,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-03"
+    },
+    {
+      "id": "GB-CHR-SKL-0131",
+      "employeeId": "GB-EMP-0018",
+      "name": "Project Management",
+      "type": "skill",
+      "category": "Technical",
+      "level": 3,
+      "requiredLevel": 3,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-01-30"
+    },
+    {
+      "id": "GB-CHR-SKL-0132",
+      "employeeId": "GB-EMP-0018",
+      "name": "Excel",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 3,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0133",
+      "employeeId": "GB-EMP-0018",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-21"
+    },
+    {
+      "id": "GB-CHR-SKL-0134",
+      "employeeId": "GB-EMP-0018",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-04"
+    },
+    {
+      "id": "GB-CHR-SKL-0135",
+      "employeeId": "GB-EMP-0018",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0136",
+      "employeeId": "GB-EMP-0018",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-06"
+    },
+    {
+      "id": "GB-CHR-SKL-0137",
+      "employeeId": "GB-EMP-0018",
+      "name": "Leadership",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 4,
+      "requiredLevel": 5,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-06-10"
+    },
+    {
+      "id": "GB-CHR-SKL-0138",
+      "employeeId": "GB-EMP-0019",
+      "name": "Sales",
+      "type": "skill",
+      "category": "Functional",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-07-27"
+    },
+    {
+      "id": "GB-CHR-SKL-0139",
+      "employeeId": "GB-EMP-0019",
+      "name": "Digital Marketing",
+      "type": "skill",
+      "category": "Functional",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-03-15"
+    },
+    {
+      "id": "GB-CHR-SKL-0140",
+      "employeeId": "GB-EMP-0019",
+      "name": "Excel",
+      "type": "skill",
+      "category": "Technical",
+      "level": 3,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-31"
+    },
+    {
+      "id": "GB-CHR-SKL-0141",
+      "employeeId": "GB-EMP-0019",
+      "name": "Payroll",
+      "type": "skill",
+      "category": "Technical",
+      "level": 1,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-20"
+    },
+    {
+      "id": "GB-CHR-SKL-0142",
+      "employeeId": "GB-EMP-0019",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-06"
+    },
+    {
+      "id": "GB-CHR-SKL-0143",
+      "employeeId": "GB-EMP-0019",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-19"
+    },
+    {
+      "id": "GB-CHR-SKL-0144",
+      "employeeId": "GB-EMP-0019",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-16"
+    },
+    {
+      "id": "GB-CHR-SKL-0145",
+      "employeeId": "GB-EMP-0019",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-07-28"
+    },
+    {
+      "id": "GB-CHR-SKL-0146",
+      "employeeId": "GB-EMP-0020",
+      "name": "Customer Service",
+      "type": "skill",
+      "category": "Functional",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-19"
+    },
+    {
+      "id": "GB-CHR-SKL-0147",
+      "employeeId": "GB-EMP-0020",
+      "name": "Leadership",
+      "type": "skill",
+      "category": "Leadership",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-09-05"
+    },
+    {
+      "id": "GB-CHR-SKL-0148",
+      "employeeId": "GB-EMP-0020",
+      "name": "Operations",
+      "type": "skill",
+      "category": "Functional",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-13"
+    },
+    {
+      "id": "GB-CHR-SKL-0149",
+      "employeeId": "GB-EMP-0020",
+      "name": "Presentation Skills",
+      "type": "skill",
+      "category": "Technical",
+      "level": 2,
+      "requiredLevel": 2,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-14"
+    },
+    {
+      "id": "GB-CHR-SKL-0150",
+      "employeeId": "GB-EMP-0020",
+      "name": "Negotiation",
+      "type": "skill",
+      "category": "Technical",
+      "level": 3,
+      "requiredLevel": 2,
+      "assessedBy": "Self",
+      "lastAssessedAt": "2026-03-29"
+    },
+    {
+      "id": "GB-CHR-SKL-0151",
+      "employeeId": "GB-EMP-0020",
+      "name": "Communication",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-08-24"
+    },
+    {
+      "id": "GB-CHR-SKL-0152",
+      "employeeId": "GB-EMP-0020",
+      "name": "Problem Solving",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 2,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-04-15"
+    },
+    {
+      "id": "GB-CHR-SKL-0153",
+      "employeeId": "GB-EMP-0020",
+      "name": "Teamwork",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-05-03"
+    },
+    {
+      "id": "GB-CHR-SKL-0154",
+      "employeeId": "GB-EMP-0020",
+      "name": "Stakeholder Management",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 5,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-03-05"
+    },
+    {
+      "id": "GB-CHR-SKL-0155",
+      "employeeId": "GB-EMP-0020",
+      "name": "Leadership",
+      "type": "competency",
+      "category": "Behavioural",
+      "level": 3,
+      "requiredLevel": 4,
+      "assessedBy": "Line manager",
+      "lastAssessedAt": "2026-02-01"
+    }
+  ],
+  "careerAspirations": [
+    {
+      "id": "GB-CHR-ASP-0001",
+      "employeeId": "GB-EMP-0003",
+      "aspiration": "Deepen technical specialism",
+      "targetRole": "Principal Head of Operations",
+      "timeframe": "2–3 years",
+      "mobility": "Remote / hybrid only",
+      "developmentNeeds": "Advanced certification, stretch projects",
+      "updatedAt": "2026-09-06"
+    },
+    {
+      "id": "GB-CHR-ASP-0002",
+      "employeeId": "GB-EMP-0004",
+      "aspiration": "Explore a move into another department",
+      "targetRole": "Product Manager",
+      "timeframe": "Within 1 year",
+      "mobility": "Current location only",
+      "developmentNeeds": "Cross-functional secondment",
+      "updatedAt": "2026-04-23"
+    },
+    {
+      "id": "GB-CHR-ASP-0003",
+      "employeeId": "GB-EMP-0005",
+      "aspiration": "Deepen technical specialism",
+      "targetRole": "Principal Logistics Coordinator",
+      "timeframe": "3–5 years",
+      "mobility": "Current location only",
+      "developmentNeeds": "Advanced certification, stretch projects",
+      "updatedAt": "2026-04-17"
+    },
+    {
+      "id": "GB-CHR-ASP-0004",
+      "employeeId": "GB-EMP-0006",
+      "aspiration": "Move into people management",
+      "targetRole": "Operations & Fleet Team Lead",
+      "timeframe": "Within 1 year",
+      "mobility": "Open to relocation",
+      "developmentNeeds": "Leadership training, coaching",
+      "updatedAt": "2026-05-08"
+    },
+    {
+      "id": "GB-CHR-ASP-0005",
+      "employeeId": "GB-EMP-0007",
+      "aspiration": "Progress to a senior role in current function",
+      "targetRole": "Senior Driver Lead",
+      "timeframe": "2–3 years",
+      "mobility": "Remote / hybrid only",
+      "developmentNeeds": "Mentoring, broader project exposure",
+      "updatedAt": "2026-05-09"
+    },
+    {
+      "id": "GB-CHR-ASP-0006",
+      "employeeId": "GB-EMP-0008",
+      "aspiration": "Move into people management",
+      "targetRole": "Operations & Fleet Team Lead",
+      "timeframe": "2–3 years",
+      "mobility": "Current location only",
+      "developmentNeeds": "Leadership training, coaching",
+      "updatedAt": "2026-06-04"
+    },
+    {
+      "id": "GB-CHR-ASP-0007",
+      "employeeId": "GB-EMP-0009",
+      "aspiration": "Deepen technical specialism",
+      "targetRole": "Principal VP Engineering",
+      "timeframe": "3–5 years",
+      "mobility": "Current location only",
+      "developmentNeeds": "Advanced certification, stretch projects",
+      "updatedAt": "2026-04-19"
+    },
+    {
+      "id": "GB-CHR-ASP-0008",
+      "employeeId": "GB-EMP-0011",
+      "aspiration": "Deepen technical specialism",
+      "targetRole": "Principal Frontend Engineer",
+      "timeframe": "2–3 years",
+      "mobility": "Current location only",
+      "developmentNeeds": "Advanced certification, stretch projects",
+      "updatedAt": "2026-04-02"
+    },
+    {
+      "id": "GB-CHR-ASP-0009",
+      "employeeId": "GB-EMP-0012",
+      "aspiration": "Deepen technical specialism",
+      "targetRole": "Principal DevOps Engineer",
+      "timeframe": "3–5 years",
+      "mobility": "Open to relocation",
+      "developmentNeeds": "Advanced certification, stretch projects",
+      "updatedAt": "2026-08-27"
+    },
+    {
+      "id": "GB-CHR-ASP-0010",
+      "employeeId": "GB-EMP-0013",
+      "aspiration": "Prepare for an executive role",
+      "targetRole": "Head of Finance & Accounting",
+      "timeframe": "3–5 years",
+      "mobility": "Open to relocation",
+      "developmentNeeds": "Executive education, board exposure",
+      "updatedAt": "2026-07-18"
+    },
+    {
+      "id": "GB-CHR-ASP-0011",
+      "employeeId": "GB-EMP-0014",
+      "aspiration": "Move into people management",
+      "targetRole": "Finance & Accounting Team Lead",
+      "timeframe": "2–3 years",
+      "mobility": "Current location only",
+      "developmentNeeds": "Leadership training, coaching",
+      "updatedAt": "2026-06-13"
+    },
+    {
+      "id": "GB-CHR-ASP-0012",
+      "employeeId": "GB-EMP-0015",
+      "aspiration": "Deepen technical specialism",
+      "targetRole": "Principal Payroll Specialist",
+      "timeframe": "2–3 years",
+      "mobility": "Open to relocation",
+      "developmentNeeds": "Advanced certification, stretch projects",
+      "updatedAt": "2026-08-07"
+    },
+    {
+      "id": "GB-CHR-ASP-0013",
+      "employeeId": "GB-EMP-0016",
+      "aspiration": "Deepen technical specialism",
+      "targetRole": "Principal HR Admin",
+      "timeframe": "3–5 years",
+      "mobility": "Remote / hybrid only",
+      "developmentNeeds": "Advanced certification, stretch projects",
+      "updatedAt": "2026-09-01"
+    },
+    {
+      "id": "GB-CHR-ASP-0014",
+      "employeeId": "GB-EMP-0017",
+      "aspiration": "Move into people management",
+      "targetRole": "People & Culture Team Lead",
+      "timeframe": "2–3 years",
+      "mobility": "Open to relocation",
+      "developmentNeeds": "Leadership training, coaching",
+      "updatedAt": "2026-09-12"
+    },
+    {
+      "id": "GB-CHR-ASP-0015",
+      "employeeId": "GB-EMP-0018",
+      "aspiration": "Deepen technical specialism",
+      "targetRole": "Principal Head of Sales",
+      "timeframe": "2–3 years",
+      "mobility": "Open to relocation",
+      "developmentNeeds": "Advanced certification, stretch projects",
+      "updatedAt": "2026-05-03"
+    },
+    {
+      "id": "GB-CHR-ASP-0016",
+      "employeeId": "GB-EMP-0019",
+      "aspiration": "Progress to a senior role in current function",
+      "targetRole": "Senior Account Executive",
+      "timeframe": "2–3 years",
+      "mobility": "Current location only",
+      "developmentNeeds": "Mentoring, broader project exposure",
+      "updatedAt": "2026-07-07"
+    }
+  ],
+  "loans": [
+    {
+      "id": "GB-CHR-LOAN-0001",
+      "employeeId": "GB-EMP-0005",
+      "loanType": "salary_advance",
+      "amount": 1150,
+      "currency": "GBP",
+      "purpose": "Unexpected bill",
+      "repaymentMonths": 3,
+      "monthlyRepayment": 383.33,
+      "amountRepaid": 1150,
+      "requestedAt": "2026-04-21",
+      "issuedAt": "2026-04-24",
+      "status": "closed",
+      "approverId": "GB-EMP-0017",
+      "interestRatePct": 0
+    },
+    {
+      "id": "GB-CHR-LOAN-0002",
+      "employeeId": "GB-EMP-0006",
+      "loanType": "season_ticket_loan",
+      "amount": 4500,
+      "currency": "GBP",
+      "purpose": "Annual travelcard",
+      "repaymentMonths": 10,
+      "monthlyRepayment": 450,
+      "amountRepaid": 450,
+      "requestedAt": "2026-01-12",
+      "issuedAt": "2026-01-24",
+      "status": "defaulted",
+      "approverId": "GB-EMP-0016",
+      "interestRatePct": 0
+    },
+    {
+      "id": "GB-CHR-LOAN-0003",
+      "employeeId": "GB-EMP-0009",
+      "loanType": "season_ticket_loan",
+      "amount": 1650,
+      "currency": "GBP",
+      "purpose": "Annual travelcard",
+      "repaymentMonths": 12,
+      "monthlyRepayment": 137.5,
+      "amountRepaid": 1650,
+      "requestedAt": "2025-08-20",
+      "issuedAt": "2025-08-24",
+      "status": "closed",
+      "approverId": "GB-EMP-0016",
+      "interestRatePct": 0
+    },
+    {
+      "id": "GB-CHR-LOAN-0004",
+      "employeeId": "GB-EMP-0010",
+      "loanType": "employee_loan",
+      "amount": 2850,
+      "currency": "GBP",
+      "purpose": "Debt consolidation",
+      "repaymentMonths": 24,
+      "monthlyRepayment": 118.75,
+      "amountRepaid": 1068.75,
+      "requestedAt": "2025-11-16",
+      "issuedAt": "2025-11-24",
+      "status": "active",
+      "approverId": "GB-EMP-0016",
+      "interestRatePct": 0
+    },
+    {
+      "id": "GB-CHR-LOAN-0005",
+      "employeeId": "GB-EMP-0011",
+      "loanType": "salary_advance",
+      "amount": 1350,
+      "currency": "GBP",
+      "purpose": "Family emergency",
+      "repaymentMonths": 3,
+      "monthlyRepayment": 450,
+      "amountRepaid": 900,
+      "requestedAt": "2026-07-19",
+      "issuedAt": "2026-07-24",
+      "status": "active",
+      "approverId": "GB-EMP-0016",
+      "interestRatePct": 0
+    },
+    {
+      "id": "GB-CHR-LOAN-0006",
+      "employeeId": "GB-EMP-0015",
+      "loanType": "salary_advance",
+      "amount": 450,
+      "currency": "GBP",
+      "purpose": "Family emergency",
+      "repaymentMonths": 2,
+      "monthlyRepayment": 225,
+      "amountRepaid": 225,
+      "requestedAt": "2026-08-21",
+      "issuedAt": "2026-08-24",
+      "status": "active",
+      "approverId": "GB-EMP-0016",
+      "interestRatePct": 0
+    },
+    {
+      "id": "GB-CHR-LOAN-0007",
+      "employeeId": "GB-EMP-0016",
+      "loanType": "employee_loan",
+      "amount": 1900,
+      "currency": "GBP",
+      "purpose": "Home deposit top-up",
+      "repaymentMonths": 12,
+      "monthlyRepayment": 158.33,
+      "amountRepaid": 1108.31,
+      "requestedAt": "2026-01-15",
+      "issuedAt": "2026-01-24",
+      "status": "active",
+      "approverId": "GB-EMP-0016",
+      "interestRatePct": 0
+    },
+    {
+      "id": "GB-CHR-LOAN-0008",
+      "employeeId": "GB-EMP-0018",
+      "loanType": "salary_advance",
+      "amount": 650,
+      "currency": "GBP",
+      "purpose": "Family emergency",
+      "repaymentMonths": 3,
+      "monthlyRepayment": 216.67,
+      "amountRepaid": 0,
+      "requestedAt": "2026-09-21",
+      "issuedAt": null,
+      "status": "pending",
+      "approverId": null,
+      "interestRatePct": 0
     }
   ]
 }

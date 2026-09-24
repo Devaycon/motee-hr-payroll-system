@@ -2,7 +2,14 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { z } from "zod";
-import { CheckCircle2, Circle, Search, X } from "lucide-react";
+import {
+  BookOpenCheck,
+  CheckCircle2,
+  Circle,
+  RotateCcw,
+  Search,
+  X,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +51,37 @@ import type {
   ClearanceItem,
 } from "../types";
 import type { EmployeeRow } from "@/src/lib/types/employees";
+import { ASSET_TYPE_LABELS, recordAssets } from "@/src/lib/offboarding/assets";
+import { ASSET_TYPE_ICONS } from "./asset-recovery";
+
+type RehireChoice = "yes" | "no" | "undecided";
+
+function toRehireChoice(value: boolean | undefined): RehireChoice {
+  return value === undefined ? "undecided" : value ? "yes" : "no";
+}
+
+function fromRehireChoice(value: RehireChoice): boolean | undefined {
+  return value === "undecided" ? undefined : value === "yes";
+}
+
+/** "Rehire Eligible: Yes / No" chip (Offboarding feedback §5). */
+export function RehireBadge({ value }: { value: boolean | undefined }) {
+  if (value === undefined) {
+    return <span className="text-xs text-muted-foreground">Not decided</span>;
+  }
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
+        value
+          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
+          : "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
+      )}
+    >
+      {value ? "Yes" : "No"}
+    </span>
+  );
+}
 
 const formSchema = z.object({
   employeeName: z.string().min(2, "Select an employee"),
@@ -63,6 +101,7 @@ const formSchema = z.object({
     { message: "Exit reason is required" },
   ),
   exitInterviewNotes: z.string(),
+  rehireEligible: z.enum(["yes", "no", "undecided"]),
 });
 
 type FormFields = z.infer<typeof formSchema>;
@@ -76,6 +115,7 @@ const EMPTY: FormFields = {
   lastWorkingDate: "",
   exitReason: "resignation",
   exitInterviewNotes: "",
+  rehireEligible: "undecided",
 };
 
 interface OffboardingModalProps {
@@ -86,6 +126,7 @@ interface OffboardingModalProps {
   editingRecord?: OffboardingRecord | null;
   onSave: (data: NewOffboardingRecord) => void;
   onToggleClearance: (recordId: string, itemId: string) => void;
+  onToggleAsset: (record: OffboardingRecord, assetId: string) => void;
   onUpdateExitInterview: (
     recordId: string,
     notes: string,
@@ -100,6 +141,7 @@ export function OffboardingModal({
   editingRecord,
   onSave,
   onToggleClearance,
+  onToggleAsset,
   onUpdateExitInterview,
 }: OffboardingModalProps) {
   const { data: employees } = useEmployees();
@@ -144,6 +186,7 @@ export function OffboardingModal({
           lastWorkingDate: editingRecord.lastWorkingDate,
           exitReason: editingRecord.exitReason,
           exitInterviewNotes: editingRecord.exitInterviewNotes ?? "",
+          rehireEligible: toRehireChoice(editingRecord.rehireEligible),
         });
         setTouched({});
         setSearchQuery(editingRecord.employeeName);
@@ -230,8 +273,10 @@ export function OffboardingModal({
     if (!result.success) return;
     // Carry the employee id through so the Employees table can join back to
     // this record for the "Offboarding Notice" tab (client feedback §2.1).
+    const { rehireEligible, ...rest } = result.data;
     onSave({
-      ...result.data,
+      ...rest,
+      rehireEligible: fromRehireChoice(rehireEligible),
       employeeId: selectedEmployee?.id ?? editingRecord?.employeeId,
     });
   };
@@ -242,6 +287,8 @@ export function OffboardingModal({
   };
 
   const isViewing = !!viewingRecord;
+  const viewingAssets = viewingRecord ? recordAssets(viewingRecord) : [];
+  const returnedAssetCount = viewingAssets.filter((a) => a.returned).length;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -272,6 +319,10 @@ export function OffboardingModal({
               >
                 {OFFBOARDING_STATUS_LABELS[viewingRecord.status]}
               </span>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                Rehire eligible:
+                <RehireBadge value={viewingRecord.rehireEligible} />
+              </span>
               <span className="text-xs text-muted-foreground ml-auto">
                 Last day: {viewingRecord.lastWorkingDate}
               </span>
@@ -288,6 +339,9 @@ export function OffboardingModal({
               <TabsList className="w-full">
                 <TabsTrigger value="clearance" className="flex-1 text-xs">
                   Clearance Checklist
+                </TabsTrigger>
+                <TabsTrigger value="assets" className="flex-1 text-xs">
+                  Assets ({returnedAssetCount}/{viewingAssets.length})
                 </TabsTrigger>
                 <TabsTrigger value="interview" className="flex-1 text-xs">
                   Exit Interview
@@ -331,6 +385,94 @@ export function OffboardingModal({
                       </span>
                     </button>
                   ))}
+                  <div className="flex items-center gap-3 py-2.5 opacity-70">
+                    <BookOpenCheck className="w-4 h-4 shrink-0 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Knowledge transfer sign-off
+                    </span>
+                    <span className="ml-auto rounded-full bg-[#FE8F44]/15 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-[#E0701F]">
+                      Soon
+                    </span>
+                  </div>
+                </div>
+              </ScrollArea>
+              <div className="px-6 py-4 border-t border-border shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={onClose}
+                >
+                  Close
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent
+              value="assets"
+              className="mt-0 flex flex-col min-h-0 flex-1"
+            >
+              <ScrollArea className="flex-1 min-h-0 max-h-[50vh]">
+                <div className="px-6 py-4 flex flex-col gap-2">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Company property issued to this employee. The asset-return
+                    clearance step completes once everything is back.
+                  </p>
+                  {viewingAssets.length === 0 && (
+                    <p className="text-sm text-muted-foreground py-4 text-center">
+                      No assets recorded for this employee.
+                    </p>
+                  )}
+                  {viewingAssets.map((asset) => {
+                    const Icon = ASSET_TYPE_ICONS[asset.type];
+                    return (
+                      <div
+                        key={asset.id}
+                        className="flex items-center gap-3 py-2.5 border-b border-border last:border-0"
+                      >
+                        <Icon className="w-4 h-4 shrink-0 text-muted-foreground" />
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span
+                            className={cn(
+                              "text-sm",
+                              asset.returned
+                                ? "text-muted-foreground"
+                                : "text-foreground",
+                            )}
+                          >
+                            {ASSET_TYPE_LABELS[asset.type]} · {asset.label}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground font-mono">
+                            {asset.tag}
+                            {asset.returned && asset.returnedAt
+                              ? ` · returned ${asset.returnedAt}`
+                              : ""}
+                          </span>
+                        </div>
+                        {asset.returned ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs gap-1 text-muted-foreground"
+                            onClick={() => onToggleAsset(viewingRecord, asset.id)}
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            Undo
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => onToggleAsset(viewingRecord, asset.id)}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Mark returned
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </ScrollArea>
               <div className="px-6 py-4 border-t border-border shrink-0">
@@ -554,6 +696,35 @@ export function OffboardingModal({
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs font-medium">Rehire Eligible</Label>
+                  <Select
+                    value={fields.rehireEligible}
+                    onValueChange={(v) =>
+                      set("rehireEligible", v as RehireChoice)
+                    }
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes" className="text-sm">
+                        Yes
+                      </SelectItem>
+                      <SelectItem value="no" className="text-sm">
+                        No
+                      </SelectItem>
+                      <SelectItem value="undecided" className="text-sm">
+                        Not decided yet
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground">
+                    Whether you would re-employ this person — kept for future
+                    recruitment.
+                  </p>
                 </div>
               </div>
             </ScrollArea>

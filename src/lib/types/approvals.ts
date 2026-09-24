@@ -16,6 +16,7 @@ export const BUILTIN_CATEGORY_IDS = [
   "training_request",
   "asset_request",
   "expense_claim",
+  "loan_request",
 ] as const;
 
 export type ApprovalStatus =
@@ -256,6 +257,7 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   training_request: "Training Request",
   asset_request: "Asset Request",
   expense_claim: "Expense Claim",
+  loan_request: "Loan / Salary Advance",
 };
 
 export const ALL_DOCUMENT_TYPES: ApprovalDocumentType[] = [

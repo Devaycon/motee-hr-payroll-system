@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { ClearanceItem, OffboardingRecord } from "@/src/lib/types/offboarding";
+import { clearanceCategory } from "@/src/lib/offboarding/clearance";
 
 /**
  * Offboarding pipeline state (client feedback §2).
@@ -30,6 +31,10 @@ function find(state: OffboardingState, id: string) {
 
 function isExitInterviewClearanceItem(item: ClearanceItem): boolean {
   return item.label.toLowerCase().includes("exit interview");
+}
+
+function isAssetClearanceItem(item: ClearanceItem): boolean {
+  return clearanceCategory(item) === "it_assets";
 }
 
 /**
@@ -175,6 +180,41 @@ const offboardingSlice = createSlice({
         record.exitInterviewCompleted = item.completed;
       }
 
+      // Signing off the asset-return step means the kit is back — reflect
+      // that on the Asset Recovery tab (Offboarding feedback §4).
+      if (isAssetClearanceItem(item) && item.completed) {
+        for (const asset of record.assets ?? []) {
+          if (asset.returned) continue;
+          asset.returned = true;
+          asset.returnedAt = today();
+        }
+      }
+
+      recomputeOffboardingStatus(record);
+    },
+
+    /**
+     * Marks one issued asset as returned (or undoes it). The asset-return
+     * clearance step follows: it completes once everything is back and
+     * reopens if any item turns out to still be outstanding.
+     */
+    toggleAssetReturned(
+      state,
+      action: PayloadAction<{ id: string; assetId: string }>,
+    ) {
+      const record = find(state, action.payload.id);
+      const asset = record?.assets?.find((a) => a.id === action.payload.assetId);
+      if (!record || !asset) return;
+      asset.returned = !asset.returned;
+      asset.returnedAt = asset.returned ? today() : undefined;
+
+      const allBack = (record.assets ?? []).every((a) => a.returned);
+      for (const step of record.clearanceItems.filter(isAssetClearanceItem)) {
+        if (step.completed === allBack) continue;
+        step.completed = allBack;
+        step.completedAt = allBack ? today() : undefined;
+      }
+
       recomputeOffboardingStatus(record);
     },
 
@@ -218,6 +258,7 @@ export const {
   scheduleExitInterview,
   generateExitDocuments,
   toggleClearanceItem,
+  toggleAssetReturned,
   updateExitInterview,
   completeRecord,
 } = offboardingSlice.actions;

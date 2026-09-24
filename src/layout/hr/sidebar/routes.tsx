@@ -49,6 +49,7 @@ import {
   Gift,
   FileSignature,
   LayoutGrid,
+  HandCoins,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -216,6 +217,13 @@ export const routes: Route[] = [
     icon: Gift,
     label: "Benefits",
     link: "/organization/benefit-plans",
+  },
+  {
+    // Core HR → Employee Loans: a register for record-keeping, not payroll.
+    group: "Employee Management",
+    icon: HandCoins,
+    label: "Employee Loans",
+    link: "/organization/loans",
   },
   // §7.1–7.2 (Correction 2 feedback) — moved here from "Knowledge &
   // Resources", superseding that group's earlier placement (Batch 3
