@@ -36,6 +36,12 @@ const EMPLOYEE_KEYED = [
   "tasks",
   "grievances",
   "helpdeskTickets",
+  "education",
+  "professionalMemberships",
+  "employeeLanguages",
+  "employeeSkills",
+  "careerAspirations",
+  "loans",
 ] as const satisfies readonly (keyof LocaleBundle)[];
 
 /**

@@ -70,11 +70,12 @@ function buildEmploymentTypes(
       employeePercentage: t.eligibleForBenefits ? 8 : 0,
       employerPercentage: t.eligibleForBenefits ? 10 : 0,
     },
+    // Per-type entitlements from the tenant data (Full-time → HMO, Pension…;
+    // Contract → none; Intern → Transport Allowance), feeding the Benefits
+    // Eligibility column and, later, the Payroll and Benefits modules.
     benefits: {
-      enabled: t.eligibleForBenefits,
-      available: t.eligibleForBenefits
-        ? ["Health insurance", "Pension", "Annual leave"]
-        : [],
+      enabled: (t.benefits ?? []).length > 0,
+      available: t.benefits ?? [],
     },
     statutoryDeductions: statutoryDeductionsFor(country, t.eligibleForBenefits),
     isActive: true,

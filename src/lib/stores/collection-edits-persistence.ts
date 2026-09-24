@@ -8,7 +8,10 @@ const STORAGE_KEY = "motee:collectionEdits";
 const API_URL = "/api/collection-edits";
 const PUT_DEBOUNCE_MS = 500;
 
-type Snapshot = Pick<CollectionEditsState, "added" | "edits">;
+// `removed` is optional so snapshots saved before deletions were persisted
+// still load.
+type Snapshot = Pick<CollectionEditsState, "added" | "edits"> &
+  Partial<Pick<CollectionEditsState, "removed">>;
 
 let initialized = false;
 
@@ -70,7 +73,9 @@ export function initCollectionEditsPersistence(): void {
   void fetchFromServer().then((server) => {
     if (
       server &&
-      (Object.keys(server.added).length > 0 || Object.keys(server.edits).length > 0)
+      (Object.keys(server.added).length > 0 ||
+        Object.keys(server.edits).length > 0 ||
+        Object.keys(server.removed ?? {}).length > 0)
     ) {
       store.dispatch(hydrate(server));
       writeCache(server);
@@ -79,14 +84,21 @@ export function initCollectionEditsPersistence(): void {
 
   let lastAdded = store.getState().collectionEdits.added;
   let lastEdits = store.getState().collectionEdits.edits;
+  let lastRemoved = store.getState().collectionEdits.removed;
   let putTimer: ReturnType<typeof setTimeout> | null = null;
 
   store.subscribe(() => {
     const s = store.getState().collectionEdits;
-    if (s.added === lastAdded && s.edits === lastEdits) return;
+    if (
+      s.added === lastAdded &&
+      s.edits === lastEdits &&
+      s.removed === lastRemoved
+    )
+      return;
     lastAdded = s.added;
     lastEdits = s.edits;
-    const snap: Snapshot = { added: s.added, edits: s.edits };
+    lastRemoved = s.removed;
+    const snap: Snapshot = { added: s.added, edits: s.edits, removed: s.removed };
     writeCache(snap);
     if (putTimer) clearTimeout(putTimer);
     putTimer = setTimeout(() => void putToServer(snap), PUT_DEBOUNCE_MS);

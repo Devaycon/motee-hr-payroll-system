@@ -615,6 +615,11 @@ const STEP_BLUEPRINTS: Record<
     { label: "Line Manager", approver: "LINE_MANAGER" },
     { label: "Finance", approver: "ROLE:ROLE-FIN" },
   ],
+  loan_request: [
+    { label: "Line Manager", approver: "LINE_MANAGER" },
+    { label: "HR Manager", approver: "ROLE:ROLE-HRMGR" },
+    { label: "Finance", approver: "ROLE:ROLE-FIN" },
+  ],
 };
 
 function buildStepsForSeed(

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Search,
   SlidersHorizontal,
@@ -13,6 +14,7 @@ import {
   Ban,
   History,
   X,
+  Building2,
 } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Input } from "@/src/components/ui/input";
@@ -61,6 +63,7 @@ import {
   LEAVE_TYPE_OPTIONS,
 } from "../data";
 import type { LeaveRequest, LeaveTypeName } from "../types";
+import { LEAVE_DEPARTMENTS_HREF } from "./stat-cards";
 
 const ALL = "all";
 
@@ -534,6 +537,15 @@ export function RequestsTable({
               )}
             </PopoverContent>
           </Popover>
+
+          {/* The department ranking, also reachable from the "Most Leave
+              Taken" card — here for anyone who starts from the table. */}
+          <Button variant="outline" size="lg" asChild>
+            <Link href={`${LEAVE_DEPARTMENTS_HREF}?year=${new Date().getFullYear()}`}>
+              <Building2 className="w-3.5 h-3.5" />
+              Leave by Department
+            </Link>
+          </Button>
 
           {/* Export lives on the DataTable below — a second button here put
               two Export menus on the page over the same filtered rows. */}

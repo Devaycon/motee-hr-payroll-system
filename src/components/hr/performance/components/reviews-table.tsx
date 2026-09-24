@@ -45,6 +45,8 @@ interface ReviewsTableProps {
   onView: (review: PerformanceReview) => void;
   onDelete: (id: string) => void;
   onAddReview: () => void;
+  /** The company's departments, for the filter. */
+  departments: string[];
 }
 
 function RatingStars({ rating }: { rating?: number }) {
@@ -70,6 +72,7 @@ export function ReviewsTable({
   onView,
   onDelete,
   onAddReview,
+  departments,
 }: ReviewsTableProps) {
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
@@ -224,6 +227,7 @@ export function ReviewsTable({
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
         onAddReview={onAddReview}
+        departments={departments}
       />
       <div className="mt-4">
         <DataTable

@@ -24,10 +24,10 @@ import { Switch } from "@/src/components/ui/switch";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { cn } from "@/src/lib/utils";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { EMPLOYMENT_TYPE_BENEFIT_OPTIONS } from "@/src/lib/benefits/catalogue";
 import {
   STATUTORY_DEDUCTION_OPTIONS,
   STATUTORY_DEDUCTIONS_BY_COUNTRY,
-  BENEFITS_OPTIONS,
   PAY_FREQUENCY_LABELS,
   CONTRACT_DURATION_LABELS,
 } from "../data";
@@ -256,6 +256,15 @@ export function EmploymentTypeModal({
     handleClose();
   }
 
+
+  // The tenant country's benefit vocabulary, plus anything already selected
+  // that isn't in it, so editing never silently drops a custom benefit.
+  const benefitOptions = [
+    ...new Set([
+      ...EMPLOYMENT_TYPE_BENEFIT_OPTIONS[country],
+      ...form.benefits.available,
+    ]),
+  ];
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent className="sm:max-w-lg">
@@ -601,7 +610,7 @@ export function EmploymentTypeModal({
               {expanded.benefits && (
                 <div className="border-t border-border px-3 py-3 bg-muted/20">
                   <div className="grid grid-cols-2 gap-y-2.5 gap-x-3">
-                    {BENEFITS_OPTIONS.map((b) => (
+                    {benefitOptions.map((b) => (
                       <div key={b} className="flex items-center gap-2">
                         <Checkbox
                           id={`ben-${b}`}

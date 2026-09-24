@@ -30,6 +30,7 @@ import {
 import type { Course } from "../types";
 
 export interface AssignTrainee {
+  employeeId: string;
   employeeName: string;
   employeeInitials: string;
   employeeDept: string;
@@ -100,6 +101,7 @@ export function EnrollModal({
     const trainees: AssignTrainee[] = employees
       .filter((e) => selected.has(e.id))
       .map((e) => ({
+        employeeId: e.id,
         employeeName: e.fullName,
         employeeInitials: e.initials,
         employeeDept: e.departmentName,

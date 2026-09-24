@@ -11,6 +11,7 @@ import {
   BENEFIT_CATEGORY_DOT,
   BENEFIT_CATEGORY_LABELS,
   BENEFIT_CATEGORY_OPTIONS,
+  plansForCountry,
   type BenefitPlan,
 } from "@/src/lib/types/benefits";
 import { eligiblePlansFor } from "@/src/lib/benefits/eligibility";
@@ -28,23 +29,42 @@ export function BenefitsModule({ employee }: ModuleProps) {
     (s) => s.locale.data?.employmentTypes ?? [],
   );
   const canManage = useCan("organization.benefit-plans", "edit");
+  const country = useAppSelector((s) => s.locale.country);
 
   const eligible = React.useMemo(
-    () => eligiblePlansFor(plans, employee, { employmentTypes }),
-    [plans, employmentTypes, employee],
+    () => eligiblePlansFor(plansForCountry(plans, country), employee, { employmentTypes }),
+    [plans, country, employmentTypes, employee],
   );
 
-  const grouped = React.useMemo(() => {
-    const byCategory = new Map<string, BenefitPlan[]>();
-    for (const p of eligible) {
-      const list = byCategory.get(p.category) ?? [];
-      list.push(p);
-      byCategory.set(p.category, list);
-    }
-    return BENEFIT_CATEGORY_OPTIONS.filter((c) => byCategory.has(c)).map((c) => ({
-      category: c,
-      plans: byCategory.get(c)!,
-    }));
+  // Employee Benefits Profile: what they get automatically, then what they
+  // can opt into — each grouped by category.
+  const sections = React.useMemo(() => {
+    const group = (list: BenefitPlan[]) => {
+      const byCategory = new Map<string, BenefitPlan[]>();
+      for (const p of list) {
+        const l = byCategory.get(p.category) ?? [];
+        l.push(p);
+        byCategory.set(p.category, l);
+      }
+      return BENEFIT_CATEGORY_OPTIONS.filter((c) => byCategory.has(c)).map((c) => ({
+        category: c,
+        plans: byCategory.get(c)!,
+      }));
+    };
+    return [
+      {
+        key: "core",
+        title: "Employee Benefits",
+        hint: "Provided automatically",
+        groups: group(eligible.filter((p) => (p.enrollment ?? "core") === "core")),
+      },
+      {
+        key: "optional",
+        title: "Optional Benefits",
+        hint: "Available to opt into",
+        groups: group(eligible.filter((p) => p.enrollment === "optional")),
+      },
+    ].filter((s) => s.groups.length > 0);
   }, [eligible]);
 
   return (
@@ -61,7 +81,7 @@ export function BenefitsModule({ employee }: ModuleProps) {
         ) : undefined
       }
     >
-      {grouped.length === 0 ? (
+      {sections.length === 0 ? (
         <Empty
           label="No active benefits for this employment type yet."
           description={
@@ -69,53 +89,61 @@ export function BenefitsModule({ employee }: ModuleProps) {
           }
         />
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          {grouped.map(({ category, plans: categoryPlans }) => (
-            <div key={category}>
-              <div className="flex items-center gap-1.5 border-b border-border/60 bg-muted/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <span className={cn("h-1.5 w-1.5 rounded-full", BENEFIT_CATEGORY_DOT[category])} />
-                {BENEFIT_CATEGORY_LABELS[category]}
-                <span className="font-normal normal-case tracking-normal">
-                  · {categoryPlans.length}
-                </span>
-              </div>
-              {categoryPlans.map((plan) => {
-                const facts = [
-                  plan.provider,
-                  (plan.employerContributionPct != null || plan.employeeContributionPct != null) &&
-                    `${plan.employeeContributionPct ?? 0}% you · ${plan.employerContributionPct ?? 0}% employer`,
-                  plan.costNote,
-                  plan.waitingPeriodDays != null && `${plan.waitingPeriodDays}-day waiting period`,
-                ].filter(Boolean) as string[];
-                return (
-                  <div
-                    key={plan.id}
-                    className="flex items-start gap-3 border-b border-border/60 px-3 py-2.5 last:border-0"
-                  >
-                    <span
-                      className={cn("mt-0.5 h-8 w-1 shrink-0 rounded-full", BENEFIT_CATEGORY_DOT[category])}
-                      aria-hidden
-                    />
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-sm font-medium text-foreground">{plan.name}</h4>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{plan.description}</p>
-                      {plan.coverageDetails && (
-                        <p className="mt-1 text-[11px] italic text-muted-foreground">
-                          {plan.coverageDetails}
-                        </p>
-                      )}
-                      {facts.length > 0 && (
-                        <p className="mt-1 text-[11px] text-muted-foreground">
-                          {facts.join(" · ")}
-                        </p>
-                      )}
-                    </div>
+        sections.map((section) => (
+          <div key={section.key} className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold text-foreground">
+              {section.title}{" "}
+              <span className="text-xs font-normal text-muted-foreground">· {section.hint}</span>
+            </h3>
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              {section.groups.map(({ category, plans: categoryPlans }) => (
+                <div key={category}>
+                  <div className="flex items-center gap-1.5 border-b border-border/60 bg-muted/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span className={cn("h-1.5 w-1.5 rounded-full", BENEFIT_CATEGORY_DOT[category])} />
+                    {BENEFIT_CATEGORY_LABELS[category]}
+                    <span className="font-normal normal-case tracking-normal">
+                      · {categoryPlans.length}
+                    </span>
                   </div>
-                );
-              })}
+                  {categoryPlans.map((plan) => {
+                    const facts = [
+                      plan.provider,
+                      (plan.employerContributionPct != null || plan.employeeContributionPct != null) &&
+                        `${plan.employeeContributionPct ?? 0}% you · ${plan.employerContributionPct ?? 0}% employer`,
+                      plan.costNote,
+                      plan.waitingPeriodDays != null && `${plan.waitingPeriodDays}-day waiting period`,
+                    ].filter(Boolean) as string[];
+                    return (
+                      <div
+                        key={plan.id}
+                        className="flex items-start gap-3 border-b border-border/60 px-3 py-2.5 last:border-0"
+                      >
+                        <span
+                          className={cn("mt-0.5 h-8 w-1 shrink-0 rounded-full", BENEFIT_CATEGORY_DOT[category])}
+                          aria-hidden
+                        />
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-medium text-foreground">{plan.name}</h4>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{plan.description}</p>
+                          {plan.coverageDetails && (
+                            <p className="mt-1 text-[11px] italic text-muted-foreground">
+                              {plan.coverageDetails}
+                            </p>
+                          )}
+                          {facts.length > 0 && (
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {facts.join(" · ")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))
       )}
     </Section>
   );

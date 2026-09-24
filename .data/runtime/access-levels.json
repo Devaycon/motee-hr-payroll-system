@@ -198,6 +198,19 @@
           ]
         },
         {
+          "module": "organization.loans",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "organization.eor",
           "access": true,
           "actions": [
@@ -865,6 +878,19 @@
           ]
         },
         {
+          "module": "organization.loans",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "organization.eor",
           "access": true,
           "actions": [
@@ -1475,6 +1501,16 @@
           ]
         },
         {
+          "module": "organization.loans",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "organization.eor",
           "access": true,
           "actions": [
@@ -1882,6 +1918,16 @@
           "actions": []
         },
         {
+          "module": "organization.loans",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "organization.eor",
           "access": true,
           "actions": [
@@ -2229,6 +2275,11 @@
           "actions": []
         },
         {
+          "module": "organization.loans",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.eor",
           "access": false,
           "actions": []
@@ -2556,6 +2607,11 @@
           "actions": []
         },
         {
+          "module": "organization.loans",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.eor",
           "access": false,
           "actions": []
@@ -2863,6 +2919,11 @@
           "actions": []
         },
         {
+          "module": "organization.loans",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.eor",
           "access": false,
           "actions": []
@@ -3162,6 +3223,11 @@
         },
         {
           "module": "organization.benefit-plans",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.loans",
           "access": false,
           "actions": []
         },
@@ -3502,6 +3568,14 @@
         },
         {
           "module": "organization.benefit-plans",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.loans",
           "access": true,
           "actions": [
             "view",
@@ -3893,6 +3967,13 @@
           ]
         },
         {
+          "module": "organization.loans",
+          "access": true,
+          "actions": [
+            "view"
+          ]
+        },
+        {
           "module": "organization.eor",
           "access": true,
           "actions": [
@@ -4238,6 +4319,16 @@
           ]
         },
         {
+          "module": "organization.loans",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "organization.eor",
           "access": true,
           "actions": [
@@ -4558,6 +4649,11 @@
           "actions": []
         },
         {
+          "module": "organization.loans",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.eor",
           "access": false,
           "actions": []
@@ -4861,6 +4957,11 @@
           "actions": []
         },
         {
+          "module": "organization.loans",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.eor",
           "access": false,
           "actions": []
@@ -5158,6 +5259,11 @@
         },
         {
           "module": "organization.benefit-plans",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.loans",
           "access": false,
           "actions": []
         },
@@ -5472,6 +5578,11 @@
           "actions": []
         },
         {
+          "module": "organization.loans",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.eor",
           "access": false,
           "actions": []
@@ -5754,6 +5865,11 @@
         },
         {
           "module": "organization.benefit-plans",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.loans",
           "access": false,
           "actions": []
         },
@@ -6045,6 +6161,11 @@
           "actions": []
         },
         {
+          "module": "organization.loans",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.eor",
           "access": false,
           "actions": []
@@ -6327,6 +6448,11 @@
         },
         {
           "module": "organization.benefit-plans",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.loans",
           "access": false,
           "actions": []
         },

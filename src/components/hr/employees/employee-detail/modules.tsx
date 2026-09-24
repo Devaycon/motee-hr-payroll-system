@@ -104,10 +104,13 @@ import {
   type RawCertification,
 } from "./hooks";
 import { AssignAssetModal } from "./assign-asset-modal";
+import { CertStatusBadge } from "@/src/components/shared/cert-status-badge";
 
 export interface ModuleProps {
   employeeId: string;
   employee: LocaleEmployee;
+  /** Switches the workspace to another module — for cross-module shortcuts. */
+  onOpenModule?: (key: string) => void;
 }
 
 const money = (n?: number | null) => (n == null ? "—" : formatMoneyLocale(n));
@@ -998,6 +1001,8 @@ export function TrainingModule({ employeeId }: ModuleProps) {
       issuedAt: e.completedAt ?? "",
       expiresAt: null,
       certificateUrl: `/files/certs/${employeeId}-${e.courseId}.pdf`,
+      kind: "course" as const,
+      issuingBody: "Internal L&D",
     }));
   }, [certs, employeeId]);
 
@@ -1016,22 +1021,23 @@ export function TrainingModule({ employeeId }: ModuleProps) {
       {rows.length === 0 ? (
         <Empty label="No certifications." />
       ) : (
-        <DataTable columns={["Certification", "Issued", "Expires", "Renewal", "Certificate", ...(canEdit ? [""] : [])]}>
+        <DataTable columns={["Certification", "Issuing Body", "Issued", "Expires", "Status", "Certificate", ...(canEdit ? [""] : [])]}>
           {rows.map((c) => {
-            const d = daysUntil(c.expiresAt);
-            const due = d != null && d <= 60;
             const editable = formalIds.has(c.id);
             return (
               <Row key={c.id}>
-                <Cell>{c.title}</Cell>
-                <Cell>{fmtDate(c.issuedAt)}</Cell>
-                <Cell>{fmtDate(c.expiresAt)}</Cell>
                 <Cell>
-                  {d == null ? "—" : due ? (
-                    <Pill className="border-rose-500/30 bg-rose-500/10 text-rose-600">
-                      Due in {d}d
-                    </Pill>
-                  ) : "OK"}
+                  <p>{c.title.replace(/ [-—] Certificate$/, "")}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {c.kind === "professional" ? "Professional credential" : "Course certificate"}
+                    {c.credentialId ? ` · ${c.credentialId}` : ""}
+                  </p>
+                </Cell>
+                <Cell>{c.issuingBody ?? "—"}</Cell>
+                <Cell>{fmtDate(c.issuedAt)}</Cell>
+                <Cell>{c.expiresAt ? fmtDate(c.expiresAt) : "No expiry"}</Cell>
+                <Cell>
+                  <CertStatusBadge expiresAt={c.expiresAt} />
                 </Cell>
                 <Cell>
                   <span

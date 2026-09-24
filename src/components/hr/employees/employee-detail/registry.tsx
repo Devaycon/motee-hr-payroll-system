@@ -38,6 +38,10 @@ import {
   Milestone,
   Gift,
   UserCheck,
+  School,
+  Sparkles,
+  HandCoins,
+  ListChecks,
 } from "lucide-react";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { useAppSelector } from "@/src/lib/stores/hooks";
@@ -50,6 +54,10 @@ import { TeamModule } from "./team-module";
 import { ChangeLogModule } from "./change-log-module";
 import { TimelineModule } from "./timeline-module";
 import { BenefitsModule } from "./benefits-module";
+import { QualificationsModule } from "./qualifications-module";
+import { SkillsModule } from "./skills-module";
+import { LoansModule } from "./loans-module";
+import { CompletionModule } from "./completion-module";
 
 export interface ModuleEntry {
   key: string;
@@ -73,12 +81,14 @@ export const MODULE_GROUP_ORDER = [
 
 export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "profile", label: "Profile", group: "Profile", icon: User, Component: Mod.ProfileModule },
-  // First in the nav, so the file opens on the journey overview rather than a
-  // single record — it is the only view that spans every other module.
+  // First in the nav, so the file opens on what the record still needs.
+  { key: "completion", label: "Profile Completion", group: "Profile", icon: ListChecks, Component: CompletionModule },
+  // The journey overview — the only view that spans every other module.
   { key: "timeline", label: "Timeline", group: "Profile", icon: Milestone, Component: TimelineModule },
   { key: "job", label: "Job", group: "Profile", icon: BriefcaseBusiness, Component: Mod.JobModule },
   { key: "compensation", label: "Compensation", group: "Profile", icon: Coins, Component: Mod.CompensationModule },
   { key: "benefits", label: "Benefits", group: "Profile", icon: Gift, Component: BenefitsModule },
+  { key: "loans", label: "Loans", group: "Profile", icon: HandCoins, Component: LoansModule },
   { key: "payslips", label: "Payslips", group: "Profile", icon: Banknote, Component: Mod.PayslipsModule },
   { key: "preferences", label: "Preferences", group: "Profile", icon: Settings2, Component: Mod.PreferencesModule },
   { key: "documents", label: "Employee Documents", group: "Profile", icon: FileText, Component: EmployeeDocumentsModule },
@@ -97,6 +107,8 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "learn", label: "Learning", group: "Growth", icon: BookOpen, Component: Mod.LearnModule },
   { key: "training-videos", label: "Training", group: "Growth", icon: MonitorPlay, Component: Mod.TrainingDashboardModule },
   { key: "training", label: "Certifications", group: "Growth", icon: GraduationCap, Component: Mod.TrainingModule },
+  { key: "qualifications", label: "Qualifications & Education", group: "Growth", icon: School, Component: QualificationsModule },
+  { key: "skills", label: "Skills & Competencies", group: "Growth", icon: Sparkles, Component: SkillsModule },
   { key: "kudos", label: "Kudos", group: "Growth", icon: Award, Component: Mod.KudosModule },
   { key: "jobs", label: "Internal Moves", group: "Growth", icon: Briefcase, Component: Mod.JobsModule },
 
@@ -125,6 +137,7 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
  */
 export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
   "timeline",
+  "completion",
   "job",
   "preferences",
   "documents",
@@ -141,11 +154,14 @@ export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
   "learn",
   "training-videos",
   "training",
+  "qualifications",
+  "skills",
   "kudos",
   "jobs",
   "pay",
   "compensation",
   "benefits",
+  "loans",
   "payslips",
   "assets",
   "dbs",

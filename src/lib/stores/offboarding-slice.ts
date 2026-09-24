@@ -1,5 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { ClearanceItem, OffboardingRecord } from "@/src/lib/types/offboarding";
+import { clearanceCategory } from "@/src/lib/offboarding/clearance";
+import {
+  buildKnowledgeTransfer,
+  isKnowledgeTransferClearanceLabel,
+  knowledgeTransferCleared,
+} from "@/src/lib/offboarding/knowledge-transfer";
 
 /**
  * Offboarding pipeline state (client feedback §2).
@@ -32,6 +38,10 @@ function isExitInterviewClearanceItem(item: ClearanceItem): boolean {
   return item.label.toLowerCase().includes("exit interview");
 }
 
+function isAssetClearanceItem(item: ClearanceItem): boolean {
+  return clearanceCategory(item) === "it_assets";
+}
+
 /**
  * An approved exit moves into `in_progress` as soon as clearance starts, and
  * to `completed` once every checklist step plus the exit interview are done.
@@ -40,10 +50,39 @@ function isExitInterviewClearanceItem(item: ClearanceItem): boolean {
  */
 function recomputeOffboardingStatus(record: OffboardingRecord) {
   const allDone = record.clearanceItems.every((c) => c.completed);
-  if (allDone && record.exitInterviewCompleted) {
+  // A required knowledge transfer must be signed off before the exit can
+  // complete (Offboarding feedback §3).
+  if (
+    allDone &&
+    record.exitInterviewCompleted &&
+    knowledgeTransferCleared(record)
+  ) {
     record.status = "completed";
   } else if (record.status === "approved") {
     record.status = "in_progress";
+  }
+}
+
+/** Older records predate knowledge transfer — give them the default. */
+function ensureKnowledgeTransfer(record: OffboardingRecord) {
+  record.knowledgeTransfer ??= buildKnowledgeTransfer(record.id, record.jobTitle);
+  return record.knowledgeTransfer;
+}
+
+/**
+ * While knowledge transfer is required, the matching clearance step is driven
+ * by it — ticked only once the whole handover is complete.
+ */
+function syncKnowledgeTransferStep(record: OffboardingRecord) {
+  const kt = ensureKnowledgeTransfer(record);
+  if (!kt.required) return;
+  const complete = kt.items.every((i) => i.completed);
+  kt.completedAt = complete ? (kt.completedAt ?? today()) : undefined;
+  for (const step of record.clearanceItems) {
+    if (!isKnowledgeTransferClearanceLabel(step.label)) continue;
+    if (step.completed === complete) continue;
+    step.completed = complete;
+    step.completedAt = complete ? today() : undefined;
   }
 }
 
@@ -165,6 +204,13 @@ const offboardingSlice = createSlice({
         (c) => c.id === action.payload.itemId,
       );
       if (!item) return;
+      // Driven by the Knowledge Transfer tab while a handover is required.
+      if (
+        record.knowledgeTransfer?.required &&
+        isKnowledgeTransferClearanceLabel(item.label)
+      ) {
+        return;
+      }
       item.completed = !item.completed;
       item.completedAt = item.completed ? today() : undefined;
 
@@ -175,7 +221,93 @@ const offboardingSlice = createSlice({
         record.exitInterviewCompleted = item.completed;
       }
 
+      // Signing off the asset-return step means the kit is back — reflect
+      // that on the Asset Recovery tab (Offboarding feedback §4).
+      if (isAssetClearanceItem(item) && item.completed) {
+        for (const asset of record.assets ?? []) {
+          if (asset.returned) continue;
+          asset.returned = true;
+          asset.returnedAt = today();
+        }
+      }
+
       recomputeOffboardingStatus(record);
+    },
+
+    /**
+     * Marks one issued asset as returned (or undoes it). The asset-return
+     * clearance step follows: it completes once everything is back and
+     * reopens if any item turns out to still be outstanding.
+     */
+    toggleAssetReturned(
+      state,
+      action: PayloadAction<{ id: string; assetId: string }>,
+    ) {
+      const record = find(state, action.payload.id);
+      const asset = record?.assets?.find((a) => a.id === action.payload.assetId);
+      if (!record || !asset) return;
+      asset.returned = !asset.returned;
+      asset.returnedAt = asset.returned ? today() : undefined;
+
+      const allBack = (record.assets ?? []).every((a) => a.returned);
+      for (const step of record.clearanceItems.filter(isAssetClearanceItem)) {
+        if (step.completed === allBack) continue;
+        step.completed = allBack;
+        step.completedAt = allBack ? today() : undefined;
+      }
+
+      recomputeOffboardingStatus(record);
+    },
+
+    setKnowledgeTransferRequired(
+      state,
+      action: PayloadAction<{ id: string; required: boolean }>,
+    ) {
+      const record = find(state, action.payload.id);
+      if (!record) return;
+      ensureKnowledgeTransfer(record).required = action.payload.required;
+      syncKnowledgeTransferStep(record);
+      recomputeOffboardingStatus(record);
+    },
+
+    toggleKnowledgeTransferItem(
+      state,
+      action: PayloadAction<{ id: string; itemId: string }>,
+    ) {
+      const record = find(state, action.payload.id);
+      if (!record) return;
+      const item = ensureKnowledgeTransfer(record).items.find(
+        (i) => i.id === action.payload.itemId,
+      );
+      if (!item) return;
+      item.completed = !item.completed;
+      item.completedAt = item.completed ? today() : undefined;
+      syncKnowledgeTransferStep(record);
+      recomputeOffboardingStatus(record);
+    },
+
+    setKnowledgeTransferSuccessor(
+      state,
+      action: PayloadAction<{
+        id: string;
+        successorId?: string;
+        successorName?: string;
+      }>,
+    ) {
+      const record = find(state, action.payload.id);
+      if (!record) return;
+      const kt = ensureKnowledgeTransfer(record);
+      kt.successorId = action.payload.successorId;
+      kt.successorName = action.payload.successorName;
+    },
+
+    setKnowledgeTransferNotes(
+      state,
+      action: PayloadAction<{ id: string; notes: string }>,
+    ) {
+      const record = find(state, action.payload.id);
+      if (!record) return;
+      ensureKnowledgeTransfer(record).notes = action.payload.notes;
     },
 
     updateExitInterview(
@@ -218,6 +350,11 @@ export const {
   scheduleExitInterview,
   generateExitDocuments,
   toggleClearanceItem,
+  toggleAssetReturned,
+  setKnowledgeTransferRequired,
+  toggleKnowledgeTransferItem,
+  setKnowledgeTransferSuccessor,
+  setKnowledgeTransferNotes,
   updateExitInterview,
   completeRecord,
 } = offboardingSlice.actions;

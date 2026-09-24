@@ -7,6 +7,10 @@ export interface EmployeeStats {
   pendingApprovals: number;
   assignedAssets: number;
   kudosReceived: number;
+  /** Documents on file, excluding ones HR rejected. */
+  documentsUploaded: number;
+  /** Continuous service in years, to one decimal place. */
+  yearsOfService: number;
 }
 
 export interface LeaveSummaryRow {

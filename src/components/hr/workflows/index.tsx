@@ -137,12 +137,13 @@ export function WorkflowsHub() {
               departments={departments}
               open={openIds.has(wf.id)}
               onOpenChange={(open) => toggleOpen(wf.id, open)}
-              onRun={() => setRunning(wf)}
-              onStatusChange={(next) => handleStatusChange(wf, next)}
-              onEdit={() =>
-                router.push(`/hr-action-center/workflows/${wf.id}`)
-              }
-              onDelete={() => setPendingDelete(wf)}
+              actions={{
+                onRun: () => setRunning(wf),
+                onStatusChange: (next) => handleStatusChange(wf, next),
+                onEdit: () =>
+                  router.push(`/hr-action-center/workflows/${wf.id}`),
+                onDelete: () => setPendingDelete(wf),
+              }}
             />
           ))}
         </div>

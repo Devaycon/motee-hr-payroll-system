@@ -123,7 +123,7 @@ export function EmploymentTypeTable({
         // existed and is editable in the create/edit form and detail modal;
         // it just wasn't surfaced as a table column.
         id: "benefits",
-        header: "Benefits",
+        header: "Benefits Eligibility",
         cell: ({ row }) =>
           row.original.benefits.enabled &&
           row.original.benefits.available.length > 0 ? (
@@ -139,7 +139,9 @@ export function EmploymentTypeTable({
               ))}
             </div>
           ) : (
-            <span className="text-xs text-muted-foreground">—</span>
+            // "None" is an answer — contractors and casual staff genuinely
+            // get no employer benefits — where a dash reads as missing data.
+            <span className="text-xs text-muted-foreground">None</span>
           ),
       },
       {

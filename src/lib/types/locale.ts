@@ -156,6 +156,85 @@ export interface LocaleDbsCheck {
   status: "clear" | "pending" | "expired";
 }
 
+/** A degree, diploma or school qualification on the employee's record. */
+export interface LocaleEducation {
+  id: string;
+  employeeId: string;
+  /** "Bachelor's", "Master's", "Doctorate", "Diploma", "Secondary"… */
+  level: string;
+  /** Award abbreviation, e.g. "BSc", "MBA". */
+  qualification: string;
+  fieldOfStudy: string;
+  institution: string;
+  grade?: string;
+  startYear?: number;
+  endYear?: number;
+}
+
+/** Membership of a professional body (CIPM, ICAN, CIPD, BCS…). */
+export interface LocaleProfessionalMembership {
+  id: string;
+  employeeId: string;
+  body: string;
+  /** Membership grade — "Associate", "Member", "Fellow". */
+  grade: string;
+  membershipNumber?: string;
+  since?: string;
+  renewalDate?: string | null;
+  status: "active" | "lapsed";
+}
+
+export interface LocaleEmployeeLanguage {
+  id: string;
+  employeeId: string;
+  language: string;
+  proficiency: "Native" | "Fluent" | "Professional" | "Conversational" | "Basic";
+}
+
+/** One assessed skill or behavioural competency, rated 1 (novice) – 5 (expert). */
+export interface LocaleEmployeeSkill {
+  id: string;
+  employeeId: string;
+  name: string;
+  type: "skill" | "competency";
+  /** "Technical", "Functional", "Leadership", "Behavioural". */
+  category: string;
+  level: number;
+  /** What the employee's role expects — the gap is `requiredLevel − level`. */
+  requiredLevel: number;
+  assessedBy?: string;
+  lastAssessedAt?: string;
+}
+
+export interface LocaleCareerAspiration {
+  id: string;
+  employeeId: string;
+  aspiration: string;
+  targetRole?: string;
+  timeframe?: string;
+  mobility?: string;
+  developmentNeeds?: string;
+  updatedAt?: string;
+}
+
+/** A staff loan or salary advance — tracked for record-keeping, not paid through payroll. */
+export interface LocaleLoan {
+  id: string;
+  employeeId: string;
+  loanType: string;
+  amount: number;
+  currency: string;
+  purpose?: string;
+  repaymentMonths: number;
+  monthlyRepayment: number;
+  amountRepaid: number;
+  requestedAt: string;
+  issuedAt?: string | null;
+  status: "pending" | "active" | "closed" | "defaulted" | "rejected";
+  approverId?: string | null;
+  interestRatePct?: number;
+}
+
 export interface LocaleDisciplinary {
   id: string;
   employeeId: string;
@@ -286,7 +365,8 @@ export interface LocaleBundle {
    */
   branches?: LocaleBranch[];
   departments: LocaleDepartment[];
-  employmentTypes: Array<{ id: string; name: string; defaultLeaveDays: number; eligibleForBenefits: boolean; probationMonths: number }>;
+  /** `benefits` names what each engagement type is entitled to (Benefits Eligibility column). */
+  employmentTypes: Array<{ id: string; name: string; defaultLeaveDays: number; eligibleForBenefits: boolean; probationMonths: number; benefits?: string[] }>;
   roles: LocaleRole[];
   accessLevels: Array<{ id: string; name: string; description: string }>;
   employees: LocaleEmployee[];
@@ -335,6 +415,13 @@ export interface LocaleBundle {
   payHistory?: LocalePayChange[];
   /** UK PAYE new-starter tax records (UK tenants only). */
   starterTaxRecords?: StarterTaxRecord[];
+  // Qualifications, skills & loans (Core HR change request).
+  education?: LocaleEducation[];
+  professionalMemberships?: LocaleProfessionalMembership[];
+  employeeLanguages?: LocaleEmployeeLanguage[];
+  employeeSkills?: LocaleEmployeeSkill[];
+  careerAspirations?: LocaleCareerAspiration[];
+  loans?: LocaleLoan[];
 }
 
 export interface AuthUser {

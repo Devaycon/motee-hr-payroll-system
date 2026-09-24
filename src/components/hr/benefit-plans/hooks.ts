@@ -11,10 +11,17 @@ import {
   deletePlan,
   duplicatePlan,
 } from "@/src/lib/stores/benefit-plans-slice";
-import type { BenefitPlan, NewBenefitPlan } from "@/src/lib/types/benefits";
+import {
+  plansForCountry,
+  type BenefitPlan,
+  type NewBenefitPlan,
+} from "@/src/lib/types/benefits";
 
+/** The catalogue for the active tenant country. */
 export function useBenefitPlans(): BenefitPlan[] {
-  return useAppSelector((s) => s.benefitPlans.plans);
+  const plans = useAppSelector((s) => s.benefitPlans.plans);
+  const country = useAppSelector((s) => s.locale.country);
+  return useMemo(() => plansForCountry(plans, country), [plans, country]);
 }
 
 export function useActorName(): string {
@@ -42,9 +49,11 @@ export function useEligibleEmployeeCount(plan: BenefitPlan): number {
 export function useBenefitPlanActions() {
   const dispatch = useAppDispatch();
   const actorName = useActorName();
+  const country = useAppSelector((s) => s.locale.country);
   return {
+    // A plan HR creates belongs to the tenant country it was created in.
     create: (data: NewBenefitPlan) =>
-      dispatch(createPlan({ ...data, actorName })),
+      dispatch(createPlan({ ...data, country: data.country ?? country, actorName })),
     update: (id: string, data: NewBenefitPlan) =>
       dispatch(updatePlan({ id, actorName, ...data })),
     setStatus: (id: string, status: BenefitPlan["status"]) =>

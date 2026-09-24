@@ -17,6 +17,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { cn } from "@/src/lib/utils";
 import { useCan } from "@/src/lib/permissions/use-can";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   BENEFIT_CATEGORY_DOT,
   BENEFIT_CATEGORY_LABELS,
@@ -56,6 +57,7 @@ export function BenefitPlansPage() {
   const actions = useBenefitPlanActions();
   const canManage = useCan("organization.benefit-plans", "edit");
   const employeeCtx = useBenefitsEmployeeContext();
+  const country = useAppSelector((s) => s.locale.country);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
@@ -81,6 +83,24 @@ export function BenefitPlansPage() {
   }
 
   const activeCount = plans.filter((p) => p.status === "active").length;
+  const activePlans = useMemo(() => plans.filter((p) => p.status === "active"), [plans]);
+  const coreCount = activePlans.filter((p) => (p.enrollment ?? "core") === "core").length;
+  const optionalCount = activePlans.length - coreCount;
+  /** Benefits Analytics — how the catalogue reaches the workforce. */
+  const analytics = useMemo(() => {
+    if (!employeeCtx || employeeCtx.employees.length === 0) return null;
+    const perEmployee = employeeCtx.employees.map(
+      (e) => activePlans.filter((p) => countEligibleEmployees(p, [e], employeeCtx) > 0).length,
+    );
+    const avg = perEmployee.reduce((s, n) => s + n, 0) / perEmployee.length;
+    const noCore = employeeCtx.employees.filter(
+      (e) =>
+        !activePlans.some(
+          (p) => (p.enrollment ?? "core") === "core" && countEligibleEmployees(p, [e], employeeCtx) > 0,
+        ),
+    ).length;
+    return { avg: Math.round(avg * 10) / 10, noCore };
+  }, [employeeCtx, activePlans]);
   const coveredEmployees = useMemo(() => {
     if (!employeeCtx) return 0;
     const activePlans = plans.filter((p) => p.status === "active");
@@ -155,8 +175,9 @@ export function BenefitPlansPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Benefits</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Set up the benefit plans employees are entitled to — company-wide, or
-            restricted to specific employment types.
+            The {country === "ng" ? "Nigerian" : "UK"} benefits catalogue — core benefits
+            every eligible employee receives, and optional ones they opt into — company-wide
+            or restricted to specific employment types.
           </p>
         </div>
         {canManage && (
@@ -195,6 +216,36 @@ export function BenefitPlansPage() {
                 </p>
                 <p className="mt-1.5 text-[11px] text-muted-foreground">Covered</p>
               </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border/60 pt-3 text-[11px]">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Core benefits</span>
+                <span className="font-medium tabular-nums">{coreCount}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Optional benefits</span>
+                <span className="font-medium tabular-nums">{optionalCount}</span>
+              </div>
+              {analytics && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Avg. per employee</span>
+                    <span className="font-medium tabular-nums">{analytics.avg}</span>
+                  </div>
+                  <div className="flex items-center justify-between" title="Employees whose employment type receives no core benefit">
+                    <span className="text-muted-foreground">No core cover</span>
+                    <span
+                      className={cn(
+                        "font-medium tabular-nums",
+                        analytics.noCore > 0 && "text-amber-600",
+                      )}
+                    >
+                      {analytics.noCore}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
 
             {distribution.length > 0 && (

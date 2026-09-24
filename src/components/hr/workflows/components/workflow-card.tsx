@@ -55,10 +55,16 @@ interface WorkflowCardProps {
   /** Expansion is owned by the hub so "Expand all" can drive every card. */
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onRun: () => void;
-  onStatusChange: (next: WorkflowStatus) => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  /**
+   * Leave the actions out to render the card read-only — how a module's
+   * Workflow tab shows it, since workflows are changed only in the hub.
+   */
+  actions?: {
+    onRun: () => void;
+    onStatusChange: (next: WorkflowStatus) => void;
+    onEdit: () => void;
+    onDelete: () => void;
+  };
 }
 
 /**
@@ -76,10 +82,7 @@ export function WorkflowCard({
   departments,
   open,
   onOpenChange,
-  onRun,
-  onStatusChange,
-  onEdit,
-  onDelete,
+  actions,
 }: WorkflowCardProps) {
   const status = wf.status ?? "draft";
   const isActive = status === "active";
@@ -151,66 +154,68 @@ export function WorkflowCard({
               </button>
             </CollapsibleTrigger>
 
-            <div className="flex items-center gap-1.5 shrink-0">
-              {/* §11.12 — only an active workflow can be run; a draft being
-                  runnable is how half-built processes escape. */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1 text-[11px]"
-                disabled={!isActive}
-                title={
-                  !isActive
-                    ? "Activate this workflow before running it"
-                    : undefined
-                }
-                onClick={onRun}
-              >
-                <Play className="w-3.5 h-3.5" />
-                Run
-              </Button>
-              {/* §11.13 — flip the lifecycle without opening the builder. */}
-              {isActive ? (
+            {actions && (
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* §11.12 — only an active workflow can be run; a draft being
+                    runnable is how half-built processes escape. */}
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 gap-1 text-[11px]"
-                  onClick={() => onStatusChange("archived")}
+                  disabled={!isActive}
+                  title={
+                    !isActive
+                      ? "Activate this workflow before running it"
+                      : undefined
+                  }
+                  onClick={actions.onRun}
                 >
-                  <PowerOff className="w-3.5 h-3.5" />
-                  Archive
+                  <Play className="w-3.5 h-3.5" />
+                  Run
                 </Button>
-              ) : (
+                {/* §11.13 — flip the lifecycle without opening the builder. */}
+                {isActive ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1 text-[11px]"
+                    onClick={() => actions.onStatusChange("archived")}
+                  >
+                    <PowerOff className="w-3.5 h-3.5" />
+                    Archive
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1 text-[11px]"
+                    onClick={() => actions.onStatusChange("active")}
+                  >
+                    <Power className="w-3.5 h-3.5" />
+                    Activate
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 gap-1 text-[11px]"
-                  onClick={() => onStatusChange("active")}
+                  onClick={actions.onEdit}
                 >
-                  <Power className="w-3.5 h-3.5" />
-                  Activate
+                  <Pencil className="w-3.5 h-3.5" />
+                  {wf.kind === "system" ? "View" : "Edit"}
                 </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1 text-[11px]"
-                onClick={onEdit}
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                {wf.kind === "system" ? "View" : "Edit"}
-              </Button>
-              {wf.kind === "custom" && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive"
-                  onClick={onDelete}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              )}
-            </div>
+                {wf.kind === "custom" && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive"
+                    onClick={actions.onDelete}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           <CollapsibleContent>

@@ -41,6 +41,12 @@ import { OpenRolesChart, ResourcingHeroRing } from "./open-roles-chart";
 import { HiringFunnelCard } from "./hiring-funnel-card";
 import { EngagementTrendCard } from "./engagement-trend-card";
 import { EngagementHeroRing } from "./engagement-hero-ring";
+import {
+  DataQualityTile,
+  CertificationComplianceTile,
+  MandatoryTrainingTile,
+  LoansTile,
+} from "./compliance-tiles";
 
 /**
  * Column span out of 12, matching the widths the mockup's rows were built
@@ -104,6 +110,20 @@ export function PeopleTabLayout() {
       </Cell>
       <Cell span={6}>
         <HeadcountTrendCard />
+      </Cell>
+
+      {/* Record quality and compliance — is the workforce data audit-ready? */}
+      <Cell span={3}>
+        <DataQualityTile />
+      </Cell>
+      <Cell span={3}>
+        <CertificationComplianceTile />
+      </Cell>
+      <Cell span={3}>
+        <MandatoryTrainingTile />
+      </Cell>
+      <Cell span={3}>
+        <LoansTile />
       </Cell>
     </Grid>
   );

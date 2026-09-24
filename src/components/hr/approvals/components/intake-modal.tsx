@@ -114,6 +114,12 @@ const EXTRA_FIELDS: Record<ApprovalDocumentType, ExtraField[]> = {
     { key: "model", label: "Preferred model" },
     { key: "justification", label: "Justification" },
   ],
+  loan_request: [
+    { key: "loanType", label: "Loan type" },
+    { key: "amount", label: "Amount", type: "number" },
+    { key: "repaymentMonths", label: "Repayment period (months)", type: "number" },
+    { key: "purpose", label: "Purpose" },
+  ],
   expense_claim: [
     { key: "category", label: "Category" },
     { key: "amount", label: "Amount", type: "number" },

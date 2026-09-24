@@ -18,6 +18,7 @@ import {
   CalendarClock,
   FileSignature,
   ShieldAlert,
+  HandCoins,
   LucideIcon,
 } from "lucide-react";
 
@@ -105,6 +106,12 @@ export const routes: Route[] = [
     icon: Receipt,
     label: "My Expenses",
     link: "/employee/expenses",
+  },
+  {
+    group: "Overview",
+    icon: HandCoins,
+    label: "My Loans",
+    link: "/employee/loans",
   },
   {
     group: "Overview",

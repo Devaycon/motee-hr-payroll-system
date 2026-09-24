@@ -10,6 +10,7 @@ import type {
   EnrollmentStatus,
 } from "@/src/lib/types/learning";
 import type { LocaleBundle } from "@/src/lib/types/locale";
+import type { CertificationRecord } from "@/src/lib/certifications/status";
 
 interface RawCourse {
   id?: string;
@@ -22,12 +23,14 @@ interface RawCourse {
   instructor?: string;
   courseUrl?: string;
   durationHours?: number;
-  duration?: number;
+  duration?: number | string;
   capacity?: number;
   startDate?: string;
   endDate?: string;
   tags?: string[];
   provider?: string;
+  mandatory?: boolean;
+  validityMonths?: number | null;
 }
 
 interface RawEnrollment {
@@ -38,11 +41,17 @@ interface RawEnrollment {
   progress?: number;
   enrolledAt?: string;
   enrolledDate?: string;
+  dueDate?: string | null;
   completedAt?: string;
   score?: number;
 }
 
-function mapCategory(c?: string): CourseCategory {
+function mapCategory(raw?: string): CourseCategory {
+  // Fixtures spell categories as labels ("Soft Skills"); the form stores ids.
+  const c = raw?.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (c === "people") return "leadership";
+  if (c === "security") return "compliance";
+  if (c === "customer") return "soft_skills";
   if (
     c === "technical" ||
     c === "leadership" ||
@@ -79,9 +88,22 @@ function mapEnrollmentStatus(s?: string): EnrollmentStatus {
   return "enrolled";
 }
 
-interface LearningData {
+export interface LearningData {
   courses: Course[];
   enrollments: Enrollment[];
+  /** Course certificates + professional credentials, for the Certification Register. */
+  certifications: CertificationRecord[];
+  /** The people in scope, for register names and mandatory-training compliance. */
+  people: LearningPerson[];
+}
+
+export interface LearningPerson {
+  id: string;
+  fullName: string;
+  initials: string;
+  departmentName: string;
+  status: string;
+  gender?: string;
 }
 
 function buildLearning(bundle: LocaleBundle): LearningData {
@@ -89,6 +111,7 @@ function buildLearning(bundle: LocaleBundle): LearningData {
   const learn = bundle.learning as {
     courses?: RawCourse[];
     enrollments?: RawEnrollment[];
+    certifications?: CertificationRecord[];
   };
 
   const rawCourses = learn.courses ?? [];
@@ -112,8 +135,12 @@ function buildLearning(bundle: LocaleBundle): LearningData {
       status: mapStatus(c.status),
       deliveryMode: mapMode(c.deliveryMode ?? c.mode),
       instructor: c.instructor ?? c.provider ?? "—",
+      provider: c.provider,
+      mandatory: c.mandatory ?? false,
+      validityMonths: c.validityMonths ?? null,
       courseUrl: c.courseUrl,
-      durationHours: c.durationHours ?? c.duration ?? 1,
+      // Fixtures carry "1.5h"; a bare number is already hours.
+      durationHours: c.durationHours ?? (parseFloat(String(c.duration ?? "")) || 1),
       capacity: c.capacity,
       enrolledCount: stats.enrolled,
       completionCount: stats.completed,
@@ -131,6 +158,7 @@ function buildLearning(bundle: LocaleBundle): LearningData {
     return {
       id: e.id ?? `enr-${i + 1}`,
       courseId: e.courseId ?? "",
+      employeeId: e.employeeId,
       courseTitle: course?.title,
       employeeName: emp?.fullName ?? e.employeeId ?? "Unknown",
       employeeInitials: emp?.initials ?? "??",
@@ -140,12 +168,27 @@ function buildLearning(bundle: LocaleBundle): LearningData {
       progress: e.progress ?? 0,
       enrolledAt: e.enrolledAt ?? e.enrolledDate,
       enrolledDate: e.enrolledDate ?? e.enrolledAt,
+      dueDate: e.dueDate ?? undefined,
       completedAt: e.completedAt,
       score: e.score,
     };
   });
 
-  return { courses, enrollments };
+  const people: LearningPerson[] = bundle.employees.map((e) => ({
+    id: e.id,
+    fullName: e.fullName,
+    initials: e.initials,
+    departmentName: e.departmentName,
+    status: e.status,
+    gender: e.gender,
+  }));
+
+  return {
+    courses,
+    enrollments,
+    certifications: learn.certifications ?? [],
+    people,
+  };
 }
 
 export function useLearning() {

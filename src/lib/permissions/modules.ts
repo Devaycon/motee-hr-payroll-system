@@ -38,6 +38,7 @@ export const ALL_MODULES: ModuleEntry[] = [
   { id: "organization.workforce-lens",          label: "Workforce Lens",                group: "Employment Management", link: "/organization/workforce-lens" },
   { id: "organization.employment-types",   label: "Employment Types",         group: "Employment Management", link: "/organization/employment-types" },
   { id: "organization.benefit-plans",      label: "Benefits",                 group: "Employment Management", link: "/organization/benefit-plans" },
+  { id: "organization.loans",              label: "Employee Loans",           group: "Employment Management", link: "/organization/loans" },
   { id: "organization.eor",                 label: "Employer of Record",       group: "Employment Management", link: "/organization/eor" },
   { id: "organization.employee-checklist", label: "Employee Checklist",       group: "Employment Management", link: "/organization/employee-checklist" },
 

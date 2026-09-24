@@ -2,6 +2,7 @@
 
 import { useLocaleSection } from "./use-locale-data";
 import { store } from "@/src/lib/stores/store";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 
 export interface MoneyFormatOptions {
@@ -80,8 +81,12 @@ export function useCurrency() {
       code: b.tenant.currency,
     }),
   );
-  const symbol = data?.symbol ?? "₦";
-  const code = data?.code ?? "NGN";
+  // While a freshly mounted section is still "loading", read the tenant off
+  // the store rather than defaulting to ₦ — a UK tab opened later otherwise
+  // flashes naira amounts.
+  const tenant = useAppSelector((s) => s.locale.data?.tenant);
+  const symbol = data?.symbol ?? tenant?.currencySymbol ?? "₦";
+  const code = data?.code ?? tenant?.currency ?? "NGN";
   return {
     symbol,
     code,

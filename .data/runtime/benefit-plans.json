@@ -22,7 +22,9 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "country": "ng",
+      "enrollment": "core"
     },
     {
       "id": "BEN-PENSION",
@@ -45,7 +47,9 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "country": "ng",
+      "enrollment": "core"
     },
     {
       "id": "BEN-LIFE",
@@ -67,7 +71,9 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "country": "ng",
+      "enrollment": "core"
     },
     {
       "id": "BEN-PA",
@@ -82,7 +88,9 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "country": "ng",
+      "enrollment": "core"
     },
     {
       "id": "BEN-LEAVE",
@@ -97,7 +105,8 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "enrollment": "core"
     },
     {
       "id": "BEN-LEAVE-ALLOWANCE",
@@ -118,7 +127,9 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "country": "ng",
+      "enrollment": "core"
     },
     {
       "id": "BEN-13TH",
@@ -139,7 +150,9 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "country": "ng",
+      "enrollment": "core"
     },
     {
       "id": "BEN-PARENTAL",
@@ -159,7 +172,8 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "enrollment": "core"
     },
     {
       "id": "BEN-TRANSPORT",
@@ -183,7 +197,9 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "country": "ng",
+      "enrollment": "core"
     },
     {
       "id": "BEN-MEAL",
@@ -197,7 +213,9 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "country": "ng",
+      "enrollment": "core"
     },
     {
       "id": "BEN-REMOTE-STIPEND",
@@ -216,7 +234,8 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "enrollment": "core"
     },
     {
       "id": "BEN-EAP",
@@ -231,7 +250,8 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "enrollment": "core"
     },
     {
       "id": "BEN-GYM",
@@ -252,7 +272,8 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "enrollment": "optional"
     },
     {
       "id": "BEN-LND",
@@ -266,7 +287,8 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "enrollment": "optional"
     },
     {
       "id": "BEN-LONG-SERVICE",
@@ -285,7 +307,436 @@
       "kind": "system",
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01",
-      "createdAt": "2026-01-01"
+      "createdAt": "2026-01-01",
+      "enrollment": "core"
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-NG-NHF",
+      "name": "National Housing Fund (NHF)",
+      "category": "retirement",
+      "country": "ng",
+      "enrollment": "core",
+      "description": "Statutory contribution to the Federal Mortgage Bank's National Housing Fund, giving access to low-interest mortgage loans.",
+      "provider": "Federal Mortgage Bank of Nigeria",
+      "employeeContributionPct": 2.5,
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-NG-STAFF-LOAN",
+      "name": "Staff Loans",
+      "category": "financial",
+      "country": "ng",
+      "enrollment": "optional",
+      "description": "Low-interest loans for rent, school fees, a car or home renovation, repaid in monthly instalments. Tracked in Employee Loans.",
+      "coverageDetails": "Up to 12× monthly gross, repaid over 6–24 months",
+      "costNote": "5% p.a. flat",
+      "waitingPeriodDays": 180,
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-NG-SALARY-ADVANCE",
+      "name": "Salary Advance",
+      "category": "financial",
+      "country": "ng",
+      "enrollment": "optional",
+      "description": "Part of next month's salary paid early for emergencies, recovered over 1–3 months.",
+      "coverageDetails": "Up to 50% of monthly net pay",
+      "costNote": "Interest-free",
+      "waitingPeriodDays": 90,
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based",
+          "contract"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-NG-COOPERATIVE",
+      "name": "Staff Cooperative Scheme",
+      "category": "financial",
+      "country": "ng",
+      "enrollment": "optional",
+      "description": "Voluntary savings through payroll into the staff cooperative, with access to cooperative loans at member rates.",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-NG-TRAINING",
+      "name": "Training & Exam Sponsorship",
+      "category": "development",
+      "country": "ng",
+      "enrollment": "optional",
+      "description": "Sponsorship of professional exams and certifications — ICAN, ACCA, CIPM, PMP — with a service bond on completion.",
+      "coverageDetails": "Exam fees + study materials; 12-month bond",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-PENSION",
+      "name": "Workplace Pension (Auto-enrolment)",
+      "category": "retirement",
+      "country": "uk",
+      "enrollment": "core",
+      "description": "Defined-contribution workplace pension under auto-enrolment, on qualifying earnings.",
+      "provider": "NEST",
+      "employerContributionPct": 5,
+      "employeeContributionPct": 3,
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based",
+          "contract",
+          "temporary",
+          "seasonal",
+          "part_time"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-PMI",
+      "name": "Private Medical Insurance",
+      "category": "health",
+      "country": "uk",
+      "enrollment": "core",
+      "description": "Fast-track private diagnosis and treatment, with the option to add partner and children.",
+      "provider": "Bupa",
+      "costNote": "Employer-funded; P11D taxable benefit",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-DENTAL",
+      "name": "Dental Cover",
+      "category": "health",
+      "country": "uk",
+      "enrollment": "optional",
+      "description": "Cash-back towards routine and emergency dental treatment.",
+      "provider": "Simplyhealth",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based",
+          "part_time"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-SCREENING",
+      "name": "Health Screening & Optical Cover",
+      "category": "health",
+      "country": "uk",
+      "enrollment": "optional",
+      "description": "Annual health assessment and a contribution towards eye tests and glasses.",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-LIFE",
+      "name": "Life Assurance",
+      "category": "insurance",
+      "country": "uk",
+      "enrollment": "core",
+      "description": "Tax-free lump sum to your nominated beneficiaries if you die in service.",
+      "provider": "Legal & General",
+      "coverageDetails": "4× basic salary",
+      "costNote": "Fully employer-funded",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-INCOME-PROTECTION",
+      "name": "Income Protection",
+      "category": "insurance",
+      "country": "uk",
+      "enrollment": "core",
+      "description": "Replaces part of your salary if long-term illness or injury stops you working.",
+      "provider": "Aviva",
+      "coverageDetails": "75% of salary after a 26-week deferred period",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-CRITICAL-ILLNESS",
+      "name": "Critical Illness Cover",
+      "category": "insurance",
+      "country": "uk",
+      "enrollment": "optional",
+      "description": "Lump sum on diagnosis of a specified serious illness.",
+      "costNote": "Employee-paid via salary deduction",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-CYCLE",
+      "name": "Cycle to Work Scheme",
+      "category": "wellness",
+      "country": "uk",
+      "enrollment": "optional",
+      "description": "Tax-efficient bike and safety equipment through salary sacrifice.",
+      "provider": "Cyclescheme",
+      "costNote": "Salary sacrifice over 12 months",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based",
+          "part_time"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-EV",
+      "name": "Electric Vehicle Salary Sacrifice",
+      "category": "perks",
+      "country": "uk",
+      "enrollment": "optional",
+      "description": "Lease a fully electric car through salary sacrifice, with insurance and maintenance included.",
+      "provider": "Octopus EV",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-SEASON-TICKET",
+      "name": "Season Ticket Loan",
+      "category": "financial",
+      "country": "uk",
+      "enrollment": "optional",
+      "description": "Interest-free loan for an annual rail or travel season ticket, repaid through monthly instalments.",
+      "costNote": "Interest-free, repaid over 10–12 months",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-EMPLOYEE-LOAN",
+      "name": "Employee Loans & Salary Advance",
+      "category": "financial",
+      "country": "uk",
+      "enrollment": "optional",
+      "description": "Short-term employee loans and earned-wage salary advances. Tracked in Employee Loans.",
+      "coverageDetails": "Loans up to £5,000; advances up to 50% of earned pay",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-LEARNING",
+      "name": "Learning Sponsorship & Professional Memberships",
+      "category": "development",
+      "country": "uk",
+      "enrollment": "optional",
+      "description": "Study support, certification sponsorship and paid professional body memberships (CIPD, ICAEW, BCS…).",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-FLEX",
+      "name": "Flexible Benefits Allowance",
+      "category": "perks",
+      "country": "uk",
+      "enrollment": "optional",
+      "description": "Annual allowance to spend on the benefits that suit you, plus an employee discount platform.",
+      "provider": "Perkbox",
+      "scope": {
+        "kind": "employmentType",
+        "types": [
+          "full_time",
+          "remote",
+          "field_based"
+        ]
+      }
+    },
+    {
+      "status": "active",
+      "kind": "system",
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "id": "BEN-UK-FLEXIBLE-WORKING",
+      "name": "Hybrid & Flexible Working",
+      "category": "leave",
+      "country": "uk",
+      "enrollment": "core",
+      "description": "Hybrid working, flexible start and finish times, and a statutory right to request flexible working.",
+      "scope": {
+        "kind": "all"
+      }
     }
   ]
 }

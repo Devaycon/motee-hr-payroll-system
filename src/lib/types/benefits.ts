@@ -6,6 +6,7 @@
  */
 
 import type { EmploymentType } from "@/src/lib/constants/employment-types";
+import type { CountryKey } from "@/src/lib/types/locale";
 
 export type BenefitCategory =
   | "health"
@@ -70,6 +71,17 @@ export type BenefitScope =
 
 export type BenefitPlanStatus = "draft" | "active" | "archived";
 
+/**
+ * core: every eligible employee gets it automatically (pension, HMO, NHF…).
+ * optional: eligible employees opt in (staff loans, cycle-to-work…).
+ */
+export type BenefitEnrollment = "core" | "optional";
+
+export const BENEFIT_ENROLLMENT_LABELS: Record<BenefitEnrollment, string> = {
+  core: "Core — automatic",
+  optional: "Optional — employee opts in",
+};
+
 export const BENEFIT_PLAN_STATUS_LABELS: Record<BenefitPlanStatus, string> = {
   draft: "Draft",
   active: "Active",
@@ -100,6 +112,13 @@ export interface BenefitPlan {
   waitingPeriodDays?: number;
   scope: BenefitScope;
   status: BenefitPlanStatus;
+  /** Core (automatic) or optional (opt-in). Absent = core. */
+  enrollment?: BenefitEnrollment;
+  /**
+   * The tenant country the plan belongs to — a Nigerian HMO means nothing to a
+   * UK tenant. Absent = offered in every country.
+   */
+  country?: CountryKey;
   /** system = pre-made seed plan (editable, but can't be permanently deleted). */
   kind: "system" | "custom";
   lastModifiedBy: string;
@@ -120,4 +139,14 @@ export type NewBenefitPlan = Pick<
   | "waitingPeriodDays"
   | "scope"
   | "status"
+  | "enrollment"
+  | "country"
 >;
+
+/** Plans offered in a tenant country (country-less plans apply everywhere). */
+export function plansForCountry<T extends Pick<BenefitPlan, "country">>(
+  plans: T[],
+  country: CountryKey,
+): T[] {
+  return plans.filter((p) => !p.country || p.country === country);
+}

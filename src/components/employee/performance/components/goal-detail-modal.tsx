@@ -88,6 +88,30 @@ export function GoalDetailModal({
                   </div>
                 ))}
               </div>
+              {goal.updates && goal.updates.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    Progress updates
+                  </p>
+                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+                    {goal.updates.map((u, i) => (
+                      <div
+                        key={`${u.date}-${i}`}
+                        className="rounded-lg border border-border p-2.5"
+                      >
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatDate(u.date)} · {u.progress}%
+                        </p>
+                        {u.note && (
+                          <p className="text-xs text-foreground mt-0.5 whitespace-pre-line">
+                            {u.note}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter className="gap-2">
               <Button
