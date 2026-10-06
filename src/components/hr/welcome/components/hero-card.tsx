@@ -24,7 +24,7 @@ export function HeroCard({ dateStr }: HeroCardProps) {
               Welcome back, Mikovla Stefani 👋
             </h1>
             <p className="text-sm text-muted-foreground mt-1">{dateStr}</p>
-            <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-xl">
+            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
               This is your connection point between the Motee platform and your
               HR workspace. Platform announcements, product updates, and support
               requests all flow through here.

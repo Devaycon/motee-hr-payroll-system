@@ -67,14 +67,14 @@ export function LifecycleWheel({ metrics }: { metrics: LifecycleMetrics }) {
       )}
 
       <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
-        <div className="text-center lg:text-left">
+        <div className="rounded-xl border border-border bg-card p-6 text-center lg:text-left">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">
             The employee lifecycle
           </p>
           <h2 className="mt-2 text-2xl font-bold text-foreground">
             One journey. Eight connected stages.
           </h2>
-          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground lg:mx-0">
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             From workforce planning to offboarding, every stage connects to
             the next — carrying information forward, triggering the right
             actions and creating one continuous employee journey.

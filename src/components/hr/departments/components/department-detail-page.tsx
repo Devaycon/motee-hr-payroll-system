@@ -327,7 +327,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
                 {dept.status}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5 max-w-xl">
+            <p className="text-sm text-muted-foreground mt-0.5">
               {dept.description}
             </p>
           </div>
