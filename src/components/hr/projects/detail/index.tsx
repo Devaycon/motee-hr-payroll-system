@@ -171,7 +171,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             </Badge>
           </div>
           {project.description && (
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground">
               {project.description}
             </p>
           )}

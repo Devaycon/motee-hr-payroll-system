@@ -36,7 +36,7 @@ export function LifecyclePage() {
         <h1 className="text-4xl font-semibold text-foreground">
           The complete employee journey
         </h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           From workforce planning to offboarding, Motee connects every stage
           of the employee lifecycle — carrying information forward,
           triggering the right actions and creating one continuous employee
