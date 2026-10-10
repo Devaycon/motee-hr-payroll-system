@@ -12,36 +12,73 @@ import {
 } from "@/src/components/ui/input-otp";
 import { Button } from "@/src/components/ui/button";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
-import { cn } from "@/src/lib/utils";
+import { cn, getApiErrorMessage } from "@/src/lib/utils";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { clearPendingAuth, readPendingEmail } from "@/src/lib/auth/pending";
+import { landingPathForSession } from "@/src/lib/auth/session";
+import { OTP_LENGTH, otpSchema } from "@/src/lib/validations/auth";
+import {
+  useResendOtpMutation,
+  useVerifyOtpMutation,
+} from "@/src/store/services/auth";
+import { setCredentials } from "@/src/store/reducers/authSlice";
 
-const TOTAL = 6;
+const TOTAL = OTP_LENGTH;
 
 const VerifyOtpIndex = () => {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const [email] = useState(readPendingEmail);
   const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
   const [error, setError] = useState("");
+  const [verifyOtp, { isLoading: loading }] = useVerifyOtpMutation();
+  const [resendOtp, { isLoading: resending }] = useResendOtpMutation();
 
-  function handleVerify() {
-    if (otp.length < TOTAL) return;
+  async function handleVerify(code: string) {
+    const parsed = otpSchema.safeParse({ email, code });
+    if (!parsed.success) {
+      setError(
+        email
+          ? parsed.error.issues[0].message
+          : "We could not tell which account to verify. Please register again.",
+      );
+      return;
+    }
     setError("");
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      router.push("/onboarding");
-    }, 1500);
+    try {
+      const { data: session } = await verifyOtp(parsed.data).unwrap();
+      dispatch(
+        setCredentials({
+          token: session.accessToken,
+          refresh_token: session.refreshToken ?? undefined,
+          expires_at: session.expiresAt,
+          user_id: session.userId,
+          tenant_id: session.tenantId,
+          onboarding_completed: session.onboardingCompleted,
+        }),
+      );
+      clearPendingAuth();
+      router.push(
+        landingPathForSession({
+          tenant_id: session.tenantId,
+          onboarding_completed: session.onboardingCompleted,
+        }),
+      );
+    } catch (err) {
+      setError(getApiErrorMessage(err, "That code is not valid."));
+    }
   }
 
-  function handleResend() {
-    setResending(true);
+  async function handleResend() {
     setResent(false);
     setError("");
-    setTimeout(() => {
-      setResending(false);
+    try {
+      await resendOtp({ email }).unwrap();
       setResent(true);
-    }, 1200);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Could not resend the code."));
+    }
   }
 
   return (
@@ -146,7 +183,7 @@ const VerifyOtpIndex = () => {
             size="lg"
             className="w-fit px-10 bg-[#FE8F44] hover:bg-[#FE8F44]/90 text-white"
             disabled={otp.length < TOTAL || loading}
-            onClick={handleVerify}
+            onClick={() => handleVerify(otp)}
           >
             {loading ? "Verifying…" : "Verify & Continue"}
           </Button>
@@ -156,7 +193,7 @@ const VerifyOtpIndex = () => {
             <button
               type="button"
               onClick={handleResend}
-              disabled={resending}
+              disabled={resending || !email}
               className="flex items-center gap-1 font-semibold text-foreground hover:underline disabled:opacity-50"
             >
               <RotateCcw

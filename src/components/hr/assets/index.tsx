@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useAssets } from "./hooks";
+import { useAssetActions, useAssets, useAssetWithHistory } from "./hooks";
 import { UserPlus, Upload } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
@@ -26,7 +26,8 @@ import {
 import type { Asset, AssetCondition, AssetType, NewAsset } from "./types";
 
 export function AssetsPage() {
-  const { data, loading } = useAssets();
+  const { data, records, loading } = useAssets();
+  const { save, assign, giveBack, setStatus } = useAssetActions(records);
   const [assets, setAssets] = useState<Asset[]>([]);
   // Seed/refresh local working copy when the async source data changes, without
   // a setState-in-effect (React render-phase sync pattern).
@@ -68,14 +69,6 @@ export function AssetsPage() {
     setAssignModalOpen(true);
   }
 
-  function generateId() {
-    const max = assets.reduce((acc, a) => {
-      const num = parseInt(a.id.replace("AST-", ""), 10);
-      return num > acc ? num : acc;
-    }, 0);
-    return `AST-${String(max + 1).padStart(3, "0")}`;
-  }
-
   function handleAddAsset() {
     setEditingAsset(null);
     setFormModalOpen(true);
@@ -91,76 +84,15 @@ export function AssetsPage() {
     setDetailModalOpen(true);
   }
 
-  function handleSaveAsset(data: NewAsset) {
-    if (editingAsset) {
-      setAssets((prev) =>
-        prev.map((a) =>
-          a.id === editingAsset.id
-            ? {
-                ...a,
-                ...data,
-                history: [
-                  ...a.history,
-                  {
-                    id: `H-${a.id}-${Date.now()}`,
-                    action: "condition_updated" as const,
-                    date: new Date().toISOString().split("T")[0],
-                    description: "Asset details updated.",
-                    performedBy: "HR Admin",
-                  },
-                ],
-              }
-            : a,
-        ),
-      );
-    } else {
-      const newId = generateId();
-      const newAsset: Asset = {
-        ...data,
-        id: newId,
-        purchaseValue: data.purchaseValue,
-        history: [
-          {
-            id: `H-${newId}-1`,
-            action: "created",
-            date: new Date().toISOString().split("T")[0],
-            description: "Asset added to inventory.",
-            performedBy: "HR Admin",
-          },
-        ],
-      };
-      setAssets((prev) => [newAsset, ...prev]);
-    }
+  async function handleSaveAsset(data: NewAsset) {
+    const saved = await save(data, editingAsset?.id);
+    if (!saved) return;
     setFormModalOpen(false);
     setEditingAsset(null);
   }
 
-  function handleBulkImport(newAssets: NewAsset[]) {
-    const today = new Date().toISOString().split("T")[0];
-    setAssets((prev) => {
-      let max = prev.reduce((acc, a) => {
-        const num = parseInt(a.id.replace("AST-", ""), 10);
-        return Number.isFinite(num) && num > acc ? num : acc;
-      }, 0);
-      const created = newAssets.map((data) => {
-        max += 1;
-        const newId = `AST-${String(max).padStart(3, "0")}`;
-        return {
-          ...data,
-          id: newId,
-          history: [
-            {
-              id: `H-${newId}-1`,
-              action: "created" as const,
-              date: today,
-              description: "Asset added to inventory via bulk upload.",
-              performedBy: "HR Admin",
-            },
-          ],
-        } satisfies Asset;
-      });
-      return [...created, ...prev];
-    });
+  async function handleBulkImport(newAssets: NewAsset[]) {
+    for (const asset of newAssets) await save(asset);
   }
 
   function handleAssign(asset: Asset) {
@@ -175,7 +107,7 @@ export function AssetsPage() {
     setAssignModalOpen(true);
   }
 
-  function handleSaveAssign(
+  async function handleSaveAssign(
     id: string,
     data: {
       employeeName: string;
@@ -184,159 +116,37 @@ export function AssetsPage() {
       assignedDate: string;
     },
   ) {
-    setAssets((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              status: "assigned" as const,
-              assignedTo: data.employeeName,
-              assignedToInitials: data.employeeInitials,
-              assignedToDepartment: data.department,
-              assignedDate: data.assignedDate,
-              pendingReturn: false,
-              history: [
-                ...a.history,
-                {
-                  id: `H-${a.id}-${Date.now()}`,
-                  action: "assigned" as const,
-                  date: data.assignedDate,
-                  description: `Assigned to ${data.employeeName} (${data.department}).`,
-                  performedBy: "HR Admin",
-                },
-              ],
-            }
-          : a,
-      ),
-    );
+    const done = await assign(id, data.employeeName, data.assignedDate);
+    if (!done) return;
     setAssignModalOpen(false);
     setAssigningAsset(null);
   }
 
-  function handleSaveReturn(
+  async function handleSaveReturn(
     id: string,
     condition: AssetCondition,
     notes?: string,
   ) {
-    const today = new Date().toISOString().split("T")[0];
-    setAssets((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              status: "available" as const,
-              condition,
-              conditionNotes: notes || a.conditionNotes,
-              assignedTo: undefined,
-              assignedToInitials: undefined,
-              assignedToDepartment: undefined,
-              assignedDate: undefined,
-              pendingReturn: false,
-              history: [
-                ...a.history,
-                {
-                  id: `H-${a.id}-${Date.now()}`,
-                  action: "returned" as const,
-                  date: today,
-                  description: notes
-                    ? `Returned. Notes: ${notes}`
-                    : "Asset returned and marked available.",
-                  performedBy: "HR Admin",
-                },
-              ],
-            }
-          : a,
-      ),
-    );
+    const done = await giveBack(id, condition, notes);
+    if (!done) return;
     setAssignModalOpen(false);
     setAssigningAsset(null);
   }
 
   function handleMarkReturned(id: string) {
-    const today = new Date().toISOString().split("T")[0];
-    setAssets((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              status: "available" as const,
-              assignedTo: undefined,
-              assignedToInitials: undefined,
-              assignedToDepartment: undefined,
-              assignedDate: undefined,
-              pendingReturn: false,
-              history: [
-                ...a.history,
-                {
-                  id: `H-${a.id}-${Date.now()}`,
-                  action: "returned" as const,
-                  date: today,
-                  description: "Asset returned from offboarded employee.",
-                  performedBy: "HR Admin",
-                },
-              ],
-            }
-          : a,
-      ),
-    );
+    void giveBack(id);
   }
 
+  /** The API has no maintenance state; this records the asset as lost. */
   function handleSendToMaintenance(id: string) {
-    const today = new Date().toISOString().split("T")[0];
-    setAssets((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              status: "under_maintenance" as const,
-              assignedTo: undefined,
-              assignedToInitials: undefined,
-              assignedToDepartment: undefined,
-              assignedDate: undefined,
-              history: [
-                ...a.history,
-                {
-                  id: `H-${a.id}-${Date.now()}`,
-                  action: "maintenance_scheduled" as const,
-                  date: today,
-                  description: "Asset sent for maintenance.",
-                  performedBy: "HR Admin",
-                },
-              ],
-            }
-          : a,
-      ),
-    );
+    void setStatus(id, "lost", "Asset marked as lost");
   }
 
   function handleDecommission(id: string) {
-    const today = new Date().toISOString().split("T")[0];
-    setAssets((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              status: "decommissioned" as const,
-              condition: "decommissioned" as const,
-              assignedTo: undefined,
-              assignedToInitials: undefined,
-              assignedToDepartment: undefined,
-              assignedDate: undefined,
-              history: [
-                ...a.history,
-                {
-                  id: `H-${a.id}-${Date.now()}`,
-                  action: "decommissioned" as const,
-                  date: today,
-                  description: "Asset formally decommissioned.",
-                  performedBy: "HR Admin",
-                },
-              ],
-            }
-          : a,
-      ),
-    );
+    void setStatus(id, "retired", "Asset decommissioned");
   }
+
+  const viewedAsset = useAssetWithHistory(viewingAsset);
 
   if (loading && !assets.length) {
     return (
@@ -470,7 +280,7 @@ export function AssetsPage() {
           setDetailModalOpen(false);
           setViewingAsset(null);
         }}
-        asset={viewingAsset}
+        asset={viewedAsset}
       />
 
       <AssetFormModal

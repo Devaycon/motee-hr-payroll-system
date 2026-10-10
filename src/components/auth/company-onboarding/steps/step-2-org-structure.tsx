@@ -338,7 +338,7 @@ export function Step2OrgStructure() {
           onValueChange={(v) => setValue("structureType", v as StructureType)}
           className="flex flex-col gap-3 mt-1"
         >
-          {STRUCTURE_OPTIONS.map(({ value, label, desc, tooltip }) => (
+          {STRUCTURE_OPTIONS.filter((o) => o.value !== "matrix").map(({ value, label, desc, tooltip }) => (
             <div
               key={value}
               className="flex items-start gap-3 rounded-lg border border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"

@@ -35,9 +35,12 @@ import {
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { Separator } from "@/src/components/ui/separator";
-import { cn } from "@/src/lib/utils";
+import { toast } from "sonner";
+import { cn, getApiErrorMessage } from "@/src/lib/utils";
+import { useEmployeeActions } from "@/src/lib/employees/use-employee-actions";
 import { STATUS_STYLES, formatBudget } from "../data";
-import { useDepartments } from "../hooks";
+import { toDepartment, useDepartments } from "../hooks";
+import { useGetDepartmentQuery } from "@/src/store/services/departments";
 import { useEmployees } from "@/src/components/hr/employees/hooks";
 import { AddEmployeeModal } from "./add-employee-modal";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -222,9 +225,13 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
   const { data: deptData } = useDepartments();
   const { data: empData } = useEmployees();
 
+  const { data: fresh } = useGetDepartmentQuery(id, { skip: !id });
   const dept = useMemo(
-    () => (deptData ?? []).find((d) => d.id === id) ?? null,
-    [deptData, id],
+    () =>
+      fresh?.data
+        ? toDepartment(fresh.data)
+        : ((deptData ?? []).find((d) => d.id === id) ?? null),
+    [fresh, deptData, id],
   );
 
   // Members come from the active locale (switches with the Nigeria/UK selector);
@@ -236,11 +243,23 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
         : [],
     [empData, dept],
   );
-  const [addedMembers, setAddedMembers] = useState<EmployeeRow[]>([]);
-  const members = useMemo(
-    () => [...baseMembers, ...addedMembers],
-    [baseMembers, addedMembers],
-  );
+  const members = baseMembers;
+  const { patchEmployee } = useEmployeeActions();
+
+  /** Moving someone in is an edit to their own record. */
+  async function handleAddMembers(emps: EmployeeRow[]) {
+    if (!dept) return;
+    let moved = 0;
+    for (const emp of emps) {
+      try {
+        await patchEmployee(emp.id, { departmentId: dept.id });
+        moved++;
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, `Could not move ${emp.name}.`));
+      }
+    }
+    if (moved) toast.success(`${moved} employee(s) moved to ${dept.name}`);
+  }
   const [addEmpOpen, setAddEmpOpen] = useState(false);
 
   if (!deptData || !empData) {
@@ -267,8 +286,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
   }
 
   const StatusIcon = STATUS_ICONS[dept.status];
-  // Budget is derived from the active locale's salaries (currency-correct).
-  const budgetMonthly = members.reduce((sum, m) => sum + (m.salary ?? 0), 0);
+  const budgetMonthly = dept.budgetMonthly ?? 0;
   const annualBudget = budgetMonthly * 12;
   const activeMembers = members.filter((m) => m.status === "active").length;
   const onLeave = members.filter((m) => m.status === "on_leave").length;
@@ -344,7 +362,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
           onOpenChange={setAddEmpOpen}
           departmentName={dept.name}
           currentMembers={members}
-          onAdd={(emps) => setAddedMembers((prev) => [...prev, ...emps])}
+          onAdd={handleAddMembers}
         />
       </div>
 
@@ -397,8 +415,6 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
           tabs={[
             { value: "overview", label: "Overview" },
             { value: "members", label: "Members" },
-            { value: "budget", label: "Budget" },
-            { value: "activity", label: "Activity" },
           ]}
         />
 

@@ -67,6 +67,11 @@ const onboardingRecordsSlice = createSlice({
   name: "onboardingRecords",
   initialState,
   reducers: {
+    /** Replace the pipeline with what the API returned. Stages are the
+     *  server's, so nothing is re-derived here. */
+    setRecords(state, action: PayloadAction<OnboardingRecord[]>) {
+      state.records = action.payload;
+    },
     addRecord(state, action: PayloadAction<OnboardingRecord>) {
       // Ids from the recruitment bridge are derived from the candidate, so a
       // repeated invite lands here with an id that already exists. Ignore it
@@ -340,6 +345,7 @@ const onboardingRecordsSlice = createSlice({
 });
 
 export const {
+  setRecords,
   addRecord,
   addRecords,
   removeRecord,

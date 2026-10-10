@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
-import { Badge } from "@/src/components/ui/badge";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,16 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { setCurrentStep, setIsComplete, setIsSubmitting } from "@/src/lib/stores/onboarding-slice";
-import { AVAILABLE_MODULES } from "@/src/lib/types/onboarding-setup.types";
+import { setCurrentStep, setIsComplete } from "@/src/lib/stores/onboarding-slice";
+import { HOME_PATH } from "@/src/lib/auth/session";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { tenantSetupSchema } from "@/src/lib/validations/tenant-setup";
+import {
+  useCompleteTenantSetupMutation,
+  useGetTenantSetupOptionsQuery,
+  useUpdateTenantSetupMutation,
+} from "@/src/store/services/tenant-setup";
+import { setOnboardingCompleted } from "@/src/store/reducers/authSlice";
 import { CheckCircle2, Pencil } from "lucide-react";
 
 interface SectionProps {
@@ -55,22 +63,53 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 export function Step7Review() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { companyProfile, organizationConfig, accessControlConfig, enabledModules, workflowConfig } =
+  const { companyProfile, organizationConfig, enabledModules } =
     useAppSelector((s) => s.onboarding.companySetup);
-  const isSubmitting = useAppSelector((s) => s.onboarding.isSubmitting);
+  const { data: options } = useGetTenantSetupOptionsQuery();
+  const [updateTenantSetup, { isLoading: isSaving }] =
+    useUpdateTenantSetupMutation();
+  const [completeTenantSetup, { isLoading: isCompleting }] =
+    useCompleteTenantSetupMutation();
+  const isSubmitting = isSaving || isCompleting;
   const [showSuccess, setShowSuccess] = useState(false);
+  const AVAILABLE_MODULES = options?.data?.modules ?? [];
 
   const handleSubmit = async () => {
-    dispatch(setIsSubmitting(true));
-    await new Promise((r) => setTimeout(r, 1200));
-    dispatch(setIsSubmitting(false));
-    dispatch(setIsComplete(true));
-    setShowSuccess(true);
+    // The wizard shows a size range; the API wants that range's id.
+    const companySize =
+      options?.data?.companySizes.find(
+        (size) => size.label === companyProfile.companySize,
+      )?.id ?? "";
+    const parsed = tenantSetupSchema.safeParse({
+      industry: companyProfile.industry,
+      companySize,
+      companyEmailDomain: companyProfile.companyEmailDomain || null,
+      companyPolicies: companyProfile.companyPolicies || null,
+      managerTitle: organizationConfig.managerTitle,
+      departmentLabel: organizationConfig.departmentLabel,
+      structureType: organizationConfig.structureType,
+      enabledModules,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    try {
+      await updateTenantSetup(parsed.data).unwrap();
+      await completeTenantSetup().unwrap();
+      dispatch(setIsComplete(true));
+      setShowSuccess(true);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Could not save your setup."));
+    }
   };
 
   const handleGoToDashboard = () => {
     setShowSuccess(false);
-    router.push("/hr");
+    // Flipped here rather than on save, so the success dialog is not replaced
+    // by the auth guard's redirect before it can be read.
+    dispatch(setOnboardingCompleted(true));
+    router.push(HOME_PATH);
   };
 
   const moduleLabels = enabledModules
@@ -100,72 +139,17 @@ export function Step7Review() {
           value={
             organizationConfig.structureType === "hierarchical"
               ? "Hierarchical"
-              : organizationConfig.structureType === "matrix"
-                ? "Matrix"
-                : "Flat"
+              : "Flat"
           }
         />
       </ReviewSection>
 
-      <ReviewSection title="Role & Permissions" step={3}>
-        <ReviewRow label="Access Model" value={accessControlConfig.model} />
-        {accessControlConfig.roles.length > 0 && (
-          <div className="flex items-start justify-between gap-4">
-            <span className="text-xs text-muted-foreground">Roles</span>
-            <div className="flex flex-wrap gap-1 justify-end">
-              {accessControlConfig.roles.map((r) => (
-                <Badge key={r.id} variant="secondary" className="text-[10px]">{r.name}</Badge>
-              ))}
-            </div>
-          </div>
-        )}
-      </ReviewSection>
-
-      <ReviewSection title="Enabled Modules" step={4}>
+      <ReviewSection title="Enabled Modules" step={3}>
         <ReviewRow label="Active Modules" value={moduleLabels || "None selected"} />
       </ReviewSection>
 
-      {/* §4.1 — was previously omitted from the review step entirely,
-          consistent with the step itself not having been wired in. */}
-      <ReviewSection title="Workflow Configuration" step={5}>
-        <ReviewRow
-          label="Leave Approval"
-          value={
-            workflowConfig.leaveApproval === "manager"
-              ? "Direct Manager"
-              : workflowConfig.leaveApproval === "hr"
-                ? "HR Department"
-                : "Manager & HR"
-          }
-        />
-        <ReviewRow label="Multi-level Approval" value={workflowConfig.multiLevelApproval ? "Enabled" : "Disabled"} />
-        <ReviewRow label="Auto-approval Rules" value={workflowConfig.autoApproval ? "Enabled" : "Disabled"} />
-        <ReviewRow
-          label="Approval Delegation"
-          value={
-            workflowConfig.autoDelegate
-              ? `Auto-delegate to ${
-                  workflowConfig.delegateTo === "hr"
-                    ? "HR Department"
-                    : workflowConfig.delegateTo === "next_level_manager"
-                      ? "next-level manager"
-                      : "designated delegate"
-                }`
-              : "Off"
-          }
-        />
-        <ReviewRow
-          label="Escalation"
-          value={
-            workflowConfig.escalationEnabled
-              ? `After ${workflowConfig.escalationHours}h with no response`
-              : "Off"
-          }
-        />
-      </ReviewSection>
-
       <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={() => dispatch(setCurrentStep(5))}>
+        <Button type="button" variant="outline" onClick={() => dispatch(setCurrentStep(3))}>
           Back
         </Button>
         <Button
@@ -193,7 +177,7 @@ export function Step7Review() {
               onClick={handleGoToDashboard}
               style={{ backgroundColor: "#1D9E75", borderColor: "#1D9E75" }}
             >
-              Go to Dashboard
+              Continue
             </Button>
           </DialogFooter>
         </DialogContent>

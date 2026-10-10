@@ -7,6 +7,7 @@ import { LogoPatternBackground } from "@/src/components/shared/logo-pattern-back
 import { MoteeFollowingPointer } from "@/src/components/shared/motee-following-pointer";
 import { SidebarInset } from "@/src/layout/shared/sidebar-collapse";
 import { useCurrentUser } from "@/src/lib/auth/demo-identity";
+import { useLiveBundle } from "@/src/lib/live/use-live-bundle";
 import { RolePreviewBanner } from "@/src/components/hr/access-levels/components/preview-banner";
 import { BranchScopeBanner } from "@/src/components/hr/branches/components/branch-scope-banner";
 
@@ -14,6 +15,7 @@ const HrLayout = ({ children }: { children: ReactNode }) => {
   // Resolves (and seeds) the signed-in user so the admin portal and
   // self-service are the same person even on a cold load.
   useCurrentUser();
+  useLiveBundle();
   return (
     <div className="flex min-h-screen">
       <Sidebar />

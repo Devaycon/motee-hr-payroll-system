@@ -26,11 +26,9 @@ import { DEPARTMENT_OPTIONS } from "../data";
 import type { ManualOnboardingData, Guarantor, AssetDraft } from "../types";
 import { emptyAssetDraft } from "../types";
 import { guarantorsSchema, emptyGuarantor } from "@/src/lib/validation/guarantor";
-import { addRecord } from "@/src/lib/stores/onboarding-records-slice";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useOnboardingActions } from "../hooks";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { useBranchOptions } from "@/src/lib/branches/use-branch";
-import { pushNotification } from "@/src/lib/stores/notifications-slice";
-import { onboardingStarted } from "@/src/lib/notifications/onboarding";
 import {
   getOnboardingTemplates,
   getDefaultOnboardingTemplate,
@@ -264,7 +262,7 @@ function ReviewRow({ label, value }: { label: string; value?: string }) {
 
 export function OnboardingFormPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
+  const { createManually } = useOnboardingActions();
   const templates = useAppSelector((s) => s.approvals.templates);
   // Sort code and driving-licence expiry are UK-shaped; NG uses NIN/TIN/PFA.
   const isUK = useAppSelector((s) => s.locale.country) === "uk";
@@ -364,49 +362,12 @@ export function OnboardingFormPage() {
     setStep((s) => s - 1);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!validateStep(stepKeys.length - 2)) return;
     setIsSubmitting(true);
-    const id = `onb-${Date.now()}`;
-    const fullName = `${data.firstName} ${data.lastName}`;
-    const initials = `${data.firstName[0]}${data.lastName[0]}`.toUpperCase();
-    dispatch(
-      addRecord({
-        id,
-        referenceId: data.employeeId || undefined,
-        employeeName: fullName,
-        employeeInitials: initials,
-        email: data.email,
-        jobTitle: data.jobTitle,
-        department: data.department,
-        startDate: data.startDate,
-        stage: "pre_boarding",
-        status: "not_started",
-        // Tasks come from the onboarding workflow run the listener starts for
-        // this record, which is the only place a real owner is known.
-        tasks: [],
-        completedTasks: 0,
-        totalTasks: 0,
-        welcomeEmailSent: false,
-        initiatedAt: new Date().toISOString().slice(0, 10),
-        mode: "manual",
-        // Everything else this wizard collected (bank, tax, emergency
-        // contact, medical, assets…) used to be discarded here — it never
-        // reached the record at all, so there was nothing for the employee
-        // handoff to carry through later.
-        joinerData: data,
-      }),
-    );
-
-    // §2.10 — the employer-side record of the process starting.
-    dispatch(
-      pushNotification(
-        onboardingStarted(fullName, data.jobTitle, data.startDate),
-      ),
-    );
-
-    toast.success(`Onboarding initiated for ${fullName}`);
-    router.push("/talent/onboarding");
+    const created = await createManually(data);
+    setIsSubmitting(false);
+    if (created) router.push("/talent/onboarding");
   }
 
   const err = (k: string) => errors[k];

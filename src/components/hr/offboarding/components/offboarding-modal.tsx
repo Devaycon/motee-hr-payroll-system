@@ -391,12 +391,6 @@ export function OffboardingModal({
                 <TabsTrigger value="clearance" className="flex-1 text-xs">
                   Clearance
                 </TabsTrigger>
-                <TabsTrigger value="assets" className="flex-1 text-xs">
-                  Assets ({returnedAssetCount}/{viewingAssets.length})
-                </TabsTrigger>
-                <TabsTrigger value="knowledge" className="flex-1 text-xs">
-                  Knowledge Transfer
-                </TabsTrigger>
                 <TabsTrigger value="interview" className="flex-1 text-xs">
                   Exit Interview
                 </TabsTrigger>

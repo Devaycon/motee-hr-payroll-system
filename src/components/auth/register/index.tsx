@@ -1,22 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { RegisterForm } from "@/src/components/auth/register-form";
-import { CountrySwitcher } from "@/src/components/auth/country-switcher";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
 import Image from "next/image";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { loadLocale } from "@/src/lib/stores/locale-slice";
 
 const RegisterIndex = () => {
-  const dispatch = useAppDispatch();
-  const country = useAppSelector((s) => s.locale.country);
-
-  useEffect(() => {
-    dispatch(loadLocale(country));
-  }, [country, dispatch]);
-
   return (
     <div
       className="relative min-h-screen flex items-center justify-end overflow-hidden"
@@ -84,7 +73,6 @@ const RegisterIndex = () => {
         <div className="flex items-center justify-between px-6 py-4">
           <div className="hidden md:block" />
           <div className="flex justify-between w-full items-center gap-2">
-            <CountrySwitcher />
             <ThemeToggle />
           </div>
         </div>

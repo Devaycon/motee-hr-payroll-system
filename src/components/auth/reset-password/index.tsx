@@ -9,6 +9,15 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
+import { toast } from "sonner";
+import {
+  clearPendingAuth,
+  readPendingEmail,
+  readResetCode,
+} from "@/src/lib/auth/pending";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { resetPasswordSchema } from "@/src/lib/validations/auth";
+import { useResetPasswordMutation } from "@/src/store/services/auth";
 
 const ResetPasswordIndex = () => {
   const router = useRouter();
@@ -16,25 +25,40 @@ const ResetPasswordIndex = () => {
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resetPassword, { isLoading: loading }] = useResetPasswordMutation();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    const parsed = resetPasswordSchema.safeParse({
+      password,
+      confirmPassword: confirm,
+    });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0].message);
       return;
     }
-    if (password !== confirm) {
-      setError("Passwords do not match.");
+    const email = readPendingEmail();
+    const code = readResetCode();
+    if (!email || !code) {
+      setError("Your reset session has expired. Please request a new code.");
       return;
     }
     setError("");
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await resetPassword({
+        email,
+        code,
+        newPassword: parsed.data.password,
+      }).unwrap();
+      clearPendingAuth();
+      toast.success("Password updated. Sign in with your new password.");
       router.push("/auth/login");
-    }, 1200);
+    } catch (err) {
+      setError(
+        getApiErrorMessage(err, "Could not reset your password. Try again."),
+      );
+    }
   }
 
   return (

@@ -1,8 +1,13 @@
 import { ReactNode } from "react";
-import MoteeLayout from "@/src/layout/motee";
+import RouteGuard from "@/src/components/RouteGuard";
+import { PlatformShell } from "@/src/layout/motee/platform-shell";
 
 const Layout = ({ children }: { children: ReactNode }) => {
-  return <MoteeLayout>{children}</MoteeLayout>;
+  return (
+    <RouteGuard requireAuth>
+      <PlatformShell>{children}</PlatformShell>
+    </RouteGuard>
+  );
 };
 
 export default Layout;

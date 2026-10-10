@@ -3,6 +3,7 @@
 import type { Route } from "./routes";
 import { getModuleByLink } from "@/src/lib/permissions/modules";
 import { useEffectiveAccess } from "@/src/lib/permissions/use-can";
+import { isLivePath } from "@/src/lib/permissions/live-modules";
 
 /**
  * Links every HR user can see regardless of access level. The `/my-*` entries
@@ -26,11 +27,13 @@ const PERSONAL_LINKS = new Set<string>([
  */
 export function useVisibleRoutes(routes: Route[]): Route[] {
   const access = useEffectiveAccess();
+  // Only what is backed by the API is offered at all.
+  const live = routes.filter((route) => isLivePath(route.link));
 
-  // No resolvable role (pre-login, demo links) — show everything, as before.
-  if (access.unresolved) return routes;
+  // No resolvable role yet — show every live route.
+  if (access.unresolved) return live;
 
-  return routes.filter((route) => {
+  return live.filter((route) => {
     if (PERSONAL_LINKS.has(route.link)) return true;
     const moduleEntry = getModuleByLink(route.link);
     if (!moduleEntry) return true;

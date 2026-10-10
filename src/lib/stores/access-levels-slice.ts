@@ -116,6 +116,18 @@ const accessLevelsSlice = createSlice({
       state.levels = [...migrated, ...seedExtras];
       state.status = "ready";
     },
+    /** Replace the list wholesale with what the API returned. */
+    setLevels(state, action: PayloadAction<AccessLevel[]>) {
+      state.levels = action.payload;
+      state.status = "ready";
+      // A preview of a role that no longer exists would lock the admin out.
+      if (
+        state.previewLevelId &&
+        !action.payload.some((l) => l.id === state.previewLevelId)
+      ) {
+        state.previewLevelId = null;
+      }
+    },
     createLevel(state, action: PayloadAction<NewAccessLevel>) {
       const data = action.payload;
       const id = `AL-CUSTOM-${Date.now()}`;
@@ -234,6 +246,7 @@ const accessLevelsSlice = createSlice({
 
 export const {
   hydrate,
+  setLevels,
   createLevel,
   updateLevel,
   setLevelStatus,

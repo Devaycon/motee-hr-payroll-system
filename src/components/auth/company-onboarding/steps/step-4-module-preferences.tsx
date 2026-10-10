@@ -3,7 +3,8 @@
 import { Button } from "@/src/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { updateEnabledModules, markStepComplete, setCurrentStep } from "@/src/lib/stores/onboarding-slice";
-import { AVAILABLE_MODULES } from "@/src/lib/types/onboarding-setup.types";
+import { AVAILABLE_MODULES as MODULE_DETAILS } from "@/src/lib/types/onboarding-setup.types";
+import { useGetTenantSetupOptionsQuery } from "@/src/store/services/tenant-setup";
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/src/lib/utils";
@@ -12,6 +13,12 @@ export function Step4ModulePreferences() {
   const dispatch = useAppDispatch();
   const enabledModules = useAppSelector((s) => s.onboarding.companySetup.enabledModules);
   const [selected, setSelected] = useState<string[]>(enabledModules);
+  const { data: options, isLoading } = useGetTenantSetupOptionsQuery();
+  const AVAILABLE_MODULES = (options?.data?.modules ?? []).map((mod) => ({
+    ...mod,
+    description:
+      MODULE_DETAILS.find((detail) => detail.id === mod.id)?.description ?? "",
+  }));
 
   const toggle = (id: string) => {
     setSelected((prev) =>
@@ -24,14 +31,14 @@ export function Step4ModulePreferences() {
 
   const onSubmit = () => {
     dispatch(updateEnabledModules(selected));
-    dispatch(markStepComplete(4));
-    dispatch(setCurrentStep(5));
+    dispatch(markStepComplete(3));
+    dispatch(setCurrentStep(4));
   };
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{selected.length} of {AVAILABLE_MODULES.length} modules selected</span>
+        <span className="text-xs text-muted-foreground">{isLoading ? "Loading modules…" : `${selected.length} of ${AVAILABLE_MODULES.length} modules selected`}</span>
         <div className="flex gap-2">
           <button type="button" onClick={selectAll} className="text-xs text-primary hover:underline">Select all</button>
           <span className="text-xs text-muted-foreground">·</span>
@@ -73,7 +80,7 @@ export function Step4ModulePreferences() {
       </div>
 
       <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={() => dispatch(setCurrentStep(3))}>
+        <Button type="button" variant="outline" onClick={() => dispatch(setCurrentStep(2))}>
           Back
         </Button>
         <Button

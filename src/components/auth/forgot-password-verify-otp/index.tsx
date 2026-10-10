@@ -12,36 +12,49 @@ import {
 } from "@/src/components/ui/input-otp";
 import { Button } from "@/src/components/ui/button";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
-import { cn } from "@/src/lib/utils";
+import { cn, getApiErrorMessage } from "@/src/lib/utils";
+import { readPendingEmail, writeResetCode } from "@/src/lib/auth/pending";
+import { OTP_LENGTH, otpSchema } from "@/src/lib/validations/auth";
+import { useForgotPasswordMutation } from "@/src/store/services/auth";
 
-const TOTAL = 6;
+const TOTAL = OTP_LENGTH;
 
 const ForgotPasswordVerifyOtpIndex = () => {
   const router = useRouter();
+  const [email] = useState(readPendingEmail);
   const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
   const [error, setError] = useState("");
+  // Asking again is how a reset code is re-sent.
+  const [forgotPassword, { isLoading: resending }] =
+    useForgotPasswordMutation();
 
-  function handleVerify() {
-    if (otp.length < TOTAL) return;
+  // No endpoint checks a reset code on its own, so it is carried to the next
+  // screen and checked when the new password is submitted.
+  function handleVerify(code: string) {
+    const parsed = otpSchema.safeParse({ email, code });
+    if (!parsed.success) {
+      setError(
+        email
+          ? parsed.error.issues[0].message
+          : "Please enter your email again to get a new code.",
+      );
+      return;
+    }
     setError("");
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      router.push("/auth/forgot-password/reset");
-    }, 1200);
+    writeResetCode(parsed.data.code);
+    router.push("/auth/forgot-password/reset");
   }
 
-  function handleResend() {
-    setResending(true);
+  async function handleResend() {
     setResent(false);
     setError("");
-    setTimeout(() => {
-      setResending(false);
+    try {
+      await forgotPassword({ email }).unwrap();
       setResent(true);
-    }, 1200);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Could not resend the code."));
+    }
   }
 
   return (
@@ -151,10 +164,10 @@ const ForgotPasswordVerifyOtpIndex = () => {
             size="lg"
             className="w-full font-semibold"
             style={{ backgroundColor: "#D85A30", borderColor: "#D85A30" }}
-            disabled={otp.length < TOTAL || loading}
-            onClick={handleVerify}
+            disabled={otp.length < TOTAL}
+            onClick={() => handleVerify(otp)}
           >
-            {loading ? "Verifying…" : "Verify Code"}
+            Verify Code
           </Button>
 
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -162,7 +175,7 @@ const ForgotPasswordVerifyOtpIndex = () => {
             <button
               type="button"
               onClick={handleResend}
-              disabled={resending}
+              disabled={resending || !email}
               className="flex items-center gap-1 font-semibold text-foreground hover:underline disabled:opacity-50"
             >
               <RotateCcw

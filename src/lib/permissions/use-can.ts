@@ -20,16 +20,17 @@ import {
  * below is a thin read off this, so the merge rules live in exactly one place.
  */
 export function useEffectiveAccess(): EffectiveAccess {
-  const accessLevelId = useAppSelector((s) => s.auth.user?.accessLevelId);
-  const accessLevelIds = useAppSelector((s) => s.auth.user?.accessLevelIds);
+  // The owner resolves as unrestricted: no role definition can lock out the
+  // account that owns the company.
+  const isOwner = useAppSelector((s) => s.auth.user?.isOwner === true);
+  const accessLevelId = useAppSelector((s) =>
+    isOwner ? undefined : s.auth.user?.accessLevelId,
+  );
+  const accessLevelIds = useAppSelector((s) =>
+    isOwner ? undefined : s.auth.user?.accessLevelIds,
+  );
   const previewLevelId = useAppSelector((s) => s.accessLevels.previewLevelId);
   const levels = useAppSelector((s) => s.accessLevels.levels);
-  // §4.14 — the account's own state, which overrides whatever its roles grant.
-  const roleId = useAppSelector((s) => s.auth.user?.roleId);
-  const accountState = useAppSelector((s) =>
-    roleId ? s.users.overrides[roleId]?.state : undefined,
-  );
-
   // Memoised because the result is now a *dependency*, not just a read: the
   // data scope on it feeds `useLocaleSection`'s memo, and a fresh object on
   // every render would re-run the bundle filter (and re-flash every skeleton)
@@ -40,9 +41,8 @@ export function useEffectiveAccess(): EffectiveAccess {
         accessLevelId,
         accessLevelIds,
         previewLevelId,
-        accountState,
       }),
-    [levels, accessLevelId, accessLevelIds, previewLevelId, accountState],
+    [levels, accessLevelId, accessLevelIds, previewLevelId],
   );
 }
 

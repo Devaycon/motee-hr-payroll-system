@@ -4,8 +4,10 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShieldOff } from "lucide-react";
-import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useEffectiveAccess } from "@/src/lib/permissions/use-can";
 import { ALL_MODULES } from "@/src/lib/permissions/modules";
+import { isLivePath } from "@/src/lib/permissions/live-modules";
+import { NotLive } from "@/src/components/shared/not-live";
 
 /**
  * Always-allowed admin paths. The `/my-*` self-service prefixes were removed
@@ -36,11 +38,13 @@ interface Props {
 
 export function HrAccessGuard({ children }: Props) {
   const pathname = usePathname();
-  const accessLevelId = useAppSelector((s) => s.auth.user?.accessLevelId);
-  const levels = useAppSelector((s) => s.accessLevels.levels);
+  const access = useEffectiveAccess();
 
-  // No login (e.g. via Demo Links bypass) → allow. Demo path of least resistance.
-  if (!accessLevelId) return <>{children}</>;
+  // Not integrated yet — blocked by URL as well as hidden from the menu.
+  if (!isLivePath(pathname)) return <NotLive />;
+  // No resolvable role (the owner, or roles still loading) → allow; the
+  // server enforces either way.
+  if (access.unresolved) return <>{children}</>;
   // Personal pages are always allowed
   if (isPersonalPath(pathname)) return <>{children}</>;
 
@@ -48,14 +52,11 @@ export function HrAccessGuard({ children }: Props) {
   // Unmapped path → allow (don't accidentally lock people out of new routes)
   if (!moduleId) return <>{children}</>;
 
-  const level = levels.find((l) => l.id === accessLevelId);
-  // Level missing in store → fail open
-  if (!level) return <>{children}</>;
-
-  const perm = level.permissions.find((p) => p.module === moduleId);
+  const perm = access.permissions.find((p) => p.module === moduleId);
   if (perm?.access) return <>{children}</>;
 
-  return <Forbidden moduleId={moduleId} roleName={level.name} />;
+  const roleName = access.sourceLevels.map((l) => l.name).join(", ") || "role";
+  return <Forbidden moduleId={moduleId} roleName={roleName} />;
 }
 
 function Forbidden({
@@ -83,10 +84,10 @@ function Forbidden({
           . Contact an administrator if you believe this is a mistake.
         </p>
         <Link
-          href="/hr"
+          href="/welcome"
           className="mt-2 inline-flex items-center justify-center h-10 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          Go to Dashboard
+          Back to home
         </Link>
       </div>
     </div>

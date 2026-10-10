@@ -5,11 +5,16 @@ import { useCallback, useMemo } from "react";
 // it by the current selection would leave you unable to switch back.
 import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { branchSchema } from "@/src/lib/validations/branches";
 import {
-  addRecord,
-  removeRecord,
-  updateRecord,
-} from "@/src/lib/stores/collection-edits-slice";
+  useCreateBranchMutation,
+  useDeleteBranchMutation,
+  useGetBranchQuery,
+  useUpdateBranchMutation,
+} from "@/src/store/services/branches";
+import type { BranchRequest } from "@/src/types/branches";
 import { setActiveBranch } from "@/src/lib/stores/branch-slice";
 import { applyCollection } from "@/src/lib/profile/collection-edits";
 import { applyBundleOverrides } from "@/src/lib/profile/overrides";
@@ -87,10 +92,21 @@ export function useBranch(branchId: string) {
   const overrides = useAppSelector((s) => s.profileEdits.overrides);
   const { data: bundle } = useLocaleSection<LocaleBundle>((b) => b);
 
-  const branch = useMemo(
-    () => branches?.find((b) => b.id === branchId) ?? null,
-    [branches, branchId],
-  );
+  const { data: fresh } = useGetBranchQuery(branchId, { skip: !branchId });
+  const branch = useMemo(() => {
+    const listed = branches?.find((b) => b.id === branchId) ?? null;
+    const latest = fresh?.data;
+    if (!listed || !latest) return listed;
+    // Headcounts are the server's; the list derives its own from whatever
+    // employees the viewer's scope lets them see.
+    return {
+      ...listed,
+      managerName: latest.managerName ?? listed.managerName,
+      employeeCount: latest.employeeCount,
+      departmentCount: latest.departmentCount,
+      openPositions: latest.openPositions ?? listed.openPositions,
+    };
+  }, [branches, branchId, fresh]);
 
   const staff = useMemo(
     () =>
@@ -111,67 +127,101 @@ export interface BranchMutations {
   remove: (id: string) => void;
 }
 
-/**
- * Create/edit/delete through the shared collection-edits slice, so branches get
- * the same session persistence (`.data/runtime/collection-edits.json`) every
- * other bundle-backed collection already has — no bespoke slice needed.
- */
+const KIND_TO_API: Record<LocaleBranch["kind"], BranchRequest["kind"]> = {
+  headquarters: "headquarters",
+  branch: "branch",
+  regional_office: "regionalOffice",
+  site: "site",
+  remote: "remote",
+};
+
+/** Checks the form's record and shapes it for the API; null when invalid. */
+function toBranchRequest(branch: LocaleBranch): BranchRequest | null {
+  const parsed = branchSchema.safeParse({
+    name: branch.name,
+    code: branch.code,
+    kind: KIND_TO_API[branch.kind],
+    status: branch.status,
+    addressLines: branch.addressLines ?? [],
+    city: branch.city || null,
+    region: branch.region || null,
+    postalCode: branch.postalCode || null,
+    country: branch.country || null,
+    timeZone: branch.timezone || null,
+    phone: branch.phone || null,
+    email: branch.email || null,
+    managerEmployeeId: branch.managerEmployeeId || null,
+    headcountTarget: branch.headcountTarget ?? null,
+    openedAt: branch.openedAt || null,
+  });
+  if (!parsed.success) {
+    toast.error(parsed.error.issues[0].message);
+    return null;
+  }
+  return parsed.data;
+}
+
+/** Create/edit/delete against the API; the list refreshes from the server. */
 export function useBranchMutations(): BranchMutations {
   const dispatch = useAppDispatch();
   const activeBranchId = useAppSelector((s) => s.branch.activeBranchId);
+  const current = useAppSelector((s) => s.locale.data?.branches);
+  const [createBranch] = useCreateBranchMutation();
+  const [updateBranch] = useUpdateBranchMutation();
+  const [deleteBranch] = useDeleteBranchMutation();
 
   const create = useCallback(
     (branch: LocaleBranch) => {
-      // The slice stores untyped records; the branch shape is re-applied on
-      // the way out in `useBranches`.
-      dispatch(
-        addRecord({
-          key: BRANCHES_KEY,
-          record: branch as unknown as Record<string, unknown>,
-        }),
-      );
+      const body = toBranchRequest(branch);
+      if (!body) return;
+      createBranch(body)
+        .unwrap()
+        .then(() => toast.success(`${branch.name} created`))
+        .catch((err) =>
+          toast.error(getApiErrorMessage(err, "Could not create the branch.")),
+        );
     },
-    [dispatch],
+    [createBranch],
   );
 
   const update = useCallback(
     (id: string, patch: Partial<LocaleBranch>) => {
-      dispatch(updateRecord({ key: BRANCHES_KEY, id, patch }));
+      // The API replaces the whole record, so the patch is laid over it.
+      const existing = current?.find((b) => b.id === id);
+      if (!existing) return;
+      const body = toBranchRequest({ ...existing, ...patch });
+      if (!body) return;
+      updateBranch({ id, body })
+        .unwrap()
+        .then(() => toast.success(`${body.name} updated`))
+        .catch((err) =>
+          toast.error(getApiErrorMessage(err, "Could not update the branch.")),
+        );
     },
-    [dispatch],
+    [current, updateBranch],
   );
 
   const remove = useCallback(
     (id: string) => {
-      // Deleting the branch the app is scoped to would leave every screen
-      // filtered to a record that no longer exists.
-      if (activeBranchId === id) dispatch(setActiveBranch(null));
-      dispatch(removeRecord({ key: BRANCHES_KEY, id }));
+      deleteBranch(id)
+        .unwrap()
+        .then(() => {
+          // Deleting the branch the app is scoped to would leave every screen
+          // filtered to a record that no longer exists.
+          if (activeBranchId === id) dispatch(setActiveBranch(null));
+          toast.success("Branch deleted");
+        })
+        .catch((err) =>
+          toast.error(getApiErrorMessage(err, "Could not delete the branch.")),
+        );
     },
-    [dispatch, activeBranchId],
+    [dispatch, activeBranchId, deleteBranch],
   );
 
   return { create, update, remove };
 }
 
-/** Next free id in the bundle's own `XX-BR-0001` sequence. */
+/** A placeholder id for the form; the server assigns the real one. */
 export function useNextBranchId(): () => string {
-  const branches = useAppSelector((s) => s.locale.data?.branches);
-  const added = useAppSelector((s) => s.collectionEdits.added[BRANCHES_KEY]);
-  const tenantEmployeeId = useAppSelector(
-    (s) => s.locale.data?.employees[0]?.id,
-  );
-
-  return useCallback(() => {
-    const prefix = (tenantEmployeeId ?? "XX-EMP-0001").split("-")[0];
-    const ids = [
-      ...(branches ?? []).map((b) => b.id),
-      ...(added ?? []).map((b) => String(b.id ?? "")),
-    ];
-    const highest = ids.reduce((max, id) => {
-      const n = Number(id.split("-").pop());
-      return Number.isFinite(n) && n > max ? n : max;
-    }, 0);
-    return `${prefix}-BR-${String(highest + 1).padStart(4, "0")}`;
-  }, [branches, added, tenantEmployeeId]);
+  return useCallback(() => `new-${Date.now()}`, []);
 }
