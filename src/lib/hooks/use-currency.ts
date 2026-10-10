@@ -1,9 +1,7 @@
 "use client";
 
-import { useLocaleSection } from "./use-locale-data";
 import { store } from "@/src/lib/stores/store";
 import { useAppSelector } from "@/src/lib/stores/hooks";
-import type { LocaleBundle } from "@/src/lib/types/locale";
 
 export interface MoneyFormatOptions {
   /** Keep minor units (pence/kobo) instead of rounding to whole units. */
@@ -75,18 +73,9 @@ export function currentCurrencyCode(): string {
  * renders ₦ for Nigeria and £ for UK and switches with the country selector.
  */
 export function useCurrency() {
-  const { data } = useLocaleSection<{ symbol: string; code: string }>(
-    (b: LocaleBundle) => ({
-      symbol: b.tenant.currencySymbol,
-      code: b.tenant.currency,
-    }),
-  );
-  // While a freshly mounted section is still "loading", read the tenant off
-  // the store rather than defaulting to ₦ — a UK tab opened later otherwise
-  // flashes naira amounts.
   const tenant = useAppSelector((s) => s.locale.data?.tenant);
-  const symbol = data?.symbol ?? tenant?.currencySymbol ?? "₦";
-  const code = data?.code ?? tenant?.currency ?? "NGN";
+  const symbol = tenant?.currencySymbol || "₦";
+  const code = tenant?.currency || "NGN";
   return {
     symbol,
     code,

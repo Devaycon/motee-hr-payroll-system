@@ -1632,7 +1632,8 @@ export function MedicalModule({ employeeId }: ModuleProps) {
     <Section
       title="Medical Facts"
       description="Sensitive — HR only."
-      action={canEdit ? <AddButton label="Edit" onClick={() => rf.openEdit(data)} /> : undefined}
+      // Medical facts are read-only here until the API takes edits on their own.
+      action={undefined}
     >
       {rf.node}
       <InfoGrid

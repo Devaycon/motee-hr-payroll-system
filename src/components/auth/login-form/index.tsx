@@ -1,42 +1,68 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { clearAuthError, loginThunk } from "@/src/lib/stores/auth-slice";
-import { landingPathForUser } from "@/src/lib/auth/landing";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { landingPathForSession } from "@/src/lib/auth/session";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { loginFormSchema, LoginFormType } from "@/src/lib/validations/auth";
+import { useLoginMutation } from "@/src/store/services/auth";
+import { setCredentials } from "@/src/store/reducers/authSlice";
 
 export function LoginForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const authStatus = useAppSelector((s) => s.auth.status);
-  const authError = useAppSelector((s) => s.auth.error);
-  const localeStatus = useAppSelector((s) => s.locale.status);
-  const tenantName = useAppSelector((s) => s.locale.data?.tenant.name);
+  const [login] = useLoginMutation();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormType>({
+    resolver: zodResolver(loginFormSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    defaultValues: { email: "", password: "" },
+  });
 
-  useEffect(() => {
-    return () => {
-      dispatch(clearAuthError());
-    };
-  }, [dispatch]);
+  const onSubmit = async (values: LoginFormType) => {
+    const result = await login(values);
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const result = await dispatch(loginThunk({ email, password }));
-    if (loginThunk.fulfilled.match(result)) {
-      router.push(landingPathForUser(result.payload));
+    if (result.data?.success && result.data.data) {
+      const session = result.data.data;
+
+      dispatch(
+        setCredentials({
+          token: session.accessToken,
+          refresh_token: session.refreshToken ?? undefined,
+          expires_at: session.expiresAt,
+          user_id: session.userId,
+          tenant_id: session.tenantId,
+          onboarding_completed: session.onboardingCompleted,
+        }),
+      );
+
+      router.push(
+        landingPathForSession({
+          tenant_id: session.tenantId,
+          onboarding_completed: session.onboardingCompleted,
+        }),
+      );
+    } else {
+      toast.error(
+        getApiErrorMessage(
+          result.error,
+          result.data?.message ?? "Invalid email or password.",
+        ),
+      );
     }
   };
-
-  const submitting = authStatus === "loading";
-  const localeLoading = localeStatus === "loading" || localeStatus === "idle";
 
   return (
     <div className="flex flex-col w-full gap-8">
@@ -49,17 +75,21 @@ export function LoginForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
             autoComplete="email"
+            {...register("email")}
           />
+          {errors.email && (
+            <span className="text-xs text-destructive">
+              {errors.email.message}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -67,11 +97,15 @@ export function LoginForm() {
           <Input
             id="password"
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             autoComplete="current-password"
+            {...register("password")}
           />
+          {errors.password && (
+            <span className="text-xs text-destructive">
+              {errors.password.message}
+            </span>
+          )}
           <Link
             href="/auth/forgot-password"
             className="text-[13px]  mt-1 text-muted-foreground hover:text-foreground hover:underline transition-colors"
@@ -80,24 +114,14 @@ export function LoginForm() {
           </Link>
         </div>
 
-        {authError && (
-          <p className="text-[13px] text-red-500" role="alert">
-            {authError}
-          </p>
-        )}
-
         <Button
           type="submit"
-          disabled={submitting || localeLoading || !email || !password}
+          disabled={isSubmitting}
           className="w-full mt-1 h-10 text-sm font-semibold"
           style={{ backgroundColor: "#D85A30", borderColor: "#D85A30" }}
         >
-          {submitting ? "Signing in…" : "Login"}
+          {isSubmitting ? "Signing in…" : "Login"}
         </Button>
-        <p className="text-[11px] text-muted-foreground text-center">
-          Tip: open the Demo Links button (bottom-right) to jump between the
-          sign-up and account screens.
-        </p>
       </form>
     </div>
   );

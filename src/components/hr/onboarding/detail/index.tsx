@@ -30,6 +30,10 @@ import {
   ONBOARDING_STATUS_STYLES,
 } from "../data";
 import { ReviewPanel } from "../components/review-panel";
+import { StageControl } from "./stage-control";
+import { toOnboardingRecord } from "@/src/lib/onboarding/api-mapping";
+import { useGetOnboardingQuery } from "@/src/store/services/onboarding";
+import { useOnboardingRecords } from "../hooks";
 import type { OnboardingTask } from "../types";
 
 const TASK_ICON = {
@@ -51,8 +55,18 @@ function formatDate(d: string) {
 export function OnboardingDetailPage({ recordId }: { recordId: string }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const record = useAppSelector((s) =>
+  const { loading } = useOnboardingRecords();
+  const listed = useAppSelector((s) =>
     s.onboardingRecords.records.find((r) => r.id === recordId),
+  );
+  // A deep link can point at a record the list has not loaded.
+  const { data: single, isLoading: loadingSingle } = useGetOnboardingQuery(
+    recordId,
+    { skip: Boolean(listed) || !recordId },
+  );
+  const record = useMemo(
+    () => listed ?? (single?.data ? toOnboardingRecord(single.data) : undefined),
+    [listed, single],
   );
   const actorName = useAppSelector((s) => s.auth.user?.name ?? "HR");
 
@@ -61,6 +75,8 @@ export function OnboardingDetailPage({ recordId }: { recordId: string }) {
     if (!record) return -1;
     return record.tasks.findIndex((t) => t.status !== "completed");
   }, [record]);
+
+  if (!record && (loading || loadingSingle)) return null;
 
   if (!record) {
     return (
@@ -182,6 +198,8 @@ export function OnboardingDetailPage({ recordId }: { recordId: string }) {
 
       {/* §2.8 / §2.14 — HR reviews what the joiner submitted, and works
           through the post-submission checklist. */}
+      <StageControl record={record} />
+
       <ReviewPanel record={record} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">

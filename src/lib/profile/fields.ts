@@ -1,3 +1,4 @@
+import { isServerField } from "@/src/lib/employees/profile-field-sync";
 import type { LocaleEmployee, CountryKey } from "@/src/lib/types/locale";
 import { TITLE_OPTIONS, titlesForGender } from "@/src/lib/constants/titles";
 import {
@@ -352,7 +353,15 @@ export function getEmployeeProfileFields(
     return f;
   });
 
-  return [...fields, ...addressFields, ...emergencyFields, ...guarantorFields, ...idFields];
+  // Only fields the API stores are offered; an edit to anything else would
+  // not survive a reload.
+  return [
+    ...fields,
+    ...addressFields,
+    ...emergencyFields,
+    ...guarantorFields,
+    ...idFields,
+  ].filter((f) => isServerField(f.key));
 }
 
 /**

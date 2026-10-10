@@ -14,7 +14,7 @@ export const ASSET_CARD_FILTER_LABELS: Record<
 > = {
   assigned: "Assigned",
   available: "Available",
-  under_maintenance: "Under maintenance",
+  under_maintenance: "Lost",
   decommissioned: "Decommissioned",
 };
 
@@ -77,7 +77,7 @@ export function StatCards({
       ...card("available"),
     },
     {
-      label: "Under Maintenance",
+      label: "Lost",
       value: underMaintenance,
       sub: "Awaiting servicing",
       icon: Wrench,

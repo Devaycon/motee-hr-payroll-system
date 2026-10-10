@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LayoutGrid, UserPlus } from "lucide-react";
+import { Download, LayoutGrid, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import type { EmployeeRow } from "./types";
 import type { EmployeeStatus } from "@/src/lib/types/employees";
@@ -16,19 +16,13 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { OverflowTabsList } from "@/src/components/shared/overflow-tabs";
 import { useEmployees } from "./hooks";
 import { PermissionGate } from "@/src/components/shared/permission-gate";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { resendInvitation } from "@/src/lib/stores/onboarding-records-slice";
-import {
-  markCredentialsSent,
-  restoreEmployee,
-  setEmployeeStatus,
-  softDeleteEmployee,
-} from "@/src/lib/stores/employees-slice";
-import { addRecord } from "@/src/lib/stores/offboarding-slice";
-import { buildClearanceItems } from "@/src/components/hr/offboarding/instantiate";
+import { useEmployeeActions } from "@/src/lib/employees/use-employee-actions";
+import { useEmployeeExport } from "@/src/lib/employees/use-employee-export";
+import { useGetEmployeeStatsQuery } from "@/src/store/services/employees";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { useInitiateOffboardingMutation } from "@/src/store/services/offboarding";
 import { SendKudosModal } from "@/src/components/hr/kudos/components/send-kudos-modal";
 import type { NewKudos } from "@/src/components/hr/kudos/types";
-import type { OffboardingRecord } from "@/src/lib/types/offboarding";
 import type { ExitDetails } from "./components/employee-row-actions";
 
 /** Query-param value → the display value `toEmployeeRow` puts on the row. */
@@ -67,11 +61,12 @@ const LENS_LIFECYCLE_BY_TAB: Record<string, string> = {
 
 export function EmployeesPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
+  const { setStatus, remove, sendInvitation } = useEmployeeActions();
+  const [initiateOffboarding] = useInitiateOffboardingMutation();
+  const { exportEmployees, exporting } = useEmployeeExport();
+  const { data: stats } = useGetEmployeeStatsQuery();
   const searchParams = useSearchParams();
   const { data, loading } = useEmployees();
-  // Needed to find the onboarding record behind a pending employee (§3.1).
-  const onboardingRecords = useAppSelector((s) => s.onboardingRecords.records);
 
   // Deep-linkable filters so the Headcount demographics breakdowns can land
   // here pre-filtered (client feedback §6.25). A department/type deep link
@@ -177,118 +172,115 @@ export function EmployeesPage() {
   );
 
   const handleSendCredentials = useCallback(
-    (e: EmployeeRow) => {
-      dispatch(markCredentialsSent(e.id));
-      toast.success(`Login credentials sent to ${e.email || e.name}`);
+    async (e: EmployeeRow) => {
+      try {
+        await sendInvitation(e.id);
+        toast.success(`Sign-in link sent to ${e.email || e.name}`);
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, "Could not send the sign-in link."));
+      }
     },
-    [dispatch],
+    [sendInvitation],
   );
 
-  /**
-   * §3.1 — the employee's own history. The detail page already carries a
-   * Timeline module, so this deep-links to it rather than building a second
-   * view of the same events.
-   */
+  /** The record's own history, filtered out of the audit trail. */
   const handleViewActivityLog = useCallback(
-    (e: EmployeeRow) =>
-      router.push(`/organization/employees/${e.id}?module=timeline`),
+    (e: EmployeeRow) => router.push(`/admin/audit-trail?entityId=${e.id}`),
     [router],
   );
 
   /** §3.1 — reissue the onboarding link for a hire still in the pipeline. */
   const handleResendInvite = useCallback(
-    (e: EmployeeRow) => {
-      const record = onboardingRecords.find(
-        (r) =>
-          (e.email && r.email === e.email) ||
-          (e.referenceId && r.referenceId === e.referenceId),
-      );
-      if (!record) {
-        toast.error("No onboarding record found for this employee", {
-          description: "They may have been added manually rather than invited.",
-        });
-        return;
+    async (e: EmployeeRow) => {
+      try {
+        await sendInvitation(e.id);
+        toast.success(`Onboarding invitation resent to ${e.name}`);
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, "Could not resend the invitation."));
       }
-      dispatch(resendInvitation(record.id));
-      toast.success(`Onboarding invitation resent to ${e.name}`, {
-        description: "The link is valid for another 14 days.",
-      });
     },
-    [dispatch, onboardingRecords],
+    [sendInvitation],
   );
 
   const handleSendKudos = useCallback((e: EmployeeRow) => setKudosFor(e), []);
 
   const handleDeactivate = useCallback(
-    (e: EmployeeRow) => {
-      dispatch(setEmployeeStatus({ employeeId: e.id, status: "inactive" }));
-      toast.success(`${e.name} has been deactivated`);
+    async (e: EmployeeRow) => {
+      try {
+        await setStatus(e.id, "inactive");
+        toast.success(`${e.name} has been deactivated`);
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, `Could not deactivate ${e.name}.`));
+      }
     },
-    [dispatch],
+    [setStatus],
   );
 
   const handleReactivate = useCallback(
-    (e: EmployeeRow) => {
-      dispatch(setEmployeeStatus({ employeeId: e.id, status: "active" }));
-      toast.success(`${e.name} has been reactivated`);
+    async (e: EmployeeRow) => {
+      try {
+        await setStatus(e.id, "active");
+        toast.success(`${e.name} has been reactivated`);
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, `Could not reactivate ${e.name}.`));
+      }
     },
-    [dispatch],
+    [setStatus],
   );
 
   /**
-   * Exit Employee — creates a pending record on the Offboarding pipeline and
-   * moves the employee to the Offboarding Notice tab (client feedback §1.2).
-   * The reason and last working date come from the "Start Offboarding"
-   * dialog rather than being assumed, since every exit initiated from here
-   * used to be silently recorded as a same-day resignation regardless of the
-   * truth, corrupting offboarding's exit-reason reporting.
+   * Exit Employee — opens a record on the Offboarding pipeline with the reason
+   * and last working date from the "Start Offboarding" dialog (§1.2).
    */
   const handleExit = useCallback(
-    (e: EmployeeRow, details: ExitDetails) => {
-      const id = `off-${Date.now()}`;
-      const record: OffboardingRecord = {
-        id,
-        employeeId: e.id,
-        employeeName: e.name,
-        employeeInitials: e.initials,
-        jobTitle: e.jobTitle,
-        department: e.department,
-        lastWorkingDate: details.lastWorkingDate,
-        exitReason: details.exitReason,
-        status: "pending",
-        clearanceItems: buildClearanceItems(id),
-        exitInterviewCompleted: false,
-        initiatedAt: new Date().toISOString().slice(0, 10),
-      };
-      dispatch(addRecord(record));
-      dispatch(setEmployeeStatus({ employeeId: e.id, status: "offboarding" }));
-      toast.success(`Offboarding initiated for ${e.name}`, {
-        description: "Awaiting approval on the Offboarding pipeline.",
-        action: {
-          label: "View",
-          onClick: () => router.push("/talent/offboarding"),
-        },
-      });
+    async (e: EmployeeRow, details: ExitDetails) => {
+      try {
+        await initiateOffboarding({
+          employeeId: e.id,
+          exitReason:
+            details.exitReason === "contract_end"
+              ? "contractEnd"
+              : details.exitReason,
+          lastWorkingDate: details.lastWorkingDate,
+        }).unwrap();
+        toast.success(`Offboarding initiated for ${e.name}`, {
+          description: "Awaiting approval on the Offboarding pipeline.",
+          action: {
+            label: "View",
+            onClick: () => router.push("/talent/offboarding"),
+          },
+        });
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, "Could not start offboarding."));
+      }
     },
-    [dispatch, router],
+    [initiateOffboarding, router],
   );
 
   const handleDelete = useCallback(
-    (e: EmployeeRow) => {
-      dispatch(softDeleteEmployee(e.id));
-      toast.success(`${e.name} moved to Deleted`, {
-        description: "Their record is kept and can be restored.",
-      });
+    async (e: EmployeeRow) => {
+      try {
+        await remove(e.id);
+        toast.success(`${e.name} moved to Deleted`, {
+          description: "Their record is kept and can be restored.",
+        });
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, `Could not delete ${e.name}.`));
+      }
     },
-    [dispatch],
+    [remove],
   );
 
   const handleRestore = useCallback(
-    (e: EmployeeRow) => {
-      dispatch(restoreEmployee(e.id));
-      toast.success(`${e.name} restored`);
+    async (e: EmployeeRow) => {
+      try {
+        await setStatus(e.id, "active");
+        toast.success(`${e.name} restored`);
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, `Could not restore ${e.name}.`));
+      }
     },
-    [dispatch],
+    [setStatus],
   );
 
   function handleKudosSave(data: NewKudos) {
@@ -317,6 +309,7 @@ export function EmployeesPage() {
           <h1 className="text-4xl font-bold text-foreground">Employees</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Manage your workforce, track employee details and reporting lines.
+            {stats?.data ? ` Headcount: ${stats.data.headcount}.` : ""}
           </p>
         </div>
         <div className="mt-1 flex items-center gap-2">
@@ -326,6 +319,17 @@ export function EmployeesPage() {
                 <LayoutGrid className="w-4 h-4" />
                 Workforce Lens
               </Link>
+            </Button>
+          </PermissionGate>
+          <PermissionGate module="organization.employees" action="export">
+            <Button
+              variant="secondary"
+              className="gap-1.5"
+              disabled={exporting}
+              onClick={() => exportEmployees()}
+            >
+              <Download className="w-4 h-4" />
+              {exporting ? "Exporting…" : "Export"}
             </Button>
           </PermissionGate>
           <PermissionGate module="organization.employees" action="create">

@@ -58,6 +58,10 @@ export type LeaveTypeName =
   | "study";
 
 export interface LeaveRequest {
+  /** The leave type record this request was booked against. */
+  leaveTypeId?: string;
+  /** The approval that carries the decision on this request. */
+  approvalId?: string;
   id: string;
   /** FK to the employee record; absent on legacy/demo rows. */
   employeeId?: string;
@@ -139,6 +143,7 @@ export interface NewLeaveRequest {
 }
 
 export interface LeaveBalance {
+  leaveTypeId?: string;
   id: string;
   employeeId?: string;
   employeeName: string;

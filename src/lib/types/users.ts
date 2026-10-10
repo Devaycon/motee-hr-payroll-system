@@ -9,6 +9,8 @@
 
 export type UserAccountState =
   | "active"
+  /** Invited but has not signed in for the first time yet. */
+  | "pending"
   /** Temporarily barred from signing in — reversible. */
   | "locked"
   /** Signed in but confined to a narrower data scope than their role grants. */
@@ -18,6 +20,7 @@ export type UserAccountState =
 
 export const USER_STATE_LABELS: Record<UserAccountState, string> = {
   active: "Active",
+  pending: "Pending",
   locked: "Locked",
   restricted: "Restricted",
   revoked: "Revoked",
@@ -26,6 +29,7 @@ export const USER_STATE_LABELS: Record<UserAccountState, string> = {
 export const USER_STATE_STYLES: Record<UserAccountState, string> = {
   active:
     "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  pending: "border-border bg-muted text-muted-foreground",
   locked:
     "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
   restricted:

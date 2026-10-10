@@ -43,15 +43,13 @@ import {
   HrStatCardsGrid,
   type HrStatCardItem,
 } from "@/src/components/shared/hr-stat-card";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { getApiErrorMessage } from "@/src/lib/utils";
 import {
-  resetPassword,
-  setAccountRoles,
-  setAccountState,
-} from "@/src/lib/stores/users-slice";
-import { setUserAccessLevels } from "@/src/lib/stores/auth-slice";
-import { pushNotification } from "@/src/lib/stores/notifications-slice";
-import { addAuditEntry } from "@/src/lib/stores/audit-slice";
+  useAssignAccessLevelMutation,
+  useUnassignAccessLevelMutation,
+} from "@/src/store/services/access-levels";
+import { useForgotPasswordMutation } from "@/src/store/services/auth";
 import {
   USER_STATE_LABELS,
   USER_STATE_STYLES,
@@ -63,45 +61,13 @@ import { formatDateTime } from "@/src/lib/utils/format-date";
 import { useUserAccounts } from "./hooks";
 import { AssignRolesModal } from "./components/assign-roles-modal";
 
-/** A state change that needs a reason before it is applied. */
-interface PendingChange {
-  account: UserAccount;
-  next: UserAccountState;
-}
-
-const CHANGE_COPY: Record<
-  Exclude<UserAccountState, "active">,
-  { title: string; description: string; verb: string }
-> = {
-  locked: {
-    title: "Lock this account",
-    description:
-      "They will not be able to sign in until the account is unlocked. Nothing else about their access changes.",
-    verb: "Lock account",
-  },
-  restricted: {
-    title: "Restrict this account",
-    description:
-      "They can still sign in, but their data access is narrowed to their own record regardless of what their roles grant.",
-    verb: "Restrict access",
-  },
-  revoked: {
-    title: "Revoke access",
-    description:
-      "Access is withdrawn entirely. The account record is kept so the audit trail stays intact, and it can be restored later.",
-    verb: "Revoke access",
-  },
-};
-
 export function UsersPage() {
-  const dispatch = useAppDispatch();
   const { accounts, loading } = useUserAccounts();
+  const [assignAccessLevel] = useAssignAccessLevelMutation();
+  const [unassignAccessLevel] = useUnassignAccessLevelMutation();
+  const [forgotPassword] = useForgotPasswordMutation();
   const levels = useAppSelector((s) => s.accessLevels.levels);
-  const actorName = useAppSelector((s) => s.auth.user?.name) ?? "You";
-  const currentRoleId = useAppSelector((s) => s.auth.user?.roleId);
 
-  const [pending, setPending] = useState<PendingChange | null>(null);
-  const [reason, setReason] = useState("");
   const [assigning, setAssigning] = useState<UserAccount | null>(null);
 
   const levelNameById = useMemo(
@@ -168,100 +134,41 @@ export function UsersPage() {
     ];
   }, [accounts, stateFilter]);
 
-  /**
-   * Apply a state change. Every one writes to the audit trail and notifies the
-   * affected person — an account being locked without either is exactly the
-   * kind of silent administrative action the audit module exists to prevent.
-   */
-  function applyChange(account: UserAccount, next: UserAccountState, why?: string) {
-    dispatch(
-      setAccountState({
-        userId: account.id,
-        accountState: next,
-        reason: why,
-        actorName,
-      }),
-    );
-    dispatch(addAuditEntry({
-      actorName,
-      actionType: next === "active" ? "update" : "delete",
-      module: "admin.users",
-      description:
-        next === "active"
-          ? `Restored access for ${account.name}`
-          : `${USER_STATE_LABELS[next]} account for ${account.name}${why ? ` — ${why}` : ""}`,
-      resourceId: account.id,
-    }));
-    dispatch(
-      pushNotification({
-        title:
-          next === "active"
-            ? "Your account has been restored"
-            : `Your account has been ${USER_STATE_LABELS[next].toLowerCase()}`,
-        description:
-          next === "active"
-            ? `${actorName} restored full access to your account.`
-            : `${actorName} ${USER_STATE_LABELS[next].toLowerCase()} your account${why ? `: ${why}` : "."}`,
-        detail:
-          next === "active"
-            ? "You can sign in as normal."
-            : `${why ?? "No reason was recorded."}\n\nContact your administrator if you believe this is a mistake.`,
-        type: next === "active" ? "success" : "warning",
-      }),
-    );
-    toast.success(
-      next === "active"
-        ? `${account.name}'s access restored`
-        : `${account.name}'s account ${USER_STATE_LABELS[next].toLowerCase()}`,
-    );
-  }
-
-  function handleReset(account: UserAccount) {
-    dispatch(resetPassword({ userId: account.id, actorName }));
-    dispatch(addAuditEntry({
-      actorName,
-      actionType: "update",
-      module: "admin.users",
-      description: `Forced a password reset for ${account.name}`,
-      resourceId: account.id,
-    }));
-    dispatch(
-      pushNotification({
-        title: "Password reset required",
-        description: `${actorName} has reset your password.`,
-        detail:
-          "Your password has been reset by an administrator. You will be asked to set a new one the next time you sign in.",
-        type: "warning",
-      }),
-    );
-    toast.success(`Password reset sent to ${account.email}`);
-  }
-
-  function handleAssignRoles(ids: string[]) {
-    if (!assigning) return;
-    dispatch(
-      setAccountRoles({
-        userId: assigning.id,
-        accessLevelIds: ids,
-        actorName,
-      }),
-    );
-    // §1.13 — reassigning your own account must take effect immediately, or
-    // the sidebar keeps showing what the old roles allowed.
-    if (assigning.id === currentRoleId) {
-      dispatch(setUserAccessLevels(ids));
+  /** Sends the account holder the same reset code "Forgot password" does. */
+  async function handleReset(account: UserAccount) {
+    try {
+      await forgotPassword({ email: account.email }).unwrap();
+      toast.success(`Password reset sent to ${account.email}`);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Could not send the password reset."));
     }
-    dispatch(addAuditEntry({
-      actorName,
-      actionType: "update",
-      module: "admin.users",
-      description: `Assigned ${ids.length} role(s) to ${assigning.name}: ${ids
-        .map((id) => levelNameById.get(id) ?? id)
-        .join(", ")}`,
-      resourceId: assigning.id,
-    }));
-    toast.success(`Roles updated for ${assigning.name}`);
-    setAssigning(null);
+  }
+
+  /** Roles are held per access level, so a change is a set of grants and
+   *  removals against the levels that differ. */
+  async function handleAssignRoles(ids: string[]) {
+    if (!assigning) return;
+    const before = new Set(assigning.accessLevelIds);
+    const after = new Set(ids);
+    try {
+      for (const id of ids) {
+        if (!before.has(id)) {
+          await assignAccessLevel({
+            id,
+            body: { userId: assigning.id },
+          }).unwrap();
+        }
+      }
+      for (const id of assigning.accessLevelIds) {
+        if (!after.has(id)) {
+          await unassignAccessLevel({ id, userId: assigning.id }).unwrap();
+        }
+      }
+      toast.success(`Roles updated for ${assigning.name}`);
+      setAssigning(null);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Could not update the roles."));
+    }
   }
 
   const columns = useMemo<ColumnDef<UserAccount>[]>(
@@ -386,78 +293,12 @@ export function UsersPage() {
               <KeyRound className="h-3.5 w-3.5" />
               Reset password
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-
-            {account.state === "locked" ? (
-              <DropdownMenuItem
-                className="gap-2"
-                onClick={() => applyChange(account, "active")}
-              >
-                <LockOpen className="h-3.5 w-3.5" />
-                Unlock account
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem
-                className="gap-2"
-                onClick={() => {
-                  setPending({ account, next: "locked" });
-                  setReason("");
-                }}
-              >
-                <Lock className="h-3.5 w-3.5" />
-                Lock account
-              </DropdownMenuItem>
-            )}
-
-            {account.state === "restricted" ? (
-              <DropdownMenuItem
-                className="gap-2"
-                onClick={() => applyChange(account, "active")}
-              >
-                <ShieldCheck className="h-3.5 w-3.5" />
-                Remove restriction
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem
-                className="gap-2"
-                onClick={() => {
-                  setPending({ account, next: "restricted" });
-                  setReason("");
-                }}
-              >
-                <ShieldMinus className="h-3.5 w-3.5" />
-                Restrict access
-              </DropdownMenuItem>
-            )}
-
-            <DropdownMenuSeparator />
-            {account.state === "revoked" ? (
-              <DropdownMenuItem
-                className="gap-2"
-                onClick={() => applyChange(account, "active")}
-              >
-                <ShieldCheck className="h-3.5 w-3.5" />
-                Restore access
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem
-                variant="destructive"
-                className="gap-2"
-                onClick={() => {
-                  setPending({ account, next: "revoked" });
-                  setReason("");
-                }}
-              >
-                <ShieldOff className="h-3.5 w-3.5" />
-                Revoke access
-              </DropdownMenuItem>
-            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [levelNameById, actorName, currentRoleId],
+    [levelNameById],
   );
 
   if (loading && accounts.length === 0) {
@@ -468,8 +309,6 @@ export function UsersPage() {
       </div>
     );
   }
-
-  const copy = pending && pending.next !== "active" ? CHANGE_COPY[pending.next] : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -511,50 +350,6 @@ export function UsersPage() {
         searchPlaceholder="Search users…"
         emptyMessage="No user accounts provisioned."
       />
-
-      {/* State changes need a reason — an account locked with no explanation is
-          an argument waiting to happen. */}
-      <Dialog
-        open={Boolean(pending)}
-        onOpenChange={(o) => !o && setPending(null)}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{copy?.title}</DialogTitle>
-            <DialogDescription>{copy?.description}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor="change-reason" className="text-xs">
-              Reason <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="change-reason"
-              placeholder="e.g. Left the company, pending IT review"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Recorded in the audit trail and sent to the account holder.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPending(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={!reason.trim()}
-              onClick={() => {
-                if (!pending) return;
-                applyChange(pending.account, pending.next, reason.trim());
-                setPending(null);
-              }}
-            >
-              {copy?.verb}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <AssignRolesModal
         account={assigning}

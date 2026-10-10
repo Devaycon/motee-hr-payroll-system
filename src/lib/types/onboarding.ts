@@ -339,6 +339,10 @@ export interface OnboardingSubmission {
 
 export interface OnboardingRecord {
   id: string;
+  /** The employee record this onboarding belongs to. */
+  employeeId?: string;
+  /** The approval that carries HR's review of the submitted pack. */
+  approvalId?: string;
   /** Optional HR-provided / external identifier carried into the employee record. */
   referenceId?: string;
   employeeName: string;

@@ -436,6 +436,8 @@ export interface AuthUser {
    * readers of the singular field keep working.
    */
   accessLevelIds?: string[];
+  /** The account that registered the company; holds every permission. */
+  isOwner?: boolean;
   name: string;
   email: string;
   employeeId: string;

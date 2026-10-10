@@ -9,25 +9,32 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
+import { writePendingEmail } from "@/src/lib/auth/pending";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { forgotPasswordSchema } from "@/src/lib/validations/auth";
+import { useForgotPasswordMutation } from "@/src/store/services/auth";
 
 const ForgotPasswordIndex = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [forgotPassword, { isLoading: loading }] = useForgotPasswordMutation();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) {
-      setError("Please enter your email address.");
+    const parsed = forgotPasswordSchema.safeParse({ email });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0].message);
       return;
     }
     setError("");
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await forgotPassword(parsed.data).unwrap();
+      writePendingEmail(parsed.data.email);
       router.push("/auth/forgot-password/verify-otp");
-    }, 1200);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Could not send the reset code."));
+    }
   }
 
   return (

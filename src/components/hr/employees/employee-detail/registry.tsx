@@ -48,7 +48,6 @@ import { useAppSelector } from "@/src/lib/stores/hooks";
 import type { CountryKey } from "@/src/lib/types/locale";
 import * as Mod from "./modules";
 import type { ModuleProps } from "./modules";
-import { EmployeeDocumentsModule } from "./employee-documents";
 import { ContractsModule } from "./contracts-module";
 import { TeamModule } from "./team-module";
 import { ChangeLogModule } from "./change-log-module";
@@ -58,6 +57,7 @@ import { QualificationsModule } from "./qualifications-module";
 import { SkillsModule } from "./skills-module";
 import { LoansModule } from "./loans-module";
 import { CompletionModule } from "./completion-module";
+import { LiveDocumentsModule, LiveLeaveModule } from "./live-modules";
 
 export interface ModuleEntry {
   key: string;
@@ -91,14 +91,14 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "loans", label: "Loans", group: "Profile", icon: HandCoins, Component: LoansModule },
   { key: "payslips", label: "Payslips", group: "Profile", icon: Banknote, Component: Mod.PayslipsModule },
   { key: "preferences", label: "Preferences", group: "Profile", icon: Settings2, Component: Mod.PreferencesModule },
-  { key: "documents", label: "Employee Documents", group: "Profile", icon: FileText, Component: EmployeeDocumentsModule },
+  { key: "documents", label: "Employee Documents", group: "Profile", icon: FileText, Component: LiveDocumentsModule },
   { key: "contracts", label: "Contracts", group: "Profile", icon: ScrollText, Component: ContractsModule },
   { key: "emergency", label: "Emergency Contact", group: "Profile", icon: Phone, Component: Mod.EmergencyContactModule },
   { key: "guarantors", label: "Guarantors", group: "Profile", icon: UserCheck, country: "ng", Component: Mod.GuarantorsModule },
   { key: "team", label: "Team & Structure", group: "Profile", icon: Network, Component: TeamModule },
 
   { key: "work-pattern", label: "Work Pattern", group: "Time & Attendance", icon: CalendarClock, Component: Mod.WorkPatternModule },
-  { key: "leave", label: "Leave", group: "Time & Attendance", icon: Plane, Component: Mod.LeaveModule },
+  { key: "leave", label: "Leave", group: "Time & Attendance", icon: Plane, Component: LiveLeaveModule },
   { key: "sickness", label: "Sickness", group: "Time & Attendance", icon: Thermometer, Component: Mod.SicknessModule },
   { key: "time-logs", label: "Time & Location Logs", group: "Time & Attendance", icon: Clock, Component: Mod.TimeLogsModule },
   { key: "expenses", label: "Expenses", group: "Time & Attendance", icon: Receipt, Component: Mod.ExpensesModule },
@@ -170,6 +170,21 @@ export const SELF_PROFILE_MODULE_KEYS = new Set<string>([
   "change-log",
 ]);
 
+/**
+ * Modules backed by the API. The rest still read fixture collections that no
+ * endpoint fills, so they stay out of the nav until theirs exists.
+ */
+const LIVE_MODULE_KEYS = new Set<string>([
+  "profile",
+  "job",
+  "emergency",
+  "team",
+  "medical",
+  "permissions",
+  "documents",
+  "leave",
+]);
+
 /** Modules the current viewer is allowed to see (sensitive ones gated). */
 export function useVisibleEmployeeModules(): ModuleEntry[] {
   const can: Record<string, boolean> = {
@@ -181,6 +196,7 @@ export function useVisibleEmployeeModules(): ModuleEntry[] {
   const country = useAppSelector((s) => s.locale.country);
   return EMPLOYEE_MODULES.filter(
     (m) =>
+      LIVE_MODULE_KEYS.has(m.key) &&
       (!m.permission || can[m.permission]) &&
       (!m.country || m.country === country),
   );

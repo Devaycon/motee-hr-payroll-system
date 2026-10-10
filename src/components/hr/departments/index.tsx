@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import type { Department } from "./types";
 import {
   StatCards,
@@ -14,14 +14,13 @@ import { DepartmentsTable } from "./components/departments-table";
 import { DepartmentCreateModal } from "./components/department-create-modal";
 import { DepartmentEditModal } from "./components/department-edit-modal";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useDepartments } from "./hooks";
+import { useDepartmentActions, useDepartments } from "./hooks";
+import { BusinessUnitsCard } from "./components/business-units-card";
 
 export function DepartmentsPage() {
   const { data, loading } = useDepartments();
-  const [departments, setDepartments] = useState<Department[]>([]);
-  useEffect(() => {
-    if (data) setDepartments(data);
-  }, [data]);
+  const departments = useMemo(() => data ?? [], [data]);
+  const { save, bulkSave, remove } = useDepartmentActions(departments);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   /** Drill-down set by the KPI cards; "all" shows every department. */
@@ -53,19 +52,15 @@ export function DepartmentsPage() {
   }
 
   function handleDelete(id: string) {
-    setDepartments((prev) => prev.filter((d) => d.id !== id));
+    void remove(id);
   }
 
   function handleSave(dept: Department) {
-    setDepartments((prev) => {
-      const exists = prev.find((d) => d.id === dept.id);
-      if (exists) return prev.map((d) => (d.id === dept.id ? dept : d));
-      return [...prev, dept];
-    });
+    void save(dept);
   }
 
   function handleBulkSave(depts: Department[]) {
-    setDepartments((prev) => [...prev, ...depts]);
+    void bulkSave(depts);
   }
 
   if (loading && !departments.length) {
@@ -122,6 +117,8 @@ export function DepartmentsPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
+
+      <BusinessUnitsCard />
 
       <DepartmentCreateModal
         open={addModalOpen}

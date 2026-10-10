@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
-import { Suspense } from "react";
 import "./globals.css";
 import { cn } from "@/src/lib/utils";
 import { ThemeProvider } from "@/src/components/themes/theme-provider";
-import { DemoSwitcher } from "@/src/components/shared/demo-switcher";
 import { OnboardingTutorial } from "@/src/components/shared/onboarding-tutorial";
 import { MobileBlock } from "@/src/components/shared/mobile-block";
 import { ReduxProvider } from "@/src/lib/stores/redux-provider";
@@ -43,9 +41,6 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <ReduxProvider>
-            <Suspense>
-              <DemoSwitcher />
-            </Suspense>
             <OnboardingTutorial />
             <MobileBlock />
             {children}

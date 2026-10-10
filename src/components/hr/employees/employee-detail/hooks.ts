@@ -6,6 +6,12 @@ import { useMemo } from "react";
 import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { applyEmployeeOverrides } from "@/src/lib/profile/overrides";
+import { toDetailedLocaleEmployee } from "@/src/lib/live/build-bundle";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import {
+  useGetEmployeeMedicalQuery,
+  useGetEmployeeQuery,
+} from "@/src/store/services/employees";
 import { applyCollection } from "@/src/lib/profile/collection-edits";
 import { ALL_MODULES, MODULE_LABELS } from "@/src/lib/permissions/modules";
 import {
@@ -255,19 +261,28 @@ export interface EmployeeRecordResult {
 }
 export function useEmployeeRecord(id: string) {
   const ov = useAppSelector((s) => s.profileEdits.overrides[id]);
-  const res = useLocaleSection<EmployeeRecordResult | null>((b) => {
-    const employee = b.employees.find((e) => e.id === id);
-    if (!employee) return null;
-    return { employee, tenant: b.tenant };
-  });
-  const data = useMemo<EmployeeRecordResult | null>(
-    () =>
-      res.data
-        ? { employee: applyEmployeeOverrides(res.data.employee, ov), tenant: res.data.tenant }
-        : null,
-    [res.data, ov],
+  const tenant = useAppSelector((s) => s.locale.data?.tenant);
+  const base = useAppSelector((s) =>
+    s.locale.data?.employees.find((e) => e.id === id),
   );
-  return { ...res, data };
+  const { data: full, isLoading, error } = useGetEmployeeQuery(id, {
+    skip: !id,
+  });
+
+  const data = useMemo<EmployeeRecordResult | null>(() => {
+    if (!tenant) return null;
+    const employee = full?.data
+      ? toDetailedLocaleEmployee(full.data, tenant, base)
+      : base;
+    if (!employee) return null;
+    return { employee: applyEmployeeOverrides(employee, ov), tenant };
+  }, [full, base, tenant, ov]);
+
+  return {
+    data,
+    loading: isLoading || !tenant,
+    error: error ? getApiErrorMessage(error) : null,
+  };
 }
 
 /**
@@ -619,16 +634,37 @@ export function useEmployeeKudos(id: string) {
   }, [bundle, edits, id]);
   return { data, loading, error };
 }
+/** Free-text on the API, shown as a list: split on commas and new lines. */
+function toList(value: string | null | undefined): string[] {
+  return (value ?? "")
+    .split(/[,\n]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 export function useEmployeeMedical(id: string) {
-  const res = useEmployeeCollection<LocaleMedicalFacts>(
-    "medicalFacts",
-    id,
-    (b) => b.medicalFacts ?? [],
-    (m, i) => m.employeeId === i,
-    "employeeId",
-  );
-  const data = useMemo(() => (res.data ? (res.data[0] ?? null) : null), [res.data]);
-  return { ...res, data };
+  const { data: res, isLoading, error } = useGetEmployeeMedicalQuery(id, {
+    skip: !id,
+  });
+  const data = useMemo<LocaleMedicalFacts | null>(() => {
+    const medical = res?.data;
+    if (!medical) return null;
+    return {
+      employeeId: id,
+      allergies: toList(medical.allergies),
+      conditions: toList(medical.conditions),
+      medications: toList(medical.medications),
+      dietaryRequirements: toList(medical.dietaryRequirements),
+      accessibilityNeeds: medical.accessibilityNeeds ?? "",
+      // The API holds no GP details.
+      doctorContact: { name: "—", phone: "—", practice: "—" },
+    };
+  }, [res, id]);
+  return {
+    data,
+    loading: isLoading,
+    error: error ? getApiErrorMessage(error) : null,
+  };
 }
 export function useEmployeeNotes(id: string) {
   const res = useEmployeeCollection<LocaleEmployeeNote>(

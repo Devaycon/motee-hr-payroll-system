@@ -1,20 +1,26 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { useAppDispatch } from "@/src/lib/stores/hooks";
-import { setCurrentStep } from "@/src/lib/stores/onboarding-slice";
+import {
+  setCurrentStep,
+  updateCompanyProfile,
+  updateEnabledModules,
+  updateOrganizationConfig,
+} from "@/src/lib/stores/onboarding-slice";
+import {
+  useGetTenantSetupOptionsQuery,
+  useGetTenantSetupQuery,
+} from "@/src/store/services/tenant-setup";
 import { OnboardingStepper } from "./stepper";
 import { Step1CompanyProfile } from "./steps/step-1-company-profile";
 import { Step2OrgStructure } from "./steps/step-2-org-structure";
-import { Step3RolePermissions } from "./steps/step-3-role-permissions";
 import { Step4ModulePreferences } from "./steps/step-4-module-preferences";
-import { Step5WorkflowConfig } from "./steps/step-5-workflow-config";
 import { Step7Review } from "./steps/step-7-review";
-import { Step8BulkUpload } from "./steps/step-8-bulk-upload";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
-import { Upload, ClipboardList, ArrowRight, File } from "lucide-react";
+import { ClipboardList, ArrowRight } from "lucide-react";
 
 const STEPS = [
   {
@@ -31,27 +37,12 @@ const STEPS = [
   },
   {
     number: 3,
-    label: "Roles",
-    title: "Role & Permission Model",
-    description: "Configure how access control works",
-  },
-  {
-    number: 4,
     label: "Modules",
     title: "HR Module Preferences",
     description: "Choose which modules to activate",
   },
   {
-    // §4.1 (Correction 2 feedback) — this step existed as a complete,
-    // working component but was never wired into the live wizard (the
-    // StepContent switch below jumped straight from Modules to Review).
-    number: 5,
-    label: "Workflow",
-    title: "Workflow Configuration",
-    description: "Set up approvals, delegation and escalation",
-  },
-  {
-    number: 6,
+    number: 4,
     label: "Review",
     title: "Review & Submit",
     description: "Confirm your configuration",
@@ -65,15 +56,9 @@ function StepContent({ step }: { step: number }) {
     case 2:
       return <Step2OrgStructure />;
     case 3:
-      return <Step3RolePermissions />;
-    case 4:
       return <Step4ModulePreferences />;
-    case 5:
-      return <Step5WorkflowConfig />;
-    case 6:
+    case 4:
       return <Step7Review />;
-    case 8:
-      return <Step8BulkUpload />;
     default:
       return null;
   }
@@ -84,19 +69,46 @@ export default function CompanyOnboardingIndex() {
   const currentStep = useAppSelector((s) => s.onboarding.currentStep);
   const completedSteps = useAppSelector((s) => s.onboarding.completedSteps);
 
-  const [entryMode, setEntryMode] = useState<"manual" | "bulk" | null>(null);
+  const [entryMode, setEntryMode] = useState<"manual" | null>(null);
+  const { data: setup } = useGetTenantSetupQuery();
+  const { data: options } = useGetTenantSetupOptionsQuery();
 
-  const isBulkUploadStep = currentStep === 8;
+  // Seed the wizard with what the server already holds — the company name and
+  // country from registration, plus anything saved on an earlier visit.
+  useEffect(() => {
+    const saved = setup?.data;
+    if (!saved) return;
+    const sizeLabel = options?.data?.companySizes.find(
+      (size) => size.id.toLowerCase() === saved.companySize?.toLowerCase(),
+    )?.label;
+    dispatch(
+      updateCompanyProfile({
+        companyName: saved.companyName,
+        country: saved.country,
+        industry: saved.industry ?? "",
+        companySize: sizeLabel ?? "",
+        companyEmailDomain: saved.companyEmailDomain ?? "",
+        companyPolicies: saved.companyPolicies ?? "",
+      }),
+    );
+    dispatch(
+      updateOrganizationConfig({
+        managerTitle: saved.managerTitle,
+        departmentLabel: saved.departmentLabel,
+        structureType: saved.structureType,
+      }),
+    );
+    if (saved.enabledModules.length > 0) {
+      dispatch(updateEnabledModules(saved.enabledModules));
+    }
+  }, [setup, options, dispatch]);
+
+  const isBulkUploadStep = false;
   const activeStepMeta = STEPS.find((s) => s.number === currentStep);
 
   const handleChooseManual = () => {
     setEntryMode("manual");
     dispatch(setCurrentStep(1));
-  };
-
-  const handleChooseBulk = () => {
-    setEntryMode("bulk");
-    dispatch(setCurrentStep(8));
   };
 
   return (
@@ -144,7 +156,7 @@ export default function CompanyOnboardingIndex() {
           <div className="flex flex-col  gap-3">
             {[
               { step: "1", label: "Set up company profile" },
-              { step: "2", label: "Define roles & permissions" },
+              { step: "2", label: "Define your structure" },
               { step: "3", label: "Configure HR modules" },
               { step: "4", label: "Review & go live" },
             ].map(({ step, label }) => (
@@ -234,8 +246,8 @@ export default function CompanyOnboardingIndex() {
                 How would you like to set up?
               </h1>
               <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-                Fill in your details step by step, or upload a bulk template to
-                auto-populate everything at once.
+                Fill in your details step by step. You can change any of this
+                later.
               </p>
             </div>
 
@@ -265,54 +277,6 @@ export default function CompanyOnboardingIndex() {
                 />
               </button>
 
-              <button
-                type="button"
-                onClick={handleChooseBulk}
-                className="group flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left transition-all duration-200 hover:border-[#7F77DD]/60 hover:shadow-md cursor-pointer"
-              >
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: "rgba(127,119,221,0.12)" }}
-                >
-                  <Upload size={20} style={{ color: "#7F77DD" }} />
-                </div>
-                <div className="flex flex-col gap-0.5 flex-1">
-                  <span className="text-sm font-semibold text-foreground">
-                    Bulk Upload
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Upload a template to auto-fill your entire setup.
-                  </span>
-                </div>
-                <ArrowRight
-                  size={14}
-                  className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
-                />
-              </button>
-              <button
-                disabled
-                type="button"
-                className="group cursor-not-allowed opacity-70 flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left transition-all duration-200"
-              >
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: "rgba(127,119,221,0.2)" }}
-                >
-                  <File size={20} style={{ color: "green" }} />
-                </div>
-                <div className="flex flex-col gap-0.5 flex-1">
-                  <span className="text-sm font-semibold text-foreground">
-                    Test With Demo Data
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                     Auto-fill your entire system with fake data.
-                  </span>
-                </div>
-                <ArrowRight
-                  size={14}
-                  className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
-                />
-              </button>
             </div>
 
             <p className="text-[11px] self text-muted-foreground/50">

@@ -98,7 +98,7 @@ const Sidebar = () => {
         )}
       >
         <SidebarBrand
-          href="/dashboard"
+          href="/welcome"
           label="MOTEE HRIS Portal"
           wordmark="/hr-logo.png"
           collapsed={collapsed}

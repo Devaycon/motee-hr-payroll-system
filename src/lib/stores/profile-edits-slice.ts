@@ -80,6 +80,19 @@ const profileEditsSlice = createSlice({
      * rather than a global flag, so seeding one profile can't suppress another,
      * and re-seeding an employee who already has entries is a no-op.
      */
+    /** The server now holds these values; stop layering local copies. */
+    clearOverrides(
+      state,
+      action: PayloadAction<{ employeeId: string; fields: string[] }>,
+    ) {
+      const overrides = state.overrides[action.payload.employeeId];
+      if (!overrides) return;
+      for (const field of action.payload.fields) delete overrides[field];
+      if (Object.keys(overrides).length === 0) {
+        delete state.overrides[action.payload.employeeId];
+      }
+    },
+
     seedRequests(state, action: PayloadAction<ChangeRequest[]>) {
       const incoming = action.payload;
       if (incoming.length === 0) return;
@@ -131,6 +144,7 @@ export const {
   hydrate,
   seedRequests,
   applyEdit,
+  clearOverrides,
   requestEdit,
   approveRequest,
   rejectRequest,

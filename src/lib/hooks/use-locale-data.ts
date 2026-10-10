@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { loadLocale } from "@/src/lib/stores/locale-slice";
+import { useMemo } from "react";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   resolveBranchScope,
   scopeBundleToBranch,
@@ -38,18 +37,16 @@ export interface UseLocaleSectionOptions {
 }
 
 /**
- * Mocks an async fetch against the active locale bundle. Returns a fresh
- * loading state every time `country` or the active branch changes so screens
- * flash a skeleton.
+ * Reads a slice of the company data. The bundle is kept in step with the API
+ * by `useLiveBundle`; this only narrows it to the active branch and the
+ * caller's data scope, then applies the selector. `loading` is true until the
+ * first load has landed.
  */
 export function useLocaleSection<T>(
   selector: (bundle: LocaleBundle) => T,
   options?: UseLocaleSectionOptions,
 ): UseLocaleSectionResult<T> {
-  const dispatch = useAppDispatch();
-  const country = useAppSelector((s) => s.locale.country);
   const bundle = useAppSelector((s) => s.locale.data);
-  const status = useAppSelector((s) => s.locale.status);
   const error = useAppSelector((s) => s.locale.error);
   const savedBranchId = useAppSelector((s) => s.branch.activeBranchId);
   const bundleBranches = useAppSelector((s) => s.locale.data?.branches);
@@ -92,36 +89,24 @@ export function useLocaleSection<T>(
     return next;
   }, [bundle, branchView, dataScope, overrides, employeeId]);
 
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const selectorRef = useRef(selector);
-  selectorRef.current = selector;
-
-  useEffect(() => {
-    if (!bundle && status === "idle") {
-      dispatch(loadLocale(country));
-    }
-  }, [bundle, status, country, dispatch]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setData(null);
-    if (!view) return;
-    const delay = 300 + Math.floor(Math.random() * 300);
-    const timer = setTimeout(() => {
-      if (cancelled) return;
+  const data = useMemo<T | null>(
+    () => {
+      if (!view) return null;
       try {
-        setData(selectorRef.current(view));
-      } finally {
-        setLoading(false);
+        return selector(view);
+      } catch (err) {
+        // A section with no endpoint yet is empty, and a selector written
+        // against the old fixtures may not expect that.
+        console.error("useLocaleSection: selector failed", err);
+        return null;
       }
-    }, delay);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [view, country]);
+    },
+    // Selectors are written inline at every call site, so depending on one
+    // would recompute on each render. It is re-applied when its data changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [view],
+  );
+  const loading = !view;
 
   return { data, loading, error };
 }

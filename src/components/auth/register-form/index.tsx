@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Building2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -16,45 +16,64 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { COUNTRY_NAMES } from "@/src/config/system-data";
-
-const registerSchema = z
-  .object({
-    firstName: z.string().min(2, "First name must be at least 2 characters"),
-    middleName: z.string().optional(),
-    lastName: z.string().min(2, "Last name must be at least 2 characters"),
-    email: z.string().email("Enter a valid email address"),
-    companyName: z
-      .string()
-      .min(2, "Company name must be at least 2 characters"),
-    country: z.string().min(1, "Select a country"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
-
-type RegisterFormValues = z.infer<typeof registerSchema>;
+import { writePendingEmail } from "@/src/lib/auth/pending";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import {
+  registerFormSchema,
+  RegisterFormType,
+} from "@/src/lib/validations/auth";
+import { useRegisterMutation } from "@/src/store/services/auth";
+import {
+  useDetectLocaleQuery,
+  useGetSupportedCountriesQuery,
+} from "@/src/store/services/locale";
 
 export function RegisterForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [registerTenant] = useRegisterMutation();
+  const { data: countries = [], isLoading: countriesLoading } =
+    useGetSupportedCountriesQuery();
 
   const {
     register,
     control,
+    getValues,
+    setValue,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { country: "" },
+  } = useForm<RegisterFormType>({
+    resolver: zodResolver(registerFormSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    defaultValues: { countryCode: "" },
   });
 
-  const onSubmit = async (_data: RegisterFormValues) => {
-    router.push("/auth/verify-otp");
+  const { data: detected } = useDetectLocaleQuery();
+  useEffect(() => {
+    if (detected?.isSupported && !getValues("countryCode")) {
+      setValue("countryCode", detected.countryCode);
+    }
+  }, [detected, getValues, setValue]);
+
+  const onSubmit = async (values: RegisterFormType) => {
+    try {
+      const response = await registerTenant({
+        firstName: values.firstName,
+        middleName: values.middleName || null,
+        lastName: values.lastName,
+        email: values.email,
+        companyName: values.companyName,
+        password: values.password,
+        countryCode: values.countryCode,
+      }).unwrap();
+      writePendingEmail(response.data.email);
+      toast.success("Account created. Check your email for the code.");
+      router.push("/auth/verify-otp");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Could not create your account."));
+    }
   };
 
   return (
@@ -155,28 +174,35 @@ export function RegisterForm() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="country">Country</Label>
+            <Label htmlFor="countryCode">Country</Label>
             <Controller
-              name="country"
+              name="countryCode"
               control={control}
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="country" className="w-full">
-                    <SelectValue placeholder="Select country" />
+                  <SelectTrigger id="countryCode" className="w-full">
+                    <SelectValue
+                      placeholder={
+                        countriesLoading ? "Loading…" : "Select country"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {COUNTRY_NAMES.map((name) => (
-                      <SelectItem key={name} value={name}>
-                        {name}
+                    {countries.map((country) => (
+                      <SelectItem
+                        key={country.countryCode}
+                        value={country.countryCode}
+                      >
+                        {country.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            {errors.country && (
+            {errors.countryCode && (
               <span className="text-xs text-destructive">
-                {errors.country.message}
+                {errors.countryCode.message}
               </span>
             )}
           </div>

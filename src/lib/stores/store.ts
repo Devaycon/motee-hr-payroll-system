@@ -1,4 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
+import {
+  FLUSH,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+  REHYDRATE,
+  persistStore,
+} from "redux-persist";
+import api from "@/src/store/services/api";
+import sessionReducer from "@/src/store/reducers/authSlice";
 import onboardingReducer from "./onboarding-slice";
 import onboardingRecordsReducer from "./onboarding-records-slice";
 import localeReducer from "./locale-slice";
@@ -14,6 +26,9 @@ import collectionEditsReducer from "./collection-edits-slice";
 import workflowsReducer from "./workflows-slice";
 import workflowRunsReducer from "./workflow-runs-slice";
 import { workflowRunsListener } from "./workflow-runs-listener";
+import { profileEditsListener } from "./profile-edits-listener";
+import { offboardingListener } from "./offboarding-listener";
+import { leaveListener } from "./leave-listener";
 import scenariosReducer from "./scenarios-slice";
 import usersReducer from "./users-slice";
 import auditReducer from "./audit-slice";
@@ -35,6 +50,8 @@ import erCasesReducer from "./er-cases-slice";
 
 export const store = configureStore({
   reducer: {
+    [api.reducerPath]: api.reducer,
+    session: sessionReducer,
     onboarding: onboardingReducer,
     onboardingRecords: onboardingRecordsReducer,
     locale: localeReducer,
@@ -71,8 +88,23 @@ export const store = configureStore({
   // Prepend, never replace: replacing the stack drops serialisability and
   // immutability checks along with thunk support.
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().prepend(workflowRunsListener.middleware),
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE],
+      },
+    })
+      .prepend(
+        workflowRunsListener.middleware,
+        profileEditsListener.middleware,
+        offboardingListener.middleware,
+        leaveListener.middleware,
+      )
+      .concat(api.middleware),
 });
+
+export const persistor = persistStore(store);
+
+setupListeners(store.dispatch);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

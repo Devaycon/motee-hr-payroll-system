@@ -42,10 +42,10 @@ type Matrix = Record<EmployeeStatus, readonly EmployeeAction[]>;
  * "resend_invite" only makes sense while onboarding is still in flight.
  */
 const ENABLED: Matrix = {
-  active: ["view", "edit", "credentials", "activity_log", "kudos", "deactivate", "exit", "delete"],
-  on_leave: ["view", "edit", "credentials", "activity_log", "kudos", "deactivate", "exit", "delete"],
-  probation: ["view", "edit", "credentials", "activity_log", "kudos", "deactivate", "exit", "delete"],
-  onboarded: ["view", "edit", "credentials", "activity_log", "kudos", "deactivate", "exit", "delete"],
+  active: ["view", "edit", "credentials", "activity_log", "deactivate", "exit", "delete"],
+  on_leave: ["view", "edit", "credentials", "activity_log", "deactivate", "exit", "delete"],
+  probation: ["view", "edit", "credentials", "activity_log", "deactivate", "exit", "delete"],
+  onboarded: ["view", "edit", "credentials", "activity_log", "deactivate", "exit", "delete"],
   // Notice already served — no second exit, and kudos would be tone-deaf.
   offboarding: ["view", "edit", "credentials", "activity_log", "deactivate", "delete"],
   // Onboarding still in flight — they are not yet a live employee, and this

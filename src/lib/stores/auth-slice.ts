@@ -1,6 +1,5 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { AuthUser, LocaleBundle } from "@/src/lib/types/locale";
-import type { RootState } from "./store";
 
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "error";
@@ -50,42 +49,6 @@ export function buildAuthUser(
   };
 }
 
-interface LoginArgs {
-  email: string;
-  password: string;
-}
-
-export const loginThunk = createAsyncThunk<
-  AuthUser,
-  LoginArgs,
-  { state: RootState; rejectValue: string }
->("auth/login", async ({ email, password }, { getState, rejectWithValue }) => {
-  const bundle = getState().locale.data;
-  if (!bundle) return rejectWithValue("Locale data not loaded");
-  const normalized = email.trim().toLowerCase();
-  const role = bundle.roles.find(
-    (r) =>
-      r.credentials.email.toLowerCase() === normalized &&
-      r.credentials.password === password,
-  );
-  if (!role) return rejectWithValue("Invalid email or password");
-  const user = buildAuthUser(bundle, role.id);
-  if (!user) return rejectWithValue("Account not provisioned");
-  return user;
-});
-
-export const loginAsRoleThunk = createAsyncThunk<
-  AuthUser,
-  string,
-  { state: RootState; rejectValue: string }
->("auth/loginAsRole", async (roleId, { getState, rejectWithValue }) => {
-  const bundle = getState().locale.data;
-  if (!bundle) return rejectWithValue("Locale data not loaded");
-  const user = buildAuthUser(bundle, roleId);
-  if (!user) return rejectWithValue("Role not found");
-  return user;
-});
-
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -117,30 +80,6 @@ const authSlice = createSlice({
       // The primary is whichever is listed first, so the two never drift apart.
       state.user.accessLevelId = ids[0];
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(loginThunk.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-      })
-      .addCase(loginThunk.fulfilled, (state, action) => {
-        state.status = "authenticated";
-        state.user = action.payload;
-      })
-      .addCase(loginThunk.rejected, (state, action) => {
-        state.status = "error";
-        state.error = action.payload ?? "Login failed";
-      })
-      .addCase(loginAsRoleThunk.fulfilled, (state, action) => {
-        state.status = "authenticated";
-        state.user = action.payload;
-        state.error = null;
-      })
-      .addCase(loginAsRoleThunk.rejected, (state, action) => {
-        state.status = "error";
-        state.error = action.payload ?? "Login failed";
-      });
   },
 });
 

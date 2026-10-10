@@ -9,7 +9,12 @@ import { PipelineTable } from "./components/pipeline-table";
 import { MethodSelector } from "./components/method-selector";
 import { InviteOnboardingModal } from "./components/invite-onboarding-modal";
 import { BulkOnboardingModal } from "./components/bulk-onboarding-modal";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useOnboardingActions, useOnboardingRecords } from "./hooks";
+import {
+  ImportTemplateCard,
+  PendingInvitations,
+} from "./components/invitations-panel";
 import {
   addRecord,
   addRecords,
@@ -47,7 +52,9 @@ const ONBOARDING_WORKFLOW_EVENTS = [
 
 export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}) {
   const router = useRouter();
-  const dispatch = useAppDispatch();
+  useOnboardingRecords();
+  const { invite, importRows, resendInvite, cancelInvite } =
+    useOnboardingActions();
   const records = useAppSelector((s) => s.onboardingRecords.records);
 
   const [search, setSearch] = useState("");
@@ -99,108 +106,26 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
     else setBulkModalOpen(true);
   };
 
-  const handleInviteSend = (data: InviteOnboardingData) => {
-    const id = `onb-${Date.now()}`;
-    const fullName = `${data.firstName} ${data.lastName}`;
-    const initials = `${data.firstName[0]}${data.lastName[0]}`.toUpperCase();
-    dispatch(
-      addRecord({
-        id,
-        employeeName: fullName,
-        employeeInitials: initials,
-        email: data.email,
-        jobTitle: data.jobTitle,
-        department: data.department,
-        startDate: data.startDate,
-        stage: "pre_boarding",
-        status: "not_started",
-        // Tasks arrive from the onboarding workflow run the listener starts
-        // for this record; nothing here knows who does what.
-        tasks: [],
-        completedTasks: 0,
-        totalTasks: 0,
-        welcomeEmailSent: true,
-        initiatedAt: new Date().toISOString().slice(0, 10),
-        mode: "invited",
-      }),
-    );
-    toast.success(`Invite sent to ${data.email}`);
-    setInviteModalOpen(false);
-    // Simulate the joiner clicking the "Launch onboarding wizard" link in their
-    // invite email — open their self-service wizard.
-    const qs = new URLSearchParams({
-      name: fullName,
-      email: data.email,
-      jobTitle: data.jobTitle,
-      department: data.department,
-      startDate: data.startDate,
-    }).toString();
-    router.push(`/join/${id}?${qs}`);
+  const handleInviteSend = async (data: InviteOnboardingData) => {
+    if (await invite(data)) setInviteModalOpen(false);
   };
 
-  const handleBulkImport = (rows: BulkOnboardingRow[]) => {
-    const newRecords: OnboardingRecord[] = rows.map((row, idx) => {
-      const id = `onb-bulk-${Date.now()}-${idx}`;
-      const fullName = `${row.firstName} ${row.lastName}`;
-      const initials = `${row.firstName[0]}${row.lastName[0]}`.toUpperCase();
-      return {
-        id,
-        referenceId: row.employeeId || undefined,
-        employeeName: fullName,
-        employeeInitials: initials,
-        email: row.email,
-        jobTitle: row.jobTitle,
-        department: row.department,
-        startDate: row.startDate,
-        stage: "pre_boarding" as const,
-        status: "not_started" as const,
-        tasks: [],
-        completedTasks: 0,
-        totalTasks: 0,
-        welcomeEmailSent: false,
-        initiatedAt: new Date().toISOString().slice(0, 10),
-        mode: "bulk" as const,
-        // The rest of what the import row carries (employment type, manager,
-        // medical facts, asset assignment) used to be dropped here, with no
-        // path back to the employee record once onboarding cleared.
-        joinerData: {
-          employmentType: row.employmentType,
-          manager: row.manager,
-          allergies: row.allergies,
-          conditions: row.conditions,
-          medications: row.medications,
-          dietaryRequirements: row.dietaryRequirements,
-          accessibilityNeeds: row.accessibilityNeeds,
-          assetTag: row.assetTag,
-          assetName: row.assetName,
-          assetCategory: row.assetCategory,
-          assetSerialNumber: row.assetSerialNumber,
-          assetAssignedDate: row.assetAssignedDate,
-        },
-      };
-    });
-    dispatch(addRecords(newRecords));
-    toast.success(
-      `${rows.length} employee${rows.length !== 1 ? "s" : ""} onboarded`,
-    );
-    setBulkModalOpen(false);
+  const handleBulkImport = async (rows: BulkOnboardingRow[]) => {
+    if (await importRows(rows)) setBulkModalOpen(false);
   };
+
+  const recordById = (id: string) => records.find((r) => r.id === id);
 
   const handleSendWelcomeEmail = (id: string) => {
-    dispatch(sendWelcomeEmail(id));
-    toast.success("Welcome email sent");
+    const record = recordById(id);
+    if (record) void resendInvite(record);
   };
 
-  const handleResendInvitation = (id: string) => {
-    dispatch(resendInvitation(id));
-    toast.success("Invitation resent", {
-      description: "The link is valid for another 14 days.",
-    });
-  };
+  const handleResendInvitation = handleSendWelcomeEmail;
 
   const handleDelete = (id: string) => {
-    dispatch(removeRecord(id));
-    toast.success("Onboarding record removed");
+    const record = recordById(id);
+    if (record) void cancelInvite(record);
   };
 
   return (
@@ -215,6 +140,10 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
           </p>
         </div>
       )}
+
+      <PendingInvitations />
+
+      <ImportTemplateCard />
 
       <StatCards
         records={records}

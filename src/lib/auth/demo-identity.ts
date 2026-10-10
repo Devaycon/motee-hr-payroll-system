@@ -1,9 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { loadLocale } from "@/src/lib/stores/locale-slice";
-import { buildAuthUser, setUser } from "@/src/lib/stores/auth-slice";
+import { useSessionUser } from "@/src/lib/auth/session";
 import type { AuthUser } from "@/src/lib/types/locale";
 
 /**
@@ -54,29 +51,9 @@ export const DEMO_IDENTITY_PLACEHOLDER = {
 } as const;
 
 /**
- * The signed-in user, falling back to {@link DEMO_IDENTITY_ROLE_ID}.
- *
- * Seeds the fallback into the store as well as returning it, so everything that
- * reads `auth.user` directly — permissions, My Profile, the leave planner —
- * resolves to the same person rather than to its own default.
+ * The signed-in user, resolved from the API session. Kept at this path because
+ * every shell and several screens already import it from here.
  */
 export function useCurrentUser(): AuthUser | null {
-  const dispatch = useAppDispatch();
-  const user = useAppSelector((s) => s.auth.user);
-  const bundle = useAppSelector((s) => s.locale.data);
-  const status = useAppSelector((s) => s.locale.status);
-  const country = useAppSelector((s) => s.locale.country);
-
-  const fallback =
-    !user && bundle ? buildAuthUser(bundle, readDemoRoleId()) : null;
-
-  useEffect(() => {
-    if (!user && !bundle && status === "idle") dispatch(loadLocale(country));
-  }, [user, bundle, status, country, dispatch]);
-
-  useEffect(() => {
-    if (fallback) dispatch(setUser(fallback));
-  }, [fallback, dispatch]);
-
-  return user ?? fallback;
+  return useSessionUser();
 }
