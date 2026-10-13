@@ -45,6 +45,7 @@ import { COLLECTION_SCHEMAS } from "@/src/lib/profile/collections";
 import { MapsLink } from "@/src/components/shared/maps-link";
 import { regionWordForCountry, profileFieldGroupOf } from "@/src/lib/profile/fields";
 import { useCan } from "@/src/lib/permissions/use-can";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { useProfileVariant } from "./variant";
 import { RowActions } from "./row-actions";
 import { RecordDetailModal } from "./record-detail-modal";
@@ -1632,8 +1633,13 @@ export function MedicalModule({ employeeId }: ModuleProps) {
     <Section
       title="Medical Facts"
       description="Sensitive — HR only."
-      // Medical facts are read-only here until the API takes edits on their own.
-      action={undefined}
+      action={
+        canEdit ? (
+          <NotIntegrated inline label="Editing medical facts">
+            <AddButton label="Edit" onClick={() => rf.openEdit(data)} />
+          </NotIntegrated>
+        ) : undefined
+      }
     >
       {rf.node}
       <InfoGrid

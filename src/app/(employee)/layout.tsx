@@ -1,15 +1,18 @@
 import { ReactNode } from "react";
+import EmployeeLayout from "@/src/layout/employee";
 import RouteGuard from "@/src/components/RouteGuard";
-import { NotLive } from "@/src/components/shared/not-live";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 
-// Self-service has no screens on the live API yet, so the whole portal is held
-// back. Restore `EmployeeLayout` around `children` as its modules are wired.
-const Layout = ({ children: _children }: { children: ReactNode }) => {
+// Self-service has no screens on the API yet, so every page in it is shown as
+// designed but inert. Lift the wrapper page by page as they are integrated.
+const Layout = ({ children }: { children: ReactNode }) => {
   return (
     <RouteGuard requireAuth requireSetup>
-      <div className="flex min-h-screen">
-        <NotLive />
-      </div>
+      <EmployeeLayout>
+        <NotIntegrated page label="Self-service">
+          {children}
+        </NotIntegrated>
+      </EmployeeLayout>
     </RouteGuard>
   );
 };

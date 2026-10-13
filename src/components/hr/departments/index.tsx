@@ -15,7 +15,6 @@ import { DepartmentCreateModal } from "./components/department-create-modal";
 import { DepartmentEditModal } from "./components/department-edit-modal";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useDepartmentActions, useDepartments } from "./hooks";
-import { BusinessUnitsCard } from "./components/business-units-card";
 
 export function DepartmentsPage() {
   const { data, loading } = useDepartments();
@@ -117,8 +116,6 @@ export function DepartmentsPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
-
-      <BusinessUnitsCard />
 
       <DepartmentCreateModal
         open={addModalOpen}

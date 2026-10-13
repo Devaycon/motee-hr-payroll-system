@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
+import { isServerField } from "@/src/lib/employees/profile-field-sync";
 import {
   Pencil,
   Check,
@@ -291,6 +293,11 @@ function BulkFieldsEditModal({
       }
     }
     for (const f of changed) {
+      // A field the API does not store yet is left as it was.
+      if (!isServerField(f.key)) {
+        notifyNotIntegrated(f.label);
+        continue;
+      }
       const value = values[f.key] ?? "";
       if (mode === "edit") {
         dispatch(applyEdit({ employeeId, field: f.key, value }));
@@ -635,6 +642,10 @@ export function ProfileFieldsEditor({
 
   // System-driven fields warn before opening the editor.
   const handlePencil = (f: ProfileField) => {
+    if (!isServerField(f.key)) {
+      notifyNotIntegrated(f.label);
+      return;
+    }
     if (f.system) setWarnField(f);
     else openFor(f);
   };

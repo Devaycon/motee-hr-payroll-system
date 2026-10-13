@@ -2,13 +2,13 @@ import { Metadata } from "next";
 import dynamic from "next/dynamic";
 
 export const metadata: Metadata = {
-  title: "Approval — Motee HR",
+  title: "Submission — Motee HR",
   description: "",
 };
 
-const LiveApprovalDetailPage = dynamic(() =>
-  import("@/src/components/hr/approvals/live/detail-page").then(
-    (m) => m.LiveApprovalDetailPage,
+const SubmissionDetailPage = dynamic(() =>
+  import("@/src/components/hr/approvals/detail-page").then(
+    (m) => m.ApprovalDetailPage,
   ),
 );
 
@@ -19,6 +19,6 @@ export default async function HrSubmissionDetailRoute({
 }) {
   const { id } = await params;
   return (
-    <LiveApprovalDetailPage id={id} basePath="/hr-action-center/submissions" />
+    <SubmissionDetailPage requestId={id} basePath="/hr-action-center/submissions" />
   );
 }

@@ -312,7 +312,7 @@ export function AssetFormModal({
                         : s === "available"
                           ? "Available"
                           : s === "under_maintenance"
-                            ? "Lost"
+                            ? "Under Maintenance"
                             : "Decommissioned"}
                     </SelectItem>
                   ))}

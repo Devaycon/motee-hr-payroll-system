@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { useEmployees } from "@/src/components/hr/employees/hooks";
 import {
   EXIT_REASON_LABELS,
@@ -391,6 +392,20 @@ export function OffboardingModal({
                 <TabsTrigger value="clearance" className="flex-1 text-xs">
                   Clearance
                 </TabsTrigger>
+                <NotIntegrated inline label="Asset recovery" className="flex-1">
+                  <TabsTrigger value="assets" className="flex-1 text-xs">
+                    Assets ({returnedAssetCount}/{viewingAssets.length})
+                  </TabsTrigger>
+                </NotIntegrated>
+                <NotIntegrated
+                  inline
+                  label="Knowledge transfer"
+                  className="flex-1"
+                >
+                  <TabsTrigger value="knowledge" className="flex-1 text-xs">
+                    Knowledge Transfer
+                  </TabsTrigger>
+                </NotIntegrated>
                 <TabsTrigger value="interview" className="flex-1 text-xs">
                   Exit Interview
                 </TabsTrigger>

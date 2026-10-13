@@ -1,15 +1,20 @@
 import { Metadata } from "next";
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Submissions & Approvals — Motee HR",
   description: "",
 };
 
-const LiveApprovalsPage = dynamic(() =>
-  import("@/src/components/hr/approvals/live").then((m) => m.LiveApprovalsPage),
+const SubmissionsPage = dynamic(() =>
+  import("@/src/components/hr/approvals").then((m) => m.ApprovalsPage),
 );
 
 export default function HrSubmissionsRoute() {
-  return <LiveApprovalsPage basePath="/hr-action-center/submissions" />;
+  return (
+    <Suspense>
+      <SubmissionsPage basePath="/hr-action-center/submissions" />
+    </Suspense>
+  );
 }

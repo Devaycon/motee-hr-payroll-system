@@ -19,7 +19,7 @@ import type { TenantUser } from "@/src/types/users";
 export const LOGIN_PATH = "/auth/login";
 export const SETUP_PATH = "/onboarding";
 export const HOME_PATH = "/welcome";
-export const PLATFORM_PATH = "/tenants";
+export const PLATFORM_PATH = "/motee";
 
 interface SessionShape {
   tenant_id?: string | null;

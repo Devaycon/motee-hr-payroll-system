@@ -21,6 +21,7 @@ import {
   type OnboardingRecord,
 } from "@/src/lib/types/onboarding";
 import { cn } from "@/src/lib/utils";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { useOnboardingActions } from "../hooks";
 
 interface ReviewPanelProps {
@@ -44,6 +45,7 @@ const STATUS_STYLES: Record<string, string> = {
  * "submitted" with nobody accountable for checking what came in.
  */
 export function ReviewPanel({ record }: ReviewPanelProps) {
+  const dispatch = useAppDispatch();
   const { review: sendReview } = useOnboardingActions();
   const [comment, setComment] = useState("");
 
@@ -71,6 +73,9 @@ export function ReviewPanel({ record }: ReviewPanelProps) {
           : "Changes requested — the employee can now edit and resubmit",
     );
   }
+
+  const checklist = record.hrChecklist ?? {};
+  const doneCount = HR_CHECKLIST_ITEMS.filter((i) => checklist[i.key]).length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -155,6 +160,46 @@ export function ReviewPanel({ record }: ReviewPanelProps) {
         </CardContent>
       </Card>
 
+      {/* §2.14 — the things HR has to do once the pack is in. */}
+      <NotIntegrated label="The HR completion checklist">
+      <Card>
+        <CardContent className="flex flex-col gap-3 p-5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">
+                HR Completion Checklist
+              </h3>
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              {doneCount} of {HR_CHECKLIST_ITEMS.length} done
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {HR_CHECKLIST_ITEMS.map((item) => (
+              <label
+                key={item.key}
+                className="flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2"
+              >
+                <Checkbox
+                  checked={Boolean(checklist[item.key])}
+                  onCheckedChange={(v) =>
+                    dispatch(
+                      toggleHrChecklistItem({
+                        id: record.id,
+                        key: item.key,
+                        done: v === true,
+                      }),
+                    )
+                  }
+                />
+                <span className="text-xs text-foreground">{item.label}</span>
+              </label>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      </NotIntegrated>
     </div>
   );
 }

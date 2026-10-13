@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { Star, type LucideIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import {
+  NOT_INTEGRATED_MESSAGE,
+  notifyNotIntegrated,
+} from "@/src/components/shared/not-integrated";
 
 /**
  * One navigation row, in both sidebar states.
@@ -28,6 +32,7 @@ export function SidebarNavLink({
   badgeDotClassName = "bg-primary",
   favourite,
   onToggleFavourite,
+  disabled = false,
 }: {
   href: string;
   label: string;
@@ -44,6 +49,8 @@ export function SidebarNavLink({
   /** Pinned to the Favourites section. Omit `onToggleFavourite` to hide the star. */
   favourite?: boolean;
   onToggleFavourite?: () => void;
+  /** Not integrated yet: shown in place, but blurred and not navigable. */
+  disabled?: boolean;
 }) {
   // Collapsed there is no room for a star beside a 12x12 icon target, and the
   // Favourites section it feeds isn't labelled either — so it only shows on the
@@ -54,8 +61,16 @@ export function SidebarNavLink({
     <li className="group/nav relative">
       <Link
         href={href}
-        onClick={onClick}
-        title={collapsed ? label : undefined}
+        onClick={(event) => {
+          if (disabled) {
+            event.preventDefault();
+            notifyNotIntegrated(label);
+            return;
+          }
+          onClick?.();
+        }}
+        aria-disabled={disabled || undefined}
+        title={disabled ? NOT_INTEGRATED_MESSAGE : collapsed ? label : undefined}
         aria-label={collapsed ? label : undefined}
         className={cn(
           "relative flex items-center transition-colors",
@@ -67,6 +82,7 @@ export function SidebarNavLink({
               ? activeCollapsedClassName
               : activeClassName
             : "text-muted-foreground hover:bg-accent hover:text-foreground",
+          disabled && "cursor-not-allowed opacity-50 blur-[0.6px]",
         )}
       >
         {Icon && (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useAssetActions, useAssets, useAssetWithHistory } from "./hooks";
+import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
 import { UserPlus, Upload } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
@@ -137,9 +138,9 @@ export function AssetsPage() {
     void giveBack(id);
   }
 
-  /** The API has no maintenance state; this records the asset as lost. */
-  function handleSendToMaintenance(id: string) {
-    void setStatus(id, "lost", "Asset marked as lost");
+  /** The API has no maintenance state yet, so this action is held. */
+  function handleSendToMaintenance() {
+    notifyNotIntegrated("Sending an asset for maintenance");
   }
 
   function handleDecommission(id: string) {

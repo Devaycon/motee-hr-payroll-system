@@ -3,22 +3,22 @@
 import { Button } from "@/src/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { updateEnabledModules, markStepComplete, setCurrentStep } from "@/src/lib/stores/onboarding-slice";
-import { AVAILABLE_MODULES as MODULE_DETAILS } from "@/src/lib/types/onboarding-setup.types";
-import { useGetTenantSetupOptionsQuery } from "@/src/store/services/tenant-setup";
+import { AVAILABLE_MODULES } from "@/src/lib/types/onboarding-setup.types";
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
+import { useGetTenantSetupOptionsQuery } from "@/src/store/services/tenant-setup";
 
 export function Step4ModulePreferences() {
   const dispatch = useAppDispatch();
   const enabledModules = useAppSelector((s) => s.onboarding.companySetup.enabledModules);
   const [selected, setSelected] = useState<string[]>(enabledModules);
-  const { data: options, isLoading } = useGetTenantSetupOptionsQuery();
-  const AVAILABLE_MODULES = (options?.data?.modules ?? []).map((mod) => ({
-    ...mod,
-    description:
-      MODULE_DETAILS.find((detail) => detail.id === mod.id)?.description ?? "",
-  }));
+  // Modules the server can switch on. Until that list has loaded every card
+  // is treated as available.
+  const { data: options } = useGetTenantSetupOptionsQuery();
+  const offeredIds = options?.data?.modules.map((m) => m.id);
+  const isOffered = (id: string) => !offeredIds || offeredIds.includes(id);
 
   const toggle = (id: string) => {
     setSelected((prev) =>
@@ -26,11 +26,12 @@ export function Step4ModulePreferences() {
     );
   };
 
-  const selectAll = () => setSelected(AVAILABLE_MODULES.map((m) => m.id));
+  const selectAll = () =>
+    setSelected(AVAILABLE_MODULES.map((m) => m.id).filter(isOffered));
   const clearAll = () => setSelected([]);
 
   const onSubmit = () => {
-    dispatch(updateEnabledModules(selected));
+    dispatch(updateEnabledModules(selected.filter(isOffered)));
     dispatch(markStepComplete(3));
     dispatch(setCurrentStep(4));
   };
@@ -38,7 +39,7 @@ export function Step4ModulePreferences() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{isLoading ? "Loading modules…" : `${selected.length} of ${AVAILABLE_MODULES.length} modules selected`}</span>
+        <span className="text-xs text-muted-foreground">{selected.length} of {AVAILABLE_MODULES.length} modules selected</span>
         <div className="flex gap-2">
           <button type="button" onClick={selectAll} className="text-xs text-primary hover:underline">Select all</button>
           <span className="text-xs text-muted-foreground">·</span>
@@ -49,7 +50,7 @@ export function Step4ModulePreferences() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {AVAILABLE_MODULES.map((mod) => {
           const isSelected = selected.includes(mod.id);
-          return (
+          const card = (
             <button
               key={mod.id}
               type="button"
@@ -75,6 +76,13 @@ export function Step4ModulePreferences() {
                 {isSelected && <Check size={11} strokeWidth={3} />}
               </div>
             </button>
+          );
+          return isOffered(mod.id) ? (
+            card
+          ) : (
+            <NotIntegrated key={mod.id} label={mod.label}>
+              {card}
+            </NotIntegrated>
           );
         })}
       </div>

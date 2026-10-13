@@ -30,7 +30,6 @@ import {
   ONBOARDING_STATUS_STYLES,
 } from "../data";
 import { ReviewPanel } from "../components/review-panel";
-import { StageControl } from "./stage-control";
 import { toOnboardingRecord } from "@/src/lib/onboarding/api-mapping";
 import { useGetOnboardingQuery } from "@/src/store/services/onboarding";
 import { useOnboardingRecords } from "../hooks";
@@ -198,8 +197,6 @@ export function OnboardingDetailPage({ recordId }: { recordId: string }) {
 
       {/* §2.8 / §2.14 — HR reviews what the joiner submitted, and works
           through the post-submission checklist. */}
-      <StageControl record={record} />
-
       <ReviewPanel record={record} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">

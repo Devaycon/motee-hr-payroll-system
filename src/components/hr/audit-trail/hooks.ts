@@ -1,118 +1,69 @@
 "use client";
 
 import { useMemo } from "react";
-// The audit trail must never be silently narrowed — a filtered log is a
-// misleading log.
-import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppSelector } from "@/src/lib/stores/hooks";
-import type {
-  AuditActionType,
-  AuditEntry,
-} from "@/src/lib/types/audit-trail";
-import type { LocaleBundle } from "@/src/lib/types/locale";
+import type { AuditEntry } from "@/src/lib/types/audit-trail";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { useGetRecentAuditEntriesQuery } from "@/src/store/services/collections";
+import type { AuditEntryDto } from "@/src/types/audit-trail";
 
-interface RawAudit {
-  id?: string;
-  timestamp?: string;
-  actor?: string;
-  actorId?: string;
-  action?: string;
-  entity?: string;
-  module?: string;
-  entityId?: string;
-  resourceId?: string;
-  description?: string;
-  ip?: string;
-  userAgent?: string;
+const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+
+function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
-function mapAction(a?: string): AuditActionType {
-  switch (a) {
-    case "created":
-    case "create":
-      return "create";
-    case "updated":
-    case "update":
-      return "update";
-    case "deleted":
-    case "delete":
-      return "delete";
-    case "viewed":
-    case "view":
-      return "view";
-    case "approved":
-      return "approve";
-    case "rejected":
-      return "reject";
-    case "exported":
-    case "export":
-      return "export";
-    case "logged_in":
-    case "login":
-      return "login";
-    case "logged_out":
-    case "logout":
-      return "logout";
-    default:
-      return "view";
-  }
+function toAuditEntry(
+  entry: AuditEntryDto,
+  roleByEmployeeName: Map<string, string>,
+): AuditEntry {
+  const userName = entry.actorName ?? "System";
+  const status = entry.httpStatus ?? 200;
+  return {
+    id: entry.id,
+    sessionId: entry.correlationId ?? `${entry.actorUserId ?? "system"}-${entry.createdAt.slice(0, 10)}`,
+    userId: entry.actorUserId ?? "",
+    userName,
+    userInitials: entry.actorName ? initialsOf(entry.actorName) : "SY",
+    userRole: roleByEmployeeName.get(userName) ?? (entry.actorName ? "" : "System"),
+    actionType: entry.action,
+    module: entry.module,
+    description: entry.description,
+    endpoint: entry.endpoint ?? "",
+    httpMethod:
+      METHODS.find((m) => m === entry.httpMethod?.toUpperCase()) ?? "GET",
+    httpStatus: status,
+    ipAddress: entry.ipAddress ?? "",
+    responseTimeMs: entry.durationMs ?? 0,
+    timestamp: entry.createdAt,
+    // A refused or failed request is what the log is there to surface.
+    isSuspicious: status === 401 || status === 403,
+    resourceId: entry.entityId ?? undefined,
+  };
 }
 
-function buildAuditEntries(bundle: LocaleBundle): AuditEntry[] {
-  const employeesById = new Map(bundle.employees.map((e) => [e.id, e]));
-  const raw = (bundle.auditTrail ?? []) as RawAudit[];
-  return raw.slice(-300).map((r, i) => {
-    const actorId = r.actorId ?? r.actor ?? "";
-    const actor = actorId ? employeesById.get(actorId) : null;
-    const actionType = mapAction(r.action);
-    const module = r.module ?? r.entity ?? "system";
-    const ts = r.timestamp ?? bundle.tenant.createdAt;
-    return {
-      id: r.id ?? `AUD-${i + 1}`,
-      sessionId: `${actorId || "system"}-${ts.slice(0, 10)}`,
-      userId: actorId,
-      userName: actor?.fullName ?? "System",
-      userInitials: actor?.initials ?? "SY",
-      userRole: actor?.jobTitle ?? "System",
-      actionType,
-      module,
-      description: r.description ?? `${actionType} on ${module}`,
-      endpoint: `/api/${module}/${r.entityId ?? r.resourceId ?? ""}`,
-      httpMethod:
-        actionType === "create"
-          ? "POST"
-          : actionType === "update"
-            ? "PATCH"
-            : actionType === "delete"
-              ? "DELETE"
-              : "GET",
-      httpStatus: 200,
-      ipAddress: r.ip ?? "10.0.0.1",
-      responseTimeMs: 120,
-      timestamp: ts,
-      isSuspicious: false,
-      resourceId: r.entityId ?? r.resourceId,
-    };
-  });
-}
-
-/**
- * The fixture trail from the bundle, plus anything the running app has
- * recorded this session (account locks, role changes). Newest first, so a
- * just-performed action is at the top where the user expects it.
- */
+/** The organisation's recent audit trail, newest first. */
 export function useAuditEntries() {
-  const { data, loading, error } = useLocaleSection<AuditEntry[]>(
-    buildAuditEntries,
-  );
-  const live = useAppSelector((s) => s.audit.entries);
+  const { data, isLoading, error } = useGetRecentAuditEntriesQuery();
+  const employees = useAppSelector((s) => s.locale.data?.employees);
 
-  const merged = useMemo(() => {
-    if (!data) return data;
-    return [...live, ...data].sort((a, b) =>
-      b.timestamp.localeCompare(a.timestamp),
+  const entries = useMemo(() => {
+    if (!data) return null;
+    const roleByEmployeeName = new Map(
+      (employees ?? []).map((e) => [e.fullName, e.jobTitle]),
     );
-  }, [data, live]);
+    return data
+      .map((entry) => toAuditEntry(entry, roleByEmployeeName))
+      .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  }, [data, employees]);
 
-  return { data: merged, loading, error };
+  return {
+    data: entries,
+    loading: isLoading,
+    error: error ? getApiErrorMessage(error) : null,
+  };
 }

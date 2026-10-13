@@ -29,12 +29,14 @@ export async function fetchAllPages<T>(
   url: string,
   style: PagingStyle,
   params: Record<string, unknown> = {},
+  /** Stop early for logs that only need their most recent entries. */
+  maxPages = MAX_PAGES,
 ): Promise<{ data: T[] } | { error: FetchBaseQueryError }> {
   const [pageKey, sizeKey] =
     style === "camel" ? ["page", "pageSize"] : ["Page", "PageSize"];
   const all: T[] = [];
 
-  for (let page = 1; page <= MAX_PAGES; page++) {
+  for (let page = 1; page <= Math.min(maxPages, MAX_PAGES); page++) {
     const result = await baseQuery({
       url,
       method: "GET",

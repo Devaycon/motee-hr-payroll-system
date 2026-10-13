@@ -11,10 +11,7 @@ import { InviteOnboardingModal } from "./components/invite-onboarding-modal";
 import { BulkOnboardingModal } from "./components/bulk-onboarding-modal";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { useOnboardingActions, useOnboardingRecords } from "./hooks";
-import {
-  ImportTemplateCard,
-  PendingInvitations,
-} from "./components/invitations-panel";
+
 import {
   addRecord,
   addRecords,
@@ -140,10 +137,6 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
           </p>
         </div>
       )}
-
-      <PendingInvitations />
-
-      <ImportTemplateCard />
 
       <StatCards
         records={records}

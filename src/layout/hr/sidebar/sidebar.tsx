@@ -15,6 +15,7 @@ import {
 } from "@/src/layout/shared/sidebar-collapse";
 import { SidebarNavLink } from "@/src/layout/shared/sidebar-nav-link";
 import { SidebarBrand } from "@/src/layout/shared/sidebar-brand";
+import { isLivePath } from "@/src/lib/permissions/live-modules";
 
 const Sidebar = () => {
   const pathname = usePathname();
@@ -71,6 +72,7 @@ const Sidebar = () => {
       badge={badges[route.link] || undefined}
       active={isActive(route.link, route.exact)}
       collapsed={collapsed}
+      disabled={!isLivePath(route.link)}
       onClick={() => setQuery("")}
       favourite={isFavourite(route.link)}
       onToggleFavourite={() => toggleFavourite(route.link)}
@@ -98,7 +100,7 @@ const Sidebar = () => {
         )}
       >
         <SidebarBrand
-          href="/welcome"
+          href="/dashboard"
           label="MOTEE HRIS Portal"
           wordmark="/hr-logo.png"
           collapsed={collapsed}

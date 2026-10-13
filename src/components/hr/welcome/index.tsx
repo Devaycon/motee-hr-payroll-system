@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { HeroCard } from "./components/hero-card";
+import { AlertsSection } from "./components/alerts-section";
+import { AnnouncementsCard } from "./components/announcements-card";
 import { WhatsNewCard } from "./components/whats-new-card";
 import { HelpResourcesCard } from "./components/help-resources-card";
 import { TipsCard } from "./components/tips-card";
 import { FeedbackCard } from "./components/feedback-card";
 import { VersionCard } from "./components/version-card";
-import { MyWorkspace } from "./components/my-workspace";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 
 export function WelcomePage() {
+  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [tipIndex, setTipIndex] = useState(0);
 
   const dateStr = new Date().toLocaleDateString("en-GB", {
@@ -23,7 +26,12 @@ export function WelcomePage() {
     <div className="flex flex-col gap-6">
       {/* <HeroCard dateStr={dateStr} /> */}
 
-      <MyWorkspace />
+      <NotIntegrated label="Alerts">
+      <AlertsSection
+        dismissedAlerts={dismissedAlerts}
+        onDismiss={(id) => setDismissedAlerts((p) => [...p, id])}
+      />
+      </NotIntegrated>
 
       {/* <div className="grid grid-cols-2 gap-4">
         <GettingStartedCard
@@ -35,7 +43,12 @@ export function WelcomePage() {
       </div> */}
 
       <div>
-        <WhatsNewCard />
+        <div className="grid grid-cols-2 gap-4">
+          <NotIntegrated label="Announcements">
+            <AnnouncementsCard />
+          </NotIntegrated>
+          <WhatsNewCard />
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">

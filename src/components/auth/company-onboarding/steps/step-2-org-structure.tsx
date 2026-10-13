@@ -21,8 +21,14 @@ import { Info, Eye } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { updateOrganizationConfig, markStepComplete, setCurrentStep } from "@/src/lib/stores/onboarding-slice";
 
-const MANAGER_TITLES = ["Line Manager", "Team leader", "Reporting Manager", "Supervisor", "Custom"];
-const DEPARTMENT_LABELS = ["Department", "Teams", "Unit", "Division", "Custom"];
+import { DEPARTMENT_LABELS, MANAGER_TITLES } from "@/src/lib/types/onboarding-setup.types";
+
+/** A stored label that is not one of the listed options is a custom one. */
+function toSelection(value: string, options: string[]) {
+  return options.includes(value)
+    ? { choice: value, custom: "" }
+    : { choice: "Custom", custom: value };
+}
 
 type StructureType = "hierarchical" | "flat" | "matrix";
 
@@ -234,6 +240,8 @@ export function Step2OrgStructure() {
   const dispatch = useAppDispatch();
   const config = useAppSelector((s) => s.onboarding.companySetup.organizationConfig);
   const [previewType, setPreviewType] = useState<StructureType | null>(null);
+  const manager = toSelection(config.managerTitle, MANAGER_TITLES);
+  const department = toSelection(config.departmentLabel, DEPARTMENT_LABELS);
 
   const {
     register,
@@ -244,15 +252,21 @@ export function Step2OrgStructure() {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      managerTitle: config.managerTitle,
-      departmentLabel: config.departmentLabel,
+      managerTitle: manager.choice,
+      customManagerTitle: manager.custom,
+      departmentLabel: department.choice,
+      customDepartmentLabel: department.custom,
       structureType: config.structureType,
     },
   });
 
   useEffect(() => {
-    setValue("managerTitle", config.managerTitle);
-    setValue("departmentLabel", config.departmentLabel);
+    const manager = toSelection(config.managerTitle, MANAGER_TITLES);
+    const department = toSelection(config.departmentLabel, DEPARTMENT_LABELS);
+    setValue("managerTitle", manager.choice);
+    setValue("customManagerTitle", manager.custom);
+    setValue("departmentLabel", department.choice);
+    setValue("customDepartmentLabel", department.custom);
     setValue("structureType", config.structureType);
   }, [config, setValue]);
 
@@ -280,7 +294,7 @@ export function Step2OrgStructure() {
           <InfoTooltip text="This label is used throughout the platform wherever a line manager or supervisor is referenced." />
         </div>
         <Select
-          defaultValue={config.managerTitle}
+          defaultValue={manager.choice}
           onValueChange={(v) => setValue("managerTitle", v)}
         >
           <SelectTrigger>
@@ -307,7 +321,7 @@ export function Step2OrgStructure() {
           <InfoTooltip text="This label is used throughout the platform wherever an organisational grouping (department, team, unit) is referenced." />
         </div>
         <Select
-          defaultValue={config.departmentLabel}
+          defaultValue={department.choice}
           onValueChange={(v) => setValue("departmentLabel", v)}
         >
           <SelectTrigger>
@@ -338,7 +352,7 @@ export function Step2OrgStructure() {
           onValueChange={(v) => setValue("structureType", v as StructureType)}
           className="flex flex-col gap-3 mt-1"
         >
-          {STRUCTURE_OPTIONS.filter((o) => o.value !== "matrix").map(({ value, label, desc, tooltip }) => (
+          {STRUCTURE_OPTIONS.map(({ value, label, desc, tooltip }) => (
             <div
               key={value}
               className="flex items-start gap-3 rounded-lg border border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"

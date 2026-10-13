@@ -7,7 +7,7 @@ import { ShieldOff } from "lucide-react";
 import { useEffectiveAccess } from "@/src/lib/permissions/use-can";
 import { ALL_MODULES } from "@/src/lib/permissions/modules";
 import { isLivePath } from "@/src/lib/permissions/live-modules";
-import { NotLive } from "@/src/components/shared/not-live";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 
 /**
  * Always-allowed admin paths. The `/my-*` self-service prefixes were removed
@@ -40,8 +40,10 @@ export function HrAccessGuard({ children }: Props) {
   const pathname = usePathname();
   const access = useEffectiveAccess();
 
-  // Not integrated yet — blocked by URL as well as hidden from the menu.
-  if (!isLivePath(pathname)) return <NotLive />;
+  // Not integrated yet — the screen is shown as designed, but inert.
+  if (!isLivePath(pathname)) {
+    return <NotIntegrated page>{children}</NotIntegrated>;
+  }
   // No resolvable role (the owner, or roles still loading) → allow; the
   // server enforces either way.
   if (access.unresolved) return <>{children}</>;

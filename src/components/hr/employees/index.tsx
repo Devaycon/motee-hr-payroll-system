@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Download, LayoutGrid, UserPlus } from "lucide-react";
+import { LayoutGrid, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import type { EmployeeRow } from "./types";
 import type { EmployeeStatus } from "@/src/lib/types/employees";
@@ -17,8 +17,7 @@ import { OverflowTabsList } from "@/src/components/shared/overflow-tabs";
 import { useEmployees } from "./hooks";
 import { PermissionGate } from "@/src/components/shared/permission-gate";
 import { useEmployeeActions } from "@/src/lib/employees/use-employee-actions";
-import { useEmployeeExport } from "@/src/lib/employees/use-employee-export";
-import { useGetEmployeeStatsQuery } from "@/src/store/services/employees";
+import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
 import { getApiErrorMessage } from "@/src/lib/utils";
 import { useInitiateOffboardingMutation } from "@/src/store/services/offboarding";
 import { SendKudosModal } from "@/src/components/hr/kudos/components/send-kudos-modal";
@@ -63,8 +62,6 @@ export function EmployeesPage() {
   const router = useRouter();
   const { setStatus, remove, sendInvitation } = useEmployeeActions();
   const [initiateOffboarding] = useInitiateOffboardingMutation();
-  const { exportEmployees, exporting } = useEmployeeExport();
-  const { data: stats } = useGetEmployeeStatsQuery();
   const searchParams = useSearchParams();
   const { data, loading } = useEmployees();
 
@@ -202,7 +199,8 @@ export function EmployeesPage() {
     [sendInvitation],
   );
 
-  const handleSendKudos = useCallback((e: EmployeeRow) => setKudosFor(e), []);
+  // Kudos has no endpoint yet; the action stays on the row and says so.
+  const handleSendKudos = useCallback(() => notifyNotIntegrated("Kudos"), []);
 
   const handleDeactivate = useCallback(
     async (e: EmployeeRow) => {
@@ -309,7 +307,6 @@ export function EmployeesPage() {
           <h1 className="text-4xl font-bold text-foreground">Employees</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Manage your workforce, track employee details and reporting lines.
-            {stats?.data ? ` Headcount: ${stats.data.headcount}.` : ""}
           </p>
         </div>
         <div className="mt-1 flex items-center gap-2">
@@ -319,17 +316,6 @@ export function EmployeesPage() {
                 <LayoutGrid className="w-4 h-4" />
                 Workforce Lens
               </Link>
-            </Button>
-          </PermissionGate>
-          <PermissionGate module="organization.employees" action="export">
-            <Button
-              variant="secondary"
-              className="gap-1.5"
-              disabled={exporting}
-              onClick={() => exportEmployees()}
-            >
-              <Download className="w-4 h-4" />
-              {exporting ? "Exporting…" : "Export"}
             </Button>
           </PermissionGate>
           <PermissionGate module="organization.employees" action="create">

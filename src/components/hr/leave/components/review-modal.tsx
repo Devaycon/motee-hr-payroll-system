@@ -21,6 +21,7 @@ import {
 import { ApprovalStepper } from "./approval-stepper";
 import type { LeaveConflict } from "@/src/lib/leave/conflicts";
 import type { LeaveStage } from "@/src/lib/leave/stages";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { isOpenLeaveStatus } from "@/src/lib/types/leave";
 import type { LeaveRequest, LeaveTypeName } from "../types";
 
@@ -153,7 +154,9 @@ export function ReviewModal({
         </DialogHeader>
 
         {/* Where the request sits in the approval chain (§F4/F7). */}
-        <ApprovalStepper status={req.status} stages={stages} />
+        <NotIntegrated label="The approval chain">
+          <ApprovalStepper status={req.status} stages={stages} />
+        </NotIntegrated>
 
         {req.status === "rejected" && req.rejectionReason && (
           <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3.5 py-2.5 text-xs text-destructive">
