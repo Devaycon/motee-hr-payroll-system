@@ -11,8 +11,8 @@ export const tenantSetupSchema = z.object({
     .string()
     .trim()
     .min(1, { message: "Department label is required" }),
-  structureType: z.enum(["hierarchical", "flat"], {
-    message: "Choose a hierarchical or flat structure",
+  structureType: z.enum(["hierarchical", "flat", "matrix"], {
+    message: "Choose an organisational structure",
   }),
   enabledModules: z
     .array(z.string())

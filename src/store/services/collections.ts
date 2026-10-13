@@ -1,6 +1,7 @@
 import api, { API_PREFIX } from "./api";
 import { fetchAllPages } from "./api/paging";
 import type { AssetDto } from "@/src/types/assets";
+import type { AuditEntryDto } from "@/src/types/audit-trail";
 import type { LeaveBalanceDto } from "@/src/types/leave-balances";
 import type { LeaveRequestDto } from "@/src/types/leave";
 import type {
@@ -21,6 +22,18 @@ export const collectionsApi = api.injectEndpoints({
       queryFn: (_arg, _api, _extraOptions, baseQuery) =>
         fetchAllPages<AssetDto>(baseQuery, `${API_PREFIX}/assets`, "camel"),
       providesTags: ["Assets"],
+    }),
+    /** The most recent audit entries (three pages), newest first. */
+    getRecentAuditEntries: builder.query<AuditEntryDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<AuditEntryDto>(
+          baseQuery,
+          `${API_PREFIX}/audit-trail`,
+          "pascal",
+          {},
+          3,
+        ),
+      providesTags: ["AuditTrail"],
     }),
     getAllLeaveRequests: builder.query<LeaveRequestDto[], void>({
       queryFn: (_arg, _api, _extraOptions, baseQuery) =>
@@ -87,6 +100,7 @@ export const collectionsApi = api.injectEndpoints({
 
 export const {
   useGetAssetInventoryQuery,
+  useGetRecentAuditEntriesQuery,
   useGetAllLeaveRequestsQuery,
   useGetAllLeaveBalancesQuery,
   useGetAllOnboardingsQuery,

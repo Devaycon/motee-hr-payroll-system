@@ -1,21 +1,31 @@
 import { Metadata } from "next";
-import dynamic from "next/dynamic";
+import { notFound } from "next/navigation";
+import { DEMO_TENANTS } from "@/src/data/motee-demo";
+import { TenantDetailPage } from "@/src/components/motee/tenants/tenant-detail";
 
-export const metadata: Metadata = {
-  title: "Tenant — Motee Admin",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const tenant = DEMO_TENANTS.find((t) => t.id === id);
+  return {
+    title: tenant ? `${tenant.name} — Motee Admin` : "Tenant Not Found",
+  };
+}
 
-const PlatformTenantPage = dynamic(() =>
-  import("@/src/components/motee/platform-live").then(
-    (m) => m.PlatformTenantPage,
-  ),
-);
-
-export default async function TenantDetailRoute({
+export default async function TenantPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <PlatformTenantPage id={id} />;
+  const tenant = DEMO_TENANTS.find((t) => t.id === id);
+
+  if (!tenant) {
+    notFound();
+  }
+
+  return <TenantDetailPage id={id} />;
 }

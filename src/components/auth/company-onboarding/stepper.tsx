@@ -16,18 +16,18 @@ interface OnboardingStepperProps {
 
 export function OnboardingStepper({ steps, currentStep, completedSteps }: OnboardingStepperProps) {
   return (
-    <div className="flex items-center gap-0">
+    <div className="flex w-full items-start">
       {steps.map((step, index) => {
         const isCompleted = completedSteps.includes(step.number);
         const isCurrent = currentStep === step.number;
         const isUpcoming = !isCompleted && !isCurrent;
 
         return (
-          <div key={step.number} className="flex items-center">
-            <div className="flex flex-col items-center gap-1.5">
+          <div key={step.number} className="flex flex-1 items-start last:flex-none">
+            <div className="flex flex-col items-center gap-2">
               <div
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all",
+                  "flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all",
                   isCompleted && "text-white",
                   isCurrent && "text-white ring-4",
                   isUpcoming && "text-muted-foreground bg-muted border border-border"
@@ -40,11 +40,11 @@ export function OnboardingStepper({ steps, currentStep, completedSteps }: Onboar
                     : {}
                 }
               >
-                {isCompleted ? <Check size={13} strokeWidth={2.5} /> : step.number}
+                {isCompleted ? <Check size={16} strokeWidth={2.5} /> : step.number}
               </div>
               <span
                 className={cn(
-                  "text-[10px] font-medium whitespace-nowrap hidden sm:block",
+                  "text-xs font-medium whitespace-nowrap hidden sm:block",
                   isCurrent ? "text-foreground" : "text-muted-foreground"
                 )}
               >
@@ -53,9 +53,10 @@ export function OnboardingStepper({ steps, currentStep, completedSteps }: Onboar
             </div>
 
             {index < steps.length - 1 && (
+              // Sits on the circles' centre line (circle is h-10).
               <div
                 className={cn(
-                  "h-px w-8 sm:w-12 mx-1 -mt-5 sm:-mt-4 transition-colors",
+                  "h-0.5 flex-1 mx-2 mt-4.75 rounded-full transition-colors",
                   isCompleted ? "bg-green-500/40" : "bg-border"
                 )}
               />

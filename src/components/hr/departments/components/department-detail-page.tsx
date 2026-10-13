@@ -38,6 +38,7 @@ import { Separator } from "@/src/components/ui/separator";
 import { toast } from "sonner";
 import { cn, getApiErrorMessage } from "@/src/lib/utils";
 import { useEmployeeActions } from "@/src/lib/employees/use-employee-actions";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { STATUS_STYLES, formatBudget } from "../data";
 import { toDepartment, useDepartments } from "../hooks";
 import { useGetDepartmentQuery } from "@/src/store/services/departments";
@@ -415,6 +416,8 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
           tabs={[
             { value: "overview", label: "Overview" },
             { value: "members", label: "Members" },
+            { value: "budget", label: "Budget" },
+            { value: "activity", label: "Activity" },
           ]}
         />
 
@@ -790,6 +793,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
         </TabsContent>
 
         <TabsContent value="budget" className="mt-5">
+          <NotIntegrated label="The department budget breakdown">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
             <Card>
               <CardHeader className="px-5 pt-4 pb-3 flex flex-row items-center gap-2">
@@ -909,9 +913,11 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
               </Card>
             </div>
           </div>
+          </NotIntegrated>
         </TabsContent>
 
         <TabsContent value="activity" className="mt-5">
+          <NotIntegrated label="Department activity">
           <Card>
             <CardHeader className="px-5 pt-4 pb-3 flex flex-row items-center gap-2">
               <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted">
@@ -959,6 +965,7 @@ export function DepartmentDetailPage({ id }: DepartmentDetailPageProps) {
               )}
             </CardContent>
           </Card>
+          </NotIntegrated>
         </TabsContent>
       </Tabs>
     </div>

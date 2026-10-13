@@ -3,10 +3,8 @@ import {
   OnboardingState,
   CompanyProfile,
   OrganizationConfig,
-  AccessControlConfig,
-  WorkflowConfig,
   UILabels,
-  CompanySetup,
+  CompanySetupPrefill,
   DEFAULT_COMPANY_SETUP,
 } from "@/src/lib/types/onboarding-setup.types";
 
@@ -43,20 +41,8 @@ const onboardingSlice = createSlice({
         ...action.payload,
       };
     },
-    updateAccessControlConfig(state, action: PayloadAction<Partial<AccessControlConfig>>) {
-      state.companySetup.accessControlConfig = {
-        ...state.companySetup.accessControlConfig,
-        ...action.payload,
-      };
-    },
     updateEnabledModules(state, action: PayloadAction<string[]>) {
       state.companySetup.enabledModules = action.payload;
-    },
-    updateWorkflowConfig(state, action: PayloadAction<Partial<WorkflowConfig>>) {
-      state.companySetup.workflowConfig = {
-        ...state.companySetup.workflowConfig,
-        ...action.payload,
-      };
     },
     updateUILabels(state, action: PayloadAction<Partial<UILabels>>) {
       const incoming = action.payload;
@@ -67,7 +53,7 @@ const onboardingSlice = createSlice({
         }
       }
     },
-    prefillFromUpload(state, action: PayloadAction<Partial<CompanySetup>>) {
+    prefillFromUpload(state, action: PayloadAction<CompanySetupPrefill>) {
       const uploaded = action.payload;
       if (uploaded.companyProfile) {
         state.companySetup.companyProfile = {
@@ -81,20 +67,8 @@ const onboardingSlice = createSlice({
           ...uploaded.organizationConfig,
         };
       }
-      if (uploaded.accessControlConfig) {
-        state.companySetup.accessControlConfig = {
-          ...state.companySetup.accessControlConfig,
-          ...uploaded.accessControlConfig,
-        };
-      }
       if (uploaded.enabledModules) {
         state.companySetup.enabledModules = uploaded.enabledModules;
-      }
-      if (uploaded.workflowConfig) {
-        state.companySetup.workflowConfig = {
-          ...state.companySetup.workflowConfig,
-          ...uploaded.workflowConfig,
-        };
       }
       if (uploaded.uiLabels) {
         for (const key in uploaded.uiLabels) {
@@ -123,9 +97,7 @@ export const {
   markStepComplete,
   updateCompanyProfile,
   updateOrganizationConfig,
-  updateAccessControlConfig,
   updateEnabledModules,
-  updateWorkflowConfig,
   updateUILabels,
   prefillFromUpload,
   setIsSubmitting,

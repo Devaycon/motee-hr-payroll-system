@@ -50,6 +50,7 @@ import {
   employeeIdColumns,
   HIDE_SYSTEM_ID,
 } from "@/src/components/shared/employee-id-columns";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { useEmployeeIdentity } from "@/src/lib/hooks/use-employee-identity";
 import { cn } from "@/src/lib/utils";
 import { isOpenLeaveStatus } from "@/src/lib/types/leave";
@@ -378,13 +379,15 @@ export function RequestsTable({
               {open && canCreate && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-xs gap-2"
-                    onClick={() => onEdit(req)}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Edit
-                  </DropdownMenuItem>
+                  <NotIntegrated label="Editing a submitted leave request">
+                    <DropdownMenuItem
+                      className="text-xs gap-2"
+                      onClick={() => onEdit(req)}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit
+                    </DropdownMenuItem>
+                  </NotIntegrated>
                   <DropdownMenuItem
                     className="text-xs gap-2 text-muted-foreground"
                     onClick={() => onCancel(req)}

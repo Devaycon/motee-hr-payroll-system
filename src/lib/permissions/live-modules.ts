@@ -1,13 +1,13 @@
 /**
  * Route prefixes backed by the live API.
  *
- * Everything else still runs on fixture data, so it is kept out of the
- * navigation and blocked by URL until its endpoints are integrated. Shipping a
- * module is: wire its screens to the API, then add its link here.
+ * Everything else is still shown exactly as designed, but blurred and inert
+ * with a "not integrated yet" message, so what remains to be done stays
+ * visible. Shipping a module is: wire its screens to the API, then add its
+ * link here.
  */
 export const LIVE_LINKS: readonly string[] = [
   "/welcome",
-  "/hr-action-center/submissions",
   "/organization/branches",
   "/organization/departments",
   "/organization/employees",

@@ -8,7 +8,6 @@ import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { BulkCsvUploadModal } from "@/src/components/shared/bulk-csv-upload-modal";
 import { useLeaveData, useLeaveStages } from "./hooks";
-import { LeaveCalendarRules } from "./components/leave-calendar-rules";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { submitApproval } from "@/src/lib/stores/approvals-slice";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
@@ -33,6 +32,7 @@ import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import {
   APPROVAL_CHAIN_TAB_ITEM,
   useHasApprovalChainTab,
@@ -421,7 +421,6 @@ export function LeaveManagementPage() {
             { value: "calendar", label: "Calendar" },
             { value: "balances", label: "Balances" },
             { value: "policies", label: "Policies" },
-            { value: "calendar_rules", label: "Holidays & Blackouts" },
             ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
@@ -468,13 +467,11 @@ export function LeaveManagementPage() {
           />
         </TabsContent>
 
-        <TabsContent value="calendar_rules" className="mt-4 space-y-4">
-          <LeaveCalendarRules />
-        </TabsContent>
-
         {hasChainTab && (
           <TabsContent value="approval_chain" className="mt-4 space-y-4">
-            <ApprovalChainTab documentType="leave_request" />
+            <NotIntegrated label="The approval chain">
+              <ApprovalChainTab documentType="leave_request" />
+            </NotIntegrated>
           </TabsContent>
         )}
       </Tabs>

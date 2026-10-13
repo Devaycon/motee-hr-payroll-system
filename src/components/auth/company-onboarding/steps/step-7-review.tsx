@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +12,7 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { toast } from "sonner";
 import { setCurrentStep, setIsComplete } from "@/src/lib/stores/onboarding-slice";
 import { HOME_PATH } from "@/src/lib/auth/session";
 import { getApiErrorMessage } from "@/src/lib/utils";
@@ -23,6 +23,7 @@ import {
   useUpdateTenantSetupMutation,
 } from "@/src/store/services/tenant-setup";
 import { setOnboardingCompleted } from "@/src/store/reducers/authSlice";
+import { AVAILABLE_MODULES } from "@/src/lib/types/onboarding-setup.types";
 import { CheckCircle2, Pencil } from "lucide-react";
 
 interface SectionProps {
@@ -72,7 +73,6 @@ export function Step7Review() {
     useCompleteTenantSetupMutation();
   const isSubmitting = isSaving || isCompleting;
   const [showSuccess, setShowSuccess] = useState(false);
-  const AVAILABLE_MODULES = options?.data?.modules ?? [];
 
   const handleSubmit = async () => {
     // The wizard shows a size range; the API wants that range's id.
@@ -80,6 +80,8 @@ export function Step7Review() {
       options?.data?.companySizes.find(
         (size) => size.label === companyProfile.companySize,
       )?.id ?? "";
+    // Only modules the server can switch on are sent.
+    const offered = options?.data?.modules.map((m) => m.id);
     const parsed = tenantSetupSchema.safeParse({
       industry: companyProfile.industry,
       companySize,
@@ -88,7 +90,9 @@ export function Step7Review() {
       managerTitle: organizationConfig.managerTitle,
       departmentLabel: organizationConfig.departmentLabel,
       structureType: organizationConfig.structureType,
-      enabledModules,
+      enabledModules: offered
+        ? enabledModules.filter((id) => offered.includes(id))
+        : enabledModules,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
@@ -139,7 +143,9 @@ export function Step7Review() {
           value={
             organizationConfig.structureType === "hierarchical"
               ? "Hierarchical"
-              : "Flat"
+              : organizationConfig.structureType === "matrix"
+                ? "Matrix"
+                : "Flat"
           }
         />
       </ReviewSection>
@@ -177,7 +183,7 @@ export function Step7Review() {
               onClick={handleGoToDashboard}
               style={{ backgroundColor: "#1D9E75", borderColor: "#1D9E75" }}
             >
-              Continue
+              Go to Dashboard
             </Button>
           </DialogFooter>
         </DialogContent>

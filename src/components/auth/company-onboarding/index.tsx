@@ -19,8 +19,9 @@ import { Step1CompanyProfile } from "./steps/step-1-company-profile";
 import { Step2OrgStructure } from "./steps/step-2-org-structure";
 import { Step4ModulePreferences } from "./steps/step-4-module-preferences";
 import { Step7Review } from "./steps/step-7-review";
+import { Step8BulkUpload } from "./steps/step-8-bulk-upload";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
-import { ClipboardList, ArrowRight } from "lucide-react";
+import { Upload, ClipboardList, ArrowRight, File } from "lucide-react";
 
 const STEPS = [
   {
@@ -59,6 +60,8 @@ function StepContent({ step }: { step: number }) {
       return <Step4ModulePreferences />;
     case 4:
       return <Step7Review />;
+    case 8:
+      return <Step8BulkUpload />;
     default:
       return null;
   }
@@ -68,16 +71,19 @@ export default function CompanyOnboardingIndex() {
   const dispatch = useAppDispatch();
   const currentStep = useAppSelector((s) => s.onboarding.currentStep);
   const completedSteps = useAppSelector((s) => s.onboarding.completedSteps);
+  const isBulkUploaded = useAppSelector((s) => s.onboarding.isBulkUploaded);
 
-  const [entryMode, setEntryMode] = useState<"manual" | null>(null);
+  const [entryMode, setEntryMode] = useState<"manual" | "bulk" | null>(null);
   const { data: setup } = useGetTenantSetupQuery();
   const { data: options } = useGetTenantSetupOptionsQuery();
 
   // Seed the wizard with what the server already holds — the company name and
-  // country from registration, plus anything saved on an earlier visit.
+  // country from registration, plus anything saved on an earlier visit. Once
+  // a template has been uploaded its values stand, so a late or repeated
+  // response does not write over them.
   useEffect(() => {
     const saved = setup?.data;
-    if (!saved) return;
+    if (!saved || isBulkUploaded) return;
     const sizeLabel = options?.data?.companySizes.find(
       (size) => size.id.toLowerCase() === saved.companySize?.toLowerCase(),
     )?.label;
@@ -85,10 +91,14 @@ export default function CompanyOnboardingIndex() {
       updateCompanyProfile({
         companyName: saved.companyName,
         country: saved.country,
-        industry: saved.industry ?? "",
-        companySize: sizeLabel ?? "",
-        companyEmailDomain: saved.companyEmailDomain ?? "",
-        companyPolicies: saved.companyPolicies ?? "",
+        ...(saved.industry ? { industry: saved.industry } : {}),
+        ...(sizeLabel ? { companySize: sizeLabel } : {}),
+        ...(saved.companyEmailDomain
+          ? { companyEmailDomain: saved.companyEmailDomain }
+          : {}),
+        ...(saved.companyPolicies
+          ? { companyPolicies: saved.companyPolicies }
+          : {}),
       }),
     );
     dispatch(
@@ -101,14 +111,19 @@ export default function CompanyOnboardingIndex() {
     if (saved.enabledModules.length > 0) {
       dispatch(updateEnabledModules(saved.enabledModules));
     }
-  }, [setup, options, dispatch]);
+  }, [setup, options, dispatch, isBulkUploaded]);
 
-  const isBulkUploadStep = false;
+  const isBulkUploadStep = currentStep === 8;
   const activeStepMeta = STEPS.find((s) => s.number === currentStep);
 
   const handleChooseManual = () => {
     setEntryMode("manual");
     dispatch(setCurrentStep(1));
+  };
+
+  const handleChooseBulk = () => {
+    setEntryMode("bulk");
+    dispatch(setCurrentStep(8));
   };
 
   return (
@@ -246,8 +261,8 @@ export default function CompanyOnboardingIndex() {
                 How would you like to set up?
               </h1>
               <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-                Fill in your details step by step. You can change any of this
-                later.
+                Fill in your details step by step, or upload a bulk template to
+                auto-populate everything at once.
               </p>
             </div>
 
@@ -277,6 +292,54 @@ export default function CompanyOnboardingIndex() {
                 />
               </button>
 
+              <button
+                type="button"
+                onClick={handleChooseBulk}
+                className="group flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left transition-all duration-200 hover:border-[#7F77DD]/60 hover:shadow-md cursor-pointer"
+              >
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: "rgba(127,119,221,0.12)" }}
+                >
+                  <Upload size={20} style={{ color: "#7F77DD" }} />
+                </div>
+                <div className="flex flex-col gap-0.5 flex-1">
+                  <span className="text-sm font-semibold text-foreground">
+                    Bulk Upload
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Upload a template to auto-fill your entire setup.
+                  </span>
+                </div>
+                <ArrowRight
+                  size={14}
+                  className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
+                />
+              </button>
+              <button
+                disabled
+                type="button"
+                className="group cursor-not-allowed opacity-70 flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left transition-all duration-200"
+              >
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: "rgba(127,119,221,0.2)" }}
+                >
+                  <File size={20} style={{ color: "green" }} />
+                </div>
+                <div className="flex flex-col gap-0.5 flex-1">
+                  <span className="text-sm font-semibold text-foreground">
+                    Test With Demo Data
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                     Auto-fill your entire system with fake data.
+                  </span>
+                </div>
+                <ArrowRight
+                  size={14}
+                  className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
+                />
+              </button>
             </div>
 
             <p className="text-[11px] self text-muted-foreground/50">

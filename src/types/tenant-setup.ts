@@ -1,6 +1,8 @@
 import type { ApiResponse } from "./api";
 
-export type StructureType = "hierarchical" | "flat";
+// The API's own options list only the first two; "matrix" is offered by the
+// setup wizard and sent as-is.
+export type StructureType = "hierarchical" | "flat" | "matrix";
 
 export interface TenantSetupOption {
   id: string;

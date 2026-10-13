@@ -1,14 +1,16 @@
-import { Metadata } from "next";
+﻿import { Metadata } from "next";
 import dynamic from "next/dynamic";
 
 export const metadata: Metadata = {
-  title: "Platform — Motee Admin",
+  title: "All Tenants — Motee Admin",
 };
 
-const PlatformPage = dynamic(() =>
-  import("@/src/components/motee/platform-live").then((m) => m.PlatformPage),
+const AllTenantsPage = dynamic(() =>
+  import("@/src/components/motee/tenants/all-tenants").then(
+    (m) => m.AllTenantsPage,
+  ),
 );
 
 export default function TenantsPage() {
-  return <PlatformPage />;
+  return <AllTenantsPage />;
 }
