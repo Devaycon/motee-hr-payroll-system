@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { DEPARTMENT_OPTIONS } from "../data";
+import { DepartmentSelectItems } from "./department-select-items";
 import type { InviteOnboardingData } from "../types";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
@@ -195,11 +195,7 @@ export function InviteOnboardingModal({
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {DEPARTMENT_OPTIONS.map((d) => (
-                  <SelectItem key={d} value={d} className="text-sm">
-                    {d}
-                  </SelectItem>
-                ))}
+                <DepartmentSelectItems className="text-sm" />
               </SelectContent>
             </Select>
             {fieldError("department") && (
