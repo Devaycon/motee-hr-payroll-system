@@ -22,7 +22,7 @@ import {
   EmployeePicker,
   type PickedEmployee,
 } from "@/src/components/shared/employee-picker";
-import { DEPARTMENT_OPTIONS } from "../data";
+import { DepartmentSelectItems } from "./department-select-items";
 import type { ManualOnboardingData, Guarantor, AssetDraft } from "../types";
 import { emptyAssetDraft } from "../types";
 import { guarantorsSchema, emptyGuarantor } from "@/src/lib/validation/guarantor";
@@ -745,11 +745,7 @@ export function OnboardingFormPage() {
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent>
-                    {DEPARTMENT_OPTIONS.map((d) => (
-                      <SelectItem key={d} value={d}>
-                        {d}
-                      </SelectItem>
-                    ))}
+                    <DepartmentSelectItems />
                   </SelectContent>
                 </Select>
                 {err("department") && (
@@ -854,11 +850,17 @@ export function OnboardingFormPage() {
                     <SelectValue placeholder="Select branch" />
                   </SelectTrigger>
                   <SelectContent>
-                    {branchOptions.map((b) => (
-                      <SelectItem key={b.id} value={b.id}>
-                        {b.name}
-                      </SelectItem>
-                    ))}
+                    {branchOptions.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-muted-foreground">
+                        No branches yet. Create one under Branches first.
+                      </div>
+                    ) : (
+                      branchOptions.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 {err("workLocation") && (
