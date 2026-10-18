@@ -55,7 +55,9 @@ export type LeaveTypeName =
   | "paternity"
   | "unpaid"
   | "compassionate"
-  | "study";
+  | "study"
+  /** Hajj / pilgrimage and other religious leave. */
+  | "religious";
 
 export interface LeaveRequest {
   id: string;

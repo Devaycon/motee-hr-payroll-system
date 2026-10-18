@@ -32,7 +32,17 @@ const SUBMISSION_PORTAL_BY_TYPE: Record<BuiltinCategoryId, SubmissionPortal> = {
   asset_request: "self_service",
   training_request: "self_service",
   loan_request: "self_service",
+  sickness_absence: "self_service",
 };
+
+/**
+ * Types that can only be raised from their own module, because submitting
+ * also creates the module's record (a sickness absence needs its dates, fit
+ * note and return-to-work tracking). The generic intake form leaves them out.
+ */
+export const MODULE_ONLY_TYPES: ReadonlySet<ApprovalDocumentType> = new Set([
+  "sickness_absence",
+]);
 
 /** Can this portal raise a submission of this type? Unknown (custom) types default to admin. */
 export function canSubmitFromPortal(
@@ -69,6 +79,7 @@ export const APPROVAL_CHAIN_MODULES: ApprovalChainModule[] = [
   { documentType: "offboarding_clearance", label: "Offboarding", href: "/talent/offboarding" },
   { documentType: "training_request", label: "Training", href: "/talent/training" },
   { documentType: "loan_request", label: "Employee Loans", href: "/organization/loans" },
+  { documentType: "sickness_absence", label: "Sickness & Absence", href: "/time-payroll/sickness" },
 ];
 
 export function moduleForDocumentType(

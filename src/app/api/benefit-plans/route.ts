@@ -14,19 +14,26 @@ async function ensureDir() {
   }
 }
 
-async function readStored(): Promise<BenefitPlan[]> {
+async function readStored(): Promise<{
+  plans: BenefitPlan[];
+  coverageOptions?: string[];
+}> {
   try {
     const raw = await fs.readFile(FILE, "utf8");
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed?.plans) ? parsed.plans : [];
+    return {
+      plans: Array.isArray(parsed?.plans) ? parsed.plans : [],
+      coverageOptions: Array.isArray(parsed?.coverageOptions)
+        ? parsed.coverageOptions
+        : undefined,
+    };
   } catch {
-    return [];
+    return { plans: [] };
   }
 }
 
 export async function GET() {
-  const plans = await readStored();
-  return NextResponse.json({ plans });
+  return NextResponse.json(await readStored());
 }
 
 export async function PUT(request: Request) {
@@ -42,7 +49,16 @@ export async function PUT(request: Request) {
     await ensureDir();
     await fs.writeFile(
       FILE,
-      JSON.stringify({ plans: body.plans }, null, 2),
+      JSON.stringify(
+        {
+          plans: body.plans,
+          ...(Array.isArray(body.coverageOptions)
+            ? { coverageOptions: body.coverageOptions }
+            : {}),
+        },
+        null,
+        2,
+      ),
       "utf8",
     );
     return NextResponse.json({ ok: true, count: body.plans.length });

@@ -15,7 +15,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
+import { CoverageManageDialog } from "./components/coverage-manage-dialog";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
@@ -47,7 +55,7 @@ const PAGE_SIZE = 5;
 function matchesSearch(plan: BenefitPlan, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  return [plan.name, plan.description, plan.provider, plan.coverageDetails]
+  return [plan.name, plan.description, plan.provider, plan.coverage, plan.coverageDetails]
     .filter(Boolean)
     .some((v) => v!.toLowerCase().includes(q));
 }
@@ -62,6 +70,9 @@ export function BenefitPlansPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [search, setSearch] = useState("");
+  const [coverageFilter, setCoverageFilter] = useState<string>("all");
+  const [manageCoverageOpen, setManageCoverageOpen] = useState(false);
+  const coverageOptions = useAppSelector((s) => s.benefitPlans.coverageOptions);
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<BenefitPlan | null>(null);
@@ -116,8 +127,13 @@ export function BenefitPlansPage() {
     () =>
       plans
         .filter((p) => statusFilter === "all" || p.status === statusFilter)
-        .filter((p) => matchesSearch(p, search)),
-    [plans, statusFilter, search],
+        .filter((p) => matchesSearch(p, search))
+        .filter(
+          (p) =>
+            coverageFilter === "all" ||
+            (coverageFilter === "__none" ? !p.coverage : p.coverage === coverageFilter),
+        ),
+    [plans, statusFilter, search, coverageFilter],
   );
 
   const categoryCounts = useMemo(() => {
@@ -314,14 +330,47 @@ export function BenefitPlansPage() {
         {/* Dense, edge-to-edge plan list — stretched (items-stretch above) to
             match the rail's height so the panel never looks short next to it. */}
         <div className="flex flex-col rounded-xl border border-border bg-card overflow-hidden">
-          <div className="relative shrink-0 border-b border-border/60 p-2">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => updateSearch(e.target.value)}
-              placeholder="Search benefit plans by name, provider or coverage..."
-              className="h-8 border-none bg-muted/40 pl-9 text-xs shadow-none focus-visible:ring-1"
-            />
+          <div className="flex shrink-0 items-center gap-2 border-b border-border/60 p-2">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => updateSearch(e.target.value)}
+                placeholder="Search benefit plans by name, provider or coverage..."
+                className="h-8 border-none bg-muted/40 pl-7 text-xs shadow-none focus-visible:ring-1"
+              />
+            </div>
+            <Select
+              value={coverageFilter}
+              onValueChange={(v) => {
+                setCoverageFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 w-[160px] text-xs">
+                <SelectValue placeholder="Coverage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All coverage</SelectItem>
+                {coverageOptions.map((o) => (
+                  <SelectItem key={o} value={o} className="text-xs">
+                    {o}
+                  </SelectItem>
+                ))}
+                <SelectItem value="__none" className="text-xs text-muted-foreground">
+                  Not specified
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setManageCoverageOpen(true)}
+                className="shrink-0 px-1 text-[10px] font-semibold uppercase tracking-wide text-primary hover:underline"
+              >
+                Manage
+              </button>
+            )}
           </div>
           <div className="flex-1">
             {groups.length === 0 ? (
@@ -411,6 +460,8 @@ export function BenefitPlansPage() {
         editingPlan={editingPlan}
         onSave={handleSave}
       />
+
+      <CoverageManageDialog open={manageCoverageOpen} onOpenChange={setManageCoverageOpen} />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>

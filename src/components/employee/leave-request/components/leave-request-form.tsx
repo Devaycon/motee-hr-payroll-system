@@ -238,6 +238,13 @@ export function LeaveRequestForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-[10px] text-muted-foreground">
+                    Unwell? Report it under{" "}
+                    <a href="/time-off/sickness" className="text-primary hover:underline">
+                      My Sickness
+                    </a>{" "}
+                    instead of requesting leave.
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-3">

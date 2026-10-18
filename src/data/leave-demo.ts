@@ -22,6 +22,7 @@ export const LEAVE_TYPE_LABELS: Record<string, string> = {
   unpaid: "Unpaid",
   compassionate: "Compassionate",
   study: "Study",
+  religious: "Hajj / Pilgrimage",
 };
 
 export const LEAVE_TYPE_STYLES: Record<string, string> = {
@@ -32,9 +33,19 @@ export const LEAVE_TYPE_STYLES: Record<string, string> = {
   unpaid: "bg-slate-500/10 text-slate-600 border-slate-500/20",
   compassionate: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   study: "bg-teal-500/10 text-teal-600 border-teal-500/20",
+  religious: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
 };
 
-export const LEAVE_TYPE_OPTIONS = ["annual","sick","maternity","paternity","unpaid","compassionate","study"] as const;
+/**
+ * Leave types that can be requested or filtered in Leave Management. Sickness
+ * is no longer one of them — it has its own module (Sickness & Absence) with
+ * its own approval chain, schemes and Bradford scoring. "sick" stays in
+ * `LeaveTypeName`/`LEAVE_TYPE_LABELS` so historic rows still render.
+ */
+export const LEAVE_TYPE_OPTIONS = ["annual","maternity","paternity","unpaid","compassionate","study","religious"] as const;
+
+/** Where sickness is recorded now. */
+export const SICKNESS_MODULE_HREF = "/time-payroll/sickness";
 
 export const LEAVE_STATUS_LABELS: Record<LeaveStatus, string> = {
   pending: "Pending",

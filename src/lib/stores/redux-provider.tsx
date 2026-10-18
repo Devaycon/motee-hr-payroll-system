@@ -25,6 +25,10 @@ import { initBranchPersistence } from "./branch-persistence";
 import { initShiftsPersistence } from "./shifts-persistence";
 import { initBenefitPlansPersistence } from "./benefit-plans-persistence";
 import { initErCasesPersistence } from "./er-cases-persistence";
+import { initRuntimePersistence } from "./runtime-persistence";
+import { hydrateBranchPerformance } from "./branch-performance-slice";
+import { hydrateSickness } from "./sickness-slice";
+import { hydrateLeaveSchemes } from "./leave-schemes-slice";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -53,6 +57,22 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
     initShiftsPersistence();
     initBenefitPlansPersistence();
     initErCasesPersistence();
+    initRuntimePersistence({
+      key: "branch-performance",
+      select: (s) => s.branchPerformance,
+      hydrate: hydrateBranchPerformance,
+    });
+    initRuntimePersistence({
+      key: "sickness",
+      select: (s) => s.sickness,
+      // A snapshot from an older seed version is ignored by the reducer.
+      hydrate: hydrateSickness,
+    });
+    initRuntimePersistence({
+      key: "leave-schemes",
+      select: (s) => s.leaveSchemes,
+      hydrate: hydrateLeaveSchemes,
+    });
   }, []);
 
   return <Provider store={store}>{children}</Provider>;

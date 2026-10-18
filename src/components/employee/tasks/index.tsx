@@ -24,7 +24,18 @@ type PersonalTask = {
 
 let taskCounter = 200;
 
+/** Self-service My Tasks page. */
 export function EmployeeTasksPage() {
+  return <MyTasksPanel />;
+}
+
+/**
+ * Assigned and personal tasks for the signed-in person. Shared by the
+ * self-service My Tasks page and the My Tasks tab in admin My Work.
+ */
+export function MyTasksPanel({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
   const { data: localeTasks } = useMyAssignedTasks();
   const [assignedTasks] = useState(
     localeTasks && localeTasks.length ? localeTasks : EMPLOYEE_TASKS,
@@ -105,40 +116,16 @@ export function EmployeeTasksPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-10">
-      <div className="flex items-center gap-3">
-        <div>
-          <h1 className="text-4xl font-bold text-foreground">My Tasks</h1>
+    <div
+      className={embedded ? "flex flex-col gap-4" : "flex flex-col gap-5 pb-10"}
+    >
+      {embedded ? (
+        // In admin My Work, assigned work already lives under To do — only
+        // the person's own personal tasks are added there.
+        <>
           <p className="text-xs text-muted-foreground">
-            {assignedDone + personalDone}/
-            {assignedTasks.length + personalTasks.length} completed
-            {assignedOverdue > 0 && (
-              <span className="ml-2 text-red-500">
-                · {assignedOverdue} overdue
-              </span>
-            )}
+            {personalDone}/{personalTasks.length} personal tasks completed
           </p>
-        </div>
-      </div>
-
-      <Tabs defaultValue="assigned" className="w-full">
-        <PageTabsList
-          className="mb-4"
-          tabs={[
-            { value: "assigned", label: "Assigned Tasks" },
-            { value: "personal", label: "Personal Tasks" },
-          ]}
-        />
-
-        <TabsContent value="assigned" className="mt-0">
-          <AssignedTasks
-            tasks={assignedTasks}
-            filter={filter}
-            onFilterChange={setFilter}
-          />
-        </TabsContent>
-
-        <TabsContent value="personal" className="mt-0">
           <PersonalTasks
             tasks={personalTasks}
             onToggle={handleTogglePersonal}
@@ -146,8 +133,55 @@ export function EmployeeTasksPage() {
             filter={filter}
             onFilterChange={setFilter}
           />
-        </TabsContent>
-      </Tabs>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-3">
+            <div>
+              {!embedded && (
+                <h1 className="text-4xl font-bold text-foreground">My Tasks</h1>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {assignedDone + personalDone}/
+                {assignedTasks.length + personalTasks.length} completed
+                {assignedOverdue > 0 && (
+                  <span className="ml-2 text-red-500">
+                    · {assignedOverdue} overdue
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <Tabs defaultValue="assigned" className="w-full">
+            <PageTabsList
+              className="mb-4"
+              tabs={[
+                { value: "assigned", label: "Assigned Tasks" },
+                { value: "personal", label: "Personal Tasks" },
+              ]}
+            />
+
+            <TabsContent value="assigned" className="mt-0">
+              <AssignedTasks
+                tasks={assignedTasks}
+                filter={filter}
+                onFilterChange={setFilter}
+              />
+            </TabsContent>
+
+            <TabsContent value="personal" className="mt-0">
+              <PersonalTasks
+                tasks={personalTasks}
+                onToggle={handleTogglePersonal}
+                onAdd={handleAddPersonal}
+                filter={filter}
+                onFilterChange={setFilter}
+              />
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
     </div>
   );
 }

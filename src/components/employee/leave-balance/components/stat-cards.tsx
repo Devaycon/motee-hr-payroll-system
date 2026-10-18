@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarDays, Clock, CheckCircle2, TrendingUp } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle2, HeartPulse } from "lucide-react";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   HrStatCardsGrid,
   type HrStatCardItem,
@@ -41,7 +42,16 @@ export function LeaveStatCards({
 }: LeaveStatCardsProps) {
   const pendingCount = MY_HISTORY.filter((h) => h.status === "pending").length;
   const annual = MY_BALANCES[0];
-  const sick = MY_BALANCES[1];
+  const me = useAppSelector((s) => s.auth.user?.employeeId);
+  const year = String(new Date().getFullYear());
+  const sickDays = useAppSelector((s) =>
+    s.sickness.records
+      .filter((r) => r.employeeId === me && r.startDate.startsWith(year) && r.approvalStatus !== "rejected" && r.approvalStatus !== "cancelled")
+      .reduce((sum, r) => {
+        const end = r.endDate ?? new Date().toISOString().slice(0, 10);
+        return sum + Math.max(1, Math.round((Date.parse(end) - Date.parse(r.startDate)) / 86400000) + 1);
+      }, 0),
+  );
 
   /** Re-clicking the open entitlement collapses it again. */
   const balanceCard = (balance: (typeof MY_BALANCES)[number]) => ({
@@ -59,12 +69,13 @@ export function LeaveStatCards({
       ...balanceCard(annual),
     },
     {
-      label: "Sick Leave Remaining",
-      value: `${daysRemaining(sick)} days`,
-      sub: "See the full entitlement",
-      icon: TrendingUp,
+      // Sickness isn't a leave balance any more — it's reported in My Sickness.
+      label: "Days Off Sick This Year",
+      value: `${sickDays} days`,
+      sub: "Report sickness & fit notes",
+      icon: HeartPulse,
       tone: "red",
-      ...balanceCard(sick),
+      link: "/time-off/sickness",
     },
     {
       label: "Pending Requests",

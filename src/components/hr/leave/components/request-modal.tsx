@@ -33,6 +33,7 @@ import {
   DEPARTMENTS,
   LEAVE_TYPE_LABELS,
   LEAVE_TYPE_OPTIONS,
+  SICKNESS_MODULE_HREF,
 } from "../data";
 import type { LeaveRequest, NewLeaveRequest, LeaveTypeName } from "../types";
 
@@ -330,6 +331,13 @@ export function RequestModal({
             {errors.leaveType && (
               <p className="text-[10px] text-destructive">{errors.leaveType}</p>
             )}
+            <p className="text-[10px] text-muted-foreground">
+              Off sick? Sickness is now recorded in{" "}
+              <a href={SICKNESS_MODULE_HREF} className="text-primary hover:underline">
+                Sickness &amp; Absence
+              </a>
+              , with its own approval chain.
+            </p>
           </div>
 
           <div className="col-span-2 flex items-center gap-2">

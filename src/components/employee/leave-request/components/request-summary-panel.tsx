@@ -29,6 +29,7 @@ const LEAVE_TYPE_EMOJI: Record<LeaveTypeName, string> = {
   paternity: "🍼",
   compassionate: "🕊️",
   study: "📚",
+  religious: "🕋",
   unpaid: "📄",
 };
 

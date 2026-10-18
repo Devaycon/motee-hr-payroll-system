@@ -15,6 +15,7 @@ interface Snapshot {
   balances: LeaveBalance[];
   policies: LeavePolicy[];
   seeded: boolean;
+  seedVersion?: number;
 }
 
 let initialized = false;
@@ -77,6 +78,7 @@ export function initLeavePersistence(): void {
       balances: s.balances,
       policies: s.policies,
       seeded: s.seeded,
+      seedVersion: s.seedVersion,
     });
   });
 }

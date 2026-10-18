@@ -22,6 +22,7 @@ const LEAVE_TYPE_LABELS: Record<string, string> = {
   unpaid: "Unpaid Leave",
   compassionate: "Compassionate Leave",
   study: "Study Leave",
+  religious: "Hajj / Pilgrimage",
   parental: "Parental Leave",
   bereavement: "Bereavement Leave",
 };
@@ -43,6 +44,7 @@ export const LEAVE_TYPE_TONES: Record<string, string> = {
   unpaid: "border-slate-400/30 bg-slate-400/10 text-slate-500",
   compassionate: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
   study: "border-teal-500/30 bg-teal-500/10 text-teal-600 dark:text-teal-400",
+  religious: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
 };
 
 export function leaveTypeTone(type?: string | null): string {

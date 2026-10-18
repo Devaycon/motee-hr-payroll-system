@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { SicknessFilterProvider } from "../sickness-data";
 import { cn } from "@/src/lib/utils";
 import { AttendanceChart } from "./attendance-chart";
 import { UpcomingEventsCard } from "./upcoming-events-card";
@@ -15,6 +16,10 @@ import { EorMapCard } from "./eor-map-card";
 import { AttendanceHeroRing } from "./attendance-summary-cards";
 import {
   SickDaysTile,
+  AbsenceFrequencyTile,
+  ReviewAlertsTile,
+  LongShortTermTile,
+  BradfordScoresTile,
   AbsenceRateTile,
   AverageSpellTile,
   OhCasesTile,
@@ -152,35 +157,49 @@ export function AttendanceTabLayout() {
 
 export function SicknessTabLayout() {
   return (
-    <Grid>
-      <Cell span={3}>
-        <SickDaysTile />
-      </Cell>
-      <Cell span={3}>
-        <AbsenceRateTile />
-      </Cell>
-      <Cell span={3}>
-        <AverageSpellTile />
-      </Cell>
-      <Cell span={3}>
-        <OhCasesTile />
-      </Cell>
-      <Cell span={12}>
-        <SicknessHeroRing />
-      </Cell>
-      <Cell span={4}>
-        <SicknessTrendTile />
-      </Cell>
-      <Cell span={4}>
-        <SicknessByReasonTile />
-      </Cell>
-      <Cell span={4}>
-        <OhFitnessTile />
-      </Cell>
-      <Cell span={12}>
-        <TopAbsenteesTile />
-      </Cell>
-    </Grid>
+    <SicknessFilterProvider>
+      <Grid>
+        <Cell span={3}>
+          <SickDaysTile />
+        </Cell>
+        <Cell span={3}>
+          <AbsenceRateTile />
+        </Cell>
+        <Cell span={3}>
+          <AverageSpellTile />
+        </Cell>
+        <Cell span={3}>
+          <OhCasesTile />
+        </Cell>
+        <Cell span={12}>
+          <SicknessHeroRing />
+        </Cell>
+        <Cell span={4}>
+          <SicknessTrendTile />
+        </Cell>
+        <Cell span={4}>
+          <SicknessByReasonTile />
+        </Cell>
+        <Cell span={4}>
+          <OhFitnessTile />
+        </Cell>
+        <Cell span={3}>
+          <AbsenceFrequencyTile />
+        </Cell>
+        <Cell span={3}>
+          <ReviewAlertsTile />
+        </Cell>
+        <Cell span={6}>
+          <LongShortTermTile />
+        </Cell>
+        <Cell span={6}>
+          <BradfordScoresTile />
+        </Cell>
+        <Cell span={6}>
+          <TopAbsenteesTile />
+        </Cell>
+      </Grid>
+    </SicknessFilterProvider>
   );
 }
 

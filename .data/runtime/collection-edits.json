@@ -12,6 +12,15 @@
         "id": "ATT-1786907407709-734",
         "hoursWorked": 0
       }
+    ],
+    "jobPostings": [
+      {
+        "id": "JOB-1792307017521-4702",
+        "hiringManagerId": "GB-EMP-0008",
+        "status": "open",
+        "postedAt": "2026-10-18",
+        "location": "Bristol Office"
+      }
     ]
   },
   "edits": {},

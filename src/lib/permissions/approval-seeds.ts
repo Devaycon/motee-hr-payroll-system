@@ -66,6 +66,12 @@ const DEFAULT_STEPS: Record<ApprovalDocumentType, SeedStep[]> = {
     { label: "Check eligibility & loan policy", approver: "ROLE:ROLE-HRMGR" },
     { label: "Approve disbursement", approver: "ROLE:ROLE-FIN" },
   ],
+  // Sickness is notified, not "requested" — the chain confirms the absence
+  // and the evidence, it can't refuse someone permission to be ill.
+  sickness_absence: [
+    { label: "Confirm absence & arrange cover", approver: "LINE_MANAGER" },
+    { label: "Check fit note & record absence", approver: "ROLE:ROLE-HRMGR" },
+  ],
 };
 
 const DOCUMENT_TEMPLATE_NAMES: Record<ApprovalDocumentType, string> = {
@@ -80,6 +86,7 @@ const DOCUMENT_TEMPLATE_NAMES: Record<ApprovalDocumentType, string> = {
   asset_request: "Standard Asset Request",
   expense_claim: "Standard Expense Claim",
   loan_request: "Standard Staff Loan / Salary Advance",
+  sickness_absence: "Standard Sickness Absence Notification",
 };
 
 const ATTACHMENTS_BY_TYPE: Record<ApprovalDocumentType, AttachmentRules> = {
@@ -125,6 +132,11 @@ const ATTACHMENTS_BY_TYPE: Record<ApprovalDocumentType, AttachmentRules> = {
     allowed: true,
     required: false,
     description: "Attach supporting evidence, e.g. a quote or invoice (optional).",
+  },
+  sickness_absence: {
+    allowed: true,
+    required: false,
+    description: "Attach a fit note for absences over 7 calendar days.",
   },
 };
 
@@ -185,6 +197,11 @@ const SIGNATURES_BY_TYPE: Record<ApprovalDocumentType, SignatureRules> = {
     reviewerSigns: true,
     placeOnDocument: false,
   },
+  sickness_absence: {
+    submitterSigns: false,
+    reviewerSigns: false,
+    placeOnDocument: false,
+  },
 };
 
 function buildTemplate(
@@ -227,6 +244,7 @@ export const DEFAULT_APPROVAL_TEMPLATES: ApprovalChainTemplate[] = [
   buildTemplate("asset_request"),
   buildTemplate("expense_claim"),
   buildTemplate("loan_request"),
+  buildTemplate("sickness_absence"),
 ];
 
 export const DEFAULT_TEMPLATE_IDS = new Set(

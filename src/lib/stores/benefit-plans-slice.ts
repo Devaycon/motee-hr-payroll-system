@@ -1,14 +1,21 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import type { BenefitPlan, NewBenefitPlan } from "@/src/lib/types/benefits";
+import {
+  DEFAULT_COVERAGE_OPTIONS,
+  type BenefitPlan,
+  type NewBenefitPlan,
+} from "@/src/lib/types/benefits";
 import { DEFAULT_BENEFIT_PLANS } from "@/src/lib/permissions/benefit-plan-seeds";
 
 interface BenefitPlansState {
   plans: BenefitPlan[];
+  /** HR-managed coverage levels shown in the plan form's Coverage dropdown. */
+  coverageOptions: string[];
   status: "idle" | "ready";
 }
 
 const initialState: BenefitPlansState = {
   plans: DEFAULT_BENEFIT_PLANS,
+  coverageOptions: DEFAULT_COVERAGE_OPTIONS,
   status: "ready",
 };
 
@@ -37,10 +44,37 @@ const benefitPlansSlice = createSlice({
           ...p,
           country: "country" in p ? p.country : seed.country,
           enrollment: p.enrollment ?? seed.enrollment,
+          coverage: p.coverage ?? seed.coverage,
         };
       });
       state.plans = [...backfilled, ...seedExtras];
       state.status = "ready";
+    },
+
+    hydrateCoverageOptions(state, action: PayloadAction<string[]>) {
+      if (Array.isArray(action.payload)) state.coverageOptions = action.payload;
+    },
+
+    addCoverageOption(state, action: PayloadAction<string>) {
+      const label = action.payload.trim();
+      if (!label) return;
+      if (state.coverageOptions.some((o) => o.toLowerCase() === label.toLowerCase())) return;
+      state.coverageOptions.push(label);
+    },
+
+    /** Renaming carries every plan on the old label across to the new one. */
+    renameCoverageOption(state, action: PayloadAction<{ from: string; to: string }>) {
+      const to = action.payload.to.trim();
+      const idx = state.coverageOptions.indexOf(action.payload.from);
+      if (!to || idx === -1) return;
+      state.coverageOptions[idx] = to;
+      for (const p of state.plans) if (p.coverage === action.payload.from) p.coverage = to;
+    },
+
+    /** Plans on a removed level keep no coverage rather than a dangling label. */
+    removeCoverageOption(state, action: PayloadAction<string>) {
+      state.coverageOptions = state.coverageOptions.filter((o) => o !== action.payload);
+      for (const p of state.plans) if (p.coverage === action.payload) p.coverage = undefined;
     },
 
     createPlan(
@@ -113,6 +147,10 @@ const benefitPlansSlice = createSlice({
 
 export const {
   hydrate,
+  hydrateCoverageOptions,
+  addCoverageOption,
+  renameCoverageOption,
+  removeCoverageOption,
   createPlan,
   updatePlan,
   setPlanStatus,

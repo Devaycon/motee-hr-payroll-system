@@ -2,7 +2,10 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { BranchPerformanceTab } from "../performance/branch-performance-tab";
 import {
   ChevronLeft,
   Building2,
@@ -37,6 +40,10 @@ import { useBranch } from "../hooks";
 
 export function BranchDetailPage({ branchId }: { branchId: string }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab =
+    searchParams.get("tab") === "performance" ? "performance" : "overview";
   const dispatch = useAppDispatch();
   const { branch, staff, loading } = useBranch(branchId);
 
@@ -67,7 +74,10 @@ export function BranchDetailPage({ branchId }: { branchId: string }) {
         <p className="text-sm text-muted-foreground">
           It may have been deleted, or it belongs to a different tenant.
         </p>
-        <Button variant="outline" onClick={() => router.push("/organization/branches")}>
+        <Button
+          variant="outline"
+          onClick={() => router.push("/organization/branches")}
+        >
           <ChevronLeft className="size-4" /> Back to branches
         </Button>
       </div>
@@ -165,144 +175,169 @@ export function BranchDetailPage({ branchId }: { branchId: string }) {
         </div>
       </div>
 
-      <HrStatCardsGrid stats={stats} columns={4} />
+      <Tabs
+        value={tab}
+        onValueChange={(v) =>
+          router.replace(v === "overview" ? pathname : `${pathname}?tab=${v}`, {
+            scroll: false,
+          })
+        }
+        className="gap-4"
+      >
+        <PageTabsList
+          tabs={[
+            { value: "overview", label: "Overview" },
+            { value: "performance", label: "Performance & Reports" },
+          ]}
+        />
+        <TabsContent value="performance">
+          <BranchPerformanceTab branchId={branch.id} />
+        </TabsContent>
+        <TabsContent value="overview" className="flex flex-col gap-6">
+          <HrStatCardsGrid stats={stats} columns={4} />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Site details</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            {detail.map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex items-start gap-2.5">
-                <Icon className="size-4 mt-0.5 shrink-0 text-muted-foreground" />
-                <div className="min-w-0">
-                  <p className="text-[11px] text-muted-foreground">{label}</p>
-                  <p className="text-sm text-foreground break-words">{value}</p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Branch head</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {branch.managerName && branch.managerEmployeeId ? (
-              <Link
-                href={`/organization/employees/${branch.managerEmployeeId}`}
-                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-              >
-                <PersonAvatar
-                  name={branch.managerName}
-                  initials={branch.managerInitials}
-                  className="size-10 shrink-0"
-                  fallbackClassName="bg-primary/10 text-primary text-xs font-semibold"
-                />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {branch.managerName}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    View employee record
-                  </p>
-                </div>
-              </Link>
-            ) : (
-              <p className="text-sm text-muted-foreground italic">
-                No branch head assigned yet.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
-          <CardTitle className="text-base">
-            Departments on site{" "}
-            <span className="text-muted-foreground font-normal">
-              ({byDepartment.length})
-            </span>
-          </CardTitle>
-          <Button variant="outline" size="sm" asChild>
-            <Link
-              href={`/organization/employees?branch=${encodeURIComponent(branch.id)}`}
-            >
-              View all {branch.employeeCount} employees
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {byDepartment.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">
-              Nobody is posted to this branch yet.
-            </p>
-          ) : (
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {byDepartment.map(([name, count]) => (
-                <div
-                  key={name}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
-                >
-                  <span className="text-sm text-foreground truncate">
-                    {name}
-                  </span>
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {count}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">
-            People here{" "}
-            <span className="text-muted-foreground font-normal">
-              ({staff.length})
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {staff.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">
-              Nobody is posted to this branch yet. Assign a branch on an
-              employee&apos;s record to place them here.
-            </p>
-          ) : (
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {staff.map((e) => (
-                <Link
-                  key={e.id}
-                  href={`/organization/employees/${e.id}`}
-                  className="flex items-center gap-2.5 rounded-lg border border-border px-3 py-2 hover:bg-accent transition-colors"
-                >
-                  <PersonAvatar
-                    name={e.fullName}
-                    initials={e.initials}
-                    className="size-8 shrink-0"
-                    fallbackClassName="bg-primary/10 text-primary text-[10px] font-semibold"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm text-foreground truncate">
-                      {e.fullName}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {e.jobTitle}
-                    </p>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base">Site details</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                {detail.map(({ icon: Icon, label, value }) => (
+                  <div key={label} className="flex items-start gap-2.5">
+                    <Icon className="size-4 mt-0.5 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground">
+                        {label}
+                      </p>
+                      <p className="text-sm text-foreground break-words">
+                        {value}
+                      </p>
+                    </div>
                   </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Branch head</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {branch.managerName && branch.managerEmployeeId ? (
+                  <Link
+                    href={`/organization/employees/${branch.managerEmployeeId}`}
+                    className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                  >
+                    <PersonAvatar
+                      name={branch.managerName}
+                      initials={branch.managerInitials}
+                      className="size-10 shrink-0"
+                      fallbackClassName="bg-primary/10 text-primary text-xs font-semibold"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {branch.managerName}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        View employee record
+                      </p>
+                    </div>
+                  </Link>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    No branch head assigned yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
+              <CardTitle className="text-base">
+                Departments on site{" "}
+                <span className="text-muted-foreground font-normal">
+                  ({byDepartment.length})
+                </span>
+              </CardTitle>
+              <Button variant="outline" size="sm" asChild>
+                <Link
+                  href={`/organization/employees?branch=${encodeURIComponent(branch.id)}`}
+                >
+                  View all {branch.employeeCount} employees
                 </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {byDepartment.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">
+                  Nobody is posted to this branch yet.
+                </p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {byDepartment.map(([name, count]) => (
+                    <div
+                      key={name}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
+                    >
+                      <span className="text-sm text-foreground truncate">
+                        {name}
+                      </span>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                People here{" "}
+                <span className="text-muted-foreground font-normal">
+                  ({staff.length})
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {staff.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">
+                  Nobody is posted to this branch yet. Assign a branch on an
+                  employee&apos;s record to place them here.
+                </p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {staff.map((e) => (
+                    <Link
+                      key={e.id}
+                      href={`/organization/employees/${e.id}`}
+                      className="flex items-center gap-2.5 rounded-lg border border-border px-3 py-2 hover:bg-accent transition-colors"
+                    >
+                      <PersonAvatar
+                        name={e.fullName}
+                        initials={e.initials}
+                        className="size-8 shrink-0"
+                        fallbackClassName="bg-primary/10 text-primary text-[10px] font-semibold"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm text-foreground truncate">
+                          {e.fullName}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {e.jobTitle}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

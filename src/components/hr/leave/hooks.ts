@@ -15,18 +15,20 @@ import type {
 } from "@/src/lib/types/leave";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 
-function mapLeaveType(t: string): LeaveTypeName {
-  if (
-    t === "annual" ||
-    t === "sick" ||
-    t === "maternity" ||
-    t === "paternity" ||
-    t === "unpaid" ||
-    t === "compassionate" ||
-    t === "study"
-  ) {
-    return t;
-  }
+/**
+ * The bundle names leave ("Annual Leave", "Sick Leave", "Hajj/Pilgrimage
+ * Leave") rather than keying it, so match on the words. Matching only exact
+ * keys is what labelled every row "Annual".
+ */
+export function mapLeaveType(raw: string | null | undefined): LeaveTypeName {
+  const t = (raw ?? "").toLowerCase();
+  if (/sick|illness|medical/.test(t)) return "sick";
+  if (/maternity/.test(t)) return "maternity";
+  if (/paternity|partner/.test(t)) return "paternity";
+  if (/compassion|bereave/.test(t)) return "compassionate";
+  if (/study|exam|education/.test(t)) return "study";
+  if (/hajj|pilgrim|religious|umrah/.test(t)) return "religious";
+  if (/unpaid/.test(t)) return "unpaid";
   return "annual";
 }
 
@@ -108,7 +110,7 @@ function buildLeave(bundle: LocaleBundle): LeaveData {
       managerName: manager?.fullName,
       location: emp?.workLocation,
       employmentType: emp ? empTypeNameById.get(emp.employmentTypeId) : undefined,
-      leaveType: mapLeaveType(r.type),
+      leaveType: mapLeaveType((r as unknown as { leaveType?: string }).leaveType ?? r.type),
       startDate: r.startDate,
       endDate: r.endDate,
       totalDays: r.days ?? 1,
@@ -136,7 +138,7 @@ function buildLeave(bundle: LocaleBundle): LeaveData {
       employeeName: emp?.fullName ?? r.employeeId ?? "Unknown",
       employeeInitials: emp?.initials ?? "??",
       department: emp?.departmentName ?? "—",
-      leaveType: mapLeaveType(policy?.type ?? r.type ?? "annual"),
+      leaveType: mapLeaveType(policy?.type ?? policy?.name ?? r.type),
       totalEntitlement: r.totalEntitlement ?? r.entitlement ?? r.balance ?? 21,
       daysUsed: r.daysUsed ?? r.used ?? 0,
       daysPending: r.daysPending ?? r.pending ?? 0,
@@ -148,8 +150,8 @@ function buildLeave(bundle: LocaleBundle): LeaveData {
     (bundle.leavePolicies as unknown as RawLeavePolicy[]) ?? []
   ).map((r, i) => ({
     id: r.id ?? `LP-${i}`,
-    name: r.name ?? `${mapLeaveType(r.type ?? "annual")} policy`,
-    leaveType: mapLeaveType(r.type ?? "annual"),
+    name: r.name ?? `${mapLeaveType(r.type)} policy`,
+    leaveType: mapLeaveType(r.type ?? r.name),
     description: r.description,
     maxDaysPerYear: r.maxDaysPerYear ?? r.days ?? 21,
     minNoticeDays: r.minNoticeDays ?? 5,

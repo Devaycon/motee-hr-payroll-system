@@ -10,17 +10,18 @@ import { LEAVE_TYPE_LABELS } from "@/src/data/leave-demo";
 import type { LeaveTypeName } from "@/src/lib/types/leave";
 import type { LeaveBalance } from "./types";
 
+// Sickness is reported under My Sickness, so it has no leave balance card.
 const SHOWN_TYPES: LeaveTypeName[] = [
   "annual",
-  "sick",
   "compassionate",
   "study",
+  "unpaid",
 ];
 
 /** Keeps each card's accent recognisable per leave type. */
 const TYPE_TONES: Partial<Record<LeaveTypeName, HrStatCardTone>> = {
   annual: "blue",
-  sick: "red",
+  unpaid: "amber",
   compassionate: "violet",
   study: "emerald",
 };
