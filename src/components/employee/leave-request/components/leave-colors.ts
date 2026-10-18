@@ -11,4 +11,5 @@ export const LEAVE_TYPE_COLORS: Record<
   unpaid: { bar: "#6B7280", bg: "#6B728018" },
   compassionate: { bar: "#D97706", bg: "#D9770618" },
   study: { bar: "#0D9488", bg: "#0D948818" },
+  religious: { bar: "#4F46E5", bg: "#4F46E518" },
 };

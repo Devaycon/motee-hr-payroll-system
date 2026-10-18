@@ -19,6 +19,8 @@ import {
 import ThemeToggle from "@/src/components/themes/theme-toggle";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { ChatPanel } from "@/src/components/shared/chat-panel";
+import { openChat } from "@/src/lib/stores/chat-slice";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
 import { NotificationsPanel } from "@/src/components/shared/notifications-panel";
 import { ScreenShareModal } from "@/src/components/shared/screen-share-modal";
 
@@ -40,7 +42,7 @@ const formatTime = (date: Date) =>
 const Navbar = () => {
   const [now, setNow] = useState(new Date());
   const router = useRouter();
-  const [chatOpen, setChatOpen] = useState(false);
+  const dispatch = useAppDispatch();
   const [notifOpen, setNotifOpen] = useState(false);
   const [screenShareOpen, setScreenShareOpen] = useState(false);
 
@@ -84,7 +86,7 @@ const Navbar = () => {
           <div className="flex items-center gap-3 border py-1 rounded-lg px-2 bg-card">
             <button
               data-tutorial="chat"
-              onClick={() => setChatOpen(true)}
+              onClick={() => dispatch(openChat())}
               className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-background border border-border text-muted-foreground hover:text-foreground transition-colors"
             >
               <MessageSquare size={16} />
@@ -155,7 +157,7 @@ const Navbar = () => {
           </Popover>
         </div>
       </header>
-      <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+      <ChatPanel />
       <NotificationsPanel
         isOpen={notifOpen}
         onClose={() => setNotifOpen(false)}

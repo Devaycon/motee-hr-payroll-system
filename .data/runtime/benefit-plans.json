@@ -24,7 +24,8 @@
       "lastModifiedAt": "2026-01-01",
       "createdAt": "2026-01-01",
       "country": "ng",
-      "enrollment": "core"
+      "enrollment": "core",
+      "coverage": "Family Cover"
     },
     {
       "id": "BEN-PENSION",
@@ -73,7 +74,8 @@
       "lastModifiedAt": "2026-01-01",
       "createdAt": "2026-01-01",
       "country": "ng",
-      "enrollment": "core"
+      "enrollment": "core",
+      "coverage": "Employee Only"
     },
     {
       "id": "BEN-PA",
@@ -90,7 +92,8 @@
       "lastModifiedAt": "2026-01-01",
       "createdAt": "2026-01-01",
       "country": "ng",
-      "enrollment": "core"
+      "enrollment": "core",
+      "coverage": "Employee Only"
     },
     {
       "id": "BEN-LEAVE",
@@ -474,7 +477,8 @@
           "remote",
           "field_based"
         ]
-      }
+      },
+      "coverage": "Family Cover"
     },
     {
       "status": "active",
@@ -497,7 +501,8 @@
           "field_based",
           "part_time"
         ]
-      }
+      },
+      "coverage": "Married Cover"
     },
     {
       "status": "active",
@@ -518,7 +523,8 @@
           "remote",
           "field_based"
         ]
-      }
+      },
+      "coverage": "Employee Only"
     },
     {
       "status": "active",
@@ -542,7 +548,8 @@
           "remote",
           "field_based"
         ]
-      }
+      },
+      "coverage": "Employee Only"
     },
     {
       "status": "active",
@@ -565,7 +572,8 @@
           "remote",
           "field_based"
         ]
-      }
+      },
+      "coverage": "Employee Only"
     },
     {
       "status": "active",
@@ -587,7 +595,8 @@
           "remote",
           "field_based"
         ]
-      }
+      },
+      "coverage": "Employee Only"
     },
     {
       "status": "active",
@@ -738,5 +747,10 @@
         "kind": "all"
       }
     }
+  ],
+  "coverageOptions": [
+    "Employee Only",
+    "Married Cover",
+    "Family Cover"
   ]
 }

@@ -33,6 +33,7 @@ import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { submitApproval } from "@/src/lib/stores/approvals-slice";
 import {
   canSubmitFromPortal,
+  MODULE_ONLY_TYPES,
   type SubmissionPortal,
 } from "@/src/lib/approvals/config";
 import {
@@ -114,6 +115,7 @@ const EXTRA_FIELDS: Record<ApprovalDocumentType, ExtraField[]> = {
     { key: "model", label: "Preferred model" },
     { key: "justification", label: "Justification" },
   ],
+  sickness_absence: [],
   loan_request: [
     { key: "loanType", label: "Loan type" },
     { key: "amount", label: "Amount", type: "number" },
@@ -170,6 +172,7 @@ export function IntakeModal({
     const out = new Map<ApprovalDocumentType, ApprovalChainTemplate[]>();
     for (const t of templates) {
       if (!canSubmitFromPortal(t.documentType, portal)) continue;
+      if (MODULE_ONLY_TYPES.has(t.documentType)) continue;
       if (!isEligibleStarter(t, user?.roleId)) continue;
       const arr = out.get(t.documentType) ?? [];
       arr.push(t);

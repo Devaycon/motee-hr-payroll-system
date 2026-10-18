@@ -33,6 +33,7 @@ const SEED_DATE = "2026-01-01";
 const BASE_PLANS: BenefitPlan[] = [
   {
     id: "BEN-HMO",
+    coverage: "Family Cover",
     name: "Group Health Insurance (HMO)",
     category: "health",
     description:
@@ -72,6 +73,7 @@ const BASE_PLANS: BenefitPlan[] = [
   },
   {
     id: "BEN-LIFE",
+    coverage: "Employee Only",
     name: "Group Life Assurance",
     category: "insurance",
     description:
@@ -90,6 +92,7 @@ const BASE_PLANS: BenefitPlan[] = [
   },
   {
     id: "BEN-PA",
+    coverage: "Employee Only",
     name: "Group Personal Accident Cover",
     category: "insurance",
     description:
@@ -366,6 +369,7 @@ const UK_PLANS: BenefitPlan[] = [
   }),
   seedPlan({
     id: "BEN-UK-PMI",
+    coverage: "Family Cover",
     name: "Private Medical Insurance",
     category: "health",
     country: "uk",
@@ -377,6 +381,7 @@ const UK_PLANS: BenefitPlan[] = [
   }),
   seedPlan({
     id: "BEN-UK-DENTAL",
+    coverage: "Married Cover",
     name: "Dental Cover",
     category: "health",
     country: "uk",
@@ -387,6 +392,7 @@ const UK_PLANS: BenefitPlan[] = [
   }),
   seedPlan({
     id: "BEN-UK-SCREENING",
+    coverage: "Employee Only",
     name: "Health Screening & Optical Cover",
     category: "health",
     country: "uk",
@@ -396,6 +402,7 @@ const UK_PLANS: BenefitPlan[] = [
   }),
   seedPlan({
     id: "BEN-UK-LIFE",
+    coverage: "Employee Only",
     name: "Life Assurance",
     category: "insurance",
     country: "uk",
@@ -408,6 +415,7 @@ const UK_PLANS: BenefitPlan[] = [
   }),
   seedPlan({
     id: "BEN-UK-INCOME-PROTECTION",
+    coverage: "Employee Only",
     name: "Income Protection",
     category: "insurance",
     country: "uk",
@@ -419,6 +427,7 @@ const UK_PLANS: BenefitPlan[] = [
   }),
   seedPlan({
     id: "BEN-UK-CRITICAL-ILLNESS",
+    coverage: "Employee Only",
     name: "Critical Illness Cover",
     category: "insurance",
     country: "uk",

@@ -32,6 +32,11 @@ import benefitPlansReducer from "./benefit-plans-slice";
 import docuSignReducer from "./docu-sign-slice";
 import myDocumentsReducer from "./my-documents-slice";
 import erCasesReducer from "./er-cases-slice";
+import branchPerformanceReducer from "./branch-performance-slice";
+import sicknessReducer from "./sickness-slice";
+import leaveSchemesReducer from "./leave-schemes-slice";
+import chatReducer from "./chat-slice";
+import { sicknessListener } from "./sickness-listener";
 
 export const store = configureStore({
   reducer: {
@@ -67,11 +72,18 @@ export const store = configureStore({
     docuSign: docuSignReducer,
     myDocuments: myDocumentsReducer,
     erCases: erCasesReducer,
+    branchPerformance: branchPerformanceReducer,
+    sickness: sicknessReducer,
+    leaveSchemes: leaveSchemesReducer,
+    chat: chatReducer,
   },
   // Prepend, never replace: replacing the stack drops serialisability and
   // immutability checks along with thunk support.
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().prepend(workflowRunsListener.middleware),
+    getDefaultMiddleware().prepend(
+      workflowRunsListener.middleware,
+      sicknessListener.middleware,
+    ),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

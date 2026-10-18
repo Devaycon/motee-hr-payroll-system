@@ -23,7 +23,6 @@ export interface HistoryEntry {
 
 export const MY_BALANCES: BalanceEntry[] = [
   { type: "annual", totalEntitlement: 20, daysUsed: 8, daysPending: 3, carryOver: 3 },
-  { type: "sick", totalEntitlement: 10, daysUsed: 2, daysPending: 0 },
   { type: "compassionate", totalEntitlement: 3, daysUsed: 0, daysPending: 0 },
   { type: "study", totalEntitlement: 5, daysUsed: 0, daysPending: 0 },
   { type: "paternity", totalEntitlement: 5, daysUsed: 0, daysPending: 0 },
@@ -42,17 +41,6 @@ export const MY_HISTORY: HistoryEntry[] = [
     notes: "Family trip",
     approvedBy: "Chidinma Okeke",
     submittedAt: "2026-01-24",
-  },
-  {
-    id: "mlr-002",
-    leaveType: "sick",
-    startDate: "2026-03-11",
-    endDate: "2026-03-12",
-    totalDays: 2,
-    status: "approved",
-    notes: "Doctor's visit",
-    approvedBy: "System",
-    submittedAt: "2026-03-11",
   },
   {
     id: "mlr-003",
@@ -85,6 +73,7 @@ export const TYPE_COLORS: Record<LeaveTypeName, { bar: string; bg: string }> = {
   unpaid: { bar: "#6B7280", bg: "#6B728018" },
   compassionate: { bar: "#D97706", bg: "#D9770618" },
   study: { bar: "#0D9488", bg: "#0D948818" },
+  religious: { bar: "#4F46E5", bg: "#4F46E518" },
 };
 
 // ── Five-value leave model (§15.3) ──────────────────────────────────────────

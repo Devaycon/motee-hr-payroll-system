@@ -31,6 +31,7 @@ import {
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { LeaveSchemesTab } from "./schemes/schemes-tab";
 import { ApprovalChainTab } from "@/src/components/hr/approvals/components/approval-chain-tab";
 import {
   APPROVAL_CHAIN_TAB_ITEM,
@@ -88,7 +89,8 @@ export function LeaveManagementPage() {
 
   // KPI-card drill-down: a card switches to Requests and narrows it to the
   // rows it counts.
-  const [activeTab, setActiveTab] = useState("requests");
+  const tabParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => tabParams.get("tab") ?? "requests");
   const [cardFilter, setCardFilter] = useState<LeaveCardFilter>("all");
   const metrics = useLeaveMetrics(requests);
 
@@ -420,6 +422,7 @@ export function LeaveManagementPage() {
             { value: "calendar", label: "Calendar" },
             { value: "balances", label: "Balances" },
             { value: "policies", label: "Policies" },
+            { value: "schemes", label: "Schemes" },
             ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
@@ -464,6 +467,10 @@ export function LeaveManagementPage() {
             onDelete={handleDeletePolicy}
             onAddPolicy={handleAddPolicy}
           />
+        </TabsContent>
+
+        <TabsContent value="schemes" className="mt-4 space-y-4">
+          <LeaveSchemesTab />
         </TabsContent>
 
         {hasChainTab && (
@@ -544,11 +551,11 @@ export function LeaveManagementPage() {
             "AN",
             "Product",
             "Product Manager",
-            "sick",
+            "compassionate",
             "2026-07-10",
             "2026-07-11",
             "2",
-            "Flu",
+            "Family bereavement",
             "",
             "",
           ],

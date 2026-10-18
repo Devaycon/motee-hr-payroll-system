@@ -1,4 +1,5 @@
 import {
+  HeartPulse,
   LayoutDashboard,
   ClipboardList,
   CalendarDays,
@@ -100,6 +101,12 @@ export const routes: Route[] = [
     icon: CalendarPlus,
     label: "Request Leave",
     link: "/time-off/request",
+  },
+  {
+    group: "Overview",
+    icon: HeartPulse,
+    label: "My Sickness",
+    link: "/time-off/sickness",
   },
   {
     group: "Overview",

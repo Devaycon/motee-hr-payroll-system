@@ -5,7 +5,9 @@ import { ResponsiveBar } from "@nivo/bar";
 import { ResponsivePie } from "@nivo/pie";
 import { ChevronRight, CalendarClock } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { OH_REFERRALS } from "@/src/data/occupational-health-demo";
+import { useOHReferrals } from "@/src/components/hr/occupational-health/use-oh-referrals";
+import { BRADFORD_ACTION_LABELS, BRADFORD_ACTION_STYLES } from "@/src/lib/types/sickness";
+import { cn } from "@/src/lib/utils";
 import { OH_FITNESS_LABELS } from "@/src/lib/types/occupational-health";
 import { Tile, TileLabel, TileSub, TileNum, HBars } from "./tiles";
 import { ChartCard, HeroRingCard, chartColor, NIVO_THEME } from "@/src/components/shared/charts";
@@ -18,7 +20,8 @@ import { useSickness } from "../hooks";
  * referral log — so every tile drills into the module that owns its data
  * rather than into a generic report.
  */
-const LEAVE_HREF = "/time-payroll/leave";
+const LEAVE_HREF = "/time-payroll/sickness";
+const BRADFORD_HREF = "/time-payroll/sickness/bradford";
 const OH_HREF = "/time-payroll/occupational-health";
 
 function TileLink({ href, children }: { href: string; children: string }) {
@@ -67,15 +70,15 @@ export function SickDaysTile() {
   return (
     <KpiTile
       label="Sick days"
-      sub="Last 12 months"
+      sub={data.windowLabel}
       value={data.daysInWindow}
       note={
         data.daysInWindow === 0
-          ? "No sickness recorded in the last 12 months"
+          ? "No sickness recorded in this period"
           : `Across ${data.peopleInWindow} ${data.peopleInWindow === 1 ? "employee" : "employees"}`
       }
       href={LEAVE_HREF}
-      link="View leave"
+      link="View absences"
     />
   );
 }
@@ -87,11 +90,11 @@ export function AbsenceRateTile() {
   return (
     <KpiTile
       label="Absence rate"
-      sub="Rolling 12 months"
+      sub={data.windowLabel}
       value={`${data.absenceRate}%`}
       note="Share of available working days"
       href={LEAVE_HREF}
-      link="View leave"
+      link="View absences"
     />
   );
 }
@@ -103,11 +106,11 @@ export function AverageSpellTile() {
   return (
     <KpiTile
       label="Average spell"
-      sub="Per absence, last 12 months"
+      sub={`Per absence, ${data.windowLabel.toLowerCase()}`}
       value={`${data.averageSpell} days`}
       note="Length of a typical sickness absence"
       href={LEAVE_HREF}
-      link="View leave"
+      link="View absences"
     />
   );
 }
@@ -118,7 +121,7 @@ export function AverageSpellTile() {
  * adjustments and the return-to-work interview.
  */
 export function OhCasesTile() {
-  const open = OH_REFERRALS.filter((r) => r.status !== "closed");
+  const open = useOHReferrals().filter((r) => r.status !== "closed");
   const referred = open.filter((r) => r.referralDate).length;
 
   return (
@@ -259,7 +262,7 @@ export function SicknessByReasonTile() {
 const VISIBLE_ROWS = 5;
 
 export function OhFitnessTile() {
-  const open = OH_REFERRALS.filter((r) => r.status !== "closed");
+  const open = useOHReferrals().filter((r) => r.status !== "closed");
 
   const counts = new Map<string, number>();
   for (const r of open) {
@@ -385,6 +388,88 @@ export function TopAbsenteesTile() {
           <TileLink href={OH_HREF}>View occupational health</TileLink>
         </>
       )}
+    </Tile>
+  );
+}
+
+/** Highest Bradford scores — a prompt for review, never a sanction. */
+export function BradfordScoresTile() {
+  const { data, loading } = useSickness();
+  if (loading || !data) return <Skeleton className="h-64 w-full rounded-xl" />;
+  const top = data.bradford.slice(0, 6);
+  return (
+    <Tile>
+      <TileLabel>Bradford Factor scores</TileLabel>
+      <TileSub>Last 52 weeks · S² × D</TileSub>
+      {top.length === 0 ? (
+        <p className="mt-3 text-xs text-muted-foreground">No sickness episodes to score.</p>
+      ) : (
+        <ul className="mt-3 space-y-1.5">
+          {top.map((b) => (
+            <li key={b.employeeId} className="flex items-center justify-between gap-2 text-xs">
+              <span className="truncate">{b.name}</span>
+              <span className="flex items-center gap-2">
+                <span className="font-semibold tabular-nums">{b.score}</span>
+                <span className={cn("rounded-full border px-1.5 text-[10px]", BRADFORD_ACTION_STYLES[b.action])}>
+                  {BRADFORD_ACTION_LABELS[b.action].replace(" suggested", "")}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <TileLink href={BRADFORD_HREF}>Bradford dashboard</TileLink>
+    </Tile>
+  );
+}
+
+export function ReviewAlertsTile() {
+  const { data, loading } = useSickness();
+  if (loading || !data) return <Skeleton className="h-40 w-full rounded-xl" />;
+  return (
+    <KpiTile
+      label="Review alerts"
+      sub="Open attendance reviews"
+      value={data.reviewsPending}
+      note={data.reviewsPending ? "Human review needed — no automatic action" : "Nothing awaiting review"}
+      href="/time-payroll/sickness/alerts"
+      link="View alerts"
+    />
+  );
+}
+
+export function AbsenceFrequencyTile() {
+  const { data, loading } = useSickness();
+  if (loading || !data) return <Skeleton className="h-40 w-full rounded-xl" />;
+  return (
+    <KpiTile
+      label="Absence frequency"
+      sub={data.windowLabel}
+      value={data.frequency}
+      note={`${data.episodes} episodes · per employee`}
+      href={BRADFORD_HREF}
+      link="View Bradford"
+    />
+  );
+}
+
+export function LongShortTermTile() {
+  const { data, loading } = useSickness();
+  if (loading || !data) return <Skeleton className="h-40 w-full rounded-xl" />;
+  const total = data.longTerm.days + data.shortTerm.days || 1;
+  return (
+    <Tile>
+      <TileLabel>Long-term vs short-term</TileLabel>
+      <TileSub>{data.windowLabel} · days lost</TileSub>
+      <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-muted">
+        <div className="bg-rose-500" style={{ width: `${(data.longTerm.days / total) * 100}%` }} />
+        <div className="bg-sky-500" style={{ width: `${(data.shortTerm.days / total) * 100}%` }} />
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+        <p><span className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-500" />Long-term: <b>{data.longTerm.count}</b> spells, {data.longTerm.days} days</p>
+        <p><span className="mr-1 inline-block h-2 w-2 rounded-full bg-sky-500" />Short-term: <b>{data.shortTerm.count}</b> spells, {data.shortTerm.days} days</p>
+      </div>
+      <TileLink href={LEAVE_HREF}>View absences</TileLink>
     </Tile>
   );
 }

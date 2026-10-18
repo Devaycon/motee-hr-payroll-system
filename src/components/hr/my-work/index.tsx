@@ -15,6 +15,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { MyTasksPanel } from "@/src/components/employee/tasks";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { useCurrentUser } from "@/src/lib/auth/demo-identity";
 import {
@@ -163,6 +164,7 @@ export function MyWorkPage({ embedded = false }: { embedded?: boolean } = {}) {
           tabs={[
             { value: "todo", label: `To do (${todo.length})` },
             { value: "review", label: `Awaiting my review (${review.length})` },
+            { value: "my_tasks", label: "Personal tasks" },
             {
               value: "others",
               label: `Assigned to others (${others.length})`,
@@ -203,6 +205,11 @@ export function MyWorkPage({ embedded = false }: { embedded?: boolean } = {}) {
               ))}
             </ul>
           )}
+        </TabsContent>
+
+        {/* Personal tasks, as in self-service My Tasks — assigned work is under To do. */}
+        <TabsContent value="my_tasks" className="mt-4">
+          <MyTasksPanel embedded />
         </TabsContent>
 
         <TabsContent value="others" className="mt-4">

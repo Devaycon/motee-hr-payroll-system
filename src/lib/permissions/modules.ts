@@ -66,6 +66,7 @@ export const ALL_MODULES: ModuleEntry[] = [
   // the page, but the restricted manager view vs. full HR/OH admin detail
   // is enforced by data scope (`useCanViewConfidentialOH` in
   // src/components/hr/occupational-health/lib.ts), not by this grant alone.
+  { id: "time-payroll.sickness",     label: "Sickness & Absence", group: "Time & Payroll", link: "/time-payroll/sickness" },
   { id: "time-payroll.occupational-health", label: "Occupational Health", group: "Time & Payroll", link: "/time-payroll/occupational-health" },
 
   // Operations

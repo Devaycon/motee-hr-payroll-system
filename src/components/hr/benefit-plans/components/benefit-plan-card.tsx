@@ -30,6 +30,7 @@ function factsSummary(plan: BenefitPlan): string {
     );
   }
   if (plan.costNote) parts.push(plan.costNote);
+  if (plan.coverage) parts.push(plan.coverage);
   if (plan.coverageDetails) parts.push(plan.coverageDetails);
   return parts.join(" · ");
 }

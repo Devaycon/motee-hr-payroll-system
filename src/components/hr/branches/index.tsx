@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { PerformanceDashboard } from "./performance/performance-dashboard";
+import { CompareBranches } from "./performance/compare-branches";
+import { ReportsPanel } from "./performance/reports-panel";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useAppDispatch } from "@/src/lib/stores/hooks";
@@ -18,8 +24,26 @@ import { BranchFormModal } from "./components/branch-form-modal";
 import { useBranches, useBranchMutations, useNextBranchId } from "./hooks";
 import type { Branch } from "./types";
 
+const BRANCH_TABS = [
+  { value: "overview", label: "Overview" },
+  { value: "performance", label: "Performance" },
+  { value: "compare", label: "Compare Branches" },
+  { value: "reports", label: "Reports" },
+];
+
 export function BranchesPage() {
   const dispatch = useAppDispatch();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const tab = BRANCH_TABS.some((t) => t.value === searchParams.get("tab"))
+    ? (searchParams.get("tab") as string)
+    : "overview";
+  function selectTab(next: string) {
+    router.replace(next === "overview" ? pathname : `${pathname}?tab=${next}`, {
+      scroll: false,
+    });
+  }
   const { data: branches, loading } = useBranches();
   const { create, update, remove } = useBranchMutations();
   const nextId = useNextBranchId();
@@ -72,7 +96,8 @@ export function BranchesPage() {
     dispatch(setActiveBranch(id));
     const name = rows.find((b) => b.id === id)?.name ?? "branch";
     toast.success(`Now showing ${name} only`, {
-      description: "Change this any time from the branch switcher in the header.",
+      description:
+        "Change this any time from the branch switcher in the header.",
     });
   }
 
@@ -95,55 +120,71 @@ export function BranchesPage() {
         </p>
       </div>
 
-      <StatCards
-        branches={rows}
-        cardFilter={cardFilter}
-        onFilterChange={setCardFilter}
-      />
+      <Tabs value={tab} onValueChange={selectTab} className="gap-4">
+        <PageTabsList tabs={BRANCH_TABS} />
+        <TabsContent value="performance">
+          <PerformanceDashboard />
+        </TabsContent>
+        <TabsContent value="compare">
+          <CompareBranches />
+        </TabsContent>
+        <TabsContent value="reports">
+          <ReportsPanel />
+        </TabsContent>
+        <TabsContent value="overview" className="flex flex-col gap-6">
+          <StatCards
+            branches={rows}
+            cardFilter={cardFilter}
+            onFilterChange={setCardFilter}
+          />
 
-      {cardFilter !== "all" && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-foreground">
-            {BRANCH_CARD_FILTER_LABELS[cardFilter]}{" "}
-            <span className="text-muted-foreground">({filtered.length})</span>
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs text-muted-foreground"
-            onClick={() => setCardFilter("all")}
-          >
-            ← All branches
-          </Button>
-        </div>
-      )}
+          {cardFilter !== "all" && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-foreground">
+                {BRANCH_CARD_FILTER_LABELS[cardFilter]}{" "}
+                <span className="text-muted-foreground">
+                  ({filtered.length})
+                </span>
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-muted-foreground"
+                onClick={() => setCardFilter("all")}
+              >
+                ← All branches
+              </Button>
+            </div>
+          )}
 
-      <BranchesToolbar
-        search={search}
-        onSearchChange={setSearch}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        kindFilter={kindFilter}
-        onKindFilterChange={setKindFilter}
-        onAdd={handleAdd}
-      />
+          <BranchesToolbar
+            search={search}
+            onSearchChange={setSearch}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            kindFilter={kindFilter}
+            onKindFilterChange={setKindFilter}
+            onAdd={handleAdd}
+          />
 
-      <BranchesTable
-        branches={filtered}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onScopeTo={handleScopeTo}
-      />
+          <BranchesTable
+            branches={filtered}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onScopeTo={handleScopeTo}
+          />
 
-      <BranchFormModal
-        open={formOpen}
-        onClose={() => setFormOpen(false)}
-        editing={editing}
-        takenCodes={rows.map((b) => b.code)}
-        onCreate={create}
-        onUpdate={update}
-        nextId={nextId}
-      />
+          <BranchFormModal
+            open={formOpen}
+            onClose={() => setFormOpen(false)}
+            editing={editing}
+            takenCodes={rows.map((b) => b.code)}
+            onCreate={create}
+            onUpdate={update}
+            nextId={nextId}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

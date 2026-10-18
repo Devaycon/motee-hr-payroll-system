@@ -594,6 +594,54 @@
       },
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01"
+    },
+    {
+      "id": "ACT-DEFAULT-SICKNESS-ABSENCE",
+      "documentType": "sickness_absence",
+      "name": "Standard Sickness Absence Notification",
+      "description": "Default sickness absence workflow",
+      "isDefault": true,
+      "kind": "system",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "steps": [
+        {
+          "id": "ACT-STEP-SICKNESS-ABSENCE-1",
+          "order": 1,
+          "label": "Confirm absence & arrange cover",
+          "approver": "LINE_MANAGER",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-SICKNESS-ABSENCE-2",
+          "order": 2,
+          "label": "Check fit note & record absence",
+          "approver": "ROLE:ROLE-HRMGR",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "attachments": {
+        "allowed": true,
+        "required": false,
+        "description": "Attach a fit note for absences over 7 calendar days."
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": false,
+        "placeOnDocument": false
+      },
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01"
     }
   ],
   "requests": []

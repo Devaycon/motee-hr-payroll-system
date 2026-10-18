@@ -1,4 +1,5 @@
 import {
+  HeartPulse,
   LayoutDashboard,
   BriefcaseBusiness,
   Building2,
@@ -331,6 +332,13 @@ export const routes: Route[] = [
 
   // §4.16 — Occupational Health was buried under "Time & Payroll", which is
   // not where anyone would look for it.
+  // Sickness moved out of Leave Management into its own module.
+  {
+    group: "Health & Wellbeing",
+    icon: HeartPulse,
+    label: "Sickness & Absence",
+    link: "/time-payroll/sickness",
+  },
   {
     group: "Health & Wellbeing",
     icon: Stethoscope,
