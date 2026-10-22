@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { ResponsiveLine } from "@nivo/line";
 import {
   ArrowDownRight,
   ArrowRight,
@@ -10,7 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
-import { ChartCard, ChartPlaceholder } from "@/src/components/shared/charts";
+import { ChartCard, NIVO_THEME } from "@/src/components/shared/charts";
 import {
   HrStatCardsGrid,
   type HrStatCardItem,
@@ -18,6 +19,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import type { HeadcountPlan, PlanPeriod } from "../types";
 import {
+  headcountSeries,
   quarterOverQuarter,
   yearOverYear,
   type TrendRow,
@@ -74,6 +76,14 @@ export function Trends({ plans, activePeriod }: TrendsProps) {
     [plans, activePeriod],
   );
 
+  const series = useMemo(() => {
+    const points = headcountSeries(plans);
+    return [
+      { id: "Actual", data: points.map((p) => ({ x: p.period, y: p.actual })) },
+      { id: "Target", data: points.map((p) => ({ x: p.period, y: p.target })) },
+    ];
+  }, [plans]);
+
   const stats = useMemo<HrStatCardItem[]>(
     () => [
       {
@@ -129,7 +139,45 @@ export function Trends({ plans, activePeriod }: TrendsProps) {
             : undefined
         }
       >
-        <ChartPlaceholder />
+        {series[0].data.length === 0 ? (
+          <div className="flex h-[260px] items-center justify-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-xs text-muted-foreground">
+            No quarterly headcount plans held yet.
+          </div>
+        ) : (
+          <div style={{ height: 260 }}>
+            <ResponsiveLine
+              data={series}
+              margin={{ top: 16, right: 20, bottom: 56, left: 44 }}
+              xScale={{ type: "point" }}
+              yScale={{ type: "linear", min: "auto", max: "auto", nice: true }}
+              curve="monotoneX"
+              axisBottom={{ tickSize: 0, tickPadding: 8 }}
+              axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 5 }}
+              enableGridX={false}
+              colors={["#50D34C", "#6366f1"]}
+              lineWidth={2.5}
+              pointSize={7}
+              pointColor={{ from: "serieColor" }}
+              pointBorderWidth={2}
+              pointBorderColor="var(--card)"
+              enableSlices="x"
+              useMesh
+              legends={[
+                {
+                  anchor: "bottom",
+                  direction: "row",
+                  translateY: 50,
+                  itemWidth: 90,
+                  itemHeight: 16,
+                  symbolSize: 10,
+                  symbolShape: "circle",
+                },
+              ]}
+              theme={NIVO_THEME}
+              motionConfig="gentle"
+            />
+          </div>
+        )}
       </ChartCard>
 
       <TrendTable
