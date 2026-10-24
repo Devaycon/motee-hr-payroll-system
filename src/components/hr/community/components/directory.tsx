@@ -20,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { ChatPanel } from "@/src/components/shared/chat-panel";
+import { startConversation } from "@/src/lib/stores/chat-slice";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
 import { DEPARTMENT_CONFIG, DIRECTORY_DEPARTMENT_OPTIONS } from "../data";
 import type { DirectoryEmployee } from "../types";
 
@@ -32,7 +33,7 @@ export function Directory({ employees }: DirectoryProps) {
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [chatTarget, setChatTarget] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 6;
 
@@ -143,7 +144,16 @@ export function Directory({ employees }: DirectoryProps) {
           <EmployeeCard
             key={employee.id}
             employee={employee}
-            onMessage={(name) => setChatTarget(name)}
+            onMessage={(e) =>
+              dispatch(
+                startConversation({
+                  id: e.id,
+                  name: e.name,
+                  initials: e.initials,
+                  role: e.jobTitle,
+                }),
+              )
+            }
           />
         ))}
       </div>
@@ -187,19 +197,13 @@ export function Directory({ employees }: DirectoryProps) {
         </div>
       )}
 
-      <ChatPanel
-        key={chatTarget ?? "closed"}
-        isOpen={!!chatTarget}
-        onClose={() => setChatTarget(null)}
-        openToName={chatTarget ?? undefined}
-      />
     </div>
   );
 }
 
 interface EmployeeCardProps {
   employee: DirectoryEmployee;
-  onMessage: (name: string) => void;
+  onMessage: (employee: DirectoryEmployee) => void;
 }
 
 function EmployeeCard({ employee, onMessage }: EmployeeCardProps) {
@@ -283,7 +287,7 @@ function EmployeeCard({ employee, onMessage }: EmployeeCardProps) {
         variant="outline"
         size="sm"
         className="mt-3 w-full h-8 text-xs"
-        onClick={() => onMessage(employee.name)}
+        onClick={() => onMessage(employee)}
       >
         <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
         Message

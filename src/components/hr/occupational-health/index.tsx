@@ -25,7 +25,8 @@ import {
   type OHReferral,
   type OHStatus,
 } from "@/src/lib/types/occupational-health";
-import { OH_REFERRALS, OH_REFERRAL_THRESHOLD_DAYS } from "@/src/data/occupational-health-demo";
+import { OH_REFERRAL_THRESHOLD_DAYS } from "@/src/data/occupational-health-demo";
+import { useOHReferrals } from "./use-oh-referrals";
 import { daysSince, fmt, isOverdue, OH_TABS, matchesTab, type OHTabValue, useCanViewConfidentialOH } from "./lib";
 
 function Stat({ label, value, warn }: { label: string; value: number; warn?: boolean }) {
@@ -151,11 +152,11 @@ function ReferralCard({ r, confidential }: { r: OHReferral; confidential: boolea
   );
 }
 
-const DEPARTMENTS = Array.from(new Set(OH_REFERRALS.map((r) => r.department))).sort();
-const OWNERS = Array.from(new Set(OH_REFERRALS.map((r) => r.caseOwner))).sort();
-
 export function OccupationalHealthPage() {
-  const referrals = OH_REFERRALS;
+  // Demo cases plus cases referred from Sickness & Absence, with HR's edits.
+  const referrals = useOHReferrals();
+  const DEPARTMENTS = useMemo(() => Array.from(new Set(referrals.map((r) => r.department))).sort(), [referrals]);
+  const OWNERS = useMemo(() => Array.from(new Set(referrals.map((r) => r.caseOwner))).sort(), [referrals]);
   const confidential = useCanViewConfidentialOH();
 
   const [tab, setTab] = useState<OHTabValue>("all");

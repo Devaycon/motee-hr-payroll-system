@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ResponsiveBar } from "@nivo/bar";
 import { MoreHorizontal } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
@@ -18,7 +19,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Badge } from "@/src/components/ui/badge";
-import { ChartCard, ChartPlaceholder } from "@/src/components/shared/charts";
+import { ChartCard, NIVO_THEME } from "@/src/components/shared/charts";
 import {
   TURNOVER_RECORDS,
   TURNOVER_PERIODS,
@@ -98,7 +99,53 @@ export function TurnoverSection() {
         title="Quarterly Turnover Trend"
         description="Voluntary vs involuntary exits across the last 5 quarters"
       >
-        <ChartPlaceholder />
+        <div style={{ height: 260 }}>
+          <ResponsiveBar
+            data={trends.map((t) => ({
+              period: t.period,
+              Voluntary: t.voluntary,
+              Involuntary: t.involuntary,
+              rate: t.rate,
+            }))}
+            keys={["Voluntary", "Involuntary"]}
+            indexBy="period"
+            margin={{ top: 16, right: 16, bottom: 56, left: 40 }}
+            padding={0.45}
+            colors={["#FE8F44", "#f43f5e"]}
+            borderRadius={3}
+            enableGridX={false}
+            axisBottom={{ tickSize: 0, tickPadding: 8 }}
+            axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 5 }}
+            labelSkipHeight={14}
+            labelTextColor="#ffffff"
+            tooltip={({ id, value, data }) => (
+              <div className="rounded-lg border border-border bg-popover px-3 py-2 text-xs shadow-lg">
+                <p className="font-medium text-foreground">{data.period}</p>
+                <p className="mt-1 text-muted-foreground">
+                  {id}:{" "}
+                  <span className="font-semibold text-foreground">{value}</span>
+                </p>
+                <p className="text-muted-foreground">
+                  Turnover rate: {data.rate}%
+                </p>
+              </div>
+            )}
+            legends={[
+              {
+                dataFrom: "keys",
+                anchor: "bottom",
+                direction: "row",
+                translateY: 50,
+                itemWidth: 100,
+                itemHeight: 16,
+                symbolSize: 10,
+                symbolShape: "square",
+              },
+            ]}
+            theme={NIVO_THEME}
+            motionConfig="gentle"
+          />
+        </div>
       </ChartCard>
 
       <div>

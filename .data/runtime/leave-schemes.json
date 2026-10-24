@@ -1,0 +1,410 @@
+{
+  "schemes": [
+    {
+      "id": "tenant_uk_001-LVS-STANDARD",
+      "tenantId": "tenant_uk_001",
+      "name": "Standard UK Holiday Scheme",
+      "description": "5.6 weeks' statutory holiday (28 days including bank holidays), one extra day per year after two years' service up to five, and family leave.",
+      "status": "active",
+      "kind": "system",
+      "fullTimeDaysPerWeek": 5,
+      "fullTimeWeeklyHours": 37.5,
+      "partTimeFormula": "days_ratio",
+      "booking": {
+        "minNoticeDays": 5,
+        "maxConsecutiveDays": 15,
+        "allowHalfDays": true,
+        "allowNegativeBalance": false
+      },
+      "eligibility": {
+        "minServiceDays": 0,
+        "employmentTypeIds": []
+      },
+      "notifyOnRequest": [
+        "line_manager"
+      ],
+      "notifyOnApproval": [
+        "employee",
+        "hr_contact"
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "leaveYearStartMonth": 1,
+      "publicHolidays": "included",
+      "entitlements": [
+        {
+          "id": "annual",
+          "leaveType": "annual",
+          "amount": 28,
+          "unit": "days",
+          "accrual": "upfront",
+          "proRataJoiners": true,
+          "carryOverMax": 5,
+          "carryOverExpiryMonths": 3,
+          "paid": true
+        },
+        {
+          "id": "maternity",
+          "leaveType": "maternity",
+          "amount": 52,
+          "unit": "weeks",
+          "accrual": "upfront",
+          "proRataJoiners": false,
+          "carryOverMax": 0,
+          "carryOverExpiryMonths": 0,
+          "paid": true
+        },
+        {
+          "id": "paternity",
+          "leaveType": "paternity",
+          "amount": 2,
+          "unit": "weeks",
+          "accrual": "upfront",
+          "proRataJoiners": false,
+          "carryOverMax": 0,
+          "carryOverExpiryMonths": 0,
+          "paid": true
+        },
+        {
+          "id": "compassionate",
+          "leaveType": "compassionate",
+          "amount": 5,
+          "unit": "days",
+          "accrual": "upfront",
+          "proRataJoiners": false,
+          "carryOverMax": 0,
+          "carryOverExpiryMonths": 0,
+          "paid": true
+        },
+        {
+          "id": "study",
+          "leaveType": "study",
+          "amount": 5,
+          "unit": "days",
+          "accrual": "upfront",
+          "proRataJoiners": true,
+          "carryOverMax": 0,
+          "carryOverExpiryMonths": 0,
+          "paid": true
+        },
+        {
+          "id": "unpaid",
+          "leaveType": "unpaid",
+          "amount": 10,
+          "unit": "days",
+          "accrual": "upfront",
+          "proRataJoiners": false,
+          "carryOverMax": 0,
+          "carryOverExpiryMonths": 0,
+          "paid": false
+        }
+      ],
+      "serviceIncrements": [
+        {
+          "id": "s2",
+          "afterYears": 2,
+          "extraDays": 1
+        },
+        {
+          "id": "s3",
+          "afterYears": 3,
+          "extraDays": 2
+        },
+        {
+          "id": "s4",
+          "afterYears": 4,
+          "extraDays": 3
+        },
+        {
+          "id": "s5",
+          "afterYears": 5,
+          "extraDays": 4
+        },
+        {
+          "id": "s6",
+          "afterYears": 6,
+          "extraDays": 5
+        }
+      ],
+      "maxServiceExtraDays": 5
+    },
+    {
+      "id": "tenant_uk_001-LVS-SENIOR",
+      "tenantId": "tenant_uk_001",
+      "name": "Senior Leadership Holiday Scheme",
+      "description": "30 days plus bank holidays, with a larger carry-over.",
+      "status": "active",
+      "kind": "system",
+      "fullTimeDaysPerWeek": 5,
+      "fullTimeWeeklyHours": 37.5,
+      "partTimeFormula": "days_ratio",
+      "booking": {
+        "minNoticeDays": 5,
+        "maxConsecutiveDays": 15,
+        "allowHalfDays": true,
+        "allowNegativeBalance": false
+      },
+      "eligibility": {
+        "minServiceDays": 0,
+        "employmentTypeIds": []
+      },
+      "notifyOnRequest": [
+        "line_manager"
+      ],
+      "notifyOnApproval": [
+        "employee",
+        "hr_contact"
+      ],
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01",
+      "createdAt": "2026-01-01",
+      "leaveYearStartMonth": 4,
+      "publicHolidays": "in_addition",
+      "entitlements": [
+        {
+          "id": "annual",
+          "leaveType": "annual",
+          "amount": 30,
+          "unit": "days",
+          "accrual": "upfront",
+          "proRataJoiners": true,
+          "carryOverMax": 10,
+          "carryOverExpiryMonths": 6,
+          "paid": true
+        },
+        {
+          "id": "maternity",
+          "leaveType": "maternity",
+          "amount": 52,
+          "unit": "weeks",
+          "accrual": "upfront",
+          "proRataJoiners": false,
+          "carryOverMax": 0,
+          "carryOverExpiryMonths": 0,
+          "paid": true
+        },
+        {
+          "id": "paternity",
+          "leaveType": "paternity",
+          "amount": 2,
+          "unit": "weeks",
+          "accrual": "upfront",
+          "proRataJoiners": false,
+          "carryOverMax": 0,
+          "carryOverExpiryMonths": 0,
+          "paid": true
+        },
+        {
+          "id": "compassionate",
+          "leaveType": "compassionate",
+          "amount": 10,
+          "unit": "days",
+          "accrual": "upfront",
+          "proRataJoiners": false,
+          "carryOverMax": 0,
+          "carryOverExpiryMonths": 0,
+          "paid": true
+        },
+        {
+          "id": "study",
+          "leaveType": "study",
+          "amount": 10,
+          "unit": "days",
+          "accrual": "upfront",
+          "proRataJoiners": true,
+          "carryOverMax": 0,
+          "carryOverExpiryMonths": 0,
+          "paid": true
+        }
+      ],
+      "serviceIncrements": [],
+      "maxServiceExtraDays": 0
+    }
+  ],
+  "enrolments": [
+    {
+      "id": "LVE-GB-EMP-0001",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0001",
+      "schemeId": "tenant_uk_001-LVS-SENIOR",
+      "effectiveFrom": "2022-09-23",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0002",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0002",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2022-04-07",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0003",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0003",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2025-10-05",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0004",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0004",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2025-09-12",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0005",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0005",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2023-06-11",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0006",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0006",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2025-08-19",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0007",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0007",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2025-07-06",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0008",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0008",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2025-06-13",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0009",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0009",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2025-05-20",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0010",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0010",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2024-03-27",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0011",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0011",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2024-02-15",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0012",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0012",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2025-04-07",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0013",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0013",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2025-03-14",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0014",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0014",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2025-02-21",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0015",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0015",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2025-01-08",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0016",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0016",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2019-07-15",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0017",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0017",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2024-06-03",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0018",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0018",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2020-11-10",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0019",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0019",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2022-12-05",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    },
+    {
+      "id": "LVE-GB-EMP-0020",
+      "tenantId": "tenant_uk_001",
+      "employeeId": "GB-EMP-0020",
+      "schemeId": "tenant_uk_001-LVS-STANDARD",
+      "effectiveFrom": "2021-12-17",
+      "enrolledBy": "System",
+      "enrolledAt": "2026-01-01"
+    }
+  ],
+  "seededTenants": [
+    "tenant_uk_001"
+  ]
+}

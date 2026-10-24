@@ -134,7 +134,7 @@ export function AssignAssetModal({
           <div className="space-y-1.5">
             <Label>Condition</Label>
             <Select value={condition} onValueChange={setCondition}>
-              <SelectTrigger>
+              <SelectTrigger className="capitalize">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

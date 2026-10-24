@@ -48,6 +48,8 @@ export interface LeaveUsageBucket {
   month: string; // YYYY-MM
   byType: Record<string, number>;
   total: number;
+  /** Everyone who approved leave taken that month, de-duplicated. */
+  approvers: { id: string; name: string; initials: string }[];
 }
 
 export interface EffectivePermissionRow {

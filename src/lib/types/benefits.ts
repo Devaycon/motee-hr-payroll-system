@@ -101,7 +101,9 @@ export interface BenefitPlan {
   description: string;
   /** Insurer / administrator / scheme name, e.g. "AXA Mansard HMO". */
   provider?: string;
-  /** Free text on what's covered, e.g. "Employee + spouse + 4 children". */
+  /** Coverage level picked from HR's managed list, e.g. "Family Cover". */
+  coverage?: string;
+  /** Optional free-text notes on what's covered, e.g. "in/outpatient care". */
   coverageDetails?: string;
   /** For contributory benefits (pension, some insurance). */
   employerContributionPct?: number;
@@ -132,6 +134,7 @@ export type NewBenefitPlan = Pick<
   | "category"
   | "description"
   | "provider"
+  | "coverage"
   | "coverageDetails"
   | "employerContributionPct"
   | "employeeContributionPct"
@@ -142,6 +145,9 @@ export type NewBenefitPlan = Pick<
   | "enrollment"
   | "country"
 >;
+
+/** Out-of-the-box coverage levels; HR can add, rename or remove them via "Manage". */
+export const DEFAULT_COVERAGE_OPTIONS = ["Employee Only", "Married Cover", "Family Cover"];
 
 /** Plans offered in a tenant country (country-less plans apply everywhere). */
 export function plansForCountry<T extends Pick<BenefitPlan, "country">>(

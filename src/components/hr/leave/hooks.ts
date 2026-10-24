@@ -14,6 +14,7 @@ import type {
   LeaveBalance,
   LeavePolicy,
   LeaveRequest,
+  LeaveTypeName,
 } from "@/src/lib/types/leave";
 import { getApiErrorMessage } from "@/src/lib/utils";
 import {
@@ -21,6 +22,23 @@ import {
   useGetAllLeaveRequestsQuery,
 } from "@/src/store/services/collections";
 import { useGetLeaveTypesQuery } from "@/src/store/services/leave-policies";
+
+/**
+ * The bundle names leave ("Annual Leave", "Sick Leave", "Hajj/Pilgrimage
+ * Leave") rather than keying it, so match on the words. Matching only exact
+ * keys is what labelled every row "Annual".
+ */
+export function mapLeaveType(raw: string | null | undefined): LeaveTypeName {
+  const t = (raw ?? "").toLowerCase();
+  if (/sick|illness|medical/.test(t)) return "sick";
+  if (/maternity/.test(t)) return "maternity";
+  if (/paternity|partner/.test(t)) return "paternity";
+  if (/compassion|bereave/.test(t)) return "compassionate";
+  if (/study|exam|education/.test(t)) return "study";
+  if (/hajj|pilgrim|religious|umrah/.test(t)) return "religious";
+  if (/unpaid/.test(t)) return "unpaid";
+  return "annual";
+}
 
 export interface LeaveData {
   requests: LeaveRequest[];

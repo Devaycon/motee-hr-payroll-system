@@ -36,6 +36,7 @@ const TYPE_COLORS: Record<string, string> = {
   unpaid: "#64748B",
   compassionate: "#D97706",
   study: "#0D9488",
+  religious: "#4F46E5",
 };
 
 /**

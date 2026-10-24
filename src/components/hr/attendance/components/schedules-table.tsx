@@ -58,7 +58,7 @@ export function SchedulesTable({
     () => [
       {
         accessorKey: "name",
-        header: sortableHeader("Schedule Name"),
+        header: sortableHeader("Work Pattern Name"),
         cell: ({ row }) => (
           <span className="text-xs font-medium">{row.original.name}</span>
         ),
@@ -155,17 +155,17 @@ export function SchedulesTable({
       <div className="flex items-center justify-end">
         <Button size="lg" onClick={onAddSchedule}>
           <Plus className="w-3.5 h-3.5" />
-          Add Schedule
+          Add Work Pattern
         </Button>
       </div>
 
       <div className="mt-4">
         <DataTable
-          exportTitle="Work Schedules"
+          exportTitle="Work Patterns"
           columns={columns}
           data={schedules}
           getRowId={(s) => s.id}
-          emptyMessage="No schedules created."
+          emptyMessage="No work patterns created."
         />
       </div>
 
@@ -175,9 +175,9 @@ export function SchedulesTable({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Schedule</AlertDialogTitle>
+            <AlertDialogTitle>Delete Work Pattern</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this work schedule. Employees
+              This will permanently delete this work pattern. Employees
               currently assigned to it will not be affected. This action cannot
               be undone.
             </AlertDialogDescription>

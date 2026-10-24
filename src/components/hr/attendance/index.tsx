@@ -233,7 +233,7 @@ export function AttendancePage() {
               value: "timesheets",
               label: `Timesheets (${visibleTimesheets.length})`,
             },
-            { value: "schedules", label: "Schedules" },
+            { value: "schedules", label: "Work Patterns" },
             { value: "deductions", label: "Deduction Policy" },
             { value: "presence", label: "Presence Checks" },
           ]}

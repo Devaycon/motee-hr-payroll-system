@@ -95,6 +95,8 @@ export const ADJUSTMENT_STATUS_STYLES: Record<AdjustmentStatus, string> = {
 
 export interface AdjustmentRecord {
   id: string;
+  /** The sickness absence this adjustment responds to (Sickness & Absence). */
+  linkedSicknessId?: string;
   /** e.g. "Phased return over 4 weeks" — the recommended adjustment itself. */
   description: string;
   dateRecommended: string;
