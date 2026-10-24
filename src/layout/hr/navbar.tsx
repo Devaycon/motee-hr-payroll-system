@@ -19,6 +19,8 @@ import {
 } from "@/src/components/ui/popover";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
 import { ChatPanel } from "@/src/components/shared/chat-panel";
+import { openChat } from "@/src/lib/stores/chat-slice";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
 import { NotificationsPanel } from "@/src/components/shared/notifications-panel";
 import { ScreenShareModal } from "@/src/components/shared/screen-share-modal";
 import { SendKudosModal } from "@/src/components/hr/kudos/components/send-kudos-modal";
@@ -51,7 +53,7 @@ const Navbar = () => {
   const [now, setNow] = useState(new Date());
   const router = useRouter();
   const logout = useLogout();
-  const [chatOpen, setChatOpen] = useState(false);
+  const dispatch = useAppDispatch();
   const [notifOpen, setNotifOpen] = useState(false);
   const [screenShareOpen, setScreenShareOpen] = useState(false);
   const [kudosOpen, setKudosOpen] = useState(false);
@@ -121,7 +123,7 @@ const Navbar = () => {
 
             <button
               data-tutorial="chat"
-              onClick={() => setChatOpen(true)}
+              onClick={() => dispatch(openChat())}
               className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-background border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               <MessageSquare size={16} />
@@ -196,7 +198,7 @@ const Navbar = () => {
           </Popover>
         </div>
       </header>
-      <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+      <ChatPanel />
       <NotificationsPanel
         isOpen={notifOpen}
         onClose={() => setNotifOpen(false)}

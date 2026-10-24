@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useMemo, useState, useRef } from "react";
 import {
   X,
   ChevronLeft,
@@ -13,63 +13,93 @@ import {
   File,
   ImageIcon,
   Monitor,
+  SquarePen,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import type { Message } from "@/src/data/chat-demo";
-import { DEMO_CONTACTS, DEMO_MESSAGES } from "@/src/data/chat-demo";
 import { ScreenShareModal } from "@/src/components/shared/screen-share-modal";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/src/components/ui/command";
+// Unscoped: you can message anyone in the company, whichever branch the view
+// is currently narrowed to.
+import { useUnscopedLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import type { LocaleBundle } from "@/src/lib/types/locale";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import {
+  closeChat,
+  selectConversation,
+  sendMessage as sendChatMessage,
+  startConversation,
+} from "@/src/lib/stores/chat-slice";
 
-interface ChatPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  openToName?: string;
-}
-
-export function ChatPanel({ isOpen, onClose, openToName }: ChatPanelProps) {
-  const resolvedContact = openToName
-    ? DEMO_CONTACTS.find(
-        (c) => c.name.toLowerCase() === openToName.toLowerCase(),
-      )
-    : undefined;
-
-  const [view, setView] = useState<"list" | "chat">(
-    resolvedContact ? "chat" : "list",
+/**
+ * The single, app-wide chat drawer. Mounted once per layout (in the navbar);
+ * anything else opens it by dispatching `openChat` or `startConversation`
+ * rather than rendering its own copy.
+ */
+export function ChatPanel() {
+  const dispatch = useAppDispatch();
+  const { isOpen, activeId: selectedId, contacts, messages } = useAppSelector(
+    (s) => s.chat,
   );
-  const [selectedId, setSelectedId] = useState<string | null>(
-    resolvedContact?.id ?? null,
-  );
+  const currentEmployeeId = useAppSelector((s) => s.auth.user?.employeeId);
+  const { data: bundle } = useUnscopedLocaleSection<LocaleBundle>((b) => b);
+
   const [filter, setFilter] = useState<"all" | "unread">("all");
-  const [messages, setMessages] = useState(DEMO_MESSAGES);
   const [input, setInput] = useState("");
+  const [newChatOpen, setNewChatOpen] = useState(false);
   const [screenShareOpen, setScreenShareOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedContact = DEMO_CONTACTS.find((c) => c.id === selectedId);
-  const filteredContacts =
-    filter === "unread"
-      ? DEMO_CONTACTS.filter((c) => c.unread > 0)
-      : DEMO_CONTACTS;
-  const totalUnread = DEMO_CONTACTS.reduce((sum, c) => sum + c.unread, 0);
-
-  const openChat = (id: string) => {
-    setSelectedId(id);
-    setView("chat");
+  const view = selectedId ? "chat" : "list";
+  const onClose = () => {
+    setNewChatOpen(false);
+    dispatch(closeChat());
   };
+
+  const employees = useMemo(
+    () =>
+      (bundle?.employees ?? [])
+        .filter((e) => e.id !== currentEmployeeId)
+        .map((e) => ({
+          id: e.id,
+          employeeNumber: e.employeeNumber,
+          name: e.fullName,
+          initials: e.initials,
+          jobTitle: e.jobTitle,
+          department: e.departmentName,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [bundle, currentEmployeeId],
+  );
+
+  const selectedContact = contacts.find((c) => c.id === selectedId);
+  const filteredContacts =
+    filter === "unread" ? contacts.filter((c) => c.unread > 0) : contacts;
+  const totalUnread = contacts.reduce((sum, c) => sum + c.unread, 0);
+
+  const openChat = (id: string) => dispatch(selectConversation(id));
 
   const sendMessage = () => {
     if (!input.trim() || !selectedId) return;
-    setMessages((prev) => ({
-      ...prev,
-      [selectedId]: [
-        ...(prev[selectedId] || []),
-        {
+    dispatch(
+      sendChatMessage({
+        contactId: selectedId,
+        message: {
           id: Date.now().toString(),
-          from: "me" as const,
+          from: "me",
           text: input.trim(),
           time: "Just now",
         },
-      ],
-    }));
+      }),
+    );
     setInput("");
   };
 
@@ -81,19 +111,18 @@ export function ChatPanel({ isOpen, onClose, openToName }: ChatPanelProps) {
         ? `${(file.size / 1024).toFixed(0)} KB`
         : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
     const url = URL.createObjectURL(file);
-    setMessages((prev) => ({
-      ...prev,
-      [selectedId]: [
-        ...(prev[selectedId] || []),
-        {
+    dispatch(
+      sendChatMessage({
+        contactId: selectedId,
+        message: {
           id: Date.now().toString(),
-          from: "me" as const,
+          from: "me",
           text: "",
           time: "Just now",
           file: { name: file.name, size: sizeStr, mimeType: file.type, url },
         },
-      ],
-    }));
+      }),
+    );
     e.target.value = "";
   };
 
@@ -155,13 +184,84 @@ export function ChatPanel({ isOpen, onClose, openToName }: ChatPanelProps) {
                   </span>
                 )}
               </div>
-              <button
-                onClick={onClose}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X size={16} />
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setNewChatOpen((o) => !o)}
+                  title="Start a new chat"
+                  aria-label="Start a new chat"
+                  className={cn(
+                    "transition-colors",
+                    newChatOpen
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <SquarePen size={16} />
+                </button>
+                <button
+                  onClick={onClose}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
+
+            {newChatOpen && (
+              <>
+                <div
+                  className="absolute inset-x-0 bottom-0 top-14 z-10"
+                  onClick={() => setNewChatOpen(false)}
+                />
+                <div className="absolute left-4 right-4 top-14 z-20 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
+                  <Command>
+                    <CommandInput
+                      autoFocus
+                      placeholder="Search employees by name, ID or department…"
+                    />
+                    <CommandList className="max-h-72">
+                      <CommandEmpty>No employee found.</CommandEmpty>
+                      <CommandGroup>
+                        {employees.map((e) => (
+                          <CommandItem
+                            key={e.id}
+                            value={`${e.name} ${e.department} ${e.jobTitle} ${e.employeeNumber ?? ""} ${e.id}`}
+                            onSelect={() => {
+                              setNewChatOpen(false);
+                              dispatch(
+                                startConversation({
+                                  id: e.id,
+                                  name: e.name,
+                                  initials: e.initials,
+                                  role: e.jobTitle,
+                                }),
+                              );
+                            }}
+                            className="gap-2"
+                          >
+                            <PersonAvatar
+                              name={e.name}
+                              initials={e.initials}
+                              className="size-7 shrink-0"
+                              fallbackClassName="bg-primary/10 text-primary text-[10px] font-semibold"
+                            />
+                            <span className="flex min-w-0 flex-col">
+                              <span className="truncate text-xs font-medium">
+                                {e.name}
+                              </span>
+                              <span className="truncate text-[10px] text-muted-foreground">
+                                {e.employeeNumber ? `${e.employeeNumber} · ` : ""}
+                                {e.jobTitle} · {e.department}
+                              </span>
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </div>
+              </>
+            )}
 
             <div className="flex gap-1 px-4 pt-3 pb-2 shrink-0">
               {(["all", "unread"] as const).map((tab) => (
@@ -250,7 +350,7 @@ export function ChatPanel({ isOpen, onClose, openToName }: ChatPanelProps) {
           <>
             <div className="flex items-center gap-3 px-4 py-4 border-b border-border shrink-0">
               <button
-                onClick={() => setView("list")}
+                onClick={() => dispatch(selectConversation(null))}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ChevronLeft size={18} />
@@ -290,6 +390,16 @@ export function ChatPanel({ isOpen, onClose, openToName }: ChatPanelProps) {
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
+              {selectedId && (messages[selectedId] ?? []).length === 0 && (
+                <div className="flex flex-1 flex-col items-center justify-center gap-1 text-center">
+                  <p className="text-xs font-medium text-foreground">
+                    No messages yet
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Say hello to {selectedContact?.name ?? "your colleague"}.
+                  </p>
+                </div>
+              )}
               {selectedId &&
                 (messages[selectedId] || []).map((msg) => (
                   <div

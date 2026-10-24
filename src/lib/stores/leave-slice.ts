@@ -20,14 +20,25 @@ interface LeaveState {
   policies: LeavePolicy[];
   /** True once seeded from the locale bundle, so we don't reseed over edits. */
   seeded: boolean;
+  /** Seed generation — a saved snapshot from an older one is discarded. */
+  seedVersion: number;
   status: "idle" | "ready";
 }
+
+/**
+ * v2: leave types are now read from their names (v1 labelled everything
+ * "annual") and sickness lives in Sickness & Absence.
+ */
+export const LEAVE_SEED_VERSION = 2;
+
+const notSick = <T extends { leaveType: string }>(x: T) => x.leaveType !== "sick";
 
 const initialState: LeaveState = {
   requests: [],
   balances: [],
   policies: [],
   seeded: false,
+  seedVersion: LEAVE_SEED_VERSION,
   status: "idle",
 };
 
@@ -60,10 +71,13 @@ const leaveSlice = createSlice({
   reducers: {
     /** Restores a persisted snapshot. */
     hydrate(state, action: PayloadAction<Partial<LeaveState>>) {
-      const { requests, balances, policies, seeded } = action.payload;
-      if (Array.isArray(requests)) state.requests = requests;
-      if (Array.isArray(balances)) state.balances = balances;
-      if (Array.isArray(policies)) state.policies = policies;
+      const { requests, balances, policies, seeded, seedVersion } = action.payload;
+      // A snapshot from an older seed is dropped so the bundle reseeds.
+      if (seedVersion !== LEAVE_SEED_VERSION) return;
+      // Sickness lives in Sickness & Absence, not here.
+      if (Array.isArray(requests)) state.requests = requests.filter(notSick);
+      if (Array.isArray(balances)) state.balances = balances.filter(notSick);
+      if (Array.isArray(policies)) state.policies = policies.filter(notSick);
       if (typeof seeded === "boolean") state.seeded = seeded;
       state.status = "ready";
     },
@@ -78,9 +92,10 @@ const leaveSlice = createSlice({
       }>,
     ) {
       if (state.seeded) return;
-      state.requests = action.payload.requests;
-      state.balances = action.payload.balances;
-      state.policies = action.payload.policies;
+      state.requests = action.payload.requests.filter(notSick);
+      state.balances = action.payload.balances.filter(notSick);
+      state.policies = action.payload.policies.filter(notSick);
+      state.seedVersion = LEAVE_SEED_VERSION;
       state.seeded = true;
       state.status = "ready";
     },
@@ -94,9 +109,10 @@ const leaveSlice = createSlice({
         policies: LeavePolicy[];
       }>,
     ) {
-      state.requests = action.payload.requests;
-      state.balances = action.payload.balances;
-      state.policies = action.payload.policies;
+      state.requests = action.payload.requests.filter(notSick);
+      state.balances = action.payload.balances.filter(notSick);
+      state.policies = action.payload.policies.filter(notSick);
+      state.seedVersion = LEAVE_SEED_VERSION;
       state.seeded = true;
       state.status = "ready";
     },

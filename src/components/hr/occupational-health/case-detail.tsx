@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ArrowLeft, Check, Clock, Scale, ShieldAlert, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { cn } from "@/src/lib/utils";
@@ -13,14 +12,24 @@ import {
   OH_STAGES,
   ohStageIndex,
 } from "@/src/lib/types/occupational-health";
-import { OH_REFERRALS } from "@/src/data/occupational-health-demo";
 import { fmt, useCanViewConfidentialOH } from "./lib";
+import { useOHReferrals } from "./use-oh-referrals";
+import { OHCaseManage } from "./oh-case-manage";
 
 export function OccupationalHealthCaseDetail({ caseId }: { caseId: string }) {
-  const referral = OH_REFERRALS.find((r) => r.id === caseId);
+  const referral = useOHReferrals().find((r) => r.id === caseId);
   const confidential = useCanViewConfidentialOH();
 
-  if (!referral) notFound();
+  // Cases referred from Sickness & Absence load from the store after the
+  // first render, so a missing case is a soft message rather than a 404.
+  if (!referral) {
+    return (
+      <div className="py-12 text-sm text-muted-foreground">
+        Occupational Health case not found.{" "}
+        <Link href="/time-payroll/occupational-health" className="text-primary hover:underline">Back to Occupational Health</Link>
+      </div>
+    );
+  }
 
   const stageIdx = ohStageIndex(referral.status);
 
@@ -178,6 +187,8 @@ export function OccupationalHealthCaseDetail({ caseId }: { caseId: string }) {
           </CardContent>
         </Card>
       </div>
+
+      {confidential && <OHCaseManage key={referral.id} referral={referral} />}
 
       {/* Confidential-only: dates, case notes and full timeline. */}
       {confidential ? (

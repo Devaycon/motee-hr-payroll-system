@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { employmentTypeFromName } from "@/src/lib/constants/employment-types";
-import { sicknessReasonCategory } from "@/src/lib/constants/sickness";
 import { TURNOVER_RECORDS, buildTurnoverTrends } from "@/src/data/workforce-demo";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 
@@ -512,146 +511,8 @@ export function useLeaveTrends() {
   });
 }
 
-export interface SicknessAbsentee {
-  employeeId: string;
-  name: string;
-  initials: string;
-  department: string;
-  days: number;
-  spells: number;
-}
-
-export interface SicknessData {
-  /** Sick days recorded over the rolling window. */
-  daysInWindow: number;
-  /** Distinct employees with a sick spell in the window. */
-  peopleInWindow: number;
-  /** Sick days as a share of available working days, as a percentage. */
-  absenceRate: number;
-  /** Average length of a sick spell, in days. */
-  averageSpell: number;
-  /** Sick days per month, oldest first, ending at the reference month. */
-  trend: MonthlyCount[];
-  /** Clinical categories, most days first. */
-  byReason: { label: string; value: number }[];
-  /** Highest total sick days over the window, most first. */
-  topAbsentees: SicknessAbsentee[];
-}
-
-/** Months of sickness history the trend tile shows. */
-const SICKNESS_TREND_MONTHS = 6;
-
-/**
- * Absence is reported on a rolling 12 months rather than the calendar month —
- * the standard HR measure, and the only one that stays meaningful when a given
- * month happens to have no absence in it.
- */
-const SICKNESS_WINDOW_MONTHS = 12;
-
-/** Working days in a year, for the absence-rate denominator. */
-const WORKING_DAYS_PER_YEAR = 260;
-
-/**
- * Sickness absence, read off the same `leaveRequests` the Sickness & Absence
- * module writes to (see `lib/profile/collections.ts`), classified through the
- * shared clinical taxonomy so the dashboard and the module agree on categories.
- */
-export function useSickness() {
-  return useLocaleSection<SicknessData>((bundle) => {
-    const refDate = bundle._meta.referenceDate ?? isoToday();
-    const refMonth = refDate.slice(0, 7);
-
-    const sick = bundle.leaveRequests.filter((r) => leaveKindOf(r) === "sick");
-    const headcount = bundle.employees.length || 1;
-
-    const daysOf = (r: LocaleLeaveRequest) => r.days ?? 1;
-
-    // Rolling window, ending at the reference date so nothing counted is in
-    // the future.
-    const windowStart = new Date(`${refDate}T00:00:00`);
-    windowStart.setMonth(windowStart.getMonth() - SICKNESS_WINDOW_MONTHS);
-    const windowStartIso = windowStart.toISOString().slice(0, 10);
-
-    const inWindow = sick.filter(
-      (r) =>
-        r.startDate && r.startDate >= windowStartIso && r.startDate <= refDate,
-    );
-    const daysInWindow = inWindow.reduce((sum, r) => sum + daysOf(r), 0);
-    const peopleInWindow = new Set(inWindow.map((r) => r.employeeId)).size;
-
-    const absenceRate =
-      Math.round(
-        (daysInWindow / (headcount * WORKING_DAYS_PER_YEAR)) * 1000,
-      ) / 10;
-
-    const averageSpell =
-      inWindow.length === 0
-        ? 0
-        : Math.round((daysInWindow / inWindow.length) * 10) / 10;
-
-    // Trend — the months up to and including the reference month, so the tile
-    // never shows absence that hasn't happened yet.
-    const byMonth = new Map<string, number>();
-    for (const r of sick) {
-      const month = r.startDate?.slice(0, 7);
-      if (!month || month > refMonth) continue;
-      byMonth.set(month, (byMonth.get(month) ?? 0) + daysOf(r));
-    }
-    const trend: MonthlyCount[] = Array.from(byMonth.keys())
-      .sort()
-      .slice(-SICKNESS_TREND_MONTHS)
-      .map((month) => ({
-        month: new Date(`${month}-01T00:00:00`).toLocaleDateString("en-GB", {
-          month: "short",
-        }),
-        value: byMonth.get(month) ?? 0,
-      }));
-
-    // Reasons, by days lost rather than spell count — a fortnight off matters
-    // more than a single afternoon.
-    const byReasonMap = new Map<string, number>();
-    for (const r of inWindow) {
-      const category = sicknessReasonCategory(r.reason);
-      byReasonMap.set(category, (byReasonMap.get(category) ?? 0) + daysOf(r));
-    }
-    const byReason = Array.from(byReasonMap.entries())
-      .map(([label, value]) => ({ label, value }))
-      .sort((a, b) => b.value - a.value);
-
-    // Who is carrying the most absence.
-    const employeesById = new Map(bundle.employees.map((e) => [e.id, e]));
-    const perEmployee = new Map<string, { days: number; spells: number }>();
-    for (const r of inWindow) {
-      const entry = perEmployee.get(r.employeeId) ?? { days: 0, spells: 0 };
-      entry.days += daysOf(r);
-      entry.spells += 1;
-      perEmployee.set(r.employeeId, entry);
-    }
-    const topAbsentees: SicknessAbsentee[] = Array.from(perEmployee.entries())
-      .map(([employeeId, entry]) => {
-        const emp = employeesById.get(employeeId);
-        return {
-          employeeId,
-          name: emp?.fullName ?? employeeId,
-          initials: emp?.initials || getInitials(emp?.fullName ?? employeeId),
-          department: emp?.departmentName ?? "—",
-          days: entry.days,
-          spells: entry.spells,
-        };
-      })
-      .sort((a, b) => b.days - a.days);
-
-    return {
-      daysInWindow,
-      peopleInWindow,
-      absenceRate,
-      averageSpell,
-      trend,
-      byReason,
-      topAbsentees,
-    };
-  });
-}
+// Sickness tab data now comes from the Sickness & Absence module.
+export { useSickness, type SicknessData, type SicknessAbsentee } from "./sickness-data";
 
 interface HeadcountPoint {
   month: string;

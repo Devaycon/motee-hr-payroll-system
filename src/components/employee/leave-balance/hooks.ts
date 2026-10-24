@@ -10,28 +10,18 @@ import type {
 } from "@/src/lib/types/employee.types";
 import type { LeaveRequest, LeaveStatus, LeaveType } from "@/src/lib/types/hr.types";
 
-function mapLeaveType(t: string): LeaveBalanceType {
-  if (
-    t === "annual" ||
-    t === "sick" ||
-    t === "maternity" ||
-    t === "paternity" ||
-    t === "compassionate"
-  )
-    return t;
+/** Leave names ("Maternity Leave") → keys; exact-key matching labelled everything annual. */
+function mapLeaveType(raw: string | undefined): LeaveBalanceType {
+  const t = (raw ?? "").toLowerCase();
+  if (/sick/.test(t)) return "sick";
+  if (/maternity/.test(t)) return "maternity";
+  if (/paternity/.test(t)) return "paternity";
+  if (/compassion|bereave/.test(t)) return "compassionate";
   return "annual";
 }
 
-function mapLeaveTypeFull(t: string): LeaveType {
-  if (
-    t === "annual" ||
-    t === "sick" ||
-    t === "maternity" ||
-    t === "paternity" ||
-    t === "compassionate"
-  )
-    return t;
-  return "annual";
+function mapLeaveTypeFull(raw: string | undefined): LeaveType {
+  return mapLeaveType(raw);
 }
 
 function mapStatus(s: string): LeaveStatus {
@@ -56,7 +46,7 @@ export function useMyLeaveBalances() {
     return balances
       .filter((b) => b.employeeId === employeeId)
       .map((b) => ({
-        type: mapLeaveType(b.type ?? b.leaveType ?? "annual"),
+        type: mapLeaveType(b.type ?? b.leaveType),
         total: b.totalEntitlement ?? 21,
         used: b.daysUsed ?? 0,
         remaining: (b.totalEntitlement ?? 21) - (b.daysUsed ?? 0),
@@ -75,7 +65,7 @@ export function useMyLeaveHistory() {
         id: r.id,
         employeeId,
         employeeName: employeeName ?? employeeId,
-        type: mapLeaveTypeFull(r.type),
+        type: mapLeaveTypeFull((r as unknown as { leaveType?: string }).leaveType ?? r.type),
         startDate: r.startDate,
         endDate: r.endDate,
         days: r.days ?? 1,

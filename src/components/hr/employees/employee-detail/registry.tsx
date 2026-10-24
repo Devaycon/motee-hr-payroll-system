@@ -111,7 +111,7 @@ export const EMPLOYEE_MODULES: ModuleEntry[] = [
   { key: "qualifications", label: "Qualifications & Education", group: "Growth", icon: School, Component: QualificationsModule },
   { key: "skills", label: "Skills & Competencies", group: "Growth", icon: Sparkles, Component: SkillsModule },
   { key: "kudos", label: "Kudos", group: "Growth", icon: Award, Component: Mod.KudosModule },
-  { key: "jobs", label: "Internal Moves", group: "Growth", icon: Briefcase, Component: Mod.JobsModule },
+  { key: "jobs", label: "Internal Mobility", group: "Growth", icon: Briefcase, Component: Mod.JobsModule },
 
   
   { key: "assets", label: "Assigned Assets", group: "Assets", icon: Package, Component: Mod.AssetsModule },

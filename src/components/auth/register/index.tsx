@@ -24,7 +24,7 @@ const RegisterIndex = () => {
       style={{
         backgroundImage: "url('/wife-and-daughter.png')",
         backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundPosition: "Left",
       }}
     >
       <div className="absolute inset-0 bg-black/45 dark:bg-black/60 light:bg-black/50" />

@@ -54,7 +54,7 @@ export function MyLeaveBalancePage() {
   }));
 
   const visibleTeamLeave = LEAVE_REQUESTS.filter(
-    (r) => r.status === "approved" || r.status === "pending",
+    (r) => (r.status === "approved" || r.status === "pending") && r.leaveType !== "sick",
   );
 
   const teamCalendarLeave: CalendarLeave[] = [

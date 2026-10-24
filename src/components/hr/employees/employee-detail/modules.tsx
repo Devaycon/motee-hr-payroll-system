@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { AlertTriangle, Pin, ChevronLeft, ChevronRight, Check, TriangleAlert } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
@@ -25,10 +26,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
-import { toast } from "sonner";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { removeRecord } from "@/src/lib/stores/collection-edits-slice";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   ProfileFieldsEditor,
   RequestProfileChangeButton,
@@ -43,12 +42,22 @@ import {
 } from "@/src/components/shared/profile-fields/record-form";
 import { COLLECTION_SCHEMAS } from "@/src/lib/profile/collections";
 import { MapsLink } from "@/src/components/shared/maps-link";
+import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { regionWordForCountry, profileFieldGroupOf } from "@/src/lib/profile/fields";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { useProfileVariant } from "./variant";
-import { RowActions } from "./row-actions";
-import { RecordDetailModal } from "./record-detail-modal";
+import {
+  useCanViewMedical,
+  useSickness as useSicknessModule,
+} from "@/src/components/hr/sickness/hooks";
+import { spellLength, workingDaysLost } from "@/src/lib/sickness/bradford";
+import {
+  BRADFORD_ACTION_LABELS,
+  BRADFORD_ACTION_STYLES,
+  FIT_NOTE_STATUS_LABELS,
+} from "@/src/lib/types/sickness";
+import { SICKNESS_REASON_REDACTED } from "@/src/lib/constants/sickness";
 import { LeaveRequestPanel } from "@/src/components/employee/leave-request/panel";
 import { LeaveInsights } from "@/src/components/employee/leave-request/components/leave-insights";
 import { EmployeeTraining } from "@/src/components/employee/training";
@@ -80,10 +89,8 @@ import {
   ONBOARDING_METHOD_DESCRIPTIONS,
 } from "@/src/lib/constants/onboarding-methods";
 import { employmentTypeLabel } from "@/src/lib/constants/employment-types";
-import { sicknessReasonDisplay } from "@/src/lib/constants/sickness";
 import {
   useEmployeeLeave,
-  useEmployeeSickness,
   useEmployeeLearn,
   useEmployeeTraining,
   useEmployeePerformance,
@@ -432,8 +439,44 @@ function LeaveContactCell({
   );
 }
 
+/**
+ * Avatar + name of whoever approved a leave. Links to their profile in the HR
+ * view only — the employee portal has no colleague-profile route.
+ */
+function ApproverChip({
+  approver,
+  linkToProfile,
+}: {
+  approver: { id: string; name: string; initials: string };
+  linkToProfile: boolean;
+}) {
+  const content = (
+    <>
+      <PersonAvatar
+        name={approver.name}
+        initials={approver.initials}
+        className="size-6 shrink-0"
+        fallbackClassName="bg-primary/10 text-primary text-[10px] font-semibold"
+      />
+      <span className="truncate">{approver.name}</span>
+    </>
+  );
+  if (!linkToProfile) {
+    return <span className="flex items-center gap-2">{content}</span>;
+  }
+  return (
+    <Link
+      href={`/organization/employees/${approver.id}`}
+      className="flex w-fit items-center gap-2 hover:text-primary hover:underline"
+    >
+      {content}
+    </Link>
+  );
+}
+
 function HrLeaveSummary({ employeeId, employee }: ModuleProps) {
   const { data, loading } = useEmployeeLeave(employeeId);
+  const variant = useProfileVariant();
   const canEdit = useCan("organization.employees", "edit");
   const rfReq = useRecordForm(COLLECTION_SCHEMAS.leaveRequests, employeeId);
   const rfAdj = useRecordForm(COLLECTION_SCHEMAS.leaveAdjustments, employeeId);
@@ -647,7 +690,7 @@ function HrLeaveSummary({ employeeId, employee }: ModuleProps) {
               description="Leave taken will appear here, broken down by month."
             />
           ) : (
-            <DataTable columns={["Month", "Breakdown", "Total days"]}>
+            <DataTable columns={["Month", "Breakdown", "Total days", "Approved by"]}>
               {data.usage.map((u) => (
                 <Row key={u.month}>
                   <Cell>{u.month}</Cell>
@@ -657,6 +700,21 @@ function HrLeaveSummary({ employeeId, employee }: ModuleProps) {
                       .join(" · ")}
                   </Cell>
                   <Cell className="font-semibold">{u.total}</Cell>
+                  <Cell>
+                    {u.approvers.length === 0 ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <div className="flex flex-col gap-1.5">
+                        {u.approvers.map((a) => (
+                          <ApproverChip
+                            key={a.id}
+                            approver={a}
+                            linkToProfile={variant.audience === "hr"}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </Cell>
                 </Row>
               ))}
             </DataTable>
@@ -669,281 +727,110 @@ function HrLeaveSummary({ employeeId, employee }: ModuleProps) {
 
 // ── Sickness ──────────────────────────────────────────────────────────────--
 /**
- * Bradford Factor banding (§17.5). Colour-codes the score so managers grasp
- * severity without knowing the formula. Higher = greater absence disruption.
- *
- * The client rated the score highly but noted "most employees won't know what
- * the number means" — and this module is on the employee's own profile too, so
- * each band carries a plain-language reading rather than a bare integer.
- */
-function bradfordBand(score: number): {
-  label: string;
-  text: string;
-  pill: string;
-  meaning: string;
-} {
-  if (score >= 400)
-    return {
-      label: "Very High",
-      text: "text-rose-600",
-      pill: "bg-rose-500/10 text-rose-600",
-      meaning: "Frequent short absences — expect a formal absence review.",
-    };
-  if (score >= 100)
-    return {
-      label: "High",
-      text: "text-orange-600",
-      pill: "bg-orange-500/10 text-orange-600",
-      meaning: "Above the usual pattern — a manager conversation is likely.",
-    };
-  if (score >= 50)
-    return {
-      label: "Moderate",
-      text: "text-amber-600",
-      pill: "bg-amber-500/10 text-amber-600",
-      meaning: "Slightly above typical, but not a concern on its own.",
-    };
-  return {
-    label: "Low",
-    text: "text-emerald-600",
-    pill: "bg-emerald-500/10 text-emerald-600",
-    meaning: "Within the normal range — no action needed.",
-  };
-}
-
-/**
- * What the score is, spelled out. It weights *frequency* over duration —
- * episodes² × days — which is unintuitive enough that showing the number
- * without this reads as an unexplained judgement.
+ * The profile's Sickness & Absence panel — a window onto the Sickness &
+ * Absence module, so the profile, the module and the dashboard show the same
+ * records, the same Bradford score (rolling 52 weeks, the employer's own
+ * thresholds) and the same return-to-work status.
  */
 const BRADFORD_EXPLAINER =
   "The Bradford Factor scores absence as episodes × episodes × total days, so several " +
-  "short absences count for far more than one long one — it measures disruption, not illness.";
-
-// Absences of this length or more trigger a formal return-to-work interview.
-const RTW_THRESHOLD_DAYS = 5;
+  "short absences count for far more than one long one — it measures disruption, not illness, " +
+  "and it is a prompt for a supportive conversation, never an automatic sanction.";
 
 export function SicknessModule({ employeeId }: ModuleProps) {
-  const { data, loading } = useEmployeeSickness(employeeId);
+  const s = useSicknessModule();
   const variant = useProfileVariant();
   const isSelf = variant.audience === "employee";
-  const canEdit = useCan("organization.employees", "edit");
-  // The redaction exists to keep clinical detail from line managers — not from
-  // the person it describes. On My Profile you always see your own reasons.
-  const canViewMedical = canEdit || isSelf;
+  const canManage = useCan("time-payroll.sickness", "edit");
+  // Clinical detail is kept from line managers — not from the person it describes.
+  const canViewMedical = useCanViewMedical() || isSelf;
+  if (s.loading) return <LoadingPanel />;
+  const records = s.records
+    .filter((r) => r.employeeId === employeeId)
+    .sort((a, b) => b.startDate.localeCompare(a.startDate));
+  const emp = s.byId.get(employeeId);
+  const bradford = s.bradfordFor(employeeId);
+  const year = String(new Date().getFullYear());
+  const counted = records.filter((r) => r.approvalStatus !== "rejected" && r.approvalStatus !== "cancelled");
+  const daysOf = (r: (typeof records)[number]) =>
+    workingDaysLost(r, s.asOf, emp?.workPattern?.schedule, s.holidays);
+  const thisYear = counted.filter((r) => r.startDate.startsWith(year));
+  const daysThisYear = thisYear.reduce((a, r) => a + daysOf(r), 0);
+  const longest = counted.reduce((m, r) => Math.max(m, spellLength(r, s.asOf)), 0);
+  const rtwPending = counted.filter((r) => r.rtw.status === "pending").length;
+  const rtwDone = counted.filter((r) => r.rtw.status === "completed").length;
+  const recordHref = (id: string) => (isSelf ? "/time-off/sickness" : `/time-payroll/sickness/records/${id}`);
 
-  /**
-   * An employee reporting their own absence files it as `pending` for HR to
-   * confirm; HR recording one is already the confirmation.
-   */
-  const schema = React.useMemo(
-    () =>
-      isSelf
-        ? {
-            ...COLLECTION_SCHEMAS.sickness,
-            defaults: (id: string) => ({
-              ...COLLECTION_SCHEMAS.sickness.defaults!(id),
-              status: "pending",
-            }),
-          }
-        : COLLECTION_SCHEMAS.sickness,
-    [isSelf],
-  );
-  const rf = useRecordForm(schema, employeeId);
-  const dispatch = useAppDispatch();
-  const [detail, setDetail] = React.useState<SicknessRecord | null>(null);
-  if (loading && !data) return <LoadingPanel />;
-  if (!data) return <Empty />;
-  const band = bradfordBand(data.summary.bradfordFactor);
-  // Records are sorted newest-first; treat the most recent qualifying absence as
-  // an outstanding return-to-work interview, earlier ones as completed (§17.7).
-  const firstRtwIdx = data.records.findIndex((r) => r.days >= RTW_THRESHOLD_DAYS);
-  const rtwPending = firstRtwIdx >= 0 ? 1 : 0;
-  const rtwCompleted =
-    data.records.filter((r) => r.days >= RTW_THRESHOLD_DAYS).length - rtwPending;
   return (
     <Section
       title="Sickness & Absence"
-      description="View sickness history, absence trends, Bradford Factor and return-to-work records."
+      description="Sickness history, Bradford Factor and return-to-work, from the Sickness & Absence module."
       action={
-        canEdit || isSelf ? (
-          <AddButton
-            label={isSelf ? "Report absence" : "Record absence"}
-            onClick={rf.openCreate}
-          />
+        isSelf ? (
+          <AddButton label="Report absence" onClick={() => (window.location.href = "/time-off/sickness")} />
+        ) : canManage ? (
+          <AddButton label="Record absence" onClick={() => (window.location.href = `/time-payroll/sickness/report?employee=${employeeId}`)} />
         ) : undefined
       }
     >
-      {rf.node}
-      {/* Units belong on the figure, not left implied by the label (§17.3). */}
       <StatStrip
         items={[
-          {
-            label: "Sick Days This Year",
-            value: `${data.summary.totalDaysThisYear} ${
-              data.summary.totalDaysThisYear === 1 ? "Day" : "Days"
-            }`,
-          },
-          { label: "Sickness Episodes", value: data.summary.episodes },
-          {
-            label: "Longest Absence",
-            value: `${data.summary.longestAbsenceDays} ${
-              data.summary.longestAbsenceDays === 1 ? "Day" : "Days"
-            }`,
-          },
+          { label: "Sick Days This Year", value: `${daysThisYear} ${daysThisYear === 1 ? "Day" : "Days"}` },
+          { label: "Episodes (52 weeks)", value: bradford.S },
+          { label: "Longest Absence", value: `${longest} ${longest === 1 ? "Day" : "Days"}` },
           {
             label: "Bradford Factor",
-            accent: band.text,
-            ariaLabel: `Bradford Factor ${data.summary.bradfordFactor}, ${band.label}. ${band.meaning}`,
+            ariaLabel: `Bradford Factor ${bradford.score}, ${BRADFORD_ACTION_LABELS[bradford.action]}`,
             value: (
               <span className="inline-flex items-center gap-2">
-                {data.summary.bradfordFactor}
-                <span
-                  className={
-                    "rounded-full px-2 py-0.5 text-[10px] font-semibold " + band.pill
-                  }
-                  title={BRADFORD_EXPLAINER}
-                >
-                  {band.label}
+                {bradford.score}
+                <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold", BRADFORD_ACTION_STYLES[bradford.action])} title={BRADFORD_EXPLAINER}>
+                  {BRADFORD_ACTION_LABELS[bradford.action].replace(" suggested", "")}
                 </span>
               </span>
             ),
           },
         ]}
       />
-
-      {/* The score is meaningless without this, and employees see it too. */}
       <p className="-mt-2 text-xs text-muted-foreground">
-        <span className={cn("font-medium", band.text)}>
-          {band.label} ({data.summary.bradfordFactor}) — {band.meaning}
-        </span>{" "}
-        {BRADFORD_EXPLAINER}
+        {bradford.S}² × {bradford.D} = {bradford.score} over the last {s.settings.bradford.windowWeeks} weeks. {BRADFORD_EXPLAINER}
       </p>
-      {data.records.length === 0 ? (
+      {records.length === 0 ? (
         <Empty label="No sickness records." />
       ) : (
         <>
-          <DataTable
-            columns={["From", "To", "Days", "Reason", "Certification", "Return to Work", "Status", ""]}
-          >
-            {data.records.map((r, i) => {
-              const needsRtw = r.days >= RTW_THRESHOLD_DAYS;
-              const rtwDone = needsRtw && i !== firstRtwIdx;
-              return (
-                <Row key={r.id}>
-                  <Cell>{fmtDate(r.startDate)}</Cell>
-                  <Cell>{fmtDate(r.endDate)}</Cell>
-                  <Cell>{r.days}</Cell>
-                  <Cell>{sicknessReasonDisplay(r.reason, canViewMedical)}</Cell>
-                  <Cell className="text-muted-foreground">
-                    {r.days > 7 ? "Fit note" : "Self-certified"}
-                  </Cell>
-                  <Cell>
-                    {!needsRtw ? (
-                      <span className="text-muted-foreground">—</span>
-                    ) : rtwDone ? (
-                      <span className="text-emerald-600">Completed</span>
-                    ) : (
-                      <span className="text-amber-600">Pending</span>
-                    )}
-                  </Cell>
-                  <Cell><StatusBadge status={r.status} /></Cell>
-                  <Cell>
-                    <RowActions
-                      onView={() =>
-                        setDetail({ ...r, needsRtw, rtwDone, canViewMedical })
-                      }
-                      onEdit={canEdit ? () => rf.openEdit(r) : undefined}
-                      onDelete={
-                        canEdit
-                          ? () => {
-                              dispatch(
-                                removeRecord({ key: "leaveRequests", id: r.id }),
-                              );
-                              toast.success("Absence removed");
-                            }
-                          : undefined
-                      }
-                    />
-                  </Cell>
-                </Row>
-              );
-            })}
+          <DataTable columns={["From", "To", "Working days", "Reason", "Fit note", "Return to Work", "Status", ""]}>
+            {records.map((r) => (
+              <Row key={r.id}>
+                <Cell>{fmtDate(r.startDate)}</Cell>
+                <Cell>{r.endDate ? fmtDate(r.endDate) : "Ongoing"}</Cell>
+                <Cell>{daysOf(r)}</Cell>
+                <Cell>{canViewMedical ? r.reasonCategory : SICKNESS_REASON_REDACTED}</Cell>
+                <Cell className="text-muted-foreground">{FIT_NOTE_STATUS_LABELS[r.fitNoteStatus]}</Cell>
+                <Cell>
+                  {r.rtw.status === "completed" ? (
+                    <span className="text-emerald-600">Completed</span>
+                  ) : r.rtw.status === "pending" ? (
+                    <span className="text-amber-600">Pending</span>
+                  ) : (
+                    <span className="text-muted-foreground">{r.absenceState === "ongoing" ? "Still off" : "—"}</span>
+                  )}
+                </Cell>
+                <Cell><StatusBadge status={r.approvalStatus === "awaiting_approval" ? "pending" : r.approvalStatus} /></Cell>
+                <Cell>
+                  <a href={recordHref(r.id)} className="text-xs text-primary hover:underline">View</a>
+                </Cell>
+              </Row>
+            ))}
           </DataTable>
           <p className="text-xs text-muted-foreground">
-            Return-to-work interviews: {rtwCompleted} completed · {rtwPending} pending
-            — triggered for absences of {RTW_THRESHOLD_DAYS}+ days.
+            Return-to-work interviews: {rtwDone} completed · {rtwPending} pending.
           </p>
         </>
-      )}
-
-      {detail && (
-        <RecordDetailModal
-          open
-          onClose={() => setDetail(null)}
-          title={`${sicknessReasonDisplay(detail.reason, detail.canViewMedical)} absence`}
-          subtitle={`${fmtDate(detail.startDate)} – ${fmtDate(detail.endDate)}`}
-          status={detail.status}
-          about={{
-            what: `A recorded sickness absence of ${detail.days} working day${
-              detail.days === 1 ? "" : "s"
-            }.`,
-            why:
-              detail.days > 7
-                ? "Absences over 7 days need a fit note from a doctor — self-certification only covers the first week."
-                : "Absences of a week or less are self-certified: no medical evidence is required.",
-            consequence: detail.needsRtw
-              ? detail.rtwDone
-                ? `A return-to-work interview was required (${RTW_THRESHOLD_DAYS}+ days) and has been completed.`
-                : `A return-to-work interview is required for absences of ${RTW_THRESHOLD_DAYS}+ days and is still outstanding.`
-              : `No return-to-work interview is triggered — those start at ${RTW_THRESHOLD_DAYS} days.`,
-          }}
-          outcome={
-            detail.needsRtw
-              ? {
-                  tone: detail.rtwDone ? "positive" : "pending",
-                  heading: detail.rtwDone
-                    ? "Return-to-work interview completed"
-                    : "Return-to-work interview pending",
-                  body: detail.rtwDone
-                    ? "The conversation has taken place and the absence is closed out."
-                    : "Book the conversation before this absence can be closed out. It covers fitness to return and any adjustments needed.",
-                }
-              : null
-          }
-          fields={[
-            { label: "First day absent", value: fmtDate(detail.startDate) },
-            { label: "Last day absent", value: fmtDate(detail.endDate) },
-            { label: "Working days lost", value: detail.days },
-            {
-              label: "Reason",
-              value: sicknessReasonDisplay(detail.reason, detail.canViewMedical),
-            },
-            {
-              label: "Certification",
-              value: detail.days > 7 ? "Fit note required" : "Self-certified",
-            },
-            { label: "Recorded", value: fmtDate(detail.submittedAt) },
-          ]}
-        />
       )}
     </Section>
   );
 }
-
-/** A sickness row plus the derived flags the detail view explains. */
-type SicknessRecord = {
-  id: string;
-  startDate: string;
-  endDate: string;
-  days: number;
-  reason?: string;
-  status: string;
-  submittedAt?: string;
-  needsRtw: boolean;
-  rtwDone: boolean;
-  canViewMedical: boolean;
-};
 
 // ── Learn ─────────────────────────────────────────────────────────────────--
 export function LearnModule({ employeeId }: ModuleProps) {
@@ -1517,13 +1404,37 @@ export function HistoryModule({ employeeId }: ModuleProps) {
 export function JobsModule({ employeeId }: ModuleProps) {
   const { data, loading } = useEmployeeJobs(employeeId);
   const canEdit = useCan("organization.employees", "edit");
-  const rf = useRecordForm(COLLECTION_SCHEMAS.jobPostings, employeeId);
+  // A posting's location is one of the company's registered branches, not
+  // free text — swap the schema's text field for a branch dropdown.
+  const branchNames = data?.branchNames;
+  const postingSchema = React.useMemo(() => {
+    const base = COLLECTION_SCHEMAS.jobPostings;
+    if (!branchNames?.length) return base;
+    return {
+      ...base,
+      fields: base.fields.map((fld) =>
+        fld.key === "location"
+          ? {
+              ...fld,
+              label: "Branch",
+              type: "select" as const,
+              options: branchNames,
+              optionLabels: Object.fromEntries(branchNames.map((n) => [n, n])),
+            }
+          : fld,
+      ),
+    };
+  }, [branchNames]);
+  const rf = useRecordForm(postingSchema, employeeId);
   if (loading && !data) return <LoadingPanel />;
   if (!data) return <Empty />;
+  const initial = data.mobility[0];
+  const latest = data.mobility[data.mobility.length - 1];
+  const transfers = data.mobility.length - 1;
   return (
     <Section
       title="Jobs"
-      description="Postings this employee owns + their internal moves."
+      description="Postings this employee owns + their movement between branches."
       action={canEdit ? <AddButton label="Add posting" onClick={rf.openCreate} /> : undefined}
     >
       {rf.node}
@@ -1532,7 +1443,7 @@ export function JobsModule({ employeeId }: ModuleProps) {
         {data.postings.length === 0 ? (
           <Empty label="Not a hiring manager on any open role." />
         ) : (
-          <DataTable columns={["Title", "Location", "Type", "Status", "Posted", "Closes", ...(canEdit ? [""] : [])]}>
+          <DataTable columns={["Title", "Branch", "Type", "Status", "Posted", "Closes", ...(canEdit ? [""] : [])]}>
             {data.postings.map((j) => (
               <Row key={j.id}>
                 <Cell>{j.title}</Cell>
@@ -1546,22 +1457,50 @@ export function JobsModule({ employeeId }: ModuleProps) {
             ))}
           </DataTable>
         )}
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">Internal moves</p>
-        {data.history.filter((h) => h.type !== "hired").length === 0 ? (
-          <Empty label="No internal role changes." />
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">Internal mobility</p>
+        {!initial || !latest ? (
+          <Empty label="No branch postings recorded." />
         ) : (
-          <DataTable columns={["Date", "Change", "From", "To"]}>
-            {data.history
-              .filter((h) => h.type !== "hired")
-              .map((h) => (
-                <Row key={h.id}>
-                  <Cell>{fmtDate(h.date)}</Cell>
-                  <Cell>{titleCase(h.type)}</Cell>
-                  <Cell>{h.from ?? "—"}</Cell>
-                  <Cell>{h.to ?? "—"}</Cell>
+          <>
+            <StatStrip
+              items={[
+                { label: "Primary branch", value: initial.toBranch },
+                { label: "Hired as", value: initial.toRole },
+                { label: "Current branch", value: latest.toBranch },
+                { label: "Current role", value: latest.toRole },
+                { label: "Branch transfers", value: transfers },
+              ]}
+            />
+            <DataTable columns={["Date", "Move", "From", "To", "Reason"]}>
+              {data.mobility.map((m) => (
+                <Row key={m.id}>
+                  <Cell>{fmtDate(m.date)}</Cell>
+                  <Cell>
+                    {m.kind === "initial_posting" ? "Initial posting" : "Branch transfer"}
+                  </Cell>
+                  <Cell>
+                    {m.fromBranch ? (
+                      <>
+                        <span className="font-medium">{m.fromBranch}</span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {m.fromRole}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </Cell>
+                  <Cell>
+                    <span className="font-medium">{m.toBranch}</span>
+                    <span className="block text-[11px] text-muted-foreground">
+                      {m.toRole}
+                    </span>
+                  </Cell>
+                  <Cell className="text-muted-foreground">{m.reason}</Cell>
                 </Row>
               ))}
-          </DataTable>
+            </DataTable>
+          </>
         )}
       </div>
     </Section>

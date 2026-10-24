@@ -66,12 +66,12 @@ export function PerformancePage() {
     setReviewModalOpen(true);
   }
 
-  function handleSaveReview(input: NewReview) {
-    actions.createReview(input);
+  async function handleSaveReview(input: NewReview) {
+    if (!(await actions.createReview(input))) return;
     toast.success(`Review created for ${input.employeeName}.`);
   }
 
-  function handleCompleteReview(
+  async function handleCompleteReview(
     id: string,
     input: {
       rating: PerformanceRating;
@@ -80,12 +80,12 @@ export function PerformancePage() {
       comments?: string;
     },
   ) {
-    actions.completeReview(id, input);
+    if (!(await actions.completeReview(id, input))) return;
     toast.success("Review marked as complete.");
   }
 
-  function handleDeleteReview(id: string) {
-    actions.deleteReview(id);
+  async function handleDeleteReview(id: string) {
+    if (!(await actions.deleteReview(id))) return;
     toast.success("Review deleted.");
   }
 
@@ -99,23 +99,23 @@ export function PerformancePage() {
     setGoalModalOpen(true);
   }
 
-  function handleSaveGoal(input: NewGoal) {
-    actions.createGoal(input);
+  async function handleSaveGoal(input: NewGoal) {
+    if (!(await actions.createGoal(input))) return;
     toast.success(`Goal added for ${input.employeeName}.`);
   }
 
-  function handleUpdateGoal(
+  async function handleUpdateGoal(
     id: string,
     updates: { progress: number; status: GoalStatus },
   ) {
     const goal = goals.find((g) => g.id === id);
     if (!goal) return;
-    actions.updateGoalProgress(goal, updates);
+    if (!(await actions.updateGoalProgress(goal, updates))) return;
     toast.success("Goal updated.");
   }
 
-  function handleDeleteGoal(id: string) {
-    actions.deleteGoal(id);
+  async function handleDeleteGoal(id: string) {
+    if (!(await actions.deleteGoal(id))) return;
     toast.success("Goal deleted.");
   }
 

@@ -141,13 +141,13 @@ export function ScheduleModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-sm font-semibold">
-            {editingSchedule ? "Edit Work Schedule" : "Add Work Schedule"}
+            {editingSchedule ? "Edit Work Pattern" : "Add Work Pattern"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3.5 py-2">
           <div className="space-y-1.5">
-            <Label className="text-xs">Schedule Name</Label>
+            <Label className="text-xs">Work Pattern Name</Label>
             <Input
               className="h-8 text-xs"
               value={form.name}
@@ -248,7 +248,7 @@ export function ScheduleModal({
             Cancel
           </Button>
           <Button size="sm" className="text-xs h-8" onClick={handleSubmit}>
-            {editingSchedule ? "Save Changes" : "Add Schedule"}
+            {editingSchedule ? "Save Changes" : "Add Work Pattern"}
           </Button>
         </DialogFooter>
       </DialogContent>

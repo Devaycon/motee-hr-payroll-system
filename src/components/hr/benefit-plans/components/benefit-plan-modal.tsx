@@ -23,6 +23,8 @@ import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { cn } from "@/src/lib/utils";
 import { EMPLOYMENT_TYPE_OPTIONS } from "@/src/lib/constants/employment-types";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { CoverageManageDialog } from "./coverage-manage-dialog";
 import {
   BENEFIT_CATEGORY_LABELS,
   BENEFIT_CATEGORY_OPTIONS,
@@ -54,6 +56,7 @@ function emptyForm(): NewBenefitPlan {
     category: "health",
     description: "",
     provider: "",
+    coverage: undefined,
     coverageDetails: "",
     employerContributionPct: undefined,
     employeeContributionPct: undefined,
@@ -73,6 +76,8 @@ export function BenefitPlanModal({
 }: BenefitPlanModalProps) {
   const [form, setForm] = useState<NewBenefitPlan>(emptyForm());
   const [errors, setErrors] = useState<FieldErrors>({});
+  const coverageOptions = useAppSelector((s) => s.benefitPlans.coverageOptions);
+  const [manageCoverageOpen, setManageCoverageOpen] = useState(false);
   const [touched, setTouched] = useState<Partial<Record<FormFields, boolean>>>(
     {},
   );
@@ -90,6 +95,7 @@ export function BenefitPlanModal({
               category: editingPlan.category,
               description: editingPlan.description,
               provider: editingPlan.provider ?? "",
+              coverage: editingPlan.coverage,
               coverageDetails: editingPlan.coverageDetails ?? "",
               employerContributionPct: editingPlan.employerContributionPct,
               employeeContributionPct: editingPlan.employeeContributionPct,
@@ -332,13 +338,39 @@ export function BenefitPlanModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Coverage Details</Label>
-              <textarea
-                placeholder="e.g. Employee + spouse + 4 children · in/outpatient care"
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Coverage</Label>
+                <button
+                  type="button"
+                  onClick={() => setManageCoverageOpen(true)}
+                  className="text-[10px] font-semibold uppercase tracking-wide text-primary hover:underline"
+                >
+                  Manage
+                </button>
+              </div>
+              <Select
+                value={form.coverage ?? "__none"}
+                onValueChange={(v) => setField("coverage", v === "__none" ? undefined : v)}
+              >
+                <SelectTrigger className="h-8 w-full text-sm">
+                  <SelectValue placeholder="Select coverage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none" className="text-xs text-muted-foreground">
+                    Not specified
+                  </SelectItem>
+                  {coverageOptions.map((o) => (
+                    <SelectItem key={o} value={o} className="text-xs">
+                      {o}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Coverage notes (optional), e.g. in/outpatient care"
                 value={form.coverageDetails ?? ""}
                 onChange={(e) => setField("coverageDetails", e.target.value)}
-                rows={2}
-                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                className="h-8 text-sm"
               />
             </div>
 
@@ -454,6 +486,7 @@ export function BenefitPlanModal({
           </Button>
         </div>
       </DialogContent>
+      <CoverageManageDialog open={manageCoverageOpen} onOpenChange={setManageCoverageOpen} />
     </Dialog>
   );
 }

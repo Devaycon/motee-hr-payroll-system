@@ -47,6 +47,7 @@ function buildMyBalances(employeeName: string | undefined): LeaveBalance {
     compassionate: { total: 3, used: 0, pending: 0 },
     study: { total: 5, used: 0, pending: 0 },
     unpaid: { total: 30, used: 0, pending: 0 },
+    religious: { total: 0, used: 0, pending: 0 },
   };
   if (!employeeName) return base;
   LEAVE_BALANCES.filter((b) => b.employeeName === employeeName).forEach((b) => {

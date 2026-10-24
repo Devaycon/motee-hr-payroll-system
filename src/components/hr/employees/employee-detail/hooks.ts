@@ -41,7 +41,6 @@ import type {
 import type {
   EmployeeStats,
   LeaveSummaryRow,
-  SicknessSummary,
   TimeLogsSummary,
   LeaveUsageBucket,
   EffectivePermissionRow,
@@ -424,51 +423,40 @@ export function useEmployeeLeave(id: string) {
       };
     });
 
+    // Older demo records were seeded without an approver. Rather than leave the
+    // History column blank, fall back to the line manager (who approves leave
+    // by default), then to the top of the org — never the employee themselves.
+    const byId = new Map(b.employees.map((e) => [e.id, e]));
+    const self = byId.get(id);
+    const topOfOrg = b.employees.find((e) => !e.managerId && e.id !== id);
+    const resolveApprover = (approverId?: string | null) => {
+      for (const candidate of [approverId, self?.managerId, topOfOrg?.id]) {
+        const emp = candidate ? byId.get(candidate) : undefined;
+        if (emp && emp.id !== id) return emp;
+      }
+      return b.employees.find((e) => e.id !== id);
+    };
+
     const usageMap = new Map<string, LeaveUsageBucket>();
     for (const r of taken) {
       const month = r.startDate.slice(0, 7);
       const bucket =
-        usageMap.get(month) ?? { month, byType: {}, total: 0 };
+        usageMap.get(month) ?? { month, byType: {}, total: 0, approvers: [] };
       bucket.byType[r.leaveType] = (bucket.byType[r.leaveType] ?? 0) + (r.days ?? 0);
       bucket.total += r.days ?? 0;
+      const approver = resolveApprover(r.approverId);
+      if (approver && !bucket.approvers.some((a) => a.id === approver.id)) {
+        bucket.approvers.push({
+          id: approver.id,
+          name: approver.fullName,
+          initials: approver.initials,
+        });
+      }
       usageMap.set(month, bucket);
     }
     const usage = [...usageMap.values()].sort((a, c) => a.month.localeCompare(c.month));
 
     return { rows, booked, taken, adjustments, usage };
-  }, [bundle, edits, id]);
-  return { data, loading, error };
-}
-
-// ── sickness ──────────────────────────────────────────────────────────────--
-export interface EmployeeSicknessData {
-  records: RawLeaveRequest[];
-  summary: SicknessSummary;
-}
-export function useEmployeeSickness(id: string) {
-  const edits = useAppSelector((s) => s.collectionEdits);
-  const { data: bundle, loading, error } = useLocaleSection<LocaleBundle>((b) => b);
-  const data = useMemo<EmployeeSicknessData | null>(() => {
-    if (!bundle) return null;
-    const year = new Date().getFullYear();
-    const records = applyCollection(
-      (bundle.leaveRequests as unknown as RawLeaveRequest[]) ?? [],
-      "leaveRequests",
-      edits,
-    ).filter((r) => r.employeeId === id && /sick/i.test(r.leaveType));
-    const thisYear = records.filter((r) => r.startDate.startsWith(String(year)));
-    const totalDaysThisYear = thisYear.reduce((s, r) => s + (r.days ?? 0), 0);
-    const episodes = thisYear.length;
-    const longestAbsenceDays = thisYear.reduce((m, r) => Math.max(m, r.days ?? 0), 0);
-    return {
-      records: [...records].sort((a, c) => c.startDate.localeCompare(a.startDate)),
-      summary: {
-        totalDaysThisYear,
-        longestAbsenceDays,
-        episodes,
-        bradfordFactor: episodes * episodes * totalDaysThisYear,
-      },
-    };
   }, [bundle, edits, id]);
   return { data, loading, error };
 }
@@ -596,23 +584,167 @@ export function useEmployeeHistory(id: string) {
   );
   return { ...res, data };
 }
+/** One step in an employee's movement between branches. */
+export interface BranchMove {
+  id: string;
+  date: string;
+  kind: "initial_posting" | "transfer";
+  fromBranch: string | null;
+  fromRole: string | null;
+  toBranch: string;
+  toRole: string;
+  reason: string;
+}
 export interface EmployeeJobsData {
   postings: RawJobPosting[];
-  history: LocaleEmploymentEvent[];
+  /** Branch-to-branch postings, oldest first, starting with the hire posting. */
+  mobility: BranchMove[];
+  /** Every registered branch name — the posting location options. */
+  branchNames: string[];
 }
+
+/** Small stable hash so each employee gets the same derived trail every render. */
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+const TRANSFER_REASONS = [
+  "Branch expansion — role needed on site",
+  "Requested relocation",
+  "Promotion into an open role at the branch",
+  "Restructure of branch teams",
+];
+
+/**
+ * The bundle has no branch-transfer records yet, so the mobility trail is
+ * derived: the employee starts at a primary branch in the role they were hired
+ * for, and each real role change / promotion becomes a posting to another
+ * branch, ending at their current branch and current job title. Deterministic
+ * per employee, so the profile reads the same on every visit.
+ */
+function deriveBranchMobility(
+  employee: LocaleBundle["employees"][number],
+  history: LocaleEmploymentEvent[],
+  branches: { id: string; name: string }[],
+): BranchMove[] {
+  const current =
+    branches.find((br) => br.id === employee.branchId) ?? branches[0];
+  if (!current) return [];
+
+  const hired = history.find((h) => h.type === "hired");
+  const hireDate = employee.startDate ?? hired?.date ?? "";
+  const roleEvents = history
+    .filter(
+      (h) =>
+        (h.type === "role_change" || h.type === "promotion") &&
+        h.to &&
+        h.date > hireDate,
+    )
+    .sort((a, c) => a.date.localeCompare(c.date));
+
+  const seed = hashString(employee.id);
+  const others = branches.filter((br) => br.id !== current.id);
+  // Roughly a third of staff have never moved; the rest moved once or twice.
+  const moveCount = others.length === 0 ? 0 : Math.min(seed % 3, others.length);
+  const initialRole =
+    (moveCount > 0 ? roleEvents[0]?.from : null) ?? employee.jobTitle;
+
+  if (moveCount === 0) {
+    return [
+      {
+        id: `${employee.id}-BM-0`,
+        date: hireDate,
+        kind: "initial_posting",
+        fromBranch: null,
+        fromRole: null,
+        toBranch: current.name,
+        toRole: employee.jobTitle,
+        reason: "Hired into this branch",
+      },
+    ];
+  }
+
+  // Branch path: earlier branches picked from the others, ending at current.
+  const path = Array.from(
+    { length: moveCount },
+    (_, i) => others[(seed + i * 7) % others.length],
+  ).filter((br, i, arr) => arr.findIndex((x) => x.id === br.id) === i);
+  path.push(current);
+
+  // Transfer dates come from real role events where there are enough of them;
+  // otherwise they are spread evenly between hire and today.
+  const start = new Date(hireDate || "2022-01-01").getTime();
+  const span = Date.now() - start;
+  const transfers = path.length - 1;
+  const dates = Array.from({ length: transfers }, (_, i) => {
+    const ev = roleEvents[roleEvents.length - transfers + i];
+    if (roleEvents.length >= transfers && ev) return ev.date;
+    return new Date(start + (span * (i + 1)) / (transfers + 1))
+      .toISOString()
+      .slice(0, 10);
+  });
+
+  const moves: BranchMove[] = [
+    {
+      id: `${employee.id}-BM-0`,
+      date: hireDate,
+      kind: "initial_posting",
+      fromBranch: null,
+      fromRole: null,
+      toBranch: path[0].name,
+      toRole: initialRole,
+      reason: "Hired into this branch",
+    },
+  ];
+  let role = initialRole;
+  for (let i = 0; i < transfers; i++) {
+    const last = i === transfers - 1;
+    const ev = roleEvents[roleEvents.length - transfers + i];
+    const nextRole = last ? employee.jobTitle : (ev?.to ?? role);
+    moves.push({
+      id: `${employee.id}-BM-${i + 1}`,
+      date: dates[i],
+      kind: "transfer",
+      fromBranch: path[i].name,
+      fromRole: role,
+      toBranch: path[i + 1].name,
+      toRole: nextRole,
+      reason: TRANSFER_REASONS[(seed + i) % TRANSFER_REASONS.length],
+    });
+    role = nextRole;
+  }
+  return moves;
+}
+
 export function useEmployeeJobs(id: string) {
   const edits = useAppSelector((s) => s.collectionEdits);
   const { data: bundle, loading, error } = useLocaleSection<LocaleBundle>((b) => b);
   const data = useMemo<EmployeeJobsData | null>(() => {
     if (!bundle) return null;
     const rec = bundle.recruitment as { jobPostings?: RawJobPosting[] };
+    const branches = bundle.branches ?? [];
+    const employee = bundle.employees.find((e) => e.id === id);
+    const history = applyCollection(
+      bundle.employmentHistory ?? [],
+      "employmentHistory",
+      edits,
+    ).filter((h) => h.employeeId === id);
     return {
       postings: applyCollection(rec?.jobPostings ?? [], "jobPostings", edits).filter(
         (j) => j.hiringManagerId === id,
       ),
-      history: applyCollection(bundle.employmentHistory ?? [], "employmentHistory", edits).filter(
-        (h) => h.employeeId === id,
-      ),
+      mobility: employee
+        ? deriveBranchMobility(
+            employee,
+            history,
+            branches.filter(
+              (br) => br.status === "active" || br.id === employee.branchId,
+            ),
+          )
+        : [],
+      branchNames: branches.map((br) => br.name),
     };
   }, [bundle, edits, id]);
   return { data, loading, error };
