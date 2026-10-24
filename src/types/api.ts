@@ -18,7 +18,8 @@ export type ApiResponseCode =
   | "1002"
   | "1003"
   | "1004"
-  | "1005";
+  | "1005"
+  | "1006";
 
 /** The wrapper every Motee API response comes back in. */
 export interface ApiResponse<T = null> {

@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useAttendanceRecords } from "./hooks";
+import {
+  useAttendanceActions,
+  useAttendanceRecords,
+  useTimesheets,
+  useWorkSchedules,
+} from "./hooks";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import {
@@ -21,12 +26,7 @@ import { TimesheetModal } from "./components/timesheet-modal";
 import { ScheduleModal } from "./components/schedule-modal";
 import { PresenceCheckPanel } from "./components/presence-check-panel";
 import { DeductionPolicyPanel } from "./components/deduction-policy-panel";
-import { WORK_SCHEDULES } from "./data";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import {
-  approveTimesheet as approveTimesheetAction,
-  rejectTimesheet as rejectTimesheetAction,
-} from "@/src/lib/stores/attendance-slice";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import type {
   AttendanceRecord,
   NewAttendanceRecord,
@@ -36,17 +36,13 @@ import type {
 } from "./types";
 
 export function AttendancePage() {
+  // Today, timesheets and work patterns come from the API; every change is
+  // sent there and the refetch that follows updates these lists.
   const { data, loading } = useAttendanceRecords();
-  const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  useEffect(() => {
-    if (data) setRecords(data);
-  }, [data]);
-  // Timesheets live in the shared attendance slice so a self-service submission
-  // lands in this queue, and an approval here is visible back on the employee's
-  // own timesheet. Schedules are still local — nothing submits them.
-  const dispatch = useAppDispatch();
-  const timesheets = useAppSelector((s) => s.attendance.timesheets);
-  const [schedules, setSchedules] = useState<WorkSchedule[]>(WORK_SCHEDULES);
+  const records = data ?? [];
+  const { data: timesheets } = useTimesheets();
+  const { data: schedules } = useWorkSchedules();
+  const actions = useAttendanceActions();
 
   // Controlled so the KPI cards can drill into a tab, not just a filter —
   // and so Settings' "Open Attendance" link can land directly on a tab.
@@ -92,32 +88,7 @@ export function AttendancePage() {
   }
 
   function handleSaveRecord(data: NewAttendanceRecord) {
-    if (editingRecord) {
-      setRecords((prev) =>
-        prev.map((r) =>
-          r.id === editingRecord.id
-            ? {
-                ...r,
-                ...data,
-                overtimeHours:
-                  data.totalHours && data.totalHours > 8
-                    ? Math.round((data.totalHours - 8) * 10) / 10
-                    : 0,
-              }
-            : r,
-        ),
-      );
-    } else {
-      const newRecord: AttendanceRecord = {
-        ...data,
-        id: `ATT-${Date.now()}`,
-        overtimeHours:
-          data.totalHours && data.totalHours > 8
-            ? Math.round((data.totalHours - 8) * 10) / 10
-            : 0,
-      };
-      setRecords((prev) => [newRecord, ...prev]);
-    }
+    void actions.logAttendance(data);
   }
 
   function handleViewTimesheet(ts: TimesheetRecord) {
@@ -126,17 +97,11 @@ export function AttendancePage() {
   }
 
   function handleApproveTimesheet(id: string) {
-    dispatch(
-      approveTimesheetAction({
-        id,
-        approvedBy: "HR Manager",
-        at: new Date().toISOString(),
-      }),
-    );
+    void actions.approveTimesheet(id);
   }
 
   function handleRejectTimesheet(id: string, reason: string) {
-    dispatch(rejectTimesheetAction({ id, reason }));
+    void actions.rejectTimesheet(id, reason);
   }
 
   function handleRejectClick(ts: TimesheetRecord) {
@@ -155,23 +120,11 @@ export function AttendancePage() {
   }
 
   function handleSaveSchedule(data: NewWorkSchedule) {
-    if (editingSchedule) {
-      setSchedules((prev) =>
-        prev.map((s) => (s.id === editingSchedule.id ? { ...s, ...data } : s)),
-      );
-    } else {
-      const newSchedule: WorkSchedule = {
-        ...data,
-        id: `SCH-${Date.now()}`,
-        assignedCount: 0,
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
-      setSchedules((prev) => [...prev, newSchedule]);
-    }
+    void actions.saveSchedule(data, editingSchedule?.id);
   }
 
   function handleDeleteSchedule(id: string) {
-    setSchedules((prev) => prev.filter((s) => s.id !== id));
+    void actions.deleteSchedule(id);
   }
 
   if (loading && !records.length) {
@@ -266,11 +219,15 @@ export function AttendancePage() {
         </TabsContent>
 
         <TabsContent value="deductions" className="mt-4 space-y-4">
-          <DeductionPolicyPanel />
+          <NotIntegrated label="The deduction policy">
+            <DeductionPolicyPanel />
+          </NotIntegrated>
         </TabsContent>
 
         <TabsContent value="presence" className="mt-4 space-y-4">
-          <PresenceCheckPanel />
+          <NotIntegrated label="Presence checks">
+            <PresenceCheckPanel />
+          </NotIntegrated>
         </TabsContent>
       </Tabs>
 

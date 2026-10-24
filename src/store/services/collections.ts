@@ -10,6 +10,11 @@ import type {
   OffboardingListItemDto,
 } from "@/src/types/offboarding";
 import type { OnboardingDto } from "@/src/types/onboarding";
+import type { AttendanceDayDto, TimesheetDto } from "@/src/types/attendance";
+import type {
+  PerformanceGoalDto,
+  PerformanceReviewDto,
+} from "@/src/types/performance";
 
 /**
  * Whole-collection reads of the paged list endpoints. Each walks every page
@@ -95,6 +100,44 @@ export const collectionsApi = api.injectEndpoints({
       },
       providesTags: ["Offboarding"],
     }),
+    /** Every attendance day on one date (the Today tab). */
+    getAttendanceForDate: builder.query<AttendanceDayDto[], string>({
+      queryFn: (date, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<AttendanceDayDto>(
+          baseQuery,
+          `${API_PREFIX}/attendance`,
+          "pascal",
+          { Date: date },
+        ),
+      providesTags: ["Attendance"],
+    }),
+    getAllTimesheets: builder.query<TimesheetDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<TimesheetDto>(
+          baseQuery,
+          `${API_PREFIX}/attendance/timesheets`,
+          "pascal",
+        ),
+      providesTags: ["Timesheets"],
+    }),
+    getAllPerformanceReviews: builder.query<PerformanceReviewDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<PerformanceReviewDto>(
+          baseQuery,
+          `${API_PREFIX}/performance/reviews`,
+          "pascal",
+        ),
+      providesTags: ["PerformanceReviews"],
+    }),
+    getAllPerformanceGoals: builder.query<PerformanceGoalDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<PerformanceGoalDto>(
+          baseQuery,
+          `${API_PREFIX}/performance/goals`,
+          "pascal",
+        ),
+      providesTags: ["PerformanceGoals"],
+    }),
   }),
 });
 
@@ -105,4 +148,8 @@ export const {
   useGetAllLeaveBalancesQuery,
   useGetAllOnboardingsQuery,
   useGetOffboardingRecordsQuery,
+  useGetAttendanceForDateQuery,
+  useGetAllTimesheetsQuery,
+  useGetAllPerformanceReviewsQuery,
+  useGetAllPerformanceGoalsQuery,
 } = collectionsApi;
