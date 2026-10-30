@@ -46,6 +46,8 @@ export interface EmployeeDto {
   jobTitle?: string | null;
   departmentId?: string | null;
   branchId?: string | null;
+  dottedLineManagerId?: string | null;
+  dottedLineManagerName?: string | null;
   department?: string | null;
   branchName?: string | null;
   employmentType?: EmploymentType;
@@ -136,6 +138,8 @@ export interface EmployeeListItemDto {
   jobTitle?: string | null;
   departmentId?: string | null;
   branchId?: string | null;
+  dottedLineManagerId?: string | null;
+  dottedLineManagerName?: string | null;
   branchName?: string | null;
   department?: string | null;
   employmentType?: EmploymentType;
@@ -158,6 +162,7 @@ export interface EmployeeRequest {
   jobTitle: string;
   departmentId: string;
   branchId?: string | null;
+  dottedLineManagerId?: string | null;
   employmentType: EmploymentType;
   managerId?: string | null;
   startDate?: string | null;
@@ -252,6 +257,7 @@ export interface InviteRequest {
   employmentType: EmploymentType;
   startDate?: string | null;
   managerId?: string | null;
+  accessLevelId?: string | null;
 }
 
 export interface MedicalDto {
@@ -270,6 +276,8 @@ export interface PendingInvitationDto {
   sentAt: string;
   expiresAt: string;
   expired: boolean;
+  emailSentAt?: string | null;
+  accessLevelName?: string | null;
 }
 
 export type WorkMode =

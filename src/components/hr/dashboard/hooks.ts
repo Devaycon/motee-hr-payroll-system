@@ -15,6 +15,13 @@ import type { LucideIcon } from "lucide-react";
 import { employmentTypeFromName } from "@/src/lib/constants/employment-types";
 import { TURNOVER_RECORDS, buildTurnoverTrends } from "@/src/data/workforce-demo";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { useMemo } from "react";
+import {
+  shortDay,
+  shortMonth,
+  useLiveDashboard,
+  withLive,
+} from "./live";
 
 type ChartConfig = Record<string, { label?: string; color?: string }>;
 import type {
@@ -165,7 +172,7 @@ export interface LeaveBreakdown {
  * Shared with `useStatCards` through `countLeaveByKind`, so the tile's headline
  * and the pie beside it can never be computed from different windows.
  */
-export function useLeaveBreakdown() {
+function useLeaveBreakdownFromBundle() {
   return useLocaleSection<LeaveBreakdown>((bundle) => {
     const refDate = bundle._meta.referenceDate ?? isoToday();
     const { current, days, pending } = countLeaveByKind(
@@ -214,7 +221,7 @@ export function getTurnoverRate(): {
   };
 }
 
-export function useStatCards() {
+function useStatCardsFromBundle() {
   return useLocaleSection<StatCard[]>((bundle) => {
     const employees = bundle.employees;
     const refDate = bundle._meta.referenceDate ?? isoToday();
@@ -366,7 +373,7 @@ export const ATTENDANCE_CONFIG: ChartConfig = {
   absent: { label: "Absent", color: "#6366f1" },
 };
 
-export function useAttendanceSeries() {
+function useAttendanceSeriesFromBundle() {
   return useLocaleSection<AttendancePoint[]>((bundle) => {
     const byDate = new Map<
       string,
@@ -411,7 +418,7 @@ const ATTENDANCE_WEEKS = 3;
  * so a short week (a bank holiday, or the partial week the data ends on) does
  * not read as a collapse in attendance.
  */
-export function useWeeklyAttendance() {
+function useWeeklyAttendanceFromBundle() {
   return useLocaleSection<WeeklyAttendancePoint[]>((bundle) => {
     const byDate = new Map<
       string,
@@ -527,7 +534,7 @@ export const HEADCOUNT_CONFIG: ChartConfig = {
   headcount: { label: "Headcount", color: "#50D34C" },
 };
 
-export function useHeadcountTrend() {
+function useHeadcountTrendFromBundle() {
   return useLocaleSection<HeadcountPoint[]>((bundle) =>
     bundle.headcountSnapshots.map((s) => {
       const month = s.date.slice(0, 7);
@@ -569,7 +576,7 @@ interface GenderSplitData {
   config: ChartConfig;
 }
 
-export function useGenderSplit() {
+function useGenderSplitFromBundle() {
   return useLocaleSection<GenderSplitData>((bundle) => {
     let male = 0;
     let female = 0;
@@ -617,7 +624,7 @@ interface DeptHeadcountData {
   config: ChartConfig;
 }
 
-export function useDepartmentHeadcount() {
+function useDepartmentHeadcountFromBundle() {
   return useLocaleSection<DeptHeadcountData>((bundle) => {
     const counts = new Map<string, number>();
     for (const emp of bundle.employees) {
@@ -649,7 +656,7 @@ const EMPLOYMENT_TYPE_PALETTE: Record<string, string> = {
   "NYSC Corps Member": "#a78bfa",
 };
 
-export function useEmploymentTypeBreakdown() {
+function useEmploymentTypeBreakdownFromBundle() {
   return useLocaleSection<EmploymentTypeData>((bundle) => {
     const byType = new Map<string, number>();
     const typeNameById = new Map(
@@ -794,3 +801,171 @@ export function useDashboardGreeting() {
 // Re-export for backwards compatibility with chart configs used elsewhere.
 export type { StatCard, AttendancePoint, HeadcountPoint };
 export { employmentLabel };
+
+// ── Live figures ─────────────────────────────────────────────────────────────
+// Signed in, the People and Attendance tabs read the dashboard API. Each hook
+// below keeps its bundle computation for the signed-out demo and lays the
+// server's figure over it.
+
+/**
+ * The tiles the API has figures for. The demo's fixed trend badges are
+ * dropped: the API reports no prior period for them, and a made-up comparison
+ * is worse than none.
+ */
+export function useStatCards() {
+  const { live, people, attendance } = useLiveDashboard();
+  const base = useStatCardsFromBundle();
+  const cards = useMemo(() => {
+    if (!people || !attendance || !base.data) return undefined;
+    const { headcount, turnover } = people;
+    const leave = attendance.leave;
+    const birthdays = people.upcomingBirthdays.filter((b) => b.daysUntil <= 7).length;
+    const values: Partial<Record<StatCardKey, Partial<StatCard>>> = {
+      total: { value: headcount.total, trend: undefined },
+      "new-hires": { value: headcount.newHiresThisMonth, trend: undefined },
+      leavers: { value: headcount.leaversThisMonth, trend: undefined },
+      remote: { value: headcount.remote, trend: undefined },
+      birthdays: { value: birthdays, trend: undefined },
+      "annual-leave": { value: leave.annual.requests, note: leaveNote(leave.annual.pending) },
+      "sick-leave": { value: leave.sick.requests, note: leaveNote(leave.sick.pending) },
+      "other-leave": { value: leave.other.requests, note: leaveNote(leave.other.pending) },
+      turnover: {
+        value: `${turnover.rate}%`,
+        trend: `${Math.abs(turnover.delta)}%`,
+        up: turnover.delta > 0,
+      },
+    };
+    return base.data.map((card) => ({ ...card, ...values[card.key] }));
+  }, [people, attendance, base.data]);
+  return withLive(base, live, cards);
+}
+
+export function useLeaveBreakdown() {
+  const { live, attendance } = useLiveDashboard();
+  const base = useLeaveBreakdownFromBundle();
+  const data = useMemo<LeaveBreakdown | undefined>(() => {
+    if (!attendance) return undefined;
+    const { annual, sick, other } = attendance.leave;
+    return {
+      requests: { annual: annual.requests, sick: sick.requests, other: other.requests },
+      days: { annual: annual.days, sick: sick.days, other: other.days },
+      pending: { annual: annual.pending, sick: sick.pending, other: other.pending },
+    };
+  }, [attendance]);
+  return withLive(base, live, data);
+}
+
+export function useAttendanceSeries() {
+  const { live, attendance } = useLiveDashboard();
+  const base = useAttendanceSeriesFromBundle();
+  const data = useMemo<AttendancePoint[] | undefined>(
+    () =>
+      attendance?.daily.map((d) => ({
+        date: shortDay(d.date),
+        present: d.present,
+        late: d.late,
+        absent: d.absent,
+      })),
+    [attendance],
+  );
+  return withLive(base, live, data);
+}
+
+export function useWeeklyAttendance() {
+  const { live, attendance } = useLiveDashboard();
+  const base = useWeeklyAttendanceFromBundle();
+  const data = useMemo<WeeklyAttendancePoint[] | undefined>(
+    () =>
+      attendance?.weekly.slice(-ATTENDANCE_WEEKS).map((w, i) => ({
+        week: `Wk${i + 1}`,
+        present: w.present,
+        late: w.late,
+        absent: w.absent,
+      })),
+    [attendance],
+  );
+  return withLive(base, live, data);
+}
+
+export function useHeadcountTrend() {
+  const { live, people } = useLiveDashboard();
+  const base = useHeadcountTrendFromBundle();
+  const data = useMemo<HeadcountPoint[] | undefined>(
+    () =>
+      people?.headcountTrend.map((p) => ({
+        month: shortMonth(p.month),
+        headcount: p.headcount,
+        joiners: p.joiners,
+        leavers: p.leavers,
+        net: p.net ?? p.joiners - p.leavers,
+      })),
+    [people],
+  );
+  return withLive(base, live, data);
+}
+
+export function useGenderSplit() {
+  const { live, people } = useLiveDashboard();
+  const base = useGenderSplitFromBundle();
+  const data = useMemo<GenderSplitData | undefined>(() => {
+    if (!people || !base.data) return undefined;
+    const count = (label: string) =>
+      people.byGender.find((g) => g.label.toLowerCase() === label)?.count ?? 0;
+    const male = count("male");
+    const female = count("female");
+    const total = people.byGender.reduce((sum, g) => sum + g.count, 0);
+    const values: Record<string, number> = {
+      male,
+      female,
+      other: Math.max(0, total - male - female),
+    };
+    return {
+      ...base.data,
+      series: base.data.series.map((s) => ({ ...s, value: values[s.key] ?? 0 })),
+    };
+  }, [people, base.data]);
+  return withLive(base, live, data);
+}
+
+export function useDepartmentHeadcount() {
+  const { live, people } = useLiveDashboard();
+  const base = useDepartmentHeadcountFromBundle();
+  const data = useMemo<DeptHeadcountData | undefined>(() => {
+    if (!people) return undefined;
+    const config: ChartConfig = {};
+    const points = people.byDepartment.map((d, i) => {
+      config[d.label] = { label: d.label, color: DEPT_PALETTE[i % DEPT_PALETTE.length] };
+      return { category: d.label, value: d.count };
+    });
+    return { data: points, config };
+  }, [people]);
+  return withLive(base, live, data);
+}
+
+export function useEmploymentTypeBreakdown() {
+  const { live, people } = useLiveDashboard();
+  const base = useEmploymentTypeBreakdownFromBundle();
+  const data = useMemo<EmploymentTypeData | undefined>(() => {
+    if (!people) return undefined;
+    const points: EmploymentTypeData["data"] = [];
+    const config: EmploymentTypeData["config"] = {};
+    for (const { label, count } of people.byEmploymentType) {
+      const color =
+        EMPLOYMENT_TYPE_PALETTE[label] ?? DEPT_PALETTE[points.length % DEPT_PALETTE.length];
+      const key = label.toLowerCase().replace(/\s+/g, "_");
+      points.push({ key, label, value: count, fill: color });
+      config[key] = { label, color };
+    }
+    return { data: points, config };
+  }, [people]);
+  return withLive(base, live, data);
+}
+
+/** Turnover for the gauge: the API's figure when signed in, else the demo's. */
+export function useTurnoverRate(): ReturnType<typeof getTurnoverRate> {
+  const { people } = useLiveDashboard();
+  const demo = getTurnoverRate();
+  if (!people) return demo;
+  const { rate, delta, voluntary, involuntary } = people.turnover;
+  return { rate, delta, voluntary, involuntary };
+}

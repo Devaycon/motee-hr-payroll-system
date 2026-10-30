@@ -909,6 +909,58 @@ const recruitmentSlice = createSlice({
       state.status = "ready";
     },
 
+    /**
+     * Replaces the records with the API's, keeping the bucket's templates.
+     * The caller has already merged in anything the API does not store.
+     */
+    replaceFromApi(
+      state,
+      action: PayloadAction<{
+        country: string;
+        requisitions: JobRequisition[];
+        candidates: Candidate[];
+        interviews: Interview[];
+      }>,
+    ) {
+      const { country, requisitions, candidates, interviews } = action.payload;
+      const existing = state.byCountry[country];
+      state.byCountry[country] = {
+        templates: existing?.templates ?? [],
+        seedVersion: SEED_VERSION,
+        requisitions,
+        candidates,
+        interviews,
+      };
+      state.status = "ready";
+    },
+    /**
+     * Swaps a locally minted id for the one the server assigned, everywhere it
+     * is referenced, so the local-only parts of the record stay attached.
+     */
+    adoptServerId(
+      state,
+      action: PayloadAction<{
+        country: string;
+        kind: "requisition" | "candidate" | "interview";
+        localId: string;
+        serverId: string;
+      }>,
+    ) {
+      const { country, kind, localId, serverId } = action.payload;
+      const b = state.byCountry[country];
+      if (!b) return;
+      if (kind === "requisition") {
+        for (const r of b.requisitions) if (r.id === localId) r.id = serverId;
+        for (const c of b.candidates) if (c.requisitionId === localId) c.requisitionId = serverId;
+        for (const i of b.interviews) if (i.requisitionId === localId) i.requisitionId = serverId;
+      } else if (kind === "candidate") {
+        for (const c of b.candidates) if (c.id === localId) c.id = serverId;
+        for (const i of b.interviews) if (i.candidateId === localId) i.candidateId = serverId;
+      } else {
+        for (const i of b.interviews) if (i.id === localId) i.id = serverId;
+      }
+    },
+
     // ── Requisitions ──
     addRequisition(
       state,
@@ -1347,6 +1399,8 @@ const recruitmentSlice = createSlice({
 export const {
   hydrate,
   seedCountry,
+  replaceFromApi,
+  adoptServerId,
   addRequisition,
   updateRequisition,
   setRequisitionStatus,

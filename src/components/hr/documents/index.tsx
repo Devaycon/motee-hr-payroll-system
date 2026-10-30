@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useDocuments } from "./hooks";
+import { useDocumentActions, useDocuments } from "./hooks";
 import { FolderOpen, Upload, FolderPlus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -22,24 +23,19 @@ import { EmployeeDocumentsTab } from "./components/employee-documents-tab";
 import { MyDocumentsTab } from "./components/my-documents-tab";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import { FOLDERS as SEED_FOLDERS } from "./data";
+import {
+  NotIntegrated,
+  notifyNotIntegrated,
+} from "@/src/components/shared/not-integrated";
 import { useAppSelector, useAppDispatch } from "@/src/lib/stores/hooks";
 import { dequeueSignedDocument } from "@/src/lib/stores/docu-sign-slice";
-import type { SelfServiceDocumentSubmission } from "@/src/lib/stores/my-documents-slice";
-import type { HRDocument, Folder, NewDocument, NewShare, DocumentCategory } from "./types";
+import type { HRDocument, Folder, NewDocument, NewShare } from "./types";
 
-const DOCU_SIGN_FOLDER_ID = "docu-sign-file";
+const DOCU_SIGN_FOLDER_NAME = "docu-sign file";
 
 /** §8 redesign — root folders that now have their own top-level area
  *  instead of sitting in the Company Documents tree. */
 const COMPANY_DOCS_HIDDEN_ROOTS = ["per", "arch"];
-
-/** §8.3 — maps a self-service submission's document kind to a document category. */
-function categoryForDocType(docType: string): DocumentCategory {
-  if (docType === "Right to Work") return "right_to_work";
-  if (docType === "Certificate") return "certificate";
-  return "id_card";
-}
 
 function getDocumentsForFolder(
   folderId: string | null,
@@ -67,7 +63,8 @@ function getDocumentsForFolder(
 export function DocumentsPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { data, loading } = useDocuments();
+  const { data, folderIds, loading } = useDocuments();
+  const actions = useDocumentActions(folderIds);
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
   const signedQueue = useAppSelector((s) => s.docuSign.queue);
   const selfServiceSubmissions = useAppSelector((s) => s.myDocuments.submissions);
@@ -76,89 +73,56 @@ export function DocumentsPage() {
   ).length;
   const [activeArea, setActiveArea] = useState("company");
 
-  const [documents, setDocuments] = useState<HRDocument[]>([]);
-  const [folders, setFolders] = useState<Folder[]>(SEED_FOLDERS);
-
-  useEffect(() => {
-    const employeeFolders: Folder[] = employees.map((emp) => ({
-      id: `emp-${emp.id}`,
-      name: emp.fullName,
-      type: "custom" as const,
-      parentId: "emp-files",
-      createdAt: emp.startDate ?? new Date().toISOString().slice(0, 10),
-      createdBy: "HR Admin",
-    }));
-    setFolders((prev) => {
-      const seedIds = new Set(SEED_FOLDERS.map((f) => f.id));
-      const empIds = new Set(employeeFolders.map((f) => f.id));
-      const custom = prev.filter(
-        (f) => !seedIds.has(f.id) && !empIds.has(f.id),
-      );
-      return [...SEED_FOLDERS, ...employeeFolders, ...custom];
-    });
-  }, [employees]);
-
-  useEffect(() => {
-    if (data) {
-      setDocuments(data.documents);
-      setFolders((prev) => {
-        const ids = new Set(prev.map((f) => f.id));
-        return [...prev, ...data.folders.filter((f) => !ids.has(f.id))];
-      });
-    }
-  }, [data]);
+  const documents = useMemo(() => data?.documents ?? [], [data]);
+  // Server folders, plus one per employee so their personal files have a
+  // name to show wherever a folder is named.
+  const folders = useMemo<Folder[]>(
+    () => [
+      ...(data?.folders ?? []),
+      ...employees.map((emp) => ({
+        id: `emp-${emp.id}`,
+        name: emp.fullName,
+        type: "custom" as const,
+        parentId: "emp-files",
+        createdAt: emp.startDate ?? "",
+        createdBy: "HR Admin",
+      })),
+    ],
+    [data, employees],
+  );
 
   // Docu-Sign tool saves land here as a queue (it's a separate route/page) —
-  // file each one into the "docu-sign file" folder, then drain the queue so
-  // it isn't re-added on the next mount.
+  // upload each one into the "docu-sign file" folder, then drain the queue so
+  // it isn't filed twice.
+  const filing = useRef(false);
   useEffect(() => {
-    if (signedQueue.length === 0) return;
-    setFolders((prev) =>
-      prev.some((f) => f.id === DOCU_SIGN_FOLDER_ID)
-        ? prev
-        : [
-            ...prev,
-            {
-              id: DOCU_SIGN_FOLDER_ID,
-              name: "docu-sign file",
-              type: "custom",
-              createdAt: new Date().toISOString().split("T")[0],
-              createdBy: "HR Admin",
-            },
-          ],
-    );
-    setDocuments((prev) => [
-      ...signedQueue.map((q): HRDocument => {
-        const uploadedAt = q.createdAt.split("T")[0];
-        return {
-          id: `DOC-SIGN-${q.id}`,
-          name: q.name,
-          fileType: q.fileType,
-          category: "other",
-          folderId: DOCU_SIGN_FOLDER_ID,
-          fileSize: q.fileSize,
-          uploadedAt,
-          uploadedBy: q.createdBy,
-          isArchived: false,
-          versions: [
-            {
-              id: `V-DOC-SIGN-${q.id}-1`,
-              version: 1,
-              uploadedAt,
-              uploadedBy: q.createdBy,
-              fileSize: q.fileSize,
-              notes: "Signed via Docu-Sign.",
-            },
-          ],
-          shares: [],
-          acknowledgements: [],
-          fileUrl: q.fileUrl,
-        };
-      }),
-      ...prev,
-    ]);
-    signedQueue.forEach((q) => dispatch(dequeueSignedDocument(q.id)));
-  }, [signedQueue, dispatch]);
+    if (!signedQueue.length || !data || filing.current) return;
+    filing.current = true;
+    void (async () => {
+      let folderId = data.folders.find((f) => f.name === DOCU_SIGN_FOLDER_NAME)?.id;
+      for (const q of signedQueue) {
+        const blob = await fetch(q.fileUrl).then((r) => r.blob());
+        const file = new File([blob], `${q.name}.${q.fileType}`, { type: blob.type });
+        const used = await actions.fileSigned(
+          {
+            name: q.name,
+            fileType: q.fileType,
+            category: "other",
+            fileSize: q.fileSize,
+            description: "Signed via Docu-Sign.",
+          },
+          file,
+          DOCU_SIGN_FOLDER_NAME,
+          folderId,
+        );
+        if (!used) break;
+        // Created on the first filing; later ones in this batch reuse it.
+        folderId = used;
+        dispatch(dequeueSignedDocument(q.id));
+      }
+      filing.current = false;
+    })();
+  }, [signedQueue, data, actions, dispatch]);
 
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
@@ -192,68 +156,10 @@ export function DocumentsPage() {
       ? getDocumentsForFolder(selectedFolderId, documents, folders)
       : documents.filter((d) => matchesDocumentCardFilter(d, cardFilter));
 
-  function handleUploadSave(data: NewDocument) {
-    const id = `DOC-${String(documents.length + 1).padStart(3, "0")}`;
-    const now = new Date().toISOString().split("T")[0];
-    const newDoc: HRDocument = {
-      ...data,
-      id,
-      uploadedAt: now,
-      uploadedBy: "HR Admin",
-      isArchived: false,
-      versions: [
-        {
-          id: `V-${id}-1`,
-          version: 1,
-          uploadedAt: now,
-          uploadedBy: "HR Admin",
-          fileSize: data.fileSize,
-          notes: "Initial upload.",
-        },
-      ],
-      shares: [],
-      assignment: data.assignment,
-      requiresAcknowledgement: data.requiresAcknowledgement,
-      acknowledgements: [],
-    };
-    setDocuments((prev) => [newDoc, ...prev]);
+  async function handleUploadSave(data: NewDocument, file: File) {
+    if (!(await actions.upload(data, file))) return;
+    toast.success("Document uploaded");
     setUploadModalOpen(false);
-  }
-
-  /** §8.3 — HR approving a self-service submission files it onto the
-   *  employee's own folder, the same place their other documents live. */
-  function handleApproveSelfServiceDoc(submission: SelfServiceDocumentSubmission) {
-    if (!submission.employeeId) return;
-    const id = `DOC-SSD-${submission.id}`;
-    const now = new Date().toISOString().split("T")[0];
-    const fileType = /^(pdf|doc|docx|png|jpg|jpeg)$/.test(submission.ext)
-      ? (submission.ext as HRDocument["fileType"])
-      : "pdf";
-    const newDoc: HRDocument = {
-      id,
-      name: submission.name,
-      fileType,
-      category: categoryForDocType(submission.docType),
-      folderId: `emp-${submission.employeeId}`,
-      fileSize: 0,
-      expiryDate: submission.expiryDate,
-      uploadedAt: now,
-      uploadedBy: submission.employeeName,
-      isArchived: false,
-      versions: [
-        {
-          id: `V-${id}-1`,
-          version: 1,
-          uploadedAt: now,
-          uploadedBy: submission.employeeName,
-          fileSize: 0,
-          notes: "Submitted via employee self-service, approved by HR.",
-        },
-      ],
-      shares: [],
-      acknowledgements: [],
-    };
-    setDocuments((prev) => [newDoc, ...prev]);
   }
 
   function handleViewDocument(doc: HRDocument) {
@@ -267,109 +173,39 @@ export function DocumentsPage() {
     setShareModalOpen(true);
   }
 
-  function handleShareSave(docId: string, data: NewShare) {
-    const now = new Date().toISOString().split("T")[0];
-    setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === docId
-          ? {
-              ...d,
-              shares: [
-                ...d.shares,
-                {
-                  id: `SH-${docId}-${Date.now()}`,
-                  employeeId: data.employeeId,
-                  employeeName: data.employeeName,
-                  employeeInitials: data.employeeInitials,
-                  permission: data.permission,
-                  sharedAt: now,
-                  sharedBy: "HR Admin",
-                },
-              ],
-            }
-          : d,
-      ),
-    );
-    if (sharingDocument?.id === docId) {
-      setSharingDocument(
-        (prev) =>
-          prev && {
-            ...prev,
-            shares: [
-              ...prev.shares,
-              {
-                id: `SH-${docId}-${Date.now()}`,
-                employeeName: data.employeeName,
-                employeeInitials: data.employeeInitials,
-                permission: data.permission,
-                sharedAt: now,
-                sharedBy: "HR Admin",
-              },
-            ],
-          },
-      );
-    }
+  async function handleShareSave(docId: string, data: NewShare) {
+    if (await actions.share(docId, data)) toast.success("Document shared");
   }
 
-  function handleRevokeShare(docId: string, shareId: string) {
-    setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === docId
-          ? { ...d, shares: d.shares.filter((s) => s.id !== shareId) }
-          : d,
-      ),
-    );
-    if (sharingDocument?.id === docId) {
-      setSharingDocument(
-        (prev) =>
-          prev && {
-            ...prev,
-            shares: prev.shares.filter((s) => s.id !== shareId),
-          },
-      );
-    }
+  async function handleRevokeShare(docId: string, shareId: string) {
+    if (await actions.revokeShare(docId, shareId)) toast.success("Access revoked");
   }
 
-  function handleArchive(id: string) {
-    setDocuments((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, isArchived: !d.isArchived } : d)),
-    );
+  async function handleArchive(id: string) {
+    const doc = documents.find((d) => d.id === id);
+    if (!doc || !(await actions.toggleArchive(doc))) return;
+    toast.success(doc.isArchived ? "Document restored" : "Document archived");
     setDetailModalOpen(false);
   }
 
-  function handleDelete(id: string) {
-    const today = new Date().toISOString().split("T")[0];
-    setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === id ? { ...d, isTrashed: true, trashedAt: today } : d,
-      ),
-    );
+  async function handleDelete(id: string) {
+    if (!(await actions.trash(id))) return;
+    toast.success("Moved to trash");
     setDetailModalOpen(false);
   }
 
-  function handleRestore(id: string) {
-    setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === id ? { ...d, isTrashed: false, trashedAt: undefined } : d,
-      ),
-    );
+  async function handleRestore(id: string) {
+    if (await actions.restore(id)) toast.success("Document restored");
   }
 
-  function handlePermanentDelete(id: string) {
-    setDocuments((prev) => prev.filter((d) => d.id !== id));
+  /** The API keeps trashed documents; there is no permanent delete. */
+  function handlePermanentDelete() {
+    notifyNotIntegrated("Permanent delete");
   }
 
-  function handleCreateFolder(name: string, parentId?: string) {
-    const id = `custom-${Date.now()}`;
-    const newFolder: Folder = {
-      id,
-      name,
-      type: "custom",
-      parentId,
-      createdAt: new Date().toISOString().split("T")[0],
-      createdBy: "HR Admin",
-    };
-    setFolders((prev) => [...prev, newFolder]);
+  async function handleCreateFolder(name: string, parentId?: string) {
+    if (!(await actions.createFolder(name, parentId))) return;
+    toast.success("Folder created");
     setCreateFolderModalOpen(false);
   }
 
@@ -508,7 +344,10 @@ export function DocumentsPage() {
         </TabsContent>
 
         <TabsContent value="my-documents" className="mt-4">
-          <MyDocumentsTab onApprove={handleApproveSelfServiceDoc} />
+          {/* The self-service review queue has no endpoint yet. */}
+          <NotIntegrated label="Self-service document review">
+            <MyDocumentsTab onApprove={() => {}} />
+          </NotIntegrated>
         </TabsContent>
 
         <TabsContent value="archive" className="mt-4">

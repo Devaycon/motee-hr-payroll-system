@@ -29,6 +29,7 @@ import { workflowRunsListener } from "./workflow-runs-listener";
 import { profileEditsListener } from "./profile-edits-listener";
 import { offboardingListener } from "./offboarding-listener";
 import { leaveListener } from "./leave-listener";
+import { recruitmentListener } from "./recruitment-listener";
 import scenariosReducer from "./scenarios-slice";
 import usersReducer from "./users-slice";
 import auditReducer from "./audit-slice";
@@ -108,6 +109,7 @@ export const store = configureStore({
         offboardingListener.middleware,
         leaveListener.middleware,
         sicknessListener.middleware,
+        recruitmentListener.middleware,
       )
       .concat(api.middleware),
 });

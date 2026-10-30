@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Megaphone, Plus } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useAnnouncements } from "./hooks";
+import { useAnnouncementActions, useAnnouncements } from "./hooks";
 import { toast } from "sonner";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
@@ -21,10 +21,8 @@ import type { Announcement, NewAnnouncement } from "./types";
 
 export function AnnouncementsPage() {
   const { data, loading } = useAnnouncements();
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  useEffect(() => {
-    if (data) setAnnouncements(data);
-  }, [data]);
+  const announcements = data ?? [];
+  const actions = useAnnouncementActions();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Announcement | null>(null);
@@ -60,55 +58,28 @@ export function AnnouncementsPage() {
     setDetailOpen(true);
   }
 
-  function handleSave(data: NewAnnouncement) {
-    if (editing) {
-      setAnnouncements((prev) =>
-        prev.map((a) => (a.id === editing.id ? { ...a, ...data } : a)),
-      );
-      toast.success("Announcement updated");
-    } else {
-      const id = `ANN-${String(announcements.length + 1).padStart(3, "0")}`;
-      const now = new Date().toISOString().split("T")[0];
-      const next: Announcement = {
-        ...data,
-        id,
-        createdAt: now,
-        createdBy: "HR Admin",
-        createdByInitials: "HA",
-        viewCount: 0,
-        acknowledgements: [],
-        totalTargeted: data.audience === "all_staff" ? 156 : 30,
-        publishedAt: data.status === "published" ? now : undefined,
-        isArchived: false,
-      };
-      setAnnouncements((prev) => [next, ...prev]);
-      toast.success("Announcement created");
-    }
+  async function handleSave(data: NewAnnouncement) {
+    const ok = editing
+      ? await actions.update(editing, data)
+      : await actions.create(data);
+    if (!ok) return;
+    toast.success(editing ? "Announcement updated" : "Announcement created");
     setFormOpen(false);
   }
 
-  function handlePin(id: string) {
-    setAnnouncements((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, isPinned: !a.isPinned } : a)),
-    );
+  async function handlePin(id: string) {
     const target = announcements.find((a) => a.id === id);
-    toast.success(target?.isPinned ? "Unpinned" : "Pinned");
+    if (await actions.togglePin(id)) {
+      toast.success(target?.isPinned ? "Unpinned" : "Pinned");
+    }
   }
 
-  function handleArchive(id: string) {
-    setAnnouncements((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? { ...a, isArchived: true, isPinned: false, status: "archived" }
-          : a,
-      ),
-    );
-    toast.success("Announcement archived");
+  async function handleArchive(id: string) {
+    if (await actions.archive(id)) toast.success("Announcement archived");
   }
 
-  function handleDelete(id: string) {
-    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-    toast.success("Announcement deleted");
+  async function handleDelete(id: string) {
+    if (await actions.remove(id)) toast.success("Announcement deleted");
   }
 
   if (loading && !announcements.length) {

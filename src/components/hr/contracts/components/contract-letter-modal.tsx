@@ -35,68 +35,64 @@ function formatSalary(amount?: number, currency?: string) {
   return `${currency} ${amount.toLocaleString()}`;
 }
 
-export function ContractLetterModal({
-  open,
-  contract,
-  hrSignature,
-  onClose,
-}: ContractLetterModalProps) {
-  if (!contract) return null;
-
+/** The contract letter as a standalone HTML page, for printing or filing. */
+export function buildContractLetterHtml(
+  contract: Contract,
+  hrSignature?: string,
+): string {
   const today = new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
 
-  function handlePrint() {
-    const rows = [
-      ["Contract ID", contract!.id],
-      ["Contract Type", CONTRACT_TYPE_LABELS[contract!.contractType]],
-      ["Status", CONTRACT_STATUS_LABELS[contract!.status]],
-      ["Start Date", formatDate(contract!.startDate)],
-      [
-        "End Date",
-        contract!.endDate ? formatDate(contract!.endDate) : "Open-Ended",
-      ],
-      [
-        "Salary / Rate",
-        formatSalary(contract!.salary, contract!.contractCurrency),
-      ],
-      ["Notice Period", `${contract!.noticePeriodDays} days`],
-      ["Auto-Renew", contract!.autoRenew ? "Yes" : "No"],
-    ];
+  const rows = [
+    ["Contract ID", contract.id],
+    ["Contract Type", CONTRACT_TYPE_LABELS[contract.contractType]],
+    ["Status", CONTRACT_STATUS_LABELS[contract.status]],
+    ["Start Date", formatDate(contract.startDate)],
+    [
+      "End Date",
+      contract.endDate ? formatDate(contract.endDate) : "Open-Ended",
+    ],
+    [
+      "Salary / Rate",
+      formatSalary(contract.salary, contract.contractCurrency),
+    ],
+    ["Notice Period", `${contract.noticePeriodDays} days`],
+    ["Auto-Renew", contract.autoRenew ? "Yes" : "No"],
+  ];
 
-    const detailRows = rows
-      .map(
-        ([label, value]) =>
-          `<tr><td style="background:#f9f9f9;font-weight:bold;padding:7px 14px;border:1px solid #ddd;width:40%;">${label}</td><td style="padding:7px 14px;border:1px solid #ddd;">${value}</td></tr>`,
-      )
-      .join("");
+  const detailRows = rows
+    .map(
+      ([label, value]) =>
+        `<tr><td style="background:#f9f9f9;font-weight:bold;padding:7px 14px;border:1px solid #ddd;width:40%;">${label}</td><td style="padding:7px 14px;border:1px solid #ddd;">${value}</td></tr>`,
+    )
+    .join("");
 
-    const descriptionBlock = contract!.description
-      ? `<div style="margin-bottom:24px;">
-          <p style="font-weight:bold;font-size:10px;text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:10px;color:#333;">Terms &amp; Description</p>
-          <p style="font-size:12.5px;line-height:1.8;white-space:pre-wrap;color:#333;">${contract!.description.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
-        </div>`
-      : "";
+  const descriptionBlock = contract.description
+    ? `<div style="margin-bottom:24px;">
+        <p style="font-weight:bold;font-size:10px;text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:10px;color:#333;">Terms &amp; Description</p>
+        <p style="font-size:12.5px;line-height:1.8;white-space:pre-wrap;color:#333;">${contract.description.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+      </div>`
+    : "";
 
-    const hrSigBlock = hrSignature
-      ? hrSignature.startsWith("data:image")
-        ? `<img src="${hrSignature}" style="height:48px;object-fit:contain;object-position:left;display:block;margin-bottom:8px;" alt="HR Signature" />`
-        : `<p style="font-style:italic;font-family:Georgia,serif;font-size:22px;color:#222;border-bottom:1px solid #333;padding-bottom:4px;margin-bottom:8px;">${hrSignature}</p>`
-      : `<div style="border-bottom:1px solid #333;min-height:36px;margin-bottom:8px;"></div>`;
+  const hrSigBlock = hrSignature
+    ? hrSignature.startsWith("data:image")
+      ? `<img src="${hrSignature}" style="height:48px;object-fit:contain;object-position:left;display:block;margin-bottom:8px;" alt="HR Signature" />`
+      : `<p style="font-style:italic;font-family:Georgia,serif;font-size:22px;color:#222;border-bottom:1px solid #333;padding-bottom:4px;margin-bottom:8px;">${hrSignature}</p>`
+    : `<div style="border-bottom:1px solid #333;min-height:36px;margin-bottom:8px;"></div>`;
 
-    const hrNameLabel =
-      hrSignature && !hrSignature.startsWith("data:image")
-        ? hrSignature
-        : "_________________________";
+  const hrNameLabel =
+    hrSignature && !hrSignature.startsWith("data:image")
+      ? hrSignature
+      : "_________________________";
 
-    const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>${contract!.title}</title>
+  <title>${contract.title}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Georgia, 'Times New Roman', serif; color: #111; background: #fff; padding: 60px 80px; font-size: 13px; line-height: 1.7; }
@@ -111,13 +107,13 @@ export function ContractLetterModal({
   <div style="text-align:center;margin-bottom:24px;">
     <p style="font-size:14px;font-weight:bold;text-transform:uppercase;letter-spacing:4px;">Contract Agreement</p>
   </div>
-  <p style="font-size:12px;color:#555;margin-bottom:24px;">Date: ${formatDate(contract!.startDate)}</p>
+  <p style="font-size:12px;color:#555;margin-bottom:24px;">Date: ${formatDate(contract.startDate)}</p>
   <div style="margin-bottom:24px;">
     <p style="font-weight:bold;font-size:10px;text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:10px;color:#333;">Parties</p>
     <div style="font-size:12.5px;line-height:2;">
       <div style="display:flex;gap:12px;"><span style="font-weight:bold;min-width:130px;">Employer:</span><span>Motee Payroll Inc.</span></div>
-      <div style="display:flex;gap:12px;"><span style="font-weight:bold;min-width:130px;">Party / Employee:</span><span>${contract!.employeeName}</span></div>
-      <div style="display:flex;gap:12px;"><span style="font-weight:bold;min-width:130px;">Department:</span><span>${contract!.department}</span></div>
+      <div style="display:flex;gap:12px;"><span style="font-weight:bold;min-width:130px;">Party / Employee:</span><span>${contract.employeeName}</span></div>
+      <div style="display:flex;gap:12px;"><span style="font-weight:bold;min-width:130px;">Department:</span><span>${contract.department}</span></div>
     </div>
   </div>
   <div style="margin-bottom:24px;">
@@ -137,7 +133,7 @@ export function ContractLetterModal({
       <div style="flex:1;">
         <p style="font-weight:bold;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Employee / Party</p>
         <div style="border-bottom:1px solid #333;min-height:36px;margin-bottom:8px;"></div>
-        <p style="font-size:10px;color:#555;margin-bottom:4px;">Name: ${contract!.employeeName}</p>
+        <p style="font-size:10px;color:#555;margin-bottom:4px;">Name: ${contract.employeeName}</p>
         <p style="font-size:10px;color:#555;">Date: _________________________</p>
       </div>
     </div>
@@ -147,6 +143,24 @@ export function ContractLetterModal({
   </div>
 </body>
 </html>`;
+}
+
+export function ContractLetterModal({
+  open,
+  contract,
+  hrSignature,
+  onClose,
+}: ContractLetterModalProps) {
+  if (!contract) return null;
+
+  const today = new Date().toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  function handlePrint() {
+    const html = buildContractLetterHtml(contract!, hrSignature);
 
     const w = window.open("", "_blank", "width=900,height=700");
     if (!w) return;

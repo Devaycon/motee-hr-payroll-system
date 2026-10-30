@@ -35,6 +35,7 @@ import type {
   AnnouncementAudience,
   AnnouncementPriority,
 } from "../types";
+import { useDepartmentNames } from "../hooks";
 
 const schema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters" }),
@@ -113,6 +114,10 @@ export function AnnouncementFormModal({
   const [prevEditing, setPrevEditing] = useState<Announcement | null>(null);
   const [form, setForm] = useState<FormValues>(() => getDefaults(null));
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
+  const liveDepartments = useDepartmentNames().names;
+  const departmentOptions = liveDepartments.length
+    ? liveDepartments
+    : DEPARTMENT_OPTIONS;
 
   if (open !== prevOpen || editing !== prevEditing) {
     setPrevOpen(open);
@@ -294,7 +299,7 @@ export function AnnouncementFormModal({
               <div className="space-y-2">
                 <Label>Target Departments</Label>
                 <div className="flex flex-wrap gap-2 p-3 rounded-lg border bg-muted/30">
-                  {DEPARTMENT_OPTIONS.map((dept) => {
+                  {departmentOptions.map((dept) => {
                     const selected = form.targetDepartments.includes(dept);
                     return (
                       <button

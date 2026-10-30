@@ -75,6 +75,8 @@ interface SelectedFile {
   name: string;
   size: number;
   fileType: DocumentFileType;
+  /** The picked file itself, uploaded when the form is saved. */
+  file: File;
 }
 
 function getInitial(defaultFolderId?: string): UploadForm {
@@ -100,7 +102,7 @@ interface UploadModalProps {
   onClose: () => void;
   folders: Folder[];
   defaultFolderId?: string;
-  onSave: (data: NewDocument) => void;
+  onSave: (data: NewDocument, file: File) => void;
 }
 
 export function UploadModal({
@@ -158,7 +160,7 @@ export function UploadModal({
       return;
     }
     const baseName = file.name.replace(/\.[^/.]+$/, "");
-    setSelectedFile({ name: file.name, size: file.size, fileType });
+    setSelectedFile({ name: file.name, size: file.size, fileType, file });
     if (!form.name) {
       set("name", baseName);
     }
@@ -206,7 +208,7 @@ export function UploadModal({
           scope === "department" && department ? [department] : undefined,
       },
       requiresAcknowledgement: requiresAck,
-    });
+    }, selectedFile.file);
   }
 
   const nonArchiveFolders = folders.filter((f) => f.id !== "arch");

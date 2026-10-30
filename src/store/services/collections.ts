@@ -15,6 +15,12 @@ import type {
   PerformanceGoalDto,
   PerformanceReviewDto,
 } from "@/src/types/performance";
+import type { AnnouncementDto } from "@/src/types/announcements";
+import type { ExpenseClaimDto } from "@/src/types/expenses";
+import type { ContractDto } from "@/src/types/contracts";
+import type { DocumentDto } from "@/src/types/documents";
+import type { RequisitionDto } from "@/src/types/requisitions";
+import type { CandidateDto } from "@/src/types/candidates";
 
 /**
  * Whole-collection reads of the paged list endpoints. Each walks every page
@@ -138,6 +144,50 @@ export const collectionsApi = api.injectEndpoints({
         ),
       providesTags: ["PerformanceGoals"],
     }),
+    /** Archived ones too: the screen has an Archived tab. */
+    getAllAnnouncements: builder.query<AnnouncementDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<AnnouncementDto>(
+          baseQuery,
+          `${API_PREFIX}/announcements`,
+          "pascal",
+          { IncludeArchived: true },
+        ),
+      providesTags: ["Announcements"],
+    }),
+    getAllExpenseClaims: builder.query<ExpenseClaimDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<ExpenseClaimDto>(
+          baseQuery,
+          `${API_PREFIX}/expenses/claims`,
+          "pascal",
+        ),
+      providesTags: ["ExpenseClaims"],
+    }),
+    getAllContracts: builder.query<ContractDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<ContractDto>(baseQuery, `${API_PREFIX}/contracts`, "pascal"),
+      providesTags: ["Contracts"],
+    }),
+    /** Archived and trashed too: both have their own views. */
+    getAllDocuments: builder.query<DocumentDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<DocumentDto>(baseQuery, `${API_PREFIX}/documents`, "pascal", {
+          IncludeArchived: true,
+          IncludeTrashed: true,
+        }),
+      providesTags: ["Documents"],
+    }),
+    getAllRequisitions: builder.query<RequisitionDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<RequisitionDto>(baseQuery, `${API_PREFIX}/requisitions`, "pascal"),
+      providesTags: ["Requisitions"],
+    }),
+    getAllCandidates: builder.query<CandidateDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<CandidateDto>(baseQuery, `${API_PREFIX}/candidates`, "pascal"),
+      providesTags: ["Candidates"],
+    }),
   }),
 });
 
@@ -152,4 +202,10 @@ export const {
   useGetAllTimesheetsQuery,
   useGetAllPerformanceReviewsQuery,
   useGetAllPerformanceGoalsQuery,
+  useGetAllAnnouncementsQuery,
+  useGetAllExpenseClaimsQuery,
+  useGetAllContractsQuery,
+  useGetAllDocumentsQuery,
+  useGetAllRequisitionsQuery,
+  useGetAllCandidatesQuery,
 } = collectionsApi;

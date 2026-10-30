@@ -4,6 +4,7 @@ export type FilePurpose =
   | "companyLogo"
   | "employeeAvatar"
   | "employeeDocument"
+  | "companyDocument"
   | "approvalAttachment"
   | "export";
 

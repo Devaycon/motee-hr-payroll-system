@@ -1,80 +1,142 @@
 "use client";
 
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { useMemo } from "react";
+import { toast } from "sonner";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import {
+  announcementToRequest,
+  dtoToRequest,
+  toAnnouncement,
+} from "@/src/lib/announcements/api-mapping";
 import type {
   Announcement,
-  AnnouncementAudience,
-  AnnouncementPriority,
-  AnnouncementStatus,
-  AnnouncementType,
+  NewAnnouncement,
 } from "@/src/lib/types/announcements";
-import type { LocaleBundle } from "@/src/lib/types/locale";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import {
+  useArchiveAnnouncementMutation,
+  useCreateAnnouncementMutation,
+  useDeleteAnnouncementMutation,
+  usePublishAnnouncementMutation,
+  useUpdateAnnouncementMutation,
+} from "@/src/store/services/announcements";
+import {
+  collectionsApi,
+  useGetAllAnnouncementsQuery,
+} from "@/src/store/services/collections";
 
-interface RawAnnouncement {
-  id?: string;
-  title?: string;
-  body?: string;
-  description?: string;
-  authorId?: string;
-  audience?: string;
-  priority?: string;
-  type?: string;
-  publishedAt?: string;
-  createdAt?: string;
-  pinned?: boolean;
-  isPinned?: boolean;
-  status?: string;
-  reactions?: { employeeId?: string }[];
-}
-
-function mapType(t?: string): AnnouncementType {
-  if (t === "policy" || t === "event" || t === "urgent") return t;
-  return "general";
-}
-
-function mapStatus(s?: string): AnnouncementStatus {
-  if (s === "draft" || s === "scheduled" || s === "expired" || s === "archived") return s;
-  return "published";
-}
-
-function mapAudience(a?: string): AnnouncementAudience {
-  if (a === "department" || a === "leadership" || a === "managers") return a;
-  return "all_staff";
-}
-
-function mapPriority(p?: string): AnnouncementPriority {
-  if (p === "urgent" || p === "high") return "urgent";
-  return "standard";
-}
-
-function buildAnnouncements(bundle: LocaleBundle): Announcement[] {
-  const employeesById = new Map(bundle.employees.map((e) => [e.id, e]));
-  return ((bundle.announcements ?? []) as RawAnnouncement[]).map((raw, i) => {
-    const id = raw.id ?? `ANN-${String(i + 1).padStart(3, "0")}`;
-    const author = raw.authorId ? employeesById.get(raw.authorId) : null;
-    const createdAt = raw.publishedAt ?? raw.createdAt ?? bundle.tenant.createdAt.slice(0, 10);
-    return {
-      id,
-      title: raw.title ?? "Announcement",
-      body: raw.body ?? raw.description ?? "",
-      type: mapType(raw.type),
-      status: mapStatus(raw.status),
-      priority: mapPriority(raw.priority),
-      audience: mapAudience(raw.audience),
-      isPinned: raw.isPinned ?? raw.pinned ?? false,
-      requiresAcknowledgement: raw.priority === "urgent" || raw.priority === "high",
-      createdAt,
-      createdBy: author?.fullName ?? "HR Admin",
-      createdByInitials: author?.initials ?? "HA",
-      viewCount: (raw.reactions ?? []).length,
-      acknowledgements: [],
-      totalTargeted: bundle.employees.length,
-      publishedAt: createdAt,
-      isArchived: raw.status === "archived",
-    };
-  });
-}
-
+/** Every announcement, archived included, newest first. */
 export function useAnnouncements() {
-  return useLocaleSection<Announcement[]>(buildAnnouncements);
+  const skip = useAppSelector(
+    (s) => !s.session.is_loggedIn || !s.session.tenant_id,
+  );
+  const query = useGetAllAnnouncementsQuery(undefined, { skip });
+
+  const data = useMemo<Announcement[] | null>(
+    () =>
+      query.data
+        ? query.data
+            .map(toAnnouncement)
+            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        : null,
+    [query.data],
+  );
+
+  return {
+    data,
+    loading: query.isLoading && !data,
+    error: query.error ? getApiErrorMessage(query.error) : null,
+  };
+}
+
+/** Department names on the form, mapped to the ids the API stores. */
+export function useDepartmentNames() {
+  const departments = useAppSelector((s) => s.locale.data?.departments);
+  return useMemo(() => {
+    const idByName = new Map(
+      (departments ?? []).map((d) => [d.name, d.id] as const),
+    );
+    return { names: [...idByName.keys()].sort(), idByName };
+  }, [departments]);
+}
+
+/** Each action resolves true once the server has accepted it. */
+export function useAnnouncementActions() {
+  // Reads the list the page already loaded; it does not fetch again.
+  const query = collectionsApi.endpoints.getAllAnnouncements.useQueryState();
+  const { idByName } = useDepartmentNames();
+  const [create] = useCreateAnnouncementMutation();
+  const [update] = useUpdateAnnouncementMutation();
+  const [publish] = usePublishAnnouncementMutation();
+  const [archive] = useArchiveAnnouncementMutation();
+  const [remove] = useDeleteAnnouncementMutation();
+  const stored = query.data;
+
+  return useMemo(() => {
+    const dtoById = new Map((stored ?? []).map((d) => [d.id, d]));
+    const attempt = async (run: () => Promise<unknown>, fallback: string) => {
+      try {
+        await run();
+        return true;
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, fallback));
+        return false;
+      }
+    };
+    // Drafts stay drafts; anything else goes out through the publish call,
+    // which honours a future "scheduled for" date.
+    const shouldPublish = (input: NewAnnouncement) =>
+      input.status === "published" || input.status === "scheduled";
+
+    return {
+      create(input: NewAnnouncement) {
+        return attempt(async () => {
+          const created = await create(
+            announcementToRequest(input, idByName),
+          ).unwrap();
+          if (shouldPublish(input)) await publish(created.data.id).unwrap();
+        }, "Could not create the announcement.");
+      },
+
+      update(current: Announcement, input: NewAnnouncement) {
+        const dto = dtoById.get(current.id);
+        return attempt(async () => {
+          await update({
+            id: current.id,
+            body: announcementToRequest(input, idByName, dto?.attachmentFileId),
+          }).unwrap();
+          if (current.status === "draft" && shouldPublish(input)) {
+            await publish(current.id).unwrap();
+          }
+        }, "Could not update the announcement.");
+      },
+
+      togglePin(id: string) {
+        const dto = dtoById.get(id);
+        if (!dto) return Promise.resolve(false);
+        return attempt(
+          () =>
+            update({
+              id,
+              body: { ...dtoToRequest(dto), isPinned: !dto.isPinned },
+            }).unwrap(),
+          "Could not change the pin.",
+        );
+      },
+
+      archive(id: string) {
+        return attempt(
+          () => archive(id).unwrap(),
+          "Could not archive the announcement.",
+        );
+      },
+
+      remove(id: string) {
+        return attempt(
+          () => remove(id).unwrap(),
+          "Could not delete the announcement.",
+        );
+      },
+    };
+  }, [stored, idByName, create, update, publish, archive, remove]);
 }
