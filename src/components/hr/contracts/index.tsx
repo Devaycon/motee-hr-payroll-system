@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useContracts } from "./hooks";
+import { toast } from "sonner";
+import { useContractActions, useContracts } from "./hooks";
 import { PenLine } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
@@ -24,7 +25,8 @@ import type { Contract, NewContract } from "./types";
 export function ContractsPage() {
   const router = useRouter();
   const { data, loading } = useContracts();
-  const [contracts, setContracts] = useState<Contract[]>(() => data ?? []);
+  const contracts = data ?? [];
+  const actions = useContractActions();
   const [activeTab, setActiveTab] = useState("all");
   const hasChainTab = useHasApprovalChainTab("contract");
 
@@ -54,14 +56,6 @@ export function ContractsPage() {
     (c) => c.status === "expired" && !c.isArchived,
   );
 
-  function generateId() {
-    const max = contracts.reduce((acc, c) => {
-      const num = parseInt(c.id.replace("CON-", ""), 10);
-      return num > acc ? num : acc;
-    }, 0);
-    return `CON-${String(max + 1).padStart(3, "0")}`;
-  }
-
   function handleAdd() {
     setEditingContract(null);
     setFormModalOpen(true);
@@ -86,45 +80,13 @@ export function ContractsPage() {
     router.push(`/sign?${params.toString()}`);
   }
 
-  function handleDelete(contract: Contract) {
-    setContracts((prev) => prev.filter((c) => c.id !== contract.id));
+  async function handleDelete(contract: Contract) {
+    if (await actions.remove(contract.id)) toast.success("Contract deleted");
   }
 
-  function handleSave(data: NewContract) {
-    const now = new Date().toISOString().split("T")[0];
-    if (editingContract) {
-      setContracts((prev) =>
-        prev.map((c) =>
-          c.id === editingContract.id
-            ? { ...c, ...data, lastModifiedAt: now }
-            : c,
-        ),
-      );
-    } else {
-      const newContract: Contract = {
-        ...data,
-        id: generateId(),
-        signatureStatus: "unsigned",
-        signatories: [
-          {
-            name: data.employeeName,
-            initials: data.employeeInitials,
-            role: data.contractType === "internship" ? "Intern" : "Employee",
-          },
-          {
-            name: "HR Admin",
-            initials: "HA",
-            role: "HR Manager",
-          },
-        ],
-        notes: [],
-        createdAt: now,
-        createdBy: "HR Admin",
-        lastModifiedAt: now,
-        isArchived: false,
-      };
-      setContracts((prev) => [newContract, ...prev]);
-    }
+  async function handleSave(data: NewContract) {
+    if (!(await actions.save(editingContract, data))) return;
+    toast.success(editingContract ? "Contract updated" : "Contract created");
     setFormModalOpen(false);
   }
 
@@ -149,12 +111,9 @@ export function ContractsPage() {
     setLetterModalOpen(true);
   }
 
-  function handleMoveToDocuments(contract: Contract) {
-    setContracts((prev) =>
-      prev.map((c) =>
-        c.id === contract.id ? { ...c, movedToDocuments: true } : c,
-      ),
-    );
+  async function handleMoveToDocuments(contract: Contract) {
+    if (!(await actions.moveToDocuments(contract, hrSignature))) return;
+    toast.success("Contract moved to documents");
     if (viewingContract?.id === contract.id) {
       setViewingContract((prev) =>
         prev ? { ...prev, movedToDocuments: true } : prev,

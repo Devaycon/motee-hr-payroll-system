@@ -7,27 +7,22 @@ import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import { cn } from "@/src/lib/utils";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import {
-  advanceClaim,
-  rejectClaim,
-  returnClaim,
-} from "@/src/lib/stores/expenses-slice";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
-import { resolveDeskFrom } from "@/src/lib/expenses/desk";
 import {
   currentExpenseStage,
-  statusForStageIndex,
   type ExpenseStage,
 } from "@/src/lib/expenses/stages";
 import { SignatureDialog } from "@/src/components/hr/approvals/components/signature-dialog";
 import type { ExpenseClaim } from "@/src/data/employee-expenses-demo";
 import type { ApprovalChainTemplate } from "@/src/lib/types/approvals";
+import { useExpenseDecisions } from "../hooks";
 
 interface DecisionPanelProps {
   claim: ExpenseClaim;
   stages: ExpenseStage[];
   template: ApprovalChainTemplate | undefined;
+  /** Kept for callers; the server records who decided from the session. */
   actor: { name: string; employeeId?: string };
   /** The claim's current stage resolves to this user. */
   onMyDesk: boolean;
@@ -39,22 +34,21 @@ interface DecisionPanelProps {
 }
 
 /**
- * Approve / Reject / Return for one claim. The decision writes straight to the
- * claim — there is no mirrored approval record to keep in step — and the next
- * approver is resolved from the same chain the employee's tracker draws.
+ * Approve / Reject / Return for one claim. Decisions go to the claim's server
+ * approval, which resolves the next approver; approving a cleared claim pays
+ * it out.
  */
 export function DecisionPanel({
   claim,
   stages,
   template,
-  actor,
   onMyDesk,
   canApprove,
   canOverride,
   onDecided,
 }: DecisionPanelProps) {
   const dispatch = useAppDispatch();
-  const bundle = useAppSelector((s) => s.locale.data);
+  const decisions = useExpenseDecisions();
   const [note, setNote] = useState("");
   const [signatureOpen, setSignatureOpen] = useState(false);
 
@@ -63,13 +57,6 @@ export function DecisionPanel({
   const overriding = !onMyDesk && canOverride;
   // The seeded chain requires the reviewer to sign an approval.
   const needsSignature = template?.signatures.reviewerSigns ?? false;
-
-  const submitter = {
-    employeeId: claim.employeeId ?? "",
-    name: claim.employeeName ?? "",
-    initials: claim.employeeInitials ?? "",
-    departmentName: claim.department ?? "",
-  };
 
   /** Adds the override to the audit note, so the trail says who really acted. */
   function withOverride(text: string): string {
@@ -84,60 +71,25 @@ export function DecisionPanel({
     dispatch(pushNotification({ title, description }));
   }
 
-  function doApprove(signatureDataUrl?: string, noteOverride?: string) {
+  async function doApprove(_signatureDataUrl?: string, noteOverride?: string) {
     // The signature dialog carries its own note field; take it directly rather
-    // than round-tripping through state, which wouldn't have updated yet.
+    // than round-tripping through state, which wouldn't have updated yet. The
+    // API records the decision and note; it has no field for the signature.
     const text = (noteOverride ?? note).trim();
-    const fromIndex = claim.stageIndex ?? 0;
-    // Who the claim lands with next — resolved now so the desk survives a
-    // later change to the approver's availability.
-    const desk = resolveDeskFrom(
-      fromIndex + 1,
-      stages,
-      template?.steps ?? [],
-      submitter,
-      bundle,
-    );
-    // Status follows the stage actually landed on, not the one merely next in
-    // line — the resolver may have walked past a stage nobody can action.
-    const toStatus = statusForStageIndex(desk.stageIndex, stages.length);
+    const reimbursing = claim.status === "approved";
+    if (!(await decisions.approve(claim, withOverride(text) || undefined))) return;
 
-    dispatch(
-      advanceClaim({
-        id: claim.id,
-        toStatus,
-        toStageIndex: desk.stageIndex,
-        stageLabel: stage?.label ?? "Review",
-        stepId: stage?.stepId,
-        nextApprover: {
-          employeeId: desk.approverEmployeeId,
-          name: desk.approverName,
-        },
-        actor: actor.name,
-        actorEmployeeId: actor.employeeId,
-        note: withOverride(text) || undefined,
-        signatureDataUrl,
-      }),
-    );
-
-    const nextStage = stages[desk.stageIndex];
-    if (toStatus === "reimbursed") {
+    if (reimbursing) {
       toast.success("Claim reimbursed");
       notify(
         "Expense claim reimbursed",
         `${claim.reference ?? claim.title} has been approved for payment.`,
       );
     } else {
-      toast.success(
-        `Moved to ${nextStage?.label ?? "the next stage"}${
-          nextStage ? ` — ${desk.approverName ?? nextStage.approverLabel}` : ""
-        }`,
-      );
+      toast.success("Claim approved");
       notify(
         "Expense claim approved",
-        `${claim.reference ?? claim.title} now awaits ${
-          desk.approverName ?? nextStage?.approverLabel ?? "the next approver"
-        }.`,
+        `${claim.reference ?? claim.title} has moved to the next stage.`,
       );
     }
 
@@ -151,24 +103,15 @@ export function DecisionPanel({
       setSignatureOpen(true);
       return;
     }
-    doApprove();
+    void doApprove();
   }
 
-  function handleReject() {
+  async function handleReject() {
     if (!note.trim()) {
       toast.error("Add a reason before rejecting.");
       return;
     }
-    dispatch(
-      rejectClaim({
-        id: claim.id,
-        reason: withOverride(note.trim()),
-        stageLabel: stage?.label,
-        stepId: stage?.stepId,
-        actor: actor.name,
-        actorEmployeeId: actor.employeeId,
-      }),
-    );
+    if (!(await decisions.reject(claim, withOverride(note.trim())))) return;
     toast.success("Claim rejected");
     notify(
       "Expense claim rejected",
@@ -178,21 +121,12 @@ export function DecisionPanel({
     onDecided?.();
   }
 
-  function handleReturn() {
+  async function handleReturn() {
     if (!note.trim()) {
       toast.error("Say what needs correcting before sending it back.");
       return;
     }
-    dispatch(
-      returnClaim({
-        id: claim.id,
-        reason: withOverride(note.trim()),
-        stageLabel: stage?.label,
-        stepId: stage?.stepId,
-        actor: actor.name,
-        actorEmployeeId: actor.employeeId,
-      }),
-    );
+    if (!(await decisions.sendBack(claim, withOverride(note.trim())))) return;
     toast.success("Sent back to the employee");
     notify(
       "Expense claim returned",

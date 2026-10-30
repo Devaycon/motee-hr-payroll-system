@@ -25,6 +25,7 @@ export interface OnboardingDto {
   startDate?: string | null;
   isOverdue: boolean;
   review?: ApprovalDto;
+  reviewUnavailableReason?: string | null;
   submittedAt?: string | null;
   completedAt?: string | null;
 }

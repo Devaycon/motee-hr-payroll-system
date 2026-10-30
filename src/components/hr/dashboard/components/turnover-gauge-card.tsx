@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Tile, TileLabel, TileSub } from "./tiles";
-import { getTurnoverRate } from "../hooks";
+import { useTurnoverRate } from "../hooks";
 
 /**
  * Turnover against the scale HR reads it on, rather than a bare percentage: the
@@ -17,7 +17,7 @@ import { getTurnoverRate } from "../hooks";
 const SCALE_CEILING = 10;
 
 export function TurnoverGaugeCard() {
-  const { rate, delta, voluntary, involuntary } = getTurnoverRate();
+  const { rate, delta, voluntary, involuntary } = useTurnoverRate();
   const leavers = voluntary + involuntary;
 
   const fraction = Math.min(Math.max(rate / SCALE_CEILING, 0), 1);

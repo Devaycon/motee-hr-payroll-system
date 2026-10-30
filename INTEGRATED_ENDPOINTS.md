@@ -1,7 +1,7 @@
 # MOTEE HRIS — Integrated API Endpoints Log
 
-> **Branch:** `feat/temitope-branch` · **Base commit:** `fe35f26` + Attendance & Performance integration · **Updated:** 2026-10-24
-> **Source of truth:** `src/store/services/*.ts` (RTK Query), checked against the live spec at `https://api.develop.moteesolutionsltd.com/openapi/v1.json` (208 operations — every one now has a hook). Usage was traced to the screens, hooks and listeners that call each endpoint.
+> **Branch:** `feat/temitope-branch` · **Base commit:** `73c2885` + the 2026-10-30 integration · **Updated:** 2026-10-30
+> **Source of truth:** `src/store/services/*.ts` (RTK Query), checked against the live spec at `https://api.develop.moteesolutionsltd.com/openapi/v1.json` (302 operations — every one now has a hook). Usage was traced to the screens, hooks and listeners that call each endpoint.
 
 ---
 
@@ -12,11 +12,11 @@
 | Base URL | `NEXT_PUBLIC_MOTEE_BASE_URL` (from `.env.local`) |
 | API prefix | `/api/v1` |
 | Auth | `Authorization: Bearer <token>`, auto-refresh on 401 via `POST /api/v1/auth/refresh` |
-| Service files | 27 |
-| Unique backend endpoints | **208** (207 in services + the token refresh) |
-| ✅ Live — called by the app | **155** |
-| 🔁 Live via the collection helper | **11** (paged list endpoints read in full by `collections.ts` / `employee-directory.ts`) |
-| ⚪ Defined but not called yet | **42** (mostly self-service `/mine` endpoints — see section 3) |
+| Service files | 37 |
+| Unique backend endpoints | **302** (301 in services + the token refresh) |
+| ✅ Live — called by the app | **205** |
+| 🔁 Live via the collection helper | **17** (paged list endpoints read in full by `collections.ts` / `employee-directory.ts`) |
+| ⚪ Defined but not called yet | **80** (mostly self-service `/mine` endpoints — see section 3) |
 
 ### Change log
 
@@ -24,6 +24,7 @@
 | --- | --- |
 | 2026-10-24 | First log: 151 endpoints across 16 modules. |
 | 2026-10-24 | **+57 endpoints:** Attendance, corrections, timesheets, work schedules (31) and Performance goals, reviews, feedback (26). HR **Attendance** and **Performance** pages switched to live. |
+| 2026-10-30 | **+94 endpoints:** Announcements (11), Calendar (6), Candidates (13), Interviews (6), Requisitions (11), Contracts (13), Dashboard (2), Documents (17), Expense claims (10), Notifications (5). Switched to live: **Dashboard** (People and Attendance tabs), **Calendar**, **Announcements**, **Recruitment**, **Contracts**, **Documents**, **Expense Claims**, and the notifications bell. Existing schemas gained `dottedLineManagerId`/`dottedLineManagerName` (employees), `accessLevelId` (invite), `emailSentAt`/`accessLevelName` (pending invitation), `reviewUnavailableReason` (onboarding) and the `companyDocument` file purpose. |
 
 ### Status legend
 
@@ -37,9 +38,9 @@
 
 From `src/lib/permissions/live-modules.ts` (everything else is shown blurred as "not integrated"):
 
-`/welcome` · `/organization/branches` · `/organization/departments` · `/organization/employees` · `/talent/onboarding` · `/talent/offboarding` · `/talent/performance` · `/operations/assets` · `/time-payroll/leave` (except **Schemes**) · `/time-payroll/attendance` (except **Deduction Policy** and **Presence Checks**) · `/admin/access-levels` · `/admin/users` · `/admin/audit-trail`
+`/welcome` · `/hr` (People and Attendance tabs; the other tabs and the EOR map, certification, mandatory training, loans and untaken-leave tiles stay blurred) · `/hr-action-center/events` · `/workspace/announcements` · `/organization/branches` · `/organization/departments` · `/organization/employees` · `/talent/onboarding` · `/talent/offboarding` · `/talent/performance` · `/talent/recruitment` · `/operations/assets` · `/operations/contracts` · `/operations/documents` (except the **My Documents** review queue) · `/time-payroll/leave` (except **Schemes**) · `/time-payroll/attendance` (except **Deduction Policy** and **Presence Checks**) · `/time-payroll/expenses` · `/admin/access-levels` · `/admin/users` · `/admin/audit-trail`
 
-Also live outside the HR shell: auth pages, company setup wizard, the new-joiner (`/join`) flow, and the platform console (`platform-live`).
+Also live outside the HR shell: auth pages, company setup wizard, the new-joiner (`/join`) flow, the platform console (`platform-live`), and the notifications panel in every navbar.
 
 ---
 
@@ -353,20 +354,169 @@ HR screen: `components/hr/performance` (Reviews and Goals tabs). Data mapping in
 | 25 | POST | `/performance/feedback/requests` | `useAskForFeedbackMutation` | — (self-service) | ⚪ |
 | 26 | POST | `/performance/feedback/requests/{id}/decline` | `useDeclineFeedbackRequestMutation` | — (self-service) | ⚪ |
 
+### 2.19 Announcements — `announcements.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/announcements/feed` | `useGetAnnouncementFeedQuery` | — | ⚪ |
+| 2 | POST | `/announcements/feed/{id}/view` | `useMarkAnnouncementViewedMutation` | — | ⚪ |
+| 3 | POST | `/announcements/feed/{id}/acknowledge` | `useAcknowledgeAnnouncementMutation` | — | ⚪ |
+| 4 | GET | `/announcements` | `useGetAnnouncementsQuery` / `useGetAllAnnouncementsQuery` (all pages) | `hr/announcements/hooks` | 🔁 |
+| 5 | POST | `/announcements` | `useCreateAnnouncementMutation` | `hr/announcements/hooks` | ✅ |
+| 6 | GET | `/announcements/{id}` | `useGetAnnouncementQuery` | — | ⚪ |
+| 7 | PUT | `/announcements/{id}` | `useUpdateAnnouncementMutation` | `hr/announcements/hooks` | ✅ |
+| 8 | DELETE | `/announcements/{id}` | `useDeleteAnnouncementMutation` | `hr/announcements/hooks` | ✅ |
+| 9 | GET | `/announcements/{id}/acknowledgements` | `useGetAnnouncementAcknowledgementsQuery` | — | ⚪ |
+| 10 | POST | `/announcements/{id}/publish` | `usePublishAnnouncementMutation` | `hr/announcements/hooks` | ✅ |
+| 11 | POST | `/announcements/{id}/archive` | `useArchiveAnnouncementMutation` | `hr/announcements/hooks` | ✅ |
+
+### 2.20 Calendar — `calendar.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/calendar` | `useGetCalendarQuery` | `hr/calendar/workspace/use-calendar-data` | ✅ |
+| 2 | GET | `/calendar/upcoming` | `useGetUpcomingCalendarQuery` | — | ⚪ |
+| 3 | POST | `/calendar/events` | `useCreateCalendarEventMutation` | `hr/calendar/workspace/use-calendar-data` | ✅ |
+| 4 | GET | `/calendar/events/{id}` | `useGetCalendarEventQuery` | — | ⚪ |
+| 5 | PUT | `/calendar/events/{id}` | `useUpdateCalendarEventMutation` | — | ⚪ |
+| 6 | DELETE | `/calendar/events/{id}` | `useDeleteCalendarEventMutation` | `hr/calendar/workspace/use-calendar-data` | ✅ |
+
+### 2.21 Recruitment: candidates — `candidates.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/candidates` | `useGetCandidatesQuery` / `useGetAllCandidatesQuery` (all pages) | `hr/recruitment/hooks` | 🔁 |
+| 2 | POST | `/candidates` | `useCreateCandidateMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 3 | GET | `/candidates/{id}` | `useGetCandidateQuery` | — | ⚪ |
+| 4 | PUT | `/candidates/{id}` | `useUpdateCandidateMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 5 | GET | `/candidates/{id}/can-move` | `useCanMoveCandidateQuery` | — | ⚪ |
+| 6 | POST | `/candidates/{id}/move` | `useMoveCandidateMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 7 | POST | `/candidates/{id}/reject` | `useRejectCandidateMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 8 | POST | `/candidates/{id}/restore` | `useRestoreCandidateMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 9 | POST | `/candidates/{id}/owner` | `useAssignCandidateOwnerMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 10 | POST | `/candidates/{id}/scorecards` | `useAddCandidateScorecardMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 11 | POST | `/candidates/{id}/offers` | `useMakeCandidateOfferMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 12 | POST | `/candidates/{id}/offers/{offerId}/respond` | `useRespondToCandidateOfferMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 13 | POST | `/candidates/{id}/send-to-onboarding` | `useSendCandidateToOnboardingMutation` | `lib/stores/recruitment-listener` | ✅ |
+
+### 2.22 Recruitment: interviews — `interviews.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/interviews` | `useGetInterviewsQuery` | `hr/recruitment/hooks` | ✅ |
+| 2 | POST | `/interviews` | `useScheduleInterviewMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 3 | GET | `/interviews/candidate/{candidateId}` | `useGetCandidateInterviewsQuery` | — | ⚪ |
+| 4 | PUT | `/interviews/{id}` | `useUpdateInterviewMutation` | — | ⚪ |
+| 5 | POST | `/interviews/{id}/complete` | `useCompleteInterviewMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 6 | POST | `/interviews/{id}/cancel` | `useCancelInterviewMutation` | `lib/stores/recruitment-listener` | ✅ |
+
+### 2.23 Recruitment: vacancies — `requisitions.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/requisitions` | `useGetRequisitionsQuery` / `useGetAllRequisitionsQuery` (all pages) | `hr/recruitment/hooks` | 🔁 |
+| 2 | POST | `/requisitions` | `useCreateRequisitionMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 3 | GET | `/requisitions/{id}` | `useGetRequisitionQuery` | — | ⚪ |
+| 4 | PUT | `/requisitions/{id}` | `useUpdateRequisitionMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 5 | DELETE | `/requisitions/{id}` | `useDeleteRequisitionMutation` | — | ⚪ |
+| 6 | GET | `/requisitions/{id}/warnings` | `useGetRequisitionWarningsQuery` | — | ⚪ |
+| 7 | POST | `/requisitions/{id}/publish` | `usePublishRequisitionMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 8 | POST | `/requisitions/{id}/hold` | `useHoldRequisitionMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 9 | POST | `/requisitions/{id}/resume` | `useResumeRequisitionMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 10 | POST | `/requisitions/{id}/close` | `useCloseRequisitionMutation` | `lib/stores/recruitment-listener` | ✅ |
+| 11 | POST | `/requisitions/{id}/cancel` | `useCancelRequisitionMutation` | `lib/stores/recruitment-listener` | ✅ |
+
+### 2.24 Contracts — `contracts.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/contracts/mine` | `useGetMyContractsQuery` | — (self-service) | ⚪ |
+| 2 | POST | `/contracts/mine/{id}/sign` | `useSignMyContractMutation` | — (self-service) | ⚪ |
+| 3 | GET | `/contracts` | `useGetContractsQuery` / `useGetAllContractsQuery` (all pages) | `hr/contracts/hooks` | 🔁 |
+| 4 | POST | `/contracts` | `useCreateContractMutation` | `hr/contracts/hooks` | ✅ |
+| 5 | GET | `/contracts/{id}` | `useGetContractQuery` | — | ⚪ |
+| 6 | PUT | `/contracts/{id}` | `useUpdateContractMutation` | `hr/contracts/hooks` | ✅ |
+| 7 | DELETE | `/contracts/{id}` | `useDeleteContractMutation` | `hr/contracts/hooks` | ✅ |
+| 8 | POST | `/contracts/{id}/send` | `useSendContractMutation` | `hr/contracts/hooks` | ✅ |
+| 9 | POST | `/contracts/{id}/activate` | `useActivateContractMutation` | `hr/contracts/hooks` | ✅ |
+| 10 | POST | `/contracts/{id}/terminate` | `useTerminateContractMutation` | — | ⚪ |
+| 11 | POST | `/contracts/{id}/sign` | `useSignContractMutation` | — | ⚪ |
+| 12 | POST | `/contracts/{id}/file-to-documents` | `useFileContractToDocumentsMutation` | `hr/contracts/hooks` | ✅ |
+| 13 | POST | `/contracts/{id}/notes` | `useAddContractNoteMutation` | — | ⚪ |
+
+### 2.25 Dashboard — `dashboard.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/dashboard/people` | `useGetPeopleDashboardQuery` | `hr/dashboard/live` | ✅ |
+| 2 | GET | `/dashboard/attendance` | `useGetAttendanceDashboardQuery` | `hr/dashboard/live` | ✅ |
+
+### 2.26 Documents — `documents.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/documents/mine` | `useGetMyDocumentsQuery` | — (self-service) | ⚪ |
+| 2 | POST | `/documents/mine/{id}/acknowledge` | `useAcknowledgeMyDocumentMutation` | — (self-service) | ⚪ |
+| 3 | GET | `/documents/folders` | `useGetDocumentFoldersQuery` | `hr/documents/hooks` | ✅ |
+| 4 | POST | `/documents/folders` | `useCreateDocumentFolderMutation` | `hr/documents/hooks` | ✅ |
+| 5 | PUT | `/documents/folders/{id}` | `useRenameDocumentFolderMutation` | — | ⚪ |
+| 6 | DELETE | `/documents/folders/{id}` | `useDeleteDocumentFolderMutation` | — | ⚪ |
+| 7 | GET | `/documents` | `useGetDocumentsQuery` / `useGetAllDocumentsQuery` (all pages) | `hr/documents/hooks` | 🔁 |
+| 8 | POST | `/documents` | `useCreateDocumentMutation` | `hr/documents/hooks` | ✅ |
+| 9 | GET | `/documents/{id}` | `useGetDocumentQuery` | — | ⚪ |
+| 10 | PUT | `/documents/{id}` | `useUpdateDocumentMutation` | — | ⚪ |
+| 11 | POST | `/documents/{id}/versions` | `useAddDocumentVersionMutation` | — | ⚪ |
+| 12 | POST | `/documents/{id}/archive` | `useArchiveDocumentMutation` | `hr/documents/hooks` | ✅ |
+| 13 | POST | `/documents/{id}/trash` | `useTrashDocumentMutation` | `hr/documents/hooks` | ✅ |
+| 14 | POST | `/documents/{id}/restore` | `useRestoreDocumentMutation` | `hr/documents/hooks` | ✅ |
+| 15 | POST | `/documents/{id}/shares` | `useShareDocumentMutation` | `hr/documents/hooks` | ✅ |
+| 16 | DELETE | `/documents/{id}/shares/{employeeId}` | `useUnshareDocumentMutation` | `hr/documents/hooks` | ✅ |
+| 17 | GET | `/documents/{id}/acknowledgements` | `useGetDocumentAcknowledgementsQuery` | — | ⚪ |
+
+### 2.27 Expense claims — `expenses.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/expenses/claims/mine` | `useGetMyExpenseClaimsQuery` | — (self-service) | ⚪ |
+| 2 | POST | `/expenses/claims/mine` | `useCreateMyExpenseClaimMutation` | — (self-service) | ⚪ |
+| 3 | PUT | `/expenses/claims/mine/{id}` | `useUpdateMyExpenseClaimMutation` | — (self-service) | ⚪ |
+| 4 | DELETE | `/expenses/claims/mine/{id}` | `useDeleteMyExpenseClaimMutation` | — (self-service) | ⚪ |
+| 5 | POST | `/expenses/claims/mine/{id}/submit` | `useSubmitMyExpenseClaimMutation` | — (self-service) | ⚪ |
+| 6 | POST | `/expenses/claims/mine/{id}/withdraw` | `useWithdrawMyExpenseClaimMutation` | — (self-service) | ⚪ |
+| 7 | GET | `/expenses/claims` | `useGetExpenseClaimsQuery` / `useGetAllExpenseClaimsQuery` (all pages) | `hr/expenses/hooks` | 🔁 |
+| 8 | GET | `/expenses/claims/{id}` | `useGetExpenseClaimQuery` | — | ⚪ |
+| 9 | POST | `/expenses/claims/{id}/return` | `useReturnExpenseClaimMutation` | `hr/expenses/hooks` | ✅ |
+| 10 | POST | `/expenses/claims/{id}/reimburse` | `useReimburseExpenseClaimMutation` | `hr/expenses/hooks` | ✅ |
+
+### 2.28 Notifications — `notifications.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/notifications` | `useGetNotificationsQuery` | `lib/notifications/use-notification-feed` | ✅ |
+| 2 | GET | `/notifications/unread-count` | `useGetUnreadNotificationCountQuery` | — | ⚪ |
+| 3 | POST | `/notifications/{id}/read` | `useMarkNotificationReadMutation` | `lib/notifications/use-notification-feed` | ✅ |
+| 4 | POST | `/notifications/read-all` | `useMarkAllNotificationsReadMutation` | `lib/notifications/use-notification-feed` | ✅ |
+| 5 | POST | `/notifications/{id}/dismiss` | `useDismissNotificationMutation` | — | ⚪ |
+
 ---
 
 ## 3. Defined but not called yet (⚪)
 
 These hooks exist and point at real endpoints, but nothing calls them yet. They're ready to use when needed.
 
-### 3.1 Waiting on the self-service portal (23)
+### 3.1 Waiting on the self-service portal (36)
 
 The whole employee portal is still shown as "not integrated", so its `/mine` endpoints wait for it:
 
 - **Attendance (13):** `/attendance/mine` (+ `/days`, `/summary`, `/clock-in`, `/break/start`, `/break/end`, `/clock-out`, `/location`), `/attendance/corrections/mine` (GET, POST), `/attendance/timesheets/mine` (+ `/submit`), `/attendance/schedules/mine`
 - **Performance (10):** `/performance/reviews/mine` (+ self-assessment PUT/POST), `/performance/goals/mine` (GET, POST), `/performance/feedback/mine`, `/performance/feedback/requests/mine`, `/requests/awaiting-me`, `POST /requests`, `/requests/{id}/decline`
+- **Announcements (3):** `/announcements/feed`, `/feed/{id}/view`, `/feed/{id}/acknowledge`
+- **Contracts (2):** `/contracts/mine`, `/contracts/mine/{id}/sign`
+- **Documents (2):** `/documents/mine`, `/documents/mine/{id}/acknowledge`
+- **Expense claims (6):** `/expenses/claims/mine` (GET, POST, PUT, DELETE, `/submit`, `/withdraw`)
+- **Notifications (0):** the panel is shared, so the bell is already live in both shells
 
-### 3.2 No matching element in the HR screens (19)
+### 3.2 No matching element in the HR screens (44)
 
 The demo UI is frozen, so these wait until a screen needs them:
 
@@ -390,6 +540,18 @@ The demo UI is frozen, so these wait until a screen needs them:
 | GET | `/performance/goals/{id}` | `useGetGoalQuery` | `performance.ts` |
 | PUT | `/performance/goals/{id}` | `useUpdateGoalMutation` | `performance.ts` |
 | GET/POST | `/performance/feedback` | `useGetFeedbackQuery`, `useGiveFeedbackMutation` | `performance.ts` |
+| GET | `/announcements/{id}`, `/announcements/{id}/acknowledgements` | `useGetAnnouncementQuery`, `useGetAnnouncementAcknowledgementsQuery` | `announcements.ts` |
+| GET | `/calendar/upcoming`, `/calendar/events/{id}` | `useGetUpcomingCalendarQuery`, `useGetCalendarEventQuery` | `calendar.ts` |
+| PUT | `/calendar/events/{id}` | `useUpdateCalendarEventMutation` (the workspace has no edit) | `calendar.ts` |
+| GET | `/candidates/{id}`, `/candidates/{id}/can-move` | `useGetCandidateQuery`, `useCanMoveCandidateQuery` | `candidates.ts` |
+| GET/PUT | `/interviews/candidate/{candidateId}`, `PUT /interviews/{id}` | `useGetCandidateInterviewsQuery`, `useUpdateInterviewMutation` | `interviews.ts` |
+| GET/DELETE | `/requisitions/{id}`, `/requisitions/{id}/warnings`, `DELETE /requisitions/{id}` | `useGetRequisitionQuery`, `useGetRequisitionWarningsQuery`, `useDeleteRequisitionMutation` | `requisitions.ts` |
+| GET | `/contracts/{id}` | `useGetContractQuery` | `contracts.ts` |
+| POST | `/contracts/{id}/terminate`, `/sign`, `/notes` | `useTerminateContractMutation`, `useSignContractMutation`, `useAddContractNoteMutation` (signing goes through the demo `/sign` page; no terminate or note form) | `contracts.ts` |
+| PUT/DELETE | `/documents/folders/{id}` | `useRenameDocumentFolderMutation`, `useDeleteDocumentFolderMutation` | `documents.ts` |
+| GET/PUT/POST | `/documents/{id}`, `PUT /documents/{id}`, `/documents/{id}/versions`, `/documents/{id}/acknowledgements` | `useGetDocumentQuery`, `useUpdateDocumentMutation`, `useAddDocumentVersionMutation`, `useGetDocumentAcknowledgementsQuery` | `documents.ts` |
+| GET | `/expenses/claims/{id}` | `useGetExpenseClaimQuery` | `expenses.ts` |
+| GET/POST | `/notifications/unread-count`, `/notifications/{id}/dismiss` | `useGetUnreadNotificationCountQuery`, `useDismissNotificationMutation` (no badge or dismiss control) | `notifications.ts` |
 
 ### 3.3 Not yet checked with a real login
 
@@ -399,13 +561,26 @@ These Attendance & Performance details were taken from the spec and haven't been
 - **Log Attendance:** the API works out the status itself, so the status picked in the modal is not sent. The free-text location goes in as `locationName`, with `location: "office"`.
 - **Times:** "HH:MM" from the forms is sent as an ISO instant in the browser's time zone.
 
+### 3.4 2026-10-30 modules — not yet checked with a real login
+
+Every endpoint answers 401 without a token, so the routes exist, but none of these flows has been run against a real account:
+
+- **Recruitment** works like leave: the API is mirrored into the recruitment slice and `src/lib/stores/recruitment-listener.ts` sends the screens' actions. The application form, advert, posting platforms, stage gates, communications and attachments have no API field and stay on the local copy (`mergeLocal`). Locally created vacancies, applicants and interviews take the server id (`adoptServerId`).
+- **Recruitment → Requisition:** new vacancies still start from the Requisition module (`/talent/requisition`), which runs on the approvals engine and is still demo. Only real UUIDs are sent for the department, people and panel, so a vacancy built from a demo requisition is created without them.
+- **Expense claims:** approve and reject go to the claim's approval (`POST /approvals/{id}/decide`); approving a claim the chain has cleared calls `/reimburse`. The stages shown are the latest claim's approval steps plus a "Reimburse claim" stage. The reviewer signature is not sent (no API field), and receipts are listed but not downloadable from the card.
+- **Documents:** server folders of type `trash`, `shared` and `archive` (and the first root `system` and `personal` folders) take the screen's fixed ids. Documents in a personal folder shared with exactly one person show on that employee's folder. ID card and right-to-work have no API category and are sent as `other`. Permanent delete has no endpoint.
+- **Contracts:** "Move to Documents" uploads the generated letter (HTML) as an `employeeDocument` file, then calls `/file-to-documents`. The status picked in the form is reached through `/send` and `/activate`.
+- **Announcements:** "Role Specific" audience is sent as `managers`. Drafts are saved only; published and scheduled ones also call `/publish`.
+- **Calendar:** reads one window, from the start of last year to the end of next year. Leave, cover and sickness still come from the live leave and sickness data, so the server's copies are skipped. `employeeIds` is sent as a repeated key.
+- **Notifications:** polled every 60 s. Notifications a screen raises in the session are shown alongside the server's.
+
 ---
 
 ## 4. Not part of the backend API
 
 These calls go to the Next.js app's own local routes (demo data snapshots), **not** to the MOTEE backend, so they aren't counted above:
 
-- `src/lib/stores/*-persistence.ts` — `access-levels`, `approvals`, `attendance-deduction-policy`, `benefit-plans`, `collection-edits`, `er-cases`, `profile-edits`, `recruitment`, `workflow-runs`
+- `src/lib/stores/*-persistence.ts` — `access-levels`, `approvals`, `attendance-deduction-policy`, `benefit-plans`, `collection-edits`, `er-cases`, `profile-edits`, `recruitment` (now only the fields the API does not store), `workflow-runs`
 - `src/lib/stores/runtime-persistence.ts` → `src/app/api/runtime/[key]/route.ts` (branch performance, sickness, leave schemes — demo only)
 
 ---

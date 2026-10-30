@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { SicknessFilterProvider } from "../sickness-data";
 import { cn } from "@/src/lib/utils";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
+import { useDashboardLive } from "../live";
 import { AttendanceChart } from "./attendance-chart";
 import { UpcomingEventsCard } from "./upcoming-events-card";
 import { UntakenLeaveCard } from "./employees-at-risk";
@@ -85,6 +87,16 @@ function Grid({ children }: { children: ReactNode }) {
  * showed), then an Employment-Type/Turnover stack beside the EOR map, then
  * Dept. Headcount beside Headcount Trend.
  */
+/**
+ * A widget the dashboard API has no figures for. Signed in, it stays where
+ * the design puts it but blurred, rather than showing demo numbers as if live.
+ */
+export function DemoOnly({ children }: { children: ReactNode }) {
+  const live = useDashboardLive();
+  if (!live) return <>{children}</>;
+  return <NotIntegrated className="h-full">{children}</NotIntegrated>;
+}
+
 export function PeopleTabLayout() {
   return (
     <Grid>
@@ -107,7 +119,9 @@ export function PeopleTabLayout() {
         </div>
       </Cell>
       <Cell span={6}>
-        <EorMapCard />
+        <DemoOnly>
+          <EorMapCard />
+        </DemoOnly>
       </Cell>
 
       <Cell span={6}>
@@ -122,13 +136,19 @@ export function PeopleTabLayout() {
         <DataQualityTile />
       </Cell>
       <Cell span={3}>
-        <CertificationComplianceTile />
+        <DemoOnly>
+          <CertificationComplianceTile />
+        </DemoOnly>
       </Cell>
       <Cell span={3}>
-        <MandatoryTrainingTile />
+        <DemoOnly>
+          <MandatoryTrainingTile />
+        </DemoOnly>
       </Cell>
       <Cell span={3}>
-        <LoansTile />
+        <DemoOnly>
+          <LoansTile />
+        </DemoOnly>
       </Cell>
     </Grid>
   );
@@ -149,7 +169,9 @@ export function AttendanceTabLayout() {
         <AttendanceChart />
       </Cell>
       <Cell span={12}>
-        <UntakenLeaveCard />
+        <DemoOnly>
+          <UntakenLeaveCard />
+        </DemoOnly>
       </Cell>
     </Grid>
   );

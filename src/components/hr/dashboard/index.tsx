@@ -13,7 +13,11 @@ import {
   EventsTabLayout,
   ResourcingTabLayout,
   EngagementTabLayout,
+  DemoOnly,
 } from "./components/tab-layouts";
+
+/** Tabs the dashboard API covers; the rest stay on demo data. */
+const LIVE_TABS = new Set<DashboardTabKey>(["people", "attendance"]);
 
 const TAB_LAYOUTS: Record<DashboardTabKey, ComponentType> = {
   people: PeopleTabLayout,
@@ -56,7 +60,13 @@ const HrDashboard = () => {
             // between the strip and the tiles, the same as between tiles. A
             // `mt-2` here doubled it to 16px.
             <TabsContent key={t.key} value={t.key}>
-              <Layout />
+              {LIVE_TABS.has(t.key) ? (
+                <Layout />
+              ) : (
+                <DemoOnly>
+                  <Layout />
+                </DemoOnly>
+              )}
             </TabsContent>
           );
         })}

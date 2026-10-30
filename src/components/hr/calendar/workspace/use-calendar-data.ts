@@ -1,10 +1,22 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { format } from "date-fns";
+import { addYears, endOfYear, format, startOfYear } from "date-fns";
+import { toast } from "sonner";
 import { useUnscopedLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import type { LocaleEmployee, LocaleWorkPattern } from "@/src/lib/types/locale";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import {
+  useCreateCalendarEventMutation,
+  useDeleteCalendarEventMutation,
+  useGetCalendarQuery,
+} from "@/src/store/services/calendar";
+import type {
+  CalendarCategory,
+  CalendarEventRequest,
+  CalendarItemDto,
+} from "@/src/types/calendar";
 import type { CalItem } from "./model";
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
@@ -77,6 +89,74 @@ function useStoredEvents(key: string) {
   return { events, save };
 }
 
+// ── Live calendar ────────────────────────────────────────────────────────────
+
+/** The API spells two categories in camelCase; the legend keys are snake_case. */
+const CATEGORY_FROM_API: Partial<Record<CalendarCategory, string>> = {
+  oneToOne: "one_to_one",
+  leaveRequest: "leave_request",
+};
+
+function categoryToApi(category: string): CalendarCategory {
+  if (category === "one_to_one") return "oneToOne";
+  if (category === "leave_request") return "leaveRequest";
+  return category as CalendarCategory;
+}
+
+/**
+ * Leave, cover and sickness are drawn from the live leave and sickness data
+ * below, so the server's copies of them are not added a second time.
+ */
+const SCHEDULE_FROM_STORE = new Set(["leave", "leave_request", "cover", "sickness"]);
+
+function toCalItem(dto: CalendarItemDto): CalItem {
+  const deletable =
+    dto.canDelete && dto.eventId
+      ? dto.layer === "company"
+        ? ("company" as const)
+        : ("personal" as const)
+      : undefined;
+  return {
+    // Deleting addresses the stored event, not the occurrence.
+    id: deletable ? (dto.eventId as string) : dto.id,
+    title: dto.title,
+    date: dto.date.slice(0, 10),
+    endDate: dto.endDate?.slice(0, 10) ?? undefined,
+    startTime: dto.startTime?.slice(0, 5) ?? undefined,
+    endTime: dto.endTime?.slice(0, 5) ?? undefined,
+    allDay: dto.allDay,
+    category: CATEGORY_FROM_API[dto.category] ?? dto.category,
+    layer: dto.layer,
+    description: dto.description ?? undefined,
+    personId: dto.personId ?? undefined,
+    personName: dto.personName ?? undefined,
+    deletable,
+    pending: dto.pending,
+  };
+}
+
+/** The year before through the year after this one. */
+function liveRange() {
+  const now = new Date();
+  return {
+    from: isoDay(startOfYear(addYears(now, -1))),
+    to: isoDay(endOfYear(addYears(now, 1))),
+  };
+}
+
+function eventRequest(
+  item: Omit<StoredEvent, "id" | "category">,
+): Omit<CalendarEventRequest, "category" | "audience"> {
+  return {
+    title: item.title,
+    description: item.description || null,
+    date: item.date,
+    allDay: item.allDay,
+    startTime: item.allDay ? null : (item.startTime ?? null),
+    endTime: item.allDay ? null : (item.endTime ?? null),
+  };
+}
+
 const LEAVE_LABELS: Record<string, string> = {
   annual: "Annual leave",
   maternity: "Maternity leave",
@@ -105,20 +185,34 @@ export function useCalendarData() {
   const personal = useStoredEvents("motee:personalCalendarEvents");
   const company = useStoredEvents("motee:companyCalendarEvents");
 
+  // Signed in, company events, holidays and people's own events come from the
+  // API instead of this browser's storage.
+  const live = useAppSelector((s) => s.session.is_loggedIn && !!s.session.tenant_id);
+  const [range] = useState(liveRange);
+  const calendar = useGetCalendarQuery(range, { skip: !live });
+  const [createEvent] = useCreateCalendarEventMutation();
+  const [deleteEvent] = useDeleteCalendarEventMutation();
+  const liveItems = useMemo(
+    () => (calendar.data?.data ?? []).map(toCalItem),
+    [calendar.data],
+  );
+
   const employees = useMemo(() => data?.employees ?? [], [data]);
   const byId = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
 
   const holidayItems = useMemo<CalItem[]>(
     () =>
-      (data?.holidays ?? []).map((h) => ({
+      live
+        ? liveItems.filter((i) => i.layer === "holidays")
+        : (data?.holidays ?? []).map((h) => ({
         id: `hol-${h.id}`,
         title: h.title,
         date: h.date,
         allDay: true,
         category: "holiday",
-        layer: "holidays",
+        layer: "holidays" as const,
       })),
-    [data],
+    [live, liveItems, data],
   );
 
   /** Leave, sickness, cover and personal events for one person. */
@@ -171,7 +265,14 @@ export function useCalendarData() {
           personName: name,
         });
       }
-      for (const e of personal.events) {
+      if (live) {
+        for (const item of liveItems) {
+          if (item.layer !== "schedule" || item.personId !== personId) continue;
+          if (SCHEDULE_FROM_STORE.has(item.category)) continue;
+          out.push({ ...item, personName: item.personName ?? name });
+        }
+      }
+      for (const e of live ? [] : personal.events) {
         if (e.employeeId !== personId) continue;
         out.push({
           id: e.id,
@@ -190,12 +291,14 @@ export function useCalendarData() {
       }
       return out;
     },
-    [leave, sickness, personal.events, byId],
+    [leave, sickness, personal.events, byId, live, liveItems],
   );
 
   const customCompany = useMemo<CalItem[]>(
     () =>
-      company.events.map((e) => ({
+      live
+        ? liveItems.filter((i) => i.layer === "company")
+        : company.events.map((e) => ({
         id: e.id,
         title: e.title,
         date: e.date,
@@ -207,7 +310,7 @@ export function useCalendarData() {
         layer: "company" as const,
         deletable: "company" as const,
       })),
-    [company.events],
+    [live, liveItems, company.events],
   );
 
   /** My team: people who share my manager (plus me); a top-level boss gets their reports. */
@@ -225,8 +328,14 @@ export function useCalendarData() {
   let seq = 0;
   const newId = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(36)}`;
 
+  // The create dialog confirms straight away, so a failed save says so after.
+  const saveLive = (body: CalendarEventRequest) =>
+    createEvent(body)
+      .unwrap()
+      .catch((err) => toast.error(getApiErrorMessage(err, "Could not save the event.")));
+
   return {
-    ready: !!data,
+    ready: !!data && (!live || !!calendar.data),
     employees,
     byId,
     me,
@@ -235,10 +344,41 @@ export function useCalendarData() {
     scheduleFor,
     teamOf,
     reportsOf,
-    addPersonal: (items: Omit<StoredEvent, "id" | "category">[]) =>
-      personal.save([...personal.events, ...items.map((x) => ({ ...x, id: newId("pe"), category: "personal" }))]),
-    addCompany: (item: Omit<StoredEvent, "id">) => company.save([...company.events, { ...item, id: newId("ce") }]),
+    addPersonal: (items: Omit<StoredEvent, "id" | "category">[]) => {
+      if (live) {
+        // One event, attended by everyone it was added for.
+        if (items.length) {
+          void saveLive({
+            ...eventRequest(items[0]),
+            category: "personal",
+            audience: "people",
+            employeeIds: items.flatMap((x) => (x.employeeId ? [x.employeeId] : [])),
+          });
+        }
+        return;
+      }
+      personal.save([...personal.events, ...items.map((x) => ({ ...x, id: newId("pe"), category: "personal" }))]);
+    },
+    addCompany: (item: Omit<StoredEvent, "id">) => {
+      if (live) {
+        void saveLive({
+          ...eventRequest(item),
+          category: categoryToApi(item.category),
+          audience: "company",
+        });
+        return;
+      }
+      company.save([...company.events, { ...item, id: newId("ce") }]);
+    },
     remove: (item: CalItem) => {
+      if (live) {
+        if (item.deletable) {
+          deleteEvent(item.id)
+            .unwrap()
+            .catch((err) => toast.error(getApiErrorMessage(err, "Could not delete the event.")));
+        }
+        return;
+      }
       if (item.deletable === "personal") personal.save(personal.events.filter((e) => e.id !== item.id));
       if (item.deletable === "company") company.save(company.events.filter((e) => e.id !== item.id));
     },

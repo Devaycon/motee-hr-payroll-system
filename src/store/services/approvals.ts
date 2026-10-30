@@ -57,7 +57,7 @@ export const approvalsApi = api.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Approvals", "Leave", "LeaveBalances", "Onboarding", "Offboarding"],
+      invalidatesTags: ["Approvals", "Leave", "LeaveBalances", "Onboarding", "Offboarding", "ExpenseClaims"],
     }),
     resubmitApproval: builder.mutation<
       ResubmitApprovalResponse,
@@ -67,7 +67,7 @@ export const approvalsApi = api.injectEndpoints({
         url: `${url}/${id}/resubmit`,
         method: "POST",
       }),
-      invalidatesTags: ["Approvals", "Leave", "LeaveBalances", "Onboarding", "Offboarding"],
+      invalidatesTags: ["Approvals", "Leave", "LeaveBalances", "Onboarding", "Offboarding", "ExpenseClaims"],
     }),
     reresolveApproval: builder.mutation<
       ReresolveApprovalResponse,
@@ -77,7 +77,7 @@ export const approvalsApi = api.injectEndpoints({
         url: `${url}/${id}/reresolve`,
         method: "POST",
       }),
-      invalidatesTags: ["Approvals", "Leave", "LeaveBalances", "Onboarding", "Offboarding"],
+      invalidatesTags: ["Approvals", "Leave", "LeaveBalances", "Onboarding", "Offboarding", "ExpenseClaims"],
     }),
     cancelApproval: builder.mutation<
       CancelApprovalResponse,
@@ -88,7 +88,7 @@ export const approvalsApi = api.injectEndpoints({
         method: "POST",
         body: body ?? undefined,
       }),
-      invalidatesTags: ["Approvals", "Leave", "LeaveBalances", "Onboarding", "Offboarding"],
+      invalidatesTags: ["Approvals", "Leave", "LeaveBalances", "Onboarding", "Offboarding", "ExpenseClaims"],
     }),
   }),
 });
