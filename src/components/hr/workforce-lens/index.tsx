@@ -5,11 +5,16 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { useCan } from "@/src/lib/permissions/use-can";
+import { RISK_MODULE } from "@/src/components/hr/workforce-risk/hooks";
 import { ExportMenu } from "@/src/components/shared/export-menu";
 import { DimensionPicker } from "./components/dimension-picker";
 import { LensFilterBar } from "./components/lens-filter-bar";
 import { LensGroups } from "./components/lens-groups";
 import { useWorkforceLens } from "./hooks";
+import { RiskPanel } from "@/src/components/hr/workforce-risk/risk-panel";
 import {
   ALL,
   LENS_DIMENSIONS,
@@ -74,6 +79,13 @@ export function WorkforceLensPage() {
     const group = searchParams.get("group");
     return isLensDimension(group) ? group : "department";
   });
+
+  // Directory and Risks & Actions share the filters, so they sit above both.
+  const canSeeRisks = useCan(RISK_MODULE, "view");
+  const [tab, setTab] = useState<"directory" | "risks">(() =>
+    searchParams.get("tab") === "risks" ? "risks" : "directory",
+  );
+  const activeTab = canSeeRisks ? tab : "directory";
 
   const { loading, total, groups, ethnicity, ethnicityAvailable } =
     useWorkforceLens(filters, dimension);
@@ -199,7 +211,9 @@ export function WorkforceLensPage() {
             even for the privacy-suppressed Ethnicity dimension) and the
             underlying roster (hidden there, since aggregate-only groups carry
             no members to list). */}
-        <div className="flex shrink-0 items-center gap-2">
+        <div
+          className={`flex shrink-0 items-center gap-2 ${activeTab === "directory" ? "" : "invisible"}`}
+        >
           <ExportMenu
             name={`workforce-lens-${activeKey}-summary`}
             title={`Workforce Lens — ${meta.label} breakdown`}
@@ -225,48 +239,70 @@ export function WorkforceLensPage() {
         </div>
       </div>
 
-      <DimensionPicker
-        dimensions={dimensions}
-        value={activeKey}
-        onChange={setDimension}
-      />
+      <Tabs value={activeTab} onValueChange={(v) => setTab(v as "directory" | "risks")}>
+        {canSeeRisks && (
+          <PageTabsList
+            tabs={[
+              { value: "directory", label: "Directory" },
+              { value: "risks", label: "Risks & Actions" },
+            ]}
+          />
+        )}
 
-      <LensFilterBar filters={filters} onChange={setFilters} />
+        <div className="mt-4">
+          <LensFilterBar filters={filters} onChange={setFilters} />
+        </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <SummaryTile label="People" value={total} hint="matching your filters" />
-        <SummaryTile
-          label={`${meta.label} groups`}
-          value={groups.length}
-          hint={
-            meta.multiValue
-              ? "people can sit in more than one"
-              : "each person in exactly one"
-          }
-        />
-        <SummaryTile
-          label="Largest group"
-          value={largest ? largest.label : "—"}
-          hint={largest ? `${largest.count} · ${largest.pct}%` : undefined}
-        />
-      </div>
+        <TabsContent value="directory" className="mt-4 flex flex-col gap-6">
+          <DimensionPicker
+            dimensions={dimensions}
+            value={activeKey}
+            onChange={setDimension}
+          />
 
-      {groups.length > 0 ? (
-        <LensGroups groups={groups} />
-      ) : (
-        <EmptyState aggregateOnly={meta.aggregateOnly} noPeople={total === 0} />
-      )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <SummaryTile label="People" value={total} hint="matching your filters" />
+            <SummaryTile
+              label={`${meta.label} groups`}
+              value={groups.length}
+              hint={
+                meta.multiValue
+                  ? "people can sit in more than one"
+                  : "each person in exactly one"
+              }
+            />
+            <SummaryTile
+              label="Largest group"
+              value={largest ? largest.label : "—"}
+              hint={largest ? `${largest.count} · ${largest.pct}%` : undefined}
+            />
+          </div>
 
-      {meta.multiValue && groups.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          Anyone with more than one {meta.label.toLowerCase()} appears on each
-          matching card, so percentages can add up to more than 100%.
-        </p>
-      )}
+          {groups.length > 0 ? (
+            <LensGroups groups={groups} />
+          ) : (
+            <EmptyState aggregateOnly={meta.aggregateOnly} noPeople={total === 0} />
+          )}
 
-      {meta.aggregateOnly && ethnicity && groups.length > 0 && (
-        <PrivacyNote suppressed={ethnicity.suppressedCount} />
-      )}
+          {meta.multiValue && groups.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Anyone with more than one {meta.label.toLowerCase()} appears on each
+              matching card, so percentages can add up to more than 100%.
+            </p>
+          )}
+
+          {meta.aggregateOnly && ethnicity && groups.length > 0 && (
+            <PrivacyNote suppressed={ethnicity.suppressedCount} />
+          )}
+        </TabsContent>
+
+        {canSeeRisks && (
+          <TabsContent value="risks" className="mt-4">
+            {/* What needs attention, under the same branch/department filters. */}
+            <RiskPanel branch={filters.branch} department={filters.department} limit={15} />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }

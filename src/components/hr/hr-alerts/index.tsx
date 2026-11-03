@@ -18,8 +18,12 @@ import {
   Laptop,
   UserCog,
   Scale,
+  ShieldAlert,
 } from "lucide-react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useCan } from "@/src/lib/permissions/use-can";
+import { RISK_MODULE, useRiskRegister } from "@/src/components/hr/workforce-risk/hooks";
+import { RISK_KIND_LABELS, RISK_STATUS_LABELS, isRiskOpen } from "@/src/lib/types/workforce-risk";
 import {
   Card,
   CardContent,
@@ -224,9 +228,41 @@ export function useHrAlertCategories(): HrAlertCategory[] {
     };
   }, [onboardingRecords]);
 
+  // Live risks from Workforce Risk & Action Management, shown only to people
+  // who may see the register. Each row opens the risk, where it is worked.
+  const canSeeRisks = useCan(RISK_MODULE, "view");
+  const { entries: riskEntries } = useRiskRegister();
+  const riskCategory = useMemo<HrAlertCategory | null>(() => {
+    if (!canSeeRisks) return null;
+    const today = new Date(new Date().toDateString()).getTime();
+    const alerts: HrAlert[] = riskEntries
+      .filter((e) => isRiskOpen(e.status))
+      .map((e) => ({
+        id: `risk-${e.key}`,
+        title: e.risk.title,
+        description: `${RISK_KIND_LABELS[e.risk.kind]} · ${e.risk.affected.label} · ${RISK_STATUS_LABELS[e.status]}${
+          e.owner ? ` · ${e.owner}` : ""
+        }`,
+        severity:
+          e.risk.priority === "critical" || e.overdue
+            ? "critical"
+            : e.risk.priority === "high"
+              ? "warning"
+              : "info",
+        dueInDays: e.dueDate
+          ? Math.round((new Date(`${e.dueDate}T00:00:00`).getTime() - today) / 86_400_000)
+          : undefined,
+        href: `/organization/workforce-lens/risks/${encodeURIComponent(e.risk.id)}`,
+      }));
+    return { key: "workforce_risk", label: "Workforce Risks", icon: ShieldAlert, alerts };
+  }, [canSeeRisks, riskEntries]);
+
   return useMemo(
-    () => [...HR_ALERT_CATEGORIES, onboardingCategory],
-    [onboardingCategory],
+    () =>
+      riskCategory
+        ? [riskCategory, ...HR_ALERT_CATEGORIES, onboardingCategory]
+        : [...HR_ALERT_CATEGORIES, onboardingCategory],
+    [riskCategory, onboardingCategory],
   );
 }
 

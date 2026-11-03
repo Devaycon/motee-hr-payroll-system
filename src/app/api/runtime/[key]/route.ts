@@ -10,7 +10,7 @@ import path from "path";
  */
 
 const DATA_DIR = path.join(process.cwd(), ".data", "runtime");
-const ALLOWED = new Set(["branch-performance", "sickness", "leave-schemes"]);
+const ALLOWED = new Set(["branch-performance", "sickness", "leave-schemes", "workforce-risk"]);
 
 function fileFor(key: string): string | null {
   return ALLOWED.has(key) ? path.join(DATA_DIR, `${key}.json`) : null;
