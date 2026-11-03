@@ -58,6 +58,11 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   // Same audience as Structure & Hierarchy: it is a picture of the workforce,
   // and a line manager's data scope already narrows it to their own team.
   "organization.workforce-lens":          ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","LINE-MANAGER","EXECUTIVE","AUDITOR","READ-ONLY"],
+  // Risks name individuals (right to work, Bradford, probation), so the
+  // audience is narrower than the Lens: HR, executives and audit (plus the
+  // compliance officer, in ROLE_MODULES). Line managers still receive the
+  // actions assigned to them via My Work.
+  "organization.workforce-risk":     ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","EXECUTIVE","AUDITOR"],
   "organization.employment-types":   ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   "organization.benefit-plans":      ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
   // Finance approves disbursement on the loan chain, so it reads the register.
@@ -168,6 +173,7 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
   "COMPLIANCE-OFFICER": [
     "submissions.queue",
     "organization.employees",
+    "organization.workforce-risk",
     "employee.disciplinary",
     "employee.grievances",
     "admin.grievance",

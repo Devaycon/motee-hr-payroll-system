@@ -172,6 +172,19 @@
           ]
         },
         {
+          "module": "organization.workforce-risk",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "organization.employment-types",
           "access": true,
           "actions": [
@@ -865,6 +878,19 @@
           ]
         },
         {
+          "module": "organization.workforce-risk",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "organization.employment-types",
           "access": true,
           "actions": [
@@ -1507,6 +1533,16 @@
           ]
         },
         {
+          "module": "organization.workforce-risk",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "organization.employment-types",
           "access": true,
           "actions": [
@@ -1944,6 +1980,11 @@
           "actions": []
         },
         {
+          "module": "organization.workforce-risk",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -2306,6 +2347,11 @@
           ]
         },
         {
+          "module": "organization.workforce-risk",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -2647,6 +2693,15 @@
           ]
         },
         {
+          "module": "organization.workforce-risk",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -2964,6 +3019,11 @@
           "actions": []
         },
         {
+          "module": "organization.workforce-risk",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -3273,6 +3333,11 @@
         },
         {
           "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.workforce-risk",
           "access": false,
           "actions": []
         },
@@ -3617,6 +3682,14 @@
         },
         {
           "module": "organization.workforce-lens",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "organization.workforce-risk",
           "access": true,
           "actions": [
             "view",
@@ -4026,6 +4099,11 @@
           ]
         },
         {
+          "module": "organization.workforce-risk",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": true,
           "actions": [
@@ -4375,6 +4453,11 @@
         },
         {
           "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.workforce-risk",
           "access": false,
           "actions": []
         },
@@ -4729,6 +4812,11 @@
           "actions": []
         },
         {
+          "module": "organization.workforce-risk",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -5038,6 +5126,11 @@
         },
         {
           "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.workforce-risk",
           "access": false,
           "actions": []
         },
@@ -5355,6 +5448,14 @@
           "module": "organization.workforce-lens",
           "access": false,
           "actions": []
+        },
+        {
+          "module": "organization.workforce-risk",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
         },
         {
           "module": "organization.employment-types",
@@ -5677,6 +5778,11 @@
           "actions": []
         },
         {
+          "module": "organization.workforce-risk",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -5969,6 +6075,11 @@
         },
         {
           "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.workforce-risk",
           "access": false,
           "actions": []
         },
@@ -6270,6 +6381,11 @@
           "actions": []
         },
         {
+          "module": "organization.workforce-risk",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "organization.employment-types",
           "access": false,
           "actions": []
@@ -6562,6 +6678,11 @@
         },
         {
           "module": "organization.workforce-lens",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "organization.workforce-risk",
           "access": false,
           "actions": []
         },

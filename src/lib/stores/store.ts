@@ -35,6 +35,7 @@ import erCasesReducer from "./er-cases-slice";
 import branchPerformanceReducer from "./branch-performance-slice";
 import sicknessReducer from "./sickness-slice";
 import leaveSchemesReducer from "./leave-schemes-slice";
+import workforceRiskReducer from "./workforce-risk-slice";
 import chatReducer from "./chat-slice";
 import { sicknessListener } from "./sickness-listener";
 
@@ -75,6 +76,7 @@ export const store = configureStore({
     branchPerformance: branchPerformanceReducer,
     sickness: sicknessReducer,
     leaveSchemes: leaveSchemesReducer,
+    workforceRisk: workforceRiskReducer,
     chat: chatReducer,
   },
   // Prepend, never replace: replacing the stack drops serialisability and

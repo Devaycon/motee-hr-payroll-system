@@ -29,6 +29,7 @@ import { initRuntimePersistence } from "./runtime-persistence";
 import { hydrateBranchPerformance } from "./branch-performance-slice";
 import { hydrateSickness } from "./sickness-slice";
 import { hydrateLeaveSchemes } from "./leave-schemes-slice";
+import { hydrateWorkforceRisk } from "./workforce-risk-slice";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -72,6 +73,11 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
       key: "leave-schemes",
       select: (s) => s.leaveSchemes,
       hydrate: hydrateLeaveSchemes,
+    });
+    initRuntimePersistence({
+      key: "workforce-risk",
+      select: (s) => s.workforceRisk,
+      hydrate: hydrateWorkforceRisk,
     });
   }, []);
 

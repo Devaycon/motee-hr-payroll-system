@@ -25,7 +25,9 @@ import type { RunContext } from "@/src/components/hr/workflows/run";
 export type RunSubjectKind =
   | "requisition"
   | "candidate"
-  | "onboarding_record";
+  | "onboarding_record"
+  /** A Workforce Risk action plan (see lib/types/workforce-risk). */
+  | "workforce_risk";
 
 export interface RunSubject {
   kind: RunSubjectKind;
