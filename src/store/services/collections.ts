@@ -21,6 +21,14 @@ import type { ContractDto } from "@/src/types/contracts";
 import type { DocumentDto } from "@/src/types/documents";
 import type { RequisitionDto } from "@/src/types/requisitions";
 import type { CandidateDto } from "@/src/types/candidates";
+import type { KudosPostDto } from "@/src/types/kudos";
+import type { LoanDto } from "@/src/types/loans";
+import type { SicknessRecordDto } from "@/src/types/sickness";
+import type { TaskItemDto } from "@/src/types/tasks";
+import type { WorkforceRequestDto } from "@/src/types/workforce-requests";
+import type { ChecklistHireDto } from "@/src/types/employee-checklist";
+import type { HeadcountPlanBoardDto } from "@/src/types/headcount";
+import type { ApiResponse } from "@/src/types/api";
 
 /**
  * Whole-collection reads of the paged list endpoints. Each walks every page
@@ -188,6 +196,59 @@ export const collectionsApi = api.injectEndpoints({
         fetchAllPages<CandidateDto>(baseQuery, `${API_PREFIX}/candidates`, "pascal"),
       providesTags: ["Candidates"],
     }),
+    getAllKudos: builder.query<KudosPostDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<KudosPostDto>(baseQuery, `${API_PREFIX}/kudos`, "pascal"),
+      providesTags: ["Kudos"],
+    }),
+    getAllLoans: builder.query<LoanDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<LoanDto>(baseQuery, `${API_PREFIX}/loans`, "pascal"),
+      providesTags: ["Loans"],
+    }),
+    getAllSicknessRecords: builder.query<SicknessRecordDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<SicknessRecordDto>(baseQuery, `${API_PREFIX}/sickness`, "pascal"),
+      providesTags: ["Sickness"],
+    }),
+    getAllTasks: builder.query<TaskItemDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<TaskItemDto>(baseQuery, `${API_PREFIX}/tasks`, "pascal"),
+      providesTags: ["Tasks"],
+    }),
+    getAllTasksAssignedByMe: builder.query<TaskItemDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<TaskItemDto>(baseQuery, `${API_PREFIX}/tasks/assigned-by-me`, "pascal"),
+      providesTags: ["Tasks"],
+    }),
+    getAllWorkforceRequests: builder.query<WorkforceRequestDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<WorkforceRequestDto>(baseQuery, `${API_PREFIX}/workforce-requests`, "pascal"),
+      providesTags: ["WorkforceRequests"],
+    }),
+    getAllChecklistHires: builder.query<ChecklistHireDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<ChecklistHireDto>(baseQuery, `${API_PREFIX}/employee-checklist/hires`, "pascal"),
+      providesTags: ["EmployeeChecklist"],
+    }),
+    /** The headcount plan board for each of several periods, in one read. */
+    getHeadcountPlanBoards: builder.query<HeadcountPlanBoardDto[], string[]>({
+      queryFn: async (periods, _api, _extraOptions, baseQuery) => {
+        const boards: HeadcountPlanBoardDto[] = [];
+        for (const period of periods) {
+          const result = await baseQuery({
+            url: `${API_PREFIX}/headcount/plans`,
+            method: "GET",
+            params: { period },
+          });
+          if (result.error) return { error: result.error };
+          const board = (result.data as ApiResponse<HeadcountPlanBoardDto> | undefined)?.data;
+          if (board) boards.push(board);
+        }
+        return { data: boards };
+      },
+      providesTags: ["Headcount"],
+    }),
   }),
 });
 
@@ -208,4 +269,12 @@ export const {
   useGetAllDocumentsQuery,
   useGetAllRequisitionsQuery,
   useGetAllCandidatesQuery,
+  useGetAllKudosQuery,
+  useGetAllLoansQuery,
+  useGetAllSicknessRecordsQuery,
+  useGetAllTasksQuery,
+  useGetAllTasksAssignedByMeQuery,
+  useGetAllWorkforceRequestsQuery,
+  useGetAllChecklistHiresQuery,
+  useGetHeadcountPlanBoardsQuery,
 } = collectionsApi;

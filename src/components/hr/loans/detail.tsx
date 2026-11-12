@@ -38,7 +38,7 @@ import {
   repaymentSchedule,
   type InstalmentStatus,
 } from "@/src/lib/loans/loans";
-import { useEmployeeLoanRows, useLoanActions, useLoans, type LoanRow } from "@/src/lib/loans/use-loans";
+import { useLoanActions, useLoanRow, type LoanRow } from "@/src/lib/loans/use-loans";
 import { LoanStatusBadge } from "./components/loan-register-table";
 
 const INSTALMENT_STYLES: Record<InstalmentStatus, string> = {
@@ -59,15 +59,15 @@ function Fact({ label, value }: { label: string; value: React.ReactNode }) {
 
 /** HR view: resolves the loan from the scoped register. */
 export function HrLoanDetailPage({ loanId }: { loanId: string }) {
-  const { rows, loading } = useLoans();
-  const loan = rows.find((r) => r.id === loanId);
+  const { loan, loading } = useLoanRow(loanId);
   return <LoanDetail loan={loan} loading={loading} audience="hr" backHref="/organization/loans" />;
 }
 
 /** Employee view: only ever their own loans. */
 export function SelfLoanDetailPage({ loanId, employeeId }: { loanId: string; employeeId?: string }) {
-  const { rows, loading } = useEmployeeLoanRows(employeeId);
-  const loan = rows.find((r) => r.id === loanId);
+  const { loan: found, loading } = useLoanRow(loanId);
+  // The server scopes the read; this keeps a stale cache from leaking across sign-ins.
+  const loan = found && (!employeeId || found.employeeId === employeeId) ? found : undefined;
   return <LoanDetail loan={loan} loading={loading} audience="self" backHref="/employee/loans" />;
 }
 
@@ -91,7 +91,10 @@ function LoanDetail({
   const [repayAmount, setRepayAmount] = useState("");
   const [confirmDefault, setConfirmDefault] = useState(false);
 
-  const schedule = useMemo(() => (loan ? repaymentSchedule(loan) : []), [loan]);
+  const schedule = useMemo(
+    () => (loan ? (loan.schedule ?? repaymentSchedule(loan)) : []),
+    [loan],
+  );
 
   if (!loan) {
     return (
@@ -119,7 +122,7 @@ function LoanDetail({
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Loans
         </Button>
-        <span className="text-xs text-muted-foreground">/ {loan.id}</span>
+        <span className="text-xs text-muted-foreground">/ {loan.reference ?? loan.id}</span>
       </div>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -138,17 +141,15 @@ function LoanDetail({
             <>
               <Button
                 variant="outline"
-                onClick={() => {
-                  actions.decide(loan, false);
-                  toast.success("Loan request rejected");
+                onClick={async () => {
+                  if (await actions.decide(loan, false)) toast.success("Loan request rejected");
                 }}
               >
                 Reject
               </Button>
               <Button
-                onClick={() => {
-                  actions.decide(loan, true);
-                  toast.success("Loan approved and issued");
+                onClick={async () => {
+                  if (await actions.decide(loan, true)) toast.success("Loan approved and issued");
                 }}
               >
                 Approve & issue
@@ -298,13 +299,13 @@ function LoanDetail({
               Cancel
             </Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
                 const n = Number(repayAmount || loan.monthlyRepayment);
                 if (!(n > 0)) {
                   toast.error("Enter an amount");
                   return;
                 }
-                actions.recordRepayment(loan, n);
+                if (!(await actions.recordRepayment(loan, n))) return;
                 toast.success(
                   n >= loan.outstanding ? "Loan fully repaid and closed" : "Repayment recorded",
                 );
@@ -331,9 +332,8 @@ function LoanDetail({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                actions.setStatus(loan, "defaulted");
-                toast.success("Loan marked as defaulted");
+              onClick={async () => {
+                if (await actions.setStatus(loan, "defaulted")) toast.success("Loan marked as defaulted");
               }}
             >
               Mark defaulted

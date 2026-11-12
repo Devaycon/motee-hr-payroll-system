@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import {
+  useKudos,
+  useKudosActions,
+  useMyKudos,
+} from "@/src/components/hr/kudos/hooks";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -47,17 +53,33 @@ import {
   EMPLOYEE_ROSTER,
   COMPANY_VALUE_CONFIG,
   MY_INITIALS,
-  MY_NAME,
-  MY_DEPT,
   timeAgo,
 } from "./data";
 
 export function KudosTab() {
-  const [kudosPosts, setKudosPosts] = useState<KudosPost[]>(KUDOS_POSTS);
+  const live = useKudos();
+  const kudosPosts = useMemo<KudosPost[]>(
+    () => live.data?.posts ?? KUDOS_POSTS,
+    [live.data],
+  );
+  const myReactions = live.data?.myReactions ?? {};
+  const kudosActions = useKudosActions(kudosPosts);
+  const me = useMyKudos();
+  // Colleagues to recognise, from the live directory.
+  const directory = useAppSelector((s) => s.locale.data?.employees);
+  const roster = useMemo(
+    () =>
+      directory?.length
+        ? directory.map((e) => ({
+            name: e.fullName,
+            initials: e.initials,
+            department: e.departmentName,
+          }))
+        : EMPLOYEE_ROSTER,
+    [directory],
+  );
+  const myInitials = useAppSelector((s) => s.auth.user?.initials) ?? MY_INITIALS;
   const [showSendModal, setShowSendModal] = useState(false);
-  const [myReactions, setMyReactions] = useState<
-    Record<string, ReactionType | null>
-  >({});
   const [kudosTypeFilter, setKudosTypeFilter] = useState<KudosType | "all">(
     "all",
   );
@@ -76,7 +98,7 @@ export function KudosTab() {
   const [sendDepartment, setSendDepartment] = useState("");
 
   const departments = [
-    ...new Set(EMPLOYEE_ROSTER.map((e) => e.department)),
+    ...new Set(roster.map((e) => e.department)),
   ].sort();
 
   const filtered = kudosPosts.filter((k) => {
@@ -93,35 +115,7 @@ export function KudosTab() {
   });
 
   function toggleReaction(postId: string, type: ReactionType) {
-    const prev = myReactions[postId] ?? null;
-    const isSame = prev === type;
-    const next = isSame ? null : type;
-    setMyReactions((m) => ({ ...m, [postId]: next }));
-    setKudosPosts((posts) =>
-      posts.map((k) => {
-        if (k.id !== postId) return k;
-        return {
-          ...k,
-          reactions: k.reactions.map((r) => {
-            if (r.type === prev && prev !== null) {
-              return {
-                ...r,
-                count: Math.max(0, r.count - 1),
-                reactedBy: r.reactedBy.filter((x) => x !== MY_INITIALS),
-              };
-            }
-            if (r.type === type && !isSame) {
-              return {
-                ...r,
-                count: r.count + 1,
-                reactedBy: [...r.reactedBy, MY_INITIALS],
-              };
-            }
-            return r;
-          }),
-        };
-      }),
-    );
+    void kudosActions.toggleReaction(postId, type);
   }
 
   function toggleSendValue(v: CompanyValue) {
@@ -130,39 +124,26 @@ export function KudosTab() {
     );
   }
 
-  function submitKudos() {
+  async function submitKudos() {
     if (!sendMessage.trim()) return;
 
     const isDept = sendScope === "department";
-    const recipient = EMPLOYEE_ROSTER.find((e) => e.name === sendRecipient);
+    const recipient = roster.find((e) => e.name === sendRecipient);
     // Individual needs a valid colleague; department needs a selected team.
     if (isDept ? !sendDepartment : !recipient) return;
 
-    const deptInitials = sendDepartment
-      .split(/\s+/)
-      .map((w) => w[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-
-    const newKudos: KudosPost = {
-      id: `kp-new-${Date.now()}`,
-      senderName: MY_NAME,
-      senderInitials: MY_INITIALS,
-      senderDept: MY_DEPT,
-      recipientName: isDept ? `${sendDepartment} Team` : recipient!.name,
-      recipientInitials: isDept ? deptInitials : recipient!.initials,
+    const sent = await kudosActions.send({
+      recipientName: isDept ? sendDepartment : recipient!.name,
+      recipientInitials: isDept ? sendDepartment.slice(0, 2).toUpperCase() : recipient!.initials,
       recipientDept: isDept ? sendDepartment : recipient!.department,
+      recipientType: isDept ? "department" : "individual",
       kudosType: sendType,
       companyValue: sendValues[0] ?? "integrity",
       message: sendMessage,
-      reactions: [],
-      comments: [],
-      createdAt: new Date().toISOString(),
       isPublic: sendPublic,
-      isBroadcast: isDept,
-    };
-    setKudosPosts((prev) => [newKudos, ...prev]);
+      isPrivate: !sendPublic,
+    });
+    if (!sent) return;
     setShowSendModal(false);
     setSendRecipient("");
     setSendDepartment("");
@@ -171,7 +152,7 @@ export function KudosTab() {
     setSendValues([]);
   }
 
-  const topList = [...LEADERBOARD]
+  const topList = [...(live.data ? live.data.leaderboard : LEADERBOARD)]
     .sort((a, b) =>
       leaderboardView === "received"
         ? b.kudosReceived - a.kudosReceived
@@ -188,20 +169,23 @@ export function KudosTab() {
     },
     {
       label: "My Kudos Received",
-      value: kudosPosts.filter((k) => k.recipientInitials === MY_INITIALS)
-        .length,
+      value:
+        me?.receivedCount ??
+        kudosPosts.filter((k) => k.recipientInitials === myInitials).length,
       icon: Heart,
       sub: "recognitions",
     },
     {
       label: "My Kudos Sent",
-      value: kudosPosts.filter((k) => k.senderInitials === MY_INITIALS).length,
+      value:
+        me?.sentCount ??
+        kudosPosts.filter((k) => k.senderInitials === myInitials).length,
       icon: Send,
       sub: "given",
     },
     {
       label: "Team Members",
-      value: EMPLOYEE_ROSTER.length,
+      value: roster.length,
       icon: Users,
       sub: "in roster",
     },
@@ -515,8 +499,8 @@ export function KudosTab() {
                       <SelectValue placeholder="Select colleague" />
                     </SelectTrigger>
                     <SelectContent>
-                      {EMPLOYEE_ROSTER.filter(
-                        (e) => e.initials !== MY_INITIALS,
+                      {roster.filter(
+                        (e) => e.initials !== myInitials,
                       ).map((e) => (
                         <SelectItem key={e.initials} value={e.name}>
                           {e.name} · {e.department}

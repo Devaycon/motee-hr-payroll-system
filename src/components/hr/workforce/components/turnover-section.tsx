@@ -21,12 +21,12 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { ChartCard, NIVO_THEME } from "@/src/components/shared/charts";
 import {
-  TURNOVER_RECORDS,
   TURNOVER_PERIODS,
   buildTurnoverTrends,
 } from "../data";
 import type { TurnoverPeriod, TurnoverRecord } from "../types";
 import { TurnoverDetailModal } from "./detail-modals";
+import { useTurnoverRecords } from "../hooks";
 import { ExportMenu } from "@/src/components/shared/export-menu";
 import type { ReportColumn } from "@/src/lib/reports/types";
 
@@ -51,14 +51,15 @@ const EXPORT_COLUMNS: ReportColumn<TurnoverRecord>[] = [
 ];
 
 export function TurnoverSection() {
+  const turnoverRecords = useTurnoverRecords();
   const [activePeriod, setActivePeriod] = useState<TurnoverPeriod>("Q1 2026");
   const [selectedRecord, setSelectedRecord] = useState<TurnoverRecord | null>(
     null,
   );
 
-  const trends = buildTurnoverTrends(TURNOVER_RECORDS);
+  const trends = buildTurnoverTrends(turnoverRecords);
 
-  const deptRecords = TURNOVER_RECORDS.filter((r) => r.period === activePeriod);
+  const deptRecords = turnoverRecords.filter((r) => r.period === activePeriod);
 
   const currentTrend = trends.find((t) => t.period === activePeriod);
 

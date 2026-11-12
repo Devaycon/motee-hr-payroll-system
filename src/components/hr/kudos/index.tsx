@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useKudos } from "./hooks";
+import { useKudos, useKudosActions } from "./hooks";
 import { Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { useAppSelector } from "@/src/lib/stores/hooks";
 import { Button } from "@/src/components/ui/button";
 import {
   AlertDialog,
@@ -27,15 +25,14 @@ import {
 import { KudosFeed } from "./components/kudos-feed";
 import { Leaderboard } from "./components/leaderboard";
 import { SendKudosModal } from "./components/send-kudos-modal";
-import type { KudosPost, NewKudos, ReactionType } from "./types";
+import type { NewKudos, ReactionType } from "./types";
 
 export function KudosPage() {
   const { data, loading } = useKudos();
-  const [posts, setPosts] = useState<KudosPost[]>([]);
+  const posts = useMemo(() => data?.posts ?? [], [data]);
   const leaderboard = data?.leaderboard ?? [];
-  useEffect(() => {
-    if (data) setPosts(data.posts);
-  }, [data]);
+  const myReactions = data?.myReactions ?? {};
+  const { send, remove, toggleReaction, addComment } = useKudosActions(posts);
   const [sendOpen, setSendOpen] = useState(false);
   /** Drill-down set by the KPI cards; "all" shows the whole feed. */
   const [cardFilter, setCardFilter] = useState<KudosCardFilter>({
@@ -44,12 +41,8 @@ export function KudosPage() {
   const visiblePosts = posts.filter((p) =>
     matchesKudosCardFilter(p, cardFilter),
   );
-  const [myReactions, setMyReactions] = useState<
-    Record<string, ReactionType | null>
-  >({});
-  const user = useAppSelector((s) => s.auth.user);
-  // HR admins can moderate (delete) any kudos; demo links (no user) fall open.
-  const canDelete = !user || user.roleId === "ROLE-HRADMIN";
+  // The server decides who may moderate: HR admins and each post's sender.
+  const canDelete = (postId: string) => !!data?.canRemove[postId];
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   function handleDeleteKudos(postId: string) {
@@ -58,99 +51,20 @@ export function KudosPage() {
 
   function handleConfirmDelete() {
     if (!confirmDeleteId) return;
-    setPosts((prev) => prev.filter((p) => p.id !== confirmDeleteId));
+    void remove(confirmDeleteId);
     setConfirmDeleteId(null);
-    toast.success("Kudos deleted");
   }
 
-  function handleSendKudos(data: NewKudos) {
-    const now = new Date().toISOString().split("T")[0];
-    const id = `KUD-${String(posts.length + 1).padStart(3, "0")}`;
-    const newPost: KudosPost = {
-      id,
-      senderName: "HR Admin",
-      senderInitials: "HA",
-      senderDept: "HR",
-      recipientName: data.recipientName,
-      recipientInitials: data.recipientInitials,
-      recipientDept: data.recipientDept,
-      recipientType: data.recipientType,
-      kudosType: data.kudosType,
-      customTypeName: data.customTypeName,
-      companyValue: data.companyValue,
-      message: data.message,
-      isBroadcast: data.isBroadcast,
-      isPinned: data.isBroadcast,
-      isPublic: !data.isPrivate,
-      isPrivate: data.isPrivate,
-      reactions: [
-        { type: "heart", count: 0, reactedBy: [], users: [] },
-        { type: "celebrate", count: 0, reactedBy: [], users: [] },
-        { type: "clap", count: 0, reactedBy: [], users: [] },
-        { type: "fire", count: 0, reactedBy: [], users: [] },
-        { type: "star", count: 0, reactedBy: [], users: [] },
-      ],
-      comments: [],
-      createdAt: now,
-    };
-    setPosts((prev) => [newPost, ...prev]);
-    setSendOpen(false);
-    toast.success(`Kudos sent to ${data.recipientName}! 🌟`);
+  async function handleSendKudos(form: NewKudos) {
+    if (await send(form)) setSendOpen(false);
   }
 
   function handleReact(postId: string, reaction: ReactionType) {
-    const prev = myReactions[postId] ?? null;
-    const isSame = prev === reaction;
-    const next = isSame ? null : reaction;
-    setMyReactions((m) => ({ ...m, [postId]: next }));
-    setPosts((posts) =>
-      posts.map((p) => {
-        if (p.id !== postId) return p;
-        return {
-          ...p,
-          reactions: p.reactions.map((r) => {
-            if (r.type === prev && prev !== null) {
-              return {
-                ...r,
-                count: Math.max(0, r.count - 1),
-                reactedBy: r.reactedBy.filter((x) => x !== "You"),
-              };
-            }
-            if (r.type === reaction && !isSame) {
-              return {
-                ...r,
-                count: r.count + 1,
-                reactedBy: [...r.reactedBy, "You"],
-              };
-            }
-            return r;
-          }),
-        };
-      }),
-    );
+    void toggleReaction(postId, reaction);
   }
 
   function handleAddComment(postId: string, message: string) {
-    const now = new Date().toISOString().split("T")[0];
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id !== postId) return p;
-        return {
-          ...p,
-          comments: [
-            ...p.comments,
-            {
-              id: `C-${postId}-${p.comments.length + 1}`,
-              authorName: "HR Admin",
-              authorInitials: "HA",
-              authorDept: "HR",
-              message,
-              createdAt: now,
-            },
-          ],
-        };
-      }),
-    );
+    void addComment(postId, message);
   }
 
   if (loading && !posts.length) {
@@ -186,6 +100,7 @@ export function KudosPage() {
 
       <StatCards
         posts={posts}
+        leaderboard={data ? leaderboard : undefined}
         cardFilter={cardFilter}
         onDrillDown={setCardFilter}
       />

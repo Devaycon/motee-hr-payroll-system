@@ -113,6 +113,17 @@ const slice = createSlice({
       state.seededTenants.push(tenantId);
     },
 
+    /** The server's records for a tenant replace whatever this device holds. */
+    replaceRecordsFromApi(
+      state,
+      action: PayloadAction<{ tenantId: string; records: SicknessRecord[] }>,
+    ) {
+      const { tenantId, records } = action.payload;
+      state.records = [
+        ...records,
+        ...state.records.filter((r) => r.tenantId !== tenantId),
+      ];
+    },
     reportSickness(state, action: PayloadAction<{ record: SicknessRecord } & Actor>) {
       const { record, actor } = action.payload;
       state.records.unshift(record);
@@ -308,6 +319,7 @@ const slice = createSlice({
 });
 
 export const {
+  replaceRecordsFromApi,
   hydrate: hydrateSickness,
   seedTenant,
   reportSickness,

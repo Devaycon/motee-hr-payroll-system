@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { HIRING_METRICS } from "../data";
+import { useHiringMetrics } from "../hooks";
 import type { HiringMetric } from "../types";
 import { HiringDetailModal } from "./detail-modals";
 import { ExportMenu } from "@/src/components/shared/export-menu";
@@ -49,30 +49,31 @@ const EXPORT_COLUMNS: ReportColumn<HiringMetric>[] = [
 ];
 
 export function HiringSection() {
+  const hiringMetrics = useHiringMetrics();
   const [selectedMetric, setSelectedMetric] = useState<HiringMetric | null>(
     null,
   );
-  const totalOpen = HIRING_METRICS.reduce((s, m) => s + m.openRequisitions, 0);
-  const totalFilled = HIRING_METRICS.reduce(
+  const totalOpen = hiringMetrics.reduce((s, m) => s + m.openRequisitions, 0);
+  const totalFilled = hiringMetrics.reduce(
     (s, m) => s + (m.filledThisQuarter ?? 0),
     0,
   );
   const avgDays =
-    HIRING_METRICS.length > 0
+    hiringMetrics.length > 0
       ? Math.round(
-          HIRING_METRICS.reduce((s, m) => s + m.avgDaysToFill, 0) /
-            HIRING_METRICS.length,
+          hiringMetrics.reduce((s, m) => s + m.avgDaysToFill, 0) /
+            hiringMetrics.length,
         )
       : 0;
   const avgCost =
-    HIRING_METRICS.length > 0
+    hiringMetrics.length > 0
       ? Math.round(
-          HIRING_METRICS.reduce((s, m) => s + (m.costPerHire ?? 0), 0) /
-            HIRING_METRICS.length,
+          hiringMetrics.reduce((s, m) => s + (m.costPerHire ?? 0), 0) /
+            hiringMetrics.length,
         )
       : 0;
 
-  const maxDays = Math.max(...HIRING_METRICS.map((m) => m.avgDaysToFill), 1);
+  const maxDays = Math.max(...hiringMetrics.map((m) => m.avgDaysToFill), 1);
 
   return (
     <div className="space-y-6">
@@ -130,7 +131,7 @@ export function HiringSection() {
           name="hiring-velocity"
           title="Hiring Velocity"
           columns={EXPORT_COLUMNS}
-          rows={HIRING_METRICS}
+          rows={hiringMetrics}
           variant="outline"
           buttonClassName="h-8 text-xs"
         />
@@ -161,7 +162,7 @@ export function HiringSection() {
                 </tr>
               </thead>
               <tbody>
-                {HIRING_METRICS.map((metric) => (
+                {hiringMetrics.map((metric) => (
                   <tr
                     key={metric.id}
                     className="border-b border-border/60 last:border-0"

@@ -51,6 +51,7 @@ import { store } from "@/src/lib/stores/store";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import { DEPARTMENT_OPTIONS } from "@/src/data/recruitment-demo";
+import { useLiveDepartments } from "@/src/lib/hooks/use-live-departments";
 import {
   submitApproval,
   seedRequestsForType,
@@ -76,6 +77,7 @@ import {
 import { buildWorkforceDemo } from "@/src/data/workforce-requests-demo";
 import { cn } from "@/src/lib/utils";
 import { RequestDetailModal } from "./components/request-detail-modal";
+import { useWorkforceRequestActions, useWorkforceRequestsSync } from "./hooks";
 
 const URGENCY: WorkforceUrgency[] = ["low", "medium", "high", "critical"];
 const URGENCY_STYLES: Record<WorkforceUrgency, string> = {
@@ -92,6 +94,17 @@ type DisplayStatus =
   | "Rejected"
   | "Returned"
   | "Converted to Requisition";
+
+/** A cancelled request is closed without a hire, which the tabs show as rejected. */
+const SERVER_STATUS: Record<NonNullable<WorkforceRequest["serverStatus"]>, DisplayStatus> = {
+  draft: "Draft",
+  pendingApproval: "Pending Approval",
+  approved: "Approved",
+  rejected: "Rejected",
+  returned: "Returned",
+  cancelled: "Rejected",
+  converted: "Converted to Requisition",
+};
 
 const STATUS_STYLES: Record<DisplayStatus, string> = {
   Draft: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
@@ -150,8 +163,13 @@ export function WorkforceRequestsPage() {
   const approvalRequests = useAppSelector((s) => s.approvals.requests);
 
   const canCreate = useCan("talent.workforce-requests", "create");
+  const live = useWorkforceRequestsSync();
+  const { names: departmentNames } = useLiveDepartments(DEPARTMENT_OPTIONS);
+  const wfrActions = useWorkforceRequestActions();
 
   useEffect(() => {
+    // Signed in, the requests come from the API (useWorkforceRequestsSync).
+    if (live) return;
     const demo = buildWorkforceDemo();
     if (!requests) {
       dispatch(seedCountry({ country, requests: demo.requests }));
@@ -163,13 +181,14 @@ export function WorkforceRequestsPage() {
         requests: demo.approvals,
       }),
     );
-  }, [requests, country, dispatch]);
+  }, [requests, country, dispatch, live]);
 
   const list = useMemo(() => requests ?? [], [requests]);
 
   const displayStatus = useMemo(() => {
     const byId = new Map(approvalRequests.map((r) => [r.id, r]));
     return (wfr: WorkforceRequest): DisplayStatus => {
+      if (wfr.serverStatus) return SERVER_STATUS[wfr.serverStatus];
       if (wfr.status === "converted") return "Converted to Requisition";
       if (!wfr.approvalRequestId) return "Draft";
       const ar = byId.get(wfr.approvalRequestId);
@@ -229,7 +248,7 @@ export function WorkforceRequestsPage() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ ...EMPTY_FORM });
+    setForm({ ...EMPTY_FORM, department: departmentNames[0] ?? EMPTY_FORM.department });
     setModalOpen(true);
   }
 
@@ -274,7 +293,7 @@ export function WorkforceRequestsPage() {
     setModalOpen(true);
   }
 
-  function saveDraft() {
+  async function saveDraft() {
     if (form.reason.trim().length < 4) {
       toast.error("Please add a reason for hiring.");
       return;
@@ -284,6 +303,13 @@ export function WorkforceRequestsPage() {
       toast.error("Select a cost centre", {
         description: "Finance allocates this request's spend against it.",
       });
+      return;
+    }
+    if (live) {
+      const saved = await wfrActions.save(form, editingId);
+      if (!saved) return;
+      toast.success(editingId ? "Workforce request updated" : "Draft workforce request created");
+      setModalOpen(false);
       return;
     }
     if (editingId) {
@@ -307,6 +333,11 @@ export function WorkforceRequestsPage() {
   async function submit(wfr: WorkforceRequest) {
     if (!user) {
       toast.error("You must be logged in to submit.");
+      return;
+    }
+    // The server starts the approval chain itself.
+    if (live) {
+      if (await wfrActions.submit(wfr.id)) toast.success("Submitted for approval");
       return;
     }
     await dispatch(
@@ -347,7 +378,19 @@ export function WorkforceRequestsPage() {
     }
   }
 
-  function startRequisition(wfr: WorkforceRequest) {
+  async function startRequisition(wfr: WorkforceRequest) {
+    if (live) {
+      // The server raises the requisition from the approved request.
+      const converted = await wfrActions.convert(wfr.id);
+      if (converted) {
+        toast.success(
+          converted.requisitionReference
+            ? `Requisition ${converted.requisitionReference} created`
+            : "Requisition created",
+        );
+      }
+      return;
+    }
     router.push(`/talent/requisition?workforceRequest=${wfr.id}`);
   }
 
@@ -436,7 +479,7 @@ export function WorkforceRequestsPage() {
               variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => setDetail(wfr)}
+              onClick={async () => setDetail(live ? await wfrActions.refresh(wfr) : wfr)}
             >
               <Eye className="w-3.5 h-3.5" />
             </Button>
@@ -633,7 +676,7 @@ export function WorkforceRequestsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DEPARTMENT_OPTIONS.map((d) => (
+                  {departmentNames.map((d) => (
                     <SelectItem key={d} value={d}>
                       {d}
                     </SelectItem>

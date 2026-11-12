@@ -10,6 +10,12 @@ import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group";
 import { Separator } from "@/src/components/ui/separator";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import {
+  useGetMyDiversityQuery,
+  useUpdateMyDiversityMutation,
+} from "@/src/store/services/diversity";
+import type { DiversityRequest } from "@/src/types/diversity";
 import { declare, withdraw } from "@/src/lib/stores/diversity-slice";
 import { formatDateTime } from "@/src/lib/utils/format-date";
 import {
@@ -28,6 +34,17 @@ import { useMyEmployeeRecord } from "@/src/components/employee/profile/hooks";
  * the same kind of edit: the explanation of why it is being asked, and the
  * assurance about how it is used, are part of asking properly.
  */
+/** Every field is sent, so a cleared answer is cleared on the server too. */
+function toRequest(answers: Partial<Record<DiversityFieldKey, string>>): DiversityRequest {
+  return {
+    ethnicity: answers.ethnicity ?? null,
+    disability: answers.disability ?? null,
+    religion: answers.religion ?? null,
+    veteranStatus: answers.veteranStatus ?? null,
+    caringResponsibilities: answers.caringResponsibilities ?? null,
+  };
+}
+
 export function MyDiversityPage() {
   const dispatch = useAppDispatch();
   const { data: rec } = useMyEmployeeRecord();
@@ -39,9 +56,21 @@ export function MyDiversityPage() {
     employeeId ? s.diversity.declarations[employeeId] : undefined,
   );
 
+  // The question set and the employee's answers come from the server.
+  const { data: mine } = useGetMyDiversityQuery();
+  const [saveMine] = useUpdateMyDiversityMutation();
+  const serverForm = mine?.data;
   const categories = useMemo(
-    () => diversityCategories(jurisdiction),
-    [jurisdiction],
+    () =>
+      serverForm?.categories.length
+        ? serverForm.categories.map((c) => ({
+            key: c.field,
+            label: c.label,
+            purpose: c.purpose,
+            options: c.options,
+          }))
+        : diversityCategories(jurisdiction),
+    [serverForm, jurisdiction],
   );
 
   const [answers, setAnswers] = useState<Partial<Record<DiversityFieldKey, string>>>(
@@ -49,11 +78,18 @@ export function MyDiversityPage() {
   );
   const [seededFor, setSeededFor] = useState<string | null>(null);
 
-  // Seed from any existing declaration once the record resolves.
-  if (employeeId && employeeId !== seededFor) {
-    setSeededFor(employeeId);
+  // Seed from the server's answers once they arrive, else any local declaration.
+  const seedKey = serverForm ? `server:${employeeId}` : employeeId;
+  if (employeeId && seedKey !== seededFor) {
+    setSeededFor(seedKey);
     setAnswers(
-      existing
+      serverForm
+        ? Object.fromEntries(
+            serverForm.categories
+              .filter((c) => Boolean(c.answer))
+              .map((c) => [c.field, c.answer as string] as const),
+          )
+        : existing
         ? Object.fromEntries(
             categories
               .map((c) => [c.key, existing[c.key]] as const)
@@ -74,14 +110,26 @@ export function MyDiversityPage() {
 
   const answeredCount = categories.filter((c) => answers[c.key]).length;
 
-  function handleSave() {
+  async function handleSave() {
+    try {
+      await saveMine(toRequest(answers)).unwrap();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Could not save your answers."));
+      return;
+    }
     dispatch(declare({ employeeId, jurisdiction, answers }));
     toast.success("Your answers have been saved", {
       description: "You can change or withdraw them at any time.",
     });
   }
 
-  function handleWithdraw() {
+  async function handleWithdraw() {
+    try {
+      await saveMine(toRequest({})).unwrap();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Could not withdraw your answers."));
+      return;
+    }
     dispatch(withdraw(employeeId));
     setAnswers({});
     toast.success("Your answers have been withdrawn", {

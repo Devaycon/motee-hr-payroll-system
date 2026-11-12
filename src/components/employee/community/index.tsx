@@ -6,6 +6,7 @@ import { Users } from "lucide-react";
 import { CommunityTab } from "./components/community-tab";
 import { KudosTab } from "./components/kudos-tab";
 import { SuggestionsTab } from "./components/suggestions-tab";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 
 export function EmployeeCommunityPage() {
   return (
@@ -28,13 +29,18 @@ export function EmployeeCommunityPage() {
           ]}
         />
         <TabsContent value="community" className="mt-6">
-          <CommunityTab />
+          {/* The community feed is not on the API yet. */}
+          <NotIntegrated label="Community feed">
+            <CommunityTab />
+          </NotIntegrated>
         </TabsContent>
         <TabsContent value="kudos" className="mt-6">
           <KudosTab />
         </TabsContent>
         <TabsContent value="suggestions" className="mt-6">
-          <SuggestionsTab />
+          <NotIntegrated label="Suggestions">
+            <SuggestionsTab />
+          </NotIntegrated>
         </TabsContent>
       </Tabs>
     </div>

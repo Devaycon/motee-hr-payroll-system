@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useGetDiversityReportQuery } from "@/src/store/services/diversity";
 import {
   declarationRate,
   diversityCategories,
@@ -40,8 +41,35 @@ export function useDiversityReport(
   const country = useAppSelector((s) => s.locale.country);
   const jurisdiction: Jurisdiction = country === "ng" ? "ng" : "uk";
 
+  // The server tallies and suppresses small groups itself; the local tally
+  // covers the wait for it.
+  const { data: server } = useGetDiversityReportQuery();
   return useMemo(() => {
     const categories = diversityCategories(jurisdiction);
+    const report = server?.data;
+    if (report) {
+      return {
+        jurisdiction,
+        breakdowns: report.breakdowns.map((b) => ({
+          category: categories.find((c) => c.key === b.field) ?? {
+            key: b.field,
+            label: b.label,
+            purpose: "",
+            options: [],
+          },
+          breakdown: {
+            rows: b.rows,
+            suppressedCount: b.suppressedCount,
+            suppressedGroups: b.suppressedGroups,
+            declared: b.declared,
+            eligible: report.eligible,
+          },
+        })),
+        declaredAny: report.declared,
+        eligible: report.eligible,
+        ratePercent: report.declarationRatePercent,
+      };
+    }
     const held = employeeIds
       .map((id) => declarations[id])
       .filter((d): d is NonNullable<typeof d> => Boolean(d));
@@ -63,5 +91,5 @@ export function useDiversityReport(
       eligible,
       ratePercent: declarationRate(declaredAny, eligible),
     };
-  }, [declarations, employeeIds, eligible, jurisdiction]);
+  }, [declarations, employeeIds, eligible, jurisdiction, server]);
 }

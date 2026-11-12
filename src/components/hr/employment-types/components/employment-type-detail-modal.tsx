@@ -27,6 +27,7 @@ import {
   PAY_FREQUENCY_LABELS,
 } from "../data";
 import type { EmploymentTypeRow } from "../types";
+import { useEmploymentTypeDetail } from "../hooks";
 
 interface Props {
   type: EmploymentTypeRow | null;
@@ -74,7 +75,12 @@ function BooleanChip({ value }: { value: boolean }) {
   );
 }
 
-export function EmploymentTypeDetailModal({ type, open, onOpenChange }: Props) {
+export function EmploymentTypeDetailModal({
+  type: listed,
+  open,
+  onOpenChange,
+}: Props) {
+  const type = useEmploymentTypeDetail(listed);
   if (!type) return null;
 
   const durationStyle = CONTRACT_DURATION_STYLES[type.contractDuration];

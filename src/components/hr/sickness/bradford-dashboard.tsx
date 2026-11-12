@@ -43,7 +43,7 @@ import {
   type BradfordThreshold,
   type ReviewOutcome,
 } from "@/src/lib/types/sickness";
-import { SICKNESS_BASE, useCanManageSickness, useSickness, useSicknessActor } from "./hooks";
+import { SICKNESS_BASE, useCanManageSickness, useServerBradfordFor, useSickness, useSicknessActor } from "./hooks";
 import { SicknessShell } from "./shell";
 import { FilterSelect } from "./records-page";
 import { BradfordBadge, ChartPanel, Pager, StatTile, fmtDate, usePaged } from "./ui";
@@ -254,7 +254,19 @@ function EmployeeBreakdown({ x, onClose, onReview }: { x: Scored; onClose: () =>
   const actor = useSicknessActor();
   const canManage = useCanManageSickness();
   const history = s.snapshots.filter((h) => h.employeeId === x.id).slice(0, 8);
-  const r = x.result;
+  // The server's own working for this person, laid over the local breakdown.
+  const server = useServerBradfordFor(x.id);
+  const r = server
+    ? {
+        ...x.result,
+        windowStart: server.windowStart,
+        windowEnd: server.windowEnd,
+        S: server.spells,
+        D: server.days,
+        score: server.score,
+        excluded: server.excluded,
+      }
+    : x.result;
   const avgLen = r.S ? r.D / r.S : 0;
 
   function startReview() {

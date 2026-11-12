@@ -41,7 +41,9 @@ import {
   useCanViewMedical,
   useSickness,
   useSicknessActor,
+  useSicknessAlerts,
 } from "./hooks";
+import type { SicknessAlertKind } from "@/src/types/sickness";
 import { SicknessShell } from "./shell";
 import { FilterSelect } from "./records-page";
 import { useFormatMoney } from "./money";
@@ -57,6 +59,13 @@ interface Alert {
   href: string;
 }
 
+const SERVER_ALERT_META: Record<SicknessAlertKind, { kind: string; severity: Severity }> = {
+  fitNoteOutstanding: { kind: "Fit note", severity: "medium" },
+  returnToWorkOverdue: { kind: "Return to work", severity: "medium" },
+  longTermAbsence: { kind: "Long-term", severity: "medium" },
+  awaitingApproval: { kind: "Approval", severity: "info" },
+};
+
 export function AlertsReportingPage() {
   const s = useSickness();
   const money = useFormatMoney();
@@ -68,8 +77,24 @@ export function AlertsReportingPage() {
   const inScope = (r: SicknessRecord) =>
     (dept === "all" || r.department === dept) && (branch === "all" || r.branchId === branch);
 
+  const serverAlerts = useSicknessAlerts();
   const alerts = useMemo<Alert[]>(() => {
     const out: Alert[] = [];
+    // Company-wide, the record alerts are the server's; a filtered view works them out here.
+    const fromServer = !!serverAlerts && dept === "all" && branch === "all";
+    if (fromServer) {
+      for (const a of serverAlerts) {
+        const meta = SERVER_ALERT_META[a.kind];
+        out.push({
+          id: `${a.kind}-${a.recordId}`,
+          severity: a.urgent ? "high" : meta.severity,
+          kind: meta.kind,
+          title: `${a.employeeName} — ${a.message}`,
+          detail: `Absence from ${fmtDate(a.startDate)}`,
+          href: a.kind === "returnToWorkOverdue" ? `${SICKNESS_BASE}/return-to-work/${a.recordId}` : `${SICKNESS_BASE}/records/${a.recordId}`,
+        });
+      }
+    }
     for (const c of s.reviewCases.filter((c) => c.status !== "closed")) {
       out.push({
         id: c.id,
@@ -83,6 +108,12 @@ export function AlertsReportingPage() {
     for (const r of s.records.filter(inScope)) {
       if (r.approvalStatus === "rejected" || r.approvalStatus === "cancelled") continue;
       const len = spellLength(r, s.asOf);
+      if (fromServer) {
+        if (r.absenceState === "ongoing" && len >= s.settings.ohTriggerDays && !r.ohReferralId) {
+          out.push({ id: `oh-${r.id}`, severity: "high", kind: "Occupational Health", title: `${r.employeeName} — ${len} days continuous absence`, detail: `Consider an Occupational Health referral (trigger ${s.settings.ohTriggerDays} days)`, href: `${SICKNESS_BASE}/records/${r.id}` });
+        }
+        continue;
+      }
       if (r.rtw.status === "pending") {
         out.push({ id: `rtw-${r.id}`, severity: "medium", kind: "Return to work", title: `${r.employeeName} needs a return-to-work interview`, detail: `Back since ${fmtDate(r.rtw.returnDate)}`, href: `${SICKNESS_BASE}/return-to-work/${r.id}` });
       }
@@ -105,7 +136,7 @@ export function AlertsReportingPage() {
     const rank: Record<Severity, number> = { high: 0, medium: 1, info: 2 };
     return out.sort((a, b) => rank[a.severity] - rank[b.severity]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s, dept, branch]);
+  }, [s, dept, branch, serverAlerts]);
 
   const report = useMemo(() => {
     const from = format(subMonths(parseISO(s.asOf), Number(months)), "yyyy-MM-dd");

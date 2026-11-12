@@ -18,7 +18,7 @@ import {
 import { useCan } from "@/src/lib/permissions/use-can";
 import { useCurrency } from "@/src/lib/hooks/use-currency";
 import { LOAN_DOCUMENT_TYPE, summariseLoans } from "@/src/lib/loans/loans";
-import { useLoans } from "@/src/lib/loans/use-loans";
+import { useLoanBook, useLoans } from "@/src/lib/loans/use-loans";
 import { LoanRegisterTable } from "./components/loan-register-table";
 import { LoanAnalytics } from "./components/loan-analytics";
 import { LoanRequestModal } from "./components/loan-request-modal";
@@ -38,7 +38,8 @@ export function LoansPage() {
   const [tab, setTab] = useState("register");
   const [modalOpen, setModalOpen] = useState(false);
 
-  const summary = useMemo(() => summariseLoans(rows), [rows]);
+  const book = useLoanBook();
+  const summary = useMemo(() => book ?? summariseLoans(rows), [book, rows]);
   const pending = useMemo(() => rows.filter((r) => r.status === "pending"), [rows]);
 
   if (loading && rows.length === 0) {

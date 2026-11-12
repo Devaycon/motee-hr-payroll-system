@@ -27,6 +27,10 @@ import {
 } from "../trends";
 import { ExportMenu } from "@/src/components/shared/export-menu";
 import type { ReportColumn } from "@/src/lib/reports/types";
+import { useServerSeries, useServerTrend } from "../hooks";
+
+/** The years the plan periods cover (see ALL_PLAN_PERIODS). */
+const SERIES_YEARS = [2025, 2026];
 
 interface TrendsProps {
   /** Every plan across every period — not just the active one. */
@@ -67,22 +71,28 @@ function movementLabel(delta: number, pct: number | null): string {
 }
 
 export function Trends({ plans, activePeriod }: TrendsProps) {
-  const qoq = useMemo(
+  // The server's movement figures; the plans cover the wait for them.
+  const serverQoq = useServerTrend(activePeriod, "previousQuarter");
+  const serverYoy = useServerTrend(activePeriod, "sameQuarterLastYear");
+  const serverSeries = useServerSeries(SERIES_YEARS);
+  const localQoq = useMemo(
     () => quarterOverQuarter(plans, activePeriod),
     [plans, activePeriod],
   );
-  const yoy = useMemo(
+  const localYoy = useMemo(
     () => yearOverYear(plans, activePeriod),
     [plans, activePeriod],
   );
+  const qoq = serverQoq ?? localQoq;
+  const yoy = serverYoy ?? localYoy;
 
   const series = useMemo(() => {
-    const points = headcountSeries(plans);
+    const points = serverSeries?.length ? serverSeries : headcountSeries(plans);
     return [
       { id: "Actual", data: points.map((p) => ({ x: p.period, y: p.actual })) },
       { id: "Target", data: points.map((p) => ({ x: p.period, y: p.target })) },
     ];
-  }, [plans]);
+  }, [plans, serverSeries]);
 
   const stats = useMemo<HrStatCardItem[]>(
     () => [

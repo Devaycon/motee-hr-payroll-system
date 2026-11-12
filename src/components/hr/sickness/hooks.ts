@@ -4,12 +4,24 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { useCan, useEffectiveAccess } from "@/src/lib/permissions/use-can";
-import { seedTenant } from "@/src/lib/stores/sickness-slice";
+import { replaceRecordsFromApi, seedTenant } from "@/src/lib/stores/sickness-slice";
+import {
+  bradfordAction,
+  isServerId,
+  sicknessRecordFromApi,
+} from "@/src/lib/sickness/api-mapping";
+import { useGetAllSicknessRecordsQuery } from "@/src/store/services/collections";
+import {
+  useGetBradfordScoresQuery,
+  useGetEmployeeBradfordQuery,
+  useGetSicknessAlertsQuery,
+  useGetSicknessRecordQuery,
+  useGetSicknessSummaryQuery,
+} from "@/src/store/services/sickness";
 import {
   DEFAULT_SICKNESS_SETTINGS,
   defaultSchemes,
   seedEnrolments,
-  seedSicknessRecords,
 } from "@/src/lib/sickness/seeds";
 import { calculateBradford, type BradfordResult } from "@/src/lib/sickness/bradford";
 import type { LocaleBundle, LocaleEmployee } from "@/src/lib/types/locale";
@@ -23,10 +35,11 @@ export function sicknessToday(): string {
 }
 
 /**
- * Seeds the tenant's sickness data from the bundle once, the way Leave seeds
- * from it — this is where historic sick leave moves into the new module.
+ * Seeds the tenant's sick-pay schemes and enrolments (not on the API yet)
+ * once, and keeps the absence records themselves in step with the API.
  */
 export function useSicknessSeed() {
+  useSicknessLiveRecords();
   const dispatch = useAppDispatch();
   const bundle = useAppSelector((s) => s.locale.data);
   const country = useAppSelector((s) => s.locale.country);
@@ -37,12 +50,64 @@ export function useSicknessSeed() {
     dispatch(
       seedTenant({
         tenantId: bundle.tenant.id,
-        records: seedSicknessRecords(bundle, sicknessToday()),
+        // Absence records come from the API (see useSicknessLiveRecords).
+        records: [],
         schemes,
         enrolments: seedEnrolments(bundle, schemes, country),
       }),
     );
   }, [bundle, country, seeded, dispatch]);
+}
+
+/** Lays the server's sickness records into the slice every screen reads. */
+export function useSicknessLiveRecords() {
+  const dispatch = useAppDispatch();
+  const skip = useAppSelector((s) => !s.session.is_loggedIn);
+  const bundle = useAppSelector((s) => s.locale.data);
+  const { data } = useGetAllSicknessRecordsQuery(undefined, { skip });
+  useEffect(() => {
+    if (!data || !bundle) return;
+    const people = new Map(bundle.employees.map((e) => [e.id, e]));
+    dispatch(
+      replaceRecordsFromApi({
+        tenantId: bundle.tenant.id,
+        records: data.map((dto) => {
+          const emp = people.get(dto.employeeId);
+          return sicknessRecordFromApi(dto, {
+            tenantId: bundle.tenant.id,
+            branchId: emp?.branchId,
+            initials: emp?.initials,
+          });
+        }),
+      }),
+    );
+  }, [data, bundle, dispatch]);
+}
+
+/** Headline figures for the records page, as the server works them out. */
+export function useSicknessSummary(from?: string) {
+  return useGetSicknessSummaryQuery(from ? { from } : undefined).data?.data ?? null;
+}
+
+/** HR alerts the server raises: fit notes outstanding, overdue RTWs, long-term absence. */
+export function useSicknessAlerts() {
+  return useGetSicknessAlertsQuery().data?.data ?? null;
+}
+
+/** The server's Bradford league table, highest score first. */
+export function useServerBradford() {
+  const { data } = useGetBradfordScoresQuery({ Limit: 500 });
+  return data?.data ?? null;
+}
+
+/** One employee's Bradford score and the spells behind it, from the server. */
+export function useServerBradfordFor(employeeId: string | undefined) {
+  return useGetEmployeeBradfordQuery(employeeId ?? "", { skip: !employeeId }).data?.data ?? null;
+}
+
+/** One record, re-read so a detail page always shows the server's copy. */
+export function useSicknessRecordRefresh(id: string | undefined) {
+  useGetSicknessRecordQuery(id ?? "", { skip: !id || !isServerId(id) });
 }
 
 /**
@@ -96,17 +161,37 @@ export function useSickness() {
   const audit = useMemo(() => state.audit.filter((a) => a.tenantId === tenantId), [state.audit, tenantId]);
   const settings = state.settings[tenantId] ?? DEFAULT_SICKNESS_SETTINGS;
 
+  // The server's score is the one of record; the local calculation supplies
+  // the episode breakdown the screens draw, and covers the wait for it.
+  const serverBradford = useServerBradford();
+  const serverScores = useMemo(
+    () => new Map((serverBradford ?? []).map((row) => [row.employeeId, row])),
+    [serverBradford],
+  );
   const bradfordFor = useCallback(
-    (employeeId: string): BradfordResult =>
-      calculateBradford({
+    (employeeId: string): BradfordResult => {
+      const local = calculateBradford({
         employeeId,
         records,
         asOf,
         settings: settings.bradford,
         schedule: byId.get(employeeId)?.workPattern?.schedule,
         holidays,
-      }),
-    [records, asOf, settings.bradford, byId, holidays],
+      });
+      const row = serverScores.get(employeeId);
+      if (!row) return local;
+      const action = bradfordAction.fromApi(row.action) ?? local.action;
+      return {
+        ...local,
+        S: row.spells,
+        D: row.days,
+        score: row.score,
+        action,
+        threshold:
+          settings.bradford.thresholds.find((t) => t.action === action) ?? local.threshold,
+      };
+    },
+    [records, asOf, settings.bradford, byId, holidays, serverScores],
   );
 
   const schemeFor = useCallback(

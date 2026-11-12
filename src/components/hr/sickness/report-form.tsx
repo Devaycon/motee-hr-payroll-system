@@ -19,8 +19,10 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { reportSickness, sicknessId } from "@/src/lib/stores/sickness-slice";
-import { submitApproval } from "@/src/lib/stores/approvals-slice";
+import { addDocument, reportSickness, sicknessId } from "@/src/lib/stores/sickness-slice";
+import { sicknessRecordToApi } from "@/src/lib/sickness/api-mapping";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { useCreateSicknessRecordMutation } from "@/src/store/services/sickness";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { SICKNESS_REASON_CATEGORIES, type SicknessReasonCategory } from "@/src/lib/constants/sickness";
 import {
@@ -55,6 +57,7 @@ export function ReportSicknessForm({
   initialEmployeeId?: string;
 }) {
   const dispatch = useAppDispatch();
+  const [createRecord] = useCreateSicknessRecordMutation();
   const s = useSickness();
   const user = useAppSelector((st) => st.auth.user);
   const actor = useSicknessActor();
@@ -213,38 +216,19 @@ export function ReportSicknessForm({
       createdAt: now,
       updatedAt: now,
     };
-    dispatch(reportSickness({ record, actor }));
-
+    // The server records the absence and starts its approval; the record is
+    // opened by the id it gives back.
+    let serverId: string;
     try {
-      await dispatch(
-        submitApproval({
-          documentType: "sickness_absence",
-          documentId: id,
-          documentTitle: `${isProcedure ? "Medical procedure" : "Sickness absence"} — ${employee.fullName}`,
-          documentSummary: `${employee.fullName} · from ${fmtDate(startDate)}${returned ? ` to ${fmtDate(lastDay)}` : ""}`,
-          // No medical detail in the approval payload — approvers see dates, not diagnoses.
-          payloadSnapshot: {
-            startDate,
-            endDate: returned ? lastDay : "ongoing",
-            fitNote: record.fitNoteStatus,
-            reportedBy: actor,
-            onBehalf: mode !== "self",
-          },
-          // Always the absent employee, even when HR logs it on their behalf,
-          // so the "line manager" step routes to *their* manager.
-          submitter: {
-            employeeId: employee.id,
-            name: employee.fullName,
-            initials: employee.initials,
-            departmentName: employee.departmentName,
-          },
-        }),
-      ).unwrap();
-    } catch {
-      toast.warning("Absence recorded, but no approval chain is set up for sickness yet", {
-        description: "Create one under Submissions & Approvals → Approval Chains.",
-      });
+      const created = await createRecord(sicknessRecordToApi(record)).unwrap();
+      serverId = created.data.id;
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Could not record the absence."));
+      return;
     }
+    dispatch(reportSickness({ record: { ...record, id: serverId, documents: [] }, actor }));
+    // Documents picked on the form are attached once the record exists.
+    for (const doc of docs) dispatch(addDocument({ id: serverId, actor, document: doc }));
 
     const notifyManager = !scheme || scheme.notifyOnSick.includes("line_manager");
     dispatch(
@@ -254,11 +238,11 @@ export function ReportSicknessForm({
         type: "warning",
         recipientRoleIds: !scheme || scheme.notifyOnSick.some((r) => r.startsWith("hr")) ? HR_ROLES : undefined,
         recipientEmployeeIds: notifyManager && employee.managerId ? [employee.managerId] : undefined,
-        href: `/time-payroll/sickness/records/${id}`,
+        href: `/time-payroll/sickness/records/${serverId}`,
       }),
     );
     toast.success(mode === "self" ? "Sickness reported — your manager has been told" : `Sickness logged for ${employee.fullName}`);
-    onDone(id);
+    onDone(serverId);
   }
 
   const err = (k: string) => errors[k] && <p className="text-[11px] text-destructive">{errors[k]}</p>;

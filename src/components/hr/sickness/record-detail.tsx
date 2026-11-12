@@ -63,6 +63,7 @@ import {
   useCanManageSickness,
   useCanViewMedical,
   useSickness,
+  useSicknessRecordRefresh,
   useSicknessActor,
 } from "./hooks";
 import {
@@ -80,6 +81,7 @@ export function SicknessRecordDetail({ id }: { id: string }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const s = useSickness();
+  useSicknessRecordRefresh(id);
   const actor = useSicknessActor();
   const canViewMedical = useCanViewMedical();
   const canManage = useCanManageSickness();

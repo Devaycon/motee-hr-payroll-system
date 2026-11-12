@@ -6,6 +6,7 @@ import {
 } from "@/src/components/ui/card";
 import { GenderSplitBreakdown } from "@/src/components/shared/gender-figures";
 import { WORKFORCE_DEMOGRAPHICS } from "../data";
+import { useWorkforceDemographics } from "../hooks";
 import type { DemographicItem } from "../types";
 
 interface DemoCardProps {
@@ -73,7 +74,8 @@ function DemoCard({
 }
 
 export function DemographicsSection() {
-  const { gender, ageGroup, employmentType, tenure } = WORKFORCE_DEMOGRAPHICS;
+  const live = useWorkforceDemographics();
+  const { gender, ageGroup, employmentType, tenure } = live ?? WORKFORCE_DEMOGRAPHICS;
 
   const total = gender.reduce((s, g) => s + g.count, 0);
 

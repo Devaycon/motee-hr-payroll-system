@@ -10,14 +10,14 @@ import { TurnoverSection } from "./components/turnover-section";
 import { HiringSection } from "./components/hiring-section";
 import { SkillsGapSection } from "./components/skills-gap-section";
 import { DemographicsSection } from "./components/demographics-section";
+import { SKILLS_GAPS, buildTurnoverTrends } from "./data";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import {
-  HIRING_METRICS,
-  SKILLS_GAPS,
-  buildTurnoverTrends,
-  TURNOVER_RECORDS,
-} from "./data";
-import { ATTRITION_RISKS } from "@/src/components/hr/headcount/data";
-import { useWorkforceOverview } from "./hooks";
+  useAttritionRisks,
+  useHiringMetrics,
+  useTurnoverRecords,
+  useWorkforceOverview,
+} from "./hooks";
 
 const CURRENT_PERIOD = "Q1 2026";
 
@@ -25,9 +25,12 @@ export function WorkforcePage() {
   const { data: overview } = useWorkforceOverview();
   const totalHeadcount = overview?.totalHeadcount ?? 0;
   const avgTenureYears = overview?.avgTenureYears ?? 0;
-  const trends = buildTurnoverTrends(TURNOVER_RECORDS);
+  const hiringMetrics = useHiringMetrics();
+  const attritionRisks = useAttritionRisks();
+  const trends = buildTurnoverTrends(useTurnoverRecords());
   const currentTrend = trends.find((t) => t.period === CURRENT_PERIOD);
-  const currentTurnoverRate = currentTrend?.rate ?? 0;
+  const currentTurnoverRate =
+    overview?.turnoverRatePercent ?? currentTrend?.rate ?? 0;
   const criticalSkills = SKILLS_GAPS.filter(
     (s) => s.severity === "critical",
   ).length;
@@ -50,9 +53,9 @@ export function WorkforcePage() {
 
       <OverviewCards
         totalHeadcount={totalHeadcount}
-        hiringMetrics={HIRING_METRICS}
+        hiringMetrics={hiringMetrics}
         currentTurnoverRate={currentTurnoverRate}
-        attritionRisks={ATTRITION_RISKS}
+        attritionRisks={attritionRisks}
         avgTenureYears={avgTenureYears}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -88,7 +91,10 @@ export function WorkforcePage() {
         </TabsContent>
 
         <TabsContent value="skills" className="mt-5">
-          <SkillsGapSection />
+          {/* Skills inventory is not on the API yet. */}
+          <NotIntegrated label="Skills gap">
+            <SkillsGapSection />
+          </NotIntegrated>
         </TabsContent>
 
         <TabsContent value="demographics" className="mt-5">

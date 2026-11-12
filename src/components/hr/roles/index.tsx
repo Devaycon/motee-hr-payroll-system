@@ -7,7 +7,8 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
-import { POSITIONS, STATUS_LABELS, STATUS_STYLES } from "./data";
+import { STATUS_LABELS, STATUS_STYLES } from "./data";
+import { usePositionActions, usePositions } from "./hooks";
 import type { Position, NewPosition } from "./types";
 import { StatCards } from "./components/stat-cards";
 import { PositionsToolbar } from "./components/positions-toolbar";
@@ -26,7 +27,8 @@ const VACANCY_EXPORT_COLUMNS: ReportColumn<Position>[] = [
 ];
 
 export function RolesPage() {
-  const [positions, setPositions] = useState<Position[]>(POSITIONS);
+  const { positions } = usePositions();
+  const { save, remove } = usePositionActions(positions);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -55,8 +57,7 @@ export function RolesPage() {
   );
 
   function handleDelete(id: string) {
-    setPositions((prev) => prev.filter((p) => p.id !== id));
-    toast.success("Position deleted");
+    void remove(id);
   }
 
   function handleEdit(position: Position) {
@@ -70,23 +71,7 @@ export function RolesPage() {
   }
 
   function handleSave(data: NewPosition | Position) {
-    if ("id" in data) {
-      setPositions((prev) =>
-        prev.map((p) =>
-          p.id === (data as Position).id ? (data as Position) : p,
-        ),
-      );
-      toast.success("Position updated");
-    } else {
-      const newPosition: Position = {
-        ...(data as NewPosition),
-        id: `p-${Date.now()}`,
-        status: (data as NewPosition).status ?? "vacant",
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
-      setPositions((prev) => [newPosition, ...prev]);
-      toast.success("Position added");
-    }
+    void save(data);
   }
 
   function handleRaiseRequisition(position: Position) {

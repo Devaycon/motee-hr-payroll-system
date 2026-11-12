@@ -1,116 +1,170 @@
 "use client";
 
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { useCallback, useMemo } from "react";
+import { toast } from "sonner";
+import {
+  kudosPostFromApi,
+  kudosToApi,
+  leaderboardFromApi,
+  myReactionsFrom,
+} from "@/src/lib/kudos/api-mapping";
+import { useLiveDepartments } from "@/src/lib/hooks/use-live-departments";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import type {
-  CompanyValue,
   KudosLeaderboardEntry,
   KudosPost,
-  KudosType,
+  NewKudos,
+  ReactionType,
 } from "@/src/lib/types/kudos";
-import type { LocaleBundle } from "@/src/lib/types/locale";
-
-interface RawKudos {
-  id?: string;
-  fromEmployeeId?: string;
-  toEmployeeId?: string;
-  message?: string;
-  value?: string;
-  type?: string;
-  badge?: string;
-  visibility?: string;
-  reactions?: { type?: string; count?: number }[];
-  createdAt?: string;
-  publishedAt?: string;
-}
-
-function mapKudosType(t?: string): KudosType {
-  if (
-    t === "teamwork" ||
-    t === "innovation" ||
-    t === "leadership" ||
-    t === "customer_focus" ||
-    t === "excellence" ||
-    t === "growth"
-  )
-    return t;
-  return "excellence";
-}
-
-function mapCompanyValue(v?: string): CompanyValue {
-  if (
-    v === "integrity" ||
-    v === "innovation" ||
-    v === "collaboration" ||
-    v === "excellence" ||
-    v === "customer_first"
-  )
-    return v;
-  return "excellence";
-}
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { useGetAllKudosQuery } from "@/src/store/services/collections";
+import {
+  useCommentOnKudosMutation,
+  useCreateKudosMutation,
+  useDeleteKudosCommentMutation,
+  useDeleteKudosMutation,
+  useGetKudosLeaderboardQuery,
+  useGetKudosSummaryQuery,
+  useGetMyKudosQuery,
+  usePinKudosMutation,
+  useReactToKudosMutation,
+  useUnpinKudosMutation,
+} from "@/src/store/services/kudos";
+import type { KudosTally } from "@/src/types/kudos";
 
 interface KudosData {
   posts: KudosPost[];
   leaderboard: KudosLeaderboardEntry[];
-}
-
-function buildKudos(bundle: LocaleBundle): KudosData {
-  const employeesById = new Map(bundle.employees.map((e) => [e.id, e]));
-  const received = new Map<string, number>();
-  const sent = new Map<string, number>();
-
-  const posts: KudosPost[] = ((bundle.kudos ?? []) as RawKudos[]).map((raw, i) => {
-    const sender = raw.fromEmployeeId ? employeesById.get(raw.fromEmployeeId) : null;
-    const recipient = raw.toEmployeeId ? employeesById.get(raw.toEmployeeId) : null;
-    if (raw.fromEmployeeId)
-      sent.set(raw.fromEmployeeId, (sent.get(raw.fromEmployeeId) ?? 0) + 1);
-    if (raw.toEmployeeId)
-      received.set(raw.toEmployeeId, (received.get(raw.toEmployeeId) ?? 0) + 1);
-    return {
-      id: raw.id ?? `KUD-${String(i + 1).padStart(3, "0")}`,
-      senderName: sender?.fullName ?? "HR Admin",
-      senderInitials: sender?.initials ?? "HA",
-      senderDept: sender?.departmentName ?? "HR",
-      recipientName: recipient?.fullName ?? "Unknown",
-      recipientInitials: recipient?.initials ?? "??",
-      recipientDept: recipient?.departmentName ?? "—",
-      kudosType: mapKudosType(raw.type ?? raw.badge),
-      companyValue: mapCompanyValue(raw.value),
-      message: raw.message ?? "",
-      reactions: [
-        { type: "heart", count: 0, users: [], reactedBy: [] },
-        { type: "celebrate", count: 0, users: [], reactedBy: [] },
-        { type: "clap", count: 0, users: [], reactedBy: [] },
-        { type: "fire", count: 0, users: [], reactedBy: [] },
-        { type: "star", count: 0, users: [], reactedBy: [] },
-      ],
-      comments: [],
-      createdAt: raw.publishedAt ?? raw.createdAt ?? bundle.tenant.createdAt.slice(0, 10),
-      isPublic: raw.visibility !== "private",
-    };
-  });
-
-  const leaderboard: KudosLeaderboardEntry[] = bundle.employees
-    .map((e) => ({
-      id: e.id,
-      name: e.fullName,
-      initials: e.initials,
-      department: e.departmentName,
-      employeeName: e.fullName,
-      employeeInitials: e.initials,
-      rank: 0,
-      kudosReceived: received.get(e.id) ?? 0,
-      kudosSent: sent.get(e.id) ?? 0,
-      streak: 0,
-      dept: e.departmentName,
-    }))
-    .filter((entry) => entry.kudosReceived > 0 || entry.kudosSent > 0)
-    .sort((a, b) => b.kudosReceived - a.kudosReceived)
-    .slice(0, 10)
-    .map((entry, i) => ({ ...entry, rank: i + 1 }));
-
-  return { posts, leaderboard };
+  myReactions: Record<string, ReactionType | null>;
+  /** Moderation rights per post, as the server decides them. */
+  canRemove: Record<string, boolean>;
 }
 
 export function useKudos() {
-  return useLocaleSection<KudosData>(buildKudos);
+  const feed = useGetAllKudosQuery();
+  const board = useGetKudosLeaderboardQuery({ take: 10 });
+  const data = useMemo<KudosData | null>(() => {
+    if (!feed.data) return null;
+    return {
+      posts: feed.data.map(kudosPostFromApi),
+      leaderboard: leaderboardFromApi(board.data?.data ?? []),
+      myReactions: myReactionsFrom(feed.data),
+      canRemove: Object.fromEntries(feed.data.map((d) => [d.id, d.canRemove])),
+    };
+  }, [feed.data, board.data]);
+  return {
+    data,
+    loading: feed.isLoading,
+    error: feed.error ? getApiErrorMessage(feed.error) : null,
+  };
+}
+
+/** Company-wide tallies for the KPI cards. */
+export function useKudosSummary(): KudosTally | null {
+  return useGetKudosSummaryQuery().data?.data ?? null;
+}
+
+/** The signed-in employee's own kudos: received, sent, and their streak. */
+export function useMyKudos() {
+  const { data } = useGetMyKudosQuery();
+  return useMemo(() => {
+    const me = data?.data;
+    if (!me) return null;
+    return {
+      received: me.received.map(kudosPostFromApi),
+      sent: me.sent.map(kudosPostFromApi),
+      receivedCount: me.receivedCount,
+      sentCount: me.sentCount,
+      streak: me.streak,
+    };
+  }, [data]);
+}
+
+export function useKudosActions(posts: KudosPost[]) {
+  const employees = useAppSelector((s) => s.locale.data?.employees);
+  const { idByName } = useLiveDepartments();
+  const [createKudos] = useCreateKudosMutation();
+  const [deleteKudos] = useDeleteKudosMutation();
+  const [react] = useReactToKudosMutation();
+  const [comment] = useCommentOnKudosMutation();
+  const [deleteComment] = useDeleteKudosCommentMutation();
+  const [pin] = usePinKudosMutation();
+  const [unpin] = useUnpinKudosMutation();
+
+  /** Resolves true once the server has accepted the kudos. */
+  const send = useCallback(
+    async (form: NewKudos): Promise<boolean> => {
+      const individual =
+        !form.recipientType || form.recipientType === "individual";
+      const employeeId = individual
+        ? employees?.find((e) => e.fullName === form.recipientName)?.id
+        : undefined;
+      const departmentId = individual
+        ? undefined
+        : idByName.get(form.recipientName);
+      if (individual ? !employeeId : !departmentId) {
+        toast.error(`"${form.recipientName}" is not on the company directory`);
+        return false;
+      }
+      try {
+        await createKudos(kudosToApi(form, { employeeId, departmentId })).unwrap();
+        toast.success(`Kudos sent to ${form.recipientName}! 🌟`);
+        return true;
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, "Could not send the kudos."));
+        return false;
+      }
+    },
+    [employees, idByName, createKudos],
+  );
+
+  const remove = useCallback(
+    async (id: string) => {
+      try {
+        await deleteKudos(id).unwrap();
+        toast.success("Kudos deleted");
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, "Could not delete the kudos."));
+      }
+    },
+    [deleteKudos],
+  );
+
+  /** The server toggles: the same reaction again takes it back. */
+  const toggleReaction = useCallback(
+    async (id: string, type: ReactionType) => {
+      try {
+        await react({ id, body: { type } }).unwrap();
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, "Could not save your reaction."));
+      }
+    },
+    [react],
+  );
+
+  const addComment = useCallback(
+    async (id: string, message: string) => {
+      try {
+        await comment({ id, body: { message } }).unwrap();
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, "Could not post the comment."));
+      }
+    },
+    [comment],
+  );
+
+  /** Not on the approved feed yet; kept for when they are. */
+  const removeComment = useCallback(
+    (id: string, commentId: string) => deleteComment({ id, commentId }).unwrap(),
+    [deleteComment],
+  );
+  const togglePin = useCallback(
+    (id: string) => {
+      const post = posts.find((p) => p.id === id);
+      return (post?.isPinned ? unpin(id) : pin(id)).unwrap();
+    },
+    [posts, pin, unpin],
+  );
+
+  return { send, remove, toggleReaction, addComment, removeComment, togglePin };
 }

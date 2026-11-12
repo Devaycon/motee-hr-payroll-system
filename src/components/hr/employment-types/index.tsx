@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Upload } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { BulkCsvUploadModal } from "@/src/components/shared/bulk-csv-upload-modal";
 import type {
@@ -13,14 +12,12 @@ import type {
 } from "./types";
 import { EmploymentTypeTable } from "./components/employment-type-table";
 import { EmploymentTypeModal } from "./components/employment-type-modal";
-import { useEmploymentTypes } from "./hooks";
+import { useEmploymentTypeActions, useEmploymentTypes } from "./hooks";
 
 export function EmploymentTypesPage() {
   const { data } = useEmploymentTypes();
-  const [types, setTypes] = useState<EmploymentTypeRow[]>([]);
-  useEffect(() => {
-    if (data) setTypes(data);
-  }, [data]);
+  const types = useMemo(() => data ?? [], [data]);
+  const { save, bulkSave, toggleStatus } = useEmploymentTypeActions(types);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingType, setEditingType] = useState<EmploymentTypeRow | null>(
     null,
@@ -28,10 +25,7 @@ export function EmploymentTypesPage() {
   const [bulkOpen, setBulkOpen] = useState(false);
 
   function handleBulkImport(imported: EmploymentTypeRow[]) {
-    setTypes((prev) => [...prev, ...imported]);
-    toast.success(
-      `Imported ${imported.length} employment type${imported.length === 1 ? "" : "s"}`,
-    );
+    void bulkSave(imported);
   }
 
   function handleEdit(type: EmploymentTypeRow) {
@@ -40,34 +34,11 @@ export function EmploymentTypesPage() {
   }
 
   function handleToggleStatus(id: string) {
-    setTypes((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, isActive: !t.isActive } : t)),
-    );
+    void toggleStatus(id);
   }
 
   function handleSave(data: NewEmploymentType | EmploymentTypeRow) {
-    if ("id" in data) {
-      setTypes((prev) =>
-        prev.map((t) =>
-          t.id === (data as EmploymentTypeRow).id
-            ? (data as EmploymentTypeRow)
-            : t,
-        ),
-      );
-    } else {
-      const newType: EmploymentTypeRow = {
-        ...(data as NewEmploymentType),
-        id: `et-${Date.now()}`,
-        employeeCount: 0,
-        isActive: true,
-        createdAt: new Date().toLocaleDateString("en-GB", {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        }),
-      };
-      setTypes((prev) => [...prev, newType]);
-    }
+    void save(data);
   }
 
   return (

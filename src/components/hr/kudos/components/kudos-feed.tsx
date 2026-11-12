@@ -29,7 +29,8 @@ interface KudosFeedProps {
   onReact: (postId: string, reaction: ReactionType) => void;
   onAddComment: (postId: string, message: string) => void;
   /** When true, an admin delete control is shown on each post. */
-  canDelete?: boolean;
+  /** One flag for the whole feed, or a check per post. */
+  canDelete?: boolean | ((postId: string) => boolean);
   onDelete?: (postId: string) => void;
 }
 
@@ -254,7 +255,8 @@ export function KudosFeed({
                         {COMPANY_VALUE_CONFIG[post.companyValue].label}
                       </Badge>
                     )}
-                    {canDelete && onDelete && (
+                    {(typeof canDelete === "function" ? canDelete(post.id) : canDelete) &&
+                      onDelete && (
                       <button
                         type="button"
                         title="Delete kudos"

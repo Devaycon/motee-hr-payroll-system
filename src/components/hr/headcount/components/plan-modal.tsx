@@ -20,6 +20,7 @@ import {
 } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
 import { DEPARTMENT_OPTIONS, PLAN_PERIODS } from "../data";
+import { useLiveDepartments } from "@/src/lib/hooks/use-live-departments";
 import type { HeadcountPlan, NewHeadcountPlan, PlanPeriod } from "../types";
 
 interface PlanModalProps {
@@ -52,6 +53,7 @@ export function PlanModal({
   activePeriod,
   onSave,
 }: PlanModalProps) {
+  const { names: departmentNames } = useLiveDepartments(DEPARTMENT_OPTIONS);
   const [department, setDepartment] = useState("");
   const [period, setPeriod] = useState<PlanPeriod>(activePeriod);
   const [target, setTarget] = useState("");
@@ -172,7 +174,7 @@ export function PlanModal({
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
               <SelectContent>
-                {DEPARTMENT_OPTIONS.map((d) => (
+                {departmentNames.map((d) => (
                   <SelectItem key={d} value={d} className="text-sm">
                     {d}
                   </SelectItem>

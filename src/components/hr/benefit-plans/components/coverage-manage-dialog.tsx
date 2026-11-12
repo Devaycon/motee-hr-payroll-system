@@ -11,12 +11,8 @@ import {
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import {
-  addCoverageOption,
-  removeCoverageOption,
-  renameCoverageOption,
-} from "@/src/lib/stores/benefit-plans-slice";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useCoverageLevelActions } from "../hooks";
 
 /** HR's list of coverage levels (Employee Only, Family Cover…) behind "Manage". */
 export function CoverageManageDialog({
@@ -26,7 +22,7 @@ export function CoverageManageDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const dispatch = useAppDispatch();
+  const coverage = useCoverageLevelActions();
   const options = useAppSelector((s) => s.benefitPlans.coverageOptions);
   const plans = useAppSelector((s) => s.benefitPlans.plans);
   const [draft, setDraft] = useState("");
@@ -38,13 +34,13 @@ export function CoverageManageDialog({
 
   function add() {
     if (!draft.trim() || duplicate) return;
-    dispatch(addCoverageOption(draft));
+    void coverage.add(draft);
     setDraft("");
   }
 
   function saveRename() {
     if (editing && editValue.trim()) {
-      dispatch(renameCoverageOption({ from: editing, to: editValue }));
+      void coverage.rename(editing, editValue);
     }
     setEditing(null);
   }
@@ -113,7 +109,7 @@ export function CoverageManageDialog({
                     variant="ghost"
                     className="h-7 w-7 text-destructive"
                     title={usage(o) > 0 ? "Plans on this level will be left without coverage" : undefined}
-                    onClick={() => dispatch(removeCoverageOption(o))}
+                    onClick={() => void coverage.remove(o)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
