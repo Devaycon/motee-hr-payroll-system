@@ -99,7 +99,7 @@ export function LoanRequestModal({ open, onOpenChange, mode }: LoanRequestModalP
         ? employees.find((e) => e.id === picked.id)
         : undefined;
 
-  function submit() {
+  async function submit() {
     const errs: Record<string, string> = {};
     if (!subject) errs.employee = mode === "hr" ? "Choose the employee" : "Sign in to apply";
     if (!(amountNum > 0)) errs.amount = "Enter the amount requested";
@@ -110,7 +110,7 @@ export function LoanRequestModal({ open, onOpenChange, mode }: LoanRequestModalP
     setErrors(errs);
     if (Object.keys(errs).length || !subject || !user) return;
 
-    actions.request({
+    const sent = await actions.request({
       employee: subject,
       loanType,
       amount: amountNum,
@@ -125,6 +125,7 @@ export function LoanRequestModal({ open, onOpenChange, mode }: LoanRequestModalP
       },
       signatureDataUrl: signature ?? undefined,
     });
+    if (!sent) return;
     toast.success(
       mode === "self"
         ? "Loan request submitted — you can follow it in My Submissions"

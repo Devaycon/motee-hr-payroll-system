@@ -6,7 +6,10 @@ import {
   type HrStatCardItem,
 } from "@/src/components/shared/hr-stat-card";
 import { KUDOS_TYPE_CONFIG, LEADERBOARD } from "../data";
-import type { KudosPost } from "../types";
+import type { KudosLeaderboardEntry, KudosPost } from "../types";
+import { useKudosSummary } from "../hooks";
+import { kudosTypeFromApi } from "@/src/lib/kudos/api-mapping";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 
 /**
  * The slice a KPI card drills the feed down to. Two of these depend on values
@@ -58,30 +61,49 @@ interface StatCardsProps {
   cardFilter: KudosCardFilter;
   /** Drill-down: filters the feed to the posts behind the number. */
   onDrillDown: (filter: KudosCardFilter) => void;
+  /** Live leaderboard; its leader is the top recipient. */
+  leaderboard?: KudosLeaderboardEntry[];
 }
 
-export function StatCards({ posts, cardFilter, onDrillDown }: StatCardsProps) {
+export function StatCards({
+  posts,
+  cardFilter,
+  onDrillDown,
+  leaderboard,
+}: StatCardsProps) {
+  const summary = useKudosSummary();
+  const employeeCount = useAppSelector(
+    (s) => s.locale.data?.employees.length ?? 0,
+  );
   const thisMonth = new Date().toISOString().slice(0, 7);
   const thisMonthPosts = posts.filter((p) => p.createdAt.startsWith(thisMonth));
 
-  const totalThisMonth = thisMonthPosts.length;
+  const totalThisMonth = summary?.thisMonth ?? thisMonthPosts.length;
 
-  const topRecipient = LEADERBOARD[0];
+  const topRecipient = leaderboard ? leaderboard[0] : LEADERBOARD[0];
 
   const typeCounts: Record<string, number> = {};
   posts.forEach((p) => {
     typeCounts[p.kudosType] = (typeCounts[p.kudosType] ?? 0) + 1;
   });
-  const topTypeKey = Object.entries(typeCounts).sort(
-    (a, b) => b[1] - a[1],
-  )[0]?.[0] as string | undefined;
+  const topTypeKey = (summary?.commonestType
+    ? kudosTypeFromApi(summary.commonestType)
+    : Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0]) as
+    | string
+    | undefined;
+  if (summary?.commonestType && topTypeKey) {
+    typeCounts[topTypeKey] = summary.commonestTypeCount;
+  }
   const topTypeLabel = topTypeKey
     ? KUDOS_TYPE_CONFIG[topTypeKey as keyof typeof KUDOS_TYPE_CONFIG]?.label
     : "—";
 
-  const uniqueGivers = new Set(posts.map((p) => p.senderName)).size;
-  const totalEmployees = 156;
-  const participationPct = Math.round((uniqueGivers / totalEmployees) * 100);
+  const uniqueGivers =
+    summary?.givers ?? new Set(posts.map((p) => p.senderName)).size;
+  const totalEmployees = employeeCount || 156;
+  const participationPct = summary
+    ? Math.round(summary.participationPercent)
+    : Math.round((uniqueGivers / totalEmployees) * 100);
 
   /** Re-clicking the selected card clears back to the whole feed. */
   const toggle = (next: KudosCardFilter, isActive: boolean) => ({

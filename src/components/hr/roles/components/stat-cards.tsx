@@ -11,6 +11,7 @@ import {
   type HrStatCardItem,
 } from "@/src/components/shared/hr-stat-card";
 import type { Position } from "../types";
+import { usePositionsSummary } from "../hooks";
 
 interface StatCardsProps {
   positions: Position[];
@@ -28,9 +29,14 @@ export function StatCards({
   statusFilter,
   onDrillDown,
 }: StatCardsProps) {
-  const total = positions.length;
-  const filled = positions.filter((p) => p.status === "filled").length;
-  const vacant = positions.filter((p) => p.status === "vacant").length;
+  const summary = usePositionsSummary();
+  const total = summary?.positions ?? positions.length;
+  const filled =
+    summary?.filled ?? positions.filter((p) => p.status === "filled").length;
+  const vacant =
+    summary != null
+      ? summary.vacant + summary.recruiting
+      : positions.filter((p) => p.status === "vacant").length;
   const departments = new Set(
     positions.filter((p) => p.status === "vacant").map((p) => p.department),
   ).size;

@@ -53,6 +53,7 @@ import sicknessReducer from "./sickness-slice";
 import leaveSchemesReducer from "./leave-schemes-slice";
 import chatReducer from "./chat-slice";
 import { sicknessListener } from "./sickness-listener";
+import { sicknessApiListener } from "./sickness-api-listener";
 
 export const store = configureStore({
   reducer: {
@@ -109,6 +110,7 @@ export const store = configureStore({
         offboardingListener.middleware,
         leaveListener.middleware,
         sicknessListener.middleware,
+        sicknessApiListener.middleware,
         recruitmentListener.middleware,
       )
       .concat(api.middleware),

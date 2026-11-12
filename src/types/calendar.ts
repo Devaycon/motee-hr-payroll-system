@@ -25,7 +25,8 @@ export type CalendarCategory =
   | "leaveRequest"
   | "cover"
   | "interview"
-  | "review";
+  | "review"
+  | "sickness";
 
 export interface CalendarEventDto {
   id: string;

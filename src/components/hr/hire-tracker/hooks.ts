@@ -16,7 +16,10 @@ import {
   type HiringDetail,
   type HiringRow,
   type HiringSources,
+  type HiringStageId,
 } from "@/src/lib/hiring/resolve-stage";
+import { useGetHireTrackerQuery } from "@/src/store/services/hire-tracker";
+import type { HiringStage as ApiHiringStage } from "@/src/types/hire-tracker";
 
 /**
  * The tracker's view of the world: the real slices, plus the chain back-filled
@@ -72,13 +75,67 @@ function useHiringSources(): HiringSources {
  */
 export function useHiringRows(): HiringRow[] {
   const sources = useHiringSources();
-  return useMemo(() => resolveHiringRows(sources), [sources]);
+  const server = useServerHiringRows();
+  // The server joins the chain itself; the local join covers the wait for it.
+  return useMemo(
+    () => server?.map((s) => s.row) ?? resolveHiringRows(sources),
+    [server, sources],
+  );
+}
+
+const STAGE_FROM_API: Record<ApiHiringStage, HiringStageId> = {
+  workforcePlanning: "workforce-planning",
+  requisition: "requisition",
+  attract: "attract",
+  select: "select",
+  preEmployment: "pre-employment",
+  onboard: "onboard",
+};
+
+/** Every hiring effort as the server tracks it, one lifecycle stage each. */
+function useServerHiringRows() {
+  const { data } = useGetHireTrackerQuery();
+  return useMemo(
+    () =>
+      data?.data?.map((dto) => ({
+        dto,
+        row: {
+          id: dto.id,
+          title: dto.title,
+          department: dto.departmentName ?? "—",
+          stageId: STAGE_FROM_API[dto.stage] ?? "workforce-planning",
+          step: dto.step,
+          detail: dto.detail,
+          person: dto.person ?? undefined,
+          owner: dto.hiringManagerName ?? "—",
+          days: dto.daysSinceMoved,
+          stalled: dto.stalled,
+          href: `/talent/hire-tracker/${encodeURIComponent(dto.id)}`,
+        } satisfies HiringRow,
+      })) ?? null,
+    [data],
+  );
 }
 
 /** Everything behind one tracker row, for its detail page. */
 export function useHiringDetail(id: string): HiringDetail | null {
   const sources = useHiringSources();
-  return useMemo(() => findHiringDetail(sources, id), [sources, id]);
+  const server = useServerHiringRows();
+  return useMemo(() => {
+    const local = findHiringDetail(sources, id);
+    if (local) return local;
+    // A server row: its linked records, where this device holds them.
+    const hit = server?.find((s) => s.row.id === id);
+    if (!hit) return null;
+    const { dto, row } = hit;
+    const requisition = dto.requisitionId
+      ? sources.requisitions.find((r) => r.id === dto.requisitionId)
+      : undefined;
+    const workforceRequest = dto.workforceRequestId
+      ? sources.workforceRequests.find((w) => w.id === dto.workforceRequestId)
+      : undefined;
+    return { row, requisition, workforceRequest, candidates: [], onboarding: [] };
+  }, [sources, server, id]);
 }
 
 /**

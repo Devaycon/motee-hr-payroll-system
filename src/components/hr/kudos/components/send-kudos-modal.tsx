@@ -1,7 +1,7 @@
 "use client";
 
 import { z } from "zod/v4";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Star } from "lucide-react";
 import {
   Dialog,
@@ -34,6 +34,8 @@ import {
 } from "../data";
 import type { KudosType, CompanyValue, NewKudos, KudosRecipientType } from "../types";
 import { Users2 } from "lucide-react";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useLiveDepartments } from "@/src/lib/hooks/use-live-departments";
 
 const schema = z.object({
   recipientName: z.string().min(1, { message: "Please select a recipient" }),
@@ -102,6 +104,21 @@ export function SendKudosModal({
   const [prevOpen, setPrevOpen] = useState(false);
   const [form, setForm] = useState<FormValues>(() => getDefaults());
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
+  // Recipients come from the live directory once it has loaded.
+  const liveEmployees = useAppSelector((s) => s.locale.data?.employees);
+  const roster = useMemo(
+    () =>
+      liveEmployees?.length
+        ? liveEmployees.map((e) => ({
+            name: e.fullName,
+            initials: e.initials,
+            department: e.departmentName,
+            dept: e.departmentName,
+          }))
+        : EMPLOYEE_ROSTER,
+    [liveEmployees],
+  );
+  const { names: departments } = useLiveDepartments(KUDOS_DEPARTMENTS);
 
   if (open !== prevOpen) {
     setPrevOpen(open);
@@ -117,7 +134,7 @@ export function SendKudosModal({
   }
 
   function handleRecipientSelect(name: string) {
-    const found = EMPLOYEE_ROSTER.find((e) => e.name === name);
+    const found = roster.find((e) => e.name === name);
     if (found) {
       setForm((prev) => ({
         ...prev,
@@ -190,7 +207,7 @@ export function SendKudosModal({
   }
 
   const charCount = form.message.length;
-  const selectedEmployee = EMPLOYEE_ROSTER.find(
+  const selectedEmployee = roster.find(
     (e) => e.name === form.recipientName,
   );
 
@@ -255,7 +272,7 @@ export function SendKudosModal({
                     )}
                   </SelectTrigger>
                   <SelectContent>
-                    {EMPLOYEE_ROSTER.map((e) => (
+                    {roster.map((e) => (
                       <SelectItem key={e.name} value={e.name}>
                         <div className="flex items-center gap-2">
                           <PersonAvatar
@@ -292,7 +309,7 @@ export function SendKudosModal({
                     )}
                   </SelectTrigger>
                   <SelectContent>
-                    {KUDOS_DEPARTMENTS.map((d) => (
+                    {departments.map((d) => (
                       <SelectItem key={d} value={d}>
                         <div className="flex items-center gap-2">
                           <Users2 className="size-4 text-muted-foreground" />

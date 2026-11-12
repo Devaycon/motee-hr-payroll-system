@@ -20,7 +20,13 @@ import { spellLength } from "@/src/lib/sickness/bradford";
 import { counts, sicknessStats, workingDaysBetween } from "@/src/lib/sickness/stats";
 import { SICKNESS_SOURCE_LABELS, type SicknessRecord } from "@/src/lib/types/sickness";
 import type { ReportColumn } from "@/src/lib/reports/types";
-import { SICKNESS_BASE, dailyCost, useCanViewMedical, useSickness } from "./hooks";
+import {
+  SICKNESS_BASE,
+  dailyCost,
+  useCanViewMedical,
+  useSickness,
+  useSicknessSummary,
+} from "./hooks";
 import { SicknessShell } from "./shell";
 import {
   AbsenceStateBadge,
@@ -67,13 +73,33 @@ export function SicknessRecordsPage() {
       .filter((r) => !q || `${r.employeeName} ${r.department}`.toLowerCase().includes(q));
   }, [s.records, s.asOf, s.settings.longTermDays, dept, branch, duration, search]);
 
-  const stats = useMemo(() => {
+  const summary = useSicknessSummary(from);
+  const unfiltered = dept === "all" && branch === "all" && duration === "all" && !search.trim();
+  const localStats = useMemo(() => {
     const people = new Map(s.employees.map((e) => [e.id, { schedule: e.workPattern?.schedule, dailyCost: dailyCost(e) }]));
     const headcount = s.employees.filter(
       (e) => e.status !== "terminated" && (dept === "all" || e.departmentName === dept) && (branch === "all" || e.branchId === branch),
     ).length;
     return sicknessStats({ records: scoped, people, headcount, holidays: s.holidays, asOf: s.asOf, from, longTermDays: s.settings.longTermDays });
   }, [scoped, s.employees, s.holidays, s.asOf, s.settings.longTermDays, from, dept, branch]);
+  // Company-wide figures come from the server; a filtered view is worked out here.
+  const stats =
+    unfiltered && summary
+      ? {
+          ...localStats,
+          episodes: summary.episodes,
+          people: summary.people,
+          daysLost: summary.daysLost,
+          averageSpell: summary.averageSpellDays,
+          absenceRate: summary.absenceRatePercent,
+          ongoing: summary.ongoing,
+          awaitingApproval: summary.awaitingApproval,
+          fitNotesOutstanding: summary.fitNotesOutstanding,
+          rtwDue: summary.returnToWorkDue,
+          longTerm: summary.longTerm,
+          shortTerm: summary.shortTerm,
+        }
+      : localStats;
 
   const rows = useMemo(() => {
     const holidays = new Set(s.holidays);

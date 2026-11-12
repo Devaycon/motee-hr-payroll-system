@@ -16,6 +16,7 @@ import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { MyTasksPanel } from "@/src/components/employee/tasks";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { useCurrentUser } from "@/src/lib/auth/demo-identity";
 import {
@@ -174,37 +175,43 @@ export function MyWorkPage({ embedded = false }: { embedded?: boolean } = {}) {
         />
 
         <TabsContent value="todo" className="mt-4">
-          {todo.length === 0 ? (
-            <EmptyState
-              message="Nothing is waiting on you"
-              hint="Check 'Assigned to others' to see who is holding what."
-            />
-          ) : (
-            <ul className="space-y-2">
-              {todo.map((item) => (
-                <WorkRow
-                  key={item.id}
-                  item={item}
-                  onAct={item.kind === "approval" ? undefined : complete}
-                />
-              ))}
-            </ul>
-          )}
+          {/* Approvals and workflow runs are not on the API yet. */}
+          <NotIntegrated label="Approvals and workflow tasks">
+            {todo.length === 0 ? (
+              <EmptyState
+                message="Nothing is waiting on you"
+                hint="Check 'Assigned to others' to see who is holding what."
+              />
+            ) : (
+              <ul className="space-y-2">
+                {todo.map((item) => (
+                  <WorkRow
+                    key={item.id}
+                    item={item}
+                    onAct={item.kind === "approval" ? undefined : complete}
+                  />
+                ))}
+              </ul>
+            )}
+          </NotIntegrated>
         </TabsContent>
 
         <TabsContent value="review" className="mt-4">
-          {review.length === 0 ? (
-            <EmptyState
-              message="No tasks awaiting your review"
-              hint="Tasks appear here once the person doing them marks them done."
-            />
-          ) : (
-            <ul className="space-y-2">
-              {review.map((item) => (
-                <WorkRow key={item.id} item={item} onAct={complete} />
-              ))}
-            </ul>
-          )}
+          {/* Approvals and workflow runs are not on the API yet. */}
+          <NotIntegrated label="Approvals and workflow tasks">
+            {review.length === 0 ? (
+              <EmptyState
+                message="No tasks awaiting your review"
+                hint="Tasks appear here once the person doing them marks them done."
+              />
+            ) : (
+              <ul className="space-y-2">
+                {review.map((item) => (
+                  <WorkRow key={item.id} item={item} onAct={complete} />
+                ))}
+              </ul>
+            )}
+          </NotIntegrated>
         </TabsContent>
 
         {/* Personal tasks, as in self-service My Tasks — assigned work is under To do. */}
@@ -213,18 +220,21 @@ export function MyWorkPage({ embedded = false }: { embedded?: boolean } = {}) {
         </TabsContent>
 
         <TabsContent value="others" className="mt-4">
-          {others.length === 0 ? (
-            <EmptyState
-              message="No open workflow tasks anywhere"
-              hint="Approve a requisition or hire a candidate to start one."
-            />
-          ) : (
-            <ul className="space-y-2">
-              {others.map((item) => (
-                <WorkRow key={item.id} item={item} showOwner />
-              ))}
-            </ul>
-          )}
+          {/* Approvals and workflow runs are not on the API yet. */}
+          <NotIntegrated label="Approvals and workflow tasks">
+            {others.length === 0 ? (
+              <EmptyState
+                message="No open workflow tasks anywhere"
+                hint="Approve a requisition or hire a candidate to start one."
+              />
+            ) : (
+              <ul className="space-y-2">
+                {others.map((item) => (
+                  <WorkRow key={item.id} item={item} showOwner />
+                ))}
+              </ul>
+            )}
+          </NotIntegrated>
         </TabsContent>
       </Tabs>
     </div>

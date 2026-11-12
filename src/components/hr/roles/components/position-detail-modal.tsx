@@ -12,6 +12,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import { STATUS_LABELS, STATUS_STYLES } from "../data";
 import type { Position } from "../types";
+import { usePositionDetail } from "../hooks";
 
 interface Props {
   position: Position | null;
@@ -41,7 +42,12 @@ function DetailRow({
   );
 }
 
-export function PositionDetailModal({ position, open, onOpenChange }: Props) {
+export function PositionDetailModal({
+  position: listed,
+  open,
+  onOpenChange,
+}: Props) {
+  const position = usePositionDetail(listed);
   if (!position) return null;
 
   return (

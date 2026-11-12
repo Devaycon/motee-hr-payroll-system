@@ -1,7 +1,7 @@
 # MOTEE HRIS — Integrated API Endpoints Log
 
-> **Branch:** `feat/temitope-branch` · **Base commit:** `73c2885` + the 2026-10-30 integration · **Updated:** 2026-10-30
-> **Source of truth:** `src/store/services/*.ts` (RTK Query), checked against the live spec at `https://api.develop.moteesolutionsltd.com/openapi/v1.json` (302 operations — every one now has a hook). Usage was traced to the screens, hooks and listeners that call each endpoint.
+> **Branch:** `feat/temitope-branch` · **Base commit:** `76ab733` + the 2026-11-08 integration · **Updated:** 2026-11-08
+> **Source of truth:** `src/store/services/*.ts` (RTK Query), checked against the live spec at `https://api.develop.moteesolutionsltd.com/openapi/v1.json` (416 operations — every one now has a hook). Usage was traced to the screens, hooks and listeners that call each endpoint.
 
 ---
 
@@ -12,11 +12,11 @@
 | Base URL | `NEXT_PUBLIC_MOTEE_BASE_URL` (from `.env.local`) |
 | API prefix | `/api/v1` |
 | Auth | `Authorization: Bearer <token>`, auto-refresh on 401 via `POST /api/v1/auth/refresh` |
-| Service files | 37 |
-| Unique backend endpoints | **302** (301 in services + the token refresh) |
-| ✅ Live — called by the app | **205** |
-| 🔁 Live via the collection helper | **17** (paged list endpoints read in full by `collections.ts` / `employee-directory.ts`) |
-| ⚪ Defined but not called yet | **80** (mostly self-service `/mine` endpoints — see section 3) |
+| Service files | 50 |
+| Unique backend endpoints | **416** (415 in services + the token refresh) |
+| ✅ Live — called by the app | **289** |
+| 🔁 Live via the collection helper | **24** (paged list endpoints read in full by `collections.ts` / `employee-directory.ts`) |
+| ⚪ Defined but not called yet | **103** (self-service `/mine` endpoints, and actions with no control on the approved screens — see section 3) |
 
 ### Change log
 
@@ -25,6 +25,7 @@
 | 2026-10-24 | First log: 151 endpoints across 16 modules. |
 | 2026-10-24 | **+57 endpoints:** Attendance, corrections, timesheets, work schedules (31) and Performance goals, reviews, feedback (26). HR **Attendance** and **Performance** pages switched to live. |
 | 2026-10-30 | **+94 endpoints:** Announcements (11), Calendar (6), Candidates (13), Interviews (6), Requisitions (11), Contracts (13), Dashboard (2), Documents (17), Expense claims (10), Notifications (5). Switched to live: **Dashboard** (People and Attendance tabs), **Calendar**, **Announcements**, **Recruitment**, **Contracts**, **Documents**, **Expense Claims**, and the notifications bell. Existing schemas gained `dottedLineManagerId`/`dottedLineManagerName` (employees), `accessLevelId` (invite), `emailSentAt`/`accessLevelName` (pending invitation), `reviewUnavailableReason` (onboarding) and the `companyDocument` file purpose. |
+| 2026-11-08 | **+114 endpoints:** Benefit plans (13), Diversity (3), Employee checklist (12), Employment types (7), Headcount (7), Hire tracker (1), Kudos (12), Loans (12), Positions (10), Sickness (16), Tasks (10), Workforce (3), Workforce requests (8). Switched to live: **Employment Types**, **Roles & Positions**, **Benefits**, **Employee Checklist**, **Loans**, **Headcount Planning**, **Workforce Planning** (except Skills Gap), **Hire Tracker**, **Workforce Requests**, **Kudos**, **Sickness & Absence** (except Schemes and Approval Chain), **My Work** (Personal tasks tab), the dashboard **Sickness** tab and **Loans** tile, and the first self-service pages: My Tasks, My Loans, Diversity, Sickness, Community (Kudos tab). Existing schemas: `CalendarCategory` gained `sickness`. |
 
 ### Status legend
 
@@ -38,7 +39,9 @@
 
 From `src/lib/permissions/live-modules.ts` (everything else is shown blurred as "not integrated"):
 
-`/welcome` · `/hr` (People and Attendance tabs; the other tabs and the EOR map, certification, mandatory training, loans and untaken-leave tiles stay blurred) · `/hr-action-center/events` · `/workspace/announcements` · `/organization/branches` · `/organization/departments` · `/organization/employees` · `/talent/onboarding` · `/talent/offboarding` · `/talent/performance` · `/talent/recruitment` · `/operations/assets` · `/operations/contracts` · `/operations/documents` (except the **My Documents** review queue) · `/time-payroll/leave` (except **Schemes**) · `/time-payroll/attendance` (except **Deduction Policy** and **Presence Checks**) · `/time-payroll/expenses` · `/admin/access-levels` · `/admin/users` · `/admin/audit-trail`
+`/welcome` · `/hr` (People, Attendance and Sickness tabs; the other tabs and the EOR map, certification, mandatory training, Occupational Health and untaken-leave tiles stay blurred) · `/hr-action-center/events` · `/hr-action-center/tasks` (Personal tasks tab only) · `/workspace/kudos` · `/organization/employment-types` · `/organization/roles` · `/organization/benefit-plans` · `/organization/employee-checklist` · `/organization/loans` · `/organization/headcount` · `/operations/workforce` (except Skills Gap) · `/talent/hire-tracker` · `/talent/workforce-requests` · `/time-payroll/sickness` (except `/schemes` and `/approval-chain`, listed in `DEMO_ONLY_LINKS`) · `/workspace/announcements` · `/organization/branches` · `/organization/departments` · `/organization/employees` · `/talent/onboarding` · `/talent/offboarding` · `/talent/performance` · `/talent/recruitment` · `/operations/assets` · `/operations/contracts` · `/operations/documents` (except the **My Documents** review queue) · `/time-payroll/leave` (except **Schemes**) · `/time-payroll/attendance` (except **Deduction Policy** and **Presence Checks**) · `/time-payroll/expenses` · `/admin/access-levels` · `/admin/users` · `/admin/audit-trail`
+
+Self-service pages lifted out of the blur by `SELF_SERVICE_LIVE_LINKS` (same file): `/employee/tasks`, `/employee/loans`, `/profile/diversity`, `/time-off/sickness`, `/company/community` (Kudos tab only).
 
 Also live outside the HR shell: auth pages, company setup wizard, the new-joiner (`/join`) flow, the platform console (`platform-live`), and the notifications panel in every navbar.
 
@@ -498,6 +501,185 @@ HR screen: `components/hr/performance` (Reviews and Goals tabs). Data mapping in
 | 4 | POST | `/notifications/read-all` | `useMarkAllNotificationsReadMutation` | `lib/notifications/use-notification-feed` | ✅ |
 | 5 | POST | `/notifications/{id}/dismiss` | `useDismissNotificationMutation` | — | ⚪ |
 
+### 2.29 Benefit plans — `benefit-plans.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/benefit-plans` | `useGetBenefitPlansQuery` | `hr/benefit-plans/hooks` (sync into the benefit-plans slice) | ✅ |
+| 2 | POST | `/benefit-plans` | `useCreateBenefitPlanMutation` | `hr/benefit-plans/hooks` | ✅ |
+| 3 | GET | `/benefit-plans/summary` | `useGetBenefitPlansSummaryQuery` | `hr/benefit-plans` analytics strip | ✅ |
+| 4 | GET | `/benefit-plans/coverage-levels` | `useGetCoverageLevelsQuery` | `hr/benefit-plans/hooks` (sync), `coverage-manage-dialog` | ✅ |
+| 5 | POST | `/benefit-plans/coverage-levels` | `useCreateCoverageLevelMutation` | `benefit-plans/components/coverage-manage-dialog` | ✅ |
+| 6 | PUT | `/benefit-plans/coverage-levels/{id}` | `useUpdateCoverageLevelMutation` | `coverage-manage-dialog` (rename) | ✅ |
+| 7 | DELETE | `/benefit-plans/coverage-levels/{id}` | `useDeleteCoverageLevelMutation` | `coverage-manage-dialog` (remove) | ✅ |
+| 8 | GET | `/benefit-plans/employees/{employeeId}` | `useGetEmployeeBenefitsQuery` | `employees/employee-detail/benefits-module` | ✅ |
+| 9 | GET | `/benefit-plans/{id}` | `useGetBenefitPlanQuery` | `hr/benefit-plans` (edit opens on the server copy) | ✅ |
+| 10 | PUT | `/benefit-plans/{id}` | `useUpdateBenefitPlanMutation` | `hr/benefit-plans/hooks` | ✅ |
+| 11 | DELETE | `/benefit-plans/{id}` | `useDeleteBenefitPlanMutation` | `hr/benefit-plans/hooks` | ✅ |
+| 12 | POST | `/benefit-plans/{id}/duplicate` | `useDuplicateBenefitPlanMutation` | `hr/benefit-plans/hooks` | ✅ |
+| 13 | POST | `/benefit-plans/{id}/status` | `useSetBenefitPlanStatusMutation` | `hr/benefit-plans/hooks` (archive / activate) | ✅ |
+
+### 2.30 Diversity & inclusion — `diversity.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/diversity/me` | `useGetMyDiversityQuery` | `employee/diversity` (self-service) | ✅ |
+| 2 | PUT | `/diversity/me` | `useUpdateMyDiversityMutation` | `employee/diversity` (save and withdraw) | ✅ |
+| 3 | GET | `/diversity/report` | `useGetDiversityReportQuery` | `hr/headcount/use-diversity` (Demographics tab) | ✅ |
+
+### 2.31 Employee checklist — `employee-checklist.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/employee-checklist/items` | `useGetChecklistItemsQuery` | `hr/employee-checklist/hooks` | ✅ |
+| 2 | POST | `/employee-checklist/items` | `useCreateChecklistItemMutation` | `hr/employee-checklist/hooks` | ✅ |
+| 3 | PUT | `/employee-checklist/items/{id}` | `useUpdateChecklistItemMutation` | `hr/employee-checklist/hooks` | ✅ |
+| 4 | DELETE | `/employee-checklist/items/{id}` | `useDeleteChecklistItemMutation` | `hr/employee-checklist/hooks` (items nobody has completed) | ✅ |
+| 5 | POST | `/employee-checklist/items/{id}/move` | `useMoveChecklistItemMutation` | `hr/employee-checklist/hooks` (up / down arrows) | ✅ |
+| 6 | POST | `/employee-checklist/items/{id}/retire` | `useRetireChecklistItemMutation` | `hr/employee-checklist/hooks` (delete of an item already completed) | ✅ |
+| 7 | POST | `/employee-checklist/items/{id}/restore` | `useRestoreChecklistItemMutation` | — (no retired-items view) | ⚪ |
+| 8 | GET | `/employee-checklist/hires` | `useGetChecklistHiresQuery` | `collections.ts` → `hr/employee-checklist/hooks` (New Hire Status) | 🔁 |
+| 9 | GET | `/employee-checklist/me` | `useGetMyChecklistQuery` | `hr/employee-checklist/hooks` `useEmployeeChecklistFor` — no screen yet | ⚪ |
+| 10 | GET | `/employee-checklist/employees/{employeeId}` | `useGetEmployeeChecklistQuery` | `useEmployeeChecklistFor` — no screen yet | ⚪ |
+| 11 | POST | `/employee-checklist/employees/{employeeId}/tasks/{itemId}` | `useCompleteChecklistTaskMutation` | `useChecklistActions.setTaskDone` — no screen yet | ⚪ |
+| 12 | DELETE | `/employee-checklist/employees/{employeeId}/tasks/{itemId}` | `useUncompleteChecklistTaskMutation` | `useChecklistActions.setTaskDone` — no screen yet | ⚪ |
+
+### 2.32 Employment types — `employment-types.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/employment-types` | `useGetEmploymentTypesQuery` | `hr/employment-types/hooks` | ✅ |
+| 2 | POST | `/employment-types` | `useCreateEmploymentTypeMutation` | `hr/employment-types/hooks` (form and bulk upload) | ✅ |
+| 3 | GET | `/employment-types/{id}` | `useGetEmploymentTypeQuery` | `employment-types/components/employment-type-detail-modal` | ✅ |
+| 4 | PUT | `/employment-types/{id}` | `useUpdateEmploymentTypeMutation` | `hr/employment-types/hooks` | ✅ |
+| 5 | DELETE | `/employment-types/{id}` | `useDeleteEmploymentTypeMutation` | — (the screen has no delete) | ⚪ |
+| 6 | POST | `/employment-types/{id}/deactivate` | `useDeactivateEmploymentTypeMutation` | `hr/employment-types/hooks` (Deactivate) | ✅ |
+| 7 | POST | `/employment-types/{id}/reactivate` | `useReactivateEmploymentTypeMutation` | `hr/employment-types/hooks` (Activate) | ✅ |
+
+### 2.33 Headcount planning — `headcount.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/headcount/plans` | `useGetHeadcountPlansQuery` | `collections.ts` `getHeadcountPlanBoards` → `hr/headcount/hooks` (one read per period) | 🔁 |
+| 2 | PUT | `/headcount/plans` | `useSaveHeadcountPlanMutation` | `hr/headcount/hooks` (create and edit target) | ✅ |
+| 3 | GET | `/headcount/trend` | `useGetHeadcountTrendQuery` | `headcount/components/trends` (QoQ and YoY) | ✅ |
+| 4 | GET | `/headcount/series` | `useGetHeadcountSeriesQuery` | `headcount/components/trends` (chart) | ✅ |
+| 5 | GET | `/headcount/demographics` | `useGetHeadcountDemographicsQuery` | `hr/headcount/hooks`, `hr/workforce/hooks` (Demographics) | ✅ |
+| 6 | GET | `/headcount/attrition` | `useGetHeadcountAttritionQuery` | `hr/headcount/hooks`, `hr/workforce/hooks` | ✅ |
+| 7 | DELETE | `/headcount/plans/{id}` | `useDeleteHeadcountPlanMutation` | `hr/headcount/hooks` | ✅ |
+
+### 2.34 Hire tracker — `hire-tracker.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/hire-tracker` | `useGetHireTrackerQuery` | `hr/hire-tracker/hooks` (list and detail) | ✅ |
+
+### 2.35 Kudos — `kudos.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/kudos` | `useGetKudosQuery` | `collections.ts` → `hr/kudos/hooks` (HR feed and self-service Kudos tab) | 🔁 |
+| 2 | POST | `/kudos` | `useCreateKudosMutation` | `hr/kudos/hooks` (both send forms) | ✅ |
+| 3 | GET | `/kudos/summary` | `useGetKudosSummaryQuery` | `kudos/components/stat-cards` | ✅ |
+| 4 | GET | `/kudos/leaderboard` | `useGetKudosLeaderboardQuery` | `hr/kudos/hooks` (leaderboard, top recipient) | ✅ |
+| 5 | GET | `/kudos/me` | `useGetMyKudosQuery` | `employee/community/components/kudos-tab` (my received / sent) | ✅ |
+| 6 | GET | `/kudos/{id}` | `useGetKudosPostQuery` | — (the feed already holds each post) | ⚪ |
+| 7 | DELETE | `/kudos/{id}` | `useDeleteKudosMutation` | `hr/kudos` (moderation) | ✅ |
+| 8 | POST | `/kudos/{id}/pin` | `usePinKudosMutation` | `useKudosActions.togglePin` — no pin control | ⚪ |
+| 9 | DELETE | `/kudos/{id}/pin` | `useUnpinKudosMutation` | `useKudosActions.togglePin` — no pin control | ⚪ |
+| 10 | POST | `/kudos/{id}/reactions` | `useReactToKudosMutation` | `hr/kudos`, self-service Kudos tab | ✅ |
+| 11 | POST | `/kudos/{id}/comments` | `useCommentOnKudosMutation` | `hr/kudos/components/kudos-feed` | ✅ |
+| 12 | DELETE | `/kudos/{id}/comments/{commentId}` | `useDeleteKudosCommentMutation` | `useKudosActions.removeComment` — no control | ⚪ |
+
+### 2.36 Staff loans — `loans.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/loans` | `useGetLoansQuery` | `collections.ts` → `lib/loans/use-loans` (register, dashboard tile) | 🔁 |
+| 2 | POST | `/loans` | `useCreateLoanMutation` | `loans/components/loan-request-modal` (HR and self-service) | ✅ |
+| 3 | GET | `/loans/summary` | `useGetLoanBookQuery` | `hr/loans` KPI cards | ✅ |
+| 4 | GET | `/loans/me` | `useGetMyLoansQuery` | `lib/loans/use-loans` (`/employee/loans`) | ✅ |
+| 5 | GET | `/loans/employees/{employeeId}` | `useGetEmployeeLoansQuery` | `lib/loans/use-loans` (employee profile Loans module) | ✅ |
+| 6 | GET | `/loans/{id}` | `useGetLoanQuery` | `hr/loans/detail` (schedule from the server) | ✅ |
+| 7 | POST | `/loans/{id}/approve` | `useApproveLoanMutation` | `hr/loans/detail` (Approve & issue) | ✅ |
+| 8 | POST | `/loans/{id}/reject` | `useRejectLoanMutation` | `hr/loans/detail` | ✅ |
+| 9 | POST | `/loans/{id}/repayments` | `useRecordLoanRepaymentMutation` | `hr/loans/detail` (Record repayment) | ✅ |
+| 10 | DELETE | `/loans/{id}/repayments/{repaymentId}` | `useDeleteLoanRepaymentMutation` | `useLoanActions.removeRepayment` — no repayment list | ⚪ |
+| 11 | POST | `/loans/{id}/default` | `useDefaultLoanMutation` | `hr/loans/detail` (Mark defaulted) | ✅ |
+| 12 | POST | `/loans/{id}/reinstate` | `useReinstateLoanMutation` | `useLoanActions.setStatus` — no reinstate button | ⚪ |
+
+### 2.37 Roles & positions — `positions.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/positions` | `useGetPositionsQuery` | `hr/roles/hooks` | ✅ |
+| 2 | POST | `/positions` | `useCreatePositionMutation` | `hr/roles/hooks` | ✅ |
+| 3 | GET | `/positions/summary` | `useGetPositionsSummaryQuery` | `roles/components/stat-cards` | ✅ |
+| 4 | GET | `/positions/{id}` | `useGetPositionQuery` | `roles/components/position-detail-modal` | ✅ |
+| 5 | PUT | `/positions/{id}` | `useUpdatePositionMutation` | `hr/roles/hooks` | ✅ |
+| 6 | DELETE | `/positions/{id}` | `useDeletePositionMutation` | `hr/roles/hooks` | ✅ |
+| 7 | POST | `/positions/{id}/assign` | `useAssignPositionMutation` | `usePositionActions.assign` — no assign control | ⚪ |
+| 8 | POST | `/positions/unassign` | `useUnassignPositionMutation` | `usePositionActions.unassign` — no control | ⚪ |
+| 9 | POST | `/positions/{id}/retire` | `useRetirePositionMutation` | `usePositionActions.retire` — no control | ⚪ |
+| 10 | POST | `/positions/{id}/restore` | `useRestorePositionMutation` | `hr/roles/hooks` (editing an inactive position back to filled / vacant) | ✅ |
+
+### 2.38 Sickness & absence — `sickness.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/sickness` | `useGetSicknessRecordsQuery` | `collections.ts` → `hr/sickness/hooks` (sync into the sickness slice) | 🔁 |
+| 2 | POST | `/sickness` | `useCreateSicknessRecordMutation` | `hr/sickness/report-form` (HR and self-service) | ✅ |
+| 3 | GET | `/sickness/{id}` | `useGetSicknessRecordQuery` | `hr/sickness/record-detail` | ✅ |
+| 4 | PUT | `/sickness/{id}` | `useUpdateSicknessRecordMutation` | `lib/stores/sickness-api-listener` (`updateRecord`) | ✅ |
+| 5 | GET | `/sickness/summary` | `useGetSicknessSummaryQuery` | `hr/sickness/records-page` KPI cards | ✅ |
+| 6 | GET | `/sickness/alerts` | `useGetSicknessAlertsQuery` | `hr/sickness/alerts-reporting` | ✅ |
+| 7 | POST | `/sickness/{id}/approve` | `useApproveSicknessRecordMutation` | `sickness-api-listener` (Confirm absence) | ✅ |
+| 8 | POST | `/sickness/{id}/reject` | `useRejectSicknessRecordMutation` | `sickness-api-listener` (Reject) | ✅ |
+| 9 | POST | `/sickness/{id}/cancel` | `useCancelSicknessRecordMutation` | `sickness-api-listener` — only the demo approvals engine cancels | ⚪ |
+| 10 | POST | `/sickness/{id}/return` | `useRecordSicknessReturnMutation` | `sickness-api-listener` (return-to-work page, self-service I'm back) | ✅ |
+| 11 | POST | `/sickness/{id}/return-to-work` | `useRecordReturnToWorkMutation` | `sickness-api-listener` (RTW interview form) | ✅ |
+| 12 | POST | `/sickness/{id}/documents` | `useAttachSicknessDocumentMutation` | `sickness-api-listener` (report form, record detail, RTW, self-service) | ✅ |
+| 13 | POST | `/sickness/{id}/exclusion` | `useSetSicknessExclusionMutation` | `sickness-api-listener` (Bradford exclusion dialog) | ✅ |
+| 14 | DELETE | `/sickness/{id}/exclusion` | `useClearSicknessExclusionMutation` | `sickness-api-listener` | ✅ |
+| 15 | GET | `/sickness/bradford/{employeeId}` | `useGetEmployeeBradfordQuery` | `sickness/bradford-dashboard` (employee breakdown) | ✅ |
+| 16 | GET | `/sickness/bradford` | `useGetBradfordScoresQuery` | `hr/sickness/hooks` `bradfordFor` (every Bradford figure) | ✅ |
+
+### 2.39 Tasks — `tasks.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/tasks` | `useGetTasksQuery` | `collections.ts` → `employee/tasks/hooks` (My Tasks, HR My Work) | 🔁 |
+| 2 | POST | `/tasks` | `useCreateTaskMutation` | `employee/tasks` (add personal task) | ✅ |
+| 3 | GET | `/tasks/assigned-by-me` | `useGetTasksAssignedByMeQuery` | `useTasksAssignedByMe` — no screen lists them | ⚪ |
+| 4 | GET | `/tasks/summary` | `useGetTasksSummaryQuery` | `employee/tasks` header counts | ✅ |
+| 5 | GET | `/tasks/{id}` | `useGetTaskQuery` | `useMyTaskActions.update` — no edit form | ⚪ |
+| 6 | PUT | `/tasks/{id}` | `useUpdateTaskMutation` | `useMyTaskActions.update` — no edit form | ⚪ |
+| 7 | DELETE | `/tasks/{id}` | `useDeleteTaskMutation` | `useMyTaskActions.remove` — no delete control | ⚪ |
+| 8 | POST | `/tasks/{id}/complete` | `useCompleteTaskMutation` | `employee/tasks` (tick) | ✅ |
+| 9 | DELETE | `/tasks/{id}/complete` | `useReopenTaskMutation` | `employee/tasks` (untick) | ✅ |
+| 10 | POST | `/tasks/reorder` | `useReorderTasksMutation` | `useMyTaskActions.reorder` — no drag handle on the routed screen | ⚪ |
+
+### 2.40 Workforce planning — `workforce.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/workforce/overview` | `useGetWorkforceOverviewQuery` | `hr/workforce` overview cards | ✅ |
+| 2 | GET | `/workforce/turnover` | `useGetWorkforceTurnoverQuery` | `workforce/components/turnover-section`, overview | ✅ |
+| 3 | GET | `/workforce/hiring` | `useGetWorkforceHiringQuery` | `workforce/components/hiring-section`, overview | ✅ |
+
+### 2.41 Workforce requests — `workforce-requests.ts` *(new)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/workforce-requests` | `useGetWorkforceRequestsQuery` | `collections.ts` → `hr/workforce-requests/hooks` (sync into the slice) | 🔁 |
+| 2 | POST | `/workforce-requests` | `useCreateWorkforceRequestMutation` | `hr/workforce-requests` (save draft) | ✅ |
+| 3 | GET | `/workforce-requests/{id}` | `useGetWorkforceRequestQuery` | `hr/workforce-requests` (view opens the server copy) | ✅ |
+| 4 | PUT | `/workforce-requests/{id}` | `useUpdateWorkforceRequestMutation` | `hr/workforce-requests` (edit draft) | ✅ |
+| 5 | DELETE | `/workforce-requests/{id}` | `useDeleteWorkforceRequestMutation` | `useWorkforceRequestActions.remove` — no delete control | ⚪ |
+| 6 | POST | `/workforce-requests/{id}/submit` | `useSubmitWorkforceRequestMutation` | `hr/workforce-requests` (Submit) | ✅ |
+| 7 | POST | `/workforce-requests/{id}/cancel` | `useCancelWorkforceRequestMutation` | `useWorkforceRequestActions.cancel` — no cancel control | ⚪ |
+| 8 | POST | `/workforce-requests/{id}/convert` | `useConvertWorkforceRequestMutation` | `hr/workforce-requests` (Create requisition) | ✅ |
+
 ---
 
 ## 3. Defined but not called yet (⚪)
@@ -506,7 +688,7 @@ These hooks exist and point at real endpoints, but nothing calls them yet. They'
 
 ### 3.1 Waiting on the self-service portal (36)
 
-The whole employee portal is still shown as "not integrated", so its `/mine` endpoints wait for it:
+Most of the employee portal is still shown as "not integrated" (only the pages in `SELF_SERVICE_LIVE_LINKS` are live), so these `/mine` endpoints wait for it:
 
 - **Attendance (13):** `/attendance/mine` (+ `/days`, `/summary`, `/clock-in`, `/break/start`, `/break/end`, `/clock-out`, `/location`), `/attendance/corrections/mine` (GET, POST), `/attendance/timesheets/mine` (+ `/submit`), `/attendance/schedules/mine`
 - **Performance (10):** `/performance/reviews/mine` (+ self-assessment PUT/POST), `/performance/goals/mine` (GET, POST), `/performance/feedback/mine`, `/performance/feedback/requests/mine`, `/requests/awaiting-me`, `POST /requests`, `/requests/{id}/decline`
@@ -553,6 +735,21 @@ The demo UI is frozen, so these wait until a screen needs them:
 | GET | `/expenses/claims/{id}` | `useGetExpenseClaimQuery` | `expenses.ts` |
 | GET/POST | `/notifications/unread-count`, `/notifications/{id}/dismiss` | `useGetUnreadNotificationCountQuery`, `useDismissNotificationMutation` (no badge or dismiss control) | `notifications.ts` |
 
+### 3.2b 2026-11-08 endpoints with no control on the approved screens (23)
+
+Each has a hook and, where it belongs to an action set, a ready action function. Only the button is missing from the frozen UI:
+
+- **Employment types (1):** `DELETE /employment-types/{id}`
+- **Positions (3):** `POST /positions/{id}/assign`, `POST /positions/unassign`, `POST /positions/{id}/retire`
+- **Kudos (4):** `GET /kudos/{id}`, `POST` and `DELETE /kudos/{id}/pin`, `DELETE /kudos/{id}/comments/{commentId}`
+- **Loans (2):** `POST /loans/{id}/reinstate`, `DELETE /loans/{id}/repayments/{repaymentId}`
+- **Employee checklist (5):** `POST /items/{id}/restore`, `GET /me`, `GET /employees/{employeeId}`, `POST` and `DELETE /employees/{employeeId}/tasks/{itemId}` (no per-hire task view exists)
+- **Tasks (6):** `GET /tasks/assigned-by-me`, `GET`, `PUT` and `DELETE /tasks/{id}`, `POST /tasks/reorder` (the sortable list in `hr/tasks` is not routed)
+- **Sickness (1):** `POST /sickness/{id}/cancel` (only the demo approvals engine cancels an absence)
+- **Workforce requests (2):** `DELETE /workforce-requests/{id}`, `POST /workforce-requests/{id}/cancel`
+
+> **2026-11-08 — first run with a real login:** see `E2E_TEST_REPORT.md`. 104 endpoints verified working; 143 return 500 on develop (including employee creation, which blocks most flows); the rest need an employee login or a parent record. Confirmed app bug: headcount periods must be sent as `Q1 2026`, not `2026-Q1` (section 3.5 below).
+
 ### 3.3 Not yet checked with a real login
 
 These Attendance & Performance details were taken from the spec and haven't been tested with a real account:
@@ -573,6 +770,17 @@ Every endpoint answers 401 without a token, so the routes exist, but none of the
 - **Announcements:** "Role Specific" audience is sent as `managers`. Drafts are saved only; published and scheduled ones also call `/publish`.
 - **Calendar:** reads one window, from the start of last year to the end of next year. Leave, cover and sickness still come from the live leave and sickness data, so the server's copies are skipped. `employeeIds` is sent as a repeated key.
 - **Notifications:** polled every 60 s. Notifications a screen raises in the session are shown alongside the server's.
+
+### 3.5 2026-11-08 modules — not yet checked with a real login
+
+- **Headcount periods:** the spec types `period` as a plain string. The app sends `2026-Q1` (and `2026` for a full year) and reads back `2026-Q1`, `Q1 2026`, `2026Q1`, `FY 2026` or `2026`. Change `periodToApi` in `src/lib/headcount/api-mapping.ts` if the server expects another form. The plan board is read once per period (10 reads).
+- **Sickness** works like leave: the API is mirrored into the sickness slice (`useSicknessLiveRecords`) and `src/lib/stores/sickness-api-listener.ts` sends the screens' actions. The report form creates the record itself and opens it by the server id. Sick-pay schemes, enrolments, review cases, OH referrals and settings have no endpoint and stay local (the schemes page is blurred). A fit-note status change on its own has no API field and is not sent. Bradford figures are the server's, laid over the local episode breakdown.
+- **Benefit plans:** mirrored into the benefit-plans slice. Seeded plans (`seedKey`) cannot be deleted. Country is sent as `NG` / `GB`.
+- **Kudos:** the API only says whether *you* reacted, so other people's names are not shown on a reaction. Sending the same reaction again is assumed to remove it.
+- **Loans:** a self-service request sends no `employeeId` (the server uses the caller's). Repayments are recorded as `bankTransfer`, dated today.
+- **Workforce requests:** mirrored into the slice so the hire tracker and requisition builder see them. "Create requisition" calls `/convert` instead of opening the (still demo) requisition builder. A cancelled request shows as Rejected.
+- **Employee checklist:** deleting an item that hires have already completed retires it instead (the server's `canDelete`).
+- **Positions:** the server works out a position's status from its holders, so the form's filled/vacant choice is not sent. Headcount stays as the server holds it (the form has no field for it).
 
 ---
 

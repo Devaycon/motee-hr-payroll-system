@@ -87,6 +87,8 @@ export interface SicknessDocument {
   validTo?: string;
   uploadedAt: string;
   uploadedBy: string;
+  /** The stored file on the API, once uploaded. */
+  fileId?: string;
 }
 
 /**

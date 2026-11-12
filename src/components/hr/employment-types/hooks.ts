@@ -1,92 +1,138 @@
 "use client";
 
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
-import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useCallback, useMemo } from "react";
+import { toast } from "sonner";
+import {
+  employmentTypeFromApi,
+  employmentTypeToApi,
+} from "@/src/lib/employment-types/api-mapping";
 import type {
   EmploymentTypeRow,
-  PayFrequency,
-  ContractDuration,
+  NewEmploymentType,
 } from "@/src/lib/types/employment-types";
-import type { LocaleBundle } from "@/src/lib/types/locale";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import {
+  useCreateEmploymentTypeMutation,
+  useDeactivateEmploymentTypeMutation,
+  useDeleteEmploymentTypeMutation,
+  useGetEmploymentTypeQuery,
+  useGetEmploymentTypesQuery,
+  useReactivateEmploymentTypeMutation,
+  useUpdateEmploymentTypeMutation,
+} from "@/src/store/services/employment-types";
 
-/**
- * Statutory deductions applied to an employment type, by country.
- *
- * Nigeria (per client's payroll spec): PAYE and NHF are employee deductions;
- * Pension is employee + employer; NSITF and ITF are employer-only and apply to
- * qualifying organisations. The full set attaches to benefit-eligible (permanent)
- * staff; non-permanent types keep PAYE only (adjustable per type in the admin).
- */
-function statutoryDeductionsFor(country: string, eligible: boolean): string[] {
-  if (country === "ng") {
-    return eligible ? ["PAYE", "Pension", "NHF", "NSITF", "ITF"] : ["PAYE"];
-  }
-  return eligible ? ["PAYE", "Pension"] : ["PAYE"];
-}
-
-function inferContractDuration(name: string): ContractDuration {
-  const lower = name.toLowerCase();
-  if (lower.includes("part-time")) return "permanent";
-  if (lower.includes("contract")) return "contract_6m";
-  if (lower.includes("intern")) return "contract_3m";
-  if (lower.includes("nysc")) return "fixed_1y";
-  return "permanent";
-}
-
-function inferPayFrequency(name: string): PayFrequency {
-  const lower = name.toLowerCase();
-  if (lower.includes("contract") || lower.includes("intern")) return "bi_weekly";
-  return "monthly";
-}
-
-function buildEmploymentTypes(
-  bundle: LocaleBundle,
-  country: string,
-): EmploymentTypeRow[] {
-  const counts = new Map<string, number>();
-  for (const e of bundle.employees) {
-    counts.set(e.employmentTypeId, (counts.get(e.employmentTypeId) ?? 0) + 1);
-  }
-  return bundle.employmentTypes.map((t) => ({
-    id: t.id,
-    name: t.name,
-    description: `${t.name} employment classification`,
-    payFrequency: inferPayFrequency(t.name),
-    contractDuration: inferContractDuration(t.name),
-    leaveEntitlement: `${t.defaultLeaveDays} days/year`,
-    payrollInclusion: true,
-    workingHours: {
-      enabled: true,
-      hoursPerWeek: t.name.includes("Part-time") ? 20 : 40,
-      flexibleHours: false,
-    },
-    probationPeriod: {
-      enabled: t.probationMonths > 0,
-      durationMonths: t.probationMonths,
-      reviewRequired: t.probationMonths > 0,
-    },
-    pensionContribution: {
-      enabled: t.eligibleForBenefits,
-      employeePercentage: t.eligibleForBenefits ? 8 : 0,
-      employerPercentage: t.eligibleForBenefits ? 10 : 0,
-    },
-    // Per-type entitlements from the tenant data (Full-time → HMO, Pension…;
-    // Contract → none; Intern → Transport Allowance), feeding the Benefits
-    // Eligibility column and, later, the Payroll and Benefits modules.
-    benefits: {
-      enabled: (t.benefits ?? []).length > 0,
-      available: t.benefits ?? [],
-    },
-    statutoryDeductions: statutoryDeductionsFor(country, t.eligibleForBenefits),
-    isActive: true,
-    employeeCount: counts.get(t.id) ?? 0,
-    createdAt: bundle.tenant.createdAt.slice(0, 10),
-  }));
-}
-
+/** Every employment type the company has set up, active or not. */
 export function useEmploymentTypes() {
-  const country = useAppSelector((s) => s.locale.country);
-  return useLocaleSection<EmploymentTypeRow[]>((bundle) =>
-    buildEmploymentTypes(bundle, country),
+  const { data, isLoading, error } = useGetEmploymentTypesQuery({
+    activeOnly: false,
+  });
+  const rows = useMemo(
+    () => data?.data?.map(employmentTypeFromApi) ?? null,
+    [data],
   );
+  return {
+    data: rows,
+    loading: isLoading,
+    error: error ? getApiErrorMessage(error) : null,
+  };
+}
+
+/** The detail view re-reads the type so it shows the server's latest copy. */
+export function useEmploymentTypeDetail(row: EmploymentTypeRow | null) {
+  const { data } = useGetEmploymentTypeQuery(row?.id ?? "", { skip: !row });
+  return useMemo(
+    () => (data?.data ? employmentTypeFromApi(data.data) : row),
+    [data, row],
+  );
+}
+
+export function useEmploymentTypeActions(types: EmploymentTypeRow[]) {
+  const [createType] = useCreateEmploymentTypeMutation();
+  const [updateType] = useUpdateEmploymentTypeMutation();
+  const [deactivate] = useDeactivateEmploymentTypeMutation();
+  const [reactivate] = useReactivateEmploymentTypeMutation();
+  const [deleteType] = useDeleteEmploymentTypeMutation();
+
+  const save = useCallback(
+    async (row: NewEmploymentType | EmploymentTypeRow) => {
+      const existing =
+        "id" in row ? types.find((t) => t.id === row.id) : undefined;
+      try {
+        if (existing) {
+          await updateType({
+            id: existing.id,
+            body: employmentTypeToApi(row, existing),
+          }).unwrap();
+          toast.success(`${row.name} updated`);
+        } else {
+          await createType(employmentTypeToApi(row)).unwrap();
+          toast.success(`${row.name} created`);
+        }
+      } catch (err) {
+        toast.error(
+          getApiErrorMessage(err, "Could not save the employment type."),
+        );
+      }
+    },
+    [types, createType, updateType],
+  );
+
+  const bulkSave = useCallback(
+    async (rows: EmploymentTypeRow[]) => {
+      let created = 0;
+      const failures: string[] = [];
+      for (const row of rows) {
+        try {
+          await createType(employmentTypeToApi(row)).unwrap();
+          created++;
+        } catch (err) {
+          failures.push(`${row.name}: ${getApiErrorMessage(err, "failed")}`);
+        }
+      }
+      if (created) {
+        toast.success(
+          `Imported ${created} employment type${created === 1 ? "" : "s"}`,
+        );
+      }
+      if (failures.length) {
+        toast.error(`${failures.length} could not be imported`, {
+          description: failures.slice(0, 3).join(" · "),
+        });
+      }
+    },
+    [createType],
+  );
+
+  const toggleStatus = useCallback(
+    async (id: string) => {
+      const type = types.find((t) => t.id === id);
+      if (!type) return;
+      try {
+        await (type.isActive ? deactivate(id) : reactivate(id)).unwrap();
+        toast.success(
+          `${type.name} ${type.isActive ? "deactivated" : "activated"}`,
+        );
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, "Could not change the status."));
+      }
+    },
+    [types, deactivate, reactivate],
+  );
+
+  /** Not offered by the approved screen yet; kept for when it is. */
+  const remove = useCallback(
+    async (id: string) => {
+      try {
+        await deleteType(id).unwrap();
+        toast.success("Employment type deleted");
+      } catch (err) {
+        toast.error(
+          getApiErrorMessage(err, "Could not delete the employment type."),
+        );
+      }
+    },
+    [deleteType],
+  );
+
+  return { save, bulkSave, toggleStatus, remove };
 }

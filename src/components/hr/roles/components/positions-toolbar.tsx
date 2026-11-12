@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { DEPARTMENT_OPTIONS } from "../data";
+import { useLiveDepartments } from "@/src/lib/hooks/use-live-departments";
 
 interface PositionsToolbarProps {
   search: string;
@@ -33,6 +34,7 @@ export function PositionsToolbar({
   onStatusFilterChange,
   onAdd,
 }: PositionsToolbarProps) {
+  const { names: departmentNames } = useLiveDepartments(DEPARTMENT_OPTIONS);
   const hasActiveFilter = deptFilter !== "all" || statusFilter !== "all";
 
   return (
@@ -75,7 +77,7 @@ export function PositionsToolbar({
               <DropdownMenuRadioItem value="all" className="text-xs">
                 All Departments
               </DropdownMenuRadioItem>
-              {DEPARTMENT_OPTIONS.map((dept) => (
+              {departmentNames.map((dept) => (
                 <DropdownMenuRadioItem
                   key={dept}
                   value={dept}

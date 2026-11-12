@@ -1,27 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useEmployeeChecklist } from "./hooks";
+import { useChecklistActions, useEmployeeChecklist } from "./hooks";
 import { Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import type { ChecklistItem, NewChecklistItem, NewHire } from "./types";
+import type { ChecklistItem, NewChecklistItem } from "./types";
 import { ChecklistTable } from "./components/checklist-table";
 import { NewHiresTable } from "./components/new-hires-table";
 import { ChecklistItemModal } from "./components/checklist-item-modal";
 
 export function EmployeeChecklistPage() {
   const { data, loading } = useEmployeeChecklist();
-  const [items, setItems] = useState<ChecklistItem[]>([]);
-  const [hires, setHires] = useState<NewHire[]>([]);
-  useEffect(() => {
-    if (data) {
-      setItems(data.items);
-      setHires(data.hires);
-    }
-  }, [data]);
+  const items = useMemo(() => data?.items ?? [], [data]);
+  const hires = useMemo(() => data?.hires ?? [], [data]);
+  const { save, remove, move } = useChecklistActions(items);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ChecklistItem | null>(null);
 
@@ -31,48 +26,19 @@ export function EmployeeChecklistPage() {
   }
 
   function handleDelete(id: string) {
-    setItems((prev) => {
-      const filtered = prev.filter((i) => i.id !== id);
-      return filtered.map((i, idx) => ({ ...i, order: idx + 1 }));
-    });
+    void remove(id);
   }
 
   function handleMoveUp(id: string) {
-    setItems((prev) => {
-      const idx = prev.findIndex((i) => i.id === id);
-      if (idx <= 0) return prev;
-      const next = [...prev];
-      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-      return next.map((i, n) => ({ ...i, order: n + 1 }));
-    });
+    void move(id, true);
   }
 
   function handleMoveDown(id: string) {
-    setItems((prev) => {
-      const idx = prev.findIndex((i) => i.id === id);
-      if (idx < 0 || idx >= prev.length - 1) return prev;
-      const next = [...prev];
-      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-      return next.map((i, n) => ({ ...i, order: n + 1 }));
-    });
+    void move(id, false);
   }
 
   function handleSave(data: NewChecklistItem | ChecklistItem) {
-    if ("id" in data) {
-      setItems((prev) =>
-        prev.map((i) =>
-          i.id === (data as ChecklistItem).id ? (data as ChecklistItem) : i,
-        ),
-      );
-    } else {
-      const newItem: ChecklistItem = {
-        ...(data as NewChecklistItem),
-        id: `ci-${Date.now()}`,
-        order: items.length + 1,
-        isActive: true,
-      };
-      setItems((prev) => [...prev, newItem]);
-    }
+    void save(data);
   }
 
   if (loading && !items.length) {

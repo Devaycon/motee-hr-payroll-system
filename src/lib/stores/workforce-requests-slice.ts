@@ -59,6 +59,18 @@ export interface WorkforceRequest {
   /** §7.3 — mandatory on new requests; Finance books the spend against it. */
   costCentreCode?: string;
   businessUnit?: string;
+  /** The status the server holds, once the request came from the API. */
+  serverStatus?:
+    | "draft"
+    | "pendingApproval"
+    | "approved"
+    | "rejected"
+    | "returned"
+    | "cancelled"
+    | "converted";
+  reference?: string;
+  /** Who the approval is waiting on, as the server words it. */
+  waitingOn?: string;
 }
 
 interface WorkforceRequestsState {
@@ -142,6 +154,14 @@ const slice = createSlice({
       }
       state.status = "ready";
     },
+    /** The server's requests for a country replace whatever this device holds. */
+    replaceCountryFromApi(
+      state,
+      action: PayloadAction<{ country: string; requests: WorkforceRequest[] }>,
+    ) {
+      state.byCountry[action.payload.country] = action.payload.requests;
+      state.status = "ready";
+    },
     addRequest(
       state,
       action: PayloadAction<{ country: string; request: WorkforceRequest }>,
@@ -194,6 +214,7 @@ export const {
   hydrate,
   seedCountry,
   mergeSeed,
+  replaceCountryFromApi,
   addRequest,
   updateRequest,
   setApproval,

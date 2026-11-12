@@ -51,6 +51,17 @@ const benefitPlansSlice = createSlice({
       state.status = "ready";
     },
 
+    /** The live catalogue replaces the seed outright; nothing is merged. */
+    replaceFromApi(
+      state,
+      action: PayloadAction<{ plans: BenefitPlan[]; coverageOptions?: string[] }>,
+    ) {
+      state.plans = action.payload.plans;
+      if (action.payload.coverageOptions) {
+        state.coverageOptions = action.payload.coverageOptions;
+      }
+      state.status = "ready";
+    },
     hydrateCoverageOptions(state, action: PayloadAction<string[]>) {
       if (Array.isArray(action.payload)) state.coverageOptions = action.payload;
     },
@@ -147,6 +158,7 @@ const benefitPlansSlice = createSlice({
 
 export const {
   hydrate,
+  replaceFromApi,
   hydrateCoverageOptions,
   addCoverageOption,
   renameCoverageOption,

@@ -21,6 +21,7 @@ import {
 } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
 import { DEPARTMENT_OPTIONS, GRADE_OPTIONS } from "../data";
+import { useLiveDepartments } from "@/src/lib/hooks/use-live-departments";
 import type { Position, NewPosition, PositionStatus } from "../types";
 
 interface PositionModalProps {
@@ -63,6 +64,7 @@ export function PositionModal({
   editingPosition,
   onSave,
 }: PositionModalProps) {
+  const { names: departmentNames } = useLiveDepartments(DEPARTMENT_OPTIONS);
   const [form, setForm] = useState<NewPosition>({ ...EMPTY });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Partial<Record<FormFields, boolean>>>(
@@ -199,7 +201,7 @@ export function PositionModal({
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
-                  {DEPARTMENT_OPTIONS.map((dept) => (
+                  {departmentNames.map((dept) => (
                     <SelectItem key={dept} value={dept} className="text-sm">
                       {dept}
                     </SelectItem>

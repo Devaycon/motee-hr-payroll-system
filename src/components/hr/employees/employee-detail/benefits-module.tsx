@@ -16,6 +16,7 @@ import {
 } from "@/src/lib/types/benefits";
 import { eligiblePlansFor } from "@/src/lib/benefits/eligibility";
 import type { ModuleProps } from "./modules";
+import { useEmployeeBenefits } from "@/src/components/hr/benefit-plans/hooks";
 import { Section, Empty } from "./ui";
 
 /**
@@ -31,9 +32,13 @@ export function BenefitsModule({ employee }: ModuleProps) {
   const canManage = useCan("organization.benefit-plans", "edit");
   const country = useAppSelector((s) => s.locale.country);
 
+  // The server resolves entitlement; the local rules cover the wait for it.
+  const live = useEmployeeBenefits(employee.id);
   const eligible = React.useMemo(
-    () => eligiblePlansFor(plansForCountry(plans, country), employee, { employmentTypes }),
-    [plans, country, employmentTypes, employee],
+    () =>
+      live.plans ??
+      eligiblePlansFor(plansForCountry(plans, country), employee, { employmentTypes }),
+    [live.plans, plans, country, employmentTypes, employee],
   );
 
   // Employee Benefits Profile: what they get automatically, then what they

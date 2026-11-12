@@ -35,7 +35,13 @@ import {
   type BenefitPlanStatus,
   type NewBenefitPlan,
 } from "./types";
-import { useBenefitPlanActions, useBenefitPlans, useBenefitsEmployeeContext } from "./hooks";
+import {
+  useBenefitPlanActions,
+  useBenefitPlans,
+  useBenefitsEmployeeContext,
+  useBenefitsSummary,
+  useLoadBenefitPlan,
+} from "./hooks";
 import { BenefitPlanModal } from "./components/benefit-plan-modal";
 import { BenefitPlanRow } from "./components/benefit-plan-card";
 import { countEligibleEmployees } from "@/src/lib/benefits/eligibility";
@@ -63,6 +69,7 @@ function matchesSearch(plan: BenefitPlan, query: string): boolean {
 export function BenefitPlansPage() {
   const plans = useBenefitPlans();
   const actions = useBenefitPlanActions();
+  const loadPlan = useLoadBenefitPlan();
   const canManage = useCan("organization.benefit-plans", "edit");
   const employeeCtx = useBenefitsEmployeeContext();
   const country = useAppSelector((s) => s.locale.country);
@@ -97,8 +104,9 @@ export function BenefitPlansPage() {
   const activePlans = useMemo(() => plans.filter((p) => p.status === "active"), [plans]);
   const coreCount = activePlans.filter((p) => (p.enrollment ?? "core") === "core").length;
   const optionalCount = activePlans.length - coreCount;
+  const serverSummary = useBenefitsSummary();
   /** Benefits Analytics — how the catalogue reaches the workforce. */
-  const analytics = useMemo(() => {
+  const localAnalytics = useMemo(() => {
     if (!employeeCtx || employeeCtx.employees.length === 0) return null;
     const perEmployee = employeeCtx.employees.map(
       (e) => activePlans.filter((p) => countEligibleEmployees(p, [e], employeeCtx) > 0).length,
@@ -112,13 +120,20 @@ export function BenefitPlansPage() {
     ).length;
     return { avg: Math.round(avg * 10) / 10, noCore };
   }, [employeeCtx, activePlans]);
-  const coveredEmployees = useMemo(() => {
+  const analytics = serverSummary
+    ? {
+        avg: Math.round(serverSummary.averagePlansPerEmployee * 10) / 10,
+        noCore: serverSummary.employeesWithoutCoreCover,
+      }
+    : localAnalytics;
+  const localCovered = useMemo(() => {
     if (!employeeCtx) return 0;
     const activePlans = plans.filter((p) => p.status === "active");
     return employeeCtx.employees.filter((e) =>
       activePlans.some((p) => countEligibleEmployees(p, [e], employeeCtx) > 0),
     ).length;
   }, [employeeCtx, plans]);
+  const coveredEmployees = serverSummary?.coveredEmployees ?? localCovered;
 
   // Status + search filtered set drives both the category rail's counts and
   // the distribution bar, so switching tabs or typing a query keeps the rail
@@ -175,12 +190,10 @@ export function BenefitPlansPage() {
     }));
   }, [pageItems, categoryFilter]);
 
-  function handleSave(data: NewBenefitPlan) {
+  async function handleSave(data: NewBenefitPlan) {
     if (editingPlan) {
-      actions.update(editingPlan.id, data);
-      toast.success("Benefit plan updated");
-    } else {
-      actions.create(data);
+      if (await actions.update(editingPlan.id, data)) toast.success("Benefit plan updated");
+    } else if (await actions.create(data)) {
       toast.success("Benefit plan created");
     }
   }
@@ -394,17 +407,18 @@ export function BenefitPlansPage() {
                       key={plan.id}
                       plan={plan}
                       canManage={canManage}
-                      onEdit={(p) => {
-                        setEditingPlan(p);
+                      onEdit={async (p) => {
+                        setEditingPlan(await loadPlan(p));
                         setModalOpen(true);
                       }}
-                      onDuplicate={(p) => {
-                        actions.duplicate(p.id);
-                        toast.success("Benefit plan duplicated as a draft");
+                      onDuplicate={async (p) => {
+                        if (await actions.duplicate(p.id)) {
+                          toast.success("Benefit plan duplicated as a draft");
+                        }
                       }}
-                      onToggleStatus={(p) => {
+                      onToggleStatus={async (p) => {
                         const next = p.status === "archived" ? "active" : "archived";
-                        actions.setStatus(p.id, next);
+                        if (!(await actions.setStatus(p.id, next))) return;
                         toast.success(
                           next === "archived" ? "Benefit plan archived" : "Benefit plan activated",
                         );
@@ -477,12 +491,12 @@ export function BenefitPlansPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (deleteTarget) {
-                  actions.remove(deleteTarget.id);
+              onClick={async () => {
+                const target = deleteTarget;
+                setDeleteTarget(null);
+                if (target && (await actions.remove(target.id))) {
                   toast.success("Benefit plan deleted");
                 }
-                setDeleteTarget(null);
               }}
             >
               Delete

@@ -146,9 +146,8 @@ export function PeopleTabLayout() {
         </DemoOnly>
       </Cell>
       <Cell span={3}>
-        <DemoOnly>
-          <LoansTile />
-        </DemoOnly>
+        {/* Live: reads the loan register from the API. */}
+        <LoansTile />
       </Cell>
     </Grid>
   );
@@ -191,7 +190,10 @@ export function SicknessTabLayout() {
           <AverageSpellTile />
         </Cell>
         <Cell span={3}>
-          <OhCasesTile />
+          {/* Occupational Health is not on the API yet. */}
+          <DemoOnly>
+            <OhCasesTile />
+          </DemoOnly>
         </Cell>
         <Cell span={12}>
           <SicknessHeroRing />
@@ -203,7 +205,9 @@ export function SicknessTabLayout() {
           <SicknessByReasonTile />
         </Cell>
         <Cell span={4}>
-          <OhFitnessTile />
+          <DemoOnly>
+            <OhFitnessTile />
+          </DemoOnly>
         </Cell>
         <Cell span={3}>
           <AbsenceFrequencyTile />

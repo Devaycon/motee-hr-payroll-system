@@ -13,13 +13,12 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { PLAN_PERIODS } from "./data";
-import { useHeadcount } from "./hooks";
+import { useHeadcount, useHeadcountActions } from "./hooks";
 import { useDiversityReport } from "./use-diversity";
 
 /** Stable identity so the diversity memo doesn't re-run while data loads. */
 const EMPTY_IDS: string[] = [];
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useEffect } from "react";
 import type {
   HeadcountPlan,
   NewHeadcountPlan,
@@ -36,17 +35,11 @@ import { Trends } from "./components/trends";
 import { Scenarios } from "./components/scenarios";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 
-function deriveGap(target: number, actual: number): GapStatus {
-  if (actual >= target) return actual > target ? "over" : "on_target";
-  return "under";
-}
 
 export function HeadcountPage() {
   const { data, loading } = useHeadcount();
-  const [plans, setPlans] = useState<HeadcountPlan[]>([]);
-  useEffect(() => {
-    if (data) setPlans(data.plans);
-  }, [data]);
+  const plans = useMemo(() => data?.plans ?? [], [data]);
+  const actions = useHeadcountActions();
   const attritionRisks = data?.attritionRisks ?? [];
   const demographics = data?.demographics;
   // §6.23 — aggregated and suppressed before it reaches the component; the
@@ -84,29 +77,13 @@ export function HeadcountPage() {
     setModalOpen(true);
   }
 
-  function handleDelete(id: string) {
-    setPlans((prev) => prev.filter((p) => p.id !== id));
-    toast.success("Headcount plan removed");
+  async function handleDelete(id: string) {
+    if (await actions.remove(id)) toast.success("Headcount plan removed");
   }
 
-  function handleSave(data: NewHeadcountPlan | HeadcountPlan) {
-    if ("id" in data) {
-      setPlans((prev) =>
-        prev.map((p) =>
-          p.id === (data as HeadcountPlan).id ? (data as HeadcountPlan) : p,
-        ),
-      );
-      toast.success("Headcount target updated");
-    } else {
-      const newPlan: HeadcountPlan = {
-        ...(data as NewHeadcountPlan),
-        id: `hc-${Date.now()}`,
-        actual: 0,
-        gapStatus: deriveGap((data as NewHeadcountPlan).target, 0),
-      };
-      setPlans((prev) => [...prev, newPlan]);
-      toast.success("Headcount target set");
-    }
+  async function handleSave(data: NewHeadcountPlan | HeadcountPlan) {
+    if (!(await actions.save(data))) return;
+    toast.success("id" in data ? "Headcount target updated" : "Headcount target set");
   }
 
   if (loading && !plans.length) {
