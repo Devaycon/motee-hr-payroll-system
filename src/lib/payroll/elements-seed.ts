@@ -191,8 +191,10 @@ export const SEED_PAY_ELEMENTS: PayElement[] = [
 
   // Corrections
   ...earning("corrections", [
-    { code: "BACK_PAY", name: "Back Pay / Arrears" },
-    { code: "SALARY_ADJ", name: "Salary Adjustment" },
+    // Arrears of salary are emoluments for the months they relate to, so they
+    // attract pension like the pay they replace.
+    { code: "BACK_PAY", name: "Back Pay / Arrears", pensionable: true },
+    { code: "SALARY_ADJ", name: "Salary Adjustment", pensionable: true },
     { code: "ONE_OFF", name: "One-Off Payment" },
   ]),
 

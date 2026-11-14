@@ -104,6 +104,8 @@ export const DEFAULT_PAYROLL_SETTINGS: PayrollSettings = {
   deductLoansViaPayroll: true,
   payExpensesViaPayroll: true,
   varianceThresholdPct: 15,
+  allowPayeRefunds: true,
+  employeePreview: false,
   basicMin: 70_000,
   basicMax: 15_000_000,
   defaultSplit: [

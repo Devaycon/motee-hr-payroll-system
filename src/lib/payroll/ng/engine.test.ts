@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeEmployeePay, makePeriod, bandTax, splitSalary, prorationFactor } from "./engine";
+import { computeEmployeePay, makePeriod, bandTax, splitSalary, prorationFactor, sumYtd } from "./engine";
 import { NG_RATE_SET_2026, DEFAULT_PAYROLL_SETTINGS, resolveRateSet, NG_RATE_SETS } from "./rate-sets";
 import { SEED_PAY_ELEMENTS, elementMap } from "../elements-seed";
 import { amountInWords } from "../amount-in-words";
@@ -199,12 +199,16 @@ describe("edge cases", () => {
     expect(withLoan.otherDeductions).toBe(50_000);
   });
 
-  it("unpaid leave reduces pay, the tax base and the pension base", () => {
+  it("unpaid leave reduces earnings (gross, tax base, pension base, NSITF)", () => {
     const inputs: PeriodInput[] = [{ id: "u", employeeId: "E1", code: "UNPAID_LEAVE", units: 2, source: "attendance" }];
     const c = computeEmployeePay({ period: jan, employee, structure: structure(WORKED), elements, inputs, profile: WORKED_PROFILE, rateSet, settings, ytd: null });
-    // January 2026 has 22 working days.
-    expect(line(c, "UNPAID_LEAVE")).toBeCloseTo((300_000 / 22) * 2, 2);
-    expect(c.bases.pensionable).toBeCloseTo(255_000 - (255_000 / 22) * 2, 2);
+    // Calendar-day basis: January has 31 days.
+    const cut = (300_000 / 31) * 2;
+    expect(line(c, "UNPAID_LEAVE")).toBeCloseTo(-cut, 2);
+    expect(c.lines.find((l) => l.code === "UNPAID_LEAVE")?.category).toBe("earning");
+    expect(c.gross).toBeCloseTo(300_000 - cut, 1);
+    expect(c.bases.pensionable).toBeCloseTo(255_000 - (255_000 / 31) * 2, 2);
+    expect(line(c, "NSITF")).toBeCloseTo((300_000 - cut) * 0.01, 1);
     expect(line(c, "PAYE")).toBeLessThan(30_353);
   });
 
@@ -271,5 +275,125 @@ describe("helpers", () => {
     expect(sha256Hex("abc")).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
     expect(canonicalJson({ b: 1, a: [2, { d: 3, c: 4 }] })).toBe('{"a":[2,{"c":4,"d":3}],"b":1}');
     expect(verificationCodeFrom(sha256Hex("x"))).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+  });
+});
+
+// ── Audit fixes: YTD as a sum, calendar tax months, cumulative reliefs ─────
+
+describe("cumulative YTD across run types", () => {
+  const base = { employee, structure: structure(WORKED), elements, profile: WORKED_PROFILE, rateSet, settings };
+  /** Pays Jan..n regularly, returning the period rows (what final payslips store). */
+  function regularRows(n: number) {
+    const rows: ReturnType<typeof computeEmployeePay>["period"][] = [];
+    for (let m = 1; m <= n; m++) {
+      const c = computeEmployeePay({ ...base, period: makePeriod(2026, m), inputs: [], ytd: sumYtd(2026, rows) });
+      rows.push(c.period);
+    }
+    return rows;
+  }
+
+  it("an off-cycle bonus in the same month is taxed at the marginal rate and adds no tax month", () => {
+    const rows = regularRows(11);
+    const bonus: PeriodInput[] = [{ id: "b", employeeId: "E1", code: "ANNUAL_BONUS", amount: 500_000, source: "manual" }];
+    const oc = computeEmployeePay({ ...base, period: makePeriod(2026, 11), runType: "off_cycle", inputs: bonus, ytd: sumYtd(2026, rows) });
+    expect(oc.gross).toBe(500_000);
+    expect(oc.tax.reliefs.find((r) => r.label.startsWith("Rent"))?.period ?? 0).toBe(0);
+    expect(line(oc, "PAYE")).toBe(90_000);
+    rows.push(oc.period);
+    const dec = computeEmployeePay({ ...base, period: makePeriod(2026, 12), inputs: [], ytd: sumYtd(2026, rows) });
+    expect(dec.tax.monthOfYear).toBe(12);
+    expect(dec.ytd.paye).toBeCloseTo(364_236 + 90_000, 1);
+    expect(line(dec, "PAYE")).toBeCloseTo(30_353, 0);
+  });
+
+  it("the order payslips are issued in cannot change YTD", () => {
+    const rows = regularRows(3);
+    expect(sumYtd(2026, rows).paye).toBe(sumYtd(2026, [...rows].reverse()).paye);
+  });
+
+  it("an as-uploaded month still feeds chargeable income, so the next auto month is right", () => {
+    const rows = regularRows(9);
+    const mk = (code: string, amount: number, category: "earning" | "deduction") => ({
+      code, name: code, category, group: category === "earning" ? ("core" as const) : ("statutory" as const), amount, source: "manual" as const, statutory: category === "deduction", taxable: category === "earning",
+    });
+    const uploadedOct = computeEmployeePay({
+      ...base,
+      period: makePeriod(2026, 10),
+      structure: null,
+      inputs: [],
+      ytd: sumYtd(2026, rows),
+      manual: {
+        statutory: "as_uploaded",
+        lines: [
+          mk("BASIC", 150_000, "earning"),
+          mk("HOUSING", 75_000, "earning"),
+          mk("TRANSPORT", 30_000, "earning"),
+          mk("OTHER_ALLOW", 45_000, "earning"),
+          mk("PAYE", 30_353, "deduction"),
+          mk("PENSION_EE", 20_400, "deduction"),
+          mk("NHF", 3_750, "deduction"),
+        ],
+      },
+    });
+    expect(uploadedOct.tax.periodChargeable).toBe(265_850);
+    expect(line(uploadedOct, "PENSION_ER")).toBe(25_500);
+    rows.push(uploadedOct.period);
+    const nov = computeEmployeePay({ ...base, period: makePeriod(2026, 11), inputs: [], ytd: sumYtd(2026, rows) });
+    expect(line(nov, "PAYE")).toBe(30_353);
+  });
+
+  it("taxes a mid-year joiner on their actual annual liability", () => {
+    const joiner = { ...employee, startDate: "2026-07-01" };
+    const rows: ReturnType<typeof computeEmployeePay>["period"][] = [];
+    for (let m = 7; m <= 12; m++) {
+      const c = computeEmployeePay({ ...base, employee: joiner, period: makePeriod(2026, m), inputs: [], ytd: sumYtd(2026, rows) });
+      rows.push(c.period);
+    }
+    const ytd = sumYtd(2026, rows);
+    expect(ytd.paye).toBeCloseTo(bandTax(ytd.chargeable, rateSet.payeBands).total, 0);
+  });
+
+  it("refunds over-deducted tax when chargeable income falls", () => {
+    const rows = regularRows(5);
+    const longLeave: PeriodInput[] = [{ id: "u", employeeId: "E1", code: "UNPAID_LEAVE", units: 29, source: "attendance" }];
+    const jun = computeEmployeePay({ ...base, period: makePeriod(2026, 6), inputs: longLeave, ytd: sumYtd(2026, rows) });
+    expect(line(jun, "PAYE")).toBeLessThan(0);
+    expect(jun.lines.find((l) => l.code === "PAYE")?.name).toBe("PAYE refund");
+    const noRefund = computeEmployeePay({ ...base, settings: { ...settings, allowPayeRefunds: false }, period: makePeriod(2026, 6), inputs: longLeave, ytd: sumYtd(2026, rows) });
+    expect(line(noRefund, "PAYE")).toBe(0);
+  });
+
+  it("catches up rent relief verified late in the year", () => {
+    const unverified = profile({ annualRentDeclared: 600_000 });
+    const rows: ReturnType<typeof computeEmployeePay>["period"][] = [];
+    for (let m = 1; m <= 9; m++) {
+      const c = computeEmployeePay({ ...base, profile: unverified, period: makePeriod(2026, m), inputs: [], ytd: sumYtd(2026, rows) });
+      rows.push(c.period);
+    }
+    const oct = computeEmployeePay({ ...base, period: makePeriod(2026, 10), inputs: [], ytd: sumYtd(2026, rows) });
+    const rent = oct.tax.reliefs.find((r) => r.label.startsWith("Rent"))!;
+    expect(rent.period).toBe(100_000);
+    expect(rent.toDate).toBe(100_000);
+  });
+
+  it("does not exempt a high earner who joins late in the month", () => {
+    const lateJoiner = { ...employee, startDate: "2026-03-29" };
+    const c = computeEmployeePay({ ...base, employee: lateJoiner, structure: structure({ BASIC: 600_000 }), period: makePeriod(2026, 3), inputs: [], ytd: null });
+    expect(c.gross).toBeLessThan(70_000);
+    expect(c.tax.exemptReason ?? "").not.toMatch(/minimum wage/);
+  });
+
+  it("uses the loss-of-office exemption once per termination", () => {
+    const sev: PeriodInput[] = [{ id: "s", employeeId: "E1", code: "SEVERANCE", amount: 40_000_000, source: "manual" }];
+    const a = computeEmployeePay({ ...base, period: makePeriod(2026, 3), runType: "off_cycle", inputs: sev, ytd: null });
+    expect(a.period.lossOfOfficeExempt).toBe(40_000_000);
+    const b = computeEmployeePay({ ...base, period: makePeriod(2026, 3), runType: "off_cycle", inputs: sev, ytd: sumYtd(2026, [a.period]) });
+    expect(b.period.lossOfOfficeExempt).toBe(10_000_000);
+  });
+
+  it("pays overtime on an off-cycle run at the structure's hourly rate", () => {
+    const c = computeEmployeePay({ ...base, period: makePeriod(2026, 3), runType: "off_cycle", inputs: [{ id: "o", employeeId: "E1", code: "OT_NORMAL", units: 10, source: "attendance" }], ytd: null });
+    expect(line(c, "OT_NORMAL")).toBeCloseTo(((150_000 * 12) / (52 * 40)) * 1.5 * 10, 2);
+    expect(line(c, "BASIC")).toBe(0);
   });
 });

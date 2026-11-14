@@ -1,7 +1,7 @@
 import type { LocaleBundle, LocaleEmployee, LocaleLoan } from "@/src/lib/types/locale";
 import { repaymentSchedule, loanTypeLabel } from "@/src/lib/loans/loans";
 import { LOAN_ELEMENT_BY_TYPE, elementMap } from "./elements-seed";
-import { computeEmployeePay, makePeriod, prorationFactor, round2, splitSalary, workingDaysBetween } from "./ng/engine";
+import { computeEmployeePay, makePeriod, prorationFactor, round2, splitSalary, sumYtd, workingDaysBetween } from "./ng/engine";
 import { resolveRateSet, ruleFor } from "./ng/rate-sets";
 import { buildInsights } from "./insights";
 import { canonicalJson, sha256Hex, verificationCodeFrom } from "./hash";
@@ -147,29 +147,52 @@ export function eligibleForPeriod(e: LocaleEmployee, period: PayPeriod, settings
   return true;
 }
 
-/** The previous finalized computation for an employee, for YTD and variance. */
+/** The previous REGULAR finalized computation for an employee — for variance and insights. */
 export function previousComputation(
   data: Pick<TenantPayrollData, "payslips">,
   employeeId: string,
   period: PayPeriod,
+  excludeRunId?: string,
 ): PayComputation | null {
   const key = period.year * 100 + period.month;
   const prior = data.payslips
-    .filter((p) => p.employeeId === employeeId && p.status === "final" && p.period.year * 100 + p.period.month < key)
-    .sort((a, b) => b.period.year * 100 + b.period.month - (a.period.year * 100 + a.period.month) || b.generatedAt.localeCompare(a.generatedAt));
+    .filter(
+      (p) =>
+        p.employeeId === employeeId &&
+        p.status === "final" &&
+        p.runType === "regular" &&
+        p.runId !== excludeRunId &&
+        p.period.year * 100 + p.period.month < key,
+    )
+    .sort((a, b) => b.period.year * 100 + b.period.month - (a.period.year * 100 + a.period.month));
   return prior[0]?.computation ?? null;
 }
 
-export function ytdBefore(data: Pick<TenantPayrollData, "payslips" | "openingYtd">, employeeId: string, period: PayPeriod): YtdTotals | null {
-  const key = period.year * 100 + period.month;
-  // Sum of every final payslip this tax year — robust to off-cycle runs in the same month.
-  const prior = data.payslips.filter(
-    (p) => p.employeeId === employeeId && p.status === "final" && p.period.year === period.year && p.period.year * 100 + p.period.month <= key && !(p.period.month === period.month && p.runType === "regular"),
-  );
-  const latest = [...prior].sort((a, b) => a.generatedAt.localeCompare(b.generatedAt)).pop();
-  if (latest) return latest.computation.ytd;
+/**
+ * Year to date before a run: the opening balance plus every final payslip in
+ * the same tax year up to and including this month (off-cycle runs already
+ * paid this month count), excluding the run being calculated.
+ */
+export function ytdBefore(
+  data: Pick<TenantPayrollData, "payslips" | "openingYtd">,
+  employeeId: string,
+  period: PayPeriod,
+  excludeRunId?: string,
+): YtdTotals | null {
+  const rows = data.payslips
+    .filter(
+      (p) =>
+        p.employeeId === employeeId &&
+        p.status === "final" &&
+        p.runId !== excludeRunId &&
+        p.period.year === period.year &&
+        p.period.month <= period.month &&
+        p.computation.period,
+    )
+    .map((p) => p.computation.period);
   const opening = data.openingYtd[employeeId];
-  return opening && opening.year === period.year ? opening : null;
+  if (!rows.length && !(opening && opening.year === period.year)) return null;
+  return sumYtd(period.year, rows, opening);
 }
 
 // ── Period inputs gathered from other modules ───────────────────────────────
@@ -322,11 +345,13 @@ export function calculateRun(run: PayrollRun, data: TenantPayrollData, bundle: L
     const e = people.get(re.employeeId);
     if (!e || !re.included) return { ...re, computation: null };
     const inputs = run.inputs.filter((i) => i.employeeId === re.employeeId);
-    const ytd = ytdBefore(data, re.employeeId, run.period);
+    const ytd = ytdBefore(data, re.employeeId, run.period, run.id);
     const computation = computeEmployeePay({
       period: run.period,
+      runType: run.type,
       employee: engineEmployee(e),
-      structure: run.type === "regular" ? structureOn(data.structures, e.id, run.period.end) : null,
+      // Off-cycle and adjustment runs don't pay the structure, but use it for rates.
+      structure: structureOn(data.structures, e.id, run.period.end),
       elements,
       inputs,
       profile: profiles.get(e.id) ?? null,

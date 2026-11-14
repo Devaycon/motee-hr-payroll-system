@@ -163,8 +163,31 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
 
   const draft = payslip.status === "draft";
   const t = c.tax;
-  const showTax = display.showTaxBreakdown && t.regime === "paye" && !t.exemptReason?.startsWith("Figures as uploaded");
-  const reliefTotalAnnual = t.reliefs.reduce((s, r) => s + r.annual, 0);
+  const showTax = display.showTaxBreakdown && t.regime === "paye" && !t.exemptReason?.startsWith("PAYE as uploaded");
+  // Cumulative payslips show the to-date calculation, which reconciles exactly
+  // with this month's PAYE (including bonus months). Annualised ones show the year.
+  const cumulative = t.method === "cumulative" || payslip.runType !== "regular";
+  const steps = cumulative
+    ? {
+        taxable: { label: `Taxable pay to date (${t.monthOfYear} month${t.monthOfYear === 1 ? "" : "s"})`, value: t.taxableToDate },
+        reliefs: t.reliefs.map((r) => ({ label: r.label, value: r.toDate })),
+        chargeable: { label: "Chargeable income to date", value: t.cumulativeChargeable },
+        bands: t.bandsToDate,
+        bandsTitle: `Bands to date (${t.monthOfYear}/12 of the year)`,
+        totalLabel: "Tax due to date",
+        total: t.taxDueToDate,
+      }
+    : {
+        taxable: { label: "Taxable pay (× 12)", value: t.periodTaxableGross * 12 },
+        reliefs: t.reliefs.map((r) => ({ label: r.label, value: r.annual })),
+        chargeable: { label: "Chargeable income", value: t.annualisedChargeable },
+        bands: t.bands,
+        bandsTitle: "Annual bands",
+        totalLabel: "Annual tax",
+        total: t.annualisedTax,
+      };
+  // Reliefs already taken through earlier payslips appear on the to-date side even when 0 this month.
+  const reliefTotal = steps.reliefs.reduce((s, r) => s + r.value, 0);
   const NetIcon = payslip.insights.find((i) => i.type === "net_change")?.tone === "attention" ? TrendingDown : TrendingUp;
 
   return (
@@ -340,24 +363,24 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
               </SectionTitle>
               <div className="grid gap-4 sm:grid-cols-2 print:grid-cols-2">
                 <div className="space-y-[0.2rem] text-[0.66rem]">
-                  <TaxStep label="Taxable pay (× 12)" value={whole(t.periodTaxableGross * 12)} />
-                  {t.reliefs.map((r) => (
-                    <TaxStep key={r.label} label={`− ${r.label}`} value={whole(r.annual)} muted />
+                  <TaxStep label={steps.taxable.label} value={whole(steps.taxable.value)} />
+                  {steps.reliefs.map((r) => (
+                    <TaxStep key={r.label} label={`− ${r.label}`} value={whole(r.value)} muted />
                   ))}
-                  {t.reliefs.length > 0 && <TaxStep label="Total reliefs" value={`− ${whole(reliefTotalAnnual)}`} muted />}
-                  <TaxStep label="Chargeable income" value={whole(t.annualisedChargeable)} strong />
+                  {steps.reliefs.length > 0 && <TaxStep label="Total reliefs" value={`− ${whole(reliefTotal)}`} muted />}
+                  <TaxStep label={steps.chargeable.label} value={whole(steps.chargeable.value)} strong />
                 </div>
                 <div>
                   <table className="w-full text-[0.62rem]">
                     <thead>
                       <tr className="text-slate-500">
-                        <th className="pb-1 text-left font-medium">Band</th>
+                        <th className="pb-1 text-left font-medium">{steps.bandsTitle}</th>
                         <th className="pb-1 text-right font-medium">Rate</th>
                         <th className="pb-1 text-right font-medium">Tax</th>
                       </tr>
                     </thead>
                     <tbody className="tabular-nums">
-                      {t.bands.map((b) => (
+                      {steps.bands.map((b) => (
                         <tr key={b.label} className={cn("border-t border-slate-100", b.taxable === 0 && "text-slate-400")}>
                           <td className="py-[0.15rem] pr-2">{b.label}</td>
                           <td className="py-[0.15rem] text-right">{Math.round(b.rate * 100)}%</td>
@@ -365,8 +388,8 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
                         </tr>
                       ))}
                       <tr className="border-t border-slate-300 font-semibold text-slate-900">
-                        <td className="pt-1" colSpan={2}>Annual tax</td>
-                        <td className="pt-1 text-right">{whole(t.annualisedTax)}</td>
+                        <td className="pt-1" colSpan={2}>{steps.totalLabel}</td>
+                        <td className="pt-1 text-right">{whole(steps.total)}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -375,10 +398,10 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
               <p className="mt-2 rounded-md bg-slate-50 px-2.5 py-1.5 text-[0.62rem] leading-snug text-slate-600">
                 {t.exemptReason ? (
                   t.exemptReason
-                ) : t.method === "cumulative" ? (
+                ) : cumulative ? (
                   <>
                     Cumulative method, tax month {t.monthOfYear}: tax due to date <b className="tabular-nums">{money(t.taxDueToDate)}</b> − already paid{" "}
-                    <b className="tabular-nums">{money(t.taxPaidBefore)}</b> = <b className="tabular-nums text-slate-900">{money(t.taxThisPeriod)}</b> this month.
+                    <b className="tabular-nums">{money(t.taxPaidBefore)}</b> = <b className="tabular-nums text-slate-900">{money(t.taxThisPeriod)}</b> {t.taxThisPeriod < 0 ? "refunded" : "this month"}.
                   </>
                 ) : (
                   <>Annual tax {whole(t.annualisedTax)} ÷ 12 = <b className="tabular-nums text-slate-900">{money(t.taxThisPeriod)}</b> this month.</>

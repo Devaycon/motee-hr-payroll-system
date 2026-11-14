@@ -194,6 +194,10 @@ export interface PayrollSettings {
   payExpensesViaPayroll: boolean;
   /** Flag an employee whose net pay moves more than this % month on month. */
   varianceThresholdPct: number;
+  /** Cumulative PAYE may go negative (a refund) when earlier months were over-taxed. */
+  allowPayeRefunds: boolean;
+  /** Employees can preview the run being prepared (regular runs, once submitted). */
+  employeePreview: boolean;
   /** Sanity range for basic salary (monthly). */
   basicMin: number;
   basicMax: number;
@@ -244,9 +248,11 @@ export interface PayslipLine {
 
 export interface TaxRelief {
   label: string;
-  /** Amount relieved this period. */
+  /** Amount relieved by this payslip. */
   period: number;
-  /** The same relief on an annual basis, for the "how your tax was calculated" view. */
+  /** Total of this relief given so far this tax year, including this payslip. */
+  toDate: number;
+  /** The relief on a full-year basis (this month × 12 for contributions; the annual figure for rent etc.). */
   annual: number;
 }
 
@@ -261,16 +267,20 @@ export interface TaxBandLine {
 export interface TaxBreakdown {
   regime: TaxRegime;
   method: TaxMethod;
-  /** 1–12: month of the tax year (calendar year in Nigeria). */
+  /** 1–12: tax month = calendar month of the pay period (tax year = calendar year). */
   monthOfYear: number;
   periodTaxableGross: number;
   reliefs: TaxRelief[];
   periodChargeable: number;
   /** Chargeable income for the year at this month's rate (chargeable × 12). */
   annualisedChargeable: number;
+  /** Bands applied to the full-year view (annualised). */
   bands: TaxBandLine[];
   annualisedTax: number;
+  /** Cumulative view: taxable pay and chargeable income to date, bands scaled by month/12. */
+  taxableToDate: number;
   cumulativeChargeable: number;
+  bandsToDate: TaxBandLine[];
   taxDueToDate: number;
   taxPaidBefore: number;
   taxThisPeriod: number;
@@ -281,6 +291,7 @@ export interface TaxBreakdown {
 
 export interface YtdTotals {
   year: number;
+  /** Highest regular pay month included (information only; tax uses the calendar month). */
   months: number;
   gross: number;
   taxableGross: number;
@@ -291,6 +302,28 @@ export interface YtdTotals {
   nhf: number;
   totalDeductions: number;
   net: number;
+  /** Relief given so far, by relief label. */
+  reliefs: Record<string, number>;
+  /** Loss-of-office exemption already used (it is a once-per-termination allowance). */
+  lossOfOfficeExempt: number;
+}
+
+/** What one payslip contributed to the tax year — YTD is the sum of these, never a chained snapshot. */
+export interface PeriodFigures {
+  year: number;
+  month: number;
+  regular: boolean;
+  gross: number;
+  taxableGross: number;
+  chargeable: number;
+  paye: number;
+  pensionEmployee: number;
+  pensionEmployer: number;
+  nhf: number;
+  totalDeductions: number;
+  net: number;
+  reliefs: Record<string, number>;
+  lossOfOfficeExempt: number;
 }
 
 export interface PayComputation {
@@ -304,6 +337,9 @@ export interface PayComputation {
   employerCost: number;
   bases: { pensionable: number; nhf: number; nhis: number };
   tax: TaxBreakdown;
+  /** This payslip's own contribution to the tax year. */
+  period: PeriodFigures;
+  /** Year to date including this payslip. */
   ytd: YtdTotals;
   /** Pro-ration applied to recurring pay (1 = full period). */
   prorationFactor: number;
@@ -343,6 +379,25 @@ export interface RunEmployee {
   manualStatutory?: "as_uploaded" | "recalculate";
   computation: PayComputation | null;
   attendance: AttendanceSnapshot;
+  /**
+   * Bank and statutory identifiers as they stood when the run was calculated.
+   * Frozen from approval onwards: the bank file pays exactly what was approved,
+   * even if someone edits the employee's bank details afterwards.
+   */
+  snapshot?: PaymentSnapshot;
+}
+
+export interface PaymentSnapshot {
+  bankName: string;
+  bankCode: string;
+  accountNumber: string;
+  accountName: string;
+  tin: string;
+  rsaPin: string;
+  pfaName: string;
+  pfaCode: string;
+  nhfNumber: string;
+  stateOfResidence: string;
 }
 
 export interface AttendanceSnapshot {
@@ -417,6 +472,16 @@ export interface PayrollRun {
   disbursedAt?: string;
   /** Adjustment runs point at the finalized run they correct. */
   parentRunId?: string;
+  /** For adjustment runs: the period being corrected (pay happens in `period`). */
+  adjustsPeriod?: PayPeriod;
+  /** Per-tenant, per-period sequence — keeps payslip references unique. */
+  seq?: number;
+  /**
+   * Set when something the figures depend on changed after calculation
+   * (an earlier month finalized, a salary or profile edit). Must be
+   * recalculated before it can be submitted or finalized.
+   */
+  stale?: { reason: string; at: string };
   notes?: string;
 }
 
