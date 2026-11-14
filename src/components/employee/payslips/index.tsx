@@ -33,7 +33,10 @@ export function MyPayslipsPage() {
   const latest = shown[0];
 
   // PayCheck Before Payday — a preview of the run being prepared, clearly marked as draft.
-  const draftRun = (data?.runs ?? []).find((r) => r.type === "regular" && (r.status === "draft" || r.status === "in_review" || r.status === "approved") && r.employees.some((e) => e.employeeId === me && e.included && e.computation));
+  // Only when the company enables it, only regular runs, and only once HR has submitted them.
+  const draftRun = data?.settings.employeePreview
+    ? data.runs.find((r) => r.type === "regular" && (r.status === "in_review" || r.status === "approved") && r.employees.some((e) => e.employeeId === me && e.included && e.computation))
+    : undefined;
   const draftNet = draftRun?.employees.find((e) => e.employeeId === me)?.computation?.net;
 
   if (!supported) {
@@ -166,8 +169,11 @@ function Header({ children, right }: { children: React.ReactNode; right?: React.
 /** Self-service draft preview — the run being prepared, watermarked DRAFT. */
 export function MyDraftPayslipPage({ runId }: { runId: string }) {
   const me = useAppSelector((s) => s.auth.user?.employeeId) ?? "";
-  const { loading } = useTenantPayroll();
-  const payslip = useDraftPayslip(runId, me);
+  const { loading, data } = useTenantPayroll();
+  const run = data?.runs.find((r) => r.id === runId);
+  const visible = !!run && !!data?.settings.employeePreview && run.type === "regular" && (run.status === "in_review" || run.status === "approved");
+  const draft = useDraftPayslip(runId, me);
+  const payslip = visible ? draft : null;
   return (
     <div className="flex flex-col gap-5 pb-10">
       <PayslipPrintStyles />

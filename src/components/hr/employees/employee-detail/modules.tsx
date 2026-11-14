@@ -1279,7 +1279,14 @@ export function AssetsModule({ employeeId }: ModuleProps) {
 
 // ── Payslips ────────────────────────────────────────────────────────────────
 export function PayslipsModule({ employeeId }: ModuleProps) {
-  const { data, loading } = useEmployeePayslips(employeeId);
+  const { data, loading, allowed } = useEmployeePayslips(employeeId);
+  if (!allowed) {
+    return (
+      <Section title="Payslips" description="Confidential — visible to the employee and payroll staff only.">
+        <Empty label="You don't have access to this person's payslips." />
+      </Section>
+    );
+  }
   if (loading && !data) return <LoadingPanel />;
   const rows = data ?? [];
   const ytdGross = rows.reduce((s, p) => s + p.gross, 0);
@@ -1289,7 +1296,7 @@ export function PayslipsModule({ employeeId }: ModuleProps) {
   return (
     <Section
       title="Payslips"
-      description="Monthly payslips generated from the employee's salary."
+      description="Payslips issued through payroll. Open one to view, print or verify it."
     >
       {rows.length === 0 ? (
         <Empty label="No payslips available." />

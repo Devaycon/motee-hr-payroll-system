@@ -209,7 +209,10 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
       />
       {draft && (
         <div aria-hidden className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-          <p className="rotate-[-24deg] select-none text-[6rem] font-black tracking-[0.2em] text-rose-500/10">DRAFT</p>
+          <p className="rotate-[-24deg] select-none text-center text-[5.5rem] font-black leading-none tracking-[0.15em] text-rose-500/25">
+            DRAFT
+            <span className="block text-[1.4rem] tracking-[0.3em]">NOT A VALID PAYSLIP</span>
+          </p>
         </div>
       )}
 
@@ -487,18 +490,26 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
 
         {/* ── Footer: verification & authority ─────────────────── */}
         <footer className="mt-6 grid items-center gap-4 border-t border-slate-200 pt-4 sm:grid-cols-[auto_1fr_auto] print:grid-cols-[auto_1fr_auto]">
-          <div className="flex items-center gap-3">
-            <div className="rounded-md border border-slate-200 bg-white p-1.5">
-              <PayslipQr value={verifyUrl} size={68} />
+          {draft ? (
+            // A draft is never verifiable — there's no code a bank could be shown.
+            <div className="max-w-[15rem] rounded-md border border-dashed border-rose-300 px-3 py-2">
+              <p className="text-[0.62rem] font-semibold text-rose-700">Draft preview — cannot be verified</p>
+              <p className="text-[0.56rem] text-slate-500">A verification code is issued only when payroll is approved and finalized.</p>
             </div>
-            <div>
-              <p className="flex items-center gap-1 text-[0.62rem] font-semibold text-slate-800">
-                <ShieldCheck className="h-3 w-3" style={{ color: accent }} /> Verify this payslip
-              </p>
-              <p className="mt-0.5 font-mono text-[0.78rem] font-bold tracking-wider text-slate-900">{payslip.verification.code}</p>
-              <p className="text-[0.56rem] text-slate-500">Scan, or enter the code at {site.replace(/^https?:\/\//, "") || "motee"}/verify</p>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="rounded-md border border-slate-200 bg-white p-1.5">
+                <PayslipQr value={verifyUrl} size={68} />
+              </div>
+              <div>
+                <p className="flex items-center gap-1 text-[0.62rem] font-semibold text-slate-800">
+                  <ShieldCheck className="h-3 w-3" style={{ color: accent }} /> Verify this payslip
+                </p>
+                <p className="mt-0.5 font-mono text-[0.78rem] font-bold tracking-wider text-slate-900">{payslip.verification.code}</p>
+                <p className="text-[0.56rem] text-slate-500">Scan, or enter the code at {site.replace(/^https?:\/\//, "") || "motee"}/verify</p>
+              </div>
             </div>
-          </div>
+          )}
           <div className="text-[0.6rem] leading-relaxed text-slate-500 sm:px-2">
             <p>
               <span className="font-semibold text-slate-700">Approved by</span> {payslip.approvedBy ?? "— (not yet approved)"} ·{" "}

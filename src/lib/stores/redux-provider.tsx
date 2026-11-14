@@ -30,7 +30,7 @@ import { hydrateBranchPerformance } from "./branch-performance-slice";
 import { hydrateSickness } from "./sickness-slice";
 import { hydrateLeaveSchemes } from "./leave-schemes-slice";
 import { hydrateWorkforceRisk } from "./workforce-risk-slice";
-import { hydratePayroll } from "./payroll-slice";
+import { initPayrollPersistence } from "./payroll-persistence";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -80,12 +80,9 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
       select: (s) => s.workforceRisk,
       hydrate: hydrateWorkforceRisk,
     });
-    initRuntimePersistence({
-      key: "payroll",
-      select: (s) => s.payroll,
-      // A snapshot from an older seed version is ignored by the reducer.
-      hydrate: hydratePayroll,
-    });
+    // Payroll stays in this browser only: salaries and bank details must never
+    // go through the shared, unauthenticated runtime API.
+    initPayrollPersistence();
   }, []);
 
   return <Provider store={store}>{children}</Provider>;

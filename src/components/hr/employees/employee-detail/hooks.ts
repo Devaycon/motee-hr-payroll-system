@@ -2,8 +2,9 @@
 
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { useCan } from "@/src/lib/permissions/use-can";
 import { useEmployeePayslipList } from "@/src/lib/payroll/use-payroll";
-import { essPayslipHref, hrPayslipHref } from "@/src/lib/payroll/constants";
+import { PAYROLL_MODULE, essPayslipHref, hrPayslipHref } from "@/src/lib/payroll/constants";
 // The detail page is about one named person, so it must resolve even when the
 // navbar is scoped to a different branch — every read here is unscoped.
 import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
@@ -832,10 +833,14 @@ export interface EmployeePayslip {
  */
 export function useEmployeePayslips(id: string) {
   const { data: bundle, loading, error } = useLocaleSection<LocaleBundle>((b) => b);
-  const payroll = useEmployeePayslipList(id);
   const pathname = usePathname();
   const viewerId = useAppSelector((s) => s.auth.user?.employeeId);
+  // Payslips are confidential: the employee themselves, or payroll staff.
+  const canViewPayroll = useCan(PAYROLL_MODULE, "view");
+  const allowed = !!viewerId && (viewerId === id || canViewPayroll);
+  const payroll = useEmployeePayslipList(id, { enabled: allowed });
   const data = useMemo<EmployeePayslip[] | null>(() => {
+    if (!allowed) return [];
     if (payroll.supported) {
       if (!payroll.data) return null;
       // My Profile (self-service) opens the employee's own copy; HR opens theirs.
@@ -875,8 +880,8 @@ export function useEmployeePayslips(id: string) {
       });
     }
     return out;
-  }, [bundle, id, payroll.supported, payroll.data, payroll.payslips, pathname, viewerId]);
-  return { data, loading: loading || (payroll.supported && payroll.loading), error };
+  }, [allowed, bundle, id, payroll.supported, payroll.data, payroll.payslips, pathname, viewerId]);
+  return { data, loading: allowed && (loading || (payroll.supported && payroll.loading)), error, allowed };
 }
 export interface EmployeeTimeLogsData {
   records: RawAttendance[];

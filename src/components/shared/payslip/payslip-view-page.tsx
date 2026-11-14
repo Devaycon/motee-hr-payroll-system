@@ -34,8 +34,10 @@ export function PayslipViewPage({ payslipId, mode, backHref, backLabel }: Props)
   if (!payslip) return <Unavailable backHref={backHref} backLabel={backLabel} message="This payslip doesn't exist or hasn't been issued yet." />;
 
   // Payslips are private: the employee themselves, or someone with payroll access.
-  const own = !!me && me === payslip.employeeId;
-  if (!own && !canViewPayroll && me) {
+  // Fails closed — no signed-in user, no payslip.
+  if (!me) return <Unavailable backHref={backHref} backLabel={backLabel} message="Sign in to view payslips." icon />;
+  const own = me === payslip.employeeId;
+  if (!own && !canViewPayroll) {
     return <Unavailable backHref={backHref} backLabel={backLabel} message="Payslips are confidential. Only the employee and payroll staff can open them." icon />;
   }
 

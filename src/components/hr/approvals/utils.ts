@@ -24,6 +24,11 @@ export function isCurrentApprover(
   );
 }
 
+/** Requests that carry pay figures (payroll runs, salary changes). */
+export function isPayConfidential(req: ApprovalRequest): boolean {
+  return req.documentType === "payroll_run" || (req.documentType === "promotion_request" && req.documentId.startsWith("SS-"));
+}
+
 export function isSubmitter(
   req: ApprovalRequest,
   userEmployeeId: string | undefined,
