@@ -34,7 +34,7 @@ import { ELEMENT_GROUP_LABELS, ELEMENT_GROUP_ORDER } from "@/src/lib/payroll/ele
 import { bandLabel } from "@/src/lib/payroll/ng/rate-sets";
 import { round2 } from "@/src/lib/payroll/ng/engine";
 import { structureOn } from "@/src/lib/payroll/run-builder";
-import { usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { useCurrentActor, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import type {
   EmployeeTaxProfile,
   InsightType,
@@ -121,7 +121,6 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
 function General({ settings, employmentTypes, canEdit }: { settings: PayrollSettings; employmentTypes: { id: string; name: string }[]; canEdit: boolean }) {
   const actions = usePayrollActions();
   const set = (c: Partial<PayrollSettings>) => { actions.updateSettings(c); toast.success("Saved"); };
-  const num = (v: string) => Math.max(0, Number(v) || 0);
   return (
     <div className="grid gap-5 xl:grid-cols-2">
       <Card title="Calculation" description="Rules the engine applies to every employee.">
@@ -144,10 +143,10 @@ function General({ settings, employmentTypes, canEdit }: { settings: PayrollSett
           </Select>
         </Row>
         <Row label="Pay day" hint="Day of the month salaries are paid (moved to month end if shorter).">
-          <Input type="number" className="h-8 w-24 text-xs" defaultValue={settings.payDay} disabled={!canEdit} onBlur={(e) => set({ payDay: Math.min(31, Math.max(1, num(e.target.value))) })} />
+          <NumberSetting value={settings.payDay} className="w-24" disabled={!canEdit} clamp={[1, 31]} onCommit={(v) => set({ payDay: v })} />
         </Row>
         <Row label="Input cut-off day" hint="Overtime, bonuses and changes after this day roll into next month.">
-          <Input type="number" className="h-8 w-24 text-xs" defaultValue={settings.inputCutoffDay} disabled={!canEdit} onBlur={(e) => set({ inputCutoffDay: Math.min(31, Math.max(1, num(e.target.value))) })} />
+          <NumberSetting value={settings.inputCutoffDay} className="w-24" disabled={!canEdit} clamp={[1, 31]} onCommit={(v) => set({ inputCutoffDay: v })} />
         </Row>
       </Card>
 
@@ -168,12 +167,12 @@ function General({ settings, employmentTypes, canEdit }: { settings: PayrollSett
 
       <Card title="Validation thresholds" description="Checks that run before every submission.">
         <Row label="Net pay variance flag" hint="Flag anyone whose net pay moves more than this, month on month.">
-          <div className="flex items-center gap-1"><Input type="number" className="h-8 w-20 text-xs" defaultValue={settings.varianceThresholdPct} disabled={!canEdit} onBlur={(e) => set({ varianceThresholdPct: num(e.target.value) })} /><span className="text-xs">%</span></div>
+          <div className="flex items-center gap-1"><NumberSetting value={settings.varianceThresholdPct} className="w-20" disabled={!canEdit} clamp={[0, 1000]} onCommit={(v) => set({ varianceThresholdPct: v })} /><span className="text-xs">%</span></div>
         </Row>
         <Row label="Basic salary sanity range (monthly)">
           <div className="flex items-center gap-1 text-xs">
-            <Input type="number" className="h-8 w-28 text-xs" defaultValue={settings.basicMin} disabled={!canEdit} onBlur={(e) => set({ basicMin: num(e.target.value) })} /> –
-            <Input type="number" className="h-8 w-32 text-xs" defaultValue={settings.basicMax} disabled={!canEdit} onBlur={(e) => set({ basicMax: num(e.target.value) })} />
+            <NumberSetting value={settings.basicMin} className="w-28" disabled={!canEdit} clamp={[0, Number.MAX_SAFE_INTEGER]} onCommit={(v) => set({ basicMin: v })} /> –
+            <NumberSetting value={settings.basicMax} className="w-32" disabled={!canEdit} clamp={[0, Number.MAX_SAFE_INTEGER]} onCommit={(v) => set({ basicMax: v })} />
           </div>
         </Row>
       </Card>
@@ -563,14 +562,30 @@ function Rates({ rateSets, canEdit }: { rateSets: StatutoryRateSet[]; canEdit: b
   const sorted = [...rateSets].sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
   const [adding, setAdding] = useState(false);
   const latest = sorted[0];
-  const [effective, setEffective] = useState(`${new Date().getFullYear() + 1}-01-01`);
+  const actor = useCurrentActor();
+  const [effectiveYear, setEffectiveYear] = useState(String(Math.max(new Date().getFullYear() + 1, Number(latest.effectiveFrom.slice(0, 4)) + 1)));
+  const effective = `${effectiveYear}-01-01`;
   const [label, setLabel] = useState("");
   const [rates, setRates] = useState(latest.payeBands.map((b) => b.rate * 100));
   return (
     <Card
       title="Statutory rate sets"
       description="Tax bands and statutory rates are data, not code. Each pay period uses the set in force on its own date, so re-running an old month uses that month's rules. When the law changes, add a new set."
-      right={canEdit && <Button size="sm" className="gap-1.5" onClick={() => setAdding(true)}><Plus className="h-3.5 w-3.5" /> New rate set</Button>}
+      right={
+        canEdit && (
+          <Button
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              setRates(latest.payeBands.map((b) => b.rate * 100));
+              setLabel("");
+              setAdding(true);
+            }}
+          >
+            <Plus className="h-3.5 w-3.5" /> New rate set
+          </Button>
+        )
+      }
     >
       <div className="space-y-4">
         {sorted.map((rs, i) => (
@@ -613,11 +628,11 @@ function Rates({ rateSets, canEdit }: { rateSets: StatutoryRateSet[]; canEdit: b
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New statutory rate set</DialogTitle>
-            <DialogDescription>Starts from the latest set. Runs for periods on or after the effective date use it; earlier periods keep their rules.</DialogDescription>
+            <DialogDescription>Starts from the latest set and applies from 1 January of the tax year, so a year is never taxed under two sets of bands. Earlier periods keep their rules.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label className="text-xs">Effective from</Label><Input type="date" value={effective} onChange={(e) => setEffective(e.target.value)} /></div>
+              <div className="space-y-1"><Label className="text-xs">Tax year (from 1 January)</Label><Input type="number" min={Number(latest.effectiveFrom.slice(0, 4)) + 1} value={effectiveYear} onChange={(e) => setEffectiveYear(e.target.value)} /></div>
               <div className="space-y-1"><Label className="text-xs">Label</Label><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Finance Act 2027" /></div>
             </div>
             <div className="space-y-1">
@@ -635,7 +650,7 @@ function Rates({ rateSets, canEdit }: { rateSets: StatutoryRateSet[]; canEdit: b
             <Button
               disabled={!label.trim() || effective <= latest.effectiveFrom}
               onClick={() => {
-                actions.addRateSet({ ...latest, id: `NG-RS-${effective}`, label: label.trim(), effectiveFrom: effective, payeBands: latest.payeBands.map((b, j) => ({ ...b, rate: rates[j] / 100 })), createdBy: "You", createdAt: new Date().toISOString().slice(0, 10) });
+                actions.addRateSet({ ...latest, id: `NG-RS-${effective}`, label: label.trim(), effectiveFrom: effective, payeBands: latest.payeBands.map((b, j) => ({ ...b, rate: rates[j] / 100 })), createdBy: actor.name, createdAt: new Date().toISOString().slice(0, 10) });
                 setAdding(false);
                 toast.success("Rate set added", { description: `Applies to pay periods from ${effective}.` });
               }}
@@ -700,5 +715,29 @@ function ResetDemo() {
         <RotateCcw className="h-3.5 w-3.5" /> Reset payroll demo
       </Button>
     </Card>
+  );
+}
+
+/** A number setting saved on blur — only when it changed — and refreshed when the stored value changes. */
+function NumberSetting({ value, onCommit, clamp, className, disabled }: { value: number; onCommit: (v: number) => void; clamp: [number, number]; className?: string; disabled?: boolean }) {
+  const [text, setText] = useState(String(value));
+  const [seen, setSeen] = useState(value);
+  if (seen !== value) {
+    setSeen(value);
+    setText(String(value));
+  }
+  return (
+    <Input
+      type="number"
+      className={cn("h-8 text-xs", className)}
+      value={text}
+      disabled={disabled}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={() => {
+        const n = Math.min(clamp[1], Math.max(clamp[0], Number(text) || 0));
+        setText(String(n));
+        if (n !== value) onCommit(n);
+      }}
+    />
   );
 }

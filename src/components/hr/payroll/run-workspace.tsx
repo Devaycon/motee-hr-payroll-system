@@ -716,7 +716,7 @@ function EmployeesTable({ run, editable, people }: { run: PayrollRun; editable: 
       getRowId={(r) => r.employeeId}
       searchPlaceholder="Search employees…"
       onRowClick={(r) =>
-        finalized
+        finalized && r.included && r.computation
           ? router.push(hrPayslipHref(r.employeeId, `${run.id}-${r.employeeId}`))
           : router.push(`${PAYROLL_HREF}/${run.id}/employees/${r.employeeId}`)
       }

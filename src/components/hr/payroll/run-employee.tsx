@@ -21,7 +21,7 @@ import { PAYROLL_HREF, PAYROLL_MODULE } from "@/src/lib/payroll/constants";
 import { EXCEPTION_RULE_LABELS } from "@/src/lib/payroll/validation";
 import { structureOn } from "@/src/lib/payroll/run-builder";
 import { useDraftPayslip, usePayrollActions, useRun } from "@/src/lib/payroll/use-payroll";
-import type { PayslipLine } from "@/src/lib/payroll/types";
+import type { PayElement, PayslipLine } from "@/src/lib/payroll/types";
 import { RunStatusBadge, money } from "./components/shared";
 
 /** One employee inside a draft run: their inputs, structure and a live payslip preview. */
@@ -47,8 +47,8 @@ export function RunEmployeePage({ runId, employeeId }: { runId: string; employee
   const el = elements.find((e) => e.code === code);
   const units = el?.calculationType === "rate_x_units";
 
-  function setManualLines(lines: PayslipLine[]) {
-    actions.applyManualUpload(run!.id, [{ employeeId, lines }], re!.manualStatutory ?? "recalculate", "manual edit");
+  function setManualLines(lines: PayslipLine[], statutory?: "as_uploaded" | "recalculate") {
+    actions.setManualLines(run!.id, employeeId, lines, statutory);
   }
 
   return (
@@ -108,8 +108,9 @@ export function RunEmployeePage({ runId, employeeId }: { runId: string; employee
                 lines={re.manualLines ?? []}
                 editable={editable}
                 statutory={re.manualStatutory ?? "recalculate"}
-                onStatutory={(s) => actions.applyManualUpload(run.id, [{ employeeId, lines: re.manualLines ?? [] }], s, "statutory mode change")}
-                onChange={setManualLines}
+                onStatutory={(s) => setManualLines(re.manualLines ?? [], s)}
+                onChange={(lines) => setManualLines(lines)}
+                elements={elements}
               />
             )}
           </div>
@@ -194,13 +195,18 @@ function ManualLines({
   statutory,
   onStatutory,
   onChange,
+  elements,
 }: {
   lines: PayslipLine[];
   editable: boolean;
   statutory: "as_uploaded" | "recalculate";
   onStatutory: (s: "as_uploaded" | "recalculate") => void;
   onChange: (lines: PayslipLine[]) => void;
+  elements: PayElement[];
 }) {
+  const [code, setCode] = useState("");
+  const [amount, setAmount] = useState("");
+  const pickable = elements.filter((e) => statutory === "as_uploaded" || !(e.statutory && e.category === "deduction"));
   return (
     <div className="space-y-2">
       <Select value={statutory} onValueChange={(v) => onStatutory(v as "as_uploaded" | "recalculate")} disabled={!editable}>
@@ -211,25 +217,64 @@ function ManualLines({
         </SelectContent>
       </Select>
       <div className="divide-y text-xs">
+        {lines.length === 0 && <p className="py-2 text-muted-foreground">No lines yet — add basic pay first.</p>}
         {lines.map((l, i) => (
-          <div key={`${l.code}-${i}`} className="flex items-center justify-between gap-2 py-1">
+          <div key={`${l.code}-${i}-${l.amount}`} className="flex items-center justify-between gap-2 py-1">
             <span className="min-w-0 truncate text-muted-foreground">{l.name}</span>
             {editable ? (
-              <Input
-                type="number"
-                className="h-7 w-28 text-right text-xs"
-                defaultValue={l.amount}
-                onBlur={(e) => {
-                  const v = Number(e.target.value);
-                  if (v !== l.amount) onChange(lines.map((x, j) => (j === i ? { ...x, amount: v } : x)));
-                }}
-              />
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  className="h-7 w-28 text-right text-xs"
+                  defaultValue={l.amount}
+                  onBlur={(e) => {
+                    // An emptied field removes nothing by accident: it restores the old figure.
+                    if (e.target.value.trim() === "") {
+                      e.target.value = String(l.amount);
+                      return;
+                    }
+                    const v = Number(e.target.value);
+                    if (Number.isFinite(v) && v !== l.amount) onChange(lines.map((x, j) => (j === i ? { ...x, amount: v } : x)));
+                  }}
+                />
+                <Button variant="ghost" size="icon" className="h-6 w-6" aria-label={`Remove ${l.name}`} onClick={() => onChange(lines.filter((_, j) => j !== i))}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
             ) : (
               <span className="tabular-nums">{money(l.amount)}</span>
             )}
           </div>
         ))}
       </div>
+      {editable && (
+        <div className="grid grid-cols-[1fr_96px_auto] gap-1.5">
+          <Select value={code} onValueChange={setCode}>
+            <SelectTrigger className="h-8 text-[11px]"><SelectValue placeholder="Add a line" /></SelectTrigger>
+            <SelectContent className="max-h-72">
+              {pickable.map((e) => <SelectItem key={e.code} value={e.code} className="text-xs">{e.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Input className="h-8 text-xs" type="number" placeholder="₦" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <Button
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Add line"
+            disabled={!code || !(Number(amount) > 0)}
+            onClick={() => {
+              const el = elements.find((e) => e.code === code)!;
+              onChange([
+                ...lines,
+                { code, name: el.name, category: el.category, group: el.group, amount: Number(amount), source: "manual", statutory: el.statutory && el.category === "deduction", taxable: el.taxable },
+              ]);
+              setCode("");
+              setAmount("");
+            }}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

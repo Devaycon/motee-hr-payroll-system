@@ -84,7 +84,8 @@ export function ManualUploadPage({ runId }: { runId: string }) {
       const key = emp?.id ?? `?${rawId}`;
       const s = byEmp.get(key) ?? { employeeId: emp?.id ?? rawId, name: emp?.fullName ?? rawId, lines: [], errors: [] };
       if (!emp) s.errors.push(`Row ${rowNo}: no employee with ID “${rawId}”.`);
-      else if (emp.status === "terminated") s.errors.push(`Row ${rowNo}: ${emp.fullName} is no longer employed.`);
+      else if (emp.status === "terminated" && !run?.employees.some((x) => x.employeeId === emp.id))
+        s.errors.push(`Row ${rowNo}: ${emp.fullName} is no longer employed. Pay a leaver through an off-cycle run.`);
       const el = elMap.get(code);
       const amount = typeof rawAmount === "number" ? rawAmount : Number(String(rawAmount ?? "").replace(/[₦,\s]/g, ""));
       if (String(rawAmount ?? "").trim() === "") {
@@ -133,10 +134,21 @@ export function ManualUploadPage({ runId }: { runId: string }) {
   const templateCodes = ["BASIC", "HOUSING", "TRANSPORT", "UTILITY", "MEAL", "PERFORMANCE_BONUS", "PAYE", "PENSION_EE", "NHF"];
 
   async function onFile(f: File) {
-    const buf = await f.arrayBuffer();
-    const wb = XLSX.read(buf, { type: "array" });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json<(string | number)[]>(ws, { header: 1, raw: true, defval: "" });
+    let rows: (string | number)[][];
+    try {
+      const buf = await f.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      if (!ws) throw new Error("empty");
+      rows = XLSX.utils.sheet_to_json<(string | number)[]>(ws, { header: 1, raw: true, defval: "" });
+    } catch {
+      toast.error(`Couldn't read ${f.name}`, { description: "Save it as .csv or .xlsx and try again." });
+      return;
+    }
+    if (rows.length < 2) {
+      toast.error(`${f.name} has no data rows`, { description: "The first row should be headers, with one row per employee or line below it." });
+      return;
+    }
     setFileName(f.name);
     setGrid(rows);
     const hdr = (rows[0] ?? []).map(String);
@@ -195,7 +207,17 @@ export function ManualUploadPage({ runId }: { runId: string }) {
           <FileSpreadsheet className="h-6 w-6 text-muted-foreground" />
           <span className="text-sm font-medium">{fileName || "Choose a CSV or Excel file"}</span>
           <span className="text-[11px] text-muted-foreground">{fileName ? `${body.length} data rows read` : ".csv, .xlsx — first sheet is used"}</span>
-          <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={(e) => e.target.files?.[0] && void onFile(e.target.files[0])} />
+          <input
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              // Clear it so choosing the same file again (after fixing it) still loads.
+              e.target.value = "";
+              if (f) void onFile(f);
+            }}
+          />
         </label>
       </Step>
 
