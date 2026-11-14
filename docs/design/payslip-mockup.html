@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MOTEE Payslip Design</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: presentation page (theme-aware) around one A4 "paper" payslip (always light ink-on-paper, as printed). */
+:root {
+  --page: #eef2f0;
+  --page-ink: #15201b;
+  --page-muted: #5b6b64;
+  --page-line: #d5dfda;
+  --note-bg: #ffffff;
+  /* Paper tokens: a document stays light in every theme, like the PDF it becomes */
+  --paper: #ffffff;
+  --ink: #14231d;
+  --ink-2: #3b4b44;
+  --muted: #6d7c75;
+  --faint: #a5b2ac;
+  --rule: #e3e9e6;
+  --tint: #f3f7f5;
+  --brand: #047857;         /* tenant primary colour (Sahel Fintech) */
+  --brand-soft: rgba(4, 120, 87, 0.07);
+  --brand-line: rgba(4, 120, 87, 0.24);
+  --tax: #2f3d37;
+  --pension: #6b7f76;
+  --other: #c9d4cf;
+  --amber: #b45309;
+  --amber-soft: rgba(217, 119, 6, 0.12);
+  --display: "Manrope", "Inter", system-ui, sans-serif;
+  --text: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0f1613; --page-ink: #e6eeea; --page-muted: #94a59d; --page-line: #24312b; --note-bg: #151f1b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0f1613; --page-ink: #e6eeea; --page-muted: #94a59d; --page-line: #24312b; --note-bg: #151f1b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--page); color: var(--page-ink); font-family: var(--text);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+.intro { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; align-items: end; }
+.intro h1 { font-family: var(--display); font-size: clamp(1.6rem, 3vw, 2.2rem); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+.intro p { margin: 6px 0 0; color: var(--page-muted); max-width: 62ch; line-height: 1.55; font-size: 0.92rem; }
+.chip { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--page-muted); border: 1px solid var(--page-line); padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
+
+/* ── Paper ─────────────────────────────────────────────── */
+.paper {
+  position: relative; isolation: isolate; overflow: hidden; min-width: 0;
+  background: var(--paper); color: var(--ink); border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(20,35,29,.06), 0 18px 50px -18px rgba(20,35,29,.28);
+  font-size: 0.8125rem;
+}
+.paper::before { /* security guilloche: faint cross-hatch in the brand colour */
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: .035;
+  background-image: repeating-linear-gradient(45deg, var(--brand) 0 1px, transparent 1px 9px), repeating-linear-gradient(-45deg, var(--brand) 0 1px, transparent 1px 9px);
+}
+.bar { height: 6px; background: linear-gradient(90deg, var(--brand), rgba(4,120,87,.55)); }
+.sheet { padding: 28px 34px 26px; display: grid; gap: 22px; }
+.label { font-size: 0.6rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); letter-spacing: -0.01em; }
+
+header.top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; }
+.co { display: flex; gap: 14px; min-width: 0; }
+.mark { width: 46px; height: 46px; border-radius: 11px; background: var(--brand); color: #fff; display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 1rem; flex: none; }
+.co h2 { font-family: var(--display); font-size: 1.12rem; margin: 0; letter-spacing: -0.01em; }
+.co p { margin: 3px 0 0; font-size: .72rem; color: var(--muted); line-height: 1.45; }
+.title { text-align: right; }
+.title .kicker { font-size: .64rem; font-weight: 700; letter-spacing: .32em; color: var(--brand); margin: 0; }
+.title .period { font-family: var(--display); font-weight: 800; font-size: 1.55rem; margin: 2px 0 8px; letter-spacing: -0.02em; }
+.meta { display: grid; grid-template-columns: auto auto; gap: 2px 14px; justify-content: end; font-size: .7rem; margin: 0; }
+.meta dt { color: var(--muted); } .meta dd { margin: 0; text-align: right; font-weight: 500; color: var(--ink-2); }
+
+.hero { display: grid; grid-template-columns: 1.25fr 1fr; gap: 22px; padding: 18px 20px; border-radius: 12px; background: var(--brand-soft); border: 1px solid var(--brand-line); }
+.net { font-family: var(--display); font-weight: 800; font-size: 2.45rem; line-height: 1; color: var(--brand); margin: 6px 0 0; letter-spacing: -0.03em; }
+.words { margin: 8px 0 0; font-size: .7rem; font-style: italic; color: var(--ink-2); line-height: 1.45; }
+.paid { margin: 10px 0 0; font-size: .7rem; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.paid b { color: var(--ink); }
+.split { display: flex; flex-direction: column; justify-content: center; gap: 8px; min-width: 0; }
+.split-top { display: flex; justify-content: space-between; font-size: .7rem; color: var(--ink-2); }
+.split-top b { color: var(--ink); }
+.track { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--rule); }
+.legend { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; font-size: .66rem; }
+.legend div { display: flex; justify-content: space-between; gap: 6px; }
+.legend span:first-child { display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+.people { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px 20px; }
+.people p:last-child { margin: 3px 0 0; font-size: .78rem; font-weight: 500; overflow-wrap: anywhere; }
+
+.att { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--rule); border-radius: 10px; background: var(--tint); }
+.att div { text-align: center; padding: 8px 4px; }
+.att div + div { border-left: 1px solid var(--rule); }
+.att b { display: block; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.att span { font-size: .58rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.sec-h { display: flex; justify-content: space-between; align-items: end; gap: 10px; border-bottom: 1px solid var(--rule); padding-bottom: 6px; margin-bottom: 4px; }
+.sec-h h3 { margin: 0; font-size: .7rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.sec-h h3::before { content: ""; width: 4px; height: 12px; border-radius: 4px; background: var(--brand); }
+.sec-h.grey h3::before { background: var(--pension); }
+.sec-h small { font-size: .62rem; color: var(--muted); }
+.grp { font-size: .58rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); margin: 10px 0 2px; }
+.row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; }
+.row p { margin: 0; font-size: .78rem; }
+.row small { display: block; font-size: .63rem; color: var(--muted); margin-top: 1px; }
+.row .amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.total { display: flex; justify-content: space-between; border-top: 2px solid var(--ink); margin-top: 8px; padding-top: 7px; font-weight: 700; font-size: .82rem; }
+
+.tax { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; font-size: .68rem; }
+.steps div { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
+.steps .m { color: var(--muted); }
+.steps .s { border-top: 1px solid var(--ink-2); margin-top: 3px; padding-top: 4px; font-weight: 700; }
+table.bands { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.bands th { text-align: left; font-weight: 500; color: var(--muted); padding-bottom: 3px; }
+.bands th:not(:first-child), .bands td:not(:first-child) { text-align: right; }
+.bands td { padding: 2px 0; border-top: 1px solid var(--rule); }
+.bands tr.off td { color: var(--faint); }
+.bands tr.sum td { border-top: 1px solid var(--ink-2); font-weight: 700; padding-top: 4px; }
+.calc { margin: 10px 0 0; background: var(--tint); border-radius: 8px; padding: 8px 10px; font-size: .66rem; line-height: 1.5; color: var(--ink-2); }
+
+.ytd { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px 16px; }
+.ytd p:last-child { margin: 2px 0 0; font-weight: 600; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.er .row p { font-size: .72rem; color: var(--ink-2); }
+.note { font-size: .62rem; font-style: italic; color: var(--muted); margin: 4px 0 0; }
+.leave { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--rule); border-radius: 10px; padding: 9px 12px; }
+.leave b { font-family: var(--display); font-size: 1.3rem; color: var(--brand); }
+.leave b small { font-family: var(--text); font-size: .6rem; color: var(--muted); font-weight: 500; margin-left: 4px; }
+
+.insights { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ins { display: flex; gap: 10px; border: 1px solid var(--rule); border-radius: 10px; padding: 9px 11px; background: var(--paper); }
+.ico { width: 26px; height: 26px; border-radius: 7px; flex: none; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.ico.warn { background: var(--amber-soft); color: var(--amber); }
+.ins b { display: block; font-size: .74rem; }
+.ins p { margin: 2px 0 0; font-size: .66rem; color: var(--ink-2); line-height: 1.45; }
+
+footer.foot { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; border-top: 1px solid var(--rule); padding-top: 16px; }
+.qr { display: flex; gap: 12px; align-items: center; }
+.qr .box { width: 82px; height: 82px; padding: 6px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+.qr .box svg { width: 100%; height: 100%; display: block; }
+.qr b { display: block; font-size: .66rem; }
+.qr .code { font-family: var(--mono); font-weight: 600; font-size: .9rem; letter-spacing: .06em; margin: 2px 0; }
+.qr small { font-size: .58rem; color: var(--muted); }
+.legal { font-size: .62rem; color: var(--muted); line-height: 1.6; }
+.legal b { color: var(--ink-2); }
+.issuer { text-align: right; }
+.issuer small { font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); display: block; }
+.issuer b { font-family: var(--display); font-size: .95rem; }
+.issuer .hash { font-family: var(--mono); font-size: .52rem; color: var(--faint); display: block; }
+
+/* ── Notes column ─────────────────────────────────────── */
+aside.notes { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); display: grid; gap: 14px; min-width: 0; }
+.notes .card { background: var(--note-bg); border: 1px solid var(--page-line); border-radius: 12px; padding: 16px 18px; }
+.notes h2 { font-family: var(--display); font-size: 1rem; margin: 0 0 10px; }
+.notes ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.notes li { font-size: .8rem; line-height: 1.5; color: var(--page-muted); }
+.notes li b { color: var(--page-ink); display: block; font-size: .82rem; }
+.notes .figs { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: .78rem; font-variant-numeric: tabular-nums; }
+.notes .figs span:nth-child(even) { text-align: right; color: var(--page-ink); font-weight: 600; }
+.notes .figs span:nth-child(odd) { color: var(--page-muted); }
+
+@media (max-width: 1080px) {
+  .wrap { grid-template-columns: minmax(0,1fr); }
+  aside.notes { position: static; }
+}
+@media (max-width: 720px) {
+  .sheet { padding: 20px 18px; }
+  .hero, .two, .tax, .insights { grid-template-columns: 1fr; }
+  .people { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .att { grid-template-columns: repeat(3, 1fr); }
+  .att div:nth-child(4) { border-left: 0; }
+  .att div:nth-child(n+4) { border-top: 1px solid var(--rule); }
+  .ytd { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  footer.foot { grid-template-columns: 1fr; }
+  .issuer, .title { text-align: left; }
+  .meta { justify-content: start; }
+  .meta dd { text-align: left; }
+  .net { font-size: 2rem; }
+}
+@media print {
+  @page { size: A4 portrait; margin: 8mm; }
+  html { font-size: 9.5px; }
+  body { background: #fff; padding: 0; }
+  .intro, aside.notes { display: none; }
+  .wrap { display: block; }
+  .paper { box-shadow: none; border-radius: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .sheet { padding: 14px 16px 12px; gap: 12px; }
+  .two { gap: 18px; }
+  .row { padding: 2.5px 0; }
+  .grp { margin-top: 6px; }
+  .hero { padding: 12px 14px; }
+  .qr .box { width: 64px; height: 64px; }
+  footer.foot { padding-top: 10px; }
+}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <div class="intro">
+    <div>
+      <h1>Payslip design for sign-off</h1>
+      <p>The payslip every employee receives from MOTEE, shown with the corrected worked example: ₦300,000 a month under the Nigeria Tax Act 2025, plus a staff-loan instalment and union dues. It is the same layout the app renders and prints to one A4 page.</p>
+    </div>
+    <span class="chip">Draft for client review · Nov 2026</span>
+  </div>
+
+  <article class="paper" aria-label="Payslip for Femi Sanusi, November 2026">
+    <div class="bar"></div>
+    <div class="sheet">
+      <header class="top">
+        <div class="co">
+          <div class="mark" aria-hidden="true">SF</div>
+          <div>
+            <h2>Sahel Fintech Solutions Limited</h2>
+            <p>12B Adeola Odeku Street, Victoria Island, Lagos</p>
+            <p>RC 1847392 · TIN 20485736-0001</p>
+          </div>
+        </div>
+        <div class="title">
+          <p class="kicker">PAYSLIP</p>
+          <p class="period">November 2026</p>
+          <dl class="meta">
+            <dt>Pay period</dt><dd>1 Nov – 30 Nov 2026</dd>
+            <dt>Pay date</dt><dd>25 Nov 2026</dd>
+            <dt>Reference</dt><dd class="mono">PSL-2026-11-0009</dd>
+          </dl>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="label">Net pay</p>
+          <p class="net num">₦217,997.00</p>
+          <p class="words">Two Hundred and Seventeen Thousand, Nine Hundred and Ninety-Seven Naira Only</p>
+          <p class="paid">Paid to <b>GTBank</b> <span class="mono">•••• 3417</span> on 25 Nov 2026</p>
+        </div>
+        <div class="split">
+          <div class="split-top"><span>Gross pay <b class="num">₦300,000.00</b></span><span>You keep <b>72.7%</b></span></div>
+          <div class="track" role="img" aria-label="Of gross pay: take-home 72.7%, tax 10.1%, pension 6.8%, other 10.4%">
+            <span style="width:72.7%;background:var(--brand)"></span>
+            <span style="width:10.1%;background:var(--tax)"></span>
+            <span style="width:6.8%;background:var(--pension)"></span>
+            <span style="width:10.4%;background:var(--other)"></span>
+          </div>
+          <div class="legend num">
+            <div><span><i class="dot" style="background:var(--brand)"></i>Take-home</span><span>₦217,997</span></div>
+            <div><span><i class="dot" style="background:var(--tax)"></i>Tax</span><span>₦30,353</span></div>
+            <div><span><i class="dot" style="background:var(--pension)"></i>Pension</span><span>₦20,400</span></div>
+            <div><span><i class="dot" style="background:var(--other)"></i>Other</span><span>₦31,250</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="people">
+        <div><p class="label">Employee</p><p>Femi Sanusi</p></div>
+        <div><p class="label">Employee ID</p><p class="mono">NG1009</p></div>
+        <div><p class="label">Job title</p><p>Junior Engineer</p></div>
+        <div><p class="label">Department</p><p>Engineering</p></div>
+        <div><p class="label">Grade</p><p>L3</p></div>
+        <div><p class="label">Employment type</p><p>Full-time</p></div>
+        <div><p class="label">Date joined</p><p>13 Jun 2025</p></div>
+        <div><p class="label">Length of service</p><p>1 yr 5 mo</p></div>
+        <div><p class="label">Tax ID (TIN)</p><p class="mono">23019475-0001</p></div>
+        <div><p class="label">Pension RSA PIN</p><p class="mono">PEN100293847561</p></div>
+        <div><p class="label">Pension administrator</p><p>ARM Pension Managers</p></div>
+        <div><p class="label">Tax state</p><p>Lagos IRS</p></div>
+      </section>
+
+      <section class="att" aria-label="Attendance this period">
+        <div><b>21</b><span>Working days</span></div>
+        <div><b>20</b><span>Days worked</span></div>
+        <div><b>1</b><span>Paid leave</span></div>
+        <div><b>0</b><span>Unpaid leave</span></div>
+        <div><b>0</b><span>Overtime hrs</span></div>
+      </section>
+
+      <section class="two">
+        <div>
+          <div class="sec-h"><h3>Earnings</h3></div>
+          <p class="grp">Core pay</p>
+          <div class="row"><p>Basic Salary</p><p class="amt">₦150,000.00</p></div>
+          <p class="grp">General allowances</p>
+          <div class="row"><p>Housing Allowance</p><p class="amt">₦75,000.00</p></div>
+          <div class="row"><p>Transport Allowance</p><p class="amt">₦30,000.00</p></div>
+          <div class="row"><p>Utility Allowance</p><p class="amt">₦15,000.00</p></div>
+          <div class="row"><p>Meal / Lunch Allowance</p><p class="amt">₦15,000.00</p></div>
+          <div class="row"><p>Communication Allowance</p><p class="amt">₦15,000.00</p></div>
+          <div class="total"><span>Gross pay</span><span class="num">₦300,000.00</span></div>
+        </div>
+        <div>
+          <div class="sec-h grey"><h3>Deductions</h3></div>
+          <p class="grp">Statutory</p>
+          <div class="row"><p>PAYE Tax<small>Tax month 11 · cumulative method</small></p><p class="amt">₦30,353.00</p></div>
+          <div class="row"><p>Pension (Employee)<small>8% of ₦255,000.00 pensionable pay</small></p><p class="amt">₦20,400.00</p></div>
+          <div class="row"><p>National Housing Fund<small>2.5% of ₦150,000.00 basic</small></p><p class="amt">₦3,750.00</p></div>
+          <p class="grp">Other deductions</p>
+          <div class="row"><p>Staff Loan Repayment<small>Instalment 4 of 12 · ₦200,000 left after</small></p><p class="amt">₦25,000.00</p></div>
+          <div class="row"><p>Union Dues</p><p class="amt">₦2,500.00</p></div>
+          <div class="total"><span>Total deductions</span><span class="num">₦82,003.00</span></div>
+        </div>
+      </section>
+
+      <section class="two">
+        <div>
+          <div class="sec-h"><h3>How your tax was calculated</h3><small>Effective rate 10.1% of gross</small></div>
+          <div class="tax">
+            <div class="steps num">
+              <div><span>Taxable pay (× 12)</span><span>₦3,600,000</span></div>
+              <div class="m"><span>− Pension (8%)</span><span>₦244,800</span></div>
+              <div class="m"><span>− NHF (2.5%)</span><span>₦45,000</span></div>
+              <div class="m"><span>− Rent relief</span><span>₦120,000</span></div>
+              <div class="m"><span>Total reliefs</span><span>− ₦409,800</span></div>
+              <div class="s"><span>Chargeable income</span><span>₦3,190,200</span></div>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="bands">
+                <thead><tr><th>Band</th><th>Rate</th><th>Tax</th></tr></thead>
+                <tbody>
+                  <tr><td>First ₦800,000</td><td>0%</td><td>₦0</td></tr>
+                  <tr><td>Next ₦2,200,000</td><td>15%</td><td>₦330,000</td></tr>
+                  <tr><td>Next ₦9,000,000</td><td>18%</td><td>₦34,236</td></tr>
+                  <tr class="off"><td>Next ₦13,000,000</td><td>21%</td><td>₦0</td></tr>
+                  <tr class="off"><td>Next ₦25,000,000</td><td>23%</td><td>₦0</td></tr>
+                  <tr class="off"><td>Above ₦50,000,000</td><td>25%</td><td>₦0</td></tr>
+                  <tr class="sum"><td colspan="2">Annual tax</td><td>₦364,236</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <p class="calc num">Cumulative method, tax month 11: tax due to date <b>₦333,883.00</b> − already paid <b>₦303,530.00</b> = <b>₦30,353.00</b> this month. Rent relief is 20% of ₦600,000 declared rent (cap ₦500,000), evidence verified.</p>
+        </div>
+        <div style="display:grid;gap:16px;align-content:start">
+          <div>
+            <div class="sec-h"><h3>Year to date · 2026</h3></div>
+            <div class="ytd">
+              <div><p class="label">Gross</p><p>₦3,300,000</p></div>
+              <div><p class="label">PAYE</p><p>₦333,883</p></div>
+              <div><p class="label">Net pay</p><p>₦2,397,967</p></div>
+              <div><p class="label">Pension (you)</p><p>₦224,400</p></div>
+              <div><p class="label">Pension (employer)</p><p>₦280,500</p></div>
+              <div><p class="label">NHF</p><p>₦41,250</p></div>
+            </div>
+          </div>
+          <div class="er">
+            <div class="sec-h grey"><h3>Paid by your employer</h3><small class="num">₦31,500.00</small></div>
+            <div class="row"><p>Pension (Employer, 10%)</p><p class="amt">₦25,500.00</p></div>
+            <div class="row"><p>NSITF (1%)</p><p class="amt">₦3,000.00</p></div>
+            <div class="row"><p>Industrial Training Fund (1%)</p><p class="amt">₦3,000.00</p></div>
+            <p class="note">Not deducted from your pay. Shown so you can see your full package.</p>
+          </div>
+          <div class="leave">
+            <div><p class="label">Annual leave balance</p><p style="margin:2px 0 0;font-size:.68rem;color:var(--muted)">14 of 21 days used</p></div>
+            <b class="num">7<small>days left</small></b>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="sec-h"><h3>Your pay at a glance</h3><small>Generated once, with this payslip</small></div>
+        <div class="insights">
+          <div class="ins">
+            <span class="ico warn" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M14 17h7v-7"/></svg></span>
+            <div><b>₦18,750 lower than last month</b><p>Mainly because October's 10 hours of overtime didn't recur this month.</p></div>
+          </div>
+          <div class="ins">
+            <span class="ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8h14M5 8l-3 7h6zM19 8l-3 7h6z"/></svg></span>
+            <div><b>You keep 73% of your gross pay</b><p>Of every ₦100 you earned this month: tax ₦10, pension ₦7, other ₦10, and ₦73 is yours.</p></div>
+          </div>
+          <div class="ins">
+            <span class="ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10M19 21V10M9 21v-7M15 21v-7M2 10l10-6 10 6"/></svg></span>
+            <div><b>Tax-year progress</b><p>You've paid ₦333,883 in PAYE so far in 2026. At this month's pay, a full year comes to about ₦364,236.</p></div>
+          </div>
+          <div class="ins">
+            <span class="ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+            <div><b>Your pension grew by ₦45,900</b><p>₦20,400 from you and ₦25,500 from Sahel Fintech went to your RSA. Contributions this year: ₦504,900.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="foot">
+        <div class="qr">
+          <div class="box" role="img" aria-label="QR code linking to the verification page"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h33v33H0z"/><path stroke="#14231d" d="M0 0.5h7m1 0h1m2 0h1m4 0h1m2 0h2m2 0h1m2 0h7M0 1.5h1m5 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m4 0h3m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m3 0h5m1 0h1m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h2m1 0h1m3 0h1m2 0h2m3 0h1m2 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m2 0h3m4 0h3m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m2 0h2m2 0h1m1 0h4m2 0h1m4 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h1m2 0h2m2 0h3m1 0h1m2 0h1m1 0h1M0 8.5h1m1 0h2m1 0h3m4 0h1m1 0h2m1 0h2m2 0h1m1 0h1m2 0h1m2 0h1m1 0h2M0 9.5h2m2 0h1m2 0h2m1 0h5m1 0h4m1 0h3m2 0h2m1 0h2m1 0h1M0 10.5h1m1 0h1m3 0h3m1 0h1m1 0h2m2 0h1m1 0h1m4 0h1m3 0h3m1 0h2M1 11.5h1m2 0h2m1 0h3m5 0h1m1 0h1m2 0h1m2 0h5m1 0h1m1 0h1M0 12.5h4m1 0h4m1 0h2m2 0h1m1 0h1m3 0h5m1 0h4m1 0h2M0 13.5h2m1 0h1m1 0h1m1 0h1m1 0h1m3 0h2m2 0h1m2 0h1m2 0h3m3 0h3M0 14.5h2m1 0h2m1 0h1m1 0h1m5 0h1m3 0h3m2 0h2m1 0h2m1 0h1M2 15.5h1m1 0h2m3 0h2m1 0h1m2 0h1m5 0h1m3 0h3m1 0h2M0 16.5h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h1m5 0h1m1 0h3m2 0h2m1 0h1m1 0h1M0 17.5h1m9 0h2m1 0h1m1 0h2m1 0h1m1 0h4m1 0h2m1 0h2m1 0h2M1 18.5h1m3 0h2m1 0h2m1 0h1m3 0h2m1 0h1m5 0h1m2 0h2m1 0h2M1 19.5h1m1 0h2m2 0h2m1 0h1m1 0h3m2 0h3m2 0h2m2 0h1m1 0h1m2 0h1M2 20.5h1m1 0h4m2 0h1m4 0h2m5 0h1m2 0h1m3 0h3M0 21.5h3m1 0h1m2 0h2m6 0h2m3 0h2m3 0h1m1 0h2m1 0h1m1 0h1M2 22.5h6m1 0h7m3 0h2m1 0h1m3 0h4m1 0h2M1 23.5h1m1 0h2m4 0h5m1 0h1m4 0h1m2 0h1m3 0h1m4 0h1M0 24.5h1m3 0h5m1 0h1m1 0h1m3 0h2m1 0h1m2 0h7M8 25.5h1m1 0h1m3 0h3m2 0h1m1 0h1m2 0h1m3 0h2m1 0h1M0 26.5h7m1 0h2m3 0h1m2 0h4m1 0h1m1 0h2m1 0h1m1 0h1M0 27.5h1m5 0h1m1 0h3m1 0h1m1 0h1m1 0h5m2 0h2m3 0h4M0 28.5h1m1 0h3m1 0h1m5 0h1m1 0h1m1 0h4m2 0h7m1 0h1M0 29.5h1m1 0h3m1 0h1m1 0h1m1 0h2m4 0h2m1 0h1m2 0h1m4 0h1m3 0h2M0 30.5h1m1 0h3m1 0h1m1 0h9m1 0h1m1 0h3m1 0h4m2 0h1M0 31.5h1m5 0h1m2 0h1m7 0h2m1 0h1m1 0h4m1 0h2m3 0h1M0 32.5h7m1 0h4m4 0h4m1 0h3m1 0h1m2 0h3"/></svg>
+</div>
+          <div>
+            <b>Verify this payslip</b>
+            <p class="code">K7QM-4XRT-9PWB</p>
+            <small>Scan, or enter the code at app.motee.ng/verify</small>
+          </div>
+        </div>
+        <div class="legal">
+          <p style="margin:0"><b>Approved by</b> Yusuf Eze (Finance) and Folake Afolayan (Executive) · <b>Generated</b> 22 Nov 2026, 15:30</p>
+          <p style="margin:0">Statutory rules: Nigeria Tax Act 2025 · PRA 2014 · NHF Act. PAYE is remitted to the Lagos State Internal Revenue Service.</p>
+          <p style="margin:0">Private and confidential. Computer-generated; valid without a signature.</p>
+        </div>
+        <div class="issuer">
+          <small>Issued via</small>
+          <b>MOTEE</b>
+          <span class="hash">#3aa65046321f</span>
+        </div>
+      </footer>
+    </div>
+  </article>
+
+  <aside class="notes">
+    <div class="card">
+      <h2>What makes it work</h2>
+      <ul>
+        <li><b>Net pay first</b>The figure people look for leads the page, in words too, with the bank it went to and a bar showing where the gross went.</li>
+        <li><b>Every line explained</b>Pension and NHF show their base (8% of ₦255,000; 2.5% of basic). Loans show the instalment and balance left.</li>
+        <li><b>Tax shown, not just charged</b>Reliefs, bands and the cumulative calculation are printed, so HR stops fielding "why is my tax this?" questions.</li>
+        <li><b>Year to date</b>The totals employees need for tax records, loan and visa applications.</li>
+        <li><b>Employer contributions</b>Shown for transparency and clearly marked as not deducted. Can be switched off per company.</li>
+        <li><b>Plain-English insights</b>Worked out once when the payslip is issued and stored with it. Nothing predictive, no advice.</li>
+        <li><b>Verifiable</b>A QR code and code let a bank or landlord confirm the payslip is genuine. A fingerprint of the figures means an edited copy fails.</li>
+        <li><b>One A4 page</b>Prints and saves as PDF in greyscale-safe colours, in the company's brand colour.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>The worked example</h2>
+      <div class="figs">
+        <span>Monthly gross</span><span>₦300,000</span>
+        <span>Pension base (B+H+T)</span><span>₦255,000</span>
+        <span>Chargeable (annual)</span><span>₦3,190,200</span>
+        <span>Annual PAYE</span><span>₦364,236</span>
+        <span>Monthly PAYE</span><span>₦30,353</span>
+        <span>Net before loan & dues</span><span>₦245,497</span>
+      </div>
+    </div>
+  </aside>
+</div>
+
+</body>
+</html>

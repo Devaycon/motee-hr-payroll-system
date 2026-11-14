@@ -3,6 +3,7 @@ import type {
   ApprovalStepStatus,
 } from "@/src/lib/types/approvals";
 import { canActOnStep } from "@/src/lib/permissions/approver-resolution";
+import { SEGREGATED_DOCUMENT_TYPES } from "@/src/lib/approvals/config";
 
 export function isCurrentApprover(
   req: ApprovalRequest,
@@ -10,6 +11,8 @@ export function isCurrentApprover(
   userRoleId: string | undefined,
 ): boolean {
   if (req.status !== "in_progress") return false;
+  // Segregation of duties — never approve your own payroll run.
+  if (SEGREGATED_DOCUMENT_TYPES.has(req.documentType) && req.submittedBy.employeeId === userEmployeeId) return false;
   const step = req.steps[req.currentStepIndex];
   if (!step) return false;
   return canActOnStep(

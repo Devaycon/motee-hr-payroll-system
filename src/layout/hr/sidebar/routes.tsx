@@ -51,6 +51,7 @@ import {
   FileSignature,
   LayoutGrid,
   HandCoins,
+  Wallet,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -328,6 +329,13 @@ export const routes: Route[] = [
     icon: Receipt,
     label: "Expense Claims",
     link: "/time-payroll/expenses",
+  },
+  {
+    // Payroll: runs, approval, payslips. Gated by `time-payroll.payroll`.
+    group: "Employee Services",
+    icon: Wallet,
+    label: "Payroll",
+    link: "/time-payroll/payroll",
   },
 
   // §4.16 — Occupational Health was buried under "Time & Payroll", which is

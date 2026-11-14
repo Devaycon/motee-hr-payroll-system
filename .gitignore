@@ -42,3 +42,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+
+# Payroll demo snapshot: salaries, bank details and BVNs, never commit
+.data/runtime/payroll.json

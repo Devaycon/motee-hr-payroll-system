@@ -33,6 +33,7 @@ const SUBMISSION_PORTAL_BY_TYPE: Record<BuiltinCategoryId, SubmissionPortal> = {
   training_request: "self_service",
   loan_request: "self_service",
   sickness_absence: "self_service",
+  payroll_run: "admin",
 };
 
 /**
@@ -42,6 +43,17 @@ const SUBMISSION_PORTAL_BY_TYPE: Record<BuiltinCategoryId, SubmissionPortal> = {
  */
 export const MODULE_ONLY_TYPES: ReadonlySet<ApprovalDocumentType> = new Set([
   "sickness_absence",
+  // Submitting a run happens from the run workspace, after validation.
+  "payroll_run",
+]);
+
+/**
+ * Segregation of duties: whoever submitted one of these can never action a
+ * step on it, even if they also hold an approver role (an HR Admin who
+ * prepared payroll cannot approve their own run).
+ */
+export const SEGREGATED_DOCUMENT_TYPES: ReadonlySet<ApprovalDocumentType> = new Set([
+  "payroll_run",
 ]);
 
 /** Can this portal raise a submission of this type? Unknown (custom) types default to admin. */
@@ -80,6 +92,7 @@ export const APPROVAL_CHAIN_MODULES: ApprovalChainModule[] = [
   { documentType: "training_request", label: "Training", href: "/talent/training" },
   { documentType: "loan_request", label: "Employee Loans", href: "/organization/loans" },
   { documentType: "sickness_absence", label: "Sickness & Absence", href: "/time-payroll/sickness" },
+  { documentType: "payroll_run", label: "Payroll", href: "/time-payroll/payroll" },
 ];
 
 export function moduleForDocumentType(

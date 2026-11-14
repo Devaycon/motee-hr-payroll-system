@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import { usePathname } from "next/navigation";
+import { useEmployeePayslipList } from "@/src/lib/payroll/use-payroll";
+import { essPayslipHref, hrPayslipHref } from "@/src/lib/payroll/constants";
 // The detail page is about one named person, so it must resolve even when the
 // navbar is scoped to a different branch — every read here is unscoped.
 import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
@@ -810,7 +813,7 @@ export function useEmployeeTasks(id: string) {
   );
 }
 
-// ── payslips (generated from the employee's salary) ─────────────────────────--
+// ── payslips ────────────────────────────────────────────────────────────────
 export interface EmployeePayslip {
   id: string;
   period: string;
@@ -821,13 +824,32 @@ export interface EmployeePayslip {
   downloadUrl: string;
 }
 /**
- * Demo payslips: the last 6 months derived from the employee's annual salary
- * (monthly gross = annual/12, ~20% statutory deductions). No payslip fixtures
- * exist yet, so these are generated deterministically per employee.
+ * The employee's issued payslips. For tenants with a payroll module (Nigeria)
+ * these are the real, finalized payslips from the payroll engine and each row
+ * opens the payslip page. Elsewhere (UK, until its statutory module lands)
+ * the previous illustrative figures are kept: last 6 months from the annual
+ * salary with ~20% deductions.
  */
 export function useEmployeePayslips(id: string) {
   const { data: bundle, loading, error } = useLocaleSection<LocaleBundle>((b) => b);
+  const payroll = useEmployeePayslipList(id);
+  const pathname = usePathname();
+  const viewerId = useAppSelector((s) => s.auth.user?.employeeId);
   const data = useMemo<EmployeePayslip[] | null>(() => {
+    if (payroll.supported) {
+      if (!payroll.data) return null;
+      // My Profile (self-service) opens the employee's own copy; HR opens theirs.
+      const self = pathname?.startsWith("/profile") || viewerId === id;
+      return payroll.payslips.slice(0, 12).map((p) => ({
+        id: p.id,
+        period: p.runType === "regular" ? p.period.label : `${p.period.label} (${p.runType === "off_cycle" ? "off-cycle" : "adjustment"})`,
+        gross: p.computation.gross,
+        deductions: p.computation.totalDeductions,
+        net: p.computation.net,
+        paidDate: p.period.payDate,
+        downloadUrl: self ? essPayslipHref(p.id) : hrPayslipHref(id, p.id),
+      }));
+    }
     if (!bundle) return null;
     const emp = bundle.employees.find((e) => e.id === id);
     const annual = emp?.salary?.amount ?? 0;
@@ -853,8 +875,8 @@ export function useEmployeePayslips(id: string) {
       });
     }
     return out;
-  }, [bundle, id]);
-  return { data, loading, error };
+  }, [bundle, id, payroll.supported, payroll.data, payroll.payslips, pathname, viewerId]);
+  return { data, loading: loading || (payroll.supported && payroll.loading), error };
 }
 export interface EmployeeTimeLogsData {
   records: RawAttendance[];

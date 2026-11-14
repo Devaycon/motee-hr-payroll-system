@@ -116,6 +116,7 @@ const EXTRA_FIELDS: Record<ApprovalDocumentType, ExtraField[]> = {
     { key: "justification", label: "Justification" },
   ],
   sickness_absence: [],
+  payroll_run: [],
   loan_request: [
     { key: "loanType", label: "Loan type" },
     { key: "amount", label: "Amount", type: "number" },

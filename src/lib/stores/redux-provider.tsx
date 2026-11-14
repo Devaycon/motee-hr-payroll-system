@@ -30,6 +30,7 @@ import { hydrateBranchPerformance } from "./branch-performance-slice";
 import { hydrateSickness } from "./sickness-slice";
 import { hydrateLeaveSchemes } from "./leave-schemes-slice";
 import { hydrateWorkforceRisk } from "./workforce-risk-slice";
+import { hydratePayroll } from "./payroll-slice";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -78,6 +79,12 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
       key: "workforce-risk",
       select: (s) => s.workforceRisk,
       hydrate: hydrateWorkforceRisk,
+    });
+    initRuntimePersistence({
+      key: "payroll",
+      select: (s) => s.payroll,
+      // A snapshot from an older seed version is ignored by the reducer.
+      hydrate: hydratePayroll,
     });
   }, []);
 

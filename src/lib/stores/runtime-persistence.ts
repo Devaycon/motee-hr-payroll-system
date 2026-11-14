@@ -12,7 +12,7 @@ const initialized = new Set<string>();
  * at once, then from the server, and write every change back to both.
  */
 export function initRuntimePersistence<T extends object>(opts: {
-  key: "branch-performance" | "sickness" | "leave-schemes" | "workforce-risk";
+  key: "branch-performance" | "sickness" | "leave-schemes" | "workforce-risk" | "payroll";
   select: (s: RootState) => T;
   hydrate: (snapshot: T) => Action;
 }): void {
