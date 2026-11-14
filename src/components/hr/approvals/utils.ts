@@ -13,6 +13,7 @@ export function isCurrentApprover(
   if (req.status !== "in_progress") return false;
   // Segregation of duties — never approve your own payroll run.
   if (SEGREGATED_DOCUMENT_TYPES.has(req.documentType) && req.submittedBy.employeeId === userEmployeeId) return false;
+  if (userEmployeeId && req.excludedApproverIds?.includes(userEmployeeId)) return false;
   const step = req.steps[req.currentStepIndex];
   if (!step) return false;
   return canActOnStep(

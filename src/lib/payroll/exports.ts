@@ -4,6 +4,7 @@ import { downloadFile } from "@/src/lib/download";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
 import type { EmployeeTaxProfile, PayrollRun, PayslipLine } from "./types";
 import { round2 } from "./ng/engine";
+import { paymentSnapshot } from "./run-builder";
 
 /**
  * The files a Nigerian payroll actually has to produce every month:
@@ -35,7 +36,8 @@ const amt = (lines: PayslipLine[], code: string) => round2(lines.filter((l) => l
 function rows(ctx: Ctx) {
   return ctx.run.employees
     .filter((e) => e.included && e.computation)
-    .map((e) => ({ re: e, c: e.computation!, emp: ctx.people.get(e.employeeId), p: ctx.profiles.get(e.employeeId) }));
+    // Bank and statutory IDs as frozen on the run (what was approved), not as edited since.
+    .map((e) => ({ re: e, c: e.computation!, emp: ctx.people.get(e.employeeId), p: e.snapshot ?? paymentSnapshot(ctx.profiles.get(e.employeeId)) }));
 }
 
 export function buildExport(kind: ExportKind, ctx: Ctx): { headers: string[]; data: (string | number)[][] } {

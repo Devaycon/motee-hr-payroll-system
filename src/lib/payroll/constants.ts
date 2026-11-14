@@ -1,6 +1,8 @@
 import type { PayrollRunStatus } from "./types";
 
 export const PAYROLL_DOCUMENT_TYPE = "payroll_run";
+/** Salary changes reuse the existing promotion / salary change approval chain. */
+export const SALARY_CHANGE_DOCUMENT_TYPE = "promotion_request";
 export const PAYROLL_HREF = "/time-payroll/payroll";
 export const PAYROLL_MODULE = "time-payroll.payroll";
 export const PAYROLL_SETTINGS_MODULE = "time-payroll.payroll-settings";

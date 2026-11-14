@@ -117,15 +117,18 @@ export function PayrollPage() {
 
   function create(type: PayrollRun["type"]) {
     const period = type === "regular" ? nextPeriod(data, data!.settings.payDay) : (current ?? lastPaid)?.period ?? nextPeriod(data, data!.settings.payDay);
-    if (type === "regular" && runs.some((r) => r.type === "regular" && r.period.year === period.year && r.period.month === period.month)) {
-      toast.error(`A regular run for ${period.label} already exists`);
+    const { run, reason } = actions.createRun(type, period);
+    if (!run) {
+      toast.error(reason ?? "Couldn't create the run");
       return;
     }
-    const run = actions.createRun(type, period);
-    if (run) {
-      toast.success(`${run.title} created`, { description: type === "regular" ? "Calculated from salary structures, loans, expenses and attendance." : "Add the employees and one-off payments for this run." });
-      router.push(`${PAYROLL_HREF}/${run.id}`);
-    }
+    toast.success(`${run.title} created`, {
+      description:
+        type === "regular"
+          ? "Calculated from salary structures, loans, expenses and attendance."
+          : "Add the employees to pay, then their one-off payments or a final settlement.",
+    });
+    router.push(`${PAYROLL_HREF}/${run.id}`);
   }
 
   const trend = runs.filter((r) => r.type === "regular").slice(0, 6).reverse();

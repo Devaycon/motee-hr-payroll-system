@@ -362,7 +362,7 @@ function Structures({ canEdit }: { canEdit: boolean }) {
   return (
     <Card
       title="Salary structures"
-      description="What each person is paid every month, versioned: a raise or promotion is a new version from its effective date, so “what was she paid in March” always has an answer."
+      description="What each person is paid every month, versioned: a raise is a new version from its effective date, so “what were they paid in March” always has an answer. Changes go through the salary change approval chain; a back-dated change pays arrears automatically in the next payroll."
       right={
         <Select value={employeeId} onValueChange={(v) => { setEmployeeId(v); setDraft(null); }}>
           <SelectTrigger className="h-8 w-64 text-xs"><SelectValue /></SelectTrigger>
@@ -373,12 +373,17 @@ function Structures({ canEdit }: { canEdit: boolean }) {
       <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
         <div className="space-y-3">
           {versions.map((v) => (
-            <div key={v.id} className={cn("rounded-lg border p-3", v === current && "border-primary/40 bg-primary/5")}>
+            <div key={v.id} className={cn("rounded-lg border p-3", v === current && "border-primary/40 bg-primary/5", v.status === "rejected" && "opacity-50")}>
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold">{v.effectiveFrom} → {v.effectiveTo ?? "now"} {v === current && <Badge className="ml-1 text-[9px]">Current</Badge>}</p>
+                <p className="text-xs font-semibold">
+                  {v.effectiveFrom} → {v.status === "pending" || v.status === "rejected" ? "—" : v.effectiveTo ?? "now"}{" "}
+                  {v === current && <Badge className="ml-1 text-[9px]">Current</Badge>}
+                  {v.status === "pending" && <Badge variant="outline" className="ml-1 border-amber-500/40 text-[9px] text-amber-700">Awaiting approval</Badge>}
+                  {v.status === "rejected" && <Badge variant="outline" className="ml-1 text-[9px]">Rejected</Badge>}
+                </p>
                 <p className="text-xs font-semibold tabular-nums">{money(total(v.lines))}/mo</p>
               </div>
-              <p className="text-[11px] text-muted-foreground">{v.reason} · approved by {v.approvedBy}</p>
+              <p className="text-[11px] text-muted-foreground">{v.reason}{v.approvedBy ? ` · ${v.status === "rejected" ? "rejected" : "approved"} by ${v.approvedBy}` : ""}</p>
               <div className="mt-2 grid grid-cols-2 gap-x-4 text-[11px]">
                 {v.lines.map((l) => (
                   <div key={l.code} className="flex justify-between"><span className="text-muted-foreground">{elements.find((e) => e.code === l.code)?.name ?? l.code}</span><span className="tabular-nums">{money(l.amount, 0)}</span></div>
@@ -387,9 +392,9 @@ function Structures({ canEdit }: { canEdit: boolean }) {
             </div>
           ))}
         </div>
-        {canEdit && current && (
+        {canEdit && current && !versions.some((v) => v.status === "pending") && (
           <div className="rounded-lg border p-4">
-            <p className="mb-3 text-xs font-semibold">New version</p>
+            <p className="mb-3 text-xs font-semibold">Propose a salary change</p>
             {current.lines.map((l) => (
               <div key={l.code} className="flex items-center justify-between gap-2 py-1">
                 <span className="text-xs text-muted-foreground">{elements.find((e) => e.code === l.code)?.name ?? l.code}</span>
@@ -413,14 +418,26 @@ function Structures({ canEdit }: { canEdit: boolean }) {
               size="sm"
               className="mt-3 w-full"
               disabled={!draft || !reason.trim() || effective <= current.effectiveFrom}
-              onClick={() => {
-                actions.addSalaryStructure({ employeeId, effectiveFrom: effective, currency: current.currency, reason: reason.trim(), lines: Object.entries(draft!).map(([code, amount]) => ({ code, amount })) });
+              onClick={async () => {
+                const res = await actions.requestSalaryChange({
+                  employeeId,
+                  effectiveFrom: effective,
+                  currency: current.currency,
+                  reason: reason.trim(),
+                  lines: Object.entries(draft!).map(([code, amount]) => ({ code, amount })),
+                });
+                if (!res.ok) {
+                  toast.error(res.reason);
+                  return;
+                }
                 setDraft(null);
                 setReason("");
-                toast.success("New salary version saved", { description: "Draft runs pick it up on their next recalculation." });
+                toast.success("Salary change sent for approval", {
+                  description: effective < today ? "It's back-dated: once approved, the arrears are added to the next payroll run automatically." : "Payroll uses it once it's approved.",
+                });
               }}
             >
-              Save new version
+              Send for approval
             </Button>
           </div>
         )}

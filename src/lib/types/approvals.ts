@@ -234,6 +234,11 @@ export interface ApprovalRequest {
   history: ApprovalEvent[];
   attachments: ApprovalAttachment[];
   signatures: ApprovalSignature[];
+  /**
+   * Segregation of duties: people who may not decide any step (e.g. whoever
+   * prepared or submitted a payroll run). Enforced in the reducer.
+   */
+  excludedApproverIds?: string[];
 }
 
 export interface NewApprovalSubmission {
@@ -246,6 +251,8 @@ export interface NewApprovalSubmission {
   chainTemplateId?: string;
   attachments?: ApprovalAttachment[];
   submitterSignatureDataUrl?: string;
+  /** People who may not decide any step on this request. */
+  excludedApproverIds?: string[];
 }
 
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {

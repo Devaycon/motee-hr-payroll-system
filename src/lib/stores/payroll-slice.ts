@@ -22,7 +22,18 @@ import type { TenantPayrollData } from "@/src/lib/payroll/run-builder";
  * Adjustment run.
  */
 
-export type TenantPayroll = TenantPayrollData & { audit: PayrollAuditEntry[] };
+export interface RemittanceRecord {
+  reference: string;
+  date: string;
+  by: string;
+  at: string;
+}
+
+export type TenantPayroll = TenantPayrollData & {
+  audit: PayrollAuditEntry[];
+  /** "YYYY-MM:item" → proof the remittance was paid to the authority. */
+  remittances?: Record<string, RemittanceRecord>;
+};
 
 export interface PayrollState {
   byTenant: Record<string, TenantPayroll>;
@@ -35,6 +46,18 @@ export const PAYROLL_SEED_VERSION = 3;
 const initialState: PayrollState = { byTenant: {}, seedVersion: PAYROLL_SEED_VERSION };
 
 const LOCKED: PayrollRun["status"][] = ["finalized", "disbursed"];
+
+/** Close the employee's open approved version the day before `next` starts. */
+function closePrevious(structures: SalaryStructure[], next: SalaryStructure) {
+  for (const prev of structures) {
+    if (prev.id === next.id || prev.employeeId !== next.employeeId || (prev.status ?? "approved") !== "approved") continue;
+    if (!prev.effectiveTo && prev.effectiveFrom < next.effectiveFrom) {
+      const d = new Date(`${next.effectiveFrom}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() - 1);
+      prev.effectiveTo = d.toISOString().slice(0, 10);
+    }
+  }
+}
 
 const uid = (p: string) => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -93,15 +116,35 @@ const slice = createSlice({
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
       const s = action.payload.structure;
-      for (const prev of t.structures) {
-        if (prev.employeeId === s.employeeId && !prev.effectiveTo && prev.effectiveFrom < s.effectiveFrom) {
-          const d = new Date(`${s.effectiveFrom}T00:00:00Z`);
-          d.setUTCDate(d.getUTCDate() - 1);
-          prev.effectiveTo = d.toISOString().slice(0, 10);
-        }
-      }
+      // A pending change takes effect (closing the old version) only when approved.
+      if ((s.status ?? "approved") === "approved") closePrevious(t.structures, s);
       t.structures.push(s);
-      log(t, action.payload.tenantId, action.payload.actor, "New salary structure version", { employeeId: s.employeeId, detail: `Effective ${s.effectiveFrom} — ${s.reason}` });
+      log(t, action.payload.tenantId, action.payload.actor, s.status === "pending" ? "Salary change sent for approval" : "New salary structure version", {
+        employeeId: s.employeeId,
+        detail: `Effective ${s.effectiveFrom} — ${s.reason}`,
+      });
+    },
+
+    decideSalaryStructure(state, action: PayloadAction<Tenant & Actor & { structureId: string; approved: boolean }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const s = t?.structures.find((x) => x.id === action.payload.structureId);
+      if (!t || !s || s.status !== "pending") return;
+      s.status = action.payload.approved ? "approved" : "rejected";
+      s.approvedBy = action.payload.actor;
+      s.approvedAt = new Date().toISOString();
+      if (action.payload.approved) closePrevious(t.structures, s);
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.approved ? "Salary change approved" : "Salary change rejected", {
+        employeeId: s.employeeId,
+        detail: `Effective ${s.effectiveFrom} — ${s.reason}`,
+      });
+    },
+
+    markRemitted(state, action: PayloadAction<Tenant & Actor & { key: string; reference: string; date: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.remittances ??= {};
+      t.remittances[action.payload.key] = { reference: action.payload.reference, date: action.payload.date, by: action.payload.actor, at: new Date().toISOString() };
+      log(t, action.payload.tenantId, action.payload.actor, "Recorded statutory remittance", { detail: `${action.payload.key} · ${action.payload.reference}` });
     },
 
     updateTaxProfile(state, action: PayloadAction<Tenant & Actor & { employeeId: string; changes: Partial<EmployeeTaxProfile> }>) {
@@ -185,6 +228,8 @@ export const {
   updatePayrollSettings,
   upsertElement,
   addSalaryStructure,
+  decideSalaryStructure,
+  markRemitted,
   updateTaxProfile,
   addRateSet,
   saveRun,

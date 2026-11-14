@@ -87,6 +87,8 @@ export interface SalaryStructure {
   reason: string;
   approvedBy: string;
   approvedAt: string;
+  /** Salary changes wait for approval; payroll only uses approved versions (absent = approved). */
+  status?: "pending" | "approved" | "rejected";
 }
 
 // ── Employee tax & statutory profile ────────────────────────────────────────
@@ -430,7 +432,12 @@ export type ExceptionRule =
   | "basic_out_of_range"
   | "variance"
   | "manual_missing_paye"
-  | "rent_evidence_unverified";
+  | "rent_evidence_unverified"
+  | "invalid_nuban"
+  | "missing_bank_code"
+  | "bank_changed"
+  | "deductions_over_limit"
+  | "input_held";
 
 export interface RunActor {
   employeeId: string;
@@ -458,6 +465,8 @@ export interface PayrollRun {
   status: PayrollRunStatus;
   employees: RunEmployee[];
   inputs: PeriodInput[];
+  /** Records the run deliberately didn't pay (held for review) — shown as warnings. */
+  inputNotes?: { employeeId: string; message: string }[];
   exceptions: PayrollException[];
   totals: PayrollRunTotals;
   preparedBy: RunActor;

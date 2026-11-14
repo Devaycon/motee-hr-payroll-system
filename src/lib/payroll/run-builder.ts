@@ -11,6 +11,7 @@ import type {
   PayComputation,
   PayElement,
   PayPeriod,
+  PaymentSnapshot,
   PayrollRun,
   PayrollRunTotals,
   PayrollSettings,
@@ -65,6 +66,28 @@ export const NG_BANK_CODES: Record<string, string> = {
   Kuda: "50211",
 };
 
+/**
+ * NUBAN check digit (CBN standard): weights 3,7,3,3,7,3,3,7,3,3,7,3 over the
+ * 3-digit bank code followed by the first 9 digits of the account number.
+ */
+export function nubanCheckDigit(bankCode3: string, serial9: string): number {
+  const digits = `${bankCode3}${serial9}`.split("").map(Number);
+  const weights = [3, 7, 3, 3, 7, 3, 3, 7, 3, 3, 7, 3];
+  const sum = digits.reduce((s, d, i) => s + d * weights[i], 0);
+  return (10 - (sum % 10)) % 10;
+}
+
+/**
+ * True when the account number is a valid 10-digit NUBAN for the bank. Banks
+ * with 5/6-digit NIP codes (microfinance, fintech) use an extended scheme the
+ * check digit can't be verified against, so only the format is checked.
+ */
+export function isValidNuban(accountNumber: string, bankCode: string): boolean {
+  if (!/^\d{10}$/.test(accountNumber)) return false;
+  if (!/^\d{3}$/.test(bankCode)) return true;
+  return nubanCheckDigit(bankCode, accountNumber.slice(0, 9)) === Number(accountNumber[9]);
+}
+
 export function normaliseState(region: string | undefined): string {
   if (!region) return "Lagos";
   const r = region.replace(/ State$/i, "").trim();
@@ -76,6 +99,11 @@ function hashNum(s: string): number {
   let h = 0;
   for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return h;
+}
+
+/** Short, URL-safe tenant prefix for run ids, e.g. tenant_ng_001 → NG001. */
+export function tenantPrefix(tenantId: string): string {
+  return tenantId.replace(/^tenant_/i, "").replace(/[^a-z0-9]/gi, "").toUpperCase().slice(-8) || "T";
 }
 
 export function seedStructure(e: LocaleEmployee, settings: PayrollSettings): SalaryStructure {
@@ -97,10 +125,16 @@ export function seedProfile(e: LocaleEmployee): EmployeeTaxProfile {
   const bank = e.bankDetails ?? {};
   const h = hashNum(e.id);
   const pfa = PFAS[h % PFAS.length];
+  const bankCode = NG_BANK_CODES[bank.bankName ?? ""] ?? "";
+  // Demo bank numbers are random; give them a valid NUBAN check digit so the
+  // NUBAN validation only fires on numbers people actually mistype.
+  let accountNumber = (bank.accountNumber ?? "").replace(/\D/g, "");
+  if (accountNumber.length === 10 && /^\d{3}$/.test(bankCode)) {
+    accountNumber = accountNumber.slice(0, 9) + nubanCheckDigit(bankCode, accountNumber.slice(0, 9));
+  }
   // About half the staff rent; one declaration is left unverified so the
   // "rent evidence" warning has something to show.
-  const rents = h % 2 === 0;
-  const rent = rents ? 600_000 + (h % 7) * 150_000 : 0;
+  const rent = h % 2 === 0 ? 600_000 + (h % 7) * 150_000 : 0;
   return {
     employeeId: e.id,
     tin: id.tin ?? "",
@@ -117,34 +151,56 @@ export function seedProfile(e: LocaleEmployee): EmployeeTaxProfile {
     lifeAssurancePremiumAnnual: h % 4 === 0 ? 120_000 : 0,
     mortgageInterestAnnual: 0,
     bankName: bank.bankName ?? "",
-    bankCode: NG_BANK_CODES[bank.bankName ?? ""] ?? "",
-    accountNumber: bank.accountNumber ?? "",
+    bankCode,
+    accountNumber,
     accountName: bank.accountName ?? e.fullName,
     bvn: id.bvn ?? "",
   };
 }
 
+export function paymentSnapshot(p: EmployeeTaxProfile | undefined | null): PaymentSnapshot {
+  return {
+    bankName: p?.bankName ?? "",
+    bankCode: p?.bankCode ?? "",
+    accountNumber: p?.accountNumber ?? "",
+    accountName: p?.accountName ?? "",
+    tin: p?.tin ?? "",
+    rsaPin: p?.rsaPin ?? "",
+    pfaName: p?.pfaName ?? "",
+    pfaCode: p?.pfaCode ?? "",
+    nhfNumber: p?.nhfNumber ?? "",
+    stateOfResidence: p?.stateOfResidence ?? "",
+  };
+}
+
 // ── Lookups ─────────────────────────────────────────────────────────────────
 
+/** The structure in force on `date`. Never falls forward to a future-dated version. */
 export function structureOn(structures: SalaryStructure[], employeeId: string, date: string): SalaryStructure | null {
+  const mine = structures.filter((s) => s.employeeId === employeeId && s.effectiveFrom <= date && (s.status ?? "approved") === "approved");
   return (
-    structures
-      .filter((s) => s.employeeId === employeeId && s.effectiveFrom <= date && (!s.effectiveTo || s.effectiveTo >= date))
-      .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0] ??
-    structures
-      .filter((s) => s.employeeId === employeeId)
-      .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0] ??
+    mine.filter((s) => !s.effectiveTo || s.effectiveTo >= date).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0] ??
+    mine.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0] ??
     null
   );
 }
 
-/** Employees paid in a period: started by its end, not gone before its start. */
+/** Employees paid in a regular period: started by its end, not gone before its start. */
 export function eligibleForPeriod(e: LocaleEmployee, period: PayPeriod, settings: PayrollSettings): boolean {
   if (ruleFor(settings, e.employmentTypeId).excluded) return false;
   if (e.startDate > period.end) return false;
   if (e.dateOfLeaving && e.dateOfLeaving < period.start) return false;
   if (e.status === "terminated" && !e.dateOfLeaving) return false;
   return true;
+}
+
+/** Off-cycle runs can also pay people who left recently (final settlement, missed pay). */
+export function eligibleForOffCycle(e: LocaleEmployee, period: PayPeriod, settings: PayrollSettings): boolean {
+  if (eligibleForPeriod(e, period, settings)) return true;
+  if (!e.dateOfLeaving || ruleFor(settings, e.employmentTypeId).excluded) return false;
+  const cutoff = new Date(`${period.start}T00:00:00Z`);
+  cutoff.setUTCDate(cutoff.getUTCDate() - 180);
+  return e.dateOfLeaving >= cutoff.toISOString().slice(0, 10);
 }
 
 /** The previous REGULAR finalized computation for an employee — for variance and insights. */
@@ -156,16 +212,19 @@ export function previousComputation(
 ): PayComputation | null {
   const key = period.year * 100 + period.month;
   const prior = data.payslips
-    .filter(
-      (p) =>
-        p.employeeId === employeeId &&
-        p.status === "final" &&
-        p.runType === "regular" &&
-        p.runId !== excludeRunId &&
-        p.period.year * 100 + p.period.month < key,
-    )
+    .filter((p) => p.employeeId === employeeId && p.status === "final" && p.runType === "regular" && p.runId !== excludeRunId && p.period.year * 100 + p.period.month < key)
     .sort((a, b) => b.period.year * 100 + b.period.month - (a.period.year * 100 + a.period.month));
   return prior[0]?.computation ?? null;
+}
+
+/** The previous finalized regular run's payment snapshot for an employee — to spot bank changes. */
+export function previousSnapshot(data: Pick<TenantPayrollData, "runs">, employeeId: string, period: PayPeriod): PaymentSnapshot | null {
+  const key = period.year * 100 + period.month;
+  const run = data.runs
+    .filter((r) => r.type === "regular" && (r.status === "finalized" || r.status === "disbursed") && r.period.year * 100 + r.period.month < key)
+    .sort((a, b) => b.period.year * 100 + b.period.month - (a.period.year * 100 + a.period.month))
+    .find((r) => r.employees.some((e) => e.employeeId === employeeId && e.included && e.snapshot));
+  return run?.employees.find((e) => e.employeeId === employeeId)?.snapshot ?? null;
 }
 
 /**
@@ -197,12 +256,34 @@ export function ytdBefore(
 
 // ── Period inputs gathered from other modules ───────────────────────────────
 
+/** An expense claim as the Expenses module holds it (only what payroll needs). */
+export interface PayableExpense {
+  id: string;
+  employeeId?: string;
+  amount: number;
+  status: string;
+  dateSubmitted: string;
+  title: string;
+}
+
 export interface InputSources {
   loans: LocaleLoan[];
   bundle: LocaleBundle;
+  /** Claims from the Expenses module. Approved, not yet reimbursed claims are paid with salary. */
+  expenses: PayableExpense[];
   /** Expense claim ids already paid through an earlier run. */
   paidExpenseIds: Set<string>;
+  /** Current monthly basic per employee (from the salary structure). */
+  basicFor: (employeeId: string) => number;
+  /** Arrears owed from back-dated salary changes, per employee. */
+  backPayFor?: (employeeId: string) => { amount: number; refId: string; description: string }[];
   today: Date;
+}
+
+export interface GatherResult {
+  inputs: PeriodInput[];
+  /** Records the payroll deliberately didn't pay — surfaced as warnings, never dropped silently. */
+  notes: { employeeId: string; message: string }[];
 }
 
 const monthKey = (iso: string) => iso.slice(0, 7);
@@ -212,9 +293,11 @@ export function gatherInputs(
   period: PayPeriod,
   settings: PayrollSettings,
   src: InputSources,
-  opts: { history?: boolean } = {},
-): PeriodInput[] {
+  /** `history`: seeding past months. `demo`: add the demo tenant's illustrative variable pay. */
+  opts: { history?: boolean; demo?: boolean } = {},
+): GatherResult {
   const out: PeriodInput[] = [];
+  const notes: GatherResult["notes"] = [];
   const pk = `${period.year}-${String(period.month).padStart(2, "0")}`;
   const mk = (code: string, rest: Partial<PeriodInput>): PeriodInput => ({
     id: `IN-${e.id}-${pk}-${code}-${out.length}`,
@@ -246,30 +329,38 @@ export function gatherInputs(
     }
   }
 
-  // Approved expense claims reimbursed with pay
-  if (settings.payExpensesViaPayroll) {
-    for (const x of src.bundle.expenses ?? []) {
+  // Approved, unpaid expense claims — any date up to the period end.
+  if (settings.payExpensesViaPayroll && !opts.history) {
+    for (const x of src.expenses) {
       if (x.employeeId !== e.id || x.status !== "approved" || src.paidExpenseIds.has(x.id)) continue;
-      if (monthKey(x.date) !== pk) continue;
-      out.push(mk("EXPENSE_REIMB", { amount: x.amount, source: "expense", refId: x.id, description: `Expense: ${x.description}` }));
+      if (x.dateSubmitted.slice(0, 10) > period.end) continue;
+      out.push(mk("EXPENSE_REIMB", { amount: x.amount, source: "expense", refId: x.id, description: `Expense: ${x.title}` }));
     }
   }
 
-  // One-off payments / deductions and recurring deductions on the employee record
+  // Recurring deductions and one-off items on the employee record
   const rec = src.bundle as unknown as {
-    recurringDeductions?: { employeeId: string; label: string; amount: number; frequency: string; startDate: string }[];
+    recurringDeductions?: { employeeId: string; label: string; amount: number; frequency: string; startDate: string; endDate?: string }[];
     oneTimePayments?: { id: string; employeeId: string; label: string; amount: number; date: string }[];
     oneTimeDeductions?: { id: string; employeeId: string; label: string; amount: number; date: string }[];
   };
-  const monthlyGross = e.salary.amount / 12;
+  const monthlyBasic = src.basicFor(e.id);
+  const monthlyPay = e.salary.amount / 12;
   for (const d of rec.recurringDeductions ?? []) {
     if (d.employeeId !== e.id || d.frequency !== "monthly" || d.startDate > period.end) continue;
-    // Loans come from the Loans module; pension and health insurance are
-    // statutory lines the engine calculates itself — never double-deduct them.
-    if (/loan|pension contribution|health insurance|paye|tax|nhf/i.test(d.label)) continue;
-    // Guard against implausible imported records (>10% of pay for a voluntary deduction).
-    if (d.amount > monthlyGross * 0.1) continue;
-    const code = /pension avc|voluntary pension/i.test(d.label) ? "VOL_PENSION" : /union/i.test(d.label) ? "UNION_DUES" : /cooperative/i.test(d.label) ? "COOP_CONTRIB" : "OTHER_DED";
+    if (d.endDate && d.endDate < period.start) continue;
+    const isVoluntaryPension = /pension avc|voluntary pension|additional voluntary/i.test(d.label);
+    // Loans come from the Loans module; statutory pension and health insurance
+    // are calculated by the engine — never deduct them twice.
+    if (!isVoluntaryPension && /loan|pension contribution|health insurance|paye|\btax\b|nhf/i.test(d.label)) {
+      notes.push({ employeeId: e.id, message: `“${d.label}” on the employee record wasn't deducted — it duplicates a statutory or Loans-module deduction.` });
+      continue;
+    }
+    if (d.amount > monthlyPay * 0.1) {
+      notes.push({ employeeId: e.id, message: `“${d.label}” (₦${Math.round(d.amount).toLocaleString("en-NG")}/month) is over 10% of pay and was held back for review.` });
+      continue;
+    }
+    const code = isVoluntaryPension ? "VOL_PENSION" : /union/i.test(d.label) ? "UNION_DUES" : /cooperative/i.test(d.label) ? "COOP_CONTRIB" : "OTHER_DED";
     out.push(mk(code, { amount: d.amount, description: d.label }));
   }
   for (const p of rec.oneTimePayments ?? []) {
@@ -281,30 +372,31 @@ export function gatherInputs(
     out.push(mk("OTHER_DED", { amount: d.amount, description: d.label }));
   }
 
-  // Leave allowance — 10% of annual basic, paid in the employee's anniversary month
-  const basicAnnual = (e.salary.amount * (settings.defaultSplit.find((s) => s.code === "BASIC")?.pct ?? 50)) / 100;
-  if (Number(e.startDate.slice(5, 7)) === period.month && e.startDate < period.start) {
-    out.push(mk("LEAVE_ALLOW", { amount: round2(basicAnnual * 0.1), description: "Annual leave allowance (10% of annual basic)" }));
+  // Back pay from back-dated salary changes (arrears for months already paid at the old rate)
+  if (!opts.history) {
+    for (const b of src.backPayFor?.(e.id) ?? []) {
+      if (b.amount > 0) out.push(mk("BACK_PAY", { amount: b.amount, source: "adjustment", refId: b.refId, description: b.description }));
+    }
   }
 
-  // Demo variable pay — deterministic so every reload shows the same history
-  const h = hashNum(`${e.id}-${pk}`);
-  if (/engineer|devops|support/i.test(e.jobTitle) && h % 3 === 0) {
-    out.push(mk("OT_NORMAL", { units: 4 + (h % 9), source: "attendance", description: undefined }));
+  // Leave allowance — 10% of annual basic, paid in the employee's anniversary month
+  if (Number(e.startDate.slice(5, 7)) === period.month && e.startDate < period.start && monthlyBasic > 0) {
+    out.push(mk("LEAVE_ALLOW", { amount: round2(monthlyBasic * 12 * 0.1), description: "Annual leave allowance (10% of annual basic)" }));
   }
-  if (/sales|growth|marketer/i.test(e.jobTitle) && h % 2 === 0) {
-    out.push(mk("COMMISSION", { amount: 50_000 + (h % 6) * 25_000 }));
+
+  // Demo tenant only: illustrative variable pay so the seeded history looks
+  // like a real company's. Never added to runs people create themselves.
+  if (opts.demo) {
+    const h = hashNum(`${e.id}-${pk}`);
+    if (/engineer|devops|support/i.test(e.jobTitle) && h % 3 === 0) out.push(mk("OT_NORMAL", { units: 4 + (h % 9), source: "attendance" }));
+    if (/sales|growth|marketer/i.test(e.jobTitle) && h % 2 === 0) out.push(mk("COMMISSION", { amount: 50_000 + (h % 6) * 25_000 }));
+    if (period.month === 9 && h % 4 === 0) out.push(mk("PERFORMANCE_BONUS", { amount: round2(monthlyBasic * 12 * 0.05), description: "H1 performance bonus" }));
+    if (h % 17 === 0) out.push(mk("UNPAID_LEAVE", { units: 1 + (h % 2), source: "attendance" }));
   }
-  if (period.month === 9 && h % 4 === 0) {
-    out.push(mk("PERFORMANCE_BONUS", { amount: round2(e.salary.amount * 0.05), description: "H1 performance bonus" }));
-  }
-  if (h % 17 === 0) {
-    out.push(mk("UNPAID_LEAVE", { units: 1 + (h % 2), source: "attendance" }));
-  }
-  return out;
+  return { inputs: out, notes };
 }
 
-function attendanceFor(e: LocaleEmployee, period: PayPeriod, inputs: PeriodInput[], settings: PayrollSettings, bundle: LocaleBundle): AttendanceSnapshot {
+function attendanceFor(e: LocaleEmployee, period: PayPeriod, inputs: PeriodInput[], bundle: LocaleBundle): AttendanceSnapshot {
   const workingDays = workingDaysBetween(period.start, period.end);
   const factor = prorationFactor(period, e, "working_days");
   const unpaid = inputs.filter((i) => i.code === "UNPAID_LEAVE").reduce((s, i) => s + (i.units ?? 0), 0);
@@ -312,7 +404,6 @@ function attendanceFor(e: LocaleEmployee, period: PayPeriod, inputs: PeriodInput
     .filter((r) => r.employeeId === e.id && r.status === "approved" && r.startDate <= period.end && r.endDate >= period.start)
     .reduce((s, r) => s + Math.min(r.days ?? 0, workingDays), 0);
   const ot = inputs.filter((i) => i.code.startsWith("OT_")).reduce((s, i) => s + (i.units ?? 0), 0);
-  void settings;
   return {
     workingDays,
     daysWorked: Math.max(0, Math.round(workingDays * factor) - unpaid - paid),
@@ -334,7 +425,7 @@ export function engineEmployee(e: LocaleEmployee) {
   };
 }
 
-/** (Re)computes every included employee of a draft run. */
+/** (Re)computes every included employee of a draft run, snapshotting bank details as of now. */
 export function calculateRun(run: PayrollRun, data: TenantPayrollData, bundle: LocaleBundle): PayrollRun {
   const elements = elementMap(data.elements);
   const rateSet = resolveRateSet(data.rateSets, run.period.end);
@@ -345,7 +436,6 @@ export function calculateRun(run: PayrollRun, data: TenantPayrollData, bundle: L
     const e = people.get(re.employeeId);
     if (!e || !re.included) return { ...re, computation: null };
     const inputs = run.inputs.filter((i) => i.employeeId === re.employeeId);
-    const ytd = ytdBefore(data, re.employeeId, run.period, run.id);
     const computation = computeEmployeePay({
       period: run.period,
       runType: run.type,
@@ -357,15 +447,17 @@ export function calculateRun(run: PayrollRun, data: TenantPayrollData, bundle: L
       profile: profiles.get(e.id) ?? null,
       rateSet,
       settings: data.settings,
-      ytd,
-      manual:
-        re.mode === "manual" && re.manualLines
-          ? { lines: re.manualLines, statutory: re.manualStatutory ?? "recalculate" }
-          : undefined,
+      ytd: ytdBefore(data, re.employeeId, run.period, run.id),
+      manual: re.mode === "manual" && re.manualLines ? { lines: re.manualLines, statutory: re.manualStatutory ?? "recalculate" } : undefined,
     });
-    return { ...re, computation, attendance: attendanceFor(e, run.period, inputs, data.settings, bundle) };
+    return {
+      ...re,
+      computation,
+      attendance: attendanceFor(e, run.period, inputs, bundle),
+      snapshot: paymentSnapshot(profiles.get(e.id)),
+    };
   });
-  const next = { ...run, employees, calculatedAt: new Date().toISOString() };
+  const next = { ...run, employees, calculatedAt: new Date().toISOString(), stale: undefined };
   return { ...next, totals: runTotals(next) };
 }
 
@@ -389,7 +481,7 @@ export function runTotals(run: Pick<PayrollRun, "employees">): PayrollRunTotals 
   return t;
 }
 
-export function newRun(args: {
+export interface NewRunArgs {
   tenantId: string;
   type: PayrollRun["type"];
   period: PayPeriod;
@@ -397,44 +489,109 @@ export function newRun(args: {
   bundle: LocaleBundle;
   data: TenantPayrollData;
   loans: LocaleLoan[];
+  expenses?: PayableExpense[];
   today: Date;
   parentRunId?: string;
+  adjustsPeriod?: PayPeriod;
   history?: boolean;
+  demo?: boolean;
   id?: string;
-}): PayrollRun {
+}
+
+export function newRun(args: NewRunArgs): PayrollRun {
   const { tenantId, type, period, preparedBy, bundle, data } = args;
   const paidExpenseIds = new Set(
-    data.runs.filter((r) => r.status === "finalized" || r.status === "disbursed").flatMap((r) => r.inputs.filter((i) => i.source === "expense" && i.refId).map((i) => i.refId!)),
+    data.runs
+      .filter((r) => r.status === "finalized" || r.status === "disbursed")
+      .flatMap((r) => r.inputs.filter((i) => i.source === "expense" && i.refId).map((i) => i.refId!)),
   );
-  const eligible = bundle.employees.filter((e) => eligibleForPeriod(e, period, data.settings));
-  const inputs =
+  const people = bundle.employees.filter((e) =>
+    type === "regular" ? eligibleForPeriod(e, period, data.settings) : eligibleForOffCycle(e, period, data.settings),
+  );
+  const basicFor = (id: string) => {
+    const s = structureOn(data.structures, id, period.end);
+    return s?.lines.find((l) => l.code === "BASIC" || l.code === "CONSOLIDATED")?.amount ?? 0;
+  };
+  const backPayFor = (employeeId: string) => backPayOwed(data, employeeId, period);
+  const gathered =
     type === "regular"
-      ? eligible.flatMap((e) => gatherInputs(e, period, data.settings, { loans: args.loans, bundle, paidExpenseIds, today: args.today }, { history: args.history }))
+      ? people.map((e) =>
+          gatherInputs(
+            e,
+            period,
+            data.settings,
+            { loans: args.loans, bundle, expenses: args.expenses ?? [], paidExpenseIds, basicFor, backPayFor, today: args.today },
+            { history: args.history, demo: args.demo },
+          ),
+        )
       : [];
+  const seq = data.runs.filter((r) => r.period.year === period.year && r.period.month === period.month && r.id !== args.id).length + 1;
   const title =
-    type === "regular" ? `${period.label} Payroll` : type === "off_cycle" ? `${period.label} Off-cycle Payroll` : `${period.label} Adjustment Run`;
+    type === "regular"
+      ? `${period.label} Payroll`
+      : type === "off_cycle"
+        ? `${period.label} Off-cycle Payroll`
+        : `Adjustment to ${args.adjustsPeriod?.label ?? period.label} (paid ${period.label})`;
+  const tag = type === "regular" ? "R" : type === "off_cycle" ? "O" : "A";
   const run: PayrollRun = {
-    id: args.id ?? `PR-${period.year}${String(period.month).padStart(2, "0")}-${type === "regular" ? "R" : type === "off_cycle" ? "O" : "A"}-${Date.now().toString(36).toUpperCase()}`,
+    id: args.id ?? `${tenantPrefix(tenantId)}-PR-${period.year}${String(period.month).padStart(2, "0")}-${tag}${seq}-${Date.now().toString(36).toUpperCase().slice(-4)}`,
     tenantId,
     type,
     period,
     title,
     status: "draft",
-    employees: eligible.map((e) => ({
+    seq,
+    employees: people.map((e) => ({
       employeeId: e.id,
       included: type === "regular",
       mode: "auto",
       computation: null,
       attendance: { workingDays: 0, daysWorked: 0, paidLeaveDays: 0, unpaidLeaveDays: 0, overtimeHours: 0 },
     })),
-    inputs,
+    inputs: gathered.flatMap((g) => g.inputs),
+    inputNotes: gathered.flatMap((g) => g.notes),
     exceptions: [],
     totals: { employees: 0, gross: 0, deductions: 0, net: 0, paye: 0, pensionEmployee: 0, pensionEmployer: 0, nhf: 0, employerCost: 0 },
     preparedBy,
     createdAt: new Date().toISOString(),
     parentRunId: args.parentRunId,
+    adjustsPeriod: args.adjustsPeriod,
   };
   return calculateRun(run, data, bundle);
+}
+
+/**
+ * Arrears from approved salary versions dated before `period` that earlier
+ * finalized months paid at the old rate. Each version's arrears are paid
+ * once: a finalized run carrying a BACK_PAY input for it settles it.
+ */
+export function backPayOwed(data: Pick<TenantPayrollData, "structures" | "runs" | "elements">, employeeId: string, period: PayPeriod) {
+  const locked = data.runs.filter((r) => r.status === "finalized" || r.status === "disbursed");
+  const settled = new Set(locked.flatMap((r) => r.inputs.filter((i) => i.code === "BACK_PAY" && i.refId).map((i) => i.refId!)));
+  const recurring = new Set(data.elements.filter((e) => e.recurring && e.category === "earning").map((e) => e.code));
+  const out: { amount: number; refId: string; description: string }[] = [];
+  for (const s of data.structures) {
+    if (s.employeeId !== employeeId || (s.status ?? "approved") !== "approved" || s.effectiveFrom >= period.start || settled.has(s.id)) continue;
+    if (s.approvedBy === "System") continue; // opening structures, not a raise
+    const monthly = s.lines.reduce((t, l) => t + l.amount, 0);
+    let arrears = 0;
+    const months: string[] = [];
+    for (const r of locked) {
+      if (r.type !== "regular" || r.period.end < s.effectiveFrom || r.period.start >= period.start) continue;
+      const re = r.employees.find((e) => e.employeeId === employeeId && e.included && e.computation);
+      if (!re?.computation) continue;
+      const paid = re.computation.lines.filter((l) => recurring.has(l.code) && l.amount > 0).reduce((t, l) => t + l.amount, 0);
+      const from = s.effectiveFrom > r.period.start ? s.effectiveFrom : r.period.start;
+      const share = (Date.parse(r.period.end) - Date.parse(from) + 86_400_000) / (Date.parse(r.period.end) - Date.parse(r.period.start) + 86_400_000);
+      const owed = round2(monthly * share * re.computation.prorationFactor - paid * share);
+      if (owed > 0) {
+        arrears += owed;
+        months.push(r.period.label.split(" ")[0].slice(0, 3));
+      }
+    }
+    if (arrears > 0) out.push({ amount: round2(arrears), refId: s.id, description: `Arrears from ${s.effectiveFrom} (${months.join(", ")}) · ${s.reason}` });
+  }
+  return out;
 }
 
 // ── Payslips ────────────────────────────────────────────────────────────────
@@ -462,17 +619,28 @@ export function companySnapshot(bundle: LocaleBundle): PayslipCompanySnapshot {
 
 const mask = (acct: string) => (acct ? `•••• ${acct.slice(-4)}` : "—");
 
-export function payslipHashPayload(p: Pick<Payslip, "reference" | "tenantId" | "employeeId" | "period" | "computation">) {
+/** What the verification fingerprint covers: every figure plus where the money went. */
+export function payslipHashPayload(p: Pick<Payslip, "reference" | "tenantId" | "employeeId" | "runId" | "runType" | "period" | "computation" | "employee">) {
   return canonicalJson({
     reference: p.reference,
     tenant: p.tenantId,
     employee: p.employeeId,
+    run: p.runId,
+    runType: p.runType,
     period: `${p.period.year}-${p.period.month}`,
-    lines: p.computation.lines.map((l) => [l.code, l.amount]),
+    lines: p.computation.lines.map((l) => [l.code, l.category, l.amount]),
     gross: p.computation.gross,
     deductions: p.computation.totalDeductions,
     net: p.computation.net,
+    ytd: [p.computation.ytd.gross, p.computation.ytd.paye, p.computation.ytd.net],
+    paidTo: [p.employee.bankName, p.employee.accountMasked],
   });
+}
+
+export function payslipReference(run: Pick<PayrollRun, "period" | "seq" | "type">, index: number): string {
+  const seq = run.seq ?? 1;
+  const runPart = run.type === "regular" && seq === 1 ? "" : `${String(seq).padStart(2, "0")}-`;
+  return `PSL-${run.period.year}-${String(run.period.month).padStart(2, "0")}-${runPart}${String(index + 1).padStart(4, "0")}`;
 }
 
 export function buildPayslips(args: {
@@ -489,48 +657,54 @@ export function buildPayslips(args: {
   const types = new Map(bundle.employmentTypes.map((t) => [t.id, t.name]));
   const company = companySnapshot(bundle);
   const balances = (bundle.leaveBalances ?? []) as { employeeId: string; leavePolicyId: string; entitlement: number; used: number; remaining: number; year: number }[];
-  const typeTag = run.type === "regular" ? "" : run.type === "off_cycle" ? "OC-" : "ADJ-";
 
   return run.employees
     .filter((re) => re.included && re.computation)
     .map((re, i) => {
       const e = people.get(re.employeeId)!;
-      const p = profiles.get(re.employeeId);
+      // Pay details as approved (the run's frozen snapshot), not as edited since.
+      const pay = re.snapshot ?? paymentSnapshot(profiles.get(re.employeeId));
       const lb = balances.find((b) => b.employeeId === re.employeeId && b.leavePolicyId === "LP-01");
       const leave = lb ? { entitlement: lb.entitlement, used: lb.used, remaining: lb.remaining, yearLabel: String(run.period.year) } : null;
-      const reference = `PSL-${run.period.year}-${String(run.period.month).padStart(2, "0")}-${typeTag}${String(i + 1).padStart(4, "0")}`;
       const computation = re.computation!;
-      const base = { reference, tenantId: run.tenantId, employeeId: re.employeeId, period: run.period, computation };
+      const employee = {
+        id: e.id,
+        employeeNumber: e.employeeNumber,
+        fullName: e.fullName,
+        jobTitle: e.jobTitle,
+        departmentName: e.departmentName,
+        grade: e.grade ?? "",
+        employmentType: types.get(e.employmentTypeId) ?? e.employmentTypeId,
+        startDate: e.startDate,
+        email: e.email,
+        bankName: pay.bankName,
+        accountMasked: mask(pay.accountNumber),
+        tin: pay.tin,
+        rsaPin: pay.rsaPin,
+        pfaName: pay.pfaName,
+        stateOfResidence: pay.stateOfResidence,
+      };
+      const base = {
+        reference: payslipReference(run, i),
+        tenantId: run.tenantId,
+        employeeId: re.employeeId,
+        runId: run.id,
+        runType: run.type,
+        period: run.period,
+        computation,
+        employee,
+      };
       const hash = sha256Hex(payslipHashPayload(base));
       return {
         ...base,
         id: `${run.id}-${re.employeeId}`,
-        runId: run.id,
-        runType: run.type,
         status,
         company,
-        employee: {
-          id: e.id,
-          employeeNumber: e.employeeNumber,
-          fullName: e.fullName,
-          jobTitle: e.jobTitle,
-          departmentName: e.departmentName,
-          grade: e.grade ?? "",
-          employmentType: types.get(e.employmentTypeId) ?? e.employmentTypeId,
-          startDate: e.startDate,
-          email: e.email,
-          bankName: p?.bankName ?? "",
-          accountMasked: mask(p?.accountNumber ?? ""),
-          tin: p?.tin ?? "",
-          rsaPin: p?.rsaPin ?? "",
-          pfaName: p?.pfaName ?? "",
-          stateOfResidence: p?.stateOfResidence ?? "",
-        },
         attendance: re.attendance,
         leave,
         insights: buildInsights({
           current: computation,
-          previous: previousComputation(data, re.employeeId, run.period),
+          previous: run.type === "regular" ? previousComputation(data, re.employeeId, run.period, run.id) : null,
           leave,
           periodMonth: run.period.month,
           companyName: company.tradingName,
@@ -546,9 +720,10 @@ export function buildPayslips(args: {
 // ── Demo history ────────────────────────────────────────────────────────────
 
 /**
- * Seeds a believable payroll history: Jan–Jul 2026 brought forward as opening
- * YTD (as if migrated from a previous system), Aug–Oct as finalized runs with
- * payslips, and the current month as a calculated draft ready for review.
+ * Seeds a believable payroll history: Jan–(current−4) brought forward as
+ * opening YTD (as if migrated from a previous system), the three months
+ * before the current one as finalized runs with payslips, and the current
+ * month as a calculated draft ready for review.
  */
 export function seedHistory(args: {
   tenantId: string;
@@ -560,26 +735,30 @@ export function seedHistory(args: {
   const { tenantId, bundle, base, loans, today } = args;
   const year = today.getUTCFullYear();
   const currentMonth = today.getUTCMonth() + 1;
-  const fin = bundle.roles.find((r) => r.id === "ROLE-FIN");
-  const hr = bundle.roles.find((r) => r.id === "ROLE-HRADMIN");
+  const role = (id: string) => bundle.roles.find((r) => r.id === id);
   const nameOf = (id?: string) => bundle.employees.find((e) => e.id === id)?.fullName ?? "System";
+  const hr = role("ROLE-HRADMIN");
+  const fin = role("ROLE-FIN");
+  const exec = role("ROLE-EXEC");
   const preparer: RunActor = { employeeId: hr?.linkedEmployeeId ?? "", name: nameOf(hr?.linkedEmployeeId) };
-  const approver: RunActor = { employeeId: fin?.linkedEmployeeId ?? "", name: nameOf(fin?.linkedEmployeeId) };
+  const approver: RunActor = { employeeId: exec?.linkedEmployeeId ?? fin?.linkedEmployeeId ?? "", name: nameOf(exec?.linkedEmployeeId ?? fin?.linkedEmployeeId) };
+  const approvedByLine = [fin && `${nameOf(fin.linkedEmployeeId)} (Finance)`, exec && `${nameOf(exec.linkedEmployeeId)} (Executive)`].filter(Boolean).join(" · ");
 
   const data: TenantPayrollData = { ...base, runs: [], payslips: [], openingYtd: {} };
   const finalizedFrom = Math.max(1, currentMonth - 3);
+  const prefix = tenantPrefix(tenantId);
 
   // Opening balances: months before the first finalized run, computed silently.
   for (let m = 1; m < finalizedFrom; m++) {
     const period = makePeriod(year, m, base.settings.payDay);
-    const run = newRun({ tenantId, type: "regular", period, preparedBy: preparer, bundle, data, loans, today, history: true, id: `OPEN-${m}` });
+    const run = newRun({ tenantId, type: "regular", period, preparedBy: preparer, bundle, data, loans, today, history: true, demo: true, id: `OPEN-${m}` });
     for (const re of run.employees) if (re.computation) data.openingYtd[re.employeeId] = re.computation.ytd;
   }
 
   for (let m = finalizedFrom; m <= currentMonth; m++) {
     const period = makePeriod(year, m, base.settings.payDay);
-    const id = `PR-${year}${String(m).padStart(2, "0")}-R`;
-    const run = newRun({ tenantId, type: "regular", period, preparedBy: preparer, bundle, data, loans, today, history: m < currentMonth, id });
+    const id = `${prefix}-PR-${year}${String(m).padStart(2, "0")}-R1`;
+    const run = newRun({ tenantId, type: "regular", period, preparedBy: preparer, bundle, data, loans, today, history: m < currentMonth, demo: true, id });
     run.createdAt = `${period.start}T09:00:00.000Z`;
     if (m === currentMonth) {
       data.runs.push(run);
@@ -597,9 +776,7 @@ export function seedHistory(args: {
       disbursedAt: `${period.payDate}T08:00:00.000Z`,
     };
     data.runs.push(finalized);
-    data.payslips.push(
-      ...buildPayslips({ run: finalized, bundle, data, status: "final", approvedBy: approver.name, generatedAt: approvedAt }),
-    );
+    data.payslips.push(...buildPayslips({ run: finalized, bundle, data, status: "final", approvedBy: approvedByLine || approver.name, generatedAt: approvedAt }));
   }
   return { runs: data.runs, payslips: data.payslips, openingYtd: data.openingYtd };
 }

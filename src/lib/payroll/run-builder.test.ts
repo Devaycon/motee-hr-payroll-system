@@ -3,7 +3,8 @@ import nigeria from "@/src/data/locale/nigeria.json";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import { SEED_PAY_ELEMENTS } from "./elements-seed";
 import { DEFAULT_PAYROLL_SETTINGS, NG_RATE_SETS } from "./ng/rate-sets";
-import { buildPayslips, calculateRun, payslipHashPayload, seedHistory, seedProfile, seedStructure } from "./run-builder";
+import { backPayOwed, buildPayslips, calculateRun, isValidNuban, newRun, nubanCheckDigit, payslipHashPayload, payslipReference, seedHistory, seedProfile, seedStructure } from "./run-builder";
+import { makePeriod } from "./ng/engine";
 import { sha256Hex } from "./hash";
 import { validateRun } from "./validation";
 
@@ -72,5 +73,76 @@ describe("seeded Nigeria payroll", () => {
     const ex = validateRun({ run: again, employees: new Map(bundle.employees.map((e) => [e.id, e])), profiles: new Map(base.profiles.map((p) => [p.employeeId, p])), previous: new Map(), settings });
     expect(Array.isArray(ex)).toBe(true);
     expect(buildPayslips({ run: again, bundle, data, status: "draft", approvedBy: null, generatedAt: "x" }).length).toBe(again.totals.employees);
+  });
+});
+
+// ── Audit fixes: integrity & validation ─────────────────────────────────────
+
+describe("run integrity and validation", () => {
+  const draft = history.runs[3];
+  const people = new Map(bundle.employees.map((e) => [e.id, e]));
+  const profiles = new Map(base.profiles.map((p) => [p.employeeId, p]));
+
+  it("validates NUBAN check digits (CBN algorithm)", () => {
+    // GTBank 058, serial 012345678 → check digit computed by the standard weights.
+    const check = nubanCheckDigit("058", "012345678");
+    expect(isValidNuban(`012345678${check}`, "058")).toBe(true);
+    expect(isValidNuban(`012345678${(check + 1) % 10}`, "058")).toBe(false);
+    expect(isValidNuban("12345", "058")).toBe(false);
+    // Seeded demo accounts carry valid check digits.
+    for (const p of base.profiles.filter((x) => /^\d{3}$/.test(x.bankCode))) expect(isValidNuban(p.accountNumber, p.bankCode)).toBe(true);
+  });
+
+  it("never adds demo variable pay to a run people create themselves", () => {
+    const real = newRun({ tenantId: bundle.tenant.id, type: "regular", period: makePeriod(2026, 12), preparedBy: { employeeId: "X", name: "X" }, bundle, data, loans: [], today });
+    expect(real.inputs.some((i) => ["OT_NORMAL", "COMMISSION", "PERFORMANCE_BONUS", "UNPAID_LEAVE"].includes(i.code))).toBe(false);
+  });
+
+  it("gives every payslip a unique reference, even across runs in one month", () => {
+    const oc = newRun({ tenantId: bundle.tenant.id, type: "off_cycle", period: draft.period, preparedBy: { employeeId: "X", name: "X" }, bundle, data: { ...data, runs: [...data.runs] }, loans: [], today });
+    const ref1 = payslipReference(draft, 0);
+    const ref2 = payslipReference(oc, 0);
+    expect(ref1).not.toBe(ref2);
+    expect(oc.id.startsWith("NG001-PR-")).toBe(true);
+  });
+
+  it("does not flag a leaver whose final pay falls inside the period", () => {
+    const leaver = { ...bundle.employees[5], dateOfLeaving: `${draft.period.year}-${String(draft.period.month).padStart(2, "0")}-10`, status: "terminated" };
+    const ex = validateRun({ run: draft, employees: new Map([...people, [leaver.id, leaver]]), profiles, previous: new Map(), settings });
+    expect(ex.some((e) => e.rule === "leaver_in_run" && e.employeeId === leaver.id)).toBe(false);
+  });
+
+  it("flags bank details changed since the last pay", () => {
+    const someone = draft.employees.find((e) => e.included)!;
+    const before = { ...someone.snapshot!, accountNumber: "0000000000" };
+    const ex = validateRun({ run: draft, employees: people, profiles, previous: new Map(), previousPayment: new Map([[someone.employeeId, before]]), settings });
+    expect(ex.find((e) => e.rule === "bank_changed" && e.employeeId === someone.employeeId)?.severity).toBe("error");
+  });
+
+  it("re-asks for acknowledgement when the figure behind an exception changes", () => {
+    const neg = { ...draft, exceptions: [{ id: "neg:E:-5000", rule: "negative_net" as const, severity: "error" as const, employeeId: "E", message: "", acknowledged: { by: "x", at: "", reason: "ok" } }] };
+    const ex = validateRun({ run: neg, employees: people, profiles, previous: new Map(), settings });
+    expect(ex.some((e) => e.id === "neg:E:-5000")).toBe(false);
+  });
+
+  it("pays arrears once for an approved back-dated raise", () => {
+    const empId = draft.employees.find((e) => e.included)!.employeeId;
+    const old = base.structures.find((s) => s.employeeId === empId)!;
+    const raise = {
+      ...old,
+      id: "SS-RAISE",
+      effectiveFrom: `${history.runs[1].period.start}`,
+      lines: old.lines.map((l) => (l.code === "BASIC" ? { ...l, amount: l.amount + 100_000 } : l)),
+      reason: "Promotion",
+      approvedBy: "Finance",
+      status: "approved" as const,
+    };
+    const withRaise = { ...data, structures: [...data.structures, raise] };
+    const owed = backPayOwed(withRaise, empId, draft.period);
+    // Two finalized months (Sep, Oct) underpaid by ₦100k each.
+    expect(owed[0]?.amount).toBeCloseTo(200_000, 0);
+    const settledRun = { ...history.runs[2], inputs: [...history.runs[2].inputs, { id: "bp", employeeId: empId, code: "BACK_PAY", amount: 1, source: "adjustment" as const, refId: "SS-RAISE" }] };
+    const settled = { ...withRaise, runs: withRaise.runs.map((r) => (r.id === settledRun.id ? settledRun : r)) };
+    expect(backPayOwed(settled, empId, draft.period)).toHaveLength(0);
   });
 });

@@ -229,8 +229,9 @@ export function ApprovalDetailPage({
 
   const showApproverActions =
     youAreCurrent && canApprove && request.status === "in_progress";
+  // Payroll runs are re-raised from the run itself (recalculated and re-validated first).
   const showSubmitterReturned =
-    youAreSubmitter && request.status === "returned";
+    youAreSubmitter && request.status === "returned" && request.documentType !== "payroll_run";
   const showSubmitterCancel =
     youAreSubmitter && request.status === "in_progress";
 

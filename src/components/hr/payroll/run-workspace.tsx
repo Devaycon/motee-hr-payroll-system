@@ -17,6 +17,9 @@ import {
   Trash2,
   Upload,
   Wallet,
+  Printer,
+  UserPlus,
+  Calculator,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/src/components/ui/badge";
@@ -52,9 +55,12 @@ import { useAppSelector } from "@/src/lib/stores/hooks";
 import { PAYROLL_DOCUMENT_TYPE, PAYROLL_HREF, PAYROLL_MODULE, hrPayslipHref } from "@/src/lib/payroll/constants";
 import { ELEMENT_GROUP_LABELS, ELEMENT_GROUP_ORDER } from "@/src/lib/payroll/elements-seed";
 import { EXCEPTION_RULE_LABELS, blockingExceptions } from "@/src/lib/payroll/validation";
-import { previousComputation } from "@/src/lib/payroll/run-builder";
+import { previousComputation, structureOn } from "@/src/lib/payroll/run-builder";
+import { applyCollection } from "@/src/lib/profile/collection-edits";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import type { LocaleEmployee } from "@/src/lib/types/locale";
 import { inputSourceOf, type PayrollException, type PayrollRun, type PeriodInput, type RunEmployee } from "@/src/lib/payroll/types";
-import { useCurrentActor, usePayrollActions, useRun } from "@/src/lib/payroll/use-payroll";
+import { openEarlierRuns, useCurrentActor, usePayrollActions, useRun, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import { cn } from "@/src/lib/utils";
 import { NotSupported, PipelineStepper, RunExportsMenu, RunStatusBadge, RunTypeBadge, Stat, fmtDate, money } from "./components/shared";
 
@@ -64,13 +70,18 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
   const actions = usePayrollActions();
   const actor = useCurrentActor();
   const canEdit = useCan(PAYROLL_MODULE, "edit");
-  const request = useAppSelector((s) =>
-    [...s.approvals.requests].reverse().find((r) => r.documentType === PAYROLL_DOCUMENT_TYPE && r.documentId === runId),
-  );
+  // Requests are stored newest first; prefer the one the run points at.
+  const request = useAppSelector((s) => {
+    const mine = s.approvals.requests.filter((r) => r.documentType === PAYROLL_DOCUMENT_TYPE && r.documentId === runId);
+    return mine.find((r) => r.id === run?.approvalRequestId) ?? mine[0];
+  });
   const [tab, setTab] = useState("employees");
   const [ack, setAck] = useState<PayrollException | null>(null);
   const [addInput, setAddInput] = useState(false);
-  const [confirmFinalize, setConfirmFinalize] = useState(false);
+  const [addPeople, setAddPeople] = useState(false);
+  const [settlement, setSettlement] = useState(false);
+  const [confirm, setConfirm] = useState<null | "finalize" | "delete" | "paid">(null);
+  const [busy, setBusy] = useState(false);
 
   const people = useMemo(() => new Map((bundle?.employees ?? []).map((e) => [e.id, e])), [bundle]);
   const profiles = useMemo(() => new Map((data?.profiles ?? []).map((p) => [p.employeeId, p])), [data]);
@@ -93,17 +104,27 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
   const source = inputSourceOf(run);
   const iPrepared = run.preparedBy.employeeId === actor.employeeId;
   const included = run.employees.filter((e) => e.included);
-  const currentStep = request?.steps[request.currentStepIndex];
+  const currentStep = request?.status === "in_progress" ? request.steps[request.currentStepIndex] : undefined;
+  const earlier = openEarlierRuns(data, run);
+  const locked = run.status === "finalized" || run.status === "disbursed";
+  const offCycle = run.type !== "regular";
 
-  function submit() {
-    const res = actions.submit(run!.id);
-    if (res.ok) toast.success("Sent for approval", { description: "Finance reviews first, then the executive authorises payment. You can't approve your own run." });
+  async function submit() {
+    setBusy(true);
+    const res = await actions.submit(run!.id);
+    setBusy(false);
+    if (res.ok) toast.success("Sent for approval", { description: "Finance reviews first, then the executive authorises payment. Neither the preparer nor the submitter can approve it." });
     else toast.error(res.reason);
   }
   function finalize() {
     const res = actions.finalize(run!.id);
-    setConfirmFinalize(false);
-    if (res.ok) toast.success("Payroll finalized", { description: "The run is locked, payslips are issued to every employee and loan repayments are posted." });
+    setConfirm(null);
+    if (res.ok) toast.success("Payroll finalized", { description: "The run is locked, every employee has been sent their payslip, loan repayments and expense reimbursements are posted." });
+    else toast.error(res.reason);
+  }
+  async function reraise() {
+    const res = await actions.reraiseApproval(run!.id);
+    if (res.ok) toast.success("Approval request raised again");
     else toast.error(res.reason);
   }
 
@@ -120,66 +141,64 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
             <RunStatusBadge status={run.status} />
             <RunTypeBadge type={run.type} />
             <Badge variant="outline" className="text-[10px] capitalize">{source === "mixed" ? "Mixed: auto + manual" : `${source} calculation`}</Badge>
+            {run.stale && <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700">Needs recalculation</Badge>}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {fmtDate(run.period.start)} – {fmtDate(run.period.end)} · pay day {fmtDate(run.period.payDate)} · prepared by {run.preparedBy.name}
             {run.parentRunId && (
               <>
                 {" · corrects "}
-                <Link href={`${PAYROLL_HREF}/${run.parentRunId}`} className="text-primary hover:underline">the original run</Link>
+                <Link href={`${PAYROLL_HREF}/${run.parentRunId}`} className="text-primary hover:underline">{run.adjustsPeriod?.label ?? "the original run"}</Link>
               </>
             )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <RunExportsMenu run={run} people={people} profiles={profiles} onExport={(w) => actions.logExport(run.id, w)} />
+          {included.length > 0 && (
+            <Button variant="outline" size="sm" className="gap-1.5" asChild>
+              <Link href={`${PAYROLL_HREF}/${run.id}/payslips`}><Printer className="h-3.5 w-3.5" /> {locked ? "All payslips" : "Preview payslips"}</Link>
+            </Button>
+          )}
           {editable && (
             <>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { actions.recalculate(run.id); toast.success("Recalculated", { description: "Loans, expenses and attendance re-read; manual inputs kept." }); }}>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { actions.recalculate(run.id); toast.success("Recalculated", { description: "Loans, expenses, back pay and YTD re-read; manual inputs kept." }); }}>
                 <RefreshCw className="h-3.5 w-3.5" /> Recalculate
               </Button>
               <Button variant="outline" size="sm" className="gap-1.5" asChild>
                 <Link href={`${PAYROLL_HREF}/${run.id}/upload`}><Upload className="h-3.5 w-3.5" /> Upload figures</Link>
               </Button>
-              <Button size="sm" className="gap-1.5" onClick={submit} disabled={!included.length}>
+              <Button size="sm" className="gap-1.5" onClick={submit} disabled={!included.length || busy || !!run.stale || earlier.length > 0}>
                 <Send className="h-3.5 w-3.5" /> Submit for approval
               </Button>
             </>
           )}
           {run.status === "approved" && canEdit && (
-            <Button size="sm" className="gap-1.5" onClick={() => setConfirmFinalize(true)}>
+            <Button size="sm" className="gap-1.5" onClick={() => setConfirm("finalize")} disabled={earlier.length > 0}>
               <Lock className="h-3.5 w-3.5" /> Finalize &amp; issue payslips
             </Button>
           )}
           {run.status === "finalized" && canEdit && (
-            <Button size="sm" className="gap-1.5" onClick={() => { actions.markDisbursed(run.id); toast.success("Marked as paid"); }}>
+            <Button size="sm" className="gap-1.5" onClick={() => setConfirm("paid")}>
               <Wallet className="h-3.5 w-3.5" /> Mark as paid
             </Button>
           )}
-          {(run.status === "finalized" || run.status === "disbursed") && canEdit && run.type !== "adjustment" && (
+          {locked && canEdit && run.type !== "adjustment" && (
             <Button
               variant="outline"
               size="sm"
               className="gap-1.5"
               onClick={() => {
-                const adj = actions.createAdjustmentRun(run.id);
+                const { run: adj, reason } = actions.createAdjustmentRun(run.id);
                 if (adj) router.push(`${PAYROLL_HREF}/${adj.id}`);
+                else toast.error(reason ?? "Couldn't create the adjustment run");
               }}
             >
               <FilePlus2 className="h-3.5 w-3.5" /> Adjustment run
             </Button>
           )}
           {draft && canEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-rose-600 hover:text-rose-600"
-              onClick={() => {
-                actions.deleteRun(run.id);
-                toast.success("Draft run deleted");
-                router.push(PAYROLL_HREF);
-              }}
-            >
+            <Button variant="ghost" size="sm" className="gap-1.5 text-rose-600 hover:text-rose-600" onClick={() => setConfirm("delete")} aria-label="Delete draft run">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
@@ -190,11 +209,48 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
         <PipelineStepper status={run.status} />
       </div>
 
-      {/* Contextual status banner */}
-      <StatusBanner run={run} blocking={blocking.length} iPrepared={iPrepared} approverStep={currentStep?.label} approverName={currentStep?.resolvedEmployeeName ?? undefined} requestId={request?.id} onReraise={canEdit ? () => { actions.reraiseApproval(run.id); toast.success("Approval request raised again"); } : undefined} />
+      {/* Sequencing and staleness come before everything else */}
+      {earlier.length > 0 && !locked && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
+          <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" />
+          <p>
+            Months are closed in order: finalize{" "}
+            {earlier.map((r, i) => (
+              <span key={r.id}>{i > 0 && ", "}<Link className="font-medium text-primary hover:underline" href={`${PAYROLL_HREF}/${r.id}`}>{r.title}</Link></span>
+            ))}{" "}
+            before submitting or finalizing this run. Its tax-to-date depends on them.
+          </p>
+        </div>
+      )}
+      {run.stale && draft && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
+          <RefreshCw className="mt-0.5 h-4 w-4 text-amber-600" />
+          <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
+            <p><b>Recalculate needed</b> — {run.stale.reason}. The figures shown may be out of date.</p>
+            {canEdit && <Button size="sm" variant="outline" onClick={() => actions.recalculate(run.id)}>Recalculate now</Button>}
+          </div>
+        </div>
+      )}
+
+      <StatusBanner run={run} blocking={blocking.length} iPrepared={iPrepared} approverStep={currentStep?.label} approverName={currentStep?.resolvedEmployeeName ?? undefined} request={request} onReraise={canEdit ? reraise : undefined} />
+
+      {offCycle && editable && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3">
+          <p className="text-xs text-muted-foreground">
+            {run.type === "adjustment" ? `Pays corrections to ${run.adjustsPeriod?.label}: add back pay or salary adjustments for the people affected.` : "Off-cycle runs pay only who you add — bonuses, a missed payment, or a leaver's final settlement."}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label htmlFor="paydate" className="text-xs">Pay date</Label>
+            <Input id="paydate" type="date" className="h-8 w-40 text-xs" defaultValue={run.period.payDate} onBlur={(e) => e.target.value && e.target.value !== run.period.payDate && actions.setPayDate(run.id, e.target.value)} />
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setAddPeople(true)}><UserPlus className="h-3.5 w-3.5" /> Add employees</Button>
+            {run.type === "off_cycle" && <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setSettlement(true)}><Calculator className="h-3.5 w-3.5" /> Final settlement</Button>}
+            <Button size="sm" className="gap-1.5" onClick={() => setAddInput(true)}><FilePlus2 className="h-3.5 w-3.5" /> Add payment</Button>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3">
-        <Stat label="Employees" value={run.totals.employees} sub={`${run.employees.length - included.length} excluded`} />
+        <Stat label="Employees" value={run.totals.employees} sub={`${run.employees.length - included.length} not in this run`} />
         <Stat label="Gross pay" value={money(run.totals.gross)} />
         <Stat label="Deductions" value={money(run.totals.deductions)} sub={`PAYE ${money(run.totals.paye, 0)}`} tone="warn" />
         <Stat label="Net pay" value={money(run.totals.net)} sub="To the bank file" tone="good" />
@@ -218,7 +274,11 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
           <ExceptionsList run={run} people={people} editable={editable} onAck={setAck} />
         </TabsContent>
         <TabsContent value="variance" className="mt-4">
-          <VarianceTable run={run} people={people} data={data} threshold={data.settings.varianceThresholdPct} />
+          {offCycle ? (
+            <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">Variance compares monthly pay, so it isn&apos;t shown for off-cycle and adjustment runs.</p>
+          ) : (
+            <VarianceTable run={run} people={people} data={data} threshold={data.settings.varianceThresholdPct} />
+          )}
         </TabsContent>
         <TabsContent value="inputs" className="mt-4">
           <InputsList run={run} people={people} editable={editable} onAdd={() => setAddInput(true)} onRemove={(id) => actions.removeInput(run.id, id)} />
@@ -248,19 +308,89 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
           toast.success("Input added and run recalculated");
         }}
       />
-      <Dialog open={confirmFinalize} onOpenChange={setConfirmFinalize}>
+      <AddPeopleDialog
+        open={addPeople}
+        onClose={() => setAddPeople(false)}
+        run={run}
+        people={people}
+        onAdd={(ids) => {
+          actions.addEmployees(run.id, ids);
+          toast.success(`${ids.length} added to the run`);
+        }}
+      />
+      <FinalSettlementDialog
+        open={settlement}
+        onClose={() => setSettlement(false)}
+        run={run}
+        people={people}
+        onApply={(employeeId, inputs) => {
+          actions.addEmployees(run.id, [employeeId]);
+          for (const input of inputs) actions.addInput(run.id, input);
+          toast.success("Final settlement added", { description: "Check the employee's payslip preview before submitting." });
+        }}
+      />
+      <Dialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Finalize {run.title}?</DialogTitle>
-            <DialogDescription>
-              This locks every figure in the run. {run.totals.employees} payslips are issued and can be verified; loan repayments are posted to the loan register. Any
-              correction after this goes through an adjustment run.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmFinalize(false)}>Cancel</Button>
-            <Button onClick={finalize} className="gap-1.5"><Lock className="h-3.5 w-3.5" /> Finalize</Button>
-          </DialogFooter>
+          {confirm === "finalize" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Finalize {run.title}?</DialogTitle>
+                <DialogDescription>
+                  This locks every figure in the run. {run.totals.employees} payslips are issued (each employee is notified), loan repayments are posted and approved expense claims are
+                  marked reimbursed. Any correction after this goes through an adjustment run.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setConfirm(null)}>Cancel</Button>
+                <Button onClick={finalize} className="gap-1.5"><Lock className="h-3.5 w-3.5" /> Finalize</Button>
+              </DialogFooter>
+            </>
+          )}
+          {confirm === "paid" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Mark {run.title} as paid?</DialogTitle>
+                <DialogDescription>
+                  Only do this once the bank has processed the NIBSS payment file ({money(run.totals.net)} to {run.totals.employees} accounts). It records the run as paid for
+                  everyone, including auditors.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setConfirm(null)}>Not yet</Button>
+                <Button
+                  onClick={() => {
+                    actions.markDisbursed(run.id);
+                    setConfirm(null);
+                    toast.success("Marked as paid");
+                  }}
+                >
+                  The bank has paid it
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+          {confirm === "delete" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Delete this draft?</DialogTitle>
+                <DialogDescription>The draft run and its inputs are removed, and any open approval request for it is withdrawn. Finalized runs are never deleted.</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setConfirm(null)}>Keep it</Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    actions.deleteRun(run.id);
+                    setConfirm(null);
+                    toast.success("Draft run deleted");
+                    router.push(PAYROLL_HREF);
+                  }}
+                >
+                  Delete draft
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
@@ -273,7 +403,7 @@ function StatusBanner({
   iPrepared,
   approverStep,
   approverName,
-  requestId,
+  request,
   onReraise,
 }: {
   run: PayrollRun;
@@ -281,7 +411,7 @@ function StatusBanner({
   iPrepared: boolean;
   approverStep?: string;
   approverName?: string;
-  requestId?: string;
+  request?: { id: string; status: string };
   onReraise?: () => void;
 }) {
   const base = "flex items-start gap-3 rounded-xl border px-4 py-3 text-sm";
@@ -297,12 +427,13 @@ function StatusBanner({
         <p>Validation passed. Review the variance, then submit — approval goes to Finance, then the executive.</p>
       </div>
     );
-  if (run.status === "in_review" && !requestId)
+  const requestOpen = request && request.status === "in_progress";
+  if (run.status === "in_review" && !requestOpen)
     return (
       <div className={cn(base, "border-amber-500/30 bg-amber-500/5")}>
         <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" />
         <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
-          <p>This run is awaiting approval, but its request is no longer in the approvals queue.</p>
+          <p>This run is awaiting approval, but there&apos;s no open approval request for it (the demo keeps requests in memory, so a full page reload drops them).</p>
           {onReraise && <Button size="sm" variant="outline" onClick={onReraise}>Raise the approval again</Button>}
         </div>
       </div>
@@ -314,7 +445,7 @@ function StatusBanner({
         <p>
           Awaiting approval{approverStep ? <> — <b>{approverStep}</b>{approverName ? ` (${approverName})` : ""}</> : ""}. The run is read-only until it&apos;s approved or sent back.
           {iPrepared && " As the preparer, you can't approve it yourself."}{" "}
-          {requestId && <Link className="font-medium text-primary hover:underline" href={`/hr-action-center/submissions/${requestId}`}>Open the approval</Link>}
+          {request && <Link className="font-medium text-primary hover:underline" href={`/hr-action-center/submissions/${request.id}`}>Open the approval</Link>}
         </p>
       </div>
     );
@@ -329,9 +460,153 @@ function StatusBanner({
     <div className={cn(base, "border-violet-500/30 bg-violet-500/5")}>
       <Lock className="mt-0.5 h-4 w-4 text-violet-600" />
       <p>
-        Finalized on {fmtDate(run.finalizedAt)} — this run is locked. {run.status === "disbursed" ? `Paid on ${fmtDate(run.disbursedAt)}.` : "Download the NIBSS file from Exports, then mark it as paid."} Corrections go through an adjustment run.
+        Finalized on {fmtDate(run.finalizedAt)} — this run is locked and pays the bank details as approved. {run.status === "disbursed" ? `Paid on ${fmtDate(run.disbursedAt)}.` : "Download the NIBSS file from Exports, then mark it as paid."} Corrections go through an adjustment run.
       </p>
     </div>
+  );
+}
+
+// ── Off-cycle tools ─────────────────────────────────────────────────────────
+
+function AddPeopleDialog({ open, onClose, run, people, onAdd }: { open: boolean; onClose: () => void; run: PayrollRun; people: Map<string, LocaleEmployee>; onAdd: (ids: string[]) => void }) {
+  const [picked, setPicked] = useState<string[]>([]);
+  const [q, setQ] = useState("");
+  const inRun = new Set(run.employees.filter((e) => e.included).map((e) => e.employeeId));
+  const candidates = run.employees
+    .map((e) => people.get(e.employeeId))
+    .filter((e): e is LocaleEmployee => !!e && !inRun.has(e.id))
+    .filter((e) => !q || `${e.fullName} ${e.departmentName}`.toLowerCase().includes(q.toLowerCase()));
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); setPicked([]); } }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add employees to this run</DialogTitle>
+          <DialogDescription>Current staff, plus anyone who left in the last six months (for a final settlement or missed pay).</DialogDescription>
+        </DialogHeader>
+        <Input placeholder="Search by name or department" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="max-h-72 divide-y overflow-y-auto rounded-lg border">
+          {candidates.length === 0 && <p className="p-4 text-center text-xs text-muted-foreground">Everyone eligible is already in the run.</p>}
+          {candidates.map((e) => (
+            <label key={e.id} className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-muted/40">
+              <Checkbox checked={picked.includes(e.id)} onCheckedChange={(v) => setPicked((p) => (v ? [...p, e.id] : p.filter((x) => x !== e.id)))} />
+              <span className="flex-1">{e.fullName}<span className="block text-[11px] text-muted-foreground">{e.departmentName}{e.dateOfLeaving ? ` · left ${e.dateOfLeaving}` : ""}</span></span>
+            </label>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button disabled={!picked.length} onClick={() => { onAdd(picked); setPicked([]); onClose(); }}>Add {picked.length || ""}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * A leaver's final settlement: accrued leave encashment, notice pay, gratuity
+ * (loss-of-office exemption applies) and recovery of any outstanding loan.
+ */
+function FinalSettlementDialog({
+  open,
+  onClose,
+  run,
+  people,
+  onApply,
+}: {
+  open: boolean;
+  onClose: () => void;
+  run: PayrollRun;
+  people: Map<string, LocaleEmployee>;
+  onApply: (employeeId: string, inputs: Omit<PeriodInput, "id">[]) => void;
+}) {
+  const { data, bundle } = useTenantPayroll();
+  const loans = useAppSelector((s) => s.collectionEdits);
+  const [employeeId, setEmployeeId] = useState("");
+  const [leaveDays, setLeaveDays] = useState("");
+  const [noticeMonths, setNoticeMonths] = useState("0");
+  const [gratuity, setGratuity] = useState("0");
+  const [recoverLoans, setRecoverLoans] = useState(true);
+  const emp = people.get(employeeId);
+  const structure = data && employeeId ? structureOn(data.structures, employeeId, run.period.end) : null;
+  const monthly = structure?.lines.reduce((s, l) => s + l.amount, 0) ?? 0;
+  const basic = structure?.lines.find((l) => l.code === "BASIC")?.amount ?? 0;
+  const balance = ((bundle?.leaveBalances ?? []) as { employeeId: string; leavePolicyId: string; remaining: number }[]).find((b) => b.employeeId === employeeId && b.leavePolicyId === "LP-01")?.remaining ?? 0;
+  const days = leaveDays === "" ? balance : Number(leaveDays) || 0;
+  // Conventional day rate: monthly pay ÷ 22 working days.
+  const leavePay = Math.round(((monthly / 22) * days) * 100) / 100;
+  const notice = Math.round(monthly * (Number(noticeMonths) || 0) * 100) / 100;
+  const grat = Number(gratuity) || 0;
+  const outstanding = bundle
+    ? applyCollection(bundle.loans ?? [], "loans", loans)
+        .filter((l) => l.employeeId === employeeId && (l.status === "active" || l.status === "defaulted"))
+        .map((l) => ({ id: l.id, type: l.loanType, left: Math.max(0, l.amount - l.amountRepaid) }))
+        .filter((l) => l.left > 0)
+    : [];
+  void basic;
+  const candidates = run.employees.map((e) => people.get(e.employeeId)).filter((e): e is LocaleEmployee => !!e);
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Final settlement</DialogTitle>
+          <DialogDescription>Accrued leave, notice pay and gratuity, less any loan still owed. Compensation for loss of office is tax-free up to ₦50m.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Employee</Label>
+            <Select value={employeeId} onValueChange={(v) => { setEmployeeId(v); setLeaveDays(""); }}>
+              <SelectTrigger><SelectValue placeholder="Choose the leaver" /></SelectTrigger>
+              <SelectContent>
+                {candidates.map((e) => <SelectItem key={e.id} value={e.id}>{e.fullName}{e.dateOfLeaving ? ` · left ${e.dateOfLeaving}` : ""}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          {emp && (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1"><Label className="text-[11px]">Leave days to pay</Label><Input type="number" min={0} value={leaveDays === "" ? String(balance) : leaveDays} onChange={(e) => setLeaveDays(e.target.value)} /></div>
+                <div className="space-y-1"><Label className="text-[11px]">Notice pay (months)</Label><Input type="number" min={0} step="0.5" value={noticeMonths} onChange={(e) => setNoticeMonths(e.target.value)} /></div>
+                <div className="space-y-1"><Label className="text-[11px]">Gratuity (₦)</Label><Input type="number" min={0} value={gratuity} onChange={(e) => setGratuity(e.target.value)} /></div>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3 text-xs">
+                {[
+                  [`Accrued leave (${days} day${days === 1 ? "" : "s"} × ${money(monthly / 22, 0)})`, leavePay],
+                  ["Payment in lieu of notice", notice],
+                  ["Gratuity", grat],
+                ].map(([k, v]) => (
+                  <div key={k as string} className="flex justify-between py-0.5"><span className="text-muted-foreground">{k}</span><span className="tabular-nums">{money(v as number)}</span></div>
+                ))}
+                {outstanding.map((l) => (
+                  <div key={l.id} className="flex justify-between py-0.5 text-amber-700">
+                    <label className="flex items-center gap-2"><Checkbox checked={recoverLoans} onCheckedChange={(v) => setRecoverLoans(!!v)} /> Recover {l.type.replace(/_/g, " ")} balance</label>
+                    <span className="tabular-nums">−{money(l.left)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
+            disabled={!emp || leavePay + notice + grat <= 0}
+            onClick={() => {
+              const inputs: Omit<PeriodInput, "id">[] = [];
+              if (leavePay > 0) inputs.push({ employeeId, code: "ACCRUED_LEAVE", amount: leavePay, units: days, source: "manual", description: `${days} days of untaken leave` });
+              if (notice > 0) inputs.push({ employeeId, code: "PILON", amount: notice, source: "manual", description: `${noticeMonths} month(s) in lieu of notice` });
+              if (grat > 0) inputs.push({ employeeId, code: "GRATUITY", amount: grat, source: "manual" });
+              if (recoverLoans)
+                for (const l of outstanding)
+                  inputs.push({ employeeId, code: l.type === "salary_advance" ? "SALARY_ADVANCE" : "STAFF_LOAN", amount: l.left, source: "loan", refId: l.id, description: "Outstanding balance recovered on leaving" });
+              onApply(employeeId, inputs);
+              onClose();
+            }}
+          >
+            Add settlement
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -431,8 +706,7 @@ function EmployeesTable({ run, editable, people }: { run: PayrollRun; editable: 
         ),
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [editable, run.id],
+    [editable, run.id, actions],
   );
 
   return (
