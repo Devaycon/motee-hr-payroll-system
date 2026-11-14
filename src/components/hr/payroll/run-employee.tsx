@@ -148,10 +148,16 @@ export function RunEmployeePage({ runId, employeeId }: { runId: string; employee
                   className="h-8 w-8"
                   disabled={!code || !(Number(value) > 0)}
                   onClick={() => {
-                    actions.addInput(run.id, { employeeId, code, ...(units ? { units: Number(value) } : { amount: Number(value) }), source: "manual" });
+                    const input = { employeeId, code, ...(units ? { units: Number(value) } : { amount: Number(value) }), source: "manual" as const };
+                    const res = actions.addInput(run.id, input);
                     setCode("");
                     setValue("");
-                    toast.success("Added — payslip preview updated");
+                    if (res.ok) toast.success("Added — payslip preview updated");
+                    else
+                      toast.error(res.reason, {
+                        duration: 12000,
+                        action: { label: "Add anyway (logged)", onClick: () => actions.addInput(run.id, input, { override: true }) },
+                      });
                   }}
                 >
                   <Plus className="h-4 w-4" />

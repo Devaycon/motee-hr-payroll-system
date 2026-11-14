@@ -9,6 +9,7 @@ import {
   Banknote,
   CalendarClock,
   ChevronDown,
+  FileSpreadsheet,
   Landmark,
   Plus,
   Settings2,
@@ -34,7 +35,11 @@ import { ApprovalChainTab } from "@/src/components/hr/approvals/components/appro
 import { APPROVAL_CHAIN_TAB_ITEM, useHasApprovalChainTab } from "@/src/components/hr/approvals/use-chain-tab";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { PAYROLL_DOCUMENT_TYPE, PAYROLL_HREF, PAYROLL_MODULE, PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
-import { remittanceCalendar } from "@/src/lib/payroll/exports";
+import { downloadFormH1, remittanceAmounts, remittanceCalendar } from "@/src/lib/payroll/exports";
+import { companySnapshot } from "@/src/lib/payroll/run-builder";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
 import { nextPeriod, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import type { PayrollRun } from "@/src/lib/payroll/types";
 import { cn } from "@/src/lib/utils";
@@ -64,12 +69,13 @@ export function PayrollPage() {
   const lastPaid = runs.find((r) => r.status === "disbursed" || r.status === "finalized") ?? null;
   const year = current?.period.year ?? lastPaid?.period.year ?? new Date().getFullYear();
 
+  // Gross pay + employer pension for the year: opening balances plus every final payslip.
   const ytdCost = !data
     ? 0
     : Object.values(data.openingYtd).filter((y) => y.year === year).reduce((s, y) => s + y.gross + y.pensionEmployer, 0) +
-      data.runs
-        .filter((r) => r.period.year === year && (r.status === "finalized" || r.status === "disbursed"))
-        .reduce((s, r) => s + r.totals.gross + r.totals.employerCost, 0);
+      data.payslips
+        .filter((p) => p.status === "final" && p.period.year === year && p.computation.period)
+        .reduce((s, p) => s + p.computation.period.gross + p.computation.period.pensionEmployer, 0);
 
   if (!supported && bundle) return <Shell><NotSupported /></Shell>;
   if (loading || !data) {
@@ -138,6 +144,17 @@ export function PayrollPage() {
     <Shell
       actions={
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => {
+              downloadFormH1(year, data.payslips, bundle ? companySnapshot(bundle).taxId : "");
+              actions.logExport("", `Form H1 ${year}`);
+              toast.success(`Form H1 for ${year} downloaded`, { description: "Annual PAYE return per employee, grouped by State IRS. File by 31 January." });
+            }}
+          >
+            <FileSpreadsheet className="h-4 w-4" /> Form H1 {year}
+          </Button>
           {canSettings && (
             <Button variant="outline" className="gap-2" asChild>
               <Link href={`${PAYROLL_HREF}/settings`}><Settings2 className="h-4 w-4" /> Settings</Link>
@@ -239,7 +256,7 @@ export function PayrollPage() {
           <RunsTable runs={runs} />
         </TabsContent>
         <TabsContent value="remittances" className="mt-4">
-          <Remittances run={lastPaid} />
+          <Remittances runs={runs} canEdit={canCreate} />
         </TabsContent>
         <TabsContent value="activity" className="mt-4">
           <div className="overflow-hidden rounded-xl border bg-card">
@@ -344,45 +361,109 @@ function RunsTable({ runs }: { runs: PayrollRun[] }) {
   );
 }
 
-function Remittances({ run }: { run: PayrollRun | null }) {
-  if (!run) return <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">Finalize a run to see what&apos;s due.</p>;
-  const cal = remittanceCalendar(run.period);
-  const amounts: Record<string, number> = {
-    "Pension (employee + employer)": run.totals.pensionEmployee + run.totals.pensionEmployer,
-    PAYE: run.totals.paye,
-    NHF: run.totals.nhf,
-    NSITF: run.employees.reduce((s, e) => s + (e.computation?.lines.find((l) => l.code === "NSITF")?.amount ?? 0), 0),
-    ITF: run.employees.reduce((s, e) => s + (e.computation?.lines.find((l) => l.code === "ITF")?.amount ?? 0), 0),
-  };
-  const today = new Date().toISOString().slice(0, 10);
+/** Every month with finalized pay: what's owed to each authority, when, and whether it's been paid. */
+function Remittances({ runs, canEdit }: { runs: PayrollRun[]; canEdit: boolean }) {
+  const { data } = useTenantPayroll();
+  const actions = usePayrollActions();
+  const [recording, setRecording] = useState<{ key: string; label: string } | null>(null);
+  const [ref, setRef] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [today] = useState(() => new Date().toISOString().slice(0, 10));
+  const locked = runs.filter((r) => r.status === "finalized" || r.status === "disbursed");
+  const months = new Map<string, PayrollRun[]>();
+  for (const r of locked) {
+    const k = `${r.period.year}-${String(r.period.month).padStart(2, "0")}`;
+    months.set(k, [...(months.get(k) ?? []), r]);
+  }
+  const sorted = [...months.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  if (!sorted.length) return <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">Finalize a run to see what&apos;s due.</p>;
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
-      <div className="border-b px-4 py-3">
-        <p className="text-sm font-semibold">Remittances for {run.period.label}</p>
-        <p className="text-xs text-muted-foreground">Amounts deducted or accrued in the finalized run, and when each must reach the authority.</p>
-      </div>
-      <table className="w-full text-xs">
-        <thead className="bg-muted/40 text-left text-muted-foreground">
-          <tr>
-            <th className="px-4 py-2 font-medium">Remittance</th>
-            <th className="px-4 py-2 font-medium">Paid to</th>
-            <th className="px-4 py-2 text-right font-medium">Amount</th>
-            <th className="px-4 py-2 font-medium">Due</th>
-            <th className="px-4 py-2 font-medium">Rule</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cal.map((c) => (
-            <tr key={c.item} className="border-t">
-              <td className="px-4 py-2.5 font-medium">{c.item}</td>
-              <td className="px-4 py-2.5 text-muted-foreground">{c.to}</td>
-              <td className="px-4 py-2.5 text-right tabular-nums">{amounts[c.item] !== undefined ? money(amounts[c.item]) : "—"}</td>
-              <td className={cn("px-4 py-2.5 tabular-nums", c.due < today ? "text-rose-600" : "")}>{fmtDate(c.due)}</td>
-              <td className="px-4 py-2.5 text-muted-foreground">{c.basis}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex flex-col gap-4">
+      {sorted.map(([key, monthRuns]) => {
+        const regular = monthRuns.find((r) => r.type === "regular") ?? monthRuns[0];
+        const amounts = remittanceAmounts(monthRuns);
+        const cal = remittanceCalendar(regular.period);
+        return (
+          <div key={key} className="overflow-hidden rounded-xl border bg-card">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold">{regular.period.label}</p>
+                <p className="text-xs text-muted-foreground">{monthRuns.length} finalized run{monthRuns.length === 1 ? "" : "s"} · {monthRuns.map((r) => r.title).join(", ")}</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-xs">
+                <thead className="bg-muted/40 text-left text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 font-medium">Remittance</th>
+                    <th className="px-4 py-2 font-medium">Paid to</th>
+                    <th className="px-4 py-2 text-right font-medium">Amount</th>
+                    <th className="px-4 py-2 font-medium">Due</th>
+                    <th className="px-4 py-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cal.map((c) => {
+                    const rk = `${key}:${c.key}`;
+                    const done = data?.remittances?.[rk];
+                    const amount = amounts[c.key];
+                    const overdue = !done && c.due < today && amount > 0;
+                    return (
+                      <tr key={c.key} className="border-t">
+                        <td className="px-4 py-2.5">
+                          <p className="font-medium">{c.item}</p>
+                          <p className="text-[10px] text-muted-foreground">{c.basis}</p>
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{c.to}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{money(amount)}</td>
+                        <td className={cn("px-4 py-2.5 tabular-nums", overdue && "font-medium text-rose-600")}>{fmtDate(c.due)}</td>
+                        <td className="px-4 py-2.5">
+                          {done ? (
+                            <span className="text-emerald-700">Paid {fmtDate(done.date)} · ref {done.reference}</span>
+                          ) : amount <= 0 ? (
+                            <span className="text-muted-foreground">Nothing due</span>
+                          ) : canEdit ? (
+                            <Button size="sm" variant={overdue ? "default" : "outline"} className="h-7 text-[11px]" onClick={() => { setRecording({ key: rk, label: `${c.item} — ${regular.period.label}` }); setRef(""); }}>
+                              {overdue ? "Overdue — record payment" : "Record payment"}
+                            </Button>
+                          ) : (
+                            <span className={overdue ? "text-rose-600" : "text-muted-foreground"}>{overdue ? "Overdue" : "Not yet paid"}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+      <Dialog open={!!recording} onOpenChange={(o) => !o && setRecording(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record remittance</DialogTitle>
+            <DialogDescription>{recording?.label}. Keep the receipt or payment reference — auditors and the authority ask for it.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1"><Label htmlFor="remit-ref" className="text-xs">Payment reference</Label><Input id="remit-ref" value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. REMITA 2701-8834-1923" /></div>
+            <div className="space-y-1"><Label htmlFor="remit-date" className="text-xs">Date paid</Label><Input id="remit-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRecording(null)}>Cancel</Button>
+            <Button
+              disabled={ref.trim().length < 3 || !date}
+              onClick={() => {
+                actions.markRemitted(recording!.key, ref.trim(), date);
+                setRecording(null);
+                toast.success("Remittance recorded");
+              }}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

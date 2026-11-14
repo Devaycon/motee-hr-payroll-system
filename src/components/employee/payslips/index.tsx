@@ -14,6 +14,7 @@ import {
 } from "@/src/components/ui/select";
 import { StatStrip } from "@/src/components/hr/employees/employee-detail/ui";
 import { PayslipDocument, PayslipPrintStyles } from "@/src/components/shared/payslip/payslip-document";
+import { TaxCertificatePage } from "@/src/components/shared/payslip/tax-certificate";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { ESS_PAYSLIPS_HREF, essPayslipHref } from "@/src/lib/payroll/constants";
 import { useDraftPayslip, useEmployeePayslipList, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
@@ -60,15 +61,25 @@ export function MyPayslipsPage() {
   return (
     <Header
       right={
-        years.length > 1 ? (
-          <Select value={year} onValueChange={setYear}>
-            <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="Tax year" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="latest">Tax year {years[0]}</SelectItem>
-              {years.slice(1).map((y) => <SelectItem key={y} value={String(y)}>Tax year {y}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        ) : undefined
+        <div className="flex items-center gap-2">
+          {activeYear && (
+            <Link
+              href={`/employee/tax-certificate/${activeYear}`}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium hover:bg-muted"
+            >
+              <FileText className="h-3.5 w-3.5" /> {activeYear} tax certificate
+            </Link>
+          )}
+          {years.length > 1 && (
+            <Select value={year} onValueChange={setYear}>
+              <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="Tax year" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="latest">Tax year {years[0]}</SelectItem>
+                {years.slice(1).map((y) => <SelectItem key={y} value={String(y)}>Tax year {y}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       }
     >
       {latest && (
@@ -167,6 +178,13 @@ function Header({ children, right }: { children: React.ReactNode; right?: React.
 }
 
 /** Self-service draft preview — the run being prepared, watermarked DRAFT. */
+/** Self-service: my annual PAYE certificate. */
+export function MyTaxCertificatePage({ year }: { year: number }) {
+  const me = useAppSelector((s) => s.auth.user?.employeeId);
+  if (!me) return <p className="py-24 text-center text-sm text-muted-foreground">Sign in to see your tax certificate.</p>;
+  return <TaxCertificatePage employeeId={me} year={year} backHref={ESS_PAYSLIPS_HREF} backLabel="My payslips" />;
+}
+
 export function MyDraftPayslipPage({ runId }: { runId: string }) {
   const me = useAppSelector((s) => s.auth.user?.employeeId) ?? "";
   const { loading, data } = useTenantPayroll();

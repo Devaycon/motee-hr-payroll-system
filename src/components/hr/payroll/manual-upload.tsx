@@ -122,7 +122,7 @@ export function ManualUploadPage({ runId }: { runId: string }) {
       if (!s.errors.length && !s.lines.some((l) => l.category === "earning")) s.errors.push("No earnings — at least basic pay is needed.");
     }
     return [...byEmp.values()];
-  }, [body, layout, idCol, codeCol, amountCol, mapping, headers, people, elMap]);
+  }, [body, layout, idCol, codeCol, amountCol, mapping, headers, people, elMap, run?.employees]);
 
   if (loading || !data || !bundle) return <Skeleton className="h-[500px] w-full rounded-xl" />;
   if (!run) return <p className="py-20 text-center text-sm text-muted-foreground">Run not found.</p>;

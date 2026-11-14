@@ -434,12 +434,23 @@ export function usePayrollActions() {
         }));
       },
 
-      addInput(runId: string, input: Omit<PeriodInput, "id">) {
-        return editDraft(runId, "Added pay input", (r) => ({
+      /**
+       * Add a one-period input. After the month's input cut-off day a regular
+       * run only takes it with an explicit override, which is logged.
+       */
+      addInput(runId: string, input: Omit<PeriodInput, "id">, opts: { override?: boolean } = {}): ActionResult {
+        const run = find(runId);
+        if (!run || run.status !== "draft") return { ok: false, reason: "Only a draft run can take new inputs." };
+        const l = live();
+        const cutoff = l ? inputCutoffDate(run.period, l.data.settings.inputCutoffDay) : null;
+        if (run.type === "regular" && cutoff && new Date().toISOString().slice(0, 10) > cutoff && !opts.override)
+          return { ok: false, reason: `The input cut-off for ${run.period.label} was ${cutoff}. Add it to next month's run, or override.` };
+        editDraft(runId, `Added pay input${opts.override ? " after the input cut-off (override)" : ""}`, (r) => ({
           ...r,
           inputs: [...r.inputs, { ...input, id: `IN-${Date.now().toString(36)}-${r.inputs.length}` }],
           employees: r.employees.map((e) => (e.employeeId === input.employeeId ? { ...e, included: true } : e)),
         }));
+        return { ok: true };
       },
 
       removeInput(runId: string, inputId: string) {
@@ -717,6 +728,12 @@ export function useDraftPayslip(runId: string, employeeId: string) {
       })[0] ?? null
     );
   }, [data, bundle, runId, employeeId]);
+}
+
+/** The last day inputs are accepted for a period (the cut-off day, clamped to the month). */
+export function inputCutoffDate(period: PayPeriod, day: number): string {
+  const last = Number(period.end.slice(8, 10));
+  return `${period.end.slice(0, 8)}${String(Math.min(Math.max(1, day), last)).padStart(2, "0")}`;
 }
 
 export function nextPeriod(data: Pick<TenantPayroll, "runs"> | null, payDay = 25): PayPeriod {

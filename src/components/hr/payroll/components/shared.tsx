@@ -15,6 +15,8 @@ import {
 import { cn } from "@/src/lib/utils";
 import { RUN_PIPELINE, RUN_STATUS_LABELS, RUN_STATUS_STYLES } from "@/src/lib/payroll/constants";
 import { downloadExport, EXPORT_LABELS, type ExportKind } from "@/src/lib/payroll/exports";
+import { companySnapshot } from "@/src/lib/payroll/run-builder";
+import { useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import type { PayrollRun, PayrollRunStatus } from "@/src/lib/payroll/types";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
 import type { EmployeeTaxProfile } from "@/src/lib/payroll/types";
@@ -83,10 +85,17 @@ export function RunExportsMenu({
   profiles: Map<string, EmployeeTaxProfile>;
   onExport?: (what: string) => void;
 }) {
+  // The bank file pays real money: only from a finalized (locked) run.
+  const locked = run.status === "finalized" || run.status === "disbursed";
+  const { data, bundle } = useTenantPayroll();
   const go = (kind: ExportKind, format: "csv" | "xlsx") => {
-    downloadExport(kind, { run, people, profiles }, format);
+    const company = bundle ? companySnapshot(bundle) : undefined;
+    const costCentres = new Map((bundle?.departments ?? []).map((d) => [d.name, d.costCenter]));
+    const excluded = downloadExport(kind, { run, people, profiles, settings: data?.settings, company, costCentres }, format);
     onExport?.(`${EXPORT_LABELS[kind]} (${format.toUpperCase()})`);
-    toast.success(`${EXPORT_LABELS[kind]} downloaded`);
+    if (excluded.length)
+      toast.warning(`${EXPORT_LABELS[kind]} downloaded — ${excluded.length} left out`, { description: excluded.slice(0, 4).join(" · ") + (excluded.length > 4 ? " …" : ""), duration: 10000 });
+    else toast.success(`${EXPORT_LABELS[kind]} downloaded`);
   };
   return (
     <DropdownMenu>
@@ -98,7 +107,7 @@ export function RunExportsMenu({
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel className="text-xs">Statutory & bank files</DropdownMenuLabel>
         {(Object.keys(EXPORT_LABELS) as ExportKind[]).map((k) => (
-          <DropdownMenuItem key={k} onClick={() => go(k, k === "nibss" ? "csv" : "xlsx")} className="gap-2 text-xs">
+          <DropdownMenuItem key={k} onClick={() => go(k, k === "nibss" ? "csv" : "xlsx")} className="gap-2 text-xs" disabled={!locked && k === "nibss"}>
             {k === "nibss" ? <Globe2 className="h-3.5 w-3.5" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
             {EXPORT_LABELS[k]}
             <span className="ml-auto text-[10px] text-muted-foreground">{k === "nibss" ? "CSV" : "XLSX"}</span>

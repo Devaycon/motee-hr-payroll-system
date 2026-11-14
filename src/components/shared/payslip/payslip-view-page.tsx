@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Copy, Lock, Printer, ShieldOff, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Copy, FileText, Lock, Printer, ShieldOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -58,6 +58,11 @@ export function PayslipViewPage({ payslipId, mode, backHref, backLabel }: Props)
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <VerificationBadge payslip={payslip} />
+          <Button variant="outline" size="sm" className="gap-1.5" asChild>
+            <Link href={mode === "ess" ? `/employee/tax-certificate/${payslip.period.year}` : `/organization/employees/${payslip.employeeId}/tax-certificate/${payslip.period.year}`}>
+              <FileText className="h-3.5 w-3.5" /> {payslip.period.year} tax certificate
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => copyVerifyLink(payslip)}>
             <Copy className="h-3.5 w-3.5" /> Copy verification link
           </Button>

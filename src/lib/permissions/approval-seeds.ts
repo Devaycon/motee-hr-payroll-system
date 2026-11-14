@@ -149,7 +149,7 @@ const ATTACHMENTS_BY_TYPE: Record<ApprovalDocumentType, AttachmentRules> = {
   payroll_run: {
     allowed: true,
     required: false,
-    description: "The payroll register and variance report are attached automatically.",
+    description: "Totals and exception counts are in the request. Attach the payroll register or variance report (Exports on the run) if your approvers want them.",
   },
 };
 

@@ -7,6 +7,7 @@ import { backPayOwed, buildPayslips, calculateRun, isValidNuban, newRun, nubanCh
 import { makePeriod } from "./ng/engine";
 import { sha256Hex } from "./hash";
 import { validateRun } from "./validation";
+import { buildExport, buildFormH1 } from "./exports";
 
 /** End-to-end over the real Nigeria demo tenant: seed → runs → payslips. */
 const bundle = nigeria as unknown as LocaleBundle;
@@ -144,5 +145,42 @@ describe("run integrity and validation", () => {
     const settledRun = { ...history.runs[2], inputs: [...history.runs[2].inputs, { id: "bp", employeeId: empId, code: "BACK_PAY", amount: 1, source: "adjustment" as const, refId: "SS-RAISE" }] };
     const settled = { ...withRaise, runs: withRaise.runs.map((r) => (r.id === settledRun.id ? settledRun : r)) };
     expect(backPayOwed(settled, empId, draft.period)).toHaveLength(0);
+  });
+});
+
+// ── Exports ─────────────────────────────────────────────────────────────────
+
+describe("statutory exports", () => {
+  const paid = history.runs[2];
+  const people = new Map(bundle.employees.map((e) => [e.id, e]));
+  const profiles = new Map(base.profiles.map((p) => [p.employeeId, p]));
+  const costCentres = new Map(bundle.departments.map((d) => [d.name, d.costCenter]));
+  const ctx = { run: paid, people, profiles, settings, company: { legalName: "Sahel Fintech Solutions Limited", taxId: "TIN 1" }, costCentres };
+
+  it("produces a balanced journal by cost centre", () => {
+    const t = buildExport("journal", ctx);
+    const [, , status, dr, cr] = t.trailer![0];
+    expect(status).toBe("Balanced");
+    expect(dr).toBeCloseTo(Number(cr), 2);
+  });
+
+  it("gives the NIBSS file a control total equal to the payable net pay", () => {
+    const t = buildExport("nibss", ctx);
+    const total = t.data.reduce((s, r) => s + Number(r[3]), 0);
+    expect(Number(t.trailer![0][2])).toBeCloseTo(total, 2);
+    expect(t.preamble![1]).toContain("Control total");
+  });
+
+  it("subtotals PAYE per state and matches the run's PAYE", () => {
+    const t = buildExport("paye", ctx);
+    const subtotal = t.data.filter((r) => String(r[0]).endsWith("subtotal")).reduce((s, r) => s + Number(r[9]), 0);
+    expect(subtotal).toBeCloseTo(paid.totals.paye, 1);
+  });
+
+  it("builds Form H1 from the year's final payslips", () => {
+    const t = buildFormH1(2026, history.payslips, "TIN 1");
+    expect(t.data.length).toBe(new Set(history.payslips.map((p) => p.employeeId)).size);
+    const paye = t.data.reduce((s, r) => s + Number(r[8]), 0);
+    expect(paye).toBeGreaterThan(0);
   });
 });

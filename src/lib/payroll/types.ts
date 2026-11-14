@@ -207,6 +207,16 @@ export interface PayrollSettings {
   defaultSplit: { code: string; pct: number }[];
   employmentTypeRules: Record<string, EmploymentTypeRule>;
   payslip: PayslipDisplayOptions;
+  /** The employer's registrations, printed on the statutory schedules and bank file. */
+  employerIds: {
+    pencomEmployerCode: string;
+    nsitfCode: string;
+    itfCode: string;
+    debitBankCode: string;
+    debitAccount: string;
+    /** State IRS payer ID per state of residence. */
+    stateTaxIds: Record<string, string>;
+  };
   /** Enabled element groups — a services company switches manufacturing off. */
   enabledGroups: PayElementGroup[];
 }

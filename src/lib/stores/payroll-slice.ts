@@ -41,7 +41,7 @@ export interface PayrollState {
 }
 
 /** Bump to reseed every tenant (drops local payroll edits). */
-export const PAYROLL_SEED_VERSION = 3;
+export const PAYROLL_SEED_VERSION = 4;
 
 const initialState: PayrollState = { byTenant: {}, seedVersion: PAYROLL_SEED_VERSION };
 

@@ -162,6 +162,9 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
   ].filter((s) => s.value > 0);
 
   const draft = payslip.status === "draft";
+  // Group life: at least 3× annual total emoluments (PRA 2014), from this month's regular pay.
+  const regularMonthly = earnings.filter((l) => l.amount > 0 && (l.group === "core" || l.group === "allowances")).reduce((s, l) => s + l.amount, 0);
+  const groupLifeCover = Math.round(regularMonthly * 12 * 3);
   const t = c.tax;
   const showTax = display.showTaxBreakdown && t.regime === "paye" && !t.exemptReason?.startsWith("PAYE as uploaded");
   // Cumulative payslips show the to-date calculation, which reconciles exactly
@@ -260,7 +263,8 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
             <p className="mt-1.5 text-[0.66rem] italic leading-snug text-slate-600">{amountInWords(c.net)}</p>
             <p className="mt-2 flex items-center gap-1.5 text-[0.66rem] text-slate-600">
               <Landmark className="h-3 w-3" />
-              Paid to <span className="font-semibold text-slate-800">{employee.bankName || "—"}</span>
+              {payslip.runType === "regular" ? "Monthly pay" : "One-off payment"} · bank transfer to{" "}
+              <span className="font-semibold text-slate-800">{employee.bankName || "—"}</span>
               <span className="font-mono">{employee.accountMasked}</span>
               on {fmtDate(period.payDate)}
             </p>
@@ -440,6 +444,11 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
                   ))}
                 </div>
                 <p className="mt-1 text-[0.58rem] italic text-slate-500">Not deducted from your pay — shown for transparency.</p>
+                {payslip.runType === "regular" && groupLifeCover > 0 && (
+                  <p className="mt-1 text-[0.58rem] text-slate-500">
+                    Group life cover: <span className="font-semibold tabular-nums text-slate-700">{whole(groupLifeCover)}</span> (3× annual pay, an employer-paid policy).
+                  </p>
+                )}
               </div>
             )}
 

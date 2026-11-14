@@ -130,6 +130,15 @@ export const DEFAULT_PAYROLL_SETTINGS: PayrollSettings = {
     },
   },
   enabledGroups: DEFAULT_ENABLED_GROUPS,
+  // Demo registrations — replace with the company's own in Payroll Settings.
+  employerIds: {
+    pencomEmployerCode: "PR0000184739",
+    nsitfCode: "NSITF/LA/0042817",
+    itfCode: "ITF/LAG/2023/0915",
+    debitBankCode: "058",
+    debitAccount: "0123456786",
+    stateTaxIds: { Lagos: "LIRS-N-0184739", FCT: "FCT-IRS-77412", Kano: "KIRS-30918", Oyo: "OYIRS-11873", Enugu: "ESIRS-55120", Rivers: "RIRS-60334" },
+  },
 };
 
 /** Rule for an employment type, defaulting to full PAYE treatment. */

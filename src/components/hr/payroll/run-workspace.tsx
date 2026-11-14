@@ -304,8 +304,19 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
         people={people}
         elements={data.elements.filter((e) => e.active && !e.statutory && data.settings.enabledGroups.includes(e.group) && e.category !== "employer" && e.calculationType !== "formula")}
         onAdd={(input) => {
-          actions.addInput(run.id, input);
-          toast.success("Input added and run recalculated");
+          const res = actions.addInput(run.id, input);
+          if (res.ok) toast.success("Input added and run recalculated");
+          else
+            toast.error(res.reason, {
+              duration: 12000,
+              action: {
+                label: "Add anyway (logged)",
+                onClick: () => {
+                  actions.addInput(run.id, input, { override: true });
+                  toast.success("Added after the cut-off — recorded in the activity log");
+                },
+              },
+            });
         }}
       />
       <AddPeopleDialog

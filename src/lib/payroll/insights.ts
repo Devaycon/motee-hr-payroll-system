@@ -72,30 +72,38 @@ export function netChangeInsight(
 }
 
 export function deductionSplitInsight(c: PayComputation): PayslipInsight | null {
-  if (!c.gross) return null;
-  const pct = (n: number) => Math.round((n / c.gross) * 100);
-  const tax = c.lines.filter((l) => l.code === "PAYE" || l.code === "WHT").reduce((s, l) => s + l.amount, 0);
+  if (c.gross <= 0 || c.net < 0) return null;
+  const tax = Math.max(0, c.lines.filter((l) => l.code === "PAYE" || l.code === "WHT").reduce((s, l) => s + l.amount, 0));
   const pension = c.lines.filter((l) => l.code === "PENSION_EE" || l.code === "VOL_PENSION").reduce((s, l) => s + l.amount, 0);
-  const other = c.totalDeductions - tax - pension;
-  const parts = [`tax ${pct(tax)}%`, `pension ${pct(pension)}%`];
-  if (other > 0) parts.push(`other ${pct(other)}%`);
+  const other = Math.max(0, c.gross - c.net - tax - pension);
+  // Largest-remainder rounding so the four shares always add up to exactly 100.
+  const parts = [c.net, tax, pension, other].map((v) => (v / c.gross) * 100);
+  const floors = parts.map(Math.floor);
+  let left = 100 - floors.reduce((s, v) => s + v, 0);
+  const order = parts.map((v, i) => [v - Math.floor(v), i] as const).sort((a, b) => b[0] - a[0]);
+  for (const [, i] of order) if (left-- > 0) floors[i] += 1;
+  const [keep, t, p, o] = floors;
+  const bits = [`tax ₦${t}`, `pension ₦${p}`];
+  if (o > 0) bits.push(`other ₦${o}`);
   return {
     type: "deduction_split",
-    title: `You keep ${pct(c.net)}% of your gross pay`,
-    message: `Of every ₦100 you earned this month: ${parts.join(", ")} — and ₦${pct(c.net)} is yours.`,
+    title: `You keep ${keep}% of your gross pay`,
+    message: `Of every ₦100 you earned this month: ${bits.join(", ")} — and ₦${keep} is yours.`,
     tone: "neutral",
   };
 }
 
 export function taxProgressInsight(c: PayComputation): PayslipInsight | null {
   if (c.tax.regime !== "paye") return null;
-  const projected = c.tax.annualisedTax;
+  // Projection from tax due to date (cumulative), so one bonus month doesn't inflate it ×12.
+  const month = Math.max(1, c.tax.monthOfYear);
+  const projected = c.tax.taxDueToDate > 0 ? (c.tax.taxDueToDate * 12) / month : c.tax.annualisedTax;
   return {
     type: "tax_progress",
     title: "Tax-year progress",
     message:
       c.ytd.paye > 0
-        ? `You've paid ${money(c.ytd.paye)} in PAYE so far in ${c.ytd.year}. At this month's pay, your tax for a full year would be about ${money(projected)}.`
+        ? `You've paid ${money(c.ytd.paye)} in PAYE so far in ${c.ytd.year}. At your pay so far this year, a full year's tax comes to about ${money(projected)}.`
         : `You've paid no PAYE so far in ${c.ytd.year} — your chargeable income is within the tax-free band.`,
     tone: "neutral",
   };
@@ -119,10 +127,14 @@ export function leaveNudgeInsight(
 ): PayslipInsight | null {
   if (!leave) return null;
   const monthsLeft = 12 - periodMonth;
+  const days = `${leave.remaining} day${leave.remaining === 1 ? "" : "s"} of annual leave left`;
   return {
     type: "leave_nudge",
     title: "Annual leave",
-    message: `You have ${leave.remaining} day${leave.remaining === 1 ? "" : "s"} of annual leave left with ${monthsLeft} month${monthsLeft === 1 ? "" : "s"} remaining in the leave year.`,
+    message:
+      monthsLeft <= 0
+        ? `You have ${days}, and the leave year ends this month.`
+        : `You have ${days} with ${monthsLeft} month${monthsLeft === 1 ? "" : "s"} remaining in the leave year.`,
     tone: "neutral",
   };
 }
