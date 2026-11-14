@@ -352,10 +352,10 @@ export function gatherInputs(
     const isVoluntaryPension = /pension avc|voluntary pension|additional voluntary/i.test(d.label);
     // Loans come from the Loans module; statutory pension and health insurance
     // are calculated by the engine — never deduct them twice.
-    if (!isVoluntaryPension && /loan|pension contribution|health insurance|paye|\btax\b|nhf/i.test(d.label)) {
-      notes.push({ employeeId: e.id, message: `“${d.label}” on the employee record wasn't deducted — it duplicates a statutory or Loans-module deduction.` });
-      continue;
-    }
+    // These records describe deductions payroll already makes itself (the
+    // statutory pension, health insurance, PAYE, NHF, or a Loans-module loan),
+    // so skipping them is correct — informational, not a warning.
+    if (!isVoluntaryPension && /loan|pension contribution|health insurance|paye|\btax\b|nhf/i.test(d.label)) continue;
     if (d.amount > monthlyPay * 0.1) {
       notes.push({ employeeId: e.id, message: `“${d.label}” (₦${Math.round(d.amount).toLocaleString("en-NG")}/month) is over 10% of pay and was held back for review.` });
       continue;
