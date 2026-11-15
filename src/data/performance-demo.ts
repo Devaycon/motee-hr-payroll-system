@@ -253,3 +253,8 @@ export const RATING_LABELS: Record<number, string> = {
   4: "Exceeds Expectations",
   5: "Outstanding",
 };
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("performance-demo", { REVIEW_STATUS_LABELS, REVIEW_STATUS_STYLES, REVIEW_TYPE_LABELS, REVIEW_TYPE_STYLES, GOAL_STATUS_LABELS, GOAL_STATUS_STYLES, GOAL_CATEGORY_LABELS, GOAL_CATEGORY_STYLES, DEPARTMENT_OPTIONS, PERFORMANCE_REVIEWS, PERFORMANCE_GOALS, RATING_LABELS });

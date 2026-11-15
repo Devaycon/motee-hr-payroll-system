@@ -1,11 +1,12 @@
 "use client";
 
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./collection-edits-slice";
 import type { CollectionEditsState } from "./collection-edits-slice";
 
-const STORAGE_KEY = "motee:collectionEdits";
-const API_URL = "/api/collection-edits";
+const STORAGE_KEY = scopedStorageKey("collectionEdits");
+const API_URL = withCountry("/api/collection-edits");
 const PUT_DEBOUNCE_MS = 500;
 
 // `removed` is optional so snapshots saved before deletions were persisted

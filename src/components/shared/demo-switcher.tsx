@@ -13,7 +13,11 @@ import {
   Link as LinkIcon,
   LayoutDashboard,
 } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/src/lib/utils";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { switchCountry } from "@/src/lib/locale/country-storage";
+import { COUNTRY_OPTIONS } from "@/src/components/auth/country-switcher";
 
 const NAV_ITEMS = [
   {
@@ -77,6 +81,7 @@ const NAV_ITEMS = [
 export function DemoSwitcher() {
   const pathname = usePathname();
   const router = useRouter();
+  const country = useAppSelector((s) => s.locale.country);
 
   const [open, setOpen] = useState(false);
   // Bounds the draggable widget to the viewport.
@@ -147,6 +152,78 @@ export function DemoSwitcher() {
             }}
           >
             DEMO
+          </span>
+
+          {/* UK ⇄ Nigeria context. Switching persists the choice and reloads
+              the whole site so every module rebuilds from that country's
+              data — people, currency, branches, statutory features. */}
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.45)",
+              letterSpacing: "0.08em",
+              paddingLeft: 4,
+              userSelect: "none",
+              alignSelf: "flex-start",
+            }}
+          >
+            COUNTRY
+          </span>
+          <div style={{ display: "flex", gap: 6 }}>
+            {COUNTRY_OPTIONS.map((option) => {
+              const isActive = country === option.key;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => {
+                    if (isActive) return;
+                    setOpen(false);
+                    switchCountry(option.key);
+                  }}
+                  className="flex flex-1 items-center gap-1.5 rounded-full px-3 transition-all duration-150 cursor-pointer"
+                  style={{
+                    height: 32,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    backgroundColor: isActive
+                      ? "#EF9F27"
+                      : "rgba(255,255,255,0.07)",
+                    color: isActive ? "#1A1A18" : "rgba(255,255,255,0.55)",
+                    border: isActive
+                      ? "none"
+                      : "1px solid rgba(255,255,255,0.12)",
+                    justifyContent: "flex-start",
+                  }}
+                >
+                  <Image
+                    src={option.flag}
+                    alt=""
+                    width={16}
+                    height={11}
+                    className="rounded-[2px] object-cover"
+                  />
+                  {option.key === "uk" ? "UK" : "Nigeria"}
+                </button>
+              );
+            })}
+          </div>
+
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.45)",
+              letterSpacing: "0.08em",
+              paddingLeft: 4,
+              paddingTop: 4,
+              userSelect: "none",
+              alignSelf: "flex-start",
+            }}
+          >
+            PAGES
           </span>
 
           {NAV_ITEMS.map((item) => {

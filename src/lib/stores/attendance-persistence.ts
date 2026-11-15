@@ -1,5 +1,6 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./attendance-slice";
 import type {
@@ -8,7 +9,7 @@ import type {
   TimesheetRecord,
 } from "@/src/lib/types/attendance";
 
-const STORAGE_KEY = "motee:attendance";
+const STORAGE_KEY = scopedStorageKey("attendance");
 
 interface Snapshot {
   sessions: Record<string, ClockSession>;

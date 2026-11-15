@@ -1,12 +1,13 @@
 "use client";
 
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate, hydrateCoverageOptions } from "./benefit-plans-slice";
 import type { BenefitPlan } from "@/src/lib/types/benefits";
 
-const STORAGE_KEY = "motee:benefitPlans";
-const COVERAGE_KEY = "motee:benefitCoverageOptions";
-const API_URL = "/api/benefit-plans";
+const STORAGE_KEY = scopedStorageKey("benefitPlans");
+const COVERAGE_KEY = scopedStorageKey("benefitCoverageOptions");
+const API_URL = withCountry("/api/benefit-plans");
 const PUT_DEBOUNCE_MS = 500;
 
 let initialized = false;

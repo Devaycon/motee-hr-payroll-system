@@ -2,6 +2,7 @@
 
 import type { Action } from "@reduxjs/toolkit";
 import { store, type RootState } from "./store";
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 
 const PUT_DEBOUNCE_MS = 500;
 const initialized = new Set<string>();
@@ -18,8 +19,8 @@ export function initRuntimePersistence<T extends object>(opts: {
 }): void {
   if (typeof window === "undefined" || initialized.has(opts.key)) return;
   initialized.add(opts.key);
-  const storageKey = `motee:${opts.key}`;
-  const apiUrl = `/api/runtime/${opts.key}`;
+  const storageKey = scopedStorageKey(opts.key);
+  const apiUrl = withCountry(`/api/runtime/${opts.key}`);
 
   try {
     const raw = window.localStorage.getItem(storageKey);

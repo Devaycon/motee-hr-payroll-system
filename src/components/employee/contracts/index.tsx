@@ -17,20 +17,28 @@ import { useAppSelector } from "@/src/lib/stores/hooks";
 export default function MyContractsPage() {
   const { data: localeContracts } = useContracts();
   const employeeName = useAppSelector((s) => s.auth.user?.name);
-  const FALLBACK_EMPLOYEE = "Adaeze Okonkwo";
-  const baseContracts =
-    localeContracts && employeeName
-      ? localeContracts.filter(
-          (c) => c.employeeName === employeeName && !c.isArchived,
-        )
-      : null;
-  const [contracts, setContracts] = useState(
-    baseContracts && baseContracts.length
-      ? baseContracts
-      : CONTRACTS.filter(
-          (c) => c.employeeName === FALLBACK_EMPLOYEE && !c.isArchived,
-        ),
-  );
+  const country = useAppSelector((s) => s.locale.country);
+  // Resolved from the active country's own contracts, so a UK user never
+  // falls back to a Nigerian employee's contract (or the other way round).
+  const resolveContracts = (list: Contract[] | null | undefined): Contract[] => {
+    if (!list) return [];
+    const live = list.filter((c) => !c.isArchived);
+    const mine = employeeName ? live.filter((c) => c.employeeName === employeeName) : [];
+    if (mine.length) return mine;
+    // Demo fallback: the first employee in this country who has a contract.
+    const sample = live[0]?.employeeName;
+    if (sample) return live.filter((c) => c.employeeName === sample);
+    return country === "ng"
+      ? CONTRACTS.filter((c) => c.employeeName === "Adaeze Okonkwo" && !c.isArchived)
+      : [];
+  };
+  const [contracts, setContracts] = useState<Contract[]>(() => resolveContracts(localeContracts));
+  // The bundle may resolve after first render; adopt it once it does.
+  const [seededFrom, setSeededFrom] = useState(localeContracts);
+  if (localeContracts !== seededFrom) {
+    setSeededFrom(localeContracts);
+    if (localeContracts) setContracts(resolveContracts(localeContracts));
+  }
 
   const myContracts = contracts;
 

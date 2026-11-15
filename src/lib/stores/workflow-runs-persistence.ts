@@ -1,11 +1,12 @@
 "use client";
 
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./workflow-runs-slice";
 import type { WorkflowRun } from "@/src/lib/types/workflow-runs";
 
-const STORAGE_KEY = "motee:workflowRuns";
-const API_URL = "/api/workflow-runs";
+const STORAGE_KEY = scopedStorageKey("workflowRuns");
+const API_URL = withCountry("/api/workflow-runs");
 const PUT_DEBOUNCE_MS = 500;
 /** Bump to drop caches written against an older run shape. */
 const SCHEMA_VERSION = 1;

@@ -6,6 +6,7 @@ import { ChevronDown, ChevronRight, Star } from "lucide-react";
 import { routes } from "./routes";
 import type { Route } from "./routes";
 import { cn } from "@/src/lib/utils";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { useNavFavourites } from "@/src/lib/hooks/use-nav-favourites";
 import { useHasDirectReports } from "@/src/components/employee/team/hooks";
 import {
@@ -28,7 +29,13 @@ const Sidebar = () => {
     useNavFavourites("employee");
 
   // Manager-only items (e.g. My Team) are hidden unless the user has reports.
-  const visibleRoutes = routes.filter((r) => !r.managerOnly || hasReports);
+  // Country-specific items (Payslips is Nigeria-only) are hidden elsewhere.
+  const country = useAppSelector((s) => s.locale.country);
+  const visibleRoutes = routes.filter(
+    (r) =>
+      (!r.managerOnly || hasReports) &&
+      (!r.countries || r.countries.includes(country)),
+  );
 
   const overviewRoutes = visibleRoutes.filter((r) => r.group === "Overview");
   const settingsRoute = visibleRoutes.find((r) => r.group === "Settings");

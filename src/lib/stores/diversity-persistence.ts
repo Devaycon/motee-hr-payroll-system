@@ -1,10 +1,11 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./diversity-slice";
 import type { DiversityDeclaration } from "@/src/lib/types/diversity";
 
-const STORAGE_KEY = "motee:diversity-declarations";
+const STORAGE_KEY = scopedStorageKey("diversity-declarations");
 
 let initialized = false;
 

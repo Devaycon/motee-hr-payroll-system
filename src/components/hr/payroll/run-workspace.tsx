@@ -141,7 +141,7 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
             <RunStatusBadge status={run.status} />
             <RunTypeBadge type={run.type} />
             <Badge variant="outline" className="text-[10px] capitalize">{source === "mixed" ? "Mixed: auto + manual" : `${source} calculation`}</Badge>
-            {run.stale && <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700">Needs recalculation</Badge>}
+            {run.stale && <Badge variant="outline" className="border-amber-500/40 bg-[color-mix(in_oklab,var(--color-amber-500)_10%,var(--card))] text-[10px] text-amber-700">Needs recalculation</Badge>}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {fmtDate(run.period.start)} – {fmtDate(run.period.end)} · pay day {fmtDate(run.period.payDate)} · prepared by {run.preparedBy.name}
@@ -211,7 +211,7 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
 
       {/* Sequencing and staleness come before everything else */}
       {earlier.length > 0 && !locked && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-[color-mix(in_oklab,var(--color-amber-500)_5%,var(--card))] px-4 py-3 text-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" />
           <p>
             Months are closed in order: finalize{" "}
@@ -223,7 +223,7 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
         </div>
       )}
       {run.stale && draft && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-[color-mix(in_oklab,var(--color-amber-500)_5%,var(--card))] px-4 py-3 text-sm">
           <RefreshCw className="mt-0.5 h-4 w-4 text-amber-600" />
           <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
             <p><b>Recalculate needed</b> — {run.stale.reason}. The figures shown may be out of date.</p>
@@ -235,7 +235,7 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
       <StatusBanner run={run} blocking={blocking.length} iPrepared={iPrepared} approverStep={currentStep?.label} approverName={currentStep?.resolvedEmployeeName ?? undefined} request={request} onReraise={canEdit ? reraise : undefined} />
 
       {offCycle && editable && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card border-dashed px-4 py-3">
           <p className="text-xs text-muted-foreground">
             {run.type === "adjustment" ? `Pays corrections to ${run.adjustsPeriod?.label}: add back pay or salary adjustments for the people affected.` : "Off-cycle runs pay only who you add — bonuses, a missed payment, or a leaver's final settlement."}
           </p>
@@ -275,7 +275,7 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
         </TabsContent>
         <TabsContent value="variance" className="mt-4">
           {offCycle ? (
-            <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">Variance compares monthly pay, so it isn&apos;t shown for off-cycle and adjustment runs.</p>
+            <p className="rounded-xl border bg-card border-dashed p-8 text-center text-sm text-muted-foreground">Variance compares monthly pay, so it isn&apos;t shown for off-cycle and adjustment runs.</p>
           ) : (
             <VarianceTable run={run} people={people} data={data} threshold={data.settings.varianceThresholdPct} />
           )}
@@ -428,12 +428,12 @@ function StatusBanner({
   const base = "flex items-start gap-3 rounded-xl border px-4 py-3 text-sm";
   if (run.status === "draft")
     return blocking ? (
-      <div className={cn(base, "border-rose-500/30 bg-rose-500/5")}>
+      <div className={cn(base, "border-rose-500/30 bg-[color-mix(in_oklab,var(--color-rose-500)_5%,var(--card))]")}>
         <CircleAlert className="mt-0.5 h-4 w-4 text-rose-600" />
         <p><b>{blocking} error{blocking === 1 ? "" : "s"}</b> must be fixed or acknowledged before this run can go for approval. See the Exceptions tab.</p>
       </div>
     ) : (
-      <div className={cn(base, "border-emerald-500/30 bg-emerald-500/5")}>
+      <div className={cn(base, "border-emerald-500/30 bg-[color-mix(in_oklab,var(--color-emerald-500)_5%,var(--card))]")}>
         <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
         <p>Validation passed. Review the variance, then submit — approval goes to Finance, then the executive.</p>
       </div>
@@ -441,7 +441,7 @@ function StatusBanner({
   const requestOpen = request && request.status === "in_progress";
   if (run.status === "in_review" && !requestOpen)
     return (
-      <div className={cn(base, "border-amber-500/30 bg-amber-500/5")}>
+      <div className={cn(base, "border-amber-500/30 bg-[color-mix(in_oklab,var(--color-amber-500)_5%,var(--card))]")}>
         <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" />
         <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
           <p>This run is awaiting approval, but there&apos;s no open approval request for it (the demo keeps requests in memory, so a full page reload drops them).</p>
@@ -451,7 +451,7 @@ function StatusBanner({
     );
   if (run.status === "in_review")
     return (
-      <div className={cn(base, "border-amber-500/30 bg-amber-500/5")}>
+      <div className={cn(base, "border-amber-500/30 bg-[color-mix(in_oklab,var(--color-amber-500)_5%,var(--card))]")}>
         <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" />
         <p>
           Awaiting approval{approverStep ? <> — <b>{approverStep}</b>{approverName ? ` (${approverName})` : ""}</> : ""}. The run is read-only until it&apos;s approved or sent back.
@@ -462,13 +462,13 @@ function StatusBanner({
     );
   if (run.status === "approved")
     return (
-      <div className={cn(base, "border-blue-500/30 bg-blue-500/5")}>
+      <div className={cn(base, "border-blue-500/30 bg-[color-mix(in_oklab,var(--color-blue-500)_5%,var(--card))]")}>
         <BadgeCheck className="mt-0.5 h-4 w-4 text-blue-600" />
         <p>Approved by <b>{run.approvedBy?.name}</b> on {fmtDate(run.approvedAt)}. Finalize to lock the figures and issue payslips.</p>
       </div>
     );
   return (
-    <div className={cn(base, "border-violet-500/30 bg-violet-500/5")}>
+    <div className={cn(base, "border-violet-500/30 bg-[color-mix(in_oklab,var(--color-violet-500)_5%,var(--card))]")}>
       <Lock className="mt-0.5 h-4 w-4 text-violet-600" />
       <p>
         Finalized on {fmtDate(run.finalizedAt)} — this run is locked and pays the bank details as approved. {run.status === "disbursed" ? `Paid on ${fmtDate(run.disbursedAt)}.` : "Download the NIBSS file from Exports, then mark it as paid."} Corrections go through an adjustment run.
@@ -495,10 +495,10 @@ function AddPeopleDialog({ open, onClose, run, people, onAdd }: { open: boolean;
           <DialogDescription>Current staff, plus anyone who left in the last six months (for a final settlement or missed pay).</DialogDescription>
         </DialogHeader>
         <Input placeholder="Search by name or department" value={q} onChange={(e) => setQ(e.target.value)} />
-        <div className="max-h-72 divide-y overflow-y-auto rounded-lg border">
+        <div className="max-h-72 divide-y overflow-y-auto rounded-lg border bg-card">
           {candidates.length === 0 && <p className="p-4 text-center text-xs text-muted-foreground">Everyone eligible is already in the run.</p>}
           {candidates.map((e) => (
-            <label key={e.id} className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-muted/40">
+            <label key={e.id} className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))]">
               <Checkbox checked={picked.includes(e.id)} onCheckedChange={(v) => setPicked((p) => (v ? [...p, e.id] : p.filter((x) => x !== e.id)))} />
               <span className="flex-1">{e.fullName}<span className="block text-[11px] text-muted-foreground">{e.departmentName}{e.dateOfLeaving ? ` · left ${e.dateOfLeaving}` : ""}</span></span>
             </label>
@@ -579,7 +579,7 @@ function FinalSettlementDialog({
                 <div className="space-y-1"><Label className="text-[11px]">Notice pay (months)</Label><Input type="number" min={0} step="0.5" value={noticeMonths} onChange={(e) => setNoticeMonths(e.target.value)} /></div>
                 <div className="space-y-1"><Label className="text-[11px]">Gratuity (₦)</Label><Input type="number" min={0} value={gratuity} onChange={(e) => setGratuity(e.target.value)} /></div>
               </div>
-              <div className="rounded-lg bg-muted/40 p-3 text-xs">
+              <div className="rounded-lg bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))] p-3 text-xs">
                 {[
                   [`Accrued leave (${days} day${days === 1 ? "" : "s"} × ${money(monthly / 22, 0)})`, leavePay],
                   ["Payment in lieu of notice", notice],
@@ -742,7 +742,7 @@ function EmployeesTable({ run, editable, people }: { run: PayrollRun; editable: 
 function ExceptionsList({ run, people, editable, onAck }: { run: PayrollRun; people: Map<string, { fullName: string }>; editable: boolean; onAck: (e: PayrollException) => void }) {
   if (!run.exceptions.length)
     return (
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed p-12 text-center">
+      <div className="flex flex-col items-center gap-2 rounded-xl border bg-card border-dashed p-12 text-center">
         <CheckCircle2 className="h-6 w-6 text-emerald-600" />
         <p className="text-sm font-medium">No exceptions</p>
         <p className="text-xs text-muted-foreground">Bank details, tax IDs, duplicates, net pay and variance all check out.</p>
@@ -827,7 +827,7 @@ function VarianceTable({ run, people, data, threshold }: { run: PayrollRun; peop
         <p className="text-xs">Total net {money(totalBefore, 0)} → <b>{money(totalNow, 0)}</b></p>
       </div>
       <table className="w-full text-xs">
-        <thead className="bg-muted/40 text-left text-muted-foreground">
+        <thead className="bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))] text-left text-muted-foreground">
           <tr>
             <th className="px-4 py-2 font-medium">Employee</th>
             <th className="px-4 py-2 text-right font-medium">Last net</th>
@@ -879,7 +879,7 @@ function InputsList({ run, people, editable, onAdd, onRemove }: { run: PayrollRu
         <p className="p-8 text-center text-sm text-muted-foreground">No period inputs.</p>
       ) : (
         <table className="w-full text-xs">
-          <thead className="bg-muted/40 text-left text-muted-foreground">
+          <thead className="bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))] text-left text-muted-foreground">
             <tr>
               <th className="px-4 py-2 font-medium">Employee</th>
               <th className="px-4 py-2 font-medium">Element</th>

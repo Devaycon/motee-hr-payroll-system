@@ -68,3 +68,8 @@ export const EMPLOYEES: EmployeeRow[] = [
   { id: "emp-019", name: "Chiamaka Eze", initials: "CE", email: "chiamaka.eze@motee.ng", phone: "+234-819-012-3456", department: "Operations", jobTitle: "Project Coordinator", employmentType: "full_time", status: "active", startDate: "2023-09-10", salary: 340000, managerId: "emp-017", managerName: "Folake Adeleke" },
   { id: "emp-020", name: "Abdullahi Musa", initials: "AM", email: "abdullahi.musa@motee.ng", phone: "+234-820-123-4567", department: "Operations", jobTitle: "Logistics Officer", employmentType: "contract", status: "active", startDate: "2024-01-05", salary: 250000, managerId: "emp-017", managerName: "Folake Adeleke" },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("employees-demo", { DEPT_OPTIONS, STATUS_LABELS, STATUS_STYLES, EMPLOYEES });

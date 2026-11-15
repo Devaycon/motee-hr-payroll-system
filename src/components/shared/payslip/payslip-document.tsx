@@ -310,7 +310,7 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
         </section>
 
         {/* ── Attendance ───────────────────────────────────────── */}
-        <section className="mt-4 grid grid-cols-5 divide-x divide-slate-200 rounded-lg border border-slate-200 bg-slate-50/70">
+        <section className="mt-4 grid grid-cols-5 divide-x divide-slate-200 rounded-lg border border-slate-200 bg-[color-mix(in_oklab,var(--color-slate-50)_70%,white)]">
           {[
             ["Working days", attendance.workingDays],
             ["Days worked", attendance.daysWorked],

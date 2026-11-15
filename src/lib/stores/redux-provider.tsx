@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
+import { hydrateCountry, loadLocale } from "./locale-slice";
+import { readStoredCountry } from "@/src/lib/locale/country-storage";
 import { initAccessLevelsPersistence } from "./access-levels-persistence";
 import { initApprovalsPersistence } from "./approvals-persistence";
 import { initRecruitmentPersistence } from "./recruitment-persistence";
@@ -32,8 +34,21 @@ import { hydrateLeaveSchemes } from "./leave-schemes-slice";
 import { hydrateWorkforceRisk } from "./workforce-risk-slice";
 import { initPayrollPersistence } from "./payroll-persistence";
 
-export function ReduxProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
+let booted = false;
+
+/** Restores the country and starts every persistence layer, once per page. */
+function boot() {
+  if (booted) return;
+  booted = true;
+  {
+    // First, before any persistence layer hydrates: restore the UK/Nigeria
+    // context the user last picked and load that country's bundle. Every
+    // `*-persistence.ts` key and runtime API call is namespaced by the same
+    // stored country, so the whole app boots in one consistent context.
+    const country = readStoredCountry();
+    store.dispatch(hydrateCountry(country));
+    void store.dispatch(loadLocale(country));
+
     initAccessLevelsPersistence();
     initApprovalsPersistence();
     initRecruitmentPersistence();
@@ -83,7 +98,19 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
     // Payroll stays in this browser only: salaries and bank details must never
     // go through the shared, unauthenticated runtime API.
     initPayrollPersistence();
-  }, []);
+  }
+}
 
-  return <Provider store={store}>{children}</Provider>;
+const noopSubscribe = () => () => {};
+
+export function ReduxProvider({ children }: { children: React.ReactNode }) {
+  // The demo is client-only data (localStorage + lazily loaded bundles) and
+  // the UK/Nigeria context lives in localStorage, which the server can't see.
+  // Rendering nothing until the client has taken over means the server HTML
+  // can never disagree with the client's country, and every screen mounts
+  // with the country already restored.
+  const isClient = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  if (isClient) boot();
+
+  return <Provider store={store}>{isClient ? children : null}</Provider>;
 }

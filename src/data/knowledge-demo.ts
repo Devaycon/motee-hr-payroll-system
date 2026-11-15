@@ -83,3 +83,8 @@ export const ARTICLE_STATUS_OPTIONS: { value: import("@/src/lib/types/knowledge"
   { value: "all", label: "All Statuses" },
   ...Object.entries(ARTICLE_STATUS_CONFIG).map(([value, cfg]) => ({ value: value as import("@/src/lib/types/knowledge").ArticleStatus, label: cfg.label })),
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("knowledge-demo", { ARTICLE_CATEGORY_CONFIG, ARTICLE_CATEGORY_OPTIONS, ARTICLE_STATUS_CONFIG, ARTICLES, ARTICLE_STATUS_OPTIONS });

@@ -105,3 +105,8 @@ export const LEAVE_POLICIES: LeavePolicy[] = [
   { id: "lp-006", name: "Study/Exam Leave", leaveType: "study", description: "Up to 5 days per year for approved academic/professional examinations.", maxDaysPerYear: 5, minNoticeDays: 14, maxConsecutiveDays: 5, requiresMedicalCertificate: false, carryOverAllowed: false, maxCarryOverDays: 0, createdAt: "2024-06-01" },
   { id: "lp-007", name: "Unpaid Leave", leaveType: "unpaid", description: "Discretionary unpaid leave pending manager and HR approval.", maxDaysPerYear: 30, minNoticeDays: 7, maxConsecutiveDays: 30, requiresMedicalCertificate: false, carryOverAllowed: false, maxCarryOverDays: 0, createdAt: "2024-01-01" },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("leave-demo", { DEPARTMENTS, DEPARTMENT_OPTIONS, LEAVE_TYPE_LABELS, LEAVE_TYPE_STYLES, LEAVE_TYPE_OPTIONS, SICKNESS_MODULE_HREF, LEAVE_STATUS_LABELS, LEAVE_STATUS_STYLES, LEAVE_STATUS_OPTIONS, LEAVE_REQUESTS, LEAVE_BALANCES, LEAVE_POLICIES });

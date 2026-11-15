@@ -23,6 +23,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
  */
 export function TaxCertificatePage({ employeeId, year, backHref, backLabel }: { employeeId: string; year: number; backHref: string; backLabel: string }) {
   const me = useAppSelector((s) => s.auth.user?.employeeId);
+  const country = useAppSelector((s) => s.locale.country);
   const canViewPayroll = useCan(PAYROLL_MODULE, "view");
   const allowed = !!me && (me === employeeId || canViewPayroll);
   const { payslips, loading, data } = useEmployeePayslipList(employeeId, { enabled: allowed });
@@ -31,6 +32,9 @@ export function TaxCertificatePage({ employeeId, year, backHref, backLabel }: { 
   const opening = data?.openingYtd[employeeId];
   const ytd = useMemo(() => sumYtd(year, yearSlips.map((p) => p.computation.period).filter(Boolean), opening), [year, yearSlips, opening]);
 
+  // Nigeria-only (PAYE under the Nigeria Tax Act). Hooks above run first so
+  // their order never changes between countries.
+  if (country !== "ng") return <p className="py-24 text-center text-sm text-muted-foreground">Annual tax certificates are available for Nigerian tenants. UK payroll is the next statutory module.</p>;
   if (!allowed) return <p className="py-24 text-center text-sm text-muted-foreground">Tax certificates are confidential: only the employee and payroll staff can open them.</p>;
   if (loading && !latest) return <Skeleton className="mx-auto h-[900px] w-full max-w-[880px] rounded-xl" />;
   if (!latest) return <p className="py-24 text-center text-sm text-muted-foreground">No final payslips for {year} yet.</p>;

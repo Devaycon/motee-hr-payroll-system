@@ -428,6 +428,15 @@ function BulkFieldsEditModal({
 }
 
 // ── request-a-change category picker ───────────────────────────────────────
+/** Nigeria wording where the UK copy names UK-only identifiers (sort code, NI). */
+const NG_CATEGORY_COPY: Record<string, { label?: string; description: string }> = {
+  bank: { description: "Bank name, account name and NUBAN account number" },
+  identity: {
+    label: "NIN, Tax & Pension Details",
+    description: "NIN, BVN, TIN, pension PIN and other identifiers",
+  },
+};
+
 /**
  * The categories an employee can raise a change against (client feedback
  * round 2, §B2a). Each maps onto existing `ProfileFieldGroup`s so the picker
@@ -514,7 +523,10 @@ export function RequestProfileChangeButton({
     (typeof REQUEST_CATEGORIES)[number] | null
   >(null);
 
-  const categories = REQUEST_CATEGORIES.filter((c) => !c.photo || onPhotoRequest);
+  const country = useAppSelector((s) => s.locale.country);
+  const categories = REQUEST_CATEGORIES.filter((c) => !c.photo || onPhotoRequest).map(
+    (c) => (country === "ng" && NG_CATEGORY_COPY[c.key] ? { ...c, ...NG_CATEGORY_COPY[c.key] } : c),
+  );
 
   return (
     <>

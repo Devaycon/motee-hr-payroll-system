@@ -204,3 +204,7 @@ export const DEMO_MY_ANNOUNCEMENTS: Announcement[] = [
   },
 ];
 
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("employee-demo", { DEMO_MY_PROFILE, DEMO_MY_PAYSLIPS, DEMO_MY_LEAVE_BALANCES, DEMO_MY_ASSETS, DEMO_MY_PERFORMANCE, DEMO_MY_ANNOUNCEMENTS });

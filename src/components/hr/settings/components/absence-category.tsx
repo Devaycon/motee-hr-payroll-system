@@ -7,9 +7,11 @@ import { SettingsLinkCard } from "./settings-link-card";
 import { HolidayYearPanel } from "./holiday-year-panel";
 import { CompanyHolidaysPanel } from "./company-holidays-panel";
 import { BlackoutPanel } from "./blackout-panel";
-import { HOLIDAY_YEARS, COMPANY_HOLIDAYS, BLACKOUT_PERIODS } from "../data";
+import { HOLIDAY_YEARS, companyHolidaysFor, BLACKOUT_PERIODS } from "../data";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 
 export function AbsenceCategory() {
+  const country = useAppSelector((s) => s.locale.country);
   return (
     <Tabs defaultValue="patterns">
       <PageTabsList
@@ -49,7 +51,7 @@ export function AbsenceCategory() {
       </TabsContent>
 
       <TabsContent value="holidays" className="mt-6">
-        <CompanyHolidaysPanel holidays={COMPANY_HOLIDAYS} />
+        <CompanyHolidaysPanel holidays={companyHolidaysFor(country)} />
       </TabsContent>
 
       <TabsContent value="blackout" className="mt-6">

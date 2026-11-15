@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { usePublicHolidays } from "@/src/lib/hooks/use-public-holidays";
 import {
-  PUBLIC_HOLIDAYS_2026,
   COMPANY_SHUTDOWNS,
   type PublicHoliday,
   type CompanyShutdown,
@@ -56,12 +56,15 @@ function inRange(day: string, start: string, end: string): boolean {
 
 export function LeaveCalendar({
   leave,
-  publicHolidays = PUBLIC_HOLIDAYS_2026,
+  publicHolidays: publicHolidaysProp,
   shutdowns = COMPANY_SHUTDOWNS,
   initialMonth,
   showLabels = false,
   onSelectEntry,
 }: LeaveCalendarProps) {
+  // Defaults to the active country's public holidays.
+  const countryHolidays = usePublicHolidays();
+  const publicHolidays = publicHolidaysProp ?? countryHolidays;
   // Opens on the current month — this was pinned to a hardcoded demo month.
   const [cursor, setCursor] = useState(() => {
     if (initialMonth) return initialMonth;

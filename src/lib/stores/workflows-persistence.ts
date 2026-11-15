@@ -1,10 +1,11 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./workflows-slice";
 import type { Workflow } from "@/src/lib/types/workflows";
 
-const STORAGE_KEY = "motee:workflows";
+const STORAGE_KEY = scopedStorageKey("workflows");
 
 interface Snapshot {
   workflows: Workflow[];

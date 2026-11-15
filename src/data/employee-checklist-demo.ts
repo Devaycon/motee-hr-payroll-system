@@ -136,3 +136,8 @@ export const NEW_HIRES: NewHire[] = [
     ],
   },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("employee-checklist-demo", { RESPONSIBLE_PARTY_LABELS, RESPONSIBLE_PARTY_STYLES, NEW_HIRE_STATUS_LABELS, NEW_HIRE_STATUS_STYLES, CHECKLIST_ITEMS, NEW_HIRES });

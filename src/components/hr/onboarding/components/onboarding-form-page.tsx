@@ -631,7 +631,7 @@ export function OnboardingFormPage() {
                   value={data.nationality}
                   onChange={(e) => update("nationality", e.target.value)}
                   className="h-9 text-sm"
-                  placeholder="e.g. Nigerian"
+                  placeholder={isUK ? "e.g. British" : "e.g. Nigerian"}
                 />
                 {err("nationality") && (
                   <p className="text-xs text-destructive">
@@ -695,12 +695,12 @@ export function OnboardingFormPage() {
                   value={data.state}
                   onChange={(e) => update("state", e.target.value)}
                   className="h-9 text-sm"
-                  placeholder="e.g. Lagos"
+                  placeholder={isUK ? "e.g. Greater London" : "e.g. Lagos"}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
-                  Postcode <span className="text-destructive">*</span>
+                  {isUK ? "Postcode" : "Postal Code"} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   value={data.postalCode}
@@ -708,7 +708,7 @@ export function OnboardingFormPage() {
                     update("postalCode", e.target.value.toUpperCase())
                   }
                   className="h-9 text-sm"
-                  placeholder="e.g. SW1A 1AA"
+                  placeholder={isUK ? "e.g. SW1A 1AA" : "e.g. 100001"}
                 />
                 {err("postalCode") && (
                   <p className="text-xs text-destructive">{err("postalCode")}</p>
@@ -722,7 +722,7 @@ export function OnboardingFormPage() {
                   value={data.country}
                   onChange={(e) => update("country", e.target.value)}
                   className="h-9 text-sm"
-                  placeholder="e.g. Nigeria"
+                  placeholder={isUK ? "e.g. United Kingdom" : "e.g. Nigeria"}
                 />
                 {err("country") && (
                   <p className="text-xs text-destructive">{err("country")}</p>
@@ -976,7 +976,7 @@ export function OnboardingFormPage() {
                   value={data.bankName}
                   onChange={(e) => update("bankName", e.target.value)}
                   className="h-9 text-sm"
-                  placeholder="e.g. First Bank of Nigeria"
+                  placeholder={isUK ? "e.g. Barclays" : "e.g. First Bank of Nigeria"}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -1592,10 +1592,16 @@ export function OnboardingFormPage() {
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                   Documents
                 </p>
-                <ReviewRow label="NIN" value={data.ninNumber} />
-                <ReviewRow label="TIN" value={data.taxId} />
-                <ReviewRow label="Pension ID" value={data.pensionId} />
-                <ReviewRow label="NHF" value={data.nhfNumber} />
+                {isUK ? (
+                  <ReviewRow label="NI Number" value={data.niNumber} />
+                ) : (
+                  <>
+                    <ReviewRow label="NIN" value={data.ninNumber} />
+                    <ReviewRow label="TIN" value={data.taxId} />
+                    <ReviewRow label="Pension ID" value={data.pensionId} />
+                    <ReviewRow label="NHF" value={data.nhfNumber} />
+                  </>
+                )}
                 <ReviewRow
                   label="Driver's License"
                   value={data.driverLicenseNumber}

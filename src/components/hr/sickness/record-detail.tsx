@@ -104,6 +104,7 @@ export function SicknessRecordDetail({ id }: { id: string }) {
       records: s.records.filter((r) => r.employeeId === record.employeeId),
       asOf: s.asOf,
       holidays: s.holidays,
+      statutory: s.statutory,
     }).filter((d) => d.recordId === record.id);
     return { scheme, days };
   }, [record, employee, s]);

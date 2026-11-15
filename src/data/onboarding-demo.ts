@@ -251,3 +251,8 @@ export const ONBOARDING_RECORDS: OnboardingRecord[] = [
     history: [{ id: "h-005-1", at: "2026-04-10", actorName: "HR Team", type: "submitted" }],
   },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("onboarding-demo", { DEPARTMENT_OPTIONS, STAGE_ORDER, ONBOARDING_STAGE_LABELS, ONBOARDING_STAGE_STYLES, ONBOARDING_STATUS_LABELS, ONBOARDING_STATUS_STYLES, ONBOARDING_MODE_LABELS, ONBOARDING_MODE_STYLES, ASSIGNEE_LABELS, ASSIGNEE_STYLES, TASK_STATUS_STYLES, ONBOARDING_RECORDS });

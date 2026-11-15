@@ -1,9 +1,10 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate, type EmployeesState } from "./employees-slice";
 
-const STORAGE_KEY = "motee:employees";
+const STORAGE_KEY = scopedStorageKey("employees");
 
 let initialized = false;
 

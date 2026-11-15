@@ -100,3 +100,8 @@ export const DIRECTORY_DEPARTMENT_OPTIONS: { value: string; label: string }[] = 
   { value: "all", label: "All Departments" },
   ...Object.entries(DEPARTMENT_CONFIG).map(([value, cfg]) => ({ value, label: cfg.label })),
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("community-demo", { POSTS, CELEBRATIONS, DIRECTORY_EMPLOYEES, CELEBRATION_KIND_CONFIG, POST_TYPE_CONFIG, POST_TYPE_OPTIONS, DEPARTMENT_CONFIG, DIRECTORY_DEPARTMENT_OPTIONS });

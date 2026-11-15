@@ -3,6 +3,7 @@
 import type { Route } from "./routes";
 import { getModuleByLink } from "@/src/lib/permissions/modules";
 import { useEffectiveAccess } from "@/src/lib/permissions/use-can";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 
 /**
  * Links every HR user can see regardless of access level. The `/my-*` entries
@@ -26,11 +27,17 @@ const PERSONAL_LINKS = new Set<string>([
  */
 export function useVisibleRoutes(routes: Route[]): Route[] {
   const access = useEffectiveAccess();
+  const country = useAppSelector((s) => s.locale.country);
+  // Country-specific modules (Payroll is Nigeria-only) are hidden elsewhere
+  // regardless of role.
+  const inCountry = routes.filter(
+    (r) => !r.countries || r.countries.includes(country),
+  );
 
   // No resolvable role (pre-login, demo links) — show everything, as before.
-  if (access.unresolved) return routes;
+  if (access.unresolved) return inCountry;
 
-  return routes.filter((route) => {
+  return inCountry.filter((route) => {
     if (PERSONAL_LINKS.has(route.link)) return true;
     const moduleEntry = getModuleByLink(route.link);
     if (!moduleEntry) return true;

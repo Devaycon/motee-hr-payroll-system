@@ -70,7 +70,7 @@ export function RunEmployeePage({ runId, employeeId }: { runId: string; employee
       <div className="grid gap-5 xl:grid-cols-[340px_1fr]">
         <aside className="flex flex-col gap-4 print:hidden">
           {issues.length > 0 && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+            <div className="rounded-xl border border-amber-500/30 bg-[color-mix(in_oklab,var(--color-amber-500)_5%,var(--card))] p-3">
               <p className="mb-1 text-xs font-semibold">Checks</p>
               {issues.map((i) => (
                 <p key={i.id} className="text-[11px] text-muted-foreground"><b className="text-foreground">{EXCEPTION_RULE_LABELS[i.rule]}:</b> {i.message}</p>
@@ -188,7 +188,7 @@ export function RunEmployeePage({ runId, employeeId }: { runId: string; employee
         </aside>
 
         <div className="payslip-print-root min-w-0">
-          {preview ? <PayslipDocument payslip={preview} /> : <p className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">Include this employee in the run to preview their payslip.</p>}
+          {preview ? <PayslipDocument payslip={preview} /> : <p className="rounded-xl border bg-card border-dashed p-10 text-center text-sm text-muted-foreground">Include this employee in the run to preview their payslip.</p>}
         </div>
       </div>
     </div>

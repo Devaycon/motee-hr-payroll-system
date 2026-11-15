@@ -177,3 +177,8 @@ export const PRIORITY_STYLES: Record<string, string> = {
   medium: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
   low:    "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
 };
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("employee-dashboard-demo", { EMPLOYEE_LEAVE_BALANCES, EMPLOYEE_PENDING_ITEMS, EMPLOYEE_TASKS, EMPLOYEE_UPCOMING_EVENTS, EMPLOYEE_RECENT_KUDOS, TEAM_ON_LEAVE, EMPLOYEE_RECENT_ACTIVITY, EMPLOYEE_QUICK_LINKS, DAY_AT_A_GLANCE, PRIORITY_STYLES });

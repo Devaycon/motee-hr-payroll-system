@@ -103,9 +103,9 @@ function copyVerifyLink(p: Payslip) {
 
 function VerificationBadge({ payslip }: { payslip: Payslip }) {
   return payslip.verification.revoked ? (
-    <Badge variant="outline" className="border-rose-500/30 bg-rose-500/10 text-rose-600">Verification revoked</Badge>
+    <Badge variant="outline" className="border-rose-500/30 bg-[color-mix(in_oklab,var(--color-rose-500)_10%,var(--card))] text-rose-600">Verification revoked</Badge>
   ) : (
-    <Badge variant="outline" className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-600">
+    <Badge variant="outline" className="gap-1 border-emerald-500/30 bg-[color-mix(in_oklab,var(--color-emerald-500)_10%,var(--card))] text-emerald-600">
       <ShieldCheck className="h-3 w-3" /> Verifiable · {payslip.verification.code}
     </Badge>
   );

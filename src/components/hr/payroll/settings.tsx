@@ -178,9 +178,9 @@ function General({ settings, employmentTypes, canEdit }: { settings: PayrollSett
       </Card>
 
       <Card title="Treatment by employment type" description="Fixed-term contract staff are employees on PAYE; only the self-employed are paid with withholding tax.">
-        <div className="overflow-hidden rounded-lg border">
+        <div className="overflow-hidden rounded-lg border bg-card">
           <table className="w-full text-xs">
-            <thead className="bg-muted/40 text-left text-muted-foreground">
+            <thead className="bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))] text-left text-muted-foreground">
               <tr><th className="px-3 py-2 font-medium">Type</th><th className="px-3 py-2 font-medium">Tax</th><th className="px-3 py-2 font-medium">Pension</th><th className="px-3 py-2 font-medium">NHF</th></tr>
             </thead>
             <tbody>
@@ -372,7 +372,7 @@ function Structures({ canEdit }: { canEdit: boolean }) {
       <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
         <div className="space-y-3">
           {versions.map((v) => (
-            <div key={v.id} className={cn("rounded-lg border p-3", v === current && "border-primary/40 bg-primary/5", v.status === "rejected" && "opacity-50")}>
+            <div key={v.id} className={cn("rounded-lg border p-3", v === current && "border-primary/40 bg-[color-mix(in_oklab,var(--primary)_5%,var(--card))]", v.status === "rejected" && "opacity-50")}>
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold">
                   {v.effectiveFrom} → {v.status === "pending" || v.status === "rejected" ? "—" : v.effectiveTo ?? "now"}{" "}
@@ -392,7 +392,7 @@ function Structures({ canEdit }: { canEdit: boolean }) {
           ))}
         </div>
         {canEdit && current && !versions.some((v) => v.status === "pending") && (
-          <div className="rounded-lg border p-4">
+          <div className="rounded-lg border bg-card p-4">
             <p className="mb-3 text-xs font-semibold">Propose a salary change</p>
             {current.lines.map((l) => (
               <div key={l.code} className="flex items-center justify-between gap-2 py-1">
@@ -458,9 +458,9 @@ function Profiles({ canEdit, focus }: { canEdit: boolean; focus: string | null }
       title="Tax & statutory profiles"
       description="Everything the statutory engine needs per person. Rent Relief only applies once the tenancy agreement or receipt is verified."
     >
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full min-w-[820px] text-xs">
-          <thead className="bg-muted/40 text-left text-muted-foreground">
+          <thead className="bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))] text-left text-muted-foreground">
             <tr>
               <th className="px-3 py-2 font-medium">Employee</th><th className="px-3 py-2 font-medium">TIN</th><th className="px-3 py-2 font-medium">Tax state</th>
               <th className="px-3 py-2 font-medium">PFA · RSA PIN</th><th className="px-3 py-2 text-right font-medium">Annual rent</th><th className="px-3 py-2 font-medium">Evidence</th><th className="px-3 py-2 font-medium">Bank</th>
@@ -468,7 +468,7 @@ function Profiles({ canEdit, focus }: { canEdit: boolean; focus: string | null }
           </thead>
           <tbody>
             {rows.map((p) => (
-              <tr key={p.employeeId} className={cn("cursor-pointer border-t hover:bg-muted/40", focus === p.employeeId && "bg-primary/5")} onClick={() => setEditing(p.employeeId)}>
+              <tr key={p.employeeId} className={cn("cursor-pointer border-t hover:bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))]", focus === p.employeeId && "bg-[color-mix(in_oklab,var(--primary)_5%,var(--card))]")} onClick={() => setEditing(p.employeeId)}>
                 <td className="px-3 py-2 font-medium">{people.get(p.employeeId)?.fullName}</td>
                 <td className={cn("px-3 py-2 font-mono", !p.tin && "text-rose-600")}>{p.tin || "Missing"}</td>
                 <td className="px-3 py-2">{p.stateOfResidence}</td>
@@ -522,7 +522,7 @@ function ProfileDialog({ profile, name, canEdit, onClose }: { profile: EmployeeT
           {field("lifeAssurancePremiumAnnual", "Life assurance premium / yr (₦)", "number")}
           {field("mortgageInterestAnnual", "Mortgage interest / yr (₦)", "number")}
         </div>
-        <div className="space-y-2 rounded-lg border p-3">
+        <div className="space-y-2 rounded-lg border bg-card p-3">
           <Row label="Rent evidence verified" hint={p.rentEvidence ? `On file: ${p.rentEvidence.fileName}` : "No tenancy agreement or receipt uploaded."}>
             <Switch checked={p.rentEvidenceVerified} disabled={!canEdit || !p.annualRentDeclared} onCheckedChange={(v) => setP({ ...p, rentEvidenceVerified: v })} />
           </Row>
@@ -620,7 +620,7 @@ function Rates({ rateSets, canEdit }: { rateSets: StatutoryRateSet[]; canEdit: b
             </div>
           </div>
         ))}
-        <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-400">
+        <p className="rounded-lg bg-[color-mix(in_oklab,var(--color-amber-500)_10%,var(--card))] px-3 py-2 text-[11px] text-amber-700 dark:text-amber-400">
           Rates are seeded from industry reporting of the Nigeria Tax Act 2025. Confirm them against Nigeria Revenue Service guidance with your tax adviser before the first live payroll.
         </p>
       </div>

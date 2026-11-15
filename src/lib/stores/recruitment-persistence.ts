@@ -1,10 +1,11 @@
 "use client";
 
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate, type RecruitmentBucket } from "./recruitment-slice";
 
-const STORAGE_KEY = "motee:recruitment";
-const API_URL = "/api/recruitment";
+const STORAGE_KEY = scopedStorageKey("recruitment");
+const API_URL = withCountry("/api/recruitment");
 const PUT_DEBOUNCE_MS = 500;
 
 interface Snapshot {

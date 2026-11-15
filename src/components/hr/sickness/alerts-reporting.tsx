@@ -412,7 +412,7 @@ function PayrollExport() {
       if (!emp) return [];
       const { scheme } = s.schemeFor(id, start);
       if (scheme && !scheme.advanced.exportToPayroll) return [];
-      return calculateSickPay({ employee: payEmployee(emp), scheme, records: s.records, asOf: s.asOf, holidays: s.holidays })
+      return calculateSickPay({ employee: payEmployee(emp), scheme, records: s.records, asOf: s.asOf, holidays: s.holidays, statutory: s.statutory })
         .filter((d) => d.date >= start && d.date <= end)
         .map((d) => ({ emp, scheme, d }));
     });
@@ -461,7 +461,7 @@ function PrivacyPanel() {
     <section className="rounded-xl border border-border bg-card p-4 text-xs">
       <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold"><ShieldCheck className="h-4 w-4 text-primary" /> Privacy, retention &amp; audit</h3>
       <p className="mb-3 text-muted-foreground">
-        Medical details are special-category data (UK GDPR Art. 9). They are shown only to authorised HR, each view is logged,
+        Medical details are {s.country === "ng" ? "sensitive personal data (Nigeria Data Protection Act 2023, s.30)" : "special-category data (UK GDPR Art. 9)"}. They are shown only to authorised HR, each view is logged,
         and closed records are anonymised after the retention period.
       </p>
       {canManage && (

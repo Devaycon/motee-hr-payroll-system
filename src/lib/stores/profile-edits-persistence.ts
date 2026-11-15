@@ -1,12 +1,13 @@
 "use client";
 
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./profile-edits-slice";
 import type { ChangeRequest } from "@/src/lib/types/profile-edits";
 import type { OverridesMap } from "@/src/lib/profile/overrides";
 
-const STORAGE_KEY = "motee:profileEdits";
-const API_URL = "/api/profile-edits";
+const STORAGE_KEY = scopedStorageKey("profileEdits");
+const API_URL = withCountry("/api/profile-edits");
 const PUT_DEBOUNCE_MS = 500;
 
 interface Snapshot {

@@ -287,3 +287,24 @@ export const EMPLOYEE_EXPENSES: ExpenseClaim[] = [
     merchant: "Office Mart",
   },
 ];
+
+/**
+ * The UK tenant's version of the same claims: UK merchants, sterling-sized
+ * amounts. Same ids and references so the approvals/attribution plumbing is
+ * identical across countries.
+ */
+const UK_EXPENSE_OVERRIDES: Record<string, Partial<ExpenseClaim>> = {
+  "exp-1": { title: "Client visit — London to Manchester rail", amount: 186.4, merchant: "Avanti West Coast", notes: "Return off-peak ticket for Q2 client review." },
+  "exp-2": { title: "Team lunch with new hires", amount: 142.5, merchant: "Pret A Manger" },
+  "exp-3": { title: "Hotel stay — onboarding workshop", amount: 238.0, merchant: "Premier Inn", notes: "Two nights during the facilitator workshop." },
+  "exp-4": { amount: 279.0, merchant: "John Lewis" },
+  "exp-5": { amount: 144.0, merchant: "Figma" },
+  "exp-6": { amount: 450.0, merchant: "CIPD" },
+  "exp-7": { amount: 46.5, merchant: "Addison Lee" },
+  "exp-8": { amount: 23.9, merchant: "Rymans" },
+};
+
+export const UK_EMPLOYEE_EXPENSES: ExpenseClaim[] = EMPLOYEE_EXPENSES.map((c) => ({
+  ...c,
+  ...UK_EXPENSE_OVERRIDES[c.id],
+}));

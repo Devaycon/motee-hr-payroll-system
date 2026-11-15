@@ -17,6 +17,7 @@ import {
 import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
 import { routes } from "@/src/layout/hr/sidebar/routes";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 
 /**
  * Platform-wide search (§8.1). Replaces the old placeholder search bar with a
@@ -46,7 +47,14 @@ export function GlobalSearch() {
     router.push(href);
   };
 
-  const pages = useMemo(() => routes.filter((r) => !r.children), []);
+  const country = useAppSelector((s) => s.locale.country);
+  const pages = useMemo(
+    () =>
+      routes.filter(
+        (r) => !r.children && (!r.countries || r.countries.includes(country)),
+      ),
+    [country],
+  );
 
   return (
     <>

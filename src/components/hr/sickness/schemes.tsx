@@ -155,7 +155,7 @@ function Enrolments() {
         .map((e) => {
           const { scheme, enrolment } = s.schemeFor(e.id);
           const summary = scheme
-            ? entitlementSummary({ employee: payEmployee(e), scheme, records: s.records, asOf: s.asOf, holidays: s.holidays })
+            ? entitlementSummary({ employee: payEmployee(e), scheme, records: s.records, asOf: s.asOf, holidays: s.holidays, statutory: s.statutory })
             : null;
           return { e, scheme, enrolment, summary };
         }),

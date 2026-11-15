@@ -1,5 +1,6 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydratePayroll, type PayrollState } from "./payroll-slice";
 
@@ -11,7 +12,7 @@ import { hydratePayroll, type PayrollState } from "./payroll-slice";
  * and tax IDs. BVNs are dropped before anything is written. In production
  * all of this lives behind the authenticated payroll API.
  */
-const STORAGE_KEY = "motee:payroll";
+const STORAGE_KEY = scopedStorageKey("payroll");
 const WRITE_DEBOUNCE_MS = 400;
 let initialized = false;
 

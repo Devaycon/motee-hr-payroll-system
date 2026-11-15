@@ -680,11 +680,42 @@ function attachmentInstance(
   };
 }
 
+/**
+ * The scenarios are written for the Nigerian tenant (naira amounts, Abuja,
+ * Air Peace). For the UK tenant the same queue gets sterling amounts and UK
+ * places, so neither country's demo carries the other's details.
+ */
+const UK_TEXT: Record<string, string> = {
+  "Exceeds policy cap of ₦40k for client meals.": "Exceeds policy cap of £150 for client meals.",
+  "Client site visit, Abuja": "Client site visit, Manchester",
+  "RSVP Restaurant": "Hawksmoor",
+  "Air Peace + Bolt": "Avanti West Coast + Uber",
+};
+/** Naira → a believable sterling figure for the same claim. */
+const NGN_PER_GBP_DEMO = 400;
+
+function localiseScenario(s: Scenario, bundle: LocaleBundle): Scenario {
+  if (bundle.tenant.countryCode !== "GB") return s;
+  const text = (v?: string) => (v && UK_TEXT[v]) || v;
+  return {
+    ...s,
+    summary: (e) => text(s.summary(e)) ?? "",
+    rejectionNote: text(s.rejectionNote),
+    payload: (e) => {
+      const p = { ...s.payload(e) } as Record<string, unknown>;
+      if (typeof p.amount === "number") p.amount = Math.round((p.amount / NGN_PER_GBP_DEMO) * 100) / 100;
+      if (typeof p.merchant === "string") p.merchant = text(p.merchant);
+      return p;
+    },
+  };
+}
+
 function buildSeedRequests(bundle: LocaleBundle): ApprovalRequest[] {
   const pool = pickSubmitters(bundle);
   if (pool.length === 0) return [];
 
-  return SCENARIOS.map((s, idx) => {
+  return SCENARIOS.map((raw, idx) => {
+    const s = localiseScenario(raw, bundle);
     const submitter = pool[(s.submitterIndex ?? idx) % pool.length];
     const { templateId, steps } = buildStepsForSeed(
       bundle,

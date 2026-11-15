@@ -23,10 +23,8 @@ import {
   LEAVE_STATUS_STYLES,
 } from "@/src/data/leave-demo";
 import { LEAVE_TYPE_COLORS } from "@/src/components/employee/leave-request/components/leave-colors";
-import {
-  PUBLIC_HOLIDAYS_2026,
-  COMPANY_SHUTDOWNS,
-} from "@/src/data/leave-calendar-demo";
+import { COMPANY_SHUTDOWNS } from "@/src/data/leave-calendar-demo";
+import { usePublicHolidays } from "@/src/lib/hooks/use-public-holidays";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -136,9 +134,10 @@ export function PeopleTimeline({
   const monthLastIso = iso(days[days.length - 1]);
   const todayIso = iso(new Date());
 
+  const publicHolidays = usePublicHolidays();
   const holidayByDate = useMemo(
-    () => new Map(PUBLIC_HOLIDAYS_2026.map((h) => [h.date, h.name])),
-    [],
+    () => new Map(publicHolidays.map((h) => [h.date, h.name])),
+    [publicHolidays],
   );
   const shutdownFor = (day: string) =>
     COMPANY_SHUTDOWNS.find((s) => day >= s.startDate && day <= s.endDate);

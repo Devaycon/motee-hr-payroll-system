@@ -23,6 +23,7 @@ import {
   Wallet,
   LucideIcon,
 } from "lucide-react";
+import type { CountryKey } from "@/src/lib/types/locale";
 
 export interface RouteChild {
   label: string;
@@ -38,6 +39,11 @@ export interface Route {
   children?: RouteChild[];
   /** Only shown to users who manage at least one direct report. */
   managerOnly?: boolean;
+  /**
+   * Only shown in these countries. Payroll is Nigeria-only for now (there is
+   * no UK statutory engine), so it isn't offered in the UK demo at all.
+   */
+  countries?: CountryKey[];
 }
 
 export const routes: Route[] = [
@@ -126,6 +132,7 @@ export const routes: Route[] = [
     icon: Wallet,
     label: "My Payslips",
     link: "/employee/payslips",
+    countries: ["ng"],
   },
   {
     group: "Overview",

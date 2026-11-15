@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { usePublicHolidays } from "@/src/lib/hooks/use-public-holidays";
 // Self-service shows one person their own record, so it is never narrowed
 // by the admin shell's branch switcher.
 import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
@@ -12,8 +13,8 @@ import {
   LEAVE_POLICIES,
 } from "@/src/data/leave-demo";
 import {
-  PUBLIC_HOLIDAYS_2026,
   COMPANY_SHUTDOWNS,
+  type PublicHoliday,
 } from "@/src/data/leave-calendar-demo";
 import type { LeaveRequest } from "@/src/lib/types/leave";
 
@@ -28,7 +29,7 @@ export interface LeavePlanningContext {
   department: string;
   teamSize: number;
   allRequests: readonly LeaveRequest[];
-  holidays: typeof PUBLIC_HOLIDAYS_2026;
+  holidays: PublicHoliday[];
   shutdowns: typeof COMPANY_SHUTDOWNS;
   /** Days of annual leave that may be carried into next year. */
   annualCarryCap: number;
@@ -49,6 +50,7 @@ export function useLeavePlanningContext(subject?: {
 }): LeavePlanningContext {
   const user = useAppSelector((s) => s.auth.user);
   const storeRequests = useAppSelector((s) => s.leave.requests);
+  const holidays = usePublicHolidays();
   const { data: departmentSizes } = useLocaleSection((b) =>
     departmentSizesFrom(b.employees),
   );
@@ -67,11 +69,11 @@ export function useLeavePlanningContext(subject?: {
       department,
       teamSize: departmentSizes?.get(department) ?? 0,
       allRequests,
-      holidays: PUBLIC_HOLIDAYS_2026,
+      holidays,
       shutdowns: COMPANY_SHUTDOWNS,
       annualCarryCap:
         LEAVE_POLICIES.find((p) => p.leaveType === "annual")?.maxCarryOverDays ?? 0,
     }),
-    [subjectName, department, departmentSizes, allRequests],
+    [subjectName, department, departmentSizes, allRequests, holidays],
   );
 }

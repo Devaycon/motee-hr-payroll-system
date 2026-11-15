@@ -71,6 +71,9 @@ export function useSickness() {
   const { data: bundle, loading } = useLocaleSection<LocaleBundle>((b) => b);
   const tenantId = useAppSelector((s) => s.locale.data?.tenant.id) ?? "";
   const state = useAppSelector((s) => s.sickness);
+  const country = useAppSelector((s) => s.locale.country);
+  /** UK Statutory Sick Pay applies only in the UK. */
+  const statutory = country === "uk";
   const asOf = sicknessToday();
 
   const employees = useMemo(() => bundle?.employees ?? [], [bundle]);
@@ -124,6 +127,8 @@ export function useSickness() {
     loading: loading && !bundle,
     bundle,
     tenantId,
+    country,
+    statutory,
     asOf,
     employees,
     byId,

@@ -134,3 +134,8 @@ export const TOP_PERFORMERS: { id: string; name: string; role: string; workMode:
   { id: "tp-004", name: "Aisha Bello",       role: "Brand Manager",        workMode: "Hybrid",    rating: 93 },
   { id: "tp-005", name: "Chukwuemeka Eze",   role: "Backend Engineer",     workMode: "Remotely",  rating: 92 },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("dashboard-demo", { STAT_CARDS, ATTENDANCE_DATA, ATTENDANCE_CONFIG, HEADCOUNT_DATA, HEADCOUNT_CONFIG, SALARY_DIST_DATA, SALARY_DIST_CONFIG, GENDER_SPLIT_SERIES, GENDER_SPLIT_CONFIG, CITIES, WORK_MODES_MAP, EMPLOYMENT_TYPE_DATA, EMPLOYMENT_TYPE_CONFIG, TOP_PERFORMERS });

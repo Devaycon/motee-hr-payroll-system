@@ -6,10 +6,12 @@ import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { TwoFactorPanel } from "./two-factor-panel";
 import { SecurityPanel } from "./security-panel";
 import type { SecuritySettings } from "../types";
-import { TWO_FACTOR_CONFIG, SECURITY_SETTINGS } from "../data";
+import { TWO_FACTOR_CONFIG, securitySettingsFor } from "../data";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 
 export function SecurityCategory() {
-  const [security, setSecurity] = useState<SecuritySettings>(SECURITY_SETTINGS);
+  const country = useAppSelector((s) => s.locale.country);
+  const [security, setSecurity] = useState<SecuritySettings>(() => securitySettingsFor(country));
 
   return (
     <Tabs defaultValue="2fa">

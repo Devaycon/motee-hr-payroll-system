@@ -53,6 +53,7 @@ import {
   HandCoins,
   Wallet,
 } from "lucide-react";
+import type { CountryKey } from "@/src/lib/types/locale";
 
 export interface RouteChild {
   label: string;
@@ -71,6 +72,11 @@ export interface Route {
   badge?: number;
   exact?: boolean;
   children?: RouteChild[];
+  /**
+   * Only shown in these countries. Payroll is Nigeria-only for now (there is
+   * no UK statutory engine), so it isn't offered in the UK demo at all.
+   */
+  countries?: CountryKey[];
 }
 
 /**
@@ -336,6 +342,7 @@ export const routes: Route[] = [
     icon: Wallet,
     label: "Payroll",
     link: "/time-payroll/payroll",
+    countries: ["ng"],
   },
 
   // §4.16 — Occupational Health was buried under "Time & Payroll", which is

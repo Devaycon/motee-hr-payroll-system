@@ -1,10 +1,11 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./shifts-slice";
 import type { ShiftAssignment, ShiftTemplate } from "@/src/lib/types/shifts";
 
-const STORAGE_KEY = "motee:shifts";
+const STORAGE_KEY = scopedStorageKey("shifts");
 
 interface Snapshot {
   templates: ShiftTemplate[];

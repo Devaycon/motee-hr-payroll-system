@@ -114,3 +114,8 @@ export function computeAuditStats(entries: AuditEntry[]): {
     suspicious: entries.filter((e) => e.isSuspicious).length,
   };
 }
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("audit-trail-demo", { ACTION_TYPE_CONFIG, ACTION_TYPE_OPTIONS, MODULE_LABELS, MODULE_OPTIONS, HTTP_STATUS_OPTIONS, ALL_ENTRIES });

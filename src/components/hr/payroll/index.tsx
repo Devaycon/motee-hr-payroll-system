@@ -213,7 +213,7 @@ export function PayrollPage() {
               ["PAYE", money(upcoming.totals.paye)],
               ["Exceptions", `${upcoming.exceptions.filter((e) => e.severity === "error" && !e.acknowledged).length} errors · ${upcoming.exceptions.filter((e) => e.severity === "warning").length} warnings`],
             ].map(([k, v]) => (
-              <div key={k} className="rounded-lg bg-muted/50 px-3 py-2">
+              <div key={k} className="rounded-lg bg-[color-mix(in_oklab,var(--muted)_50%,var(--card))] px-3 py-2">
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{k}</p>
                 <p className="text-sm font-semibold tabular-nums">{v}</p>
               </div>
@@ -244,7 +244,7 @@ export function PayrollPage() {
                       <span className="text-[10px] tabular-nums text-muted-foreground">{compact(total)}</span>
                       <div className="flex w-full max-w-14 flex-col overflow-hidden rounded-t-md" style={{ height: `${(total / trendMax) * 80}px` }}>
                         <div className="bg-primary/25" style={{ height: `${(r.totals.employerCost / total) * 100}%` }} />
-                        <div className={cn("flex-1", r.status === "draft" || r.status === "in_review" ? "bg-primary/50" : "bg-primary")} />
+                        <div className={cn("flex-1", r.status === "draft" || r.status === "in_review" ? "bg-[color-mix(in_oklab,var(--primary)_50%,var(--card))]" : "bg-primary")} />
                       </div>
                       <span className="text-[10px] text-muted-foreground">{r.period.label.split(" ")[0].slice(0, 3)}</span>
                     </div>
@@ -376,7 +376,7 @@ function Remittances({ runs, canEdit }: { runs: PayrollRun[]; canEdit: boolean }
     months.set(k, [...(months.get(k) ?? []), r]);
   }
   const sorted = [...months.entries()].sort((a, b) => b[0].localeCompare(a[0]));
-  if (!sorted.length) return <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">Finalize a run to see what&apos;s due.</p>;
+  if (!sorted.length) return <p className="rounded-xl border bg-card border-dashed p-8 text-center text-sm text-muted-foreground">Finalize a run to see what&apos;s due.</p>;
   return (
     <div className="flex flex-col gap-4">
       {sorted.map(([key, monthRuns]) => {
@@ -393,7 +393,7 @@ function Remittances({ runs, canEdit }: { runs: PayrollRun[]; canEdit: boolean }
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-xs">
-                <thead className="bg-muted/40 text-left text-muted-foreground">
+                <thead className="bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))] text-left text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 font-medium">Remittance</th>
                     <th className="px-4 py-2 font-medium">Paid to</th>

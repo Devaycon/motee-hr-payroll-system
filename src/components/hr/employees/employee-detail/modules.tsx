@@ -1644,6 +1644,7 @@ export function PayModule({ employeeId, employee }: ModuleProps) {
   const { data, loading } = useEmployeePay(employeeId);
   const canEdit = useCan("organization.employees", "edit");
   const rf = useRecordForm(COLLECTION_SCHEMAS.payHistory, employeeId);
+  const country = useAppSelector((s) => s.locale.country);
   if (loading && !data) return <LoadingPanel />;
   if (!data) return <Empty />;
   const bank = employee.bankDetails ?? {};
@@ -1666,7 +1667,8 @@ export function PayModule({ employeeId, employee }: ModuleProps) {
           { label: "Bank name", value: bank.bankName },
           { label: "Account name", value: bank.accountName },
           { label: "Account number", value: bank.accountNumber },
-          { label: "Sort code", value: bank.sortCode },
+          // Sort codes are UK-only; Nigerian accounts are a 10-digit NUBAN.
+          ...(country === "uk" ? [{ label: "Sort code", value: bank.sortCode }] : []),
         ]}
       />
       {data.history.length === 0 ? (

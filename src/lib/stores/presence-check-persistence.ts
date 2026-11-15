@@ -1,5 +1,6 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./presence-check-slice";
 import type {
@@ -7,7 +8,7 @@ import type {
   PresencePrompt,
 } from "@/src/lib/types/presence-check";
 
-const STORAGE_KEY = "motee:presence-check";
+const STORAGE_KEY = scopedStorageKey("presence-check");
 
 interface Snapshot {
   settings: PresenceCheckSettings;

@@ -1,10 +1,11 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./scenarios-slice";
 import type { Scenario } from "@/src/lib/types/headcount-scenarios";
 
-const STORAGE_KEY = "motee:headcount-scenarios";
+const STORAGE_KEY = scopedStorageKey("headcount-scenarios");
 
 let initialized = false;
 

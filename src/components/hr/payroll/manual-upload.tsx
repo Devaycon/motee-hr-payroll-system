@@ -203,7 +203,7 @@ export function ManualUploadPage({ runId }: { runId: string }) {
 
       {/* Step 2 */}
       <Step n={2} title="Upload your file">
-        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed p-8 text-center transition hover:bg-muted/40">
+        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed p-8 text-center transition hover:bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))]">
           <FileSpreadsheet className="h-6 w-6 text-muted-foreground" />
           <span className="text-sm font-medium">{fileName || "Choose a CSV or Excel file"}</span>
           <span className="text-[11px] text-muted-foreground">{fileName ? `${body.length} data rows read` : ".csv, .xlsx — first sheet is used"}</span>
@@ -246,7 +246,7 @@ export function ManualUploadPage({ runId }: { runId: string }) {
             <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {headers.map((h, i) =>
                 i === idCol ? null : (
-                  <div key={i} className="flex items-center gap-2 rounded-lg border px-2.5 py-1.5">
+                  <div key={i} className="flex items-center gap-2 rounded-lg border bg-card px-2.5 py-1.5">
                     <span className="min-w-0 flex-1 truncate text-xs font-medium">{h || `Column ${i + 1}`}</span>
                     <span className="text-[10px] text-muted-foreground">→</span>
                     <Select value={mapping[i] ?? IGNORE} onValueChange={(v) => setMapping((m) => ({ ...m, [i]: v }))}>
@@ -270,12 +270,12 @@ export function ManualUploadPage({ runId }: { runId: string }) {
             <Badge variant="outline" className="gap-1 border-emerald-500/30 text-emerald-600"><CheckCircle2 className="h-3 w-3" /> {valid.length} ready</Badge>
             {invalid.length > 0 && <Badge variant="outline" className="gap-1 border-rose-500/30 text-rose-600"><CircleAlert className="h-3 w-3" /> {invalid.length} with errors — skipped</Badge>}
           </div>
-          <div className="overflow-hidden rounded-xl border">
+          <div className="overflow-hidden rounded-xl border bg-card">
             {staged.map((s) => {
               const gross = s.lines.filter((l) => l.category === "earning").reduce((a, l) => a + l.amount, 0);
               const ded = s.lines.filter((l) => l.category === "deduction").reduce((a, l) => a + l.amount, 0);
               return (
-                <div key={s.employeeId} className={cn("border-b px-4 py-2.5 text-xs last:border-0", s.errors.length && "bg-rose-500/5")}>
+                <div key={s.employeeId} className={cn("border-b px-4 py-2.5 text-xs last:border-0", s.errors.length && "bg-[color-mix(in_oklab,var(--color-rose-500)_5%,var(--card))]")}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-medium">{s.name}</p>
                     <p className="tabular-nums text-muted-foreground">

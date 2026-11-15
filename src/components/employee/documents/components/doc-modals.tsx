@@ -26,7 +26,8 @@ import {
 } from "@/src/components/ui/select";
 import { Textarea } from "@/src/components/ui/textarea";
 import { cn } from "@/src/lib/utils";
-import { FOLDER_COLORS, EXT_OPTIONS, formatDate, SELF_SERVICE_DOC_TYPES } from "../data";
+import { FOLDER_COLORS, EXT_OPTIONS, formatDate, selfServiceDocTypes } from "../data";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { FileIcon } from "./file-icon";
 import type { DocFolder, EmployeeDocument, FileExt } from "../types";
 
@@ -158,6 +159,7 @@ export function UploadModal({
   folders,
   onSubmit,
 }: UploadModalProps) {
+  const country = useAppSelector((s) => s.locale.country);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -184,7 +186,7 @@ export function UploadModal({
               <Input
                 value={name}
                 onChange={(e) => onNameChange(e.target.value)}
-                placeholder="e.g. National ID – NIN"
+                placeholder={country === "ng" ? "e.g. National ID – NIN" : "e.g. Passport – photo page"}
                 className="h-8 text-xs"
               />
             </div>
@@ -198,7 +200,7 @@ export function UploadModal({
                   <SelectContent>
                     {/* §8.3 — the specific kinds the client asked for, ahead
                         of the generic HR-file-shaped types. */}
-                    {[...SELF_SERVICE_DOC_TYPES, "Contract", "Offer Letter", "Policy", "HR File", "Other"].map(
+                    {[...selfServiceDocTypes(country), "Contract", "Offer Letter", "Policy", "HR File", "Other"].map(
                       (t) => (
                         <SelectItem key={t} value={t} className="text-xs">
                           {t}

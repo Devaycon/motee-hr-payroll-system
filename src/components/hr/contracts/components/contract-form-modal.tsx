@@ -39,6 +39,7 @@ import type {
   ContractStatus,
   NewContract,
 } from "../types";
+import { useCurrency } from "@/src/lib/hooks/use-currency";
 
 const contractSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
@@ -123,7 +124,8 @@ export function ContractFormModal({
   const [prevOpen, setPrevOpen] = useState(false);
   const [prevContract, setPrevContract] = useState<Contract | null>(null);
 
-  const [form, setForm] = useState<NewContract>(EMPTY);
+  const { code: tenantCurrency } = useCurrency();
+  const [form, setForm] = useState<NewContract>(() => ({ ...EMPTY, contractCurrency: tenantCurrency }));
   const [errors, setErrors] = useState<FormErrors>({});
 
   if (open !== prevOpen || contract !== prevContract) {
@@ -148,7 +150,8 @@ export function ContractFormModal({
           contractCurrency: contract.contractCurrency,
         });
       } else {
-        setForm(EMPTY);
+        // New contracts default to the tenant's own currency.
+        setForm({ ...EMPTY, contractCurrency: tenantCurrency });
       }
       setErrors({});
     }

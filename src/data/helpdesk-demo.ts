@@ -129,3 +129,8 @@ export function computeHelpdeskStats(tickets: HelpDeskTicket[]): {
     resolvedToday: tickets.filter((t) => t.resolvedAt?.startsWith(today)).length,
   };
 }
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("helpdesk-demo", { TICKET_CATEGORY_CONFIG, TICKET_CATEGORY_OPTIONS, TICKET_STATUS_CONFIG, TICKET_STATUS_OPTIONS, TICKET_PRIORITY_CONFIG, TICKET_PRIORITY_OPTIONS, HR_AGENTS, TICKETS, FAQ_ARTICLES });

@@ -8,17 +8,26 @@ import { PickListPanel } from "./picklist-panel";
 import { NotificationsPanel } from "./notifications-panel";
 import { AccountPanel } from "./account-panel";
 import type { NotificationPrefs } from "../types";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   MODULE_SETTINGS,
-  PICK_LISTS,
-  NOTIFICATION_PREFS,
   ACCOUNT_SETTINGS,
-  BILLING_RECORDS,
+  billingRecordsFor,
+  notificationPrefsFor,
+  pickListsFor,
 } from "../data";
 
 export function AccountCategory() {
+  // Billing currency, office locations and timezone follow the active country.
+  const country = useAppSelector((s) => s.locale.country);
+  const branches = useAppSelector((s) => s.locale.data?.branches);
+  const legalName = useAppSelector(
+    (s) => (s.locale.data?.companyProfile as { legalName?: string } | undefined)?.legalName,
+  );
   const [notifPrefs, setNotifPrefs] =
-    useState<NotificationPrefs>(NOTIFICATION_PREFS);
+    useState<NotificationPrefs>(() => notificationPrefsFor(country));
+  const pickLists = pickListsFor(country, (branches ?? []).map((b) => b.name));
+  const account = legalName ? { ...ACCOUNT_SETTINGS, companyName: legalName } : ACCOUNT_SETTINGS;
 
   return (
     <Tabs defaultValue="modules">
@@ -36,7 +45,7 @@ export function AccountCategory() {
       </TabsContent>
 
       <TabsContent value="picklist" className="mt-6">
-        <PickListPanel lists={PICK_LISTS} />
+        <PickListPanel lists={pickLists} />
       </TabsContent>
 
       <TabsContent value="notifications" className="mt-6">
@@ -44,7 +53,7 @@ export function AccountCategory() {
       </TabsContent>
 
       <TabsContent value="subscription" className="mt-6">
-        <AccountPanel account={ACCOUNT_SETTINGS} billing={BILLING_RECORDS} />
+        <AccountPanel account={account} billing={billingRecordsFor(country)} />
       </TabsContent>
     </Tabs>
   );

@@ -122,7 +122,7 @@ export function RunExportsMenu({
 
 export function NotSupported() {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed p-14 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-14 text-center">
       <Globe2 className="h-7 w-7 text-muted-foreground" />
       <p className="text-base font-semibold">Payroll is live for Nigerian tenants</p>
       <p className="max-w-md text-sm text-muted-foreground">

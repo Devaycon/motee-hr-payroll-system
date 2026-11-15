@@ -1,5 +1,6 @@
 "use client";
 
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { useState } from "react";
 import { formatDate } from "@/src/lib/utils/format-date";
 import { FileStack, FolderOpen, Eye, Share2, Archive, Trash2, PenLine, FileText } from "lucide-react";
@@ -105,6 +106,12 @@ export function EmployeeDocumentsTab({
   onDelete,
 }: EmployeeDocumentsTabProps) {
   const [employee, setEmployee] = useState<PickedEmployee | null>(null);
+  const country = useAppSelector((s) => s.locale.country);
+  // "Right to Work" is the UK check; in Nigeria the same folder holds work
+  // permits and statutory IDs.
+  const groups = GROUPS.map((g) =>
+    country === "ng" && g.label === "Right to Work" ? { ...g, label: "Work Permits & IDs" } : g,
+  );
 
   if (!employee) {
     return (
@@ -115,7 +122,7 @@ export function EmployeeDocumentsTab({
             Search for an employee to see their documents
           </p>
           <p className="text-xs text-muted-foreground">
-            Grouped into Personal, Right to Work, Employment, Qualifications and Other.
+            Grouped into Personal, {country === "ng" ? "Work Permits & IDs" : "Right to Work"}, Employment, Qualifications and Other.
           </p>
         </div>
         <div className="w-full max-w-sm">
@@ -152,7 +159,7 @@ export function EmployeeDocumentsTab({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {GROUPS.map((group) => {
+          {groups.map((group) => {
             const docs = employeeDocs.filter((d) => group.categories.includes(d.category));
             if (docs.length === 0) return null;
             return (
