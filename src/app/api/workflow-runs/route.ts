@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
-import path from "path";
+import {
+  badCountry,
+  countryFromRequest,
+  runtimeDir,
+  runtimeFile,
+  type RuntimeCountry,
+} from "@/src/lib/server/runtime-file";
 
-const DATA_DIR = path.join(process.cwd(), ".data", "runtime");
-const FILE = path.join(DATA_DIR, "workflow-runs.json");
+const FILE_NAME = "workflow-runs.json";
 
-async function ensureDir() {
+async function ensureDir(country: RuntimeCountry) {
   try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.mkdir(runtimeDir(country), { recursive: true });
   } catch {
     // ignored
   }
@@ -19,9 +24,9 @@ async function ensureDir() {
  * vocabulary this module replaces, and no code ever read it. It fails the
  * `byCountry` guard below, so the first save overwrites it - intended.
  */
-async function read(): Promise<{ byCountry: Record<string, unknown> } | null> {
+async function read(country: RuntimeCountry): Promise<{ byCountry: Record<string, unknown> } | null> {
   try {
-    const raw = await fs.readFile(FILE, "utf8");
+    const raw = await fs.readFile(runtimeFile(FILE_NAME, country), "utf8");
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === "object" && parsed.byCountry) return parsed;
     return null;
@@ -30,12 +35,16 @@ async function read(): Promise<{ byCountry: Record<string, unknown> } | null> {
   }
 }
 
-export async function GET() {
-  const data = await read();
+export async function GET(request: Request) {
+  const country = countryFromRequest(request);
+  if (!country) return badCountry();
+  const data = await read(country);
   return NextResponse.json(data ?? { byCountry: {} });
 }
 
 export async function PUT(request: Request) {
+  const country = countryFromRequest(request);
+  if (!country) return badCountry();
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object" || !body.byCountry) {
     return NextResponse.json(
@@ -44,9 +53,9 @@ export async function PUT(request: Request) {
     );
   }
   try {
-    await ensureDir();
+    await ensureDir(country);
     await fs.writeFile(
-      FILE,
+      runtimeFile(FILE_NAME, country),
       JSON.stringify({ byCountry: body.byCountry }, null, 2),
       "utf8",
     );

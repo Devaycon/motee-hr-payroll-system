@@ -1,11 +1,12 @@
 "use client";
 
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./approvals-slice";
 import type { ApprovalCategory, ApprovalChainTemplate } from "@/src/lib/types/approvals";
 
-const STORAGE_KEY = "motee:approvals";
-const API_URL = "/api/approvals";
+const STORAGE_KEY = scopedStorageKey("approvals");
+const API_URL = withCountry("/api/approvals");
 const PUT_DEBOUNCE_MS = 500;
 
 /**

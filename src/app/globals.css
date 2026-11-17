@@ -157,3 +157,17 @@
   border-top-right-radius: var(--dashboard-card-radius);
   border-bottom-right-radius: var(--dashboard-card-radius);
 }
+
+/*
+ * Payroll pages only (`.payroll-surface`, set by the payroll route layout):
+ * inputs are `bg-input/60`, which lets the shell's logo watermark show through
+ * wherever one sits straight on the page (e.g. a table's search box). This is
+ * the same colour pre-mixed onto the card, so it looks identical but is opaque,
+ * hovered or not. Unlayered for the same reason as `.dashboard-corners` above.
+ */
+.payroll-surface [data-slot="input"] {
+  background-color: color-mix(in oklab, var(--input) 60%, var(--card));
+}
+.dark .payroll-surface [data-slot="input"] {
+  background-color: var(--input);
+}

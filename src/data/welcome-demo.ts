@@ -128,3 +128,8 @@ export const WHATS_NEW = [
     link: "#",
   },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("welcome-demo", { SETUP_STEPS, ALERTS, ANNOUNCEMENTS, TAG_COLORS, HELP_RESOURCES, NEXT_ACTIONS, TIPS, NEW_TYPE_COLORS, WHATS_NEW });

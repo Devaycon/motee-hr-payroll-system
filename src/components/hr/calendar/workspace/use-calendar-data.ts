@@ -6,6 +6,7 @@ import { useUnscopedLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import type { LocaleEmployee, LocaleWorkPattern } from "@/src/lib/types/locale";
 import type { CalItem } from "./model";
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
@@ -102,8 +103,8 @@ export function useCalendarData() {
   const leave = useAppSelector((s) => s.leave.requests);
   const sickness = useAppSelector((s) => s.sickness.records);
   const me = useAppSelector((s) => s.auth.user?.employeeId);
-  const personal = useStoredEvents("motee:personalCalendarEvents");
-  const company = useStoredEvents("motee:companyCalendarEvents");
+  const personal = useStoredEvents(scopedStorageKey("personalCalendarEvents"));
+  const company = useStoredEvents(scopedStorageKey("companyCalendarEvents"));
 
   const employees = useMemo(() => data?.employees ?? [], [data]);
   const byId = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);

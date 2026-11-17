@@ -1,5 +1,6 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./leave-slice";
 import type {
@@ -8,7 +9,7 @@ import type {
   LeaveRequest,
 } from "@/src/lib/types/leave";
 
-const STORAGE_KEY = "motee:leave";
+const STORAGE_KEY = scopedStorageKey("leave");
 
 interface Snapshot {
   requests: LeaveRequest[];

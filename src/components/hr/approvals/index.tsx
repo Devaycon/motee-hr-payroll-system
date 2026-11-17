@@ -41,7 +41,7 @@ import { QueueTable } from "./components/queue-table";
 import { IntakeModal } from "./components/intake-modal";
 import { ApprovalChainsTab } from "./components/chains-tab";
 import { MyDelegationPanel } from "./components/my-delegation-panel";
-import { currentApproverName, isCurrentApprover, isSubmitter } from "./utils";
+import { currentApproverName, isCurrentApprover, isHistoricalApprover, isPayConfidential, isSubmitter } from "./utils";
 import { useDemoApprovalSeed } from "./use-demo-seed";
 import { useCan } from "@/src/lib/permissions/use-can";
 
@@ -106,7 +106,22 @@ export function ApprovalsPage({
 }: ApprovalsPageProps) {
   const seeding = useDemoApprovalSeed();
   const user = useAppSelector((s) => s.auth.user);
-  const requests = useAppSelector((s) => s.approvals.requests);
+  const allRequests = useAppSelector((s) => s.approvals.requests);
+  // Payroll runs and salary changes carry pay figures: only payroll staff,
+  // the submitter and the people on the chain may see them in the queue.
+  const canViewPay = useCan("time-payroll.payroll", "view");
+  const requests = useMemo(
+    () =>
+      canViewPay
+        ? allRequests
+        : allRequests.filter(
+            (r) =>
+              !isPayConfidential(r) ||
+              isSubmitter(r, user?.employeeId) ||
+              isHistoricalApprover(r, user?.employeeId, user?.roleId),
+          ),
+    [allRequests, canViewPay, user],
+  );
   const canSubmit = useCan("submissions.queue", "create");
   // Creating, editing and activating approval chains is module configuration.
   const canAdminister = useCan("submissions.queue", "administer");

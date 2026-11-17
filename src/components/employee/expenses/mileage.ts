@@ -20,6 +20,29 @@ export const DEFAULT_MILEAGE_RATES = {
 
 const KM_PER_MILE = 1.609_34;
 
+/**
+ * Nigeria has no statutory mileage rate (HMRC's AMAP rates are UK-only), so
+ * the NG tenant uses a company policy rate per kilometre, in naira.
+ */
+export const NG_MILEAGE_RATE_PER_KM = 200;
+
+/** Flat per-kilometre claim for jurisdictions without HMRC-style rates. */
+export function calculateKmMileage(
+  distance: number,
+  unit: DistanceUnit,
+  ratePerKm: number,
+  symbol: string,
+): MileageResult {
+  const km = unit === "miles" ? distance * KM_PER_MILE : distance;
+  const safeKm = Number.isFinite(km) && km > 0 ? km : 0;
+  const amount = safeKm * ratePerKm;
+  return {
+    miles: round(safeKm / KM_PER_MILE),
+    amount: round(amount),
+    workings: `${round(safeKm)} km × ${symbol}${ratePerKm}/km = ${symbol}${round(amount).toLocaleString()}`,
+  };
+}
+
 export interface MileageInput {
   distance: number;
   unit: DistanceUnit;

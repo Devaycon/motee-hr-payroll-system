@@ -1,10 +1,11 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./users-slice";
 import type { UserAccountOverride } from "@/src/lib/types/users";
 
-const STORAGE_KEY = "motee:user-accounts";
+const STORAGE_KEY = scopedStorageKey("user-accounts");
 
 let initialized = false;
 

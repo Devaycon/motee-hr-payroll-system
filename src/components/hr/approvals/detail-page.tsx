@@ -43,6 +43,8 @@ import { useCan } from "@/src/lib/permissions/use-can";
 import {
   formatRelativeDate,
   isCurrentApprover,
+  isHistoricalApprover,
+  isPayConfidential,
   isSubmitter,
 } from "./utils";
 import {
@@ -76,6 +78,7 @@ export function ApprovalDetailPage({
       : null,
   );
   const canApprove = useCan("submissions.queue", "approve");
+  const canViewPay = useCan("time-payroll.payroll", "view");
 
   const [note, setNote] = useState("");
   const [editTitle, setEditTitle] = useState<string | null>(null);
@@ -97,6 +100,21 @@ export function ApprovalDetailPage({
       <div className="flex flex-col gap-6 py-6">
         <Skeleton className="h-16 w-72" />
         <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  // Pay figures stay with payroll staff, the submitter and the chain.
+  if (
+    isPayConfidential(request) &&
+    !canViewPay &&
+    !isSubmitter(request, user?.employeeId) &&
+    !isHistoricalApprover(request, user?.employeeId, user?.roleId)
+  ) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-24 text-center">
+        <p className="text-sm font-medium">This submission is confidential</p>
+        <p className="max-w-md text-xs text-muted-foreground">It contains pay figures, so only payroll staff, the person who raised it and its approvers can open it.</p>
       </div>
     );
   }
@@ -229,8 +247,9 @@ export function ApprovalDetailPage({
 
   const showApproverActions =
     youAreCurrent && canApprove && request.status === "in_progress";
+  // Payroll runs are re-raised from the run itself (recalculated and re-validated first).
   const showSubmitterReturned =
-    youAreSubmitter && request.status === "returned";
+    youAreSubmitter && request.status === "returned" && request.documentType !== "payroll_run";
   const showSubmitterCancel =
     youAreSubmitter && request.status === "in_progress";
 

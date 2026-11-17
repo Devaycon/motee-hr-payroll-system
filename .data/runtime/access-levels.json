@@ -471,6 +471,32 @@
           ]
         },
         {
+          "module": "time-payroll.payroll",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": true,
           "actions": [
@@ -1177,6 +1203,32 @@
           ]
         },
         {
+          "module": "time-payroll.payroll",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "delete",
+            "export",
+            "approve",
+            "administer"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": true,
           "actions": [
@@ -1738,6 +1790,16 @@
           ]
         },
         {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -2130,6 +2192,21 @@
           "actions": []
         },
         {
+          "module": "time-payroll.payroll",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -2498,6 +2575,16 @@
           ]
         },
         {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -2824,6 +2911,20 @@
           "actions": []
         },
         {
+          "module": "time-payroll.payroll",
+          "access": true,
+          "actions": [
+            "view",
+            "approve",
+            "export"
+          ]
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -3146,6 +3247,16 @@
           "actions": []
         },
         {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -3448,6 +3559,16 @@
         },
         {
           "module": "time-payroll.occupational-health",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
           "access": false,
           "actions": []
         },
@@ -3861,6 +3982,22 @@
           ]
         },
         {
+          "module": "time-payroll.payroll",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": true,
+          "actions": [
+            "view",
+            "export"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": true,
           "actions": [
@@ -4250,6 +4387,16 @@
           ]
         },
         {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": true,
           "actions": [
@@ -4612,6 +4759,26 @@
           "actions": []
         },
         {
+          "module": "time-payroll.payroll",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -4935,6 +5102,16 @@
           "actions": []
         },
         {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -5249,6 +5426,16 @@
         },
         {
           "module": "time-payroll.occupational-health",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
           "access": false,
           "actions": []
         },
@@ -5574,6 +5761,16 @@
           "actions": []
         },
         {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -5893,6 +6090,16 @@
           "actions": []
         },
         {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": true,
           "actions": [
@@ -6190,6 +6397,16 @@
         },
         {
           "module": "time-payroll.occupational-health",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
           "access": false,
           "actions": []
         },
@@ -6496,6 +6713,16 @@
           "actions": []
         },
         {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
+          "access": false,
+          "actions": []
+        },
+        {
           "module": "operations.assets",
           "access": false,
           "actions": []
@@ -6793,6 +7020,16 @@
         },
         {
           "module": "time-payroll.occupational-health",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll",
+          "access": false,
+          "actions": []
+        },
+        {
+          "module": "time-payroll.payroll-settings",
           "access": false,
           "actions": []
         },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { seed, reseed } from "@/src/lib/stores/leave-slice";
@@ -191,7 +192,7 @@ export function useLeaveData() {
   const seededTenant = useAppSelector((s) => s.locale.data?.tenant.id);
   useEffect(() => {
     if (!data || !state.seeded) return;
-    const marker = `motee:leave:tenant`;
+    const marker = scopedStorageKey("leave:tenant");
     if (typeof window === "undefined") return;
     const prev = window.localStorage.getItem(marker);
     if (prev && prev !== tenantId) {

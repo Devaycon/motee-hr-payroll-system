@@ -48,7 +48,7 @@ import {
 } from "@/src/lib/types/sickness";
 import { SICKNESS_BASE, useCanManageSickness, useSickness, useSicknessActor } from "./hooks";
 
-function blankScheme(tenantId: string): SicknessScheme {
+function blankScheme(tenantId: string, statutory: boolean): SicknessScheme {
   const today = new Date().toISOString().slice(0, 10);
   return {
     id: `${tenantId}-SCH-${Date.now().toString(36).toUpperCase()}`,
@@ -72,7 +72,8 @@ function blankScheme(tenantId: string): SicknessScheme {
     eligibility: { minServiceDays: 0, employmentTypeIds: [], excludeProbation: false },
     waitingDays: 0,
     linkingDays: 56,
-    applyStatutory: true,
+    // UK SSP only exists in the UK; Nigeria schemes are company pay only.
+    applyStatutory: statutory,
     notifyOnSick: ["hr_contact", "line_manager"],
     notifyOnReturn: ["line_manager", "hr_contact"],
     advanced: { selfCertDays: 7, rtwInterview: "always", rtwAfterDays: 0, ohReferralAfterDays: 28, exportToPayroll: true },
@@ -94,7 +95,7 @@ export function SchemeBuilder({ schemeId }: { schemeId: string }) {
   if (schemeId !== "new" && !existing) {
     return <p className="py-12 text-sm text-muted-foreground">Scheme not found.</p>;
   }
-  return <Builder key={schemeId} initial={existing ?? blankScheme(s.tenantId)} isNew={!existing} />;
+  return <Builder key={schemeId} initial={existing ?? blankScheme(s.tenantId, s.statutory)} isNew={!existing} />;
 }
 
 function Builder({ initial, isNew }: { initial: SicknessScheme; isNew: boolean }) {
@@ -250,7 +251,9 @@ function Builder({ initial, isNew }: { initial: SicknessScheme; isNew: boolean }
             <Field label="Payroll element code"><Input value={f.advanced.payrollCode ?? ""} onChange={(e) => set("advanced", { ...f.advanced, payrollCode: e.target.value || undefined })} placeholder="e.g. OSP01" disabled={!canManage} /></Field>
           </div>
           <div className="mt-3 space-y-2 text-sm">
-            <label className="flex items-center justify-between gap-3">Pay statutory sick pay where it applies (UK SSP, date-versioned)<Switch checked={f.applyStatutory} onCheckedChange={(c) => set("applyStatutory", c)} disabled={!canManage} /></label>
+            {s.statutory && (
+              <label className="flex items-center justify-between gap-3">Pay statutory sick pay where it applies (UK SSP, date-versioned)<Switch checked={f.applyStatutory} onCheckedChange={(c) => set("applyStatutory", c)} disabled={!canManage} /></label>
+            )}
             <label className="flex items-center justify-between gap-3">Exclude employees on probation<Switch checked={f.eligibility.excludeProbation} onCheckedChange={(c) => set("eligibility", { ...f.eligibility, excludeProbation: c })} disabled={!canManage} /></label>
             <label className="flex items-center justify-between gap-3">Send sick pay to payroll<Switch checked={f.advanced.exportToPayroll} onCheckedChange={(c) => set("advanced", { ...f.advanced, exportToPayroll: c })} disabled={!canManage} /></label>
             <Field label="Status">
@@ -286,7 +289,7 @@ function Builder({ initial, isNew }: { initial: SicknessScheme; isNew: boolean }
               </div>
             </div>
           )}
-          {f.applyStatutory && (
+          {s.statutory && f.applyStatutory && (
             <div className="mt-4 rounded-md border border-border p-3">
               <p className="mb-2 text-xs font-medium">Statutory sick pay rules (applied by date of absence)</p>
               <table className="w-full text-[11px]">

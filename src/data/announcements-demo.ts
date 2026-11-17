@@ -169,3 +169,7 @@ export const ANNOUNCEMENTS: Announcement[] = [
 	},
 ];
 
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("announcements-demo", { ANNOUNCEMENT_TYPE_LABELS, ANNOUNCEMENT_TYPE_STYLES, ANNOUNCEMENT_TYPE_BORDER, ANNOUNCEMENT_STATUS_LABELS, ANNOUNCEMENT_STATUS_STYLES, AUDIENCE_LABELS, ANNOUNCEMENT_TYPE_OPTIONS, DEPARTMENT_OPTIONS, ANNOUNCEMENTS });

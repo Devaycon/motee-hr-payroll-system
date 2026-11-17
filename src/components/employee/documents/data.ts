@@ -247,6 +247,16 @@ export const SELF_SERVICE_DOC_TYPES = [
   "Certificate",
 ];
 
+/**
+ * Self-service types for the active country: "Right to Work" (share code /
+ * BRP evidence) is a UK concept; Nigeria asks for the NIN slip instead.
+ */
+export function selfServiceDocTypes(country: "uk" | "ng"): string[] {
+  return country === "ng"
+    ? SELF_SERVICE_DOC_TYPES.map((t) => (t === "Right to Work" ? "NIN Slip" : t))
+    : SELF_SERVICE_DOC_TYPES;
+}
+
 export const EXT_OPTIONS: { label: string; value: FileExt }[] = [
   { label: "PDF (.pdf)", value: "pdf" },
   { label: "Word (.docx)", value: "docx" },

@@ -1,22 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { RegisterForm } from "@/src/components/auth/register-form";
 import { CountrySwitcher } from "@/src/components/auth/country-switcher";
 import ThemeToggle from "@/src/components/themes/theme-toggle";
 import Image from "next/image";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { loadLocale } from "@/src/lib/stores/locale-slice";
 
 const RegisterIndex = () => {
-  const dispatch = useAppDispatch();
-  const country = useAppSelector((s) => s.locale.country);
-
-  useEffect(() => {
-    dispatch(loadLocale(country));
-  }, [country, dispatch]);
-
+  // The bundle for the persisted country is loaded once by ReduxProvider;
+  // the country switcher reloads the page rather than swapping it in place.
   return (
     <div
       className="relative min-h-screen flex items-center justify-end overflow-hidden"

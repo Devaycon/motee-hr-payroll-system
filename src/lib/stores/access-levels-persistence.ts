@@ -1,5 +1,6 @@
 "use client";
 
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate, hydrateAssignments } from "./access-levels-slice";
 import type {
@@ -7,8 +8,8 @@ import type {
   RoleAssignmentEvent,
 } from "@/src/lib/types/access-levels";
 
-const STORAGE_KEY = "motee:accessLevels";
-const API_URL = "/api/access-levels";
+const STORAGE_KEY = scopedStorageKey("accessLevels");
+const API_URL = withCountry("/api/access-levels");
 const PUT_DEBOUNCE_MS = 500;
 
 let initialized = false;

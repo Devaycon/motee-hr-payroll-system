@@ -70,3 +70,8 @@ export function recomputeNodes(nodes: HierarchyNode[]): HierarchyNode[] {
 const _raw = rawNodes().map((n) => ({ ...n, level: 0, directReports: 0 })) as HierarchyNode[];
 
 export const HIERARCHY_NODES: HierarchyNode[] = recomputeNodes(_raw);
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("structure-demo", { STATUS_LABELS, STATUS_STYLES, DEPT_OPTIONS, HIERARCHY_NODES });

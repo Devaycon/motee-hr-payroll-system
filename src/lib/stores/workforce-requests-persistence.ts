@@ -1,10 +1,11 @@
 "use client";
 
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate, type WorkforceRequest } from "./workforce-requests-slice";
 
-const STORAGE_KEY = "motee:workforceRequests";
-const API_URL = "/api/workforce-requests";
+const STORAGE_KEY = scopedStorageKey("workforceRequests");
+const API_URL = withCountry("/api/workforce-requests");
 const PUT_DEBOUNCE_MS = 500;
 
 interface Snapshot {

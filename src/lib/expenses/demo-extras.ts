@@ -81,6 +81,65 @@ const SPECS: ExtraSpec[] = [
   },
 ];
 
+/**
+ * The same queue for the UK tenant — UK merchants at UK-sized amounts. The
+ * Nigerian set above is in naira; stamping it with £ would show a £168,000
+ * team dinner.
+ */
+const UK_SPECS: ExtraSpec[] = [
+  {
+    title: "Quarterly client roadshow — rail",
+    category: "travel",
+    amount: 486.4,
+    merchant: "Avanti West Coast",
+    status: "submitted",
+    dayOffset: -3,
+    notes: "Three-city roadshow ahead of the Q3 renewal cycle.",
+  },
+  {
+    title: "Team offsite dinner (12 people)",
+    category: "meals",
+    amount: 612.0,
+    merchant: "Dishoom King's Cross",
+    status: "submitted",
+    dayOffset: -5,
+  },
+  {
+    title: "Conference pass — Leeds Digital Festival",
+    category: "training",
+    amount: 295.0,
+    merchant: "Leeds Digital Festival",
+    status: "approved",
+    dayOffset: -9,
+    notes: "Approved against this year's engineering L&D budget.",
+  },
+  {
+    title: "Standing desk & monitor arm",
+    category: "equipment",
+    amount: 389.99,
+    merchant: "Fully UK",
+    status: "approved",
+    dayOffset: -12,
+  },
+  {
+    title: "Payroll software renewal",
+    category: "software",
+    amount: 1150.0,
+    merchant: "BrightPay",
+    status: "reimbursed",
+    dayOffset: -21,
+  },
+  {
+    title: "Airport transfers — audit visit",
+    category: "travel",
+    amount: 84.5,
+    merchant: "Addison Lee",
+    status: "rejected",
+    dayOffset: -16,
+    notes: "Personal leg of the journey included on the same receipt.",
+  },
+];
+
 function isoOffset(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -117,10 +176,11 @@ export function buildExpenseExtras(
   ownerEmployeeId: string,
   stageCount: number,
 ): ExpenseClaim[] {
-  const owners = pickOwners(bundle, ownerEmployeeId, SPECS.length);
+  const specs = bundle.tenant.countryCode === "GB" ? UK_SPECS : SPECS;
+  const owners = pickOwners(bundle, ownerEmployeeId, specs.length);
   if (owners.length === 0) return [];
 
-  return SPECS.map((spec, i) => {
+  return specs.map((spec, i) => {
     const owner = owners[i % owners.length];
     const dateSubmitted = isoOffset(spec.dayOffset);
     const year = dateSubmitted.slice(0, 4);

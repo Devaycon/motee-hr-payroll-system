@@ -141,3 +141,8 @@ export const OFFBOARDING_RECORDS: OffboardingRecord[] = [
     initiatedAt: "2026-04-01",
   },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("offboarding-demo", { EXIT_REASON_LABELS, EXIT_REASON_STYLES, OFFBOARDING_STATUS_LABELS, OFFBOARDING_STATUS_STYLES, DEPARTMENT_OPTIONS, DEFAULT_CLEARANCE_ITEMS, OFFBOARDING_RECORDS });

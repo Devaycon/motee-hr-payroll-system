@@ -129,3 +129,8 @@ export const WORKFORCE_DEMOGRAPHICS: {
     { label: "10+ Years", count: 11, percentage: 6 },
   ],
 };
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("workforce-demo", { GAP_SEVERITY_LABELS, GAP_SEVERITY_STYLES, SKILL_CATEGORY_LABELS, SKILL_CATEGORY_STYLES, TURNOVER_PERIODS, TURNOVER_CHART_CONFIG, HIRING_METRICS, SKILLS_GAPS, TURNOVER_RECORDS, WORKFORCE_DEMOGRAPHICS });

@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { AuthUser, LocaleBundle } from "@/src/lib/types/locale";
 import type { RootState } from "./store";
+import { loadLocale } from "./locale-slice";
 
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "error";
@@ -120,6 +121,24 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Safety net for the UK ⇄ Nigeria switch: a signed-in user who isn't an
+      // employee of the bundle that just loaded is re-resolved from the same
+      // role in that bundle (HR Admin is William Jones in the UK and Chinedu
+      // Lawal in Nigeria), so nobody stays "logged in" as the other
+      // country's person.
+      .addCase(loadLocale.fulfilled, (state, action) => {
+        const user = state.user;
+        if (!user) return;
+        const bundle = action.payload;
+        if (bundle.employees.some((e) => e.id === user.employeeId)) return;
+        const rebuilt = buildAuthUser(bundle, user.roleId);
+        if (rebuilt) {
+          state.user = rebuilt;
+        } else {
+          state.user = null;
+          state.status = "idle";
+        }
+      })
       .addCase(loginThunk.pending, (state) => {
         state.status = "loading";
         state.error = null;

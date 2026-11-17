@@ -317,6 +317,7 @@ const approvalsSlice = createSlice({
         history: [event],
         attachments,
         signatures,
+        excludedApproverIds: submission.excludedApproverIds?.filter(Boolean),
       });
     },
 
@@ -328,6 +329,7 @@ const approvalsSlice = createSlice({
         action.payload;
       const req = state.requests.find((r) => r.id === requestId);
       if (!req || req.status !== "in_progress") return;
+      if (req.excludedApproverIds?.includes(actorEmployeeId)) return;
       const step = req.steps[req.currentStepIndex];
       if (!step) return;
       step.status = "approved";
@@ -372,6 +374,7 @@ const approvalsSlice = createSlice({
       const { requestId, actorEmployeeId, actorName, note } = action.payload;
       const req = state.requests.find((r) => r.id === requestId);
       if (!req || req.status !== "in_progress") return;
+      if (req.excludedApproverIds?.includes(actorEmployeeId)) return;
       const step = req.steps[req.currentStepIndex];
       if (!step) return;
       step.status = "rejected";
@@ -393,6 +396,7 @@ const approvalsSlice = createSlice({
       const { requestId, actorEmployeeId, actorName, note } = action.payload;
       const req = state.requests.find((r) => r.id === requestId);
       if (!req || req.status !== "in_progress") return;
+      if (req.excludedApproverIds?.includes(actorEmployeeId)) return;
       const step = req.steps[req.currentStepIndex];
       if (!step) return;
       step.status = "returned";
@@ -435,6 +439,9 @@ const approvalsSlice = createSlice({
       } = action.payload;
       const req = state.requests.find((r) => r.id === requestId);
       if (!req || req.status !== "returned") return;
+      // Module-owned requests (payroll runs) are re-raised from their module,
+      // which re-validates and recalculates first.
+      if (req.documentType === "payroll_run") return;
       if (updatedTitle) req.documentTitle = updatedTitle;
       if (updatedSummary) req.documentSummary = updatedSummary;
       if (updatedPayload) req.payloadSnapshot = updatedPayload;

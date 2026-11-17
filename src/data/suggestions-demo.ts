@@ -357,3 +357,7 @@ export function getStatusBreakdown(
   return counts;
 }
 
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("suggestions-demo", { SUGGESTION_CATEGORY_CONFIG, SUGGESTION_STATUS_CONFIG, SUGGESTION_PRIORITY_CONFIG, SUGGESTION_CATEGORY_OPTIONS, SUGGESTION_STATUS_OPTIONS, SUGGESTION_PRIORITY_OPTIONS, SUGGESTIONS });

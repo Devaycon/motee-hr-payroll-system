@@ -55,6 +55,7 @@ function formatDate(date?: string) {
 function formatSalary(amount?: number, currency?: string) {
   if (!amount) return "—";
   if (currency === "NGN") return `₦${amount.toLocaleString("en-NG")}`;
+  if (currency === "GBP") return `£${amount.toLocaleString("en-GB")}`;
   return `${currency} ${amount.toLocaleString()}`;
 }
 

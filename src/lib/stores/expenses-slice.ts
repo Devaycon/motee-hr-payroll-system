@@ -134,6 +134,9 @@ const expensesSlice = createSlice({
           claim.currentApproverEmployeeId = desk.employeeId;
           claim.currentApproverName = desk.name;
         }
+        // The seed's reviewer is a placeholder name; use this tenant's real
+        // approver so no other country's person appears on the claim.
+        if (claim.reviewer && desk?.name) claim.reviewer = desk.name;
         // Materialise the inferred trail now, so the first decision appends to
         // a real history instead of replacing an inferred one.
         if (!claim.history?.length) claim.history = claimTimeline(claim);

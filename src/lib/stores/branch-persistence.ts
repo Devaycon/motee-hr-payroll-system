@@ -1,9 +1,10 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate, type BranchState } from "./branch-slice";
 
-const STORAGE_KEY = "motee:branch";
+const STORAGE_KEY = scopedStorageKey("branch");
 
 let initialized = false;
 

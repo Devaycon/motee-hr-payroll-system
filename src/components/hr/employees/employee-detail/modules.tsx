@@ -1279,7 +1279,14 @@ export function AssetsModule({ employeeId }: ModuleProps) {
 
 // ── Payslips ────────────────────────────────────────────────────────────────
 export function PayslipsModule({ employeeId }: ModuleProps) {
-  const { data, loading } = useEmployeePayslips(employeeId);
+  const { data, loading, allowed } = useEmployeePayslips(employeeId);
+  if (!allowed) {
+    return (
+      <Section title="Payslips" description="Confidential — visible to the employee and payroll staff only.">
+        <Empty label="You don't have access to this person's payslips." />
+      </Section>
+    );
+  }
   if (loading && !data) return <LoadingPanel />;
   const rows = data ?? [];
   const ytdGross = rows.reduce((s, p) => s + p.gross, 0);
@@ -1289,7 +1296,7 @@ export function PayslipsModule({ employeeId }: ModuleProps) {
   return (
     <Section
       title="Payslips"
-      description="Monthly payslips generated from the employee's salary."
+      description="Payslips issued through payroll. Open one to view, print or verify it."
     >
       {rows.length === 0 ? (
         <Empty label="No payslips available." />
@@ -1637,6 +1644,7 @@ export function PayModule({ employeeId, employee }: ModuleProps) {
   const { data, loading } = useEmployeePay(employeeId);
   const canEdit = useCan("organization.employees", "edit");
   const rf = useRecordForm(COLLECTION_SCHEMAS.payHistory, employeeId);
+  const country = useAppSelector((s) => s.locale.country);
   if (loading && !data) return <LoadingPanel />;
   if (!data) return <Empty />;
   const bank = employee.bankDetails ?? {};
@@ -1659,7 +1667,8 @@ export function PayModule({ employeeId, employee }: ModuleProps) {
           { label: "Bank name", value: bank.bankName },
           { label: "Account name", value: bank.accountName },
           { label: "Account number", value: bank.accountNumber },
-          { label: "Sort code", value: bank.sortCode },
+          // Sort codes are UK-only; Nigerian accounts are a 10-digit NUBAN.
+          ...(country === "uk" ? [{ label: "Sort code", value: bank.sortCode }] : []),
         ]}
       />
       {data.history.length === 0 ? (

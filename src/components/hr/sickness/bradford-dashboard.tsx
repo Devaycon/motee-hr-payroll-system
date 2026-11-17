@@ -30,7 +30,7 @@ import {
 } from "@/src/components/ui/select";
 import { NIVO_THEME } from "@/src/components/shared/charts";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
-import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { openReviewCase, sicknessId, updateReviewCase, updateSettings } from "@/src/lib/stores/sickness-slice";
 import { bandFor } from "@/src/lib/sickness/bradford";
 import { cn } from "@/src/lib/utils";
@@ -342,6 +342,7 @@ function ReviewCaseDialog({ reviewCase, onClose }: { reviewCase: AbsenceReviewCa
   const dispatch = useAppDispatch();
   const actor = useSicknessActor();
   const canManage = useCanManageSickness();
+  const country = useAppSelector((s) => s.locale.country);
   const [considerations, setConsiderations] = useState(reviewCase?.considerations);
   const [outcome, setOutcome] = useState<ReviewOutcome | "">(reviewCase?.outcome ?? "");
   const [notes, setNotes] = useState(reviewCase?.outcomeNotes ?? "");
@@ -357,7 +358,7 @@ function ReviewCaseDialog({ reviewCase, onClose }: { reviewCase: AbsenceReviewCa
   const allConsidered = Object.values(considerations).every(Boolean);
 
   const items: Array<[keyof AbsenceReviewCase["considerations"], string]> = [
-    ["disability", "Considered whether any absence is disability-related (Equality Act 2010)"],
+    ["disability", `Considered whether any absence is disability-related (${country === "ng" ? "Discrimination Against Persons with Disabilities Act 2018" : "Equality Act 2010"})`],
     ["pregnancy", "Considered whether any absence is pregnancy-related — these must be excluded"],
     ["adjustments", "Considered whether reasonable adjustments are in place or needed"],
     ["otherCircumstances", "Considered other circumstances (bereavement, caring, injury at work…)"],

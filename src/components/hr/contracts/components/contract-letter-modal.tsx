@@ -10,6 +10,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Printer } from "lucide-react";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS } from "../data";
 import type { Contract } from "../types";
 
@@ -32,6 +33,7 @@ function formatDate(date?: string) {
 function formatSalary(amount?: number, currency?: string) {
   if (!amount) return "—";
   if (currency === "NGN") return `₦${amount.toLocaleString("en-NG")}`;
+  if (currency === "GBP") return `£${amount.toLocaleString("en-GB")}`;
   return `${currency} ${amount.toLocaleString()}`;
 }
 
@@ -41,6 +43,17 @@ export function ContractLetterModal({
   hrSignature,
   onClose,
 }: ContractLetterModalProps) {
+  // The employer on the letter is the active tenant, not a hardcoded Lagos
+  // address — a UK contract must carry the UK company's details.
+  const profile = useAppSelector((s) => s.locale.data?.companyProfile) as
+    | { legalName?: string; headquarters?: { city?: string; country?: string } }
+    | undefined;
+  const employer = {
+    name: profile?.legalName ?? "",
+    address: profile
+      ? [profile.headquarters?.city, profile.headquarters?.country].filter(Boolean).join(", ")
+      : "",
+  };
   if (!contract) return null;
 
   const today = new Date().toLocaleDateString("en-GB", {
@@ -105,8 +118,8 @@ export function ContractLetterModal({
 </head>
 <body>
   <div style="text-align:center;border-bottom:2px solid #111;padding-bottom:20px;margin-bottom:28px;">
-    <p style="font-size:18px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;">Motee Payroll Inc.</p>
-    <p style="font-size:11px;color:#555;margin-top:4px;">HR &amp; Payroll Management Platform &middot; Lagos, Nigeria</p>
+    <p style="font-size:18px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;">${employer.name}</p>
+    <p style="font-size:11px;color:#555;margin-top:4px;">${employer.address}</p>
   </div>
   <div style="text-align:center;margin-bottom:24px;">
     <p style="font-size:14px;font-weight:bold;text-transform:uppercase;letter-spacing:4px;">Contract Agreement</p>
@@ -115,7 +128,7 @@ export function ContractLetterModal({
   <div style="margin-bottom:24px;">
     <p style="font-weight:bold;font-size:10px;text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:10px;color:#333;">Parties</p>
     <div style="font-size:12.5px;line-height:2;">
-      <div style="display:flex;gap:12px;"><span style="font-weight:bold;min-width:130px;">Employer:</span><span>Motee Payroll Inc.</span></div>
+      <div style="display:flex;gap:12px;"><span style="font-weight:bold;min-width:130px;">Employer:</span><span>${employer.name}</span></div>
       <div style="display:flex;gap:12px;"><span style="font-weight:bold;min-width:130px;">Party / Employee:</span><span>${contract!.employeeName}</span></div>
       <div style="display:flex;gap:12px;"><span style="font-weight:bold;min-width:130px;">Department:</span><span>${contract!.department}</span></div>
     </div>
@@ -184,10 +197,10 @@ export function ContractLetterModal({
           <div className="mx-auto max-w-2xl space-y-6 bg-white px-10 py-8 text-[#111] shadow-sm ring-1 ring-black/10 dark:text-[#111]">
             <div className="border-b-2 border-[#111] pb-5 text-center">
               <p className="text-lg font-bold uppercase tracking-widest">
-                Motee Payroll Inc.
+                {employer.name}
               </p>
               <p className="mt-1 text-[11px] text-[#555]">
-                HR & Payroll Management Platform · Lagos, Nigeria
+                {employer.address}
               </p>
             </div>
 
@@ -208,7 +221,7 @@ export function ContractLetterModal({
               <div className="space-y-1 text-xs leading-loose">
                 <div className="flex gap-3">
                   <span className="min-w-32 font-bold">Employer:</span>
-                  <span>Motee Payroll Inc.</span>
+                  <span>{employer.name}</span>
                 </div>
                 <div className="flex gap-3">
                   <span className="min-w-32 font-bold">Party / Employee:</span>

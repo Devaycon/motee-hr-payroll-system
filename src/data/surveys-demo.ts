@@ -632,3 +632,7 @@ export const ENGAGEMENT_CHART_CONFIG = {
 	operations: { label: "Operations", color: "hsl(221, 70%, 55%)" },
 };
 
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("surveys-demo", { SURVEY_TYPE_CONFIG, SURVEY_STATUS_CONFIG, SURVEY_TYPE_OPTIONS, SURVEY_STATUS_OPTIONS, AUDIENCE_OPTIONS, AUDIENCE_LABEL, PULSE_FREQUENCY_OPTIONS, PULSE_FREQUENCY_LABEL, DEPARTMENTS, SURVEY_TEMPLATES, SURVEYS, ENGAGEMENT_TREND_DATA, ENGAGEMENT_CHART_CONFIG });

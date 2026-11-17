@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Sparkles, Check, AlertTriangle, Users, CalendarClock } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { LEAVE_REQUESTS, LEAVE_POLICIES } from "@/src/data/leave-demo";
-import { PUBLIC_HOLIDAYS_2026 } from "@/src/data/leave-calendar-demo";
+import { usePublicHolidays } from "@/src/lib/hooks/use-public-holidays";
 import {
   suggestLeaveWindows,
   staffingImpact,
@@ -29,6 +29,7 @@ const TEAM_SIZE = 10;
 export function SmartLeaveAssistant() {
   // 1. Suggested windows — staffing-aware, with a bonus for weeks next to a
   // public holiday.
+  const holidays = usePublicHolidays();
   const suggestions = useMemo(
     () =>
       suggestLeaveWindows({
@@ -36,9 +37,9 @@ export function SmartLeaveAssistant() {
         department: DEMO_DEPARTMENT,
         allRequests: LEAVE_REQUESTS,
         teamSize: TEAM_SIZE,
-        holidays: PUBLIC_HOLIDAYS_2026,
+        holidays,
       }),
-    [],
+    [holidays],
   );
 
   // 2. Coverage right now.

@@ -1,11 +1,12 @@
 "use client";
 
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./er-cases-slice";
 import type { ERCase } from "@/src/lib/types/grievance";
 
-const STORAGE_KEY = "motee:erCases";
-const API_URL = "/api/er-cases";
+const STORAGE_KEY = scopedStorageKey("erCases");
+const API_URL = withCountry("/api/er-cases");
 const PUT_DEBOUNCE_MS = 500;
 
 interface Snapshot {

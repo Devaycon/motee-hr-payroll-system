@@ -72,6 +72,13 @@ const DEFAULT_STEPS: Record<ApprovalDocumentType, SeedStep[]> = {
     { label: "Confirm absence & arrange cover", approver: "LINE_MANAGER" },
     { label: "Check fit note & record absence", approver: "ROLE:ROLE-HRMGR" },
   ],
+  // Two-person control: the preparer (Payroll / HR Admin) never approves.
+  // Finance reviews the register, variances and exceptions; the executive
+  // authorises releasing the money.
+  payroll_run: [
+    { label: "Review register, variances & exceptions", approver: "ROLE:ROLE-FIN" },
+    { label: "Authorise payment release", approver: "ROLE:ROLE-EXEC" },
+  ],
 };
 
 const DOCUMENT_TEMPLATE_NAMES: Record<ApprovalDocumentType, string> = {
@@ -87,6 +94,7 @@ const DOCUMENT_TEMPLATE_NAMES: Record<ApprovalDocumentType, string> = {
   expense_claim: "Standard Expense Claim",
   loan_request: "Standard Staff Loan / Salary Advance",
   sickness_absence: "Standard Sickness Absence Notification",
+  payroll_run: "Standard Payroll Run Approval",
 };
 
 const ATTACHMENTS_BY_TYPE: Record<ApprovalDocumentType, AttachmentRules> = {
@@ -137,6 +145,11 @@ const ATTACHMENTS_BY_TYPE: Record<ApprovalDocumentType, AttachmentRules> = {
     allowed: true,
     required: false,
     description: "Attach a fit note for absences over 7 calendar days.",
+  },
+  payroll_run: {
+    allowed: true,
+    required: false,
+    description: "Totals and exception counts are in the request. Attach the payroll register or variance report (Exports on the run) if your approvers want them.",
   },
 };
 
@@ -202,6 +215,12 @@ const SIGNATURES_BY_TYPE: Record<ApprovalDocumentType, SignatureRules> = {
     reviewerSigns: false,
     placeOnDocument: false,
   },
+  // Approvers sign the payroll authorisation.
+  payroll_run: {
+    submitterSigns: false,
+    reviewerSigns: true,
+    placeOnDocument: false,
+  },
 };
 
 function buildTemplate(
@@ -245,6 +264,7 @@ export const DEFAULT_APPROVAL_TEMPLATES: ApprovalChainTemplate[] = [
   buildTemplate("expense_claim"),
   buildTemplate("loan_request"),
   buildTemplate("sickness_absence"),
+  buildTemplate("payroll_run"),
 ];
 
 export const DEFAULT_TEMPLATE_IDS = new Set(

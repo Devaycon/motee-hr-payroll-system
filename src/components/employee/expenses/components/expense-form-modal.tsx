@@ -64,8 +64,15 @@ import {
 } from "@/src/lib/utils/file-attachments";
 import { cn } from "@/src/lib/utils";
 import { findDuplicates, duplicateWarning } from "../duplicate-check";
-import { calculateMileage, type DistanceUnit } from "../mileage";
+import {
+  calculateKmMileage,
+  calculateMileage,
+  NG_MILEAGE_RATE_PER_KM,
+  type DistanceUnit,
+} from "../mileage";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import { extractFromText, toClaimPatch } from "../receipt-extract";
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 
 interface ExpenseFormModalProps {
   open: boolean;
@@ -80,7 +87,7 @@ interface ExpenseFormModalProps {
 }
 
 /** §9.7 — the currency the employee last filed in, remembered between claims. */
-const LAST_CURRENCY_KEY = "motee:expenses:lastCurrency";
+const LAST_CURRENCY_KEY = scopedStorageKey("expenses:lastCurrency");
 
 function readLastCurrency(): string | null {
   if (typeof window === "undefined") return null;
@@ -189,6 +196,8 @@ export function ExpenseFormModal({
   editingClaim = null,
 }: ExpenseFormModalProps) {
   const { code: tenantCurrency } = useCurrency();
+  // HMRC mileage rates (per mile) are UK-only; Nigeria claims per km.
+  const isUk = useAppSelector((s) => s.locale.country) === "uk";
   const [prevOpen, setPrevOpen] = useState(false);
   const [form, setForm] = useState<FormValues>(() =>
     getDefaults(tenantCurrency),
@@ -208,7 +217,7 @@ export function ExpenseFormModal({
   const [receiptText, setReceiptText] = useState("");
   const [mileageOpen, setMileageOpen] = useState(false);
   const [distance, setDistance] = useState("");
-  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>("miles");
+  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(() => (isUk ? "miles" : "km"));
 
   if (open !== prevOpen) {
     setPrevOpen(open);
@@ -327,7 +336,9 @@ export function ExpenseFormModal({
       toast.error("Enter a distance greater than 0.");
       return;
     }
-    const result = calculateMileage({ distance: value, unit: distanceUnit });
+    const result = isUk
+      ? calculateMileage({ distance: value, unit: distanceUnit })
+      : calculateKmMileage(value, distanceUnit, NG_MILEAGE_RATE_PER_KM, currencySymbol);
     setForm((prev) => ({
       ...prev,
       amount: formatAmountInput(result.amount.toFixed(2)),
@@ -449,7 +460,9 @@ export function ExpenseFormModal({
                   rows={5}
                   className="text-xs"
                   placeholder={
-                    "Paste an email receipt or PDF text here, e.g.\n\nPremier Inn London\n14/08/2026\nTotal: £128.50"
+                    isUk
+                      ? "Paste an email receipt or PDF text here, e.g.\n\nPremier Inn London\n14/08/2026\nTotal: £128.50"
+                      : "Paste an email receipt or PDF text here, e.g.\n\nEko Hotel & Suites, Lagos\n14/08/2026\nTotal: ₦85,000.00"
                   }
                   value={receiptText}
                   onChange={(e) => setReceiptText(e.target.value)}
@@ -518,7 +531,10 @@ export function ExpenseFormModal({
                   </Button>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Uses the standard 0.45/mile rate. The working is added to your
+                  {isUk
+                    ? "Uses the standard HMRC 0.45/mile rate."
+                    : `Uses the company rate of ${currencySymbol}${NG_MILEAGE_RATE_PER_KM}/km.`}{" "}
+                  The working is added to your
                   notes so an approver can see how the figure was reached.
                 </p>
               </div>

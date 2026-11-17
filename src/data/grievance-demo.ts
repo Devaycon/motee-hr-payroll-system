@@ -698,3 +698,8 @@ export function computeCaseStats(cases: ERCase[]) {
   const totalCases = cases.length;
   return { open, investigations, hearings, closed, totalCases };
 }
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("grievance-demo", { CASE_TYPE_CONFIG, CASE_STAGE_CONFIG, CASE_STAGE_ORDER, CONFIDENTIALITY_CONFIG, CASE_OUTCOME_CONFIG, PRIORITY_CONFIG, CASE_TYPE_OPTIONS, PRIORITY_OPTIONS, CONFIDENTIALITY_OPTIONS, STAGE_OPTIONS, CASE_OUTCOME_OPTIONS, ER_CASES });

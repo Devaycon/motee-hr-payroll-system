@@ -38,6 +38,8 @@ import leaveSchemesReducer from "./leave-schemes-slice";
 import workforceRiskReducer from "./workforce-risk-slice";
 import chatReducer from "./chat-slice";
 import { sicknessListener } from "./sickness-listener";
+import payrollReducer from "./payroll-slice";
+import { payrollListener } from "./payroll-listener";
 
 export const store = configureStore({
   reducer: {
@@ -78,6 +80,7 @@ export const store = configureStore({
     leaveSchemes: leaveSchemesReducer,
     workforceRisk: workforceRiskReducer,
     chat: chatReducer,
+    payroll: payrollReducer,
   },
   // Prepend, never replace: replacing the stack drops serialisability and
   // immutability checks along with thunk support.
@@ -85,6 +88,7 @@ export const store = configureStore({
     getDefaultMiddleware().prepend(
       workflowRunsListener.middleware,
       sicknessListener.middleware,
+      payrollListener.middleware,
     ),
 });
 

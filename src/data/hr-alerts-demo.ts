@@ -210,6 +210,59 @@ export const HR_ALERT_CATEGORIES: HrAlertCategory[] = [
   },
 ];
 
+/**
+ * Nigeria's statutory/compliance checks, in place of the UK "Right to Work"
+ * category (share codes, P45, HMRC starter checklist and DBS are UK-only).
+ * Same key and size so tab state and totals behave identically.
+ */
+const NG_STATUTORY_CATEGORY: HrAlertCategory = {
+  key: "right_to_work",
+  label: "Statutory Checks",
+  icon: ShieldCheck,
+  alerts: [
+    { id: "rtw-1", title: "NIN verification missing", description: "Person · Operations", severity: "critical", dueInDays: 2, href: "/organization/employees" },
+    { id: "rtw-2", title: "Guarantor forms outstanding", description: "Person · Engineering", severity: "critical", dueInDays: 1, href: "/organization/employees" },
+    { id: "rtw-3", title: "Expatriate CERPAC expiry", description: "Person · Sales", severity: "warning", dueInDays: 68, href: "/organization/employees" },
+    { id: "rtw-4", title: "Pension RSA PIN not captured", description: "Person · new starter", severity: "warning", dueInDays: 7, href: "/talent/onboarding" },
+    { id: "rtw-5", title: "TIN missing for PAYE remittance", description: "2 new starters this month", severity: "warning", dueInDays: 10, href: "/talent/onboarding" },
+    { id: "rtw-6", title: "Pre-employment medical due", description: "Person · Operations", severity: "warning", dueInDays: 21, href: "/organization/employees" },
+    { id: "rtw-7", title: "Probation review due", description: "3 employees due this cycle", severity: "info", dueInDays: 14, href: "/organization/employees" },
+  ],
+};
+
+/** A "Firstname Lastname · context" description names a person. */
+const PERSON_DESCRIPTION = /^([A-Z][a-z]+ [A-Z][a-z]+|Person) · (.+)$/;
+
+/**
+ * The alert categories for one country, with every named person drawn from
+ * that country's own employees — the seed above mixes names, and a UK
+ * employee must never appear in the Nigeria demo (or the other way round).
+ */
+export function hrAlertCategoriesFor(
+  country: "uk" | "ng",
+  employees: ReadonlyArray<{ id: string; employeeNumber?: string; fullName: string; departmentName: string }>,
+): HrAlertCategory[] {
+  const base =
+    country === "ng"
+      ? [NG_STATUTORY_CATEGORY, ...HR_ALERT_CATEGORIES.filter((c) => c.key !== "right_to_work")]
+      : HR_ALERT_CATEGORIES;
+  if (employees.length === 0) return base;
+  let next = 0;
+  return base.map((category) => ({
+    ...category,
+    alerts: category.alerts.map((alert) => {
+      const match = alert.description?.match(PERSON_DESCRIPTION);
+      if (!match) return alert;
+      const person = employees[next++ % employees.length];
+      return {
+        ...alert,
+        description: `${person.fullName} · ${match[2]}`,
+        employeeId: alert.employeeId ? (person.employeeNumber ?? person.id) : undefined,
+      };
+    }),
+  }));
+}
+
 /** Total number of outstanding alerts across all categories. */
 export const HR_ALERT_TOTAL = HR_ALERT_CATEGORIES.reduce(
   (sum, c) => sum + c.alerts.length,

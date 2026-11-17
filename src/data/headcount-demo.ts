@@ -169,3 +169,7 @@ export const DEMOGRAPHICS_DEPARTMENT: DemographicsItem[] = [
 	{ label: "HR", value: 5 },
 ];
 
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("headcount-demo", { PLAN_PERIODS, DEPARTMENT_OPTIONS, GAP_STATUS_LABELS, GAP_STATUS_STYLES, GAP_SEVERITY_LABELS, GAP_SEVERITY_STYLES, RISK_LABELS, RISK_STYLES, HEADCOUNT_PLANS, ATTRITION_RISKS, DEMOGRAPHICS_EMPLOYMENT_TYPE, DEMOGRAPHICS_TENURE, DEMOGRAPHICS_DEPARTMENT });

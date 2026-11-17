@@ -67,8 +67,13 @@ export function useCurrentUser(): AuthUser | null {
   const status = useAppSelector((s) => s.locale.status);
   const country = useAppSelector((s) => s.locale.country);
 
+  // A saved role the bundle doesn't have falls back to HR Admin rather than
+  // leaving the shell without a user.
   const fallback =
-    !user && bundle ? buildAuthUser(bundle, readDemoRoleId()) : null;
+    !user && bundle
+      ? (buildAuthUser(bundle, readDemoRoleId()) ??
+        buildAuthUser(bundle, DEMO_IDENTITY_ROLE_ID))
+      : null;
 
   useEffect(() => {
     if (!user && !bundle && status === "idle") dispatch(loadLocale(country));

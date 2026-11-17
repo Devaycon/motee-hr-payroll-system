@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/src/lib/utils";
-import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { setCountry } from "@/src/lib/stores/locale-slice";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { switchCountry } from "@/src/lib/locale/country-storage";
 import type { CountryKey } from "@/src/lib/types/locale";
 import {
   DropdownMenu,
@@ -13,16 +13,16 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 
-const COUNTRY_OPTIONS: { key: CountryKey; label: string; flag: string }[] = [
-  {
-    key: "uk",
-    label: "United Kingdom",
-    flag: "/united-kingdom-flag-icon.png",
-  },
+export const COUNTRY_OPTIONS: { key: CountryKey; label: string; flag: string }[] = [
   {
     key: "ng",
     label: "Nigeria",
     flag: "/nigeria-flag-icon.png",
+  },
+  {
+    key: "uk",
+    label: "United Kingdom",
+    flag: "/united-kingdom-flag-icon.png",
   },
 ];
 
@@ -33,7 +33,6 @@ const COUNTRY_OPTIONS: { key: CountryKey; label: string; flag: string }[] = [
  * drifted from this one.
  */
 export function CountrySwitcher() {
-  const dispatch = useAppDispatch();
   const country = useAppSelector((s) => s.locale.country);
   const current = COUNTRY_OPTIONS.find((c) => c.key === country) ?? COUNTRY_OPTIONS[0];
 
@@ -59,7 +58,9 @@ export function CountrySwitcher() {
         {COUNTRY_OPTIONS.map((option) => (
           <DropdownMenuItem
             key={option.key}
-            onClick={() => dispatch(setCountry(option.key))}
+            // Persists the choice and reloads the site so every module rebuilds
+            // from this country's data.
+            onClick={() => switchCountry(option.key)}
             className={cn("gap-2", country === option.key && "bg-accent")}
           >
             <Image

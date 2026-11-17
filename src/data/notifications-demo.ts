@@ -121,3 +121,8 @@ export const DEMO_NOTIFICATIONS: Notification[] = [
     type: "calendar",
   },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("notifications-demo", { DEMO_NOTIFICATIONS });

@@ -129,6 +129,12 @@ export function calculateSickPay(opts: {
   asOf: string;
   holidays?: string[];
   sspRules?: SspRuleVersion[];
+  /**
+   * Whether UK Statutory Sick Pay exists in this jurisdiction at all. False
+   * for Nigeria: there is no statutory sick pay there, only the company
+   * scheme, so an employee without a scheme gets nothing rather than SSP.
+   */
+  statutory?: boolean;
 }): SickPayDay[] {
   const { employee: emp, scheme, asOf } = opts;
   const holidays = new Set(opts.holidays ?? []);
@@ -172,7 +178,7 @@ export function calculateSickPay(opts: {
       let ssp = 0;
       let sspBasis = "";
       const meetsLel = dayRule.lowerEarningsLimit == null || emp.weeklyEarnings >= dayRule.lowerEarningsLimit;
-      if (scheme?.applyStatutory !== false && isPiw && meetsLel && sspWeeksUsedInPiw < dayRule.maxWeeks) {
+      if (opts.statutory !== false && scheme?.applyStatutory !== false && isPiw && meetsLel && sspWeeksUsedInPiw < dayRule.maxWeeks) {
         if (sspWaitingLeft > 0) {
           sspWaitingLeft -= 1;
           sspBasis = "SSP waiting day";
@@ -263,6 +269,7 @@ export function entitlementSummary(opts: {
   records: SicknessRecord[];
   asOf: string;
   holidays?: string[];
+  statutory?: boolean;
 }): EntitlementSummary {
   const { scheme, employee, asOf } = opts;
   const eligible = isEligible(scheme, employee, asOf);

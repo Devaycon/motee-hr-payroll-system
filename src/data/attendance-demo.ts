@@ -96,3 +96,8 @@ export const WORK_SCHEDULES: WorkSchedule[] = [
   { id: "ws-002", name: "Early Shift (7-3)", workDays: ["Mon","Tue","Wed","Thu","Fri"], startTime: "07:00", endTime: "15:00", breakMinutes: 30, assignedCount: 12, createdAt: "2024-06-01" },
   { id: "ws-003", name: "Flexible (Core 10-3)", workDays: ["Mon","Tue","Wed","Thu","Fri"], startTime: "10:00", endTime: "15:00", breakMinutes: 30, assignedCount: 18, createdAt: "2025-01-15" },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("attendance-demo", { DEPARTMENT_OPTIONS, ALL_WORK_DAYS, ATTENDANCE_STATUS_LABELS, ATTENDANCE_STATUS_STYLES, TIMESHEET_STATUS_LABELS, TIMESHEET_STATUS_STYLES, TODAY_ATTENDANCE, TIMESHEETS, WORK_SCHEDULES });

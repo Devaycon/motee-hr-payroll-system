@@ -149,3 +149,8 @@ export const LEADERBOARD: KudosLeaderboardEntry[] = [
   { id: "lb-008", employeeName: "Chiamaka Eze",     employeeInitials: "CE", rank: 8, name: "Chiamaka Eze",     initials: "CE", department: "Operations",     dept: "Operations",     kudosReceived: 5,  kudosSent: 12, streak: 4 },
   { id: "lb-009", employeeName: "Adaeze Okonkwo",   employeeInitials: "AO", rank: 9, name: "Adaeze Okonkwo",   initials: "AO", department: "Human Resources",dept: "Human Resources",kudosReceived: 4,  kudosSent: 14, streak: 5 },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("kudos-demo", { KUDOS_TYPE_CONFIG, KUDOS_TYPE_OPTIONS, COMPANY_VALUE_CONFIG, REACTION_ICONS, KUDOS_DEPARTMENTS, EMPLOYEE_ROSTER, KUDOS_POSTS, LEADERBOARD });

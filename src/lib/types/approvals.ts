@@ -18,6 +18,7 @@ export const BUILTIN_CATEGORY_IDS = [
   "expense_claim",
   "loan_request",
   "sickness_absence",
+  "payroll_run",
 ] as const;
 
 export type ApprovalStatus =
@@ -233,6 +234,11 @@ export interface ApprovalRequest {
   history: ApprovalEvent[];
   attachments: ApprovalAttachment[];
   signatures: ApprovalSignature[];
+  /**
+   * Segregation of duties: people who may not decide any step (e.g. whoever
+   * prepared or submitted a payroll run). Enforced in the reducer.
+   */
+  excludedApproverIds?: string[];
 }
 
 export interface NewApprovalSubmission {
@@ -245,6 +251,8 @@ export interface NewApprovalSubmission {
   chainTemplateId?: string;
   attachments?: ApprovalAttachment[];
   submitterSignatureDataUrl?: string;
+  /** People who may not decide any step on this request. */
+  excludedApproverIds?: string[];
 }
 
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -260,6 +268,7 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   expense_claim: "Expense Claim",
   loan_request: "Loan / Salary Advance",
   sickness_absence: "Sickness Absence",
+  payroll_run: "Payroll Run",
 };
 
 export const ALL_DOCUMENT_TYPES: ApprovalDocumentType[] = [

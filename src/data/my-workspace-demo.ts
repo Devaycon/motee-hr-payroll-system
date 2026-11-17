@@ -65,3 +65,8 @@ export const RECENT_ACTIVITY: { id: number; icon: LucideIcon; action: string; ti
   { id: 4, icon: Clock,       action: "Timesheet approved for Ngozi Obi",          time: "Yesterday" },
   { id: 5, icon: DollarSign,  action: "Payroll run initiated for January 2026",    time: "Yesterday" },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("my-workspace-demo", { LEAVE_TYPE_STYLES, PRIORITY_STYLES, PENDING_LEAVES, PENDING_TIMESHEETS, PENDING_EXPENSES, MY_TASKS, UPCOMING_EVENTS, RECENT_ACTIVITY });

@@ -37,6 +37,7 @@ import { OverflowTabsList } from "@/src/components/shared/overflow-tabs";
 import { cn } from "@/src/lib/utils";
 import {
   HR_ALERT_CATEGORIES,
+  hrAlertCategoriesFor,
   HR_ALERT_SEVERITIES,
   HR_ALERT_SEVERITY_DOTS,
   HR_ALERT_SEVERITY_LABELS,
@@ -201,6 +202,17 @@ function SeverityChips({
  */
 export function useHrAlertCategories(): HrAlertCategory[] {
   const onboardingRecords = useAppSelector((s) => s.onboardingRecords.records);
+  const country = useAppSelector((s) => s.locale.country);
+  const bundleEmployees = useAppSelector((s) => s.locale.data?.employees);
+  // Country-specific checks, with people from this country's own staff.
+  const staticCategories = useMemo(
+    () =>
+      hrAlertCategoriesFor(
+        country,
+        (bundleEmployees ?? []).filter((e) => e.status === "active"),
+      ),
+    [country, bundleEmployees],
+  );
 
   // Surface self-onboarding invites that the new hire hasn't started or finished.
   const onboardingCategory = useMemo<HrAlertCategory>(() => {
@@ -260,9 +272,9 @@ export function useHrAlertCategories(): HrAlertCategory[] {
   return useMemo(
     () =>
       riskCategory
-        ? [riskCategory, ...HR_ALERT_CATEGORIES, onboardingCategory]
-        : [...HR_ALERT_CATEGORIES, onboardingCategory],
-    [riskCategory, onboardingCategory],
+        ? [riskCategory, ...staticCategories, onboardingCategory]
+        : [...staticCategories, onboardingCategory],
+    [riskCategory, staticCategories, onboardingCategory],
   );
 }
 

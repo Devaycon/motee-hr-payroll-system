@@ -1,13 +1,15 @@
 "use client";
 
+import { readStoredCountry, scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate, seed } from "./expenses-slice";
 import {
   EMPLOYEE_EXPENSES,
+  UK_EMPLOYEE_EXPENSES,
   type ExpenseClaim,
 } from "@/src/data/employee-expenses-demo";
 
-const STORAGE_KEY = "motee:expenses";
+const STORAGE_KEY = scopedStorageKey("expenses");
 
 interface Snapshot {
   claims: ExpenseClaim[];
@@ -54,7 +56,9 @@ export function initExpensesPersistence(): void {
   if (cached) store.dispatch(hydrate(cached));
   // No-op once `seeded` is set, so the employee's own claims are never
   // overwritten by the demo rows.
-  store.dispatch(seed(EMPLOYEE_EXPENSES));
+  store.dispatch(
+    seed(readStoredCountry() === "uk" ? UK_EMPLOYEE_EXPENSES : EMPLOYEE_EXPENSES),
+  );
 
   let last = store.getState().expenses;
   store.subscribe(() => {

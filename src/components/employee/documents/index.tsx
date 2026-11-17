@@ -104,7 +104,15 @@ export function MyDocumentsPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
-  const [docs, setDocs] = useState<EmployeeDocument[]>(DEMO_DOCUMENTS);
+  const country = useAppSelector((s) => s.locale.country);
+  // The demo ID document is the country's own (NIN in Nigeria, BRP in the UK).
+  const [docs, setDocs] = useState<EmployeeDocument[]>(() =>
+    country === "uk"
+      ? DEMO_DOCUMENTS.map((d) =>
+          d.name === "National ID – NIN" ? { ...d, name: "Biometric Residence Permit" } : d,
+        )
+      : DEMO_DOCUMENTS,
+  );
   const [folders, setFolders] = useState<DocFolder[]>(DEMO_FOLDERS);
 
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);

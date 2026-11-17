@@ -345,3 +345,7 @@ export const DOCUMENTS: HRDocument[] = [
 	},
 ];
 
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("documents-demo", { FILE_TYPE_LABELS, FILE_TYPE_STYLES, DOCUMENT_CATEGORY_LABELS, DOCUMENT_CATEGORY_STYLES, DOCUMENT_CATEGORY_OPTIONS, FOLDERS, DOCUMENTS });

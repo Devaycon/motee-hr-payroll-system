@@ -144,3 +144,8 @@ export const OH_REFERRALS: OHReferral[] = [
     ],
   },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("occupational-health-demo", { OH_REFERRAL_THRESHOLD_DAYS, OH_REFERRALS });

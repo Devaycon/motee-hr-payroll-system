@@ -307,4 +307,73 @@ export const API_USAGE_LOGS: ApiUsageLog[] = [
   { id: "log-5", endpoint: "/v1/attendance", method: "GET", status: 200, timestamp: "2026-06-03T07:50:00" },
 ];
 
+// --- Per-country views --------------------------------------------------------
+// The constants above are the Nigerian tenant's settings. The UK tenant gets
+// the same screens with its own currency, office locations, login locations,
+// timezone and public holidays, so nothing Nigerian shows in the UK demo.
+
+type SettingsCountry = "uk" | "ng";
+
+const UK_LOGIN_LOCATIONS: Record<string, { location: string; ipAddress: string }> = {
+  "act-001": { location: "London, United Kingdom", ipAddress: "81.2.69.160" },
+  "act-002": { location: "London, United Kingdom", ipAddress: "81.2.69.160" },
+  "act-004": { location: "Manchester, United Kingdom", ipAddress: "86.12.44.201" },
+  "act-005": { location: "London, United Kingdom", ipAddress: "81.2.69.160" },
+};
+
+export function billingRecordsFor(country: SettingsCountry): BillingRecord[] {
+  return country === "uk"
+    ? BILLING_RECORDS.map((b) => ({ ...b, currency: "GBP" }))
+    : BILLING_RECORDS;
+}
+
+export function securitySettingsFor(country: SettingsCountry): SecuritySettings {
+  if (country !== "uk") return SECURITY_SETTINGS;
+  return {
+    ...SECURITY_SETTINGS,
+    loginActivity: (SECURITY_SETTINGS.loginActivity ?? []).map((a) =>
+      UK_LOGIN_LOCATIONS[a.id] ? { ...a, ...UK_LOGIN_LOCATIONS[a.id] } : a,
+    ),
+  };
+}
+
+export function notificationPrefsFor(country: SettingsCountry): NotificationPrefs {
+  return country === "uk"
+    ? { ...NOTIFICATION_PREFS, timezone: "Europe/London" }
+    : NOTIFICATION_PREFS;
+}
+
+export function pickListsFor(
+  country: SettingsCountry,
+  branchNames: string[] = [],
+): PickList[] {
+  return PICK_LISTS.map((list) => {
+    if (list.id !== "pl-location") return list;
+    // Office locations are the tenant's own branches.
+    const names = branchNames.length
+      ? branchNames
+      : country === "uk"
+        ? ["London HQ", "Manchester"]
+        : ["Lagos HQ", "Abuja"];
+    return {
+      ...list,
+      options: [
+        ...names.map((value, i) => ({ id: `loc-${i + 1}`, value, isDefault: i === 0 })),
+        { id: `loc-${names.length + 1}`, value: "Remote", isDefault: false },
+      ],
+    };
+  });
+}
+
+const UK_COMPANY_HOLIDAYS: CompanyHoliday[] = [
+  { id: "ch-1", name: "New Year's Day", date: "2026-01-01", nonWorking: true, excludedDepartments: [] },
+  { id: "ch-2", name: "Early May Bank Holiday", date: "2026-05-04", nonWorking: true, excludedDepartments: [] },
+  { id: "ch-3", name: "Spring Bank Holiday", date: "2026-05-25", nonWorking: true, excludedDepartments: [] },
+  { id: "ch-4", name: "Summer Bank Holiday", date: "2026-08-31", nonWorking: true, excludedDepartments: [] },
+  { id: "ch-5", name: "Founders' Day", date: "2026-08-15", nonWorking: false, excludedDepartments: ["Sales"] },
+];
+
+export function companyHolidaysFor(country: SettingsCountry): CompanyHoliday[] {
+  return country === "uk" ? UK_COMPANY_HOLIDAYS : COMPANY_HOLIDAYS;
+}
 

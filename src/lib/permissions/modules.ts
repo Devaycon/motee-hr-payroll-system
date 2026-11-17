@@ -69,6 +69,11 @@ export const ALL_MODULES: ModuleEntry[] = [
   // src/components/hr/occupational-health/lib.ts), not by this grant alone.
   { id: "time-payroll.sickness",     label: "Sickness & Absence", group: "Time & Payroll", link: "/time-payroll/sickness" },
   { id: "time-payroll.occupational-health", label: "Occupational Health", group: "Time & Payroll", link: "/time-payroll/occupational-health" },
+  // Payroll: runs, approval, payslips. Settings (pay elements, salary
+  // structures, statutory rates) is a separate grant so Finance can approve
+  // runs without being able to change how pay is calculated.
+  { id: "time-payroll.payroll",          label: "Payroll",          group: "Time & Payroll", link: "/time-payroll/payroll" },
+  { id: "time-payroll.payroll-settings", label: "Payroll Settings", group: "Time & Payroll", link: "/time-payroll/payroll/settings" },
 
   // Operations
   { id: "operations.assets",     label: "Asset Management",       group: "Operations", link: "/operations/assets" },

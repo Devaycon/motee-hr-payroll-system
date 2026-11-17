@@ -109,3 +109,7 @@ export const DEMO_HR_STATS = {
   turnoverRate: 8.2,
 };
 
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("hr-demo", { DEMO_EMPLOYEES, DEMO_LEAVE_REQUESTS, DEMO_JOB_POSTINGS, DEMO_CANDIDATES, DEMO_PAYROLL_RUNS, DEMO_ATTENDANCE_TODAY, DEMO_HR_STATS });

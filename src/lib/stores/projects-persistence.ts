@@ -1,10 +1,11 @@
 "use client";
 
+import { scopedStorageKey } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./projects-slice";
 import type { Project, TimesheetEntry } from "@/src/lib/types/projects";
 
-const STORAGE_KEY = "motee:projects";
+const STORAGE_KEY = scopedStorageKey("projects");
 
 interface Snapshot {
   projects: Project[];

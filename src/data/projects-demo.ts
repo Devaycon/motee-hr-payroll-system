@@ -551,3 +551,8 @@ export const DEMO_GO_LIVE_CHECKLISTS: GoLiveChecklist[] = [
     ],
   },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("projects-demo", { DEMO_PROJECTS, DEMO_TIMESHEETS, DEMO_PROJECT_RISKS, DEMO_PROJECT_DOCUMENTS, DEMO_GO_LIVE_CHECKLISTS });

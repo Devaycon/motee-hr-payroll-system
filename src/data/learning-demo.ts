@@ -156,3 +156,8 @@ export const DEPARTMENT_OPTIONS: string[] = [
   "Operations",
   "Legal",
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("learning-demo", { COURSE_CATEGORY_LABELS, COURSE_CATEGORY_STYLES, COURSE_STATUS_LABELS, COURSE_STATUS_STYLES, DELIVERY_MODE_LABELS, ENROLLMENT_STATUS_LABELS, ENROLLMENT_STATUS_STYLES, COURSES, ENROLLMENTS, DEPARTMENT_OPTIONS });

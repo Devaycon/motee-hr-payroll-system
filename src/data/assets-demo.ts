@@ -207,3 +207,8 @@ export const ASSETS: Asset[] = [
     ],
   },
 ];
+
+// Follow the UK ⇄ Nigeria switch: people, places and money in these fixtures
+// become the active country's own (see src/lib/locale/localise-demo.ts).
+import { localiseDemoInPlace } from "@/src/lib/locale/localise-demo";
+localiseDemoInPlace("assets-demo", { DEPARTMENT_OPTIONS, ASSET_STATUS_LABELS, ASSET_STATUS_STYLES, ASSET_CONDITION_LABELS, ASSET_CONDITION_STYLES, ASSET_TYPE_LABELS, ASSET_TYPE_OPTIONS, ASSET_HISTORY_LABELS, ASSET_HISTORY_STYLES, ASSETS });

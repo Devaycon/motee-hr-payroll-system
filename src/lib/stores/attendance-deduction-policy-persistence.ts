@@ -1,11 +1,12 @@
 "use client";
 
+import { scopedStorageKey, withCountry } from "@/src/lib/locale/country-storage";
 import { store } from "./store";
 import { hydrate } from "./attendance-deduction-policy-slice";
 import type { DeductionPolicy } from "@/src/lib/types/attendance";
 
-const STORAGE_KEY = "motee:attendance-deduction-policy";
-const API_URL = "/api/attendance-deduction-policy";
+const STORAGE_KEY = scopedStorageKey("attendance-deduction-policy");
+const API_URL = withCountry("/api/attendance-deduction-policy");
 const PUT_DEBOUNCE_MS = 500;
 
 interface Snapshot {
