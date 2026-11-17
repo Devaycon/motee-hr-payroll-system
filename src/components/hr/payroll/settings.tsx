@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Lock, Plus, RotateCcw } from "lucide-react";
+import { ArrowLeft, Lock, Plus, RotateCcw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -28,10 +28,12 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { EmployeePicker } from "@/src/components/shared/employee-picker";
+import { ListPagination } from "@/src/components/shared/list-pagination";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { PAYROLL_HREF, PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
 import { ELEMENT_GROUP_LABELS, ELEMENT_GROUP_ORDER } from "@/src/lib/payroll/elements-seed";
-import { bandLabel } from "@/src/lib/payroll/ng/rate-sets";
+import { bandLabel, groupLifeOf, nhfBasisOf } from "@/src/lib/payroll/ng/rate-sets";
 import { round2 } from "@/src/lib/payroll/ng/engine";
 import { structureOn } from "@/src/lib/payroll/run-builder";
 import { useCurrentActor, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
@@ -82,7 +84,7 @@ export function PayrollSettingsPage() {
         <TabsContent value="elements" className="mt-4"><Elements elements={data.elements} enabled={data.settings.enabledGroups} canEdit={canEdit} /></TabsContent>
         <TabsContent value="structures" className="mt-4"><Structures canEdit={canEdit} /></TabsContent>
         <TabsContent value="profiles" className="mt-4"><Profiles canEdit={canEdit} focus={params.get("employee")} /></TabsContent>
-        <TabsContent value="rates" className="mt-4"><Rates rateSets={data.rateSets} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="rates" className="mt-4"><Rates rateSets={data.rateSets} settings={data.settings} canEdit={canEdit} /></TabsContent>
         <TabsContent value="payslip" className="mt-4"><PayslipOptions settings={data.settings} canEdit={canEdit} /></TabsContent>
       </Tabs>
     </div>
@@ -118,9 +120,15 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
 
 // ── General ─────────────────────────────────────────────────────────────────
 
+const TYPES_PAGE_SIZE = 6;
+
 function General({ settings, employmentTypes, canEdit }: { settings: PayrollSettings; employmentTypes: { id: string; name: string }[]; canEdit: boolean }) {
   const actions = usePayrollActions();
   const set = (c: Partial<PayrollSettings>) => { actions.updateSettings(c); toast.success("Saved"); };
+  const [page, setTypePage] = useState(1);
+  const typePages = Math.max(1, Math.ceil(employmentTypes.length / TYPES_PAGE_SIZE));
+  const typePage = Math.min(page, typePages);
+  const typeStart = (typePage - 1) * TYPES_PAGE_SIZE;
   return (
     <div className="grid gap-5 xl:grid-cols-2">
       <Card title="Calculation" description="Rules the engine applies to every employee.">
@@ -154,6 +162,44 @@ function General({ settings, employmentTypes, canEdit }: { settings: PayrollSett
         <Row label="NHIA health insurance deductions" hint="Off when the company provides a private HMO instead.">
           <Switch checked={settings.nhisEnabled} disabled={!canEdit} onCheckedChange={(v) => set({ nhisEnabled: v })} />
         </Row>
+        <Row label="NHF basis" hint="2.5% NHF on monthly gross (Business Facilitation Act 2022) or on basic salary, as some employers still do.">
+          <Select value={nhfBasisOf(settings)} onValueChange={(v) => set({ nhfBasis: v as PayrollSettings["nhfBasis"] })} disabled={!canEdit}>
+            <SelectTrigger className="h-8 w-44 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gross">Gross pay</SelectItem>
+              <SelectItem value="basic">Basic salary</SelectItem>
+            </SelectContent>
+          </Select>
+        </Row>
+        <Row label="Group life assurance" hint="Employer-paid cover of 3× annual emoluments (Pension Reform Act 2014). The premium is charged as a monthly employer cost.">
+          <Switch checked={groupLifeOf(settings).enabled} disabled={!canEdit} onCheckedChange={(v) => set({ groupLife: { ...groupLifeOf(settings), enabled: v } })} />
+        </Row>
+        {groupLifeOf(settings).enabled && (
+          <>
+            <Row label="Group life premium rate (%)" hint="The insurer's rate on the sum assured, e.g. 0.6 for 0.6%.">
+              <NumberSetting
+                value={groupLifeOf(settings).ratePct}
+                className="w-24"
+                disabled={!canEdit}
+                clamp={[0, 10]}
+                onCommit={(v) => set({ groupLife: { ...groupLifeOf(settings), ratePct: v } })}
+              />
+            </Row>
+            <Row label="Group life basis" hint="What the 3× sum assured is based on.">
+              <Select
+                value={groupLifeOf(settings).basis}
+                onValueChange={(v) => set({ groupLife: { ...groupLifeOf(settings), basis: v as "gross" | "bht" } })}
+                disabled={!canEdit}
+              >
+                <SelectTrigger className="h-8 w-44 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gross">Gross pay</SelectItem>
+                  <SelectItem value="bht">Basic + housing + transport</SelectItem>
+                </SelectContent>
+              </Select>
+            </Row>
+          </>
+        )}
         <Row label="ITF applies to this company" hint="Employers with 5+ staff or ₦50m+ annual turnover.">
           <Switch checked={settings.itfApplicable} disabled={!canEdit} onCheckedChange={(v) => set({ itfApplicable: v })} />
         </Row>
@@ -184,7 +230,7 @@ function General({ settings, employmentTypes, canEdit }: { settings: PayrollSett
               <tr><th className="px-3 py-2 font-medium">Type</th><th className="px-3 py-2 font-medium">Tax</th><th className="px-3 py-2 font-medium">Pension</th><th className="px-3 py-2 font-medium">NHF</th></tr>
             </thead>
             <tbody>
-              {employmentTypes.map((t) => {
+              {employmentTypes.slice(typeStart, typeStart + TYPES_PAGE_SIZE).map((t) => {
                 const r = settings.employmentTypeRules[t.id] ?? { regime: "paye", pension: true, nhf: true };
                 const upd = (c: Partial<typeof r>) => set({ employmentTypeRules: { ...settings.employmentTypeRules, [t.id]: { ...r, ...c } } });
                 return (
@@ -208,6 +254,12 @@ function General({ settings, employmentTypes, canEdit }: { settings: PayrollSett
             </tbody>
           </table>
         </div>
+        <ListPagination
+          page={typePage}
+          totalPages={typePages}
+          onPageChange={setTypePage}
+          summary={`Showing ${typeStart + 1}–${Math.min(typeStart + TYPES_PAGE_SIZE, employmentTypes.length)} of ${employmentTypes.length} types`}
+        />
       </Card>
     </div>
   );
@@ -348,6 +400,8 @@ function Structures({ canEdit }: { canEdit: boolean }) {
   const { data, bundle } = useTenantPayroll();
   const actions = usePayrollActions();
   const people = (bundle?.employees ?? []).filter((e) => e.status !== "terminated");
+  // Leavers have no salary to change; keep them out of the picker. Memoised so the picker's list isn't rebuilt every render.
+  const leavers = useMemo(() => (bundle?.employees ?? []).filter((e) => e.status === "terminated").map((e) => e.id), [bundle]);
   const [employeeId, setEmployeeId] = useState(people[0]?.id ?? "");
   const today = new Date().toISOString().slice(0, 10);
   const versions = (data?.structures ?? []).filter((s) => s.employeeId === employeeId).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
@@ -363,10 +417,18 @@ function Structures({ canEdit }: { canEdit: boolean }) {
       title="Salary structures"
       description="What each person is paid every month, versioned: a raise is a new version from its effective date, so “what were they paid in March” always has an answer. Changes go through the salary change approval chain; a back-dated change pays arrears automatically in the next payroll."
       right={
-        <Select value={employeeId} onValueChange={(v) => { setEmployeeId(v); setDraft(null); }}>
-          <SelectTrigger className="h-8 w-64 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent className="max-h-80">{people.map((p) => <SelectItem key={p.id} value={p.id} className="text-xs">{p.fullName} · {p.jobTitle}</SelectItem>)}</SelectContent>
-        </Select>
+        <EmployeePicker
+          className="w-72"
+          value={employeeId}
+          excludeIds={leavers}
+          clearable={false}
+          placeholder="Search employees…"
+          onChange={(e) => {
+            if (!e) return;
+            setEmployeeId(e.id);
+            setDraft(null);
+          }}
+        />
       }
     >
       <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
@@ -447,16 +509,48 @@ function Structures({ canEdit }: { canEdit: boolean }) {
 
 // ── Tax profiles ────────────────────────────────────────────────────────────
 
+const PROFILES_PAGE_SIZE = 10;
+
 function Profiles({ canEdit, focus }: { canEdit: boolean; focus: string | null }) {
   const { data, bundle } = useTenantPayroll();
   const [editing, setEditing] = useState<string | null>(focus);
   const people = new Map((bundle?.employees ?? []).map((e) => [e.id, e]));
   const rows = (data?.profiles ?? []).filter((p) => people.get(p.employeeId)?.status !== "terminated");
   const profile = rows.find((p) => p.employeeId === editing) ?? null;
+
+  const [q, setQ] = useState("");
+  const needle = q.trim().toLowerCase();
+  const shown = needle
+    ? rows.filter((p) => {
+        const e = people.get(p.employeeId);
+        return [e?.fullName, e?.employeeNumber, p.employeeId, p.tin].some((v) => v?.toLowerCase().includes(needle));
+      })
+    : rows;
+  // Open on the page holding a deep-linked (?focus=) employee.
+  const [page, setPage] = useState(() => {
+    const i = focus ? rows.findIndex((p) => p.employeeId === focus) : -1;
+    return i > 0 ? Math.floor(i / PROFILES_PAGE_SIZE) + 1 : 1;
+  });
+  const totalPages = Math.max(1, Math.ceil(shown.length / PROFILES_PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PROFILES_PAGE_SIZE;
+  const pageRows = shown.slice(pageStart, pageStart + PROFILES_PAGE_SIZE);
+
   return (
     <Card
       title="Tax & statutory profiles"
       description="Everything the statutory engine needs per person. Rent Relief only applies once the tenancy agreement or receipt is verified."
+      right={
+        <div className="relative w-72">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="h-8 pl-8 text-xs"
+            placeholder="Search by name, employee ID or TIN"
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPage(1); }}
+          />
+        </div>
+      }
     >
       <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full min-w-[820px] text-xs">
@@ -467,9 +561,19 @@ function Profiles({ canEdit, focus }: { canEdit: boolean; focus: string | null }
             </tr>
           </thead>
           <tbody>
-            {rows.map((p) => (
+            {pageRows.length === 0 && (
+              <tr className="border-t">
+                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+                  {rows.length ? `No employee matches “${q.trim()}”.` : "No tax profiles yet."}
+                </td>
+              </tr>
+            )}
+            {pageRows.map((p) => (
               <tr key={p.employeeId} className={cn("cursor-pointer border-t hover:bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))]", focus === p.employeeId && "bg-[color-mix(in_oklab,var(--primary)_5%,var(--card))]")} onClick={() => setEditing(p.employeeId)}>
-                <td className="px-3 py-2 font-medium">{people.get(p.employeeId)?.fullName}</td>
+                <td className="px-3 py-2">
+                  <p className="font-medium">{people.get(p.employeeId)?.fullName}</p>
+                  <p className="font-mono text-[10px] text-muted-foreground">{people.get(p.employeeId)?.employeeNumber ?? p.employeeId}</p>
+                </td>
                 <td className={cn("px-3 py-2 font-mono", !p.tin && "text-rose-600")}>{p.tin || "Missing"}</td>
                 <td className="px-3 py-2">{p.stateOfResidence}</td>
                 <td className="px-3 py-2"><p>{p.pfaName}</p><p className="font-mono text-[10px] text-muted-foreground">{p.rsaPin || "—"}</p></td>
@@ -481,6 +585,12 @@ function Profiles({ canEdit, focus }: { canEdit: boolean; focus: string | null }
           </tbody>
         </table>
       </div>
+      <ListPagination
+        page={currentPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        summary={`Showing ${pageStart + 1}–${pageStart + pageRows.length} of ${shown.length} employees`}
+      />
       {profile && <ProfileDialog key={profile.employeeId} profile={profile} name={people.get(profile.employeeId)?.fullName ?? ""} canEdit={canEdit} onClose={() => setEditing(null)} />}
     </Card>
   );
@@ -557,7 +667,7 @@ function ProfileDialog({ profile, name, canEdit, onClose }: { profile: EmployeeT
 
 // ── Statutory rates ─────────────────────────────────────────────────────────
 
-function Rates({ rateSets, canEdit }: { rateSets: StatutoryRateSet[]; canEdit: boolean }) {
+function Rates({ rateSets, settings, canEdit }: { rateSets: StatutoryRateSet[]; settings: PayrollSettings; canEdit: boolean }) {
   const actions = usePayrollActions();
   const sorted = [...rateSets].sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
   const [adding, setAdding] = useState(false);
@@ -606,11 +716,11 @@ function Rates({ rateSets, canEdit }: { rateSets: StatutoryRateSet[]; canEdit: b
                   ["Minimum wage (exempt)", `${money(rs.minimumWageMonthly, 0)}/month`],
                   ["Pension", `${rs.employeePensionRate * 100}% employee · ${rs.employerPensionRate * 100}% employer`],
                   ["Pension base", "Basic + housing + transport"],
-                  ["NHF", `${rs.nhfRate * 100}% of basic`],
+                  ["NHF", `${rs.nhfRate * 100}% of ${nhfBasisOf(settings) === "gross" ? "gross pay" : "basic"}`],
                   ["NHIA", `${rs.nhisEmployeeRate * 100}% / ${rs.nhisEmployerRate * 100}% of basic`],
                   ["NSITF", `${rs.nsitfRate * 100}% of payroll`],
                   ["ITF", `${rs.itfRate * 100}% of payroll`],
-                  ["Group life", `${rs.groupLifeMultiplier}× annual emoluments`],
+                  ["Group life", `${rs.groupLifeMultiplier}× annual emoluments${groupLifeOf(settings).enabled ? ` · ${groupLifeOf(settings).ratePct}% premium` : " · off"}`],
                   ["Loss-of-office exempt", money(rs.lossOfOfficeExemption, 0)],
                   ["CRA", "Repealed from 1 Jan 2026"],
                 ].map(([k, v]) => (

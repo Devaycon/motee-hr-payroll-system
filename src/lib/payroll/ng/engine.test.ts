@@ -12,7 +12,11 @@ import type { EmployeeTaxProfile, PeriodInput, SalaryStructure, YtdTotals } from
  */
 
 const elements = elementMap(SEED_PAY_ELEMENTS);
-const settings = DEFAULT_PAYROLL_SETTINGS;
+// The original golden vectors below were worked with NHF on basic and no group
+// life; they stay pinned to that so they keep guarding that mode. The tenant
+// defaults (NHF on gross, group life on) are covered by the calculator-parity
+// block at the end.
+const settings = { ...DEFAULT_PAYROLL_SETTINGS, nhfBasis: "basic" as const, groupLife: { enabled: false, ratePct: 0.6, basis: "gross" as const } };
 const rateSet = NG_RATE_SET_2026;
 
 const employee = {
@@ -395,5 +399,62 @@ describe("cumulative YTD across run types", () => {
     const c = computeEmployeePay({ ...base, period: makePeriod(2026, 3), runType: "off_cycle", inputs: [{ id: "o", employeeId: "E1", code: "OT_NORMAL", units: 10, source: "attendance" }], ytd: null });
     expect(line(c, "OT_NORMAL")).toBeCloseTo(((150_000 * 12) / (52 * 40)) * 1.5 * 10, 2);
     expect(line(c, "BASIC")).toBe(0);
+  });
+});
+
+// Parity with the client-approved MOTEE salary calculator
+// (motee-solutions/components/calculator/utils/tax-calculations.ts), using its
+// template row EMP001 and the tenant defaults: NHF 2.5% of gross, group life
+// 0.6% of 3× annual gross. Figures are the calculator's own output.
+describe("matches the client-approved MOTEE calculator (default settings)", () => {
+  const EMP001 = { BASIC: 150_000, HOUSING: 75_000, TRANSPORT: 45_000, UTILITY: 30_000 };
+  const run = (over: Partial<typeof DEFAULT_PAYROLL_SETTINGS> = {}) =>
+    computeEmployeePay({
+      period: jan,
+      employee,
+      structure: structure(EMP001),
+      elements,
+      inputs: [],
+      profile: profile({ annualRentDeclared: 600_000, rentEvidenceVerified: true }),
+      rateSet,
+      settings: { ...DEFAULT_PAYROLL_SETTINGS, ...over },
+      ytd: null,
+    });
+
+  it("NHF on gross, PAYE, net pay and employer costs", () => {
+    const c = run();
+    expect(c.gross).toBe(300_000);
+    expect(line(c, "PENSION_EE")).toBe(21_600);
+    expect(line(c, "NHF")).toBe(7_500);
+    expect(line(c, "PAYE")).toBe(29_462);
+    expect(c.net).toBe(241_438);
+    expect(line(c, "PENSION_ER")).toBe(27_000);
+    expect(line(c, "NSITF")).toBe(3_000);
+    expect(line(c, "ITF")).toBe(3_000);
+    expect(line(c, "GROUP_LIFE")).toBe(5_400);
+  });
+
+  it("NHF on basic when the tenant chooses it", () => {
+    const c = run({ nhfBasis: "basic" });
+    expect(line(c, "NHF")).toBe(3_750);
+    expect(line(c, "PAYE")).toBe(30_137);
+    expect(c.net).toBe(244_513);
+  });
+
+  it("group life on BHT, and none when switched off", () => {
+    expect(line(run({ groupLife: { enabled: true, ratePct: 0.6, basis: "bht" } }), "GROUP_LIFE")).toBe(4_860);
+    expect(line(run({ groupLife: { enabled: false, ratePct: 0.6, basis: "gross" } }), "GROUP_LIFE")).toBe(0);
+  });
+
+  it("settings saved before NHF basis / group life existed use the calculator defaults", () => {
+    const legacy = { ...DEFAULT_PAYROLL_SETTINGS };
+    delete legacy.nhfBasis;
+    delete legacy.groupLife;
+    const c = computeEmployeePay({
+      period: jan, employee, structure: structure(EMP001), elements, inputs: [],
+      profile: profile({ annualRentDeclared: 600_000, rentEvidenceVerified: true }), rateSet, settings: legacy, ytd: null,
+    });
+    expect(line(c, "NHF")).toBe(7_500);
+    expect(line(c, "GROUP_LIFE")).toBe(5_400);
   });
 });

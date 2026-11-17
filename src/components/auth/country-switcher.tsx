@@ -15,14 +15,14 @@ import {
 
 export const COUNTRY_OPTIONS: { key: CountryKey; label: string; flag: string }[] = [
   {
-    key: "uk",
-    label: "United Kingdom",
-    flag: "/united-kingdom-flag-icon.png",
-  },
-  {
     key: "ng",
     label: "Nigeria",
     flag: "/nigeria-flag-icon.png",
+  },
+  {
+    key: "uk",
+    label: "United Kingdom",
+    flag: "/united-kingdom-flag-icon.png",
   },
 ];
 

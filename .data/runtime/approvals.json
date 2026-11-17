@@ -642,6 +642,54 @@
       },
       "lastModifiedBy": "System",
       "lastModifiedAt": "2026-01-01"
+    },
+    {
+      "id": "ACT-DEFAULT-PAYROLL-RUN",
+      "documentType": "payroll_run",
+      "name": "Standard Payroll Run Approval",
+      "description": "Default payroll run workflow",
+      "isDefault": true,
+      "kind": "system",
+      "startDesk": {
+        "kind": "submitter"
+      },
+      "endDesk": {
+        "kind": "approved"
+      },
+      "steps": [
+        {
+          "id": "ACT-STEP-PAYROLL-RUN-1",
+          "order": 1,
+          "label": "Review register, variances & exceptions",
+          "approver": "ROLE:ROLE-FIN",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        },
+        {
+          "id": "ACT-STEP-PAYROLL-RUN-2",
+          "order": 2,
+          "label": "Authorise payment release",
+          "approver": "ROLE:ROLE-EXEC",
+          "required": true,
+          "onLeaveAction": {
+            "kind": "skip"
+          }
+        }
+      ],
+      "attachments": {
+        "allowed": true,
+        "required": false,
+        "description": "Totals and exception counts are in the request. Attach the payroll register or variance report (Exports on the run) if your approvers want them."
+      },
+      "signatures": {
+        "submitterSigns": false,
+        "reviewerSigns": true,
+        "placeOnDocument": false
+      },
+      "lastModifiedBy": "System",
+      "lastModifiedAt": "2026-01-01"
     }
   ],
   "requests": []

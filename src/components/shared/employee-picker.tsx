@@ -49,6 +49,8 @@ interface EmployeePickerProps {
   /** Set when the picker is rendered inside a modal that already traps focus. */
   className?: string;
   disabled?: boolean;
+  /** Show the × that clears the pick. Off where something must always be selected. */
+  clearable?: boolean;
 }
 
 /**
@@ -66,6 +68,7 @@ export function EmployeePicker({
   placeholder = "Search for a colleague…",
   className,
   disabled,
+  clearable = true,
 }: EmployeePickerProps) {
   const [open, setOpen] = useState(false);
   const { data: bundle } = useLocaleSection<LocaleBundle>((b) => b);
@@ -120,7 +123,7 @@ export function EmployeePicker({
             <ChevronsUpDown className="size-3.5 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        {selected && !disabled && (
+        {selected && !disabled && clearable && (
           <Button
             type="button"
             variant="ghost"
@@ -144,7 +147,9 @@ export function EmployeePicker({
                   key={e.id}
                   value={`${e.name} ${e.department} ${e.jobTitle} ${e.employeeNumber ?? ""} ${e.id}`}
                   onSelect={() => {
-                    onChange(e.id === value ? null : e);
+                    // Re-picking the current person clears it — unless clearing isn't allowed.
+                    if (e.id !== value) onChange(e);
+                    else if (clearable) onChange(null);
                     setOpen(false);
                   }}
                   className="gap-2"

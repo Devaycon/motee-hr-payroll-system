@@ -12,8 +12,8 @@ import type { CountryKey } from "@/src/lib/types/locale";
  */
 export const COUNTRY_KEY = "motee:country";
 
-const COUNTRIES: readonly CountryKey[] = ["uk", "ng"];
-export const DEFAULT_COUNTRY: CountryKey = "uk";
+const COUNTRIES: readonly CountryKey[] = ["ng", "uk"];
+export const DEFAULT_COUNTRY: CountryKey = "ng";
 
 export function isCountryKey(value: unknown): value is CountryKey {
   return typeof value === "string" && (COUNTRIES as readonly string[]).includes(value);

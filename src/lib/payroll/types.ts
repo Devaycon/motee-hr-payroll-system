@@ -182,6 +182,16 @@ export interface PayslipDisplayOptions {
   insights: Record<InsightType, boolean>;
 }
 
+export type NhfBasis = "gross" | "basic";
+
+export interface GroupLifeSettings {
+  enabled: boolean;
+  /** Insurer's premium rate as a % of sum assured, e.g. 0.6 for 0.6%. */
+  ratePct: number;
+  /** What the 3× sum assured is based on: gross pay, or BHT (basic + housing + transport). */
+  basis: "gross" | "bht";
+}
+
 export interface PayrollSettings {
   taxMethod: TaxMethod;
   prorationBasis: ProrationBasis;
@@ -190,6 +200,18 @@ export interface PayrollSettings {
   /** Day of month after which inputs for the period are locked. */
   inputCutoffDay: number;
   nhisEnabled: boolean;
+  /**
+   * Base for the 2.5% NHF deduction. The Business Facilitation Act 2022 points
+   * to gross; many employers still use basic. Optional so settings saved
+   * before it existed fall back to the default (see `nhfBasisOf`).
+   */
+  nhfBasis?: NhfBasis;
+  /**
+   * Group Life Assurance (Pension Reform Act 2014 s.4(5)): sum assured of
+   * 3× annual emoluments, premium = sum assured × rate, paid by the employer.
+   * Optional for the same reason as `nhfBasis` (see `groupLifeOf`).
+   */
+  groupLife?: GroupLifeSettings;
   /** ITF applies to employers with 5+ staff or ≥ ₦50m turnover. */
   itfApplicable: boolean;
   deductLoansViaPayroll: boolean;

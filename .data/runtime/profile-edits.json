@@ -729,6 +729,65 @@
       "requestedAt": "2026-09-08T06:36:31.639Z",
       "decidedBy": "Chidinma Okeke",
       "decidedAt": "2026-09-10T06:36:31.639Z"
+    },
+    {
+      "id": "CR-DEMO-NG-EMP-0003-0",
+      "employeeId": "NG-EMP-0003",
+      "field": "addresses.home.line1",
+      "label": "Home address line 1",
+      "currentValue": "14 Elmwood Court",
+      "requestedValue": "3 Kingsley Terrace",
+      "reason": "Moved house at the end of last month.",
+      "status": "approved",
+      "requestedBy": "Chinedu Olawale",
+      "requestedById": "NG-EMP-0003",
+      "requestedAt": "2026-09-15T04:50:31.861Z",
+      "decidedBy": "Chidinma Okeke",
+      "decidedAt": "2026-09-16T04:50:31.862Z"
+    },
+    {
+      "id": "CR-DEMO-NG-EMP-0003-1",
+      "employeeId": "NG-EMP-0003",
+      "field": "phone",
+      "label": "Mobile number",
+      "currentValue": "+44 7700 900112",
+      "requestedValue": "+44 7700 900874",
+      "reason": "New phone contract, old number is no longer in service.",
+      "status": "approved",
+      "requestedBy": "Chinedu Olawale",
+      "requestedById": "NG-EMP-0003",
+      "requestedAt": "2026-10-06T04:50:31.862Z",
+      "decidedBy": "Chidinma Okeke",
+      "decidedAt": "2026-10-08T04:50:31.862Z"
+    },
+    {
+      "id": "CR-DEMO-NG-EMP-0003-2",
+      "employeeId": "NG-EMP-0003",
+      "field": "lastName",
+      "label": "Legal Last Name",
+      "currentValue": "Olawale",
+      "requestedValue": "Olawale-Adeyemi",
+      "reason": "Changed my surname after getting married.",
+      "status": "rejected",
+      "requestedBy": "Chinedu Olawale",
+      "requestedById": "NG-EMP-0003",
+      "requestedAt": "2026-10-19T04:50:31.862Z",
+      "decidedBy": "Chidinma Okeke",
+      "decidedAt": "2026-10-23T04:50:31.862Z",
+      "decisionNote": "A legal name change needs the marriage certificate attached. Please re-submit with the document and it'll go straight through."
+    },
+    {
+      "id": "CR-DEMO-NG-EMP-0003-3",
+      "employeeId": "NG-EMP-0003",
+      "field": "emergencyContacts.0.phone",
+      "label": "Emergency contact phone",
+      "currentValue": "+44 7700 900233",
+      "requestedValue": "+44 7700 900961",
+      "reason": "My sister changed her number.",
+      "status": "pending",
+      "requestedBy": "Chinedu Olawale",
+      "requestedById": "NG-EMP-0003",
+      "requestedAt": "2026-11-09T04:50:31.862Z"
     }
   ]
 }

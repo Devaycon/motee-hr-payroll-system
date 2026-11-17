@@ -54,6 +54,7 @@ import type {
   PaymentSnapshot,
   PayrollRun,
   PayrollSettings,
+  Payslip,
   PayslipLine,
   PeriodInput,
   RunActor,
@@ -386,6 +387,15 @@ export function usePayrollActions() {
         }));
       },
 
+      /** Include or exclude many employees at once — one recalculation, one audit entry. */
+      setIncludedMany(runId: string, employeeIds: string[], included: boolean) {
+        const ids = new Set(employeeIds);
+        return editDraft(runId, `${included ? "Included" : "Excluded"} ${ids.size} employee${ids.size === 1 ? "" : "s"}`, (r) => ({
+          ...r,
+          employees: r.employees.map((e) => (ids.has(e.employeeId) ? { ...e, included } : e)),
+        }));
+      },
+
       /** Add people to an off-cycle run (recent leavers included). */
       addEmployees(runId: string, employeeIds: string[]) {
         return editDraft(runId, `Added ${employeeIds.length} employee${employeeIds.length === 1 ? "" : "s"}`, (r) => {
@@ -604,6 +614,20 @@ export function usePayrollActions() {
         log(`Exported ${what}`, { runId });
       },
 
+      /** Re-notifies the employee that an issued payslip is ready (demo: in-app notification). */
+      resendPayslip(p: Payslip) {
+        dispatch(
+          pushNotification({
+            title: `Your ${p.period.label} payslip has been resent`,
+            description: `Net pay ${ngn(p.computation.net)} · ${p.reference}.`,
+            type: "info",
+            recipientEmployeeIds: [p.employeeId],
+            href: `${ESS_PAYSLIPS_HREF}/${encodeURIComponent(p.id)}`,
+          }),
+        );
+        log("Resent payslip", { runId: p.runId, employeeId: p.employeeId, detail: `${p.reference} to ${p.employee.email || p.employee.fullName}` });
+      },
+
       markRemitted(key: string, reference: string, date: string) {
         if (!tenantId) return;
         dispatch(markRemitted({ tenantId, actor: actor.name, key, reference, date }));
@@ -612,7 +636,7 @@ export function usePayrollActions() {
       updateSettings(changes: Partial<PayrollSettings>) {
         if (!tenantId) return;
         dispatch(updatePayrollSettings({ tenantId, actor: actor.name, changes }));
-        const calcKeys: (keyof PayrollSettings)[] = ["taxMethod", "prorationBasis", "nhisEnabled", "itfApplicable", "deductLoansViaPayroll", "payExpensesViaPayroll", "allowPayeRefunds", "employmentTypeRules", "enabledGroups", "basicMin", "basicMax", "varianceThresholdPct"];
+        const calcKeys: (keyof PayrollSettings)[] = ["taxMethod", "prorationBasis", "nhisEnabled", "nhfBasis", "groupLife", "itfApplicable", "deductLoansViaPayroll", "payExpensesViaPayroll", "allowPayeRefunds", "employmentTypeRules", "enabledGroups", "basicMin", "basicMax", "varianceThresholdPct"];
         if (Object.keys(changes).some((k) => calcKeys.includes(k as keyof PayrollSettings))) markStale("payroll settings changed");
       },
 

@@ -16,7 +16,7 @@ import type {
   TaxRelief,
   YtdTotals,
 } from "../types";
-import { bandLabel, ruleFor } from "./rate-sets";
+import { bandLabel, groupLifeOf, nhfBasisOf, ruleFor } from "./rate-sets";
 
 /**
  * Nigeria gross-to-net engine. Pure: same inputs, same payslip, every time —
@@ -31,7 +31,7 @@ import { bandLabel, ruleFor } from "./rate-sets";
  *   3. Gross, then taxable gross (non-taxable reimbursements and the
  *      once-per-termination loss-of-office exemption left out).
  *   4. Statutory bases: pension on pensionable emoluments (basic + housing +
- *      transport), NHF and NHIA on basic.
+ *      transport), NHF on gross or basic (tenant setting), NHIA on basic.
  *   5. Reliefs. Contributions (pension, NHF, NHIA, voluntary pension) as
  *      actually deducted; annual reliefs (rent, life assurance, mortgage
  *      interest) given cumulatively — annual × month/12 less what's already
@@ -43,7 +43,8 @@ import { bandLabel, ruleFor } from "./rate-sets";
  *      so a bonus is taxed at the marginal rate and never adds a "13th"
  *      tax period. Over-deductions come back as a refund when allowed.
  *      Annualised: this month × 12 through the bands, ÷ 12 (regular runs).
- *   7. Other deductions, net pay, employer costs (pension, NHIA, NSITF, ITF).
+ *   7. Other deductions, net pay, employer costs (pension, NHIA, NSITF, ITF,
+ *      group life).
  *
  * Year-to-date is the SUM of every final payslip's own period figures (see
  * `sumYtd`), never a chained snapshot, so the order runs are issued in can't
@@ -366,7 +367,12 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
   // 4 · Statutory bases
   const sumBy = (pred: (l: PayslipLine) => boolean) => earnings.filter(pred).reduce((s, l) => s + l.amount, 0);
   const pensionable = round2(Math.max(0, sumBy((l) => l.amount > 0 && !!elements.get(l.code)?.pensionable) - pensionableReduction));
-  const nhfBase = round2(Math.max(0, sumBy((l) => l.amount > 0 && rateSet.nhfBaseCodes.includes(l.code)) - nhfBaseReduction));
+  // NHF: 2.5% of monthly gross (the tenant default) or of basic, per Payroll Settings.
+  const nhfBasis = nhfBasisOf(settings);
+  const nhfBase =
+    nhfBasis === "gross"
+      ? Math.max(0, payrollGross)
+      : round2(Math.max(0, sumBy((l) => l.amount > 0 && rateSet.nhfBaseCodes.includes(l.code)) - nhfBaseReduction));
   const nhisBase = round2(Math.max(0, sumBy((l) => l.amount > 0 && rateSet.nhisBaseCodes.includes(l.code)) - nhisBaseReduction));
 
   const asUploaded = manual?.statutory === "as_uploaded";
@@ -420,7 +426,7 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
       nhisEe = settings.nhisEnabled && profile?.nhisEnrolled ? round2(nhisBase * rateSet.nhisEmployeeRate) : 0;
       if (pensionEe)
         statutory.push(lineFor(elements.get("PENSION_EE"), "PENSION_EE", pensionEe, { note: `${rateSet.employeePensionRate * 100}% of ${fmt(pensionable)} pensionable pay` }));
-      if (nhf) statutory.push(lineFor(elements.get("NHF"), "NHF", nhf, { note: `${rateSet.nhfRate * 100}% of ${fmt(nhfBase)} basic` }));
+      if (nhf) statutory.push(lineFor(elements.get("NHF"), "NHF", nhf, { note: `${rateSet.nhfRate * 100}% of ${fmt(nhfBase)} ${nhfBasis === "gross" ? "gross pay" : "basic"}` }));
       if (nhisEe) statutory.push(lineFor(elements.get("NHIS_EE"), "NHIS_EE", nhisEe, { note: `${rateSet.nhisEmployeeRate * 100}% of basic` }));
     }
   }
@@ -518,6 +524,24 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
   if (rule.regime !== "wht" && payrollGross > 0) {
     employer.push(lineFor(elements.get("NSITF"), "NSITF", payrollGross * rateSet.nsitfRate, { note: "1% of monthly payroll" }));
     if (settings.itfApplicable) employer.push(lineFor(elements.get("ITF"), "ITF", payrollGross * rateSet.itfRate, { note: "1% of payroll (accrued monthly)" }));
+  }
+  // Group life: annual premium = (annual base × 3) × rate, accrued monthly — so
+  // a mid-year joiner is only charged for the months they're covered.
+  const groupLife = groupLifeOf(settings);
+  const groupLifeBase = groupLife.basis === "bht" ? pensionable : payrollGross;
+  if (rule.regime !== "wht" && groupLife.enabled && groupLife.ratePct > 0 && groupLifeBase > 0) {
+    const premium = groupLifeBase * rateSet.groupLifeMultiplier * (groupLife.ratePct / 100);
+    employer.push(
+      lineFor(elements.get("GROUP_LIFE"), "GROUP_LIFE", premium, {
+        // Explicit, for tenants whose saved element list predates GROUP_LIFE.
+        name: elements.get("GROUP_LIFE")?.name ?? "Group Life Assurance",
+        category: "employer",
+        group: "employer",
+        statutory: true,
+        taxable: false,
+        note: `${groupLife.ratePct}% of ${rateSet.groupLifeMultiplier}× annual ${groupLife.basis === "bht" ? "BHT" : "gross"} (${fmt(groupLifeBase * 12 * rateSet.groupLifeMultiplier)} cover)`,
+      }),
+    );
   }
 
   const allLines = [...lines.filter((l) => l.category !== "employer"), ...statutory, ...employer];

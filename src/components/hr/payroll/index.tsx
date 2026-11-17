@@ -9,11 +9,14 @@ import {
   Banknote,
   CalendarClock,
   ChevronDown,
+  Eye,
   FileSpreadsheet,
   Landmark,
+  MoreHorizontal,
   Plus,
   Settings2,
   ShieldCheck,
+  Trash2,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -313,7 +316,9 @@ function Shell({ children, actions }: { children: React.ReactNode; actions?: Rea
 }
 
 function RunsTable({ runs }: { runs: PayrollRun[] }) {
-  const router = useRouter();
+  const canEdit = useCan(PAYROLL_MODULE, "edit");
+  const actions = usePayrollActions();
+  const [toDelete, setToDelete] = useState<PayrollRun | null>(null);
   const columns = useMemo<ColumnDef<PayrollRun>[]>(
     () => [
       {
@@ -343,21 +348,85 @@ function RunsTable({ runs }: { runs: PayrollRun[] }) {
             <span className="text-xs text-muted-foreground">—</span>
           ),
       },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Actions</span>,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const r = row.original;
+          const draft = r.status === "draft";
+          return (
+            <div onClick={(e) => e.stopPropagation()} className="flex justify-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Actions for ${r.title}`}>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild className="gap-2 text-xs">
+                    <Link href={`${PAYROLL_HREF}/${r.id}`}>
+                      <Eye className="h-3.5 w-3.5" /> View details
+                    </Link>
+                  </DropdownMenuItem>
+                  {canEdit && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="gap-2 text-xs text-rose-600 focus:text-rose-600"
+                        disabled={!draft}
+                        onClick={() => setToDelete(r)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                        {!draft && <span className="ml-auto text-[10px] text-muted-foreground">Drafts only</span>}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+      },
     ],
-    [],
+    [canEdit],
   );
   return (
-    <DataTable
-      columns={columns}
-      data={runs}
-      getRowId={(r) => r.id}
-      onRowClick={(r) => router.push(`${PAYROLL_HREF}/${r.id}`)}
-      exportTitle="Payroll Runs"
-      exportName="payroll-runs"
-      emptyMessage="No payroll runs yet."
-      enablePagination
-      pageSize={12}
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={runs}
+        getRowId={(r) => r.id}
+        exportTitle="Payroll Runs"
+        exportName="payroll-runs"
+        emptyMessage="No payroll runs yet."
+        enablePagination
+        pageSize={12}
+      />
+      <Dialog open={!!toDelete} onOpenChange={(open) => !open && setToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {toDelete?.title}?</DialogTitle>
+            <DialogDescription>
+              The draft run and its inputs are removed, and any open approval request for it is withdrawn. Finalized runs are never deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setToDelete(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (toDelete) actions.deleteRun(toDelete.id);
+                setToDelete(null);
+                toast.success("Draft run deleted");
+              }}
+            >
+              Delete draft
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

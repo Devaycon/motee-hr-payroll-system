@@ -94,11 +94,12 @@ export function buildExport(kind: ExportKind, ctx: ExportCtx): ExportTable {
         amt(c.lines, "PENSION_ER"),
         amt(c.lines, "NSITF"),
         amt(c.lines, "ITF"),
+        amt(c.lines, "GROUP_LIFE"),
         c.employerCost,
       ]);
-      const totals = ["TOTAL", `${data.length} employees`, "", "", ...[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((i) => sum(data.map((d) => Number(d[i]))))];
+      const totals = ["TOTAL", `${data.length} employees`, "", "", ...[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((i) => sum(data.map((d) => Number(d[i]))))];
       return {
-        headers: ["Employee ID", "Name", "Department", "Source", "Gross", "Taxable", "PAYE", "Pension (EE)", "NHF", "Other deductions", "Total deductions", "Net pay", "Pension (ER)", "NSITF", "ITF", "Employer cost"],
+        headers: ["Employee ID", "Name", "Department", "Source", "Gross", "Taxable", "PAYE", "Pension (EE)", "NHF", "Other deductions", "Total deductions", "Net pay", "Pension (ER)", "NSITF", "ITF", "Group life", "Employer cost"],
         data: [...data, totals],
       };
     }
@@ -207,6 +208,7 @@ export function buildExport(kind: ExportKind, ctx: ExportCtx): ExportTable {
         add("DR NSITF", amt(c.lines, "NSITF"));
         add("DR ITF", amt(c.lines, "ITF"));
         add("DR Employer health insurance", amt(c.lines, "NHIS_ER"));
+        add("DR Group life assurance", amt(c.lines, "GROUP_LIFE"));
         add("CR Net pay payable", c.net);
         add("CR PAYE payable", amt(c.lines, "PAYE") + amt(c.lines, "WHT"));
         add("CR Pension payable", amt(c.lines, "PENSION_EE") + amt(c.lines, "PENSION_ER") + amt(c.lines, "VOL_PENSION"));
@@ -214,6 +216,7 @@ export function buildExport(kind: ExportKind, ctx: ExportCtx): ExportTable {
         add("CR Health insurance payable", amt(c.lines, "NHIS_EE") + amt(c.lines, "NHIS_ER"));
         add("CR NSITF payable", amt(c.lines, "NSITF"));
         add("CR ITF payable", amt(c.lines, "ITF"));
+        add("CR Group life premium payable", amt(c.lines, "GROUP_LIFE"));
         const loans = c.lines.filter((l) => l.source === "loan").reduce((s, l) => s + l.amount, 0);
         add("CR Staff loans receivable", loans);
         const statutory = ["PAYE", "WHT", "PENSION_EE", "VOL_PENSION", "NHF", "NHIS_EE"];

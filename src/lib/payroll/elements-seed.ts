@@ -238,6 +238,7 @@ export const SEED_PAY_ELEMENTS: PayElement[] = [
     { code: "NHIS_ER", name: "Health Insurance (Employer)" },
     { code: "NSITF", name: "NSITF (Employee Compensation)" },
     { code: "ITF", name: "Industrial Training Fund" },
+    { code: "GROUP_LIFE", name: "Group Life Assurance" },
   ].map<PayElement>((s) => ({
     ...s,
     category: "employer",

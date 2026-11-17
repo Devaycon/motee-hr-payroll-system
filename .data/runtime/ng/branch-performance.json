@@ -1,0 +1,48 @@
+{
+  "targets": {
+    "taskCompletion": 90,
+    "compliance": 90,
+    "overdueTasks": 2,
+    "training": 85,
+    "issues": 2,
+    "attendance": 95,
+    "punctuality": 85,
+    "sicknessRate": 3,
+    "staffing": 100,
+    "rating": 3.5
+  },
+  "scoreKpis": [
+    "taskCompletion",
+    "compliance",
+    "training",
+    "attendance"
+  ],
+  "schedules": [
+    {
+      "id": "BPR-SCH-001",
+      "name": "Weekly Branch Performance Report",
+      "frequency": "weekly",
+      "weekday": "monday",
+      "time": "08:00",
+      "recipients": [
+        {
+          "name": "Regional Manager",
+          "email": "regional.manager@example.com"
+        }
+      ],
+      "branchIds": [],
+      "kpis": [
+        "taskCompletion",
+        "compliance",
+        "overdueTasks",
+        "training",
+        "issues"
+      ],
+      "format": "pdf",
+      "active": true,
+      "createdBy": "System",
+      "createdAt": "2026-01-01"
+    }
+  ],
+  "deliveries": []
+}

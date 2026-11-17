@@ -1,5 +1,7 @@
 import type {
   EmploymentTypeRule,
+  GroupLifeSettings,
+  NhfBasis,
   PayrollSettings,
   StatutoryRateSet,
 } from "../types";
@@ -94,12 +96,26 @@ export const NG_EMPLOYMENT_TYPE_RULES: Record<string, EmploymentTypeRule> = {
   "ET-FL": { regime: "wht", pension: false, nhf: false },
 };
 
+/**
+ * Defaults match the client-approved MOTEE salary calculator
+ * (motee-solutions `tax-calculations.ts`): NHF on gross, group life at 0.6%
+ * of 3× annual gross.
+ */
+export const DEFAULT_NHF_BASIS: NhfBasis = "gross";
+export const DEFAULT_GROUP_LIFE: GroupLifeSettings = { enabled: true, ratePct: 0.6, basis: "gross" };
+
+/** Settings saved before these fields existed fall back to the defaults. */
+export const nhfBasisOf = (s: PayrollSettings): NhfBasis => s.nhfBasis ?? DEFAULT_NHF_BASIS;
+export const groupLifeOf = (s: PayrollSettings): GroupLifeSettings => ({ ...DEFAULT_GROUP_LIFE, ...s.groupLife });
+
 export const DEFAULT_PAYROLL_SETTINGS: PayrollSettings = {
   taxMethod: "cumulative",
   prorationBasis: "calendar_days",
   payDay: 25,
   inputCutoffDay: 18,
   nhisEnabled: false,
+  nhfBasis: DEFAULT_NHF_BASIS,
+  groupLife: DEFAULT_GROUP_LIFE,
   itfApplicable: true,
   deductLoansViaPayroll: true,
   payExpensesViaPayroll: true,

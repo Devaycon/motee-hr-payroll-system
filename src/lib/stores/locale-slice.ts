@@ -7,8 +7,8 @@ interface LocaleState {
   country: CountryKey;
   /**
    * False until the provider has read the persisted country (`motee:country`).
-   * The server render and the first client render both start as "uk"; loading
-   * the bundle before this flips would load the UK bundle for a Nigeria user.
+   * The server render and the first client render both start as "ng"; loading
+   * the bundle before this flips would load the Nigeria bundle for a UK user.
    */
   hydrated: boolean;
   data: LocaleBundle | null;
@@ -17,7 +17,7 @@ interface LocaleState {
 }
 
 const initialState: LocaleState = {
-  country: "uk",
+  country: "ng",
   hydrated: false,
   data: null,
   status: "idle",

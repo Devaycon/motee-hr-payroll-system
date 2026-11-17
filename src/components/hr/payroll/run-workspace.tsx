@@ -20,6 +20,9 @@ import {
   Printer,
   UserPlus,
   Calculator,
+  Eye,
+  FileText,
+  MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/src/components/ui/badge";
@@ -38,6 +41,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -631,7 +640,6 @@ interface EmpRow extends RunEmployee {
 }
 
 function EmployeesTable({ run, editable, people }: { run: PayrollRun; editable: boolean; people: Map<string, import("@/src/lib/types/locale").LocaleEmployee> }) {
-  const router = useRouter();
   const actions = usePayrollActions();
   const rows = useMemo<EmpRow[]>(
     () =>
@@ -709,15 +717,67 @@ function EmployeesTable({ run, editable, people }: { run: PayrollRun; editable: 
       },
       {
         id: "included",
-        header: "In run",
+        meta: { exportHeader: "In run" },
+        header: () => {
+          const total = run.employees.length;
+          const on = run.employees.filter((e) => e.included).length;
+          const all = total > 0 && on === total;
+          return (
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <Switch
+                checked={all}
+                disabled={!editable || total === 0}
+                aria-label={all ? "Exclude everyone from the run" : "Include everyone in the run"}
+                title={all ? "Exclude everyone" : "Include everyone"}
+                onCheckedChange={(v) => actions.setIncludedMany(run.id, run.employees.map((e) => e.employeeId), v)}
+              />
+              <span>In run</span>
+              <span className="text-[10px] font-normal tabular-nums text-muted-foreground">{on}/{total}</span>
+            </div>
+          );
+        },
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()}>
             <Switch checked={row.original.included} disabled={!editable} onCheckedChange={(v) => actions.setIncluded(run.id, row.original.employeeId, v)} />
           </div>
         ),
       },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Actions</span>,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const r = row.original;
+          const hasPayslip = finalized && r.included && !!r.computation;
+          return (
+            <div onClick={(e) => e.stopPropagation()} className="flex justify-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Actions for ${r.name}`}>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem asChild className="gap-2 text-xs">
+                    <Link href={`${PAYROLL_HREF}/${run.id}/employees/${r.employeeId}`}>
+                      <Eye className="h-3.5 w-3.5" /> View details
+                    </Link>
+                  </DropdownMenuItem>
+                  {hasPayslip && (
+                    <DropdownMenuItem asChild className="gap-2 text-xs">
+                      <Link href={hrPayslipHref(r.employeeId, `${run.id}-${r.employeeId}`)}>
+                        <FileText className="h-3.5 w-3.5" /> View payslip
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+      },
     ],
-    [editable, run.id, actions],
+    [editable, finalized, run.id, run.employees, actions],
   );
 
   return (
@@ -726,11 +786,6 @@ function EmployeesTable({ run, editable, people }: { run: PayrollRun; editable: 
       data={rows}
       getRowId={(r) => r.employeeId}
       searchPlaceholder="Search employees…"
-      onRowClick={(r) =>
-        finalized && r.included && r.computation
-          ? router.push(hrPayslipHref(r.employeeId, `${run.id}-${r.employeeId}`))
-          : router.push(`${PAYROLL_HREF}/${run.id}/employees/${r.employeeId}`)
-      }
       exportTitle={`${run.title} — employees`}
       exportName={`${run.id}-employees`}
     />
