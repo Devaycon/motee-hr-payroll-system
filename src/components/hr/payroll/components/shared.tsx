@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Download, FileSpreadsheet, Globe2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Check, Download, FileSpreadsheet, Globe2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -87,11 +88,13 @@ export function RunExportsMenu({
 }) {
   // The bank file pays real money: only from a finalized (locked) run.
   const locked = run.status === "finalized" || run.status === "disbursed";
+  // …and only once a Payment Authoriser has released it (runs paid before payment batches existed keep their file).
+  const released = locked && (!!run.payment || run.status === "disbursed");
   const { data, bundle } = useTenantPayroll();
   const go = (kind: ExportKind, format: "csv" | "xlsx") => {
     const company = bundle ? companySnapshot(bundle) : undefined;
     const costCentres = new Map((bundle?.departments ?? []).map((d) => [d.name, d.costCenter]));
-    const excluded = downloadExport(kind, { run, people, profiles, settings: data?.settings, company, costCentres }, format);
+    const excluded = downloadExport(kind, { run, people, profiles, settings: data?.settings, company, costCentres, elements: data?.elements }, format);
     onExport?.(`${EXPORT_LABELS[kind]} (${format.toUpperCase()})`);
     if (excluded.length)
       toast.warning(`${EXPORT_LABELS[kind]} downloaded — ${excluded.length} left out`, { description: excluded.slice(0, 4).join(" · ") + (excluded.length > 4 ? " …" : ""), duration: 10000 });
@@ -107,10 +110,10 @@ export function RunExportsMenu({
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel className="text-xs">Statutory & bank files</DropdownMenuLabel>
         {(Object.keys(EXPORT_LABELS) as ExportKind[]).map((k) => (
-          <DropdownMenuItem key={k} onClick={() => go(k, k === "nibss" ? "csv" : "xlsx")} className="gap-2 text-xs" disabled={!locked && k === "nibss"}>
+          <DropdownMenuItem key={k} onClick={() => go(k, k === "nibss" ? "csv" : "xlsx")} className="gap-2 text-xs" disabled={!released && k === "nibss"}>
             {k === "nibss" ? <Globe2 className="h-3.5 w-3.5" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
             {EXPORT_LABELS[k]}
-            <span className="ml-auto text-[10px] text-muted-foreground">{k === "nibss" ? "CSV" : "XLSX"}</span>
+            <span className="ml-auto text-[10px] text-muted-foreground">{k === "nibss" ? (released ? "CSV" : locked ? "Authorise first" : "After finalize") : "XLSX"}</span>
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
@@ -132,12 +135,38 @@ export function NotSupported() {
   );
 }
 
-export function Stat({ label, value, sub, tone }: { label: string; value: string | number; sub?: string; tone?: "good" | "warn" | "muted" }) {
-  return (
-    <div className="min-w-0 flex-1 rounded-xl bg-card px-4 py-3 ring-1 ring-foreground/10">
-      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+export function Stat({
+  label,
+  value,
+  sub,
+  tone,
+  href,
+  onClick,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  tone?: "good" | "warn" | "muted";
+  /** Makes the card a link to its drill-down. */
+  href?: string;
+  onClick?: () => void;
+}) {
+  const interactive = !!(href || onClick);
+  const body = (
+    <>
+      <p className="flex items-center justify-between gap-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+        {interactive && <ArrowRight className="h-3 w-3 opacity-0 transition group-hover:opacity-100" />}
+      </p>
       <p className={cn("mt-0.5 truncate text-lg font-semibold tabular-nums", tone === "good" && "text-emerald-600", tone === "warn" && "text-amber-600")}>{value}</p>
       {sub && <p className="truncate text-[11px] text-muted-foreground">{sub}</p>}
-    </div>
+    </>
   );
+  const cls = cn(
+    "group min-w-0 flex-1 rounded-xl bg-card px-4 py-3 text-left ring-1 ring-foreground/10",
+    interactive && "cursor-pointer transition hover:ring-primary/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+  );
+  if (href) return <Link href={href} className={cls}>{body}</Link>;
+  if (onClick) return <button type="button" onClick={onClick} className={cls}>{body}</button>;
+  return <div className={cls}>{body}</div>;
 }

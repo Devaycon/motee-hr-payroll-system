@@ -2,7 +2,8 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { downloadFile } from "@/src/lib/download";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
-import type { EmployeeTaxProfile, PayrollRun, PayrollSettings, Payslip, PayslipLine } from "./types";
+import type { EmployeeTaxProfile, PayElement, PayrollRun, PayrollSettings, Payslip, PayslipLine } from "./types";
+import { addWorkingDays } from "./ng/calendar";
 import { round2 } from "./ng/engine";
 import { paymentSnapshot } from "./run-builder";
 
@@ -42,7 +43,30 @@ export interface ExportCtx {
   company?: { legalName: string; taxId: string };
   /** Department name → cost centre code. */
   costCentres?: Map<string, string>;
+  /** Element master — the journal posts elements with an accounting code to their own GL account. */
+  elements?: PayElement[];
 }
+
+/** Default general-ledger codes for the standard payroll accounts (an element's own code overrides). */
+export const DEFAULT_GL: Record<string, string> = {
+  "Salaries & wages": "6100",
+  "Staff expenses reimbursed": "6150",
+  "Employer pension": "6200",
+  NSITF: "6210",
+  ITF: "6220",
+  "Employer health insurance": "6230",
+  "Group life assurance": "6240",
+  "Net pay payable": "2100",
+  "PAYE payable": "2210",
+  "Pension payable": "2220",
+  "NHF payable": "2230",
+  "Health insurance payable": "2240",
+  "NSITF payable": "2250",
+  "ITF payable": "2260",
+  "Group life premium payable": "2270",
+  "Staff loans receivable": "1300",
+  "Other deductions payable": "2290",
+};
 
 type Cell = string | number;
 export interface ExportTable {
@@ -196,13 +220,26 @@ export function buildExport(kind: ExportKind, ctx: ExportCtx): ExportTable {
     case "journal": {
       // Balanced journal per cost centre: debits are the cost, credits what's owed.
       const byCc = new Map<string, { dept: string; acc: Record<string, number> }>();
+      const gl = new Map((ctx.elements ?? []).filter((e) => e.glCode).map((e) => [e.code, e]));
+      const glOf: Record<string, string> = {};
       for (const { c, emp } of r) {
         const dept = emp?.departmentName ?? "Unassigned";
         const cc = ctx.costCentres?.get(dept) ?? "—";
         const row = byCc.get(cc) ?? { dept, acc: {} };
-        const add = (k: string, v: number) => (row.acc[k] = round2((row.acc[k] ?? 0) + v));
+        const add = (k: string, v: number, code?: string) => {
+          row.acc[k] = round2((row.acc[k] ?? 0) + v);
+          glOf[k] ??= code ?? DEFAULT_GL[k.slice(3)] ?? "";
+        };
         const reimb = reimbursed(c.lines);
-        add("DR Salaries & wages", c.gross - reimb);
+        // Earnings mapped to their own GL account come out of the salaries line.
+        let ownGl = 0;
+        for (const l of c.lines) {
+          const el = gl.get(l.code);
+          if (!el || l.category !== "earning" || l.group === "reimbursements") continue;
+          add(`DR ${el.name}`, l.amount, el.glCode);
+          ownGl += l.amount;
+        }
+        add("DR Salaries & wages", c.gross - reimb - ownGl);
         add("DR Staff expenses reimbursed", reimb);
         add("DR Employer pension", amt(c.lines, "PENSION_ER"));
         add("DR NSITF", amt(c.lines, "NSITF"));
@@ -220,7 +257,14 @@ export function buildExport(kind: ExportKind, ctx: ExportCtx): ExportTable {
         const loans = c.lines.filter((l) => l.source === "loan").reduce((s, l) => s + l.amount, 0);
         add("CR Staff loans receivable", loans);
         const statutory = ["PAYE", "WHT", "PENSION_EE", "VOL_PENSION", "NHF", "NHIS_EE"];
-        add("CR Other deductions payable", c.lines.filter((l) => l.category === "deduction" && l.source !== "loan" && !statutory.includes(l.code)).reduce((s, l) => s + l.amount, 0));
+        let ownGlDed = 0;
+        for (const l of c.lines) {
+          const el = gl.get(l.code);
+          if (!el || l.category !== "deduction" || l.source === "loan" || statutory.includes(l.code)) continue;
+          add(`CR ${el.name} payable`, l.amount, el.glCode);
+          ownGlDed += l.amount;
+        }
+        add("CR Other deductions payable", c.lines.filter((l) => l.category === "deduction" && l.source !== "loan" && !statutory.includes(l.code)).reduce((s, l) => s + l.amount, 0) - ownGlDed);
         byCc.set(cc, row);
       }
       const data: Cell[][] = [];
@@ -228,17 +272,17 @@ export function buildExport(kind: ExportKind, ctx: ExportCtx): ExportTable {
         for (const [k, v] of Object.entries(acc)) {
           if (!v) continue;
           const dr = k.startsWith("DR ");
-          data.push([cc, dept, k.slice(3), dr ? v : "", dr ? "" : v]);
+          data.push([cc, dept, glOf[k] ?? "", k.slice(3), dr ? v : "", dr ? "" : v]);
         }
       }
-      const dr = sum(data.map((d) => Number(d[3]) || 0));
-      const cr = sum(data.map((d) => Number(d[4]) || 0));
-      return { headers: ["Cost centre", "Department", "Account", "Debit", "Credit"], data, trailer: [["TOTAL", "", dr === cr ? "Balanced" : "OUT OF BALANCE", dr, cr]] };
+      const dr = sum(data.map((d) => Number(d[4]) || 0));
+      const cr = sum(data.map((d) => Number(d[5]) || 0));
+      return { headers: ["Cost centre", "Department", "GL account", "Account", "Debit", "Credit"], data, trailer: [["TOTAL", "", "", dr === cr ? "Balanced" : "OUT OF BALANCE", dr, cr]] };
     }
   }
 }
 
-function writeTable(name: string, sheet: string, t: ExportTable, format: "csv" | "xlsx") {
+export function writeTable(name: string, sheet: string, t: ExportTable, format: "csv" | "xlsx") {
   const aoa: Cell[][] = [...(t.preamble ?? []), t.headers, ...t.data, ...(t.trailer ?? [])];
   if (format === "xlsx") {
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -299,22 +343,17 @@ export function downloadTemplate(layout: "long" | "wide", employees: { employeeN
 
 // ── Remittances ─────────────────────────────────────────────────────────────
 
-export type RemittanceItem = "pension" | "paye" | "nhf" | "nsitf" | "itf";
+export type RemittanceItem = "pension" | "avc" | "paye" | "nhf" | "nsitf" | "itf";
 
 /** Statutory remittance due dates for a pay month. */
 export function remittanceCalendar(period: Pick<PayrollRun["period"], "year" | "month" | "payDate">) {
   const next = period.month === 12 ? { y: period.year + 1, m: 1 } : { y: period.year, m: period.month + 1 };
   const iso = (y: number, m: number, d: number) => `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-  // 7 working days after pay day
-  const pay = new Date(`${period.payDate}T00:00:00Z`);
-  let added = 0;
-  while (added < 7) {
-    pay.setUTCDate(pay.getUTCDate() + 1);
-    const d = pay.getUTCDay();
-    if (d !== 0 && d !== 6) added++;
-  }
+  // 7 working days after pay day — weekends and public holidays don't count.
+  const pensionDue = addWorkingDays(period.payDate, 7);
   return [
-    { key: "pension" as const, item: "Pension (employee + employer)", to: "Each employee's PFA", due: pay.toISOString().slice(0, 10), basis: "Within 7 working days of paying salaries (PRA 2014 s.11)" },
+    { key: "pension" as const, item: "Pension (employee + employer)", to: "Each employee's PFA", due: pensionDue, basis: "Within 7 working days of paying salaries (PRA 2014 s.11)" },
+    { key: "avc" as const, item: "Voluntary pension (AVC)", to: "Each employee's PFA", due: pensionDue, basis: "With the mandatory contribution, within 7 working days (PRA 2014 s.4(3))" },
     { key: "paye" as const, item: "PAYE", to: "State IRS of each employee's residence", due: iso(next.y, next.m, 10), basis: "By the 10th of the following month" },
     { key: "nhf" as const, item: "NHF", to: "Federal Mortgage Bank of Nigeria", due: iso(next.y, next.m, Math.min(28, new Date(Date.UTC(next.y, next.m, 0)).getUTCDate())), basis: "Within one month of deduction" },
     { key: "nsitf" as const, item: "NSITF", to: "Nigeria Social Insurance Trust Fund", due: iso(next.y, next.m, 16), basis: "Monthly, by the 16th" },
@@ -324,12 +363,13 @@ export function remittanceCalendar(period: Pick<PayrollRun["period"], "year" | "
 
 /** What each remittance amounts to for a month, summed across every finalized run in it. */
 export function remittanceAmounts(runs: PayrollRun[]): Record<RemittanceItem, number> {
-  const t: Record<RemittanceItem, number> = { pension: 0, paye: 0, nhf: 0, nsitf: 0, itf: 0 };
+  const t: Record<RemittanceItem, number> = { pension: 0, avc: 0, paye: 0, nhf: 0, nsitf: 0, itf: 0 };
   for (const run of runs) {
     for (const e of run.employees) {
       const c = e.included ? e.computation : null;
       if (!c) continue;
-      t.pension += amt(c.lines, "PENSION_EE") + amt(c.lines, "PENSION_ER") + amt(c.lines, "VOL_PENSION");
+      t.pension += amt(c.lines, "PENSION_EE") + amt(c.lines, "PENSION_ER");
+      t.avc += amt(c.lines, "VOL_PENSION");
       t.paye += amt(c.lines, "PAYE");
       t.nhf += amt(c.lines, "NHF");
       t.nsitf += amt(c.lines, "NSITF");

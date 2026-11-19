@@ -458,3 +458,36 @@ describe("matches the client-approved MOTEE calculator (default settings)", () =
     expect(line(c, "GROUP_LIFE")).toBe(5_400);
   });
 });
+
+// ── Voluntary pension (AVC) from the employee profile ───────────────────────
+
+describe("NG engine — voluntary pension contribution (AVC)", () => {
+  const run = (avc: EmployeeTaxProfile["avc"], inputs: PeriodInput[] = [], runType?: "regular" | "off_cycle") =>
+    computeEmployeePay({ period: jan, employee, structure: structure(WORKED), elements, inputs, profile: profile({ avc }), rateSet, settings, ytd: null, runType });
+  const none = run(null);
+
+  it("deducts a % of pensionable pay and relieves it from PAYE", () => {
+    const c = run({ mode: "percent", value: 5 });
+    expect(line(c, "VOL_PENSION")).toBe(12_750); // 5% of ₦255,000
+    expect(c.tax.reliefs.find((r) => /voluntary/i.test(r.label))?.period).toBe(12_750);
+    expect(line(c, "PAYE")).toBeLessThan(line(none, "PAYE"));
+    expect(c.gross).toBe(none.gross);
+    expect(Math.round((c.gross - c.totalDeductions) * 100) / 100).toBe(c.net);
+    expect(c.net).toBeGreaterThan(none.net - 12_750); // the tax saving cushions the deduction
+  });
+
+  it("deducts a fixed monthly amount", () => {
+    expect(line(run({ mode: "fixed", value: 25_000 }), "VOL_PENSION")).toBe(25_000);
+  });
+
+  it("respects the start and end dates", () => {
+    expect(line(run({ mode: "fixed", value: 25_000, startDate: "2026-02-01" }), "VOL_PENSION")).toBe(0);
+    expect(line(run({ mode: "fixed", value: 25_000, endDate: "2025-12-31" }), "VOL_PENSION")).toBe(0);
+  });
+
+  it("never doubles up with an AVC input, and skips off-cycle runs", () => {
+    const input: PeriodInput = { id: "I1", employeeId: "E1", code: "VOL_PENSION", amount: 10_000, source: "manual" };
+    expect(run({ mode: "fixed", value: 25_000 }, [input]).lines.filter((l) => l.code === "VOL_PENSION").map((l) => l.amount)).toEqual([10_000]);
+    expect(line(run({ mode: "fixed", value: 25_000 }, [], "off_cycle"), "VOL_PENSION")).toBe(0);
+  });
+});

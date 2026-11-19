@@ -1,8 +1,9 @@
 import type { LocaleBundle, LocaleEmployee, LocaleLoan } from "@/src/lib/types/locale";
 import { repaymentSchedule, loanTypeLabel } from "@/src/lib/loans/loans";
-import { LOAN_ELEMENT_BY_TYPE, elementMap } from "./elements-seed";
+import { LOAN_ELEMENT_BY_TYPE } from "./elements-seed";
+import { elementMapOn, settingsOn } from "./config";
 import { computeEmployeePay, makePeriod, prorationFactor, round2, splitSalary, sumYtd, workingDaysBetween } from "./ng/engine";
-import { resolveRateSet, ruleFor } from "./ng/rate-sets";
+import { leaveAllowanceOf, resolveRateSet, ruleFor } from "./ng/rate-sets";
 import { buildInsights } from "./insights";
 import { canonicalJson, sha256Hex, verificationCodeFrom } from "./hash";
 import type {
@@ -16,11 +17,13 @@ import type {
   PayrollRunTotals,
   PayrollSettings,
   Payslip,
+  SalaryLine,
   PayslipCompanySnapshot,
   PeriodInput,
   RunActor,
   RunEmployee,
   SalaryStructure,
+  SettingsVersion,
   StatutoryRateSet,
   YtdTotals,
 } from "./types";
@@ -36,6 +39,8 @@ export interface TenantPayrollData {
   elements: PayElement[];
   rateSets: StatutoryRateSet[];
   settings: PayrollSettings;
+  /** Earlier versions of the settings (effective-dated). Absent = the settings never changed. */
+  settingsVersions?: SettingsVersion[];
   structures: SalaryStructure[];
   profiles: EmployeeTaxProfile[];
   runs: PayrollRun[];
@@ -135,6 +140,10 @@ export function seedProfile(e: LocaleEmployee): EmployeeTaxProfile {
   // About half the staff rent; one declaration is left unverified so the
   // "rent evidence" warning has something to show.
   const rent = h % 2 === 0 ? 600_000 + (h % 7) * 150_000 : 0;
+  // A few staff save extra for retirement: some a % of pensionable pay, some a fixed sum.
+  // Each is backed by the employee's signed mandate.
+  const mandate = { reference: `AVC-${e.employeeNumber}`, signedOn: "2025-12-15", fileName: `avc-mandate-${e.employeeNumber}.pdf` };
+  const avc = h % 6 === 1 ? { mode: "percent" as const, value: 2 + (h % 4), startDate: "2026-01-01", mandate } : h % 6 === 4 && h % 4 === 0 ? { mode: "fixed" as const, value: 25_000, startDate: "2026-01-01", mandate } : null;
   return {
     employeeId: e.id,
     tin: id.tin ?? "",
@@ -155,6 +164,7 @@ export function seedProfile(e: LocaleEmployee): EmployeeTaxProfile {
     accountNumber,
     accountName: bank.accountName ?? e.fullName,
     bvn: id.bvn ?? "",
+    avc,
   };
 }
 
@@ -275,6 +285,12 @@ export interface InputSources {
   paidExpenseIds: Set<string>;
   /** Current monthly basic per employee (from the salary structure). */
   basicFor: (employeeId: string) => number;
+  /** True when the employee's payroll profile sets a voluntary pension — it replaces any AVC on the HR record. */
+  hasProfileAvc?: (employeeId: string) => boolean;
+  /** The employee's salary lines in force for the period (for leave allowance on basic / BHT / gross). */
+  linesFor?: (employeeId: string) => SalaryLine[];
+  /** Leave allowance already paid in this tax year (an earlier payslip, or the previous payroll). */
+  leaveAllowancePaid?: (employeeId: string, year: number) => boolean;
   /** Arrears owed from back-dated salary changes, per employee. */
   backPayFor?: (employeeId: string) => { amount: number; refId: string; description: string }[];
   today: Date;
@@ -340,7 +356,8 @@ export function gatherInputs(
 
   // Recurring deductions and one-off items on the employee record
   const rec = src.bundle as unknown as {
-    recurringDeductions?: { employeeId: string; label: string; amount: number; frequency: string; startDate: string; endDate?: string }[];
+    /** `code` is set on deductions imported through the starter template: the pay element is known, no guessing. */
+    recurringDeductions?: { employeeId: string; label: string; amount: number; frequency: string; startDate: string; endDate?: string; code?: string }[];
     oneTimePayments?: { id: string; employeeId: string; label: string; amount: number; date: string }[];
     oneTimeDeductions?: { id: string; employeeId: string; label: string; amount: number; date: string }[];
   };
@@ -349,7 +366,13 @@ export function gatherInputs(
   for (const d of rec.recurringDeductions ?? []) {
     if (d.employeeId !== e.id || d.frequency !== "monthly" || d.startDate > period.end) continue;
     if (d.endDate && d.endDate < period.start) continue;
+    if (d.code) {
+      out.push(mk(d.code, { amount: d.amount, description: d.label }));
+      continue;
+    }
     const isVoluntaryPension = /pension avc|voluntary pension|additional voluntary/i.test(d.label);
+    // The payroll profile's AVC is the one that counts; the engine adds it.
+    if (isVoluntaryPension && src.hasProfileAvc?.(e.id)) continue;
     // Loans come from the Loans module; statutory pension and health insurance
     // are calculated by the engine — never deduct them twice.
     // These records describe deductions payroll already makes itself (the
@@ -379,10 +402,14 @@ export function gatherInputs(
     }
   }
 
-  // Leave allowance — 10% of annual basic, paid in the employee's anniversary month
-  if (Number(e.startDate.slice(5, 7)) === period.month && e.startDate < period.start && monthlyBasic > 0) {
-    out.push(mk("LEAVE_ALLOW", { amount: round2(monthlyBasic * 12 * 0.1), description: "Annual leave allowance (10% of annual basic)" }));
-  }
+  // Leave allowance — per the company policy, once per tax year
+  const la = leaveAllowanceFor({
+    startDate: e.startDate,
+    period,
+    settings,
+    lines: src.linesFor?.(e.id) ?? (monthlyBasic ? [{ code: "BASIC", amount: monthlyBasic }] : []),
+  });
+  if (la && !src.leaveAllowancePaid?.(e.id, period.year)) out.push(mk("LEAVE_ALLOW", { amount: la.amount, description: la.description }));
 
   // Demo tenant only: illustrative variable pay so the seeded history looks
   // like a real company's. Never added to runs people create themselves.
@@ -394,6 +421,39 @@ export function gatherInputs(
     if (h % 17 === 0) out.push(mk("UNPAID_LEAVE", { units: 1 + (h % 2), source: "attendance" }));
   }
   return { inputs: out, notes };
+}
+
+const BASIS_LABEL = { basic: "annual basic", bht: "annual basic + housing + transport", gross: "annual gross" } as const;
+
+/**
+ * The leave allowance due in `period` under the company policy, or null.
+ * Anniversary: the month the employee joined, from their first anniversary.
+ * Fixed month: everyone employed by then, pro-rated in the year they joined
+ * when the policy says so.
+ */
+export function leaveAllowanceFor(args: {
+  startDate: string;
+  period: Pick<PayPeriod, "year" | "month" | "start" | "end">;
+  settings: PayrollSettings;
+  lines: SalaryLine[];
+}): { amount: number; description: string } | null {
+  const p = leaveAllowanceOf(args.settings);
+  if (p.mode === "none" || p.ratePct <= 0) return null;
+  const sum = (codes: string[] | null) => args.lines.filter((l) => !codes || codes.includes(l.code)).reduce((s, l) => s + l.amount, 0);
+  const monthly = p.basis === "gross" ? sum(null) : sum(p.basis === "bht" ? ["BASIC", "CONSOLIDATED", "HOUSING", "TRANSPORT"] : ["BASIC", "CONSOLIDATED"]);
+  if (monthly <= 0) return null;
+  const full = (monthly * 12 * p.ratePct) / 100;
+  const label = `Annual leave allowance (${p.ratePct}% of ${BASIS_LABEL[p.basis]})`;
+  if (p.mode === "anniversary") {
+    if (Number(args.startDate.slice(5, 7)) !== args.period.month || args.startDate >= args.period.start) return null;
+    return { amount: round2(full), description: label };
+  }
+  if (args.period.month !== p.month || args.startDate > args.period.end) return null;
+  if (p.prorateFirstYear && Number(args.startDate.slice(0, 4)) === args.period.year) {
+    const months = 12 - Number(args.startDate.slice(5, 7)) + 1;
+    return { amount: round2((full * months) / 12), description: `${label}, pro-rated ${months}/12 for joining in ${args.period.year}` };
+  }
+  return { amount: round2(full), description: label };
 }
 
 function attendanceFor(e: LocaleEmployee, period: PayPeriod, inputs: PeriodInput[], bundle: LocaleBundle): AttendanceSnapshot {
@@ -427,8 +487,12 @@ export function engineEmployee(e: LocaleEmployee) {
 
 /** (Re)computes every included employee of a draft run, snapshotting bank details as of now. */
 export function calculateRun(run: PayrollRun, data: TenantPayrollData, bundle: LocaleBundle): PayrollRun {
-  const elements = elementMap(data.elements);
-  const rateSet = resolveRateSet(data.rateSets, run.period.end);
+  // Every rule as it stood in the period being paid, not as it is today — so re-running
+  // September 2026 in January 2027 uses September's elements, rates and settings.
+  const date = run.period.end;
+  const elements = elementMapOn(data.elements, date);
+  const rateSet = resolveRateSet(data.rateSets, date);
+  const settings = settingsOn(data.settings, data.settingsVersions, date);
   const people = new Map(bundle.employees.map((e) => [e.id, e]));
   const profiles = new Map(data.profiles.map((p) => [p.employeeId, p]));
 
@@ -446,7 +510,7 @@ export function calculateRun(run: PayrollRun, data: TenantPayrollData, bundle: L
       inputs,
       profile: profiles.get(e.id) ?? null,
       rateSet,
-      settings: data.settings,
+      settings,
       ytd: ytdBefore(data, re.employeeId, run.period, run.id),
       manual: re.mode === "manual" && re.manualLines ? { lines: re.manualLines, statutory: re.manualStatutory ?? "recalculate" } : undefined,
     });
@@ -513,6 +577,10 @@ export function newRun(args: NewRunArgs): PayrollRun {
     return s?.lines.find((l) => l.code === "BASIC" || l.code === "CONSOLIDATED")?.amount ?? 0;
   };
   const backPayFor = (employeeId: string) => backPayOwed(data, employeeId, period);
+  const linesFor = (id: string) => structureOn(data.structures, id, period.end)?.lines ?? [];
+  const leaveAllowancePaid = (id: string, year: number) =>
+    data.profiles.find((p) => p.employeeId === id)?.leaveAllowancePaidYear === year ||
+    data.payslips.some((p) => p.employeeId === id && p.status === "final" && p.period.year === year && p.computation.lines.some((l) => l.code === "LEAVE_ALLOW" && l.amount > 0));
   const gathered =
     type === "regular"
       ? people.map((e) =>
@@ -520,7 +588,7 @@ export function newRun(args: NewRunArgs): PayrollRun {
             e,
             period,
             data.settings,
-            { loans: args.loans, bundle, expenses: args.expenses ?? [], paidExpenseIds, basicFor, backPayFor, today: args.today },
+            { loans: args.loans, bundle, expenses: args.expenses ?? [], paidExpenseIds, basicFor, backPayFor, linesFor, leaveAllowancePaid, hasProfileAvc: (id) => !!data.profiles.find((p) => p.employeeId === id)?.avc?.value, today: args.today },
             { history: args.history, demo: args.demo },
           ),
         )

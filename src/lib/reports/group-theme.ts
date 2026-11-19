@@ -26,6 +26,13 @@ const THEMES: Record<string, ReportGroupTheme> = {
     dot: "bg-[#7F77DD]",
     bar: "from-[#7F77DD] to-[#7F77DD]/40",
   },
+  Payroll: {
+    bg: "bg-[#1baf7a]/10",
+    text: "text-[#1baf7a]",
+    ring: "ring-[#1baf7a]/15",
+    dot: "bg-[#1baf7a]",
+    bar: "from-[#1baf7a] to-[#1baf7a]/40",
+  },
   Operations: {
     bg: "bg-[#FE8F44]/10",
     text: "text-[#FE8F44]",

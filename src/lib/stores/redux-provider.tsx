@@ -34,12 +34,24 @@ import { hydrateLeaveSchemes } from "./leave-schemes-slice";
 import { hydrateWorkforceRisk } from "./workforce-risk-slice";
 import { initPayrollPersistence } from "./payroll-persistence";
 
-let booted = false;
+/**
+ * Stores that have already been booted. Kept on `globalThis`, not in a module
+ * variable: a hot reload re-runs this module, and a reset flag made `boot()`
+ * re-dispatch every hydrate action during `ReduxProvider`'s render while pages
+ * were mounted ("Cannot update a component while rendering ReduxProvider").
+ * Keyed by the store so a genuinely new store (store module reloaded) still boots.
+ */
+const BOOTED_KEY = "__moteeBootedStores";
+function bootedStores(): WeakSet<object> {
+  const g = globalThis as unknown as Record<string, WeakSet<object> | undefined>;
+  return (g[BOOTED_KEY] ??= new WeakSet<object>());
+}
 
-/** Restores the country and starts every persistence layer, once per page. */
+/** Restores the country and starts every persistence layer, once per store. */
 function boot() {
-  if (booted) return;
-  booted = true;
+  const booted = bootedStores();
+  if (booted.has(store)) return;
+  booted.add(store);
   {
     // First, before any persistence layer hydrates: restore the UK/Nigeria
     // context the user last picked and load that country's bundle. Every

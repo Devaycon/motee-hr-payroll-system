@@ -57,7 +57,18 @@ function toRow(record: OnboardingRecord, status: EmployeeStatus): EmployeeRow {
     taxId: jd?.taxId || undefined,
     pensionId: jd?.pensionId || undefined,
     nhfNumber: jd?.nhfNumber || undefined,
+    pfaName: jd?.pfaName || undefined,
+    bvn: jd?.bvn || undefined,
+    bankCode: jd?.bankCode || undefined,
+    payBreakdown: payBreakdown(jd),
   };
+}
+
+function payBreakdown(jd: OnboardingRecord["joinerData"]): EmployeeRow["payBreakdown"] {
+  const n = (v?: string) => (v && Number(String(v).replace(/[^\d.]/g, "")) > 0 ? Number(String(v).replace(/[^\d.]/g, "")) : undefined);
+  const basic = n(jd?.monthlyBasic);
+  if (!basic) return undefined;
+  return { basic, housing: n(jd?.monthlyHousing), transport: n(jd?.monthlyTransport) };
 }
 
 /**

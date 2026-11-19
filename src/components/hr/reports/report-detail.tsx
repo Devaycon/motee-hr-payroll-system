@@ -19,6 +19,7 @@ import type { LocaleBundle } from "@/src/lib/types/locale";
 import { getReport } from "@/src/lib/reports/registry";
 import { ReportTable } from "./components/report-table";
 import { ExportModal } from "./components/export-modal";
+import { reportInCountry, useReportContext } from "@/src/lib/reports/use-report-context";
 
 function BackLink() {
   return (
@@ -38,6 +39,7 @@ function BackLink() {
 
 export function ReportDetailPage({ reportId }: { reportId: string }) {
   const { data: bundle, loading } = useLocaleSection<LocaleBundle>((b) => b);
+  const { ctx, payrollLoading } = useReportContext();
   const accessLevelId = useAppSelector((s) => s.auth.user?.accessLevelId);
   const levels = useAppSelector((s) => s.accessLevels.levels);
 
@@ -47,8 +49,8 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
   const [filters, setFilters] = useState<Record<string, string>>({});
 
   const allRows = useMemo(
-    () => (bundle && def ? def.select(bundle) : []),
-    [bundle, def],
+    () => (bundle && def ? def.select(bundle, ctx) : []),
+    [bundle, def, ctx],
   );
 
   const filteredRows = useMemo(() => {
@@ -66,8 +68,8 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
   }, [def, allRows, search, filters]);
 
   const analytics = useMemo(
-    () => (def && bundle ? def.analytics(filteredRows, bundle) : null),
-    [def, bundle, filteredRows],
+    () => (def && bundle ? def.analytics(filteredRows, bundle, ctx) : null),
+    [def, bundle, filteredRows, ctx],
   );
 
   const canView = (mod: string) => {
@@ -78,7 +80,7 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
   };
 
   // Unknown report id, or the user lacks permission for it.
-  if (!def || !canView(def.permission)) {
+  if (!def || !canView(def.permission) || !reportInCountry(def, ctx)) {
     return (
       <div className="flex flex-col gap-5">
         <BackLink />
@@ -102,7 +104,7 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
     );
   }
 
-  if (loading || !bundle) {
+  if (loading || payrollLoading || !bundle) {
     return (
       <div className="flex flex-col gap-5">
         <BackLink />

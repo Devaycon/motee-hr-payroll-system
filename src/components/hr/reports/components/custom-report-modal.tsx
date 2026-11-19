@@ -26,6 +26,7 @@ import type { LocaleBundle } from "@/src/lib/types/locale";
 import { ALL_REPORTS, getReport } from "@/src/lib/reports/registry";
 import { exportCsv, exportXlsx } from "@/src/lib/reports/export";
 import type { ReportColumn } from "@/src/lib/reports/types";
+import { reportInCountry, useReportContext } from "@/src/lib/reports/use-report-context";
 
 interface CustomReportModalProps {
   open: boolean;
@@ -40,8 +41,9 @@ export function CustomReportModal({
   allowedReportIds,
 }: CustomReportModalProps) {
   const { data: bundle } = useLocaleSection<LocaleBundle>((b) => b);
+  const { ctx } = useReportContext();
 
-  const bases = ALL_REPORTS.filter((r) => allowedReportIds.includes(r.id));
+  const bases = ALL_REPORTS.filter((r) => allowedReportIds.includes(r.id) && reportInCountry(r, ctx));
   const [baseId, setBaseId] = useState<string>(bases[0]?.id ?? "");
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
@@ -58,8 +60,8 @@ export function CustomReportModal({
   }
 
   const rows = useMemo(
-    () => (bundle && def ? def.select(bundle) : []),
-    [bundle, def],
+    () => (bundle && def ? def.select(bundle, ctx) : []),
+    [bundle, def, ctx],
   );
 
   const filteredRows = useMemo(() => {

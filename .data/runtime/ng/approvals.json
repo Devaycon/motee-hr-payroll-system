@@ -660,7 +660,7 @@
         {
           "id": "ACT-STEP-PAYROLL-RUN-1",
           "order": 1,
-          "label": "Review register, variances & exceptions",
+          "label": "Payroll Reviewer — verify calculations, changes & exceptions",
           "approver": "ROLE:ROLE-FIN",
           "required": true,
           "onLeaveAction": {
@@ -670,7 +670,7 @@
         {
           "id": "ACT-STEP-PAYROLL-RUN-2",
           "order": 2,
-          "label": "Authorise payment release",
+          "label": "Payroll Approver — approve the final payroll",
           "approver": "ROLE:ROLE-EXEC",
           "required": true,
           "onLeaveAction": {

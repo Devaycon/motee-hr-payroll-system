@@ -9,6 +9,7 @@ import { PipelineTable } from "./components/pipeline-table";
 import { MethodSelector } from "./components/method-selector";
 import { InviteOnboardingModal } from "./components/invite-onboarding-modal";
 import { BulkOnboardingModal } from "./components/bulk-onboarding-modal";
+import { bulkRowToRecord } from "./bulk";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import {
   addRecord,
@@ -139,46 +140,11 @@ export function OnboardingPage({ embedded = false }: { embedded?: boolean } = {}
   };
 
   const handleBulkImport = (rows: BulkOnboardingRow[]) => {
-    const newRecords: OnboardingRecord[] = rows.map((row, idx) => {
-      const id = `onb-bulk-${Date.now()}-${idx}`;
-      const fullName = `${row.firstName} ${row.lastName}`;
-      const initials = `${row.firstName[0]}${row.lastName[0]}`.toUpperCase();
-      return {
-        id,
-        referenceId: row.employeeId || undefined,
-        employeeName: fullName,
-        employeeInitials: initials,
-        email: row.email,
-        jobTitle: row.jobTitle,
-        department: row.department,
-        startDate: row.startDate,
-        stage: "pre_boarding" as const,
-        status: "not_started" as const,
-        tasks: [],
-        completedTasks: 0,
-        totalTasks: 0,
-        welcomeEmailSent: false,
-        initiatedAt: new Date().toISOString().slice(0, 10),
-        mode: "bulk" as const,
-        // The rest of what the import row carries (employment type, manager,
-        // medical facts, asset assignment) used to be dropped here, with no
-        // path back to the employee record once onboarding cleared.
-        joinerData: {
-          employmentType: row.employmentType,
-          manager: row.manager,
-          allergies: row.allergies,
-          conditions: row.conditions,
-          medications: row.medications,
-          dietaryRequirements: row.dietaryRequirements,
-          accessibilityNeeds: row.accessibilityNeeds,
-          assetTag: row.assetTag,
-          assetName: row.assetName,
-          assetCategory: row.assetCategory,
-          assetSerialNumber: row.assetSerialNumber,
-          assetAssignedDate: row.assetAssignedDate,
-        },
-      };
-    });
+    const today = new Date().toISOString().slice(0, 10);
+    const stamp = Date.now();
+    const newRecords: OnboardingRecord[] = rows.map((row, idx) =>
+      bulkRowToRecord(row, `onb-bulk-${stamp}-${idx}`, today),
+    );
     dispatch(addRecords(newRecords));
     toast.success(
       `${rows.length} employee${rows.length !== 1 ? "s" : ""} onboarded`,

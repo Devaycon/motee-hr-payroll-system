@@ -13,6 +13,7 @@ import { ALL_REPORTS, REPORT_GROUPS } from "@/src/lib/reports/registry";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import type { AnyReportDef, ReportAnalytics, ReportStat } from "@/src/lib/reports/types";
 import { ReportMiniChart, findTrendChart } from "./components/report-mini-chart";
+import { reportInCountry, useReportContext } from "@/src/lib/reports/use-report-context";
 
 /**
  * The four dashboards an HR admin actually opens every day. Everything else
@@ -132,6 +133,7 @@ export function AnalyticsPage() {
   const accessLevelId = useAppSelector((s) => s.auth.user?.accessLevelId);
   const levels = useAppSelector((s) => s.accessLevels.levels);
   const { data: bundle, loading } = useLocaleSection<LocaleBundle>((b) => b);
+  const { ctx, payrollLoading } = useReportContext();
   const [search, setSearch] = useState("");
 
   const visibleReports = useMemo(() => {
@@ -142,8 +144,8 @@ export function AnalyticsPage() {
       if (!accessLevelId || !level) return true;
       return !!level.permissions.find((p) => p.module === mod)?.access;
     };
-    return ALL_REPORTS.filter((r) => canView(r.permission));
-  }, [accessLevelId, levels]);
+    return ALL_REPORTS.filter((r) => canView(r.permission) && reportInCountry(r, ctx));
+  }, [accessLevelId, levels, ctx]);
 
   const insights = useMemo(() => {
     if (!bundle) return null;
@@ -151,14 +153,14 @@ export function AnalyticsPage() {
     let totalCharts = 0;
     let totalRecords = 0;
     for (const r of visibleReports) {
-      const rows = r.select(bundle);
-      const analytics = r.analytics(rows, bundle);
+      const rows = r.select(bundle, ctx);
+      const analytics = r.analytics(rows, bundle, ctx);
       map.set(r.id, { report: r, recordCount: rows.length, analytics });
       totalCharts += analytics.charts.length;
       totalRecords += rows.length;
     }
     return { map, totalCharts, totalRecords };
-  }, [bundle, visibleReports]);
+  }, [bundle, visibleReports, ctx]);
 
   const filteredReports = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -217,7 +219,7 @@ export function AnalyticsPage() {
         ]}
       />
 
-      {loading || !bundle || !insights ? (
+      {loading || payrollLoading || !bundle || !insights ? (
         <div className="grid grid-cols-12 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="col-span-12 h-44 sm:col-span-6 lg:col-span-4" />

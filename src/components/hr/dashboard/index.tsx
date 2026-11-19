@@ -5,6 +5,7 @@ import { WelcomeBanner } from "./components/welcome-banner";
 import { DASHBOARD_TABS, type DashboardTabKey } from "./widgets";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { DashboardTabsList } from "./components/dashboard-tabs";
+import { useDashboardTabs } from "./use-dashboard-tabs";
 import {
   PeopleTabLayout,
   AttendanceTabLayout,
@@ -13,6 +14,7 @@ import {
   EventsTabLayout,
   ResourcingTabLayout,
   EngagementTabLayout,
+  PayrollTabLayout,
 } from "./components/tab-layouts";
 
 const TAB_LAYOUTS: Record<DashboardTabKey, ComponentType> = {
@@ -23,10 +25,12 @@ const TAB_LAYOUTS: Record<DashboardTabKey, ComponentType> = {
   events: EventsTabLayout,
   resourcing: ResourcingTabLayout,
   engagement: EngagementTabLayout,
+  payroll: PayrollTabLayout,
 };
 
 const HrDashboard = () => {
   const [tab, setTab] = useState<DashboardTabKey>(DASHBOARD_TABS[0].key);
+  const tabs = useDashboardTabs();
 
   return (
     // `gap-2` throughout, matching the grid's gutter, so the spacing between
@@ -49,7 +53,7 @@ const HrDashboard = () => {
         className="-mx-4"
       >
         <DashboardTabsList />
-        {DASHBOARD_TABS.map((t) => {
+        {tabs.map((t) => {
           const Layout = TAB_LAYOUTS[t.key];
           return (
             // No top margin: the Tabs container's own `gap-2` already puts 8px

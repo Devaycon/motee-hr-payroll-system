@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
 import {
   AlertTriangle,
@@ -20,6 +20,7 @@ import {
   Printer,
   UserPlus,
   Calculator,
+  RotateCcw,
   Eye,
   FileText,
   MoreHorizontal,
@@ -71,6 +72,7 @@ import type { LocaleEmployee } from "@/src/lib/types/locale";
 import { inputSourceOf, type PayrollException, type PayrollRun, type PeriodInput, type RunEmployee } from "@/src/lib/payroll/types";
 import { openEarlierRuns, useCurrentActor, usePayrollActions, useRun, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import { cn } from "@/src/lib/utils";
+import { PaymentPanel } from "./payment-panel";
 import { NotSupported, PipelineStepper, RunExportsMenu, RunStatusBadge, RunTypeBadge, Stat, fmtDate, money } from "./components/shared";
 
 export function RunWorkspacePage({ runId }: { runId: string }) {
@@ -84,7 +86,11 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
     const mine = s.approvals.requests.filter((r) => r.documentType === PAYROLL_DOCUMENT_TYPE && r.documentId === runId);
     return mine.find((r) => r.id === run?.approvalRequestId) ?? mine[0];
   });
-  const [tab, setTab] = useState("employees");
+  const search = useSearchParams();
+  const [tab, setTab] = useState(() => {
+    const t = search.get("tab") ?? "";
+    return ["employees", "exceptions", "variance", "inputs", "summary", "payment"].includes(t) ? t : "employees";
+  });
   const [ack, setAck] = useState<PayrollException | null>(null);
   const [addInput, setAddInput] = useState(false);
   const [addPeople, setAddPeople] = useState(false);
@@ -94,6 +100,12 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
 
   const people = useMemo(() => new Map((bundle?.employees ?? []).map((e) => [e.id, e])), [bundle]);
   const profiles = useMemo(() => new Map((data?.profiles ?? []).map((p) => [p.employeeId, p])), [data]);
+  // Joiners check: re-run when HR onboarding moves (a hire clears, a new one starts this month).
+  const onboardingKey = useAppSelector((s) => `${s.onboardingRecords.records.map((r) => `${r.id}:${r.status}:${r.startDate}`).join(",")}|${s.onboardingRecords.cleared.map((c) => c.id).join(",")}`);
+  const isDraft = run?.status === "draft";
+  useEffect(() => {
+    if (isDraft) actions.revalidate(runId);
+  }, [onboardingKey, isDraft, runId, actions]);
 
   if (!supported && bundle) return <NotSupported />;
   if (loading || !data) return <Skeleton className="h-[600px] w-full rounded-xl" />;
@@ -153,7 +165,8 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
             {run.stale && <Badge variant="outline" className="border-amber-500/40 bg-[color-mix(in_oklab,var(--color-amber-500)_10%,var(--card))] text-[10px] text-amber-700">Needs recalculation</Badge>}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {fmtDate(run.period.start)} – {fmtDate(run.period.end)} · pay day {fmtDate(run.period.payDate)} · prepared by {run.preparedBy.name}
+            {fmtDate(run.period.start)} – {fmtDate(run.period.end)} · pay day {fmtDate(run.period.payDate)}
+            {run.period.scheduledPayDate && ` (moved from ${fmtDate(run.period.scheduledPayDate)}, ${run.period.payDateNote ?? "a non-working day"})`} · prepared by {run.preparedBy.name}
             {run.parentRunId && (
               <>
                 {" · corrects "}
@@ -187,9 +200,9 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
               <Lock className="h-3.5 w-3.5" /> Finalize &amp; issue payslips
             </Button>
           )}
-          {run.status === "finalized" && canEdit && (
-            <Button size="sm" className="gap-1.5" onClick={() => setConfirm("paid")}>
-              <Wallet className="h-3.5 w-3.5" /> Mark as paid
+          {locked && run.payment?.status !== "settled" && (
+            <Button size="sm" className="gap-1.5" onClick={() => { setTab("payment"); document.getElementById("run-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
+              <Wallet className="h-3.5 w-3.5" /> {run.payment ? "Payment" : "Release payment"}
             </Button>
           )}
           {locked && canEdit && run.type !== "adjustment" && (
@@ -253,20 +266,33 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
             <Input id="paydate" type="date" className="h-8 w-40 text-xs" defaultValue={run.period.payDate} onBlur={(e) => e.target.value && e.target.value !== run.period.payDate && actions.setPayDate(run.id, e.target.value)} />
             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setAddPeople(true)}><UserPlus className="h-3.5 w-3.5" /> Add employees</Button>
             {run.type === "off_cycle" && <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setSettlement(true)}><Calculator className="h-3.5 w-3.5" /> Final settlement</Button>}
+            {run.type === "adjustment" && run.parentRunId && <ReverseButton run={run} people={people} />}
             <Button size="sm" className="gap-1.5" onClick={() => setAddInput(true)}><FilePlus2 className="h-3.5 w-3.5" /> Add payment</Button>
           </div>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Employees" value={run.totals.employees} sub={`${run.employees.length - included.length} not in this run`} />
-        <Stat label="Gross pay" value={money(run.totals.gross)} />
-        <Stat label="Deductions" value={money(run.totals.deductions)} sub={`PAYE ${money(run.totals.paye, 0)}`} tone="warn" />
-        <Stat label="Net pay" value={money(run.totals.net)} sub="To the bank file" tone="good" />
+        <Stat label="Gross pay" value={money(run.totals.gross)} href={`${PAYROLL_HREF}/${run.id}/breakdown?view=gross`} />
+        <Stat label="Deductions" value={money(run.totals.deductions)} sub={`incl. PAYE ${money(run.totals.paye, 0)}`} tone="warn" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=deductions`} />
+        <Stat label="PAYE" value={money(run.totals.paye)} sub="By State IRS" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=paye`} />
+        <Stat label="Net pay" value={money(run.totals.net)} sub="Names, banks and accounts" tone="good" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=net`} />
+        <Stat label="Pension" value={money(run.totals.pensionEmployee + run.totals.pensionEmployer)} sub="Employee + employer, by PFA" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=pension`} />
         <Stat label="Employer cost" value={money(run.totals.employerCost)} sub="Pension, NSITF, ITF" />
+        <Stat
+          label="Exceptions"
+          value={`${errors.length} / ${warnings.length}`}
+          sub="Errors / warnings"
+          tone={blocking.length ? "warn" : undefined}
+          onClick={() => {
+            setTab("exceptions");
+            document.getElementById("run-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        />
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={setTab} id="run-tabs" className="scroll-mt-4">
         <PageTabsList
           tabs={[
             { value: "employees", label: `Employees (${run.employees.length})` },
@@ -274,6 +300,7 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
             { value: "variance", label: "Variance" },
             { value: "inputs", label: `Inputs (${run.inputs.length})` },
             { value: "summary", label: "Summary" },
+            ...(locked ? [{ value: "payment", label: run.payment?.status === "settled" ? "Payment ✓" : "Payment" }] : []),
           ]}
         />
         <TabsContent value="employees" className="mt-4">
@@ -295,6 +322,11 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
         <TabsContent value="summary" className="mt-4">
           <Summary run={run} people={people} />
         </TabsContent>
+        {locked && (
+          <TabsContent value="payment" className="mt-4">
+            <PaymentPanel run={run} people={people} />
+          </TabsContent>
+        )}
       </Tabs>
 
       <AckDialog
@@ -480,13 +512,46 @@ function StatusBanner({
     <div className={cn(base, "border-violet-500/30 bg-[color-mix(in_oklab,var(--color-violet-500)_5%,var(--card))]")}>
       <Lock className="mt-0.5 h-4 w-4 text-violet-600" />
       <p>
-        Finalized on {fmtDate(run.finalizedAt)} — this run is locked and pays the bank details as approved. {run.status === "disbursed" ? `Paid on ${fmtDate(run.disbursedAt)}.` : "Download the NIBSS file from Exports, then mark it as paid."} Corrections go through an adjustment run.
+        Finalized on {fmtDate(run.finalizedAt)} — this run is locked and pays the bank details as approved. {run.status === "disbursed" ? `Paid on ${fmtDate(run.disbursedAt)}.` : "Next: a Finance / Payment Authoriser releases the payment from the Payment tab, then the bank settlement is reconciled."} Corrections go through an adjustment run.
       </p>
     </div>
   );
 }
 
 // ── Off-cycle tools ─────────────────────────────────────────────────────────
+
+/** Reverse an employee's whole pay for the corrected period (paid in error, wrong person, duplicate). */
+function ReverseButton({ run, people }: { run: PayrollRun; people: Map<string, LocaleEmployee> }) {
+  const { data } = useTenantPayroll();
+  const actions = usePayrollActions();
+  const [open, setOpen] = useState(false);
+  const [pick, setPick] = useState("");
+  const parent = data?.runs.find((r) => r.id === run.parentRunId);
+  const paid = (parent?.employees ?? []).filter((e) => e.included && e.computation);
+  return (
+    <>
+      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { setPick(""); setOpen(true); }}><RotateCcw className="h-3.5 w-3.5" /> Reverse a payment</Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reverse a payment from {parent?.title}</DialogTitle>
+            <DialogDescription>Backs out everything the employee was paid in that run, element by element. PAYE and pension are recalculated, and any net overpayment shows as negative net pay to recover. The original payslip stays as issued; the reversal is its own audited record.</DialogDescription>
+          </DialogHeader>
+          <Select value={pick} onValueChange={setPick}>
+            <SelectTrigger className="text-xs"><SelectValue placeholder="Choose the employee" /></SelectTrigger>
+            <SelectContent>
+              {paid.map((e) => <SelectItem key={e.employeeId} value={e.employeeId} className="text-xs">{people.get(e.employeeId)?.fullName ?? e.employeeId} · net {money(e.computation!.net, 0)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button disabled={!pick} onClick={() => { const r = actions.reversePay(run.id, pick); if (r.ok) { toast.success("Reversal added"); setOpen(false); } else toast.error(r.reason); }}>Reverse</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 function AddPeopleDialog({ open, onClose, run, people, onAdd }: { open: boolean; onClose: () => void; run: PayrollRun; people: Map<string, LocaleEmployee>; onAdd: (ids: string[]) => void }) {
   const [picked, setPicked] = useState<string[]>([]);
@@ -814,11 +879,19 @@ function ExceptionsList({ run, people, editable, onAck }: { run: PayrollRun; peo
               <p className="flex items-center gap-2 text-xs font-semibold">
                 {EXCEPTION_RULE_LABELS[e.rule]}
                 <Badge variant="outline" className={cn("text-[9px]", e.severity === "error" ? "border-rose-500/30 text-rose-600" : "border-amber-500/30 text-amber-600")}>
-                  {e.severity === "error" ? "Blocks submission" : "Review"}
+                  {e.severity === "error" ? "Error · blocks submission" : "Warning · review"}
                 </Badge>
-                {e.employeeId && <span className="font-normal text-muted-foreground">· {people.get(e.employeeId)?.fullName}</span>}
+                <Badge variant="outline" className={cn("text-[9px]", e.acknowledged ? "border-emerald-500/30 text-emerald-700" : "text-muted-foreground")}>
+                  {e.acknowledged ? "Resolved" : "Open"}
+                </Badge>
+                {e.employeeId && people.get(e.employeeId) && <span className="font-normal text-muted-foreground">· {people.get(e.employeeId)?.fullName}</span>}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">{e.message}</p>
+              {(e.rule === "joiner_not_in_payroll" || e.rule === "joiner_still_onboarding") && !people.has(e.employeeId ?? "") && (
+                <Link href={`${PAYROLL_HREF}/import`} className="mt-1 inline-block text-[11px] font-medium text-primary hover:underline">
+                  Set up from onboarding →
+                </Link>
+              )}
               {e.acknowledged && (
                 <p className="mt-1 text-[11px] text-emerald-700">
                   Acknowledged by {e.acknowledged.by} · “{e.acknowledged.reason}”
@@ -879,7 +952,12 @@ function VarianceTable({ run, people, data, threshold }: { run: PayrollRun; peop
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
         <p className="text-xs text-muted-foreground">Net pay against each employee&apos;s previous payslip. Changes over {threshold}% are flagged for review.</p>
-        <p className="text-xs">Total net {money(totalBefore, 0)} → <b>{money(totalNow, 0)}</b></p>
+        <div className="flex items-center gap-3">
+          <p className="text-xs">Total net {money(totalBefore, 0)} → <b>{money(totalNow, 0)}</b></p>
+          <Button size="sm" variant="outline" className="h-7 text-[11px]" asChild>
+            <Link href={`${PAYROLL_HREF}/compare?current=${run.id}`}>Full comparison with reasons</Link>
+          </Button>
+        </div>
       </div>
       <table className="w-full text-xs">
         <thead className="bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))] text-left text-muted-foreground">

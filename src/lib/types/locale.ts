@@ -233,6 +233,12 @@ export interface LocaleLoan {
   status: "pending" | "active" | "closed" | "defaulted" | "rejected";
   approverId?: string | null;
   interestRatePct?: number;
+  /**
+   * Set on loans brought forward from a previous payroll: the agreed monthly
+   * instalment (the last one takes whatever balance is left). Without it the
+   * amount is spread evenly over `repaymentMonths`.
+   */
+  fixedInstalment?: number;
 }
 
 export interface LocaleDisciplinary {

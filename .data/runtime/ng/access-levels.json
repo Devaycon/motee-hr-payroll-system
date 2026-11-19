@@ -2203,8 +2203,13 @@
         },
         {
           "module": "time-payroll.payroll-settings",
-          "access": false,
-          "actions": []
+          "access": true,
+          "actions": [
+            "view",
+            "create",
+            "edit",
+            "approve"
+          ]
         },
         {
           "module": "operations.assets",

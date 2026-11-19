@@ -72,12 +72,14 @@ const DEFAULT_STEPS: Record<ApprovalDocumentType, SeedStep[]> = {
     { label: "Confirm absence & arrange cover", approver: "LINE_MANAGER" },
     { label: "Check fit note & record absence", approver: "ROLE:ROLE-HRMGR" },
   ],
-  // Two-person control: the preparer (Payroll / HR Admin) never approves.
-  // Finance reviews the register, variances and exceptions; the executive
-  // authorises releasing the money.
+  // Segregation of duties: the Payroll Processor (HR Admin) prepares and
+  // submits; the Payroll Reviewer independently verifies calculations and
+  // changes; the Payroll Approver approves the final payroll. Nobody acts on
+  // two steps, and payment release is a separate Finance authorisation on
+  // the run itself.
   payroll_run: [
-    { label: "Review register, variances & exceptions", approver: "ROLE:ROLE-FIN" },
-    { label: "Authorise payment release", approver: "ROLE:ROLE-EXEC" },
+    { label: "Payroll Reviewer — verify calculations, changes & exceptions", approver: "ROLE:ROLE-FIN" },
+    { label: "Payroll Approver — approve the final payroll", approver: "ROLE:ROLE-EXEC" },
   ],
 };
 

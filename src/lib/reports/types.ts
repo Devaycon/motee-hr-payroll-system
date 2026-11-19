@@ -1,5 +1,17 @@
 import type { LucideIcon } from "lucide-react";
 import type { LocaleBundle } from "@/src/lib/types/locale";
+import type { TenantPayroll } from "@/src/lib/stores/payroll-slice";
+
+/**
+ * Data a report can read beyond the locale bundle. Payroll lives in its own
+ * store (it's confidential and computed), so payroll reports read it from
+ * here; every other report ignores it.
+ */
+export interface ReportContext {
+  country: "uk" | "ng";
+  /** The tenant's payroll, when this user may see it and the country runs payroll. */
+  payroll: TenantPayroll | null;
+}
 
 export interface ReportColumn<T> {
   key: string;
@@ -160,7 +172,7 @@ export interface ReportBreakdownDef<T> {
   label: string;
   description?: string;
   icon: LucideIcon;
-  analytics: (rows: T[], bundle: LocaleBundle) => ReportAnalytics;
+  analytics: (rows: T[], bundle: LocaleBundle, ctx: ReportContext) => ReportAnalytics;
 }
 
 export interface ReportDef<T> {
@@ -171,15 +183,17 @@ export interface ReportDef<T> {
   group: string;
   /** Permission module id gating visibility. */
   permission: string;
+  /** Countries the report exists in (default: all). */
+  countries?: ReportContext["country"][];
   /** Dataset for the report. */
-  select: (bundle: LocaleBundle) => T[];
+  select: (bundle: LocaleBundle, ctx: ReportContext) => T[];
   columns: ReportColumn<T>[];
   filters?: ReportFilterDef<T>[];
   /** Optional domain-specific toggles shown in the export dialog. */
   exportParams?: ReportExportParam<T>[];
   /** Free-text search haystack for a row. */
   searchText?: (row: T) => string;
-  analytics: (rows: T[], bundle: LocaleBundle) => ReportAnalytics;
+  analytics: (rows: T[], bundle: LocaleBundle, ctx: ReportContext) => ReportAnalytics;
   /** Dedicated single-dimension deep-dive pages, each with several graphs of its own. */
   breakdowns?: ReportBreakdownDef<T>[];
 }
