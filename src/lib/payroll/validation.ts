@@ -44,7 +44,35 @@ export const EXCEPTION_RULE_LABELS: Record<PayrollException["rule"], string> = {
   manual_missing_paye: "Manual figures without PAYE",
   rent_evidence_unverified: "Rent relief evidence unverified",
   input_held: "Deduction held for review",
+  joiner_not_in_payroll: "Joiner not paid",
+  joiner_still_onboarding: "Joiner still onboarding",
+  duplicate_employee: "Possible duplicate employee",
+  unusual_salary_increase: "Unusual salary increase",
+  deduction_change: "Unexplained deduction change",
+  avc_no_mandate: "Voluntary pension without a mandate",
 };
+
+/** A rise in recurring pay above this % month on month is flagged for review. */
+export const UNUSUAL_INCREASE_PCT = 20;
+
+/** Recurring salary pay on a computation (structure lines, before one-offs). */
+function recurringPay(c: PayComputation): number {
+  return c.lines.filter((l) => l.category === "earning" && l.source === "auto" && (l.group === "core" || l.group === "allowances") && l.amount > 0).reduce((s, l) => s + l.amount, 0);
+}
+
+/** Non-statutory deductions by code. */
+function otherDeductions(c: PayComputation): Map<string, { name: string; amount: number; source: string }> {
+  const m = new Map<string, { name: string; amount: number; source: string }>();
+  for (const l of c.lines) {
+    if (l.category !== "deduction" || l.statutory || l.code === "VOL_PENSION") continue;
+    const cur = m.get(l.code);
+    m.set(l.code, { name: l.name, amount: (cur?.amount ?? 0) + l.amount, source: l.source });
+  }
+  return m;
+}
+
+const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
+const normName = (n: string) => n.toLowerCase().replace(/[^a-z]/g, " ").split(/\s+/).filter(Boolean).sort().join(" ");
 
 const k = (n: number) => Math.round(n);
 
@@ -57,6 +85,8 @@ export function validateRun(args: {
   /** Each employee's payment details at their last finalized pay (bank-change check). */
   previousPayment?: Map<string, PaymentSnapshot>;
   settings: PayrollSettings;
+  /** Joiners check: exceptions for HR hires due pay this month but missing from the run (see onboarding-handover). */
+  joiners?: Omit<PayrollException, "acknowledged">[];
 }): PayrollException[] {
   const { run, employees, profiles, previous, settings } = args;
   const out: PayrollException[] = [];
@@ -150,8 +180,54 @@ export function validateRun(args: {
     if (re.mode === "manual" && re.manualStatutory === "as_uploaded" && !c.lines.some((l) => l.code === "PAYE") && c.tax.regime === "paye")
       push({ id: `mpaye:${id}`, rule: "manual_missing_paye", severity: "warning", employeeId: id, message: `${name}'s uploaded figures have no PAYE line.` });
 
+    // AVC is deducted only on the employee's written authority.
+    const avc = p?.avc;
+    if (avc?.value && !avc.mandate && c.lines.some((l) => l.code === "VOL_PENSION"))
+      push({ id: `avcm:${id}`, rule: "avc_no_mandate", severity: "warning", employeeId: id, message: `${name} has a voluntary pension deduction but no signed mandate on file. Record it on their tax & statutory profile.` });
+
     // Variance only makes sense regular-to-regular.
     const prev = regular ? previous.get(id) : undefined;
+
+    // Unusual salary increase: recurring pay up more than the threshold on last month.
+    if (prev && re.mode === "auto") {
+      const before = recurringPay(prev);
+      const now = recurringPay(c);
+      if (before > 0 && c.prorationFactor === 1 && prev.prorationFactor === 1) {
+        const pct = ((now - before) / before) * 100;
+        if (pct > UNUSUAL_INCREASE_PCT)
+          push({
+            id: `rise:${id}:${k(now)}`,
+            rule: "unusual_salary_increase",
+            severity: "warning",
+            employeeId: id,
+            message: `${name}'s recurring pay rose ${pct.toFixed(1)}% (${naira(before)} → ${naira(now)}). Check the salary change was approved and is meant to apply from this month.`,
+          });
+      }
+    }
+
+    // Deduction changes nobody keyed in this month: a recurring deduction appeared, stopped or changed amount.
+    if (prev) {
+      const was = otherDeductions(prev);
+      const is = otherDeductions(c);
+      const keyed = new Set(run.inputs.filter((i) => i.employeeId === id && (i.source === "manual" || i.source === "adjustment")).map((i) => i.code));
+      const changed: string[] = [];
+      for (const code of new Set([...was.keys(), ...is.keys()])) {
+        const a = was.get(code);
+        const b = is.get(code);
+        if (Math.abs((a?.amount ?? 0) - (b?.amount ?? 0)) < 1 || keyed.has(code)) continue;
+        // Loans start and finish on their own schedule — the loan record explains it.
+        if ((a?.source ?? b?.source) === "loan" || (a?.source ?? b?.source) === "expense") continue;
+        changed.push(`${(b ?? a)!.name} ${naira(a?.amount ?? 0)} → ${naira(b?.amount ?? 0)}`);
+      }
+      if (changed.length)
+        push({
+          id: `dedchg:${id}:${changed.join("|")}`,
+          rule: "deduction_change",
+          severity: "warning",
+          employeeId: id,
+          message: `${name}'s deductions changed with no input this month: ${changed.join("; ")}.`,
+        });
+    }
     if (prev && prev.net > 0) {
       const pct = ((c.net - prev.net) / prev.net) * 100;
       if (Math.abs(pct) > settings.varianceThresholdPct)
@@ -165,12 +241,37 @@ export function validateRun(args: {
     }
   }
 
+  // Possible duplicate employees: the same TIN, BVN or name on two records in the run.
+  const seen = new Map<string, string[]>();
+  for (const re of included) {
+    const p = profiles.get(re.employeeId);
+    const emp = employees.get(re.employeeId);
+    const keys = [p?.tin && `TIN ${p.tin}`, p?.bvn && `BVN ${p.bvn}`, emp?.fullName && `name ${normName(emp.fullName)}`].filter(Boolean) as string[];
+    for (const key of keys) seen.set(key, [...(seen.get(key) ?? []), re.employeeId]);
+  }
+  for (const [key, ids] of seen) {
+    const unique = [...new Set(ids)];
+    if (unique.length < 2) continue;
+    const names = unique.map((id) => employees.get(id)?.fullName ?? id).join(" and ");
+    const what = key.split(" ")[0];
+    for (const id of unique)
+      push({
+        id: `dupemp:${id}:${key}`,
+        rule: "duplicate_employee",
+        severity: what === "name" ? "warning" : "error",
+        employeeId: id,
+        message: `${names} share the same ${what === "name" ? "name" : what}. Confirm they are different people before paying both.`,
+      });
+  }
+
   for (const [key, ids] of accounts) {
     if (ids.length < 2) continue;
     const names = ids.map((id) => employees.get(id)?.fullName ?? id).join(", ");
     for (const id of ids)
       push({ id: `dup:${id}:${key}`, rule: "duplicate_bank_account", severity: "error", employeeId: id, message: `The same bank account is used by ${names}.` });
   }
+
+  for (const j of args.joiners ?? []) push(j);
 
   return out;
 }

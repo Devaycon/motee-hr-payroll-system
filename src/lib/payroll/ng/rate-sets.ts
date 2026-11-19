@@ -1,6 +1,7 @@
 import type {
   EmploymentTypeRule,
   GroupLifeSettings,
+  LeaveAllowancePolicy,
   NhfBasis,
   PayrollSettings,
   StatutoryRateSet,
@@ -104,7 +105,11 @@ export const NG_EMPLOYMENT_TYPE_RULES: Record<string, EmploymentTypeRule> = {
 export const DEFAULT_NHF_BASIS: NhfBasis = "gross";
 export const DEFAULT_GROUP_LIFE: GroupLifeSettings = { enabled: true, ratePct: 0.6, basis: "gross" };
 
+/** Matches what payroll did before the policy existed: 10% of annual basic in the anniversary month. */
+export const DEFAULT_LEAVE_ALLOWANCE: LeaveAllowancePolicy = { mode: "anniversary", month: 12, ratePct: 10, basis: "basic", prorateFirstYear: false };
+
 /** Settings saved before these fields existed fall back to the defaults. */
+export const leaveAllowanceOf = (s: PayrollSettings): LeaveAllowancePolicy => ({ ...DEFAULT_LEAVE_ALLOWANCE, ...s.leaveAllowance });
 export const nhfBasisOf = (s: PayrollSettings): NhfBasis => s.nhfBasis ?? DEFAULT_NHF_BASIS;
 export const groupLifeOf = (s: PayrollSettings): GroupLifeSettings => ({ ...DEFAULT_GROUP_LIFE, ...s.groupLife });
 

@@ -159,7 +159,7 @@ describe("statutory exports", () => {
 
   it("produces a balanced journal by cost centre", () => {
     const t = buildExport("journal", ctx);
-    const [, , status, dr, cr] = t.trailer![0];
+    const [, , , status, dr, cr] = t.trailer![0];
     expect(status).toBe("Balanced");
     expect(dr).toBeCloseTo(Number(cr), 2);
   });

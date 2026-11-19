@@ -101,7 +101,10 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   // Pay data is confidential: no line managers, no read-only role. Finance
   // and the executive sit on the approval chain; the auditor reads and exports.
   "time-payroll.payroll":            ["SUPER-ADMIN","HR-ADMIN","FINANCE","EXECUTIVE","AUDITOR"],
-  "time-payroll.payroll-settings":   ["SUPER-ADMIN","HR-ADMIN","AUDITOR"],
+  // Finance (the Payroll Reviewer) is the second approver for configuration
+  // changes - statutory rates and controlled pay elements - so it needs the
+  // settings too. A change is never approved by the person who made it.
+  "time-payroll.payroll-settings":   ["SUPER-ADMIN","HR-ADMIN","FINANCE","AUDITOR"],
   // Operations
   "operations.assets":               ["SUPER-ADMIN","HR-ADMIN","IT-ADMIN","AUDITOR","READ-ONLY"],
   "operations.documents":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],

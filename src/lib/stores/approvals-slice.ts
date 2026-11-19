@@ -22,6 +22,7 @@ import type {
 import { BUILTIN_CATEGORIES } from "@/src/lib/types/approvals";
 import { DEFAULT_APPROVAL_TEMPLATES } from "@/src/lib/permissions/approval-seeds";
 import { resolveStepWithOnLeave } from "@/src/lib/permissions/approver-resolution";
+import { SEGREGATED_DOCUMENT_TYPES } from "@/src/lib/approvals/config";
 import type { RootState } from "./store";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 
@@ -330,6 +331,8 @@ const approvalsSlice = createSlice({
       const req = state.requests.find((r) => r.id === requestId);
       if (!req || req.status !== "in_progress") return;
       if (req.excludedApproverIds?.includes(actorEmployeeId)) return;
+      // Segregation of duties: one person never approves two steps of the same run.
+      if (SEGREGATED_DOCUMENT_TYPES.has(req.documentType) && req.history.some((h) => h.type === "approved" && h.actorEmployeeId === actorEmployeeId)) return;
       const step = req.steps[req.currentStepIndex];
       if (!step) return;
       step.status = "approved";

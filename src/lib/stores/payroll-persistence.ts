@@ -38,18 +38,30 @@ export function initPayrollPersistence(): void {
 
   let last: PayrollState | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  const write = (snap: PayrollState) => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(redact(snap)));
+    } catch {
+      // quota — state stays in memory for the session
+    }
+  };
   store.subscribe(() => {
     const snap = store.getState().payroll;
     if (snap === last) return;
     last = snap;
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(redact(snap)));
-      } catch {
-        // quota — state stays in memory for the session
-      }
+      timer = null;
+      write(snap);
     }, WRITE_DEBOUNCE_MS);
+  });
+  // A reload or tab close inside the debounce window would otherwise lose the
+  // last change (e.g. an import followed straight away by a refresh).
+  window.addEventListener("pagehide", () => {
+    if (!timer || !last) return;
+    clearTimeout(timer);
+    timer = null;
+    write(last);
   });
 }
 

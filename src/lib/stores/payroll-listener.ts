@@ -33,6 +33,16 @@ payrollListener.startListening({
     const actorId = (action.payload as { actorEmployeeId?: string }).actorEmployeeId ?? "";
     const closedBad = req.status === "rejected" || req.status === "returned" || req.status === "cancelled";
 
+    // Bulk salary review: one request decides every change in the batch.
+    if (req.documentType === SALARY_CHANGE_DOCUMENT_TYPE && req.documentId.startsWith("SSB-")) {
+      if (req.status !== "approved" && !closedBad) return;
+      for (const [tenantId, t] of Object.entries(state.payroll.byTenant)) {
+        for (const s of t.structures.filter((x) => x.batchId === req.documentId && x.status === "pending"))
+          api.dispatch(decideSalaryStructure({ tenantId, actor: actorName, structureId: s.id, approved: req.status === "approved" }));
+      }
+      return;
+    }
+
     if (req.documentType === SALARY_CHANGE_DOCUMENT_TYPE && req.documentId.startsWith("SS-")) {
       if (req.status !== "approved" && !closedBad) return;
       for (const [tenantId, t] of Object.entries(state.payroll.byTenant)) {

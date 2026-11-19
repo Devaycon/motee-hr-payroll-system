@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
 import {
   ArrowRight,
@@ -11,12 +11,15 @@ import {
   ChevronDown,
   Eye,
   FileSpreadsheet,
+  FlaskConical,
+  GitCompareArrows,
   Landmark,
   MoreHorizontal,
   Plus,
   Settings2,
   ShieldCheck,
   Trash2,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -38,14 +41,15 @@ import { ApprovalChainTab } from "@/src/components/hr/approvals/components/appro
 import { APPROVAL_CHAIN_TAB_ITEM, useHasApprovalChainTab } from "@/src/components/hr/approvals/use-chain-tab";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { PAYROLL_DOCUMENT_TYPE, PAYROLL_HREF, PAYROLL_MODULE, PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
-import { downloadFormH1, remittanceAmounts, remittanceCalendar } from "@/src/lib/payroll/exports";
+import { downloadFormH1 } from "@/src/lib/payroll/exports";
 import { companySnapshot } from "@/src/lib/payroll/run-builder";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
-import { nextPeriod, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { nextPeriod, openRegularRunBefore, useOnboardingHandover, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import type { PayrollRun } from "@/src/lib/payroll/types";
 import { cn } from "@/src/lib/utils";
+import { PayrollControlCentre } from "./control-centre";
+import { PayrollIntelligence } from "./intelligence";
+import { RemittanceCentre, useRemittanceReminders } from "./remittance-centre";
 import { NotSupported, PipelineStepper, RunStatusBadge, RunTypeBadge, compact, fmtDate, money } from "./components/shared";
 
 /**
@@ -59,16 +63,21 @@ export function PayrollPage() {
   const { data, loading, supported, bundle } = useTenantPayroll();
   const actions = usePayrollActions();
   const canCreate = useCan(PAYROLL_MODULE, "create");
+  // New hires from HR onboarding still to be set up in payroll.
+  const awaitingSetup = useOnboardingHandover({ enabled: canCreate }).queue.length;
   const canSettings = useCan(PAYROLL_SETTINGS_MODULE, "view");
   const hasChainTab = useHasApprovalChainTab(PAYROLL_DOCUMENT_TYPE);
-  const [tab, setTab] = useState("runs");
+  const search = useSearchParams();
+  const [tab, setTab] = useState(() => (["control", "runs", "intelligence", "remittances", "activity"].includes(search.get("tab") ?? "") ? search.get("tab")! : "control"));
+  useRemittanceReminders();
   const [now] = useState(() => Date.now());
 
   const runs = useMemo(
     () => [...(data?.runs ?? [])].sort((a, b) => b.period.year * 100 + b.period.month - (a.period.year * 100 + a.period.month) || b.createdAt.localeCompare(a.createdAt)),
     [data],
   );
-  const current = runs.find((r) => r.status !== "disbursed" && r.status !== "finalized") ?? null;
+  // The run in progress is the EARLIEST open month — months are paid and closed in order.
+  const current = [...runs].reverse().find((r) => r.status !== "disbursed" && r.status !== "finalized") ?? null;
   const lastPaid = runs.find((r) => r.status === "disbursed" || r.status === "finalized") ?? null;
   const year = current?.period.year ?? lastPaid?.period.year ?? new Date().getFullYear();
 
@@ -100,6 +109,7 @@ export function PayrollPage() {
       sub: upcoming ? `${upcoming.period.label} · net pay · ${upcoming.totals.employees} employees` : "No run in progress",
       icon: Banknote,
       tone: "violet",
+      link: upcoming ? `${PAYROLL_HREF}/${upcoming.id}/breakdown?view=net` : undefined,
     },
     {
       label: "Payroll Cost YTD",
@@ -107,6 +117,7 @@ export function PayrollPage() {
       sub: `Gross pay + employer pension, ${year}`,
       icon: Landmark,
       tone: "blue",
+      link: "?tab=intelligence",
     },
     {
       label: "On Payroll",
@@ -114,13 +125,17 @@ export function PayrollPage() {
       sub: lastPaid ? `Last paid ${fmtDate(lastPaid.disbursedAt ?? lastPaid.period.payDate)}` : "Employees in the current run",
       icon: Users,
       tone: "emerald",
+      link: upcoming ? `${PAYROLL_HREF}/${upcoming.id}/breakdown?view=gross` : undefined,
     },
     {
       label: "Next Pay Day",
       value: upcoming ? fmtDate(upcoming.period.payDate) : "—",
-      sub: daysToPay === null ? "Create the next run" : daysToPay > 0 ? `In ${daysToPay} day${daysToPay === 1 ? "" : "s"}` : daysToPay === 0 ? "Today" : `${-daysToPay} days overdue`,
+      sub:
+        (daysToPay === null ? "Create the next run" : daysToPay > 0 ? `In ${daysToPay} day${daysToPay === 1 ? "" : "s"}` : daysToPay === 0 ? "Today" : `${-daysToPay} days overdue`) +
+        (upcoming?.period.scheduledPayDate ? ` · moved from ${fmtDate(upcoming.period.scheduledPayDate)} (${upcoming.period.payDateNote ?? "non-working day"})` : ""),
       icon: CalendarClock,
       tone: "amber",
+      link: upcoming ? `${PAYROLL_HREF}/${upcoming.id}` : undefined,
     },
   ];
 
@@ -140,6 +155,10 @@ export function PayrollPage() {
     router.push(`${PAYROLL_HREF}/${run.id}`);
   }
 
+  const next = nextPeriod(data, data.settings.payDay);
+  const blocking = openRegularRunBefore(data, next);
+  const lastRegular = runs.find((r) => r.type === "regular" && r.status !== "draft") ?? null;
+
   const trend = runs.filter((r) => r.type === "regular").slice(0, 6).reverse();
   const trendMax = Math.max(1, ...trend.map((r) => r.totals.gross + r.totals.employerCost));
 
@@ -147,6 +166,16 @@ export function PayrollPage() {
     <Shell
       actions={
         <div className="flex items-center gap-2">
+          {lastRegular && (
+            <Button variant="outline" className="gap-2" asChild>
+              <Link href={`${PAYROLL_HREF}/compare?current=${lastRegular.id}`}><GitCompareArrows className="h-4 w-4" /> Compare months</Link>
+            </Button>
+          )}
+          {canCreate && (
+            <Button variant="outline" className="gap-2" asChild>
+              <Link href={`${PAYROLL_HREF}/simulate`}><FlaskConical className="h-4 w-4" /> Simulate</Link>
+            </Button>
+          )}
           <Button
             variant="outline"
             className="gap-2"
@@ -158,6 +187,18 @@ export function PayrollPage() {
           >
             <FileSpreadsheet className="h-4 w-4" /> Form H1 {year}
           </Button>
+          {canCreate && (
+            <Button variant="outline" className="gap-2" asChild>
+              <Link href={`${PAYROLL_HREF}/import`}>
+                <UserPlus className="h-4 w-4" /> Import starters
+                {awaitingSetup > 0 && (
+                  <span title={`${awaitingSetup} new hire${awaitingSetup === 1 ? "" : "s"} from onboarding awaiting payroll setup`} className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                    {awaitingSetup}
+                  </span>
+                )}
+              </Link>
+            </Button>
+          )}
           {canSettings && (
             <Button variant="outline" className="gap-2" asChild>
               <Link href={`${PAYROLL_HREF}/settings`}><Settings2 className="h-4 w-4" /> Settings</Link>
@@ -170,9 +211,11 @@ export function PayrollPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-72">
                 <DropdownMenuLabel className="text-xs">Create a payroll run</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => create("regular")} className="flex-col items-start gap-0.5">
-                  <span className="text-sm font-medium">Regular — {nextPeriod(data, data.settings.payDay).label}</span>
-                  <span className="text-[11px] text-muted-foreground">Everyone on payroll, auto-calculated</span>
+                <DropdownMenuItem disabled={!!blocking} onClick={() => create("regular")} className="flex-col items-start gap-0.5">
+                  <span className="text-sm font-medium">Regular — {next.label}</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {blocking ? `Finish ${blocking.period.label} first` : "Everyone on payroll, auto-calculated"}
+                  </span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => create("off_cycle")} className="flex-col items-start gap-0.5">
@@ -210,16 +253,22 @@ export function PayrollPage() {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
             {[
-              ["Gross pay", money(upcoming.totals.gross)],
-              ["Deductions", money(upcoming.totals.deductions)],
-              ["Net pay", money(upcoming.totals.net)],
-              ["PAYE", money(upcoming.totals.paye)],
-              ["Exceptions", `${upcoming.exceptions.filter((e) => e.severity === "error" && !e.acknowledged).length} errors · ${upcoming.exceptions.filter((e) => e.severity === "warning").length} warnings`],
-            ].map(([k, v]) => (
-              <div key={k} className="rounded-lg bg-[color-mix(in_oklab,var(--muted)_50%,var(--card))] px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{k}</p>
+              ["Gross pay", money(upcoming.totals.gross), "breakdown?view=gross"],
+              ["Deductions", money(upcoming.totals.deductions), "breakdown?view=deductions"],
+              ["Net pay", money(upcoming.totals.net), "breakdown?view=net"],
+              ["PAYE", money(upcoming.totals.paye), "breakdown?view=paye"],
+              ["Exceptions", `${upcoming.exceptions.filter((e) => e.severity === "error" && !e.acknowledged).length} errors · ${upcoming.exceptions.filter((e) => e.severity === "warning").length} warnings`, "?tab=exceptions"],
+            ].map(([k, v, to]) => (
+              <Link
+                key={k}
+                href={`${PAYROLL_HREF}/${upcoming.id}${to.startsWith("?") ? to : `/${to}`}`}
+                className="group rounded-lg bg-[color-mix(in_oklab,var(--muted)_50%,var(--card))] px-3 py-2 ring-primary/40 transition hover:bg-[color-mix(in_oklab,var(--primary)_8%,var(--card))] hover:ring-1 focus-visible:outline-none focus-visible:ring-2"
+              >
+                <p className="flex items-center justify-between text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {k} <ArrowRight className="h-3 w-3 opacity-0 transition group-hover:opacity-100" />
+                </p>
                 <p className="text-sm font-semibold tabular-nums">{v}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -228,12 +277,20 @@ export function PayrollPage() {
       <Tabs value={tab} onValueChange={setTab}>
         <PageTabsList
           tabs={[
+            { value: "control", label: "Control Centre" },
             { value: "runs", label: `Payroll Runs (${runs.length})` },
+            { value: "intelligence", label: "Payroll Intelligence" },
             { value: "remittances", label: "Statutory Remittances" },
             { value: "activity", label: "Activity Log" },
             ...(hasChainTab ? [APPROVAL_CHAIN_TAB_ITEM] : []),
           ]}
         />
+        <TabsContent value="control" className="mt-4">
+          <PayrollControlCentre current={current} runs={runs} />
+        </TabsContent>
+        <TabsContent value="intelligence" className="mt-4">
+          <PayrollIntelligence />
+        </TabsContent>
         <TabsContent value="runs" className="mt-4 flex flex-col gap-4">
           {trend.length > 1 && (
             <div className="rounded-xl border bg-card p-4">
@@ -259,7 +316,7 @@ export function PayrollPage() {
           <RunsTable runs={runs} />
         </TabsContent>
         <TabsContent value="remittances" className="mt-4">
-          <Remittances runs={runs} canEdit={canCreate} />
+          <RemittanceCentre />
         </TabsContent>
         <TabsContent value="activity" className="mt-4">
           <div className="overflow-hidden rounded-xl border bg-card">
@@ -328,7 +385,10 @@ function RunsTable({ runs }: { runs: PayrollRun[] }) {
         cell: ({ row }) => (
           <div>
             <p className="flex items-center gap-1.5 text-xs font-medium">{row.original.title} <RunTypeBadge type={row.original.type} /></p>
-            <p className="text-[10px] text-muted-foreground">Pay day {fmtDate(row.original.period.payDate)}</p>
+            <p className="text-[10px] text-muted-foreground" title={row.original.period.scheduledPayDate ? `Moved from ${fmtDate(row.original.period.scheduledPayDate)} (${row.original.period.payDateNote})` : undefined}>
+              Pay day {fmtDate(row.original.period.payDate)}
+              {row.original.period.scheduledPayDate && " · moved back"}
+            </p>
           </div>
         ),
       },
@@ -427,112 +487,5 @@ function RunsTable({ runs }: { runs: PayrollRun[] }) {
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-/** Every month with finalized pay: what's owed to each authority, when, and whether it's been paid. */
-function Remittances({ runs, canEdit }: { runs: PayrollRun[]; canEdit: boolean }) {
-  const { data } = useTenantPayroll();
-  const actions = usePayrollActions();
-  const [recording, setRecording] = useState<{ key: string; label: string } | null>(null);
-  const [ref, setRef] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [today] = useState(() => new Date().toISOString().slice(0, 10));
-  const locked = runs.filter((r) => r.status === "finalized" || r.status === "disbursed");
-  const months = new Map<string, PayrollRun[]>();
-  for (const r of locked) {
-    const k = `${r.period.year}-${String(r.period.month).padStart(2, "0")}`;
-    months.set(k, [...(months.get(k) ?? []), r]);
-  }
-  const sorted = [...months.entries()].sort((a, b) => b[0].localeCompare(a[0]));
-  if (!sorted.length) return <p className="rounded-xl border bg-card border-dashed p-8 text-center text-sm text-muted-foreground">Finalize a run to see what&apos;s due.</p>;
-  return (
-    <div className="flex flex-col gap-4">
-      {sorted.map(([key, monthRuns]) => {
-        const regular = monthRuns.find((r) => r.type === "regular") ?? monthRuns[0];
-        const amounts = remittanceAmounts(monthRuns);
-        const cal = remittanceCalendar(regular.period);
-        return (
-          <div key={key} className="overflow-hidden rounded-xl border bg-card">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold">{regular.period.label}</p>
-                <p className="text-xs text-muted-foreground">{monthRuns.length} finalized run{monthRuns.length === 1 ? "" : "s"} · {monthRuns.map((r) => r.title).join(", ")}</p>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-xs">
-                <thead className="bg-[color-mix(in_oklab,var(--muted)_40%,var(--card))] text-left text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-2 font-medium">Remittance</th>
-                    <th className="px-4 py-2 font-medium">Paid to</th>
-                    <th className="px-4 py-2 text-right font-medium">Amount</th>
-                    <th className="px-4 py-2 font-medium">Due</th>
-                    <th className="px-4 py-2 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cal.map((c) => {
-                    const rk = `${key}:${c.key}`;
-                    const done = data?.remittances?.[rk];
-                    const amount = amounts[c.key];
-                    const overdue = !done && c.due < today && amount > 0;
-                    return (
-                      <tr key={c.key} className="border-t">
-                        <td className="px-4 py-2.5">
-                          <p className="font-medium">{c.item}</p>
-                          <p className="text-[10px] text-muted-foreground">{c.basis}</p>
-                        </td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{c.to}</td>
-                        <td className="px-4 py-2.5 text-right tabular-nums">{money(amount)}</td>
-                        <td className={cn("px-4 py-2.5 tabular-nums", overdue && "font-medium text-rose-600")}>{fmtDate(c.due)}</td>
-                        <td className="px-4 py-2.5">
-                          {done ? (
-                            <span className="text-emerald-700">Paid {fmtDate(done.date)} · ref {done.reference}</span>
-                          ) : amount <= 0 ? (
-                            <span className="text-muted-foreground">Nothing due</span>
-                          ) : canEdit ? (
-                            <Button size="sm" variant={overdue ? "default" : "outline"} className="h-7 text-[11px]" onClick={() => { setRecording({ key: rk, label: `${c.item} — ${regular.period.label}` }); setRef(""); }}>
-                              {overdue ? "Overdue — record payment" : "Record payment"}
-                            </Button>
-                          ) : (
-                            <span className={overdue ? "text-rose-600" : "text-muted-foreground"}>{overdue ? "Overdue" : "Not yet paid"}</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-      })}
-      <Dialog open={!!recording} onOpenChange={(o) => !o && setRecording(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Record remittance</DialogTitle>
-            <DialogDescription>{recording?.label}. Keep the receipt or payment reference — auditors and the authority ask for it.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1"><Label htmlFor="remit-ref" className="text-xs">Payment reference</Label><Input id="remit-ref" value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. REMITA 2701-8834-1923" /></div>
-            <div className="space-y-1"><Label htmlFor="remit-date" className="text-xs">Date paid</Label><Input id="remit-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRecording(null)}>Cancel</Button>
-            <Button
-              disabled={ref.trim().length < 3 || !date}
-              onClick={() => {
-                actions.markRemitted(recording!.key, ref.trim(), date);
-                setRecording(null);
-                toast.success("Remittance recorded");
-              }}
-            >
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
   );
 }

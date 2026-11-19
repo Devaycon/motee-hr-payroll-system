@@ -80,6 +80,12 @@ export interface EmployeeRow {
   taxId?: string;
   pensionId?: string;
   nhfNumber?: string;
+  /** Payroll hand-over details collected at onboarding (NG). */
+  pfaName?: string;
+  bvn?: string;
+  bankCode?: string;
+  /** Monthly basic / housing / transport, when onboarding captured the split. */
+  payBreakdown?: { basic?: number; housing?: number; transport?: number };
 }
 
 export interface NewEmployee {

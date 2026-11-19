@@ -66,7 +66,37 @@ export interface PayElement {
   /** Added by the tenant rather than seeded. */
   custom?: boolean;
   description?: string;
+  /**
+   * Tax treatment. Absent = derived from `taxable`. `conditional` = exempt up
+   * to `taxExemptMonthlyCap` a month, taxable above it.
+   */
+  taxTreatment?: TaxTreatment;
+  taxExemptMonthlyCap?: number;
+  /** ISO date the element can first be paid. Earlier periods ignore it. */
+  effectiveFrom?: string;
+  /** General-ledger account the payroll journal posts it to. */
+  glCode?: string;
+  /** Who can create or change it: any payroll settings admin, or a second person must approve. */
+  approval?: ElementApproval;
+  /**
+   * Earlier versions of the rules, newest first. A period before a version's
+   * `effectiveTo` is calculated with that version, so changing an element
+   * never rewrites history (see `elementOn`).
+   */
+  history?: PayElementVersion[];
 }
+
+export type TaxTreatment = "taxable" | "exempt" | "conditional";
+export type ElementApproval = "settings_admin" | "two_person";
+
+/** The calculation rules of an element as they stood until `effectiveTo` (exclusive). */
+export interface PayElementVersion {
+  effectiveTo: string;
+  rules: Pick<PayElement, "name" | "calculationType" | "taxable" | "pensionable" | "recurring" | "proratable" | "active" | "taxTreatment" | "taxExemptMonthlyCap" | "glCode">;
+}
+
+/** Element fields that change how pay is calculated or posted (versioned). */
+export const ELEMENT_RULE_KEYS = ["name", "calculationType", "taxable", "pensionable", "recurring", "proratable", "active", "taxTreatment", "taxExemptMonthlyCap", "glCode"] as const;
 
 // ── Salary structure (versioned) ────────────────────────────────────────────
 
@@ -89,6 +119,30 @@ export interface SalaryStructure {
   approvedAt: string;
   /** Salary changes wait for approval; payroll only uses approved versions (absent = approved). */
   status?: "pending" | "approved" | "rejected";
+  /** Who proposed it and when. */
+  proposedBy?: string;
+  proposedAt?: string;
+  /** Supporting evidence (promotion letter, review sheet). */
+  evidence?: { fileName: string; uploadedAt: string } | null;
+  /** Monthly figures before and after, calculated when it was proposed. */
+  impact?: SalaryImpact;
+  /** Set when it came from a bulk salary review. */
+  batchId?: string;
+}
+
+/** One side of a salary change's monthly financial impact. */
+export interface PayFigures {
+  gross: number;
+  paye: number;
+  pension: number;
+  nhf: number;
+  net: number;
+  employerCost: number;
+}
+
+export interface SalaryImpact {
+  before: PayFigures;
+  after: PayFigures;
 }
 
 // ── Employee tax & statutory profile ────────────────────────────────────────
@@ -119,6 +173,31 @@ export interface EmployeeTaxProfile {
   accountNumber: string;
   accountName: string;
   bvn: string;
+  /**
+   * Additional voluntary pension contribution (AVC) to the employee's RSA,
+   * deducted from pay every month and remitted to the PFA with the mandatory
+   * contribution. Tax-relieved. Absent or value 0 = none.
+   */
+  avc?: VoluntaryPension | null;
+  /**
+   * Tax year in which leave allowance was already paid outside MOTEE (the
+   * previous payroll), so MOTEE doesn't pay it again that year.
+   */
+  leaveAllowancePaidYear?: number;
+}
+
+export interface VoluntaryPension {
+  /** `fixed`: ₦ a month. `percent`: % of pensionable pay. */
+  mode: "fixed" | "percent";
+  value: number;
+  /** ISO date the deduction starts / stops (inclusive). */
+  startDate?: string;
+  endDate?: string;
+  /**
+   * The employee's signed instruction. Payroll deducts an AVC only on the
+   * employee's authority, so the mandate is recorded with it.
+   */
+  mandate?: { reference: string; signedOn: string; fileName?: string } | null;
 }
 
 // ── Statutory rate set (versioned, effective-dated) ─────────────────────────
@@ -192,6 +271,24 @@ export interface GroupLifeSettings {
   basis: "gross" | "bht";
 }
 
+/**
+ * When and how much leave allowance is paid. Nigerian employers differ: many
+ * pay 10% of annual basic in the employee's anniversary month, others pay
+ * everyone in one month (often December), some fold it into monthly pay.
+ */
+export interface LeaveAllowancePolicy {
+  /** `anniversary`: the month the employee joined. `month`: one month for everyone. `none`: not paid through payroll. */
+  mode: "anniversary" | "month" | "none";
+  /** 1–12, for `month`. */
+  month: number;
+  /** % of the annual basis. */
+  ratePct: number;
+  /** Annual basic, basic + housing + transport, or gross. */
+  basis: "basic" | "bht" | "gross";
+  /** `month` mode: staff who joined this year get months employed ÷ 12 of it. */
+  prorateFirstYear: boolean;
+}
+
 export interface PayrollSettings {
   taxMethod: TaxMethod;
   prorationBasis: ProrationBasis;
@@ -212,6 +309,10 @@ export interface PayrollSettings {
    * Optional for the same reason as `nhfBasis` (see `groupLifeOf`).
    */
   groupLife?: GroupLifeSettings;
+  /** Leave allowance policy. Optional so saved settings fall back to the default (see `leaveAllowanceOf`). */
+  leaveAllowance?: LeaveAllowancePolicy;
+  /** Voluntary pension (AVC) relieved from PAYE. Optional; absent = relieved. */
+  avcTaxRelieved?: boolean;
   /** ITF applies to employers with 5+ staff or ≥ ₦50m turnover. */
   itfApplicable: boolean;
   deductLoansViaPayroll: boolean;
@@ -241,6 +342,60 @@ export interface PayrollSettings {
   };
   /** Enabled element groups — a services company switches manufacturing off. */
   enabledGroups: PayElementGroup[];
+  /** Approved payroll budget (gross + employer cost) per month, for forecast vs budget. Optional. */
+  budget?: PayrollBudget;
+  /** Days before a remittance deadline that payroll and finance users are reminded. Optional (default 5). */
+  remittanceReminderDays?: number;
+}
+
+export interface PayrollBudget {
+  /** Monthly budget used for any month not listed in `months`. */
+  monthly: number;
+  /** "YYYY-MM" → budget for that month. */
+  months: Record<string, number>;
+}
+
+// ── Configuration change control ────────────────────────────────────────────
+
+export type ConfigArea = "settings" | "element" | "rate_set";
+
+export interface ConfigFieldChange {
+  field: string;
+  before: string;
+  after: string;
+}
+
+/**
+ * One change to how payroll is calculated: who, what (field by field), when,
+ * from which date it applies and who approved it. Changes that need a second
+ * person wait as `pending` and only take effect once approved.
+ */
+export interface ConfigChange {
+  id: string;
+  area: ConfigArea;
+  /** Element code, rate set id, or "settings". */
+  target: string;
+  summary: string;
+  changes: ConfigFieldChange[];
+  effectiveFrom: string;
+  requestedBy: string;
+  requestedById?: string;
+  requestedAt: string;
+  status: "pending" | "applied" | "rejected";
+  approvedBy?: string;
+  approvedAt?: string;
+  /** Why it was approved without a second person (a settings admin change), or the reviewer's note. */
+  approvalNote?: string;
+  /** What to apply when a pending change is approved. */
+  payload?: { element?: PayElement; rateSet?: StatutoryRateSet; settings?: Partial<PayrollSettings> };
+}
+
+/** Settings as they stood from `effectiveFrom` — the calculation of a period uses the version in force on its end date. */
+export interface SettingsVersion {
+  effectiveFrom: string;
+  settings: PayrollSettings;
+  changedBy: string;
+  changedAt: string;
 }
 
 // ── Period inputs ───────────────────────────────────────────────────────────
@@ -398,7 +553,12 @@ export interface PayPeriod {
   label: string;
   start: string;
   end: string;
+  /** The working day salaries are paid. */
   payDate: string;
+  /** The nominal pay day from settings, when it fell on a non-working day and payDate moved back. */
+  scheduledPayDate?: string;
+  /** Why the pay day moved ("Sunday", "Christmas Day"). */
+  payDateNote?: string;
 }
 
 export type EmployeeMode = "auto" | "manual";
@@ -469,7 +629,13 @@ export type ExceptionRule =
   | "missing_bank_code"
   | "bank_changed"
   | "deductions_over_limit"
-  | "input_held";
+  | "input_held"
+  | "joiner_not_in_payroll"
+  | "joiner_still_onboarding"
+  | "duplicate_employee"
+  | "unusual_salary_increase"
+  | "deduction_change"
+  | "avc_no_mandate";
 
 export interface RunActor {
   employeeId: string;
@@ -524,6 +690,37 @@ export interface PayrollRun {
    */
   stale?: { reason: string; at: string };
   notes?: string;
+  /** Bank payment of the net pay: authorisation, submission and settlement. */
+  payment?: PaymentBatch;
+}
+
+export type PaymentBatchStatus = "awaiting_authorisation" | "authorised" | "submitted" | "settled";
+
+export interface PaymentResult {
+  status: "paid" | "rejected";
+  reason?: string;
+  /** Paid again after a rejection — the off-cycle run or note that settled it. */
+  resolvedBy?: string;
+}
+
+/**
+ * The net-pay payment batch. Releasing money is its own control: a Finance /
+ * Payment Authoriser who neither prepared nor approved the run authorises it,
+ * then the bank's settlement is reconciled employee by employee.
+ */
+export interface PaymentBatch {
+  status: PaymentBatchStatus;
+  amount: number;
+  count: number;
+  authorisedBy?: RunActor;
+  authorisedAt?: string;
+  submittedAt?: string;
+  bankReference?: string;
+  /** employeeId → settlement outcome. Absent = not yet confirmed by the bank. */
+  results: Record<string, PaymentResult>;
+  settledAmount?: number;
+  reconciledAt?: string;
+  reconciledBy?: string;
 }
 
 export function inputSourceOf(run: Pick<PayrollRun, "employees">): "auto" | "manual" | "mixed" {

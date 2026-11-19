@@ -14,6 +14,8 @@ export function isCurrentApprover(
   // Segregation of duties — never approve your own payroll run.
   if (SEGREGATED_DOCUMENT_TYPES.has(req.documentType) && req.submittedBy.employeeId === userEmployeeId) return false;
   if (userEmployeeId && req.excludedApproverIds?.includes(userEmployeeId)) return false;
+  // …and one person never signs two steps of the same run (reviewer ≠ approver).
+  if (SEGREGATED_DOCUMENT_TYPES.has(req.documentType) && hasApprovedEarlierStep(req, userEmployeeId)) return false;
   const step = req.steps[req.currentStepIndex];
   if (!step) return false;
   return canActOnStep(
@@ -24,9 +26,14 @@ export function isCurrentApprover(
   );
 }
 
+/** Has this person already approved a step of the request? */
+export function hasApprovedEarlierStep(req: Pick<ApprovalRequest, "history">, userEmployeeId: string | undefined): boolean {
+  return !!userEmployeeId && req.history.some((h) => h.type === "approved" && h.actorEmployeeId === userEmployeeId);
+}
+
 /** Requests that carry pay figures (payroll runs, salary changes). */
 export function isPayConfidential(req: ApprovalRequest): boolean {
-  return req.documentType === "payroll_run" || (req.documentType === "promotion_request" && req.documentId.startsWith("SS-"));
+  return req.documentType === "payroll_run" || (req.documentType === "promotion_request" && (req.documentId.startsWith("SS-") || req.documentId.startsWith("SSB-")));
 }
 
 export function isSubmitter(

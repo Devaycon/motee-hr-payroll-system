@@ -52,6 +52,14 @@ import {
   MandatoryTrainingTile,
   LoansTile,
 } from "./compliance-tiles";
+import {
+  PayrollKpiRow,
+  PayrollCostTrendCard,
+  PayrollByDepartmentCard,
+  DeductionMixCard,
+  RemittancesDueCard,
+  CurrentRunCard,
+} from "./payroll-tiles";
 
 /**
  * Column span out of 12, matching the widths the mockup's rows were built
@@ -271,6 +279,38 @@ export function EngagementTabLayout() {
       </Cell>
       <Cell span={12}>
         <EngagementTrendCard />
+      </Cell>
+    </Grid>
+  );
+}
+
+/**
+ * Payroll (Nigeria tenants) — last paid month against the one before, cost
+ * over the year and by department, the deduction mix, remittances still owed
+ * and the month in progress.
+ */
+export function PayrollTabLayout() {
+  return (
+    <Grid>
+      <Cell span={12}>
+        <PayrollKpiRow />
+      </Cell>
+
+      <Cell span={8}>
+        <PayrollCostTrendCard />
+      </Cell>
+      <Cell span={4}>
+        <PayrollByDepartmentCard />
+      </Cell>
+
+      <Cell span={4}>
+        <CurrentRunCard />
+      </Cell>
+      <Cell span={4}>
+        <DeductionMixCard />
+      </Cell>
+      <Cell span={4}>
+        <RemittancesDueCard />
       </Cell>
     </Grid>
   );

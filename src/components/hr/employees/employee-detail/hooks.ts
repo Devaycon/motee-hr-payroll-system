@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useCan } from "@/src/lib/permissions/use-can";
-import { useEmployeePayslipList } from "@/src/lib/payroll/use-payroll";
+import { selectPayrollImportedStaff, useEmployeePayslipList } from "@/src/lib/payroll/use-payroll";
 import { PAYROLL_MODULE, essPayslipHref, hrPayslipHref } from "@/src/lib/payroll/constants";
 // The detail page is about one named person, so it must resolve even when the
 // navbar is scoped to a different branch — every read here is unscoped.
@@ -263,13 +263,16 @@ export function useEmployeeRecord(id: string) {
     if (!employee) return null;
     return { employee, tenant: b.tenant };
   });
-  const data = useMemo<EmployeeRecordResult | null>(
-    () =>
-      res.data
-        ? { employee: applyEmployeeOverrides(res.data.employee, ov), tenant: res.data.tenant }
-        : null,
-    [res.data, ov],
-  );
+  // Someone brought onto payroll by the new-starter import has no HR bundle
+  // record yet; their profile is the one the import created.
+  const canPayroll = useCan(PAYROLL_MODULE, "view");
+  const imported = useAppSelector((s) => (canPayroll ? selectPayrollImportedStaff(s)?.find((e) => e.id === id) : undefined));
+  const tenant = useAppSelector((s) => s.locale.data?.tenant);
+  const data = useMemo<EmployeeRecordResult | null>(() => {
+    if (res.data) return { employee: applyEmployeeOverrides(res.data.employee, ov), tenant: res.data.tenant };
+    if (imported && tenant) return { employee: applyEmployeeOverrides(imported, ov), tenant } as EmployeeRecordResult;
+    return null;
+  }, [res.data, ov, imported, tenant]);
   return { ...res, data };
 }
 

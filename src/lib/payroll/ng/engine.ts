@@ -16,6 +16,7 @@ import type {
   TaxRelief,
   YtdTotals,
 } from "../types";
+import { nonWorkingReason, previousWorkingDay } from "./calendar";
 import { bandLabel, groupLifeOf, nhfBasisOf, ruleFor } from "./rate-sets";
 
 /**
@@ -118,13 +119,17 @@ export function makePeriod(year: number, month: number, payDay = 25): PayPeriod 
   const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const end = `${year}-${String(month).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
   const day = Math.min(payDay, last);
-  const payDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const scheduled = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  // A pay day on a weekend or public holiday moves back to the working day before it.
+  const payDate = previousWorkingDay(scheduled);
   const label = new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString("en-GB", {
     month: "long",
     year: "numeric",
     timeZone: "UTC",
   });
-  return { year, month, label, start, end, payDate };
+  return payDate === scheduled
+    ? { year, month, label, start, end, payDate }
+    : { year, month, label, start, end, payDate, scheduledPayDate: scheduled, payDateNote: nonWorkingReason(scheduled) ?? undefined };
 }
 
 /** Share of the period the person was employed for (1 = whole period). */
@@ -362,7 +367,14 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
   const payrollGross = round2(gross - reimbursements);
   const lossOfOffice = earnings.filter((l) => LOSS_OF_OFFICE_CODES.has(l.code)).reduce((s, l) => s + l.amount, 0);
   const lossOfOfficeExempt = round2(Math.max(0, Math.min(lossOfOffice, rateSet.lossOfOfficeExemption - ytdBefore.lossOfOfficeExempt)));
-  const taxableGross = round2(Math.max(0, earnings.filter((l) => l.taxable).reduce((s, l) => s + l.amount, 0) - lossOfOfficeExempt));
+  // Conditionally exempt elements: the first `taxExemptMonthlyCap` a month is tax-free, the rest taxable.
+  const conditionalByCode = new Map<string, number>();
+  for (const l of earnings) {
+    const el = elements.get(l.code);
+    if (el?.taxTreatment === "conditional" && l.taxable) conditionalByCode.set(l.code, (conditionalByCode.get(l.code) ?? 0) + l.amount);
+  }
+  const conditionalExempt = [...conditionalByCode].reduce((s, [code, total]) => s + Math.min(Math.max(0, total), elements.get(code)?.taxExemptMonthlyCap ?? 0), 0);
+  const taxableGross = round2(Math.max(0, earnings.filter((l) => l.taxable).reduce((s, l) => s + l.amount, 0) - lossOfOfficeExempt - conditionalExempt));
 
   // 4 · Statutory bases
   const sumBy = (pred: (l: PayslipLine) => boolean) => earnings.filter(pred).reduce((s, l) => s + l.amount, 0);
@@ -431,6 +443,28 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
     }
   }
 
+  // Voluntary pension (AVC) from the employee's profile, monthly runs only — unless the period
+  // already carries one as an input or upload, which takes its place.
+  const avc = profile?.avc;
+  if (
+    regular &&
+    rule.regime !== "wht" &&
+    rule.pension &&
+    avc &&
+    avc.value > 0 &&
+    (!avc.startDate || avc.startDate <= period.end) &&
+    (!avc.endDate || avc.endDate >= period.start) &&
+    !lines.some((l) => l.code === "VOL_PENSION")
+  ) {
+    const amount = avc.mode === "percent" ? round2((pensionable * avc.value) / 100) : round2(avc.value);
+    if (amount > 0)
+      lines.push(
+        lineFor(elements.get("VOL_PENSION"), "VOL_PENSION", amount, {
+          note: avc.mode === "percent" ? `${avc.value}% of ${fmt(pensionable)} pensionable pay` : "Fixed monthly contribution",
+        }),
+      );
+  }
+
   if (rule.regime === "wht") {
     const wht = asUploaded ? uploaded("WHT") : round2(payrollGross * rateSet.whtRate);
     if (wht && !asUploaded) statutory.push(lineFor(elements.get("WHT"), "WHT", wht, { note: `${rateSet.whtRate * 100}% of gross` }));
@@ -440,7 +474,8 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
     if (pensionEe) addRelief(RELIEF.pension, pensionEe, pensionEe * 12);
     if (nhf) addRelief(RELIEF.nhf, nhf, nhf * 12);
     if (nhisEe) addRelief(RELIEF.nhis, nhisEe, nhisEe * 12);
-    if (volPension) addRelief(RELIEF.vol, volPension, volPension * 12);
+    // AVC is relieved from PAYE unless the tenant's adviser says otherwise (Payroll Settings).
+    if (volPension && settings.avcTaxRelieved !== false) addRelief(RELIEF.vol, volPension, volPension * 12);
 
     // Annual reliefs, given cumulatively: entitled to annual × month/12 by now.
     const annualReliefs: [string, number][] = [

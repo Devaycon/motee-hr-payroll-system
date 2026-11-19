@@ -2,7 +2,7 @@
 
 import { TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { cn } from "@/src/lib/utils";
-import { DASHBOARD_TABS } from "../widgets";
+import { useDashboardTabs } from "../use-dashboard-tabs";
 
 /**
  * The dashboard's own tab bar: equal segments filling the width, in a single
@@ -47,9 +47,10 @@ const SEGMENT = [
 ].join(" ");
 
 export function DashboardTabsList() {
+  const tabs = useDashboardTabs();
   return (
     <TabsList className={STRIP}>
-      {DASHBOARD_TABS.map((tab, i) => (
+      {tabs.map((tab, i) => (
         <TabsTrigger
           key={tab.key}
           value={tab.key}
@@ -59,7 +60,7 @@ export function DashboardTabsList() {
             // strip reads as a single control.
             i > 0 && "border-l border-border",
             i === 0 && "rounded-l-xl",
-            i === DASHBOARD_TABS.length - 1 && "rounded-r-xl",
+            i === tabs.length - 1 && "rounded-r-xl",
           )}
         >
           {/* Sits left of the label; takes the trigger's text colour, so it

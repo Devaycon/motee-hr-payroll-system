@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useCan } from "@/src/lib/permissions/use-can";
+import { PAYROLL_MODULE } from "@/src/lib/payroll/constants";
 import { applyBundleOverrides } from "@/src/lib/profile/overrides";
 import { onboardingRecordToPendingEmployee } from "@/src/lib/demo/pending-employees";
 import {
@@ -153,6 +155,14 @@ export function useEmployees() {
   const deleted = useAppSelector((s) => s.employees.deleted);
   const onboardingRecords = useAppSelector((s) => s.onboardingRecords.records);
   const cleared = useAppSelector((s) => s.onboardingRecords.cleared);
+  // Staff brought onto payroll by the new-starter import are real employees:
+  // the directory shows them too, so both modules agree on headcount.
+  const importedRaw = useAppSelector((s) => {
+    const t = s.locale.data?.tenant.id;
+    return t ? s.payroll.byTenant[t]?.imports : undefined;
+  });
+  // Payroll is company-wide, so only people who can see payroll see its imported staff here.
+  const canPayroll = useCan(PAYROLL_MODULE, "view");
   // Reading through the hook also seeds the offboarding slice, so the
   // "Offboarding Notice" tab works without visiting /talent/offboarding first.
   const { data: offboarding } = useOffboardingRecords();
@@ -173,8 +183,22 @@ export function useEmployees() {
       return status === row.status ? row : { ...row, status };
     };
 
+    // Payroll-imported staff, minus anyone the directory already has (an
+    // onboarding hire set up in payroll keeps the onboarding record's id).
+    const known = new Set([
+      ...bundle.employees.map((e) => e.id),
+      ...cleared.map((c) => c.id),
+      ...onboardingRecords.map((r) => `emp-${r.id}`),
+    ]);
+    const imported = canPayroll
+      ? (importedRaw ?? []).flatMap((b) => b.employees).filter((e) => !known.has(e.id))
+      : [];
+
     const fromBundle = buildEmployees(
-      applyBundleOverrides(bundle, overrides),
+      applyBundleOverrides(
+        imported.length ? { ...bundle, employees: [...bundle.employees, ...imported] } : bundle,
+        overrides,
+      ),
     ).map(applyLifecycle);
 
     // Hires still working through an onboarding workflow.
@@ -191,6 +215,8 @@ export function useEmployees() {
     offboarding,
     onboardingRecords,
     cleared,
+    importedRaw,
+    canPayroll,
   ]);
 
   return { data, loading, error };

@@ -162,11 +162,16 @@ New statutory rate sets start on **1 January** of a tax year, so a year is never
 | Remittance | To | Due |
 |---|---|---|
 | Pension (employee + employer) | Each employee's PFA | Within 7 working days of paying salaries |
+| Voluntary pension (AVC) | Each employee's PFA | With the mandatory pension, within 7 working days |
 | PAYE | State IRS of the employee's residence | 10th of the following month |
 | NHF | Federal Mortgage Bank of Nigeria | Within one month |
 | NSITF | NSITF | Monthly |
 | ITF | ITF | 1 April, for the previous year |
 | Annual PAYE return (Form H1) | State IRS | 31 January |
+
+"Working days" exclude weekends and federal public holidays (`src/lib/payroll/ng/calendar.ts`).
+
+**Pay day.** Pay day is set in Payroll Settings (default 25th). If it falls on a weekend or public holiday, pay moves back to the **previous working day**. For example, Sunday 25 October 2026 becomes Friday 23 October, and Christmas Day 2026 becomes Thursday 24 December. The period keeps the scheduled day (`scheduledPayDate`) and the reason (`payDateNote`) so screens can say why the date moved. Months are paid and closed in order: a new regular run can't be created while an earlier month is still open. On the overview, "Next Pay Day" is the earliest open month.
 
 ---
 
@@ -350,6 +355,9 @@ One A4 page that prints in greyscale-safe colours, in the tenant's brand colour,
 | `/time-payroll/payroll/[runId]` | Same | Run workspace with tabs for Employees (Auto/Manual, include toggle), Exceptions (acknowledge with reason), Variance, Inputs (add/remove), Summary. Actions: Recalculate, Upload, Submit, Finalize, Mark paid, Adjustment run, Exports, All payslips, Delete draft (all confirmed). Off-cycle runs add: Add employees (incl. recent leavers), Pay date, **Final settlement** (accrued leave, notice pay, gratuity, loan recovery). |
 | `/time-payroll/payroll/[runId]/employees/[employeeId]` | Same | One employee in a draft run: structure, inputs, tax profile, live payslip preview |
 | `/time-payroll/payroll/[runId]/upload` | Payroll admin | Manual upload (§5.2) |
+| `/time-payroll/payroll/[runId]/breakdown?view=gross\|deductions\|net\|paye\|pension\|third-party` | Payroll staff | Drill-down behind the stat cards. **Net pay** shows each employee's name, ID, bank, account number, account name and net pay, grouped by bank. **Pension** shows PFA, RSA PIN, employee, employer and AVC. **Third-party** shows cooperative, union, loan and court-order deductions by payee. Search, group toggle and XLSX/CSV download are available |
+| `/time-payroll/payroll/compare?current=&previous=` | Payroll staff, Finance | Month-on-month comparison: the totals and each earning element side by side with variance and %. A gross-pay **bridge** explains the movement by reason (joiners, leavers, salary changes, part months, overtime, unpaid leave, one-off payments, expenses), and a per-employee table shows the reason chips. Every naira of the change is assigned to exactly one reason. Downloadable |
+| `/time-payroll/payroll/remittances/[YYYY-MM]/statement?item=&doc=statement\|receipt` | Payroll staff | Printable remittance **statement** (amount due, payee, due date, summary by payee, per-employee schedule) and, once the payment is recorded, the **remittance receipt** (reference, date, recorded by). Print / Save as PDF |
 | `/time-payroll/payroll/settings` | Payroll/HR admin (edit), Auditor (read) | General, Pay Elements, Salary Structures (versioned), Tax & Statutory Profiles, Statutory Rates, Payslip options |
 | `/organization/employees/[id]/payslips/[payslipId]` | Payroll staff, or the employee | Payslip page: Print / Save as PDF, copy verification link, revoke verification |
 | `/employee/payslips` | Every employee | My Payslips: YTD strip, tax-year filter, list with month-on-month change, pre-payday draft preview |
@@ -357,6 +365,8 @@ One A4 page that prints in greyscale-safe colours, in the tenant's brand colour,
 | `/time-payroll/payroll/[runId]/payslips` | Payroll staff | Every payslip in a run on one page; prints one per A4 page |
 | `/employee/tax-certificate/[year]`, `/organization/employees/[id]/tax-certificate/[year]` | The employee, payroll staff | Annual PAYE certificate: month by month, reliefs, totals; printable |
 | `/verify`, `/verify/payslip/[code]` | Public | Verification (§7.1) |
+
+**Stat cards are clickable.** On the overview, the Gross pay, Deductions, Net pay and PAYE tiles open the matching breakdown, and Exceptions opens the run's Exceptions tab. In the run workspace, the Gross, Deductions, PAYE, Net and Pension cards open breakdowns, and Exceptions jumps to its tab. **HR dashboard → Payroll tab** (Nigeria tenants, payroll viewers only) shows the last paid month's gross, net, PAYE and employer cost against the month before, a 12-month cost trend, cost by department, the deduction mix, remittances due or overdue, and the month in progress.
 
 The existing **Payslips** table on the employee profile is visually unchanged. For Nigerian tenants it now shows real payslips, and each row opens the payslip page. UK tenants see a "Nigeria first" notice on payroll screens.
 
@@ -373,7 +383,7 @@ Every schedule reads the bank and statutory IDs frozen on the run. Employer regi
 - **NIBSS bulk payment file:** batch header (payer, debit account and bank code, value date), control count and total, detail rows, trailer. Only from a finalized run. Anyone left out (net ≤ 0, no account, no bank code) is listed when you download it.
 - **Payroll journal by cost centre:** balanced debits (salaries, reimbursements, employer pension, NSITF, ITF) and credits (net pay, PAYE, pension, NHF, NSITF, ITF, loans, other deductions payable).
 - **Form H1:** the annual PAYE return per employee, grouped by State IRS, from the year's final payslips.
-- **Remittances tab:** every month with finalized pay, amounts summed across all its runs, due dates, overdue highlighting and **"Record payment"** (reference + date) for proof of remittance.
+- **Remittances tab:** every month with finalized pay, amounts summed across all its runs, due dates, overdue highlighting and **"Record payment"** (reference + date) for proof of remittance. Each line has **Download**: Statement (PDF), Schedule (XLSX) and Remittance receipt (after payment). Each month has **Download all**. Statements cover PAYE, pension, AVC, NHF, NSITF and ITF, and their totals match the tab.
 - **Format:** XLSX (NIBSS as CSV, every field quoted so account numbers keep leading zeros). Every export is written to the activity log.
 
 ---
@@ -486,6 +496,17 @@ Server rules:
 ## 15. Later (parked, unchanged from v1)
 
 Payroll Guardian (predictive risk), Statutory Remittance Tracker (proof of payment per remittance), Payroll Leakage Map, Payroll Investigator (AI Q&A), and the "Payroll Intelligence" bundle. All need several months of real, finalized payroll history first. UK payroll (PAYE codes, NI, auto-enrolment pension) is a second statutory module. The starter-tax logic in `lib/payroll/derive-starter-tax.ts` already exists for it.
+
+---
+
+## 15a. Voluntary pension contributions (AVC)
+
+Set per employee in Settings → Tax & Statutory Profiles as a fixed ₦ amount a month or a % of pensionable pay, with an optional start and end date (`EmployeeTaxProfile.avc`).
+- The engine adds the `VOL_PENSION` deduction on regular runs.
+- It is relieved from PAYE.
+- It is remitted to the PFA as its own line, alongside the mandatory 8%/10%.
+- An AVC entered as a run input or upload replaces the profile amount for that month.
+- An AVC on the HR record (a "Pension AVC" recurring deduction) is ignored once the payroll profile sets one, so it is never deducted twice.
 
 ---
 

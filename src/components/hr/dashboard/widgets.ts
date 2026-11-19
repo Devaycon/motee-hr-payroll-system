@@ -5,6 +5,7 @@ import {
   Flag,
   Heart,
   Stethoscope,
+  Wallet,
   Users,
 } from "lucide-react";
 
@@ -22,6 +23,11 @@ export const DASHBOARD_TABS = [
   { key: "events", label: "Events", icon: CalendarDays },
   { key: "resourcing", label: "Resourcing", icon: Briefcase },
   { key: "engagement", label: "Engagement", icon: Heart },
+  // Nigeria tenants only, and only for people who can see payroll — see `useDashboardTabs`.
+  { key: "payroll", label: "Payroll", icon: Wallet },
 ] as const;
 
 export type DashboardTabKey = (typeof DASHBOARD_TABS)[number]["key"];
+
+/** Tabs that only show for some tenants or roles. */
+export const RESTRICTED_TABS: readonly DashboardTabKey[] = ["payroll"];

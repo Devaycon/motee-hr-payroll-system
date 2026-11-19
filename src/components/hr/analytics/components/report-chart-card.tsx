@@ -7,7 +7,7 @@ import { ResponsiveLine } from "@nivo/line";
 import { ResponsiveRadar } from "@nivo/radar";
 import type { PartialTheme } from "@nivo/theming";
 import { ChartCard } from "@/src/components/shared/charts";
-import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
+import { currentCurrencySymbol, formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import type { ReportChartSpec } from "@/src/lib/reports/types";
 import { RingStat } from "./ring-stat";
 import { FunnelStat } from "./funnel-stat";
@@ -39,6 +39,21 @@ export function useNivoTheme(): PartialTheme {
 
 function fmt(v: number, money?: boolean): string {
   return money ? formatMoneyLocale(v) : v.toLocaleString();
+}
+
+/**
+ * Short form for axis ticks and in-chart labels, where a full "₦12,204,930.22"
+ * doesn't fit: ₦12.2m, ₦850k. Tooltips and legends keep the exact figure.
+ */
+function fmtShort(v: number, money?: boolean): string {
+  if (!money) return v.toLocaleString();
+  const sym = currentCurrencySymbol();
+  const a = Math.abs(v);
+  const sign = v < 0 ? "-" : "";
+  if (a >= 1_000_000_000) return `${sign}${sym}${(a / 1_000_000_000).toFixed(1)}bn`;
+  if (a >= 1_000_000) return `${sign}${sym}${(a / 1_000_000).toFixed(a >= 10_000_000 ? 1 : 2)}m`;
+  if (a >= 10_000) return `${sign}${sym}${(a / 1_000).toFixed(0)}k`;
+  return formatMoneyLocale(Math.round(v));
 }
 
 /**
@@ -122,14 +137,14 @@ export function ReportChartCard({
               enableGridX={horizontal}
               enableGridY={!horizontal}
               enableLabel
-              label={(d) => fmt(Number(d.value ?? 0), spec.money)}
+              label={(d) => fmtShort(Number(d.value ?? 0), spec.money)}
               labelPosition={horizontal ? "end" : "end"}
               labelOffset={horizontal ? -8 : -14}
               labelTextColor={horizontal ? theme.text?.fill : "#ffffff"}
-              axisLeft={horizontal ? { tickSize: 0, tickPadding: 8 } : { tickSize: 0, tickPadding: 6, format: (v) => fmt(Math.round(Number(v)), spec.money) }}
+              axisLeft={horizontal ? { tickSize: 0, tickPadding: 8 } : { tickSize: 0, tickPadding: 6, format: (v) => fmtShort(Math.round(Number(v)), spec.money) }}
               axisBottom={
                 horizontal
-                  ? { tickSize: 0, tickPadding: 6, format: (v) => fmt(Math.round(Number(v)), spec.money) }
+                  ? { tickSize: 0, tickPadding: 6, format: (v) => fmtShort(Math.round(Number(v)), spec.money) }
                   : {
                       tickSize: 0,
                       tickPadding: 8,
@@ -176,7 +191,7 @@ export function ReportChartCard({
               enableGridY
               enableGridX={false}
               enableLabel={false}
-              axisLeft={{ tickSize: 0, tickPadding: 6, format: (v) => fmt(Math.round(Number(v)), spec.money) }}
+              axisLeft={{ tickSize: 0, tickPadding: 6, format: (v) => fmtShort(Math.round(Number(v)), spec.money) }}
               axisBottom={{ tickSize: 0, tickPadding: 8, tickRotation: longLabels ? -35 : 0 }}
               // Nivo's own legend would show the raw series keys (e.g.
               // "involuntary") — the card's own details legend below already
@@ -211,6 +226,8 @@ export function ReportChartCard({
               colors={{ datum: "data.fill" }}
               theme={theme}
               enableArcLinkLabels={false}
+              // Share of the whole reads better inside a slice than a raw amount.
+              arcLabel={(d) => (total ? `${Math.round((d.value / total) * 100)}%` : "")}
               arcLabelsSkipAngle={18}
               arcLabelsTextColor={theme.labels?.text?.fill as string}
               tooltip={({ datum }) => (
@@ -275,7 +292,7 @@ export function ReportChartCard({
               enableGridY
               enableArea={spec.kind === "area"}
               areaOpacity={0.14}
-              axisLeft={{ tickSize: 0, tickPadding: 8, format: (v) => fmt(Math.round(Number(v)), spec.money) }}
+              axisLeft={{ tickSize: 0, tickPadding: 8, format: (v) => fmtShort(Math.round(Number(v)), spec.money) }}
               axisBottom={{
                 tickSize: 0,
                 tickPadding: 8,

@@ -84,7 +84,7 @@ function addMonthsUTC(iso: string, n: number): Date {
 export function repaymentSchedule(loan: LocaleLoan, today: Date = new Date()): Instalment[] {
   if (!loan.issuedAt || loan.status === "pending" || loan.status === "rejected") return [];
   const months = Math.max(1, loan.repaymentMonths);
-  const each = monthlyRepayment(loan.amount, months);
+  const each = loan.fixedInstalment && loan.fixedInstalment > 0 ? round2(loan.fixedInstalment) : monthlyRepayment(loan.amount, months);
   const todayIso = isoDate(today);
   const monthKey = todayIso.slice(0, 7);
   let paidBudget = loan.amountRepaid;

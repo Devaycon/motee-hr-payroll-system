@@ -21,6 +21,7 @@ import { reportGroupTheme } from "@/src/lib/reports/group-theme";
 import { AnalyticsBento } from "./components/analytics-bento";
 import { BreakdownNav } from "./components/breakdown-nav";
 import { GenderSplitLayout } from "./components/gender-split-layout";
+import { reportInCountry, useReportContext } from "@/src/lib/reports/use-report-context";
 
 function BackLink({ reportId, label }: { reportId: string; label: string }) {
   return (
@@ -46,6 +47,7 @@ export function ReportBreakdownPage({
   breakdownId: string;
 }) {
   const { data: bundle, loading } = useLocaleSection<LocaleBundle>((b) => b);
+  const { ctx, payrollLoading } = useReportContext();
   const accessLevelId = useAppSelector((s) => s.auth.user?.accessLevelId);
   const levels = useAppSelector((s) => s.accessLevels.levels);
 
@@ -56,8 +58,8 @@ export function ReportBreakdownPage({
   const [filters, setFilters] = useState<Record<string, string>>({});
 
   const allRows = useMemo(
-    () => (bundle && def ? def.select(bundle) : []),
-    [bundle, def],
+    () => (bundle && def ? def.select(bundle, ctx) : []),
+    [bundle, def, ctx],
   );
 
   const filteredRows = useMemo(() => {
@@ -75,8 +77,8 @@ export function ReportBreakdownPage({
   }, [def, allRows, search, filters]);
 
   const analytics = useMemo(
-    () => (breakdown && bundle ? breakdown.analytics(filteredRows, bundle) : null),
-    [breakdown, bundle, filteredRows],
+    () => (breakdown && bundle ? breakdown.analytics(filteredRows, bundle, ctx) : null),
+    [breakdown, bundle, filteredRows, ctx],
   );
 
   const canView = (mod: string) => {
@@ -86,7 +88,7 @@ export function ReportBreakdownPage({
     return !!level.permissions.find((p) => p.module === mod)?.access;
   };
 
-  if (!def || !breakdown || !canView(def.permission)) {
+  if (!def || !breakdown || !canView(def.permission) || !reportInCountry(def, ctx)) {
     return (
       <div className="flex flex-col gap-5">
         <BackLink reportId={reportId} label={def?.label ?? "Analytics"} />
@@ -110,7 +112,7 @@ export function ReportBreakdownPage({
     );
   }
 
-  if (loading || !bundle) {
+  if (loading || payrollLoading || !bundle) {
     return (
       <div className="flex flex-col gap-5">
         <BackLink reportId={reportId} label={def.label} />

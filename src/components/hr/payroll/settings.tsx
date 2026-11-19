@@ -33,10 +33,12 @@ import { ListPagination } from "@/src/components/shared/list-pagination";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { PAYROLL_HREF, PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
 import { ELEMENT_GROUP_LABELS, ELEMENT_GROUP_ORDER } from "@/src/lib/payroll/elements-seed";
-import { bandLabel, groupLifeOf, nhfBasisOf } from "@/src/lib/payroll/ng/rate-sets";
+import { bandLabel, groupLifeOf, leaveAllowanceOf, nhfBasisOf } from "@/src/lib/payroll/ng/rate-sets";
 import { round2 } from "@/src/lib/payroll/ng/engine";
 import { structureOn } from "@/src/lib/payroll/run-builder";
-import { useCurrentActor, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { calcLabel, diffElement, taxTreatmentOf } from "@/src/lib/payroll/config";
+import { earliestOpenRun, useCurrentActor, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { ApprovalFramework, ConfigHistory, SalaryProposal } from "./settings-extras";
 import type {
   EmployeeTaxProfile,
   InsightType,
@@ -56,6 +58,7 @@ export function PayrollSettingsPage() {
 
   if (!supported && bundle) return <NotSupported />;
   if (loading || !data || !bundle) return <Skeleton className="h-[600px] w-full rounded-xl" />;
+  const pendingChanges = (data.configChanges ?? []).filter((c) => c.status === "pending").length;
 
   return (
     <div className="flex flex-col gap-5">
@@ -65,7 +68,7 @@ export function PayrollSettingsPage() {
         </Link>
         <h1 className="mt-1 text-3xl font-semibold">Payroll Settings</h1>
         <p className="text-xs text-muted-foreground">
-          How pay is calculated. Changes apply to draft runs when they&apos;re recalculated — finalized runs keep the rules they were paid under.
+          How pay is calculated. Every change is effective-dated and recorded in Change History (who, what, when, from when, approved by) — finalized runs, and any re-run of an earlier month, keep the rules they were paid under.
           {!canEdit && " You have read-only access."}
         </p>
       </div>
@@ -78,6 +81,7 @@ export function PayrollSettingsPage() {
             { value: "profiles", label: "Tax & Statutory Profiles" },
             { value: "rates", label: "Statutory Rates" },
             { value: "payslip", label: "Payslip" },
+            { value: "history", label: `Change History${pendingChanges ? ` (${pendingChanges} pending)` : ""}` },
           ]}
         />
         <TabsContent value="general" className="mt-4"><General settings={data.settings} employmentTypes={bundle.employmentTypes} canEdit={canEdit} /></TabsContent>
@@ -86,6 +90,7 @@ export function PayrollSettingsPage() {
         <TabsContent value="profiles" className="mt-4"><Profiles canEdit={canEdit} focus={params.get("employee")} /></TabsContent>
         <TabsContent value="rates" className="mt-4"><Rates rateSets={data.rateSets} settings={data.settings} canEdit={canEdit} /></TabsContent>
         <TabsContent value="payslip" className="mt-4"><PayslipOptions settings={data.settings} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="history" className="mt-4"><ConfigHistory canEdit={canEdit} /></TabsContent>
       </Tabs>
     </div>
   );
@@ -122,15 +127,92 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
 
 const TYPES_PAGE_SIZE = 6;
 
+const MONTH_NAMES = Array.from({ length: 12 }, (_, i) => new Date(Date.UTC(2026, i, 1)).toLocaleString("en-GB", { month: "long", timeZone: "UTC" }));
+
+/** When and how much leave allowance payroll pays (once per tax year per employee). */
+function LeaveAllowanceCard({ settings, canEdit, onSave }: { settings: PayrollSettings; canEdit: boolean; onSave: (c: Partial<PayrollSettings>) => void }) {
+  const p = leaveAllowanceOf(settings);
+  const save = (c: Partial<typeof p>) => onSave({ leaveAllowance: { ...p, ...c } });
+  const basisLabel = p.basis === "basic" ? "annual basic" : p.basis === "bht" ? "annual basic + housing + transport" : "annual gross";
+  return (
+    <Card
+      title="Leave allowance"
+      description={
+        p.mode === "none"
+          ? "Not paid through payroll."
+          : `${p.ratePct}% of ${basisLabel}, paid ${p.mode === "anniversary" ? "in each employee's anniversary month (from the first anniversary)" : `to everyone in ${MONTH_NAMES[p.month - 1]}`}. Never twice in a tax year.`
+      }
+    >
+      <Row label="When it's paid" hint="Anniversary: the month the employee joined. One month: everyone together, e.g. December.">
+        <Select value={p.mode} onValueChange={(v) => save({ mode: v as typeof p.mode })} disabled={!canEdit}>
+          <SelectTrigger className="h-8 w-44 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="anniversary">Anniversary month</SelectItem>
+            <SelectItem value="month">One month for everyone</SelectItem>
+            <SelectItem value="none">Not through payroll</SelectItem>
+          </SelectContent>
+        </Select>
+      </Row>
+      {p.mode !== "none" && (
+        <>
+          {p.mode === "month" && (
+            <>
+              <Row label="Month">
+                <Select value={String(p.month)} onValueChange={(v) => save({ month: Number(v) })} disabled={!canEdit}>
+                  <SelectTrigger className="h-8 w-44 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MONTH_NAMES.map((m, i) => (
+                      <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Row>
+              <Row label="Pro-rate in the joining year" hint="Someone who joined in October gets 3/12 of it that December.">
+                <Switch checked={p.prorateFirstYear} disabled={!canEdit} onCheckedChange={(v) => save({ prorateFirstYear: v })} />
+              </Row>
+            </>
+          )}
+          <Row label="Rate" hint="Percentage of the annual amount below.">
+            <div className="flex items-center gap-1"><NumberSetting value={p.ratePct} className="w-20" disabled={!canEdit} clamp={[0, 100]} onCommit={(v) => save({ ratePct: v })} /><span className="text-xs">%</span></div>
+          </Row>
+          <Row label="Based on">
+            <Select value={p.basis} onValueChange={(v) => save({ basis: v as typeof p.basis })} disabled={!canEdit}>
+              <SelectTrigger className="h-8 w-44 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="basic">Annual basic</SelectItem>
+                <SelectItem value="bht">Basic + housing + transport</SelectItem>
+                <SelectItem value="gross">Annual gross</SelectItem>
+              </SelectContent>
+            </Select>
+          </Row>
+        </>
+      )}
+    </Card>
+  );
+}
+
 function General({ settings, employmentTypes, canEdit }: { settings: PayrollSettings; employmentTypes: { id: string; name: string }[]; canEdit: boolean }) {
   const actions = usePayrollActions();
-  const set = (c: Partial<PayrollSettings>) => { actions.updateSettings(c); toast.success("Saved"); };
+  const { data } = useTenantPayroll();
+  const openFrom = data ? earliestOpenRun(data)?.period.start : undefined;
+  const [effectiveFrom, setEffectiveFrom] = useState<string>("");
+  const set = (c: Partial<PayrollSettings>) => {
+    const from = effectiveFrom || openFrom;
+    actions.updateSettings(c, { effectiveFrom: from });
+    toast.success("Saved", { description: from ? `Calculation changes apply to pay periods from ${from}.` : undefined });
+  };
   const [page, setTypePage] = useState(1);
   const typePages = Math.max(1, Math.ceil(employmentTypes.length / TYPES_PAGE_SIZE));
   const typePage = Math.min(page, typePages);
   const typeStart = (typePage - 1) * TYPES_PAGE_SIZE;
   return (
     <div className="grid gap-5 xl:grid-cols-2">
+      <Card title="Effective date of changes" description="Calculation settings are versioned. Periods before this date keep the settings they had; the change is logged in Change History.">
+        <Row label="Changes below apply from" hint={openFrom ? `Default: the first open pay period (${openFrom}). Pick a later date to schedule a change, e.g. 1 January.` : "Default: today."}>
+          <Input type="date" className="h-8 w-44 text-xs" disabled={!canEdit} value={effectiveFrom || openFrom || ""} min={openFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
+        </Row>
+      </Card>
+      <ApprovalFramework />
       <Card title="Calculation" description="Rules the engine applies to every employee.">
         <Row label="PAYE method" hint="Cumulative spreads bonuses fairly and self-corrects; annualised taxes each month × 12. Confirm with your tax adviser.">
           <Select value={settings.taxMethod} onValueChange={(v) => set({ taxMethod: v as PayrollSettings["taxMethod"] })} disabled={!canEdit}>
@@ -150,7 +232,7 @@ function General({ settings, employmentTypes, canEdit }: { settings: PayrollSett
             </SelectContent>
           </Select>
         </Row>
-        <Row label="Pay day" hint="Day of the month salaries are paid (moved to month end if shorter).">
+        <Row label="Pay day" hint="Day of the month salaries are paid. On a weekend or public holiday (e.g. 25 December) pay moves back to the working day before; a short month pays on its last working day.">
           <NumberSetting value={settings.payDay} className="w-24" disabled={!canEdit} clamp={[1, 31]} onCommit={(v) => set({ payDay: v })} />
         </Row>
         <Row label="Input cut-off day" hint="Overtime, bonuses and changes after this day roll into next month.">
@@ -159,6 +241,12 @@ function General({ settings, employmentTypes, canEdit }: { settings: PayrollSett
       </Card>
 
       <Card title="Contributions & integrations">
+        <Row label="Voluntary pension (AVC) relieved from PAYE" hint="AVCs are set per employee (Tax & Statutory Profiles) separately from the statutory 8%, need the employee's signed mandate, and are remitted to the PFA with the mandatory contribution. Withdrawals within 5 years may be taxable — confirm treatment with your adviser.">
+          <Switch checked={settings.avcTaxRelieved !== false} disabled={!canEdit} onCheckedChange={(v) => set({ avcTaxRelieved: v })} />
+        </Row>
+        <Row label="Remittance reminders (days before deadline)" hint="Payroll and finance users are notified this many days before each statutory deadline, on the day, and when overdue.">
+          <NumberSetting value={settings.remittanceReminderDays ?? 5} className="w-24" disabled={!canEdit} clamp={[1, 30]} onCommit={(v) => set({ remittanceReminderDays: v })} />
+        </Row>
         <Row label="NHIA health insurance deductions" hint="Off when the company provides a private HMO instead.">
           <Switch checked={settings.nhisEnabled} disabled={!canEdit} onCheckedChange={(v) => set({ nhisEnabled: v })} />
         </Row>
@@ -210,6 +298,8 @@ function General({ settings, employmentTypes, canEdit }: { settings: PayrollSett
           <Switch checked={settings.payExpensesViaPayroll} disabled={!canEdit} onCheckedChange={(v) => set({ payExpensesViaPayroll: v })} />
         </Row>
       </Card>
+
+      <LeaveAllowanceCard settings={settings} canEdit={canEdit} onSave={set} />
 
       <Card title="Validation thresholds" description="Checks that run before every submission.">
         <Row label="Net pay variance flag" hint="Flag anyone whose net pay moves more than this, month on month.">
@@ -273,11 +363,18 @@ function Flag({ on, label }: { on: boolean; label: string }) {
 
 function Elements({ elements, enabled, canEdit }: { elements: PayElement[]; enabled: PayElementGroup[]; canEdit: boolean }) {
   const actions = usePayrollActions();
+  const { data } = useTenantPayroll();
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<PayElement | null>(null);
+  const pendingCodes = new Set((data?.configChanges ?? []).filter((c) => c.status === "pending" && c.area === "element").map((c) => c.target));
+  const save = (el: PayElement, effectiveFrom: string) => {
+    const { pending } = actions.upsertElement(el, { effectiveFrom });
+    toast.success(pending ? `${el.name}: sent for a second approver` : `${el.name} saved`, { description: pending ? "It takes effect once another payroll settings user approves it in Change History." : `Applies to pay periods from ${effectiveFrom}; earlier periods keep the old rules.` });
+  };
   return (
     <Card
       title="Pay Element Master"
-      description="Every earning, deduction and employer contribution the payroll knows. Turn off groups your company doesn't use; codes never change once used, because payslip history depends on them."
+      description="Every earning, deduction and employer contribution: code, description, category, tax and pension treatment, calculation method, recurrence, effective date, accounting code and who can change it. Click an element to view or change it — changes are effective-dated and earlier periods keep the old rules."
       right={canEdit && <Button size="sm" className="gap-1.5" onClick={() => setAdding(true)}><Plus className="h-3.5 w-3.5" /> Custom element</Button>}
     >
       <div className="grid gap-4 lg:grid-cols-2">
@@ -300,94 +397,267 @@ function Elements({ elements, enabled, canEdit }: { elements: PayElement[]; enab
                 )}
               </div>
               <div className="max-h-56 divide-y overflow-y-auto">
-                {items.map((e) => (
-                  <div key={e.code} className="flex items-center justify-between gap-2 px-3 py-1.5">
-                    <div className="min-w-0">
-                      <p className="truncate text-xs">{e.name} {e.custom && <Badge variant="outline" className="ml-1 text-[9px]">Custom</Badge>}</p>
-                      <p className="font-mono text-[10px] text-muted-foreground">{e.code}</p>
-                    </div>
-                    <div className="flex flex-wrap justify-end gap-1">
-                      <Flag on={e.statutory} label="Statutory" />
-                      <Flag on={e.category === "earning" && e.taxable} label="Taxable" />
-                      <Flag on={e.category === "earning" && !e.taxable} label="Non-taxable" />
-                      <Flag on={e.pensionable} label="Pensionable" />
-                      <Flag on={e.recurring} label="Recurring" />
-                      <Flag on={!!e.preTax} label="Pre-tax" />
-                    </div>
-                  </div>
-                ))}
+                {items.map((e) => {
+                  const pending = pendingCodes.has(e.code);
+                  return (
+                    <button type="button" key={e.code} onClick={() => setEditing(e)} className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left hover:bg-muted/40">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs">
+                          {e.name} {e.custom && <Badge variant="outline" className="ml-1 text-[9px]">Custom</Badge>}
+                          {!e.active && <Badge variant="outline" className="ml-1 text-[9px]">Inactive</Badge>}
+                          {pending && <Badge variant="outline" className="ml-1 border-amber-500/40 text-[9px] text-amber-700">Change pending</Badge>}
+                        </p>
+                        <p className="font-mono text-[10px] text-muted-foreground">
+                          {e.code}
+                          {e.glCode && ` · GL ${e.glCode}`}
+                          {e.effectiveFrom && ` · from ${e.effectiveFrom}`}
+                          {!!e.history?.length && ` · ${e.history.length} earlier version${e.history.length === 1 ? "" : "s"}`}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap justify-end gap-1">
+                        <Flag on={e.statutory} label="Statutory" />
+                        <Flag on={e.category === "earning" && taxTreatmentOf(e) === "taxable"} label="Taxable" />
+                        <Flag on={e.category === "earning" && taxTreatmentOf(e) === "exempt"} label="Exempt" />
+                        <Flag on={e.category === "earning" && taxTreatmentOf(e) === "conditional"} label="Conditional" />
+                        <Flag on={e.pensionable} label="Pensionable" />
+                        <Flag on={e.recurring} label="Recurring" />
+                        <Flag on={!!e.preTax} label="Pre-tax" />
+                        <Flag on={e.approval === "two_person"} label="2nd approver" />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
         })}
       </div>
-      <NewElementDialog open={adding} onClose={() => setAdding(false)} existing={elements} onSave={(el) => { actions.upsertElement(el); toast.success(`${el.name} added`); }} />
+      {(adding || editing) && (
+        <ElementDialog
+          key={editing?.code ?? "new"}
+          element={editing}
+          existing={elements}
+          canEdit={canEdit}
+          onClose={() => { setAdding(false); setEditing(null); }}
+          onSave={(el, from) => save(el, from)}
+        />
+      )}
     </Card>
   );
 }
 
-function NewElementDialog({ open, onClose, existing, onSave }: { open: boolean; onClose: () => void; existing: PayElement[]; onSave: (e: PayElement) => void }) {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState<"earning" | "deduction">("earning");
-  const [group, setGroup] = useState<PayElementGroup>("allowances");
-  const [taxable, setTaxable] = useState(true);
-  const [pensionable, setPensionable] = useState(false);
-  const [recurring, setRecurring] = useState(false);
-  const code = name.trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 24);
-  const clash = existing.some((e) => e.code === code);
+const CALC_OPTIONS: { value: PayElement["calculationType"]; label: string }[] = [
+  { value: "fixed", label: "Fixed amount" },
+  { value: "percent_of_basic", label: "Percentage of basic" },
+  { value: "percent_of_gross", label: "Percentage of gross" },
+  { value: "rate_x_units", label: "Formula — hourly rate × multiplier × units" },
+  { value: "manual", label: "Variable — keyed each period" },
+];
+
+function ElementDialog({
+  element,
+  existing,
+  canEdit,
+  onClose,
+  onSave,
+}: {
+  element: PayElement | null;
+  existing: PayElement[];
+  canEdit: boolean;
+  onClose: () => void;
+  onSave: (e: PayElement, effectiveFrom: string) => void;
+}) {
+  const { data } = useTenantPayroll();
+  const openFrom = (data ? earliestOpenRun(data)?.period.start : undefined) ?? new Date().toISOString().slice(0, 10);
+  const isNew = !element;
+  const readOnly = !canEdit || !!element?.statutory;
+  const [el, setEl] = useState<PayElement>(
+    () =>
+      element ?? {
+        code: "",
+        name: "",
+        category: "earning",
+        group: "allowances",
+        calculationType: "fixed",
+        taxable: true,
+        taxTreatment: "taxable",
+        pensionable: false,
+        recurring: false,
+        proratable: false,
+        statutory: false,
+        active: true,
+        custom: true,
+        approval: "settings_admin",
+      },
+  );
+  const [from, setFrom] = useState(element?.effectiveFrom && element.effectiveFrom > openFrom ? element.effectiveFrom : openFrom);
+  const set = (c: Partial<PayElement>) => setEl((x) => ({ ...x, ...c }));
+  const code = isNew ? el.name.trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 24) : el.code;
+  const clash = isNew && existing.some((e) => e.code === code);
+  const treatment = taxTreatmentOf(el);
+  const diff = diffElement(element, { ...el, code });
+
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>New pay element</DialogTitle>
-          <DialogDescription>Statutory items are system-owned; this adds a company-specific earning or deduction.</DialogDescription>
+          <DialogTitle>{isNew ? "New pay element" : `${element.name}`}</DialogTitle>
+          <DialogDescription>
+            {element?.statutory ? "System-owned statutory element — its rules follow the law and the statutory rate sets." : "Pay element configuration. Changes take effect from the date you choose; earlier periods keep the rules they were paid under."}
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Generator Allowance" />
-            {code && <p className={cn("font-mono text-[10px]", clash ? "text-rose-600" : "text-muted-foreground")}>Code: {code}{clash && " — already exists"}</p>}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-xs">Description (payslip label)</Label>
+            <Input value={el.name} disabled={readOnly} onChange={(e) => set({ name: e.target.value })} placeholder="e.g. Generator Allowance" />
+            <p className={cn("font-mono text-[10px]", clash ? "text-rose-600" : "text-muted-foreground")}>Pay element code: {code || "—"}{clash && " — already exists"}{!isNew && " (never changes)"}</p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Category</Label>
+            <Select value={el.category} disabled={readOnly || !isNew} onValueChange={(v) => set({ category: v as PayElement["category"], group: v === "earning" ? "allowances" : v === "deduction" ? "other_deductions" : "employer", taxable: v === "earning", taxTreatment: v === "earning" ? "taxable" : "exempt", pensionable: false })}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="earning">Earnings</SelectItem>
+                <SelectItem value="deduction">Deductions</SelectItem>
+                <SelectItem value="employer">Employer cost</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Group</Label>
+            <Select value={el.group} disabled={readOnly} onValueChange={(v) => set({ group: v as PayElementGroup })}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ELEMENT_GROUP_ORDER.filter((g) => (el.category === "earning" ? g !== "other_deductions" && g !== "statutory" && g !== "employer" : el.category === "deduction" ? g === "other_deductions" || (el.statutory && g === "statutory") : g === "employer")).map((g) => (
+                  <SelectItem key={g} value={g} className="text-xs">{ELEMENT_GROUP_LABELS[g]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Tax treatment</Label>
+            <Select value={treatment} disabled={readOnly || el.category !== "earning"} onValueChange={(v) => set({ taxTreatment: v as PayElement["taxTreatment"], taxable: v !== "exempt" })}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="taxable">Taxable</SelectItem>
+                <SelectItem value="exempt">Exempt</SelectItem>
+                <SelectItem value="conditional">Conditional — exempt up to a monthly limit</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {treatment === "conditional" && el.category === "earning" ? (
             <div className="space-y-1">
-              <Label className="text-xs">Type</Label>
-              <Select value={category} onValueChange={(v) => { setCategory(v as typeof category); setGroup(v === "earning" ? "allowances" : "other_deductions"); }}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="earning">Earning</SelectItem><SelectItem value="deduction">Deduction</SelectItem></SelectContent>
-              </Select>
+              <Label className="text-xs">Tax-free up to (₦ a month)</Label>
+              <Input type="number" disabled={readOnly} value={el.taxExemptMonthlyCap ?? 0} onChange={(e) => set({ taxExemptMonthlyCap: Math.max(0, Number(e.target.value) || 0) })} />
             </div>
+          ) : (
             <div className="space-y-1">
-              <Label className="text-xs">Group</Label>
-              <Select value={group} onValueChange={(v) => setGroup(v as PayElementGroup)}>
+              <Label className="text-xs">Pension treatment</Label>
+              <Select value={el.pensionable ? "yes" : "no"} disabled={readOnly || el.category !== "earning"} onValueChange={(v) => set({ pensionable: v === "yes" })}>
                 <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {ELEMENT_GROUP_ORDER.filter((g) => g !== "statutory" && g !== "employer" && (category === "earning" ? g !== "other_deductions" : g === "other_deductions")).map((g) => (
-                    <SelectItem key={g} value={g} className="text-xs">{ELEMENT_GROUP_LABELS[g]}</SelectItem>
-                  ))}
+                  <SelectItem value="yes">Pensionable</SelectItem>
+                  <SelectItem value="no">Non-pensionable</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          {category === "earning" && (
-            <>
-              <Row label="Taxable"><Switch checked={taxable} onCheckedChange={setTaxable} /></Row>
-              <Row label="Pensionable" hint="By law, pension is calculated on basic + housing + transport at minimum."><Switch checked={pensionable} onCheckedChange={setPensionable} /></Row>
-            </>
           )}
-          <Row label="Recurring every month"><Switch checked={recurring} onCheckedChange={setRecurring} /></Row>
+          {treatment === "conditional" && el.category === "earning" && (
+            <div className="space-y-1">
+              <Label className="text-xs">Pension treatment</Label>
+              <Select value={el.pensionable ? "yes" : "no"} disabled={readOnly} onValueChange={(v) => set({ pensionable: v === "yes" })}>
+                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">Pensionable</SelectItem>
+                  <SelectItem value="no">Non-pensionable</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="space-y-1">
+            <Label className="text-xs">Calculation method</Label>
+            <Select value={el.calculationType} disabled={readOnly} onValueChange={(v) => set({ calculationType: v as PayElement["calculationType"] })}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CALC_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>)}
+                {el.calculationType === "formula" && <SelectItem value="formula" className="text-xs">Formula</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
+          {el.calculationType === "rate_x_units" && (
+            <div className="space-y-1">
+              <Label className="text-xs">Multiplier</Label>
+              <Input type="number" step={0.25} disabled={readOnly} value={el.multiplier ?? 1} onChange={(e) => set({ multiplier: Math.max(0, Number(e.target.value) || 0) })} />
+            </div>
+          )}
+          <div className="space-y-1">
+            <Label className="text-xs">Recurrence</Label>
+            <Select value={el.recurring ? "recurring" : "one_off"} disabled={readOnly} onValueChange={(v) => set({ recurring: v === "recurring", proratable: v === "recurring" })}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recurring">Recurring every month</SelectItem>
+                <SelectItem value="one_off">One-off</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Accounting code (GL)</Label>
+            <Input value={el.glCode ?? ""} disabled={!canEdit} onChange={(e) => set({ glCode: e.target.value.trim() || undefined })} placeholder="Blank = posts with salaries / other deductions" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Approval requirement</Label>
+            <Select value={el.approval ?? "settings_admin"} disabled={!canEdit} onValueChange={(v) => set({ approval: v as PayElement["approval"] })}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="settings_admin">Settings admin</SelectItem>
+                <SelectItem value="two_person">Second approver</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">{isNew ? "Effective date" : "Change applies from"}</Label>
+            <Input type="date" disabled={!canEdit} min={openFrom} value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-xs">Notes</Label>
+            <Input value={el.description ?? ""} disabled={readOnly} onChange={(e) => set({ description: e.target.value || undefined })} placeholder="What it's for, eligibility" />
+          </div>
+          {!isNew && (
+            <Row label="Active" hint="Inactive elements stop being paid from the effective date; history keeps them.">
+              <Switch checked={el.active} disabled={readOnly} onCheckedChange={(v) => set({ active: v })} />
+            </Row>
+          )}
         </div>
+        {!!element?.history?.length && (
+          <div className="rounded-lg border p-3 text-[11px]">
+            <p className="mb-1 font-semibold">Earlier versions</p>
+            {element.history.map((v) => (
+              <p key={v.effectiveTo} className="text-muted-foreground">
+                Until {v.effectiveTo}: {calcLabel(v.rules.calculationType)} · {taxTreatmentOf(v.rules)} · {v.rules.pensionable ? "pensionable" : "non-pensionable"} · {v.rules.recurring ? "recurring" : "one-off"}
+                {v.rules.glCode ? ` · GL ${v.rules.glCode}` : ""}
+              </p>
+            ))}
+          </div>
+        )}
+        {!isNew && diff.length > 0 && (
+          <div className="rounded-lg bg-muted/50 p-3 text-[11px]">
+            <p className="mb-1 font-semibold">This change</p>
+            {diff.map((d) => <p key={d.field}><span className="text-muted-foreground">{d.field}:</span> {d.before} → <b>{d.after}</b></p>)}
+          </div>
+        )}
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button
-            disabled={!code || clash}
-            onClick={() => {
-              onSave({ code, name: name.trim(), category, group, calculationType: "fixed", taxable: category === "earning" ? taxable : false, pensionable: category === "earning" && pensionable, recurring, proratable: recurring, statutory: false, active: true, custom: true });
-              onClose();
-              setName("");
-            }}
-          >
-            Add element
-          </Button>
+          <Button variant="outline" onClick={onClose}>{canEdit ? "Cancel" : "Close"}</Button>
+          {canEdit && (
+            <Button
+              disabled={!code || clash || !el.name.trim() || (!isNew && !diff.length)}
+              onClick={() => {
+                onSave({ ...el, code, name: el.name.trim(), effectiveFrom: isNew ? from : el.effectiveFrom, taxable: el.category === "earning" ? treatment !== "exempt" : false }, from);
+                onClose();
+              }}
+            >
+              {el.approval === "two_person" || element?.approval === "two_person" ? "Send for approval" : isNew ? "Add element" : "Save change"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -398,7 +668,6 @@ function NewElementDialog({ open, onClose, existing, onSave }: { open: boolean; 
 
 function Structures({ canEdit }: { canEdit: boolean }) {
   const { data, bundle } = useTenantPayroll();
-  const actions = usePayrollActions();
   const people = (bundle?.employees ?? []).filter((e) => e.status !== "terminated");
   // Leavers have no salary to change; keep them out of the picker. Memoised so the picker's list isn't rebuilt every render.
   const leavers = useMemo(() => (bundle?.employees ?? []).filter((e) => e.status === "terminated").map((e) => e.id), [bundle]);
@@ -406,16 +675,13 @@ function Structures({ canEdit }: { canEdit: boolean }) {
   const today = new Date().toISOString().slice(0, 10);
   const versions = (data?.structures ?? []).filter((s) => s.employeeId === employeeId).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
   const current = data ? structureOn(data.structures, employeeId, today) : null;
-  const [draft, setDraft] = useState<Record<string, number> | null>(null);
-  const [effective, setEffective] = useState(today.slice(0, 8) + "01");
-  const [reason, setReason] = useState("");
   const elements = data?.elements ?? [];
   const total = (lines: { amount: number }[]) => round2(lines.reduce((s, l) => s + l.amount, 0));
 
   return (
     <Card
       title="Salary structures"
-      description="What each person is paid every month, versioned: a raise is a new version from its effective date, so “what were they paid in March” always has an answer. Changes go through the salary change approval chain; a back-dated change pays arrears automatically in the next payroll."
+      description="What each person is paid every month, versioned: a raise is a new version from its effective date, so “what were they paid in March” always has an answer. Propose → see the financial impact → approval → applied in the right period (back-dated changes pay arrears) → kept in the salary history with its evidence."
       right={
         <EmployeePicker
           className="w-72"
@@ -426,7 +692,6 @@ function Structures({ canEdit }: { canEdit: boolean }) {
           onChange={(e) => {
             if (!e) return;
             setEmployeeId(e.id);
-            setDraft(null);
           }}
         />
       }
@@ -444,7 +709,18 @@ function Structures({ canEdit }: { canEdit: boolean }) {
                 </p>
                 <p className="text-xs font-semibold tabular-nums">{money(total(v.lines))}/mo</p>
               </div>
-              <p className="text-[11px] text-muted-foreground">{v.reason}{v.approvedBy ? ` · ${v.status === "rejected" ? "rejected" : "approved"} by ${v.approvedBy}` : ""}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {v.reason}
+                {v.proposedBy ? ` · proposed by ${v.proposedBy}` : ""}
+                {v.approvedBy ? ` · ${v.status === "rejected" ? "rejected" : "approved"} by ${v.approvedBy}` : ""}
+                {v.batchId ? ` · bulk review ${v.batchId}` : ""}
+              </p>
+              {v.evidence && <p className="text-[10px] text-muted-foreground">Evidence: {v.evidence.fileName}</p>}
+              {v.impact && (
+                <p className="text-[10px] text-muted-foreground">
+                  Net {money(v.impact.before.net, 0)} → {money(v.impact.after.net, 0)} · employer cost {money(v.impact.before.employerCost, 0)} → {money(v.impact.after.employerCost, 0)} a month
+                </p>
+              )}
               <div className="mt-2 grid grid-cols-2 gap-x-4 text-[11px]">
                 {v.lines.map((l) => (
                   <div key={l.code} className="flex justify-between"><span className="text-muted-foreground">{elements.find((e) => e.code === l.code)?.name ?? l.code}</span><span className="tabular-nums">{money(l.amount, 0)}</span></div>
@@ -453,55 +729,7 @@ function Structures({ canEdit }: { canEdit: boolean }) {
             </div>
           ))}
         </div>
-        {canEdit && current && !versions.some((v) => v.status === "pending") && (
-          <div className="rounded-lg border bg-card p-4">
-            <p className="mb-3 text-xs font-semibold">Propose a salary change</p>
-            {current.lines.map((l) => (
-              <div key={l.code} className="flex items-center justify-between gap-2 py-1">
-                <span className="text-xs text-muted-foreground">{elements.find((e) => e.code === l.code)?.name ?? l.code}</span>
-                <Input
-                  type="number"
-                  className="h-7 w-36 text-right text-xs"
-                  value={(draft ?? Object.fromEntries(current.lines.map((x) => [x.code, x.amount])))[l.code]}
-                  onChange={(e) => setDraft({ ...(draft ?? Object.fromEntries(current.lines.map((x) => [x.code, x.amount]))), [l.code]: Number(e.target.value) })}
-                />
-              </div>
-            ))}
-            <div className="mt-2 flex justify-between border-t pt-2 text-xs font-semibold">
-              <span>Monthly gross</span>
-              <span className="tabular-nums">{money(total(Object.values(draft ?? Object.fromEntries(current.lines.map((x) => [x.code, x.amount]))).map((amount) => ({ amount }))))}</span>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="space-y-1"><Label className="text-[11px]">Effective from</Label><Input type="date" className="h-8 text-xs" value={effective} onChange={(e) => setEffective(e.target.value)} /></div>
-              <div className="space-y-1"><Label className="text-[11px]">Reason</Label><Input className="h-8 text-xs" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Annual review 2026" /></div>
-            </div>
-            <Button
-              size="sm"
-              className="mt-3 w-full"
-              disabled={!draft || !reason.trim() || effective <= current.effectiveFrom}
-              onClick={async () => {
-                const res = await actions.requestSalaryChange({
-                  employeeId,
-                  effectiveFrom: effective,
-                  currency: current.currency,
-                  reason: reason.trim(),
-                  lines: Object.entries(draft!).map(([code, amount]) => ({ code, amount })),
-                });
-                if (!res.ok) {
-                  toast.error(res.reason);
-                  return;
-                }
-                setDraft(null);
-                setReason("");
-                toast.success("Salary change sent for approval", {
-                  description: effective < today ? "It's back-dated: once approved, the arrears are added to the next payroll run automatically." : "Payroll uses it once it's approved.",
-                });
-              }}
-            >
-              Send for approval
-            </Button>
-          </div>
-        )}
+        {canEdit && current && !versions.some((v) => v.status === "pending") && <SalaryProposal key={employeeId + current.id} employeeId={employeeId} current={current} />}
       </div>
     </Card>
   );
@@ -576,7 +804,11 @@ function Profiles({ canEdit, focus }: { canEdit: boolean; focus: string | null }
                 </td>
                 <td className={cn("px-3 py-2 font-mono", !p.tin && "text-rose-600")}>{p.tin || "Missing"}</td>
                 <td className="px-3 py-2">{p.stateOfResidence}</td>
-                <td className="px-3 py-2"><p>{p.pfaName}</p><p className="font-mono text-[10px] text-muted-foreground">{p.rsaPin || "—"}</p></td>
+                <td className="px-3 py-2">
+                  <p>{p.pfaName}</p>
+                  <p className="font-mono text-[10px] text-muted-foreground">{p.rsaPin || "—"}</p>
+                  {!!p.avc?.value && <p className="text-[10px] text-primary">AVC {p.avc.mode === "percent" ? `${p.avc.value}%` : `${money(p.avc.value, 0)}/mo`}</p>}
+                </td>
                 <td className="px-3 py-2 text-right tabular-nums">{p.annualRentDeclared ? money(p.annualRentDeclared, 0) : "—"}</td>
                 <td className="px-3 py-2">{p.annualRentDeclared ? (p.rentEvidenceVerified ? <Badge variant="outline" className="border-emerald-500/30 text-[10px] text-emerald-600">Verified</Badge> : <Badge variant="outline" className="border-amber-500/30 text-[10px] text-amber-600">To verify</Badge>) : "—"}</td>
                 <td className="px-3 py-2">{p.bankName} <span className="text-muted-foreground">({p.bankCode || "no code"})</span></td>
@@ -639,6 +871,51 @@ function ProfileDialog({ profile, name, canEdit, onClose }: { profile: EmployeeT
           <Row label="NHF eligible"><Switch checked={p.nhfEligible} disabled={!canEdit} onCheckedChange={(v) => setP({ ...p, nhfEligible: v })} /></Row>
           <Row label="Enrolled in NHIA"><Switch checked={p.nhisEnrolled} disabled={!canEdit} onCheckedChange={(v) => setP({ ...p, nhisEnrolled: v })} /></Row>
         </div>
+        <div className="space-y-2 rounded-lg border bg-card p-3">
+          <Row label="Voluntary pension (AVC)" hint="Extra contribution to the employee's RSA, deducted from pay each month, remitted to the PFA with the mandatory 8% and relieved from PAYE.">
+            <div className="flex items-center gap-2">
+              <Select
+                value={p.avc?.value ? p.avc.mode : "none"}
+                disabled={!canEdit}
+                onValueChange={(v) =>
+                  setP({ ...p, avc: v === "none" ? null : { mode: v as "fixed" | "percent", value: p.avc?.value || (v === "percent" ? 2 : 10_000), startDate: p.avc?.startDate ?? new Date().toISOString().slice(0, 10) } })
+                }
+              >
+                <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none" className="text-xs">None</SelectItem>
+                  <SelectItem value="fixed" className="text-xs">Fixed ₦ a month</SelectItem>
+                  <SelectItem value="percent" className="text-xs">% of pensionable pay</SelectItem>
+                </SelectContent>
+              </Select>
+              {!!p.avc?.value && (
+                <Input
+                  type="number"
+                  min={0}
+                  step={p.avc.mode === "percent" ? 0.5 : 1000}
+                  className="h-8 w-28 text-xs"
+                  disabled={!canEdit}
+                  aria-label={p.avc.mode === "percent" ? "AVC percentage" : "AVC monthly amount"}
+                  value={p.avc.value}
+                  onChange={(e) => setP({ ...p, avc: { ...p.avc!, value: Math.max(0, Number(e.target.value) || 0) } })}
+                />
+              )}
+            </div>
+          </Row>
+          {!!p.avc?.value && (
+            <Row label="Employee mandate" hint="The employee's signed instruction to deduct the AVC. Without it payroll flags a warning on every run.">
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                <Input className="h-8 w-32 text-xs" disabled={!canEdit} placeholder="Reference" value={p.avc.mandate?.reference ?? ""} onChange={(e) => setP({ ...p, avc: { ...p.avc!, mandate: e.target.value ? { reference: e.target.value, signedOn: p.avc!.mandate?.signedOn ?? new Date().toISOString().slice(0, 10), fileName: p.avc!.mandate?.fileName } : null } })} />
+                <Input type="date" className="h-8 w-36 text-xs" disabled={!canEdit || !p.avc.mandate} value={p.avc.mandate?.signedOn ?? ""} onChange={(e) => setP({ ...p, avc: { ...p.avc!, mandate: { ...p.avc!.mandate!, signedOn: e.target.value } } })} />
+              </div>
+            </Row>
+          )}
+          {!!p.avc?.value && (
+            <Row label="AVC starts">
+              <Input type="date" className="h-8 w-40 text-xs" disabled={!canEdit} value={p.avc.startDate ?? ""} onChange={(e) => setP({ ...p, avc: { ...p.avc!, startDate: e.target.value || undefined } })} />
+            </Row>
+          )}
+        </div>
         {p.annualRentDeclared > 0 && (
           <p className="text-[11px] text-muted-foreground">
             Rent relief: 20% of {money(p.annualRentDeclared, 0)} = {money(Math.min(p.annualRentDeclared * 0.2, 500_000), 0)} a year{p.annualRentDeclared * 0.2 > 500_000 && " (capped at ₦500,000)"}
@@ -673,10 +950,22 @@ function Rates({ rateSets, settings, canEdit }: { rateSets: StatutoryRateSet[]; 
   const [adding, setAdding] = useState(false);
   const latest = sorted[0];
   const actor = useCurrentActor();
-  const [effectiveYear, setEffectiveYear] = useState(String(Math.max(new Date().getFullYear() + 1, Number(latest.effectiveFrom.slice(0, 4)) + 1)));
-  const effective = `${effectiveYear}-01-01`;
+  const { data } = useTenantPayroll();
+  const [effective, setEffective] = useState(`${Math.max(new Date().getFullYear() + 1, Number(latest.effectiveFrom.slice(0, 4)) + 1)}-01-01`);
   const [label, setLabel] = useState("");
   const [rates, setRates] = useState(latest.payeBands.map((b) => b.rate * 100));
+  const [other, setOther] = useState(() => ({
+    minimumWageMonthly: latest.minimumWageMonthly,
+    employeePensionRate: latest.employeePensionRate * 100,
+    employerPensionRate: latest.employerPensionRate * 100,
+    nhfRate: latest.nhfRate * 100,
+    nsitfRate: latest.nsitfRate * 100,
+    itfRate: latest.itfRate * 100,
+    rentReliefRate: latest.rentReliefRate * 100,
+    rentReliefCap: latest.rentReliefCap,
+    lossOfOfficeExemption: latest.lossOfOfficeExemption,
+  }));
+  const pending = (data?.configChanges ?? []).filter((c) => c.status === "pending" && c.area === "rate_set");
   return (
     <Card
       title="Statutory rate sets"
@@ -689,6 +978,17 @@ function Rates({ rateSets, settings, canEdit }: { rateSets: StatutoryRateSet[]; 
             onClick={() => {
               setRates(latest.payeBands.map((b) => b.rate * 100));
               setLabel("");
+              setOther({
+                minimumWageMonthly: latest.minimumWageMonthly,
+                employeePensionRate: latest.employeePensionRate * 100,
+                employerPensionRate: latest.employerPensionRate * 100,
+                nhfRate: latest.nhfRate * 100,
+                nsitfRate: latest.nsitfRate * 100,
+                itfRate: latest.itfRate * 100,
+                rentReliefRate: latest.rentReliefRate * 100,
+                rentReliefCap: latest.rentReliefCap,
+                lossOfOfficeExemption: latest.lossOfOfficeExemption,
+              });
               setAdding(true);
             }}
           >
@@ -698,6 +998,12 @@ function Rates({ rateSets, settings, canEdit }: { rateSets: StatutoryRateSet[]; 
       }
     >
       <div className="space-y-4">
+        {pending.map((c) => (
+          <div key={c.id} className="rounded-lg border border-dashed border-amber-500/50 p-3 text-xs">
+            <p className="font-semibold">{c.summary} <Badge variant="outline" className="ml-1 border-amber-500/40 text-[9px] text-amber-700">Awaiting second approver</Badge></p>
+            <p className="text-muted-foreground">Requested by {c.requestedBy} · effective {c.effectiveFrom} · approve it in Change History.</p>
+          </div>
+        ))}
         {sorted.map((rs, i) => (
           <div key={rs.id} className={cn("rounded-lg border p-4", i === 0 && "border-primary/40")}>
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -738,11 +1044,15 @@ function Rates({ rateSets, settings, canEdit }: { rateSets: StatutoryRateSet[]; 
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New statutory rate set</DialogTitle>
-            <DialogDescription>Starts from the latest set and applies from 1 January of the tax year, so a year is never taxed under two sets of bands. Earlier periods keep their rules.</DialogDescription>
+            <DialogDescription>Starts from the latest set. Pay periods from the effective date use it; earlier periods keep their rules. Statutory changes take effect only once a second payroll settings user approves them.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label className="text-xs">Tax year (from 1 January)</Label><Input type="number" min={Number(latest.effectiveFrom.slice(0, 4)) + 1} value={effectiveYear} onChange={(e) => setEffectiveYear(e.target.value)} /></div>
+              <div className="space-y-1">
+                <Label className="text-xs">Effective from</Label>
+                <Input type="date" min={latest.effectiveFrom} value={effective} onChange={(e) => setEffective(e.target.value.slice(0, 8) + "01")} />
+                {effective.slice(5) !== "01-01" && rates.some((r, j) => r !== latest.payeBands[j].rate * 100) && <p className="text-[10px] text-amber-700">PAYE bands changing mid-year: cumulative PAYE re-spreads the year from this month.</p>}
+              </div>
               <div className="space-y-1"><Label className="text-xs">Label</Label><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Finance Act 2027" /></div>
             </div>
             <div className="space-y-1">
@@ -754,18 +1064,55 @@ function Rates({ rateSets, settings, canEdit }: { rateSets: StatutoryRateSet[]; 
                 </div>
               ))}
             </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              {(
+                [
+                  ["minimumWageMonthly", "Minimum wage (₦/month)", 1000],
+                  ["employeePensionRate", "Employee pension (%)", 0.5],
+                  ["employerPensionRate", "Employer pension (%)", 0.5],
+                  ["nhfRate", "NHF (%)", 0.5],
+                  ["nsitfRate", "NSITF (%)", 0.5],
+                  ["itfRate", "ITF (%)", 0.5],
+                  ["rentReliefRate", "Rent relief (% of rent)", 1],
+                  ["rentReliefCap", "Rent relief cap (₦/year)", 10000],
+                  ["lossOfOfficeExemption", "Loss-of-office exemption (₦)", 1000000],
+                ] as const
+              ).map(([k, l, step]) => (
+                <div key={k} className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">{l}</span>
+                  <Input type="number" step={step} className="h-7 w-28 text-right text-xs" value={other[k]} onChange={(e) => setOther({ ...other, [k]: Math.max(0, Number(e.target.value) || 0) })} />
+                </div>
+              ))}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
             <Button
               disabled={!label.trim() || effective <= latest.effectiveFrom}
               onClick={() => {
-                actions.addRateSet({ ...latest, id: `NG-RS-${effective}`, label: label.trim(), effectiveFrom: effective, payeBands: latest.payeBands.map((b, j) => ({ ...b, rate: rates[j] / 100 })), createdBy: actor.name, createdAt: new Date().toISOString().slice(0, 10) });
+                actions.addRateSet({
+                  ...latest,
+                  id: `NG-RS-${effective}`,
+                  label: label.trim(),
+                  effectiveFrom: effective,
+                  payeBands: latest.payeBands.map((b, j) => ({ ...b, rate: rates[j] / 100 })),
+                  minimumWageMonthly: other.minimumWageMonthly,
+                  employeePensionRate: other.employeePensionRate / 100,
+                  employerPensionRate: other.employerPensionRate / 100,
+                  nhfRate: other.nhfRate / 100,
+                  nsitfRate: other.nsitfRate / 100,
+                  itfRate: other.itfRate / 100,
+                  rentReliefRate: other.rentReliefRate / 100,
+                  rentReliefCap: other.rentReliefCap,
+                  lossOfOfficeExemption: other.lossOfOfficeExemption,
+                  createdBy: actor.name,
+                  createdAt: new Date().toISOString().slice(0, 10),
+                });
                 setAdding(false);
-                toast.success("Rate set added", { description: `Applies to pay periods from ${effective}.` });
+                toast.success("Rate set sent for approval", { description: `Once a second person approves it in Change History, it applies to pay periods from ${effective}.` });
               }}
             >
-              Add rate set
+              Send for approval
             </Button>
           </DialogFooter>
         </DialogContent>

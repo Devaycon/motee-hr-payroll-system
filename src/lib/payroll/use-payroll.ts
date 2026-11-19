@@ -10,11 +10,21 @@ import { updateClaim } from "@/src/lib/stores/expenses-slice";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { withApproval } from "@/src/lib/loans/loans";
 import {
+  addConfigChange,
+  clearRemittance,
+  decideConfigChange,
+  markReminderSent,
+  setPayment,
+  updateRemittance,
+  type RemittanceRecord,
   addPayslips,
   addRateSet,
   addSalaryStructure,
   deleteRun,
+  importStarters,
   logPayroll,
+  recordImportedLoanRepayment,
+  removeStarterImport,
   markRemitted,
   resetTenantPayroll,
   saveRun,
@@ -31,6 +41,9 @@ import { store, type RootState } from "@/src/lib/stores/store";
 import { SEED_PAY_ELEMENTS } from "./elements-seed";
 import { DEFAULT_PAYROLL_SETTINGS, NG_RATE_SETS } from "./ng/rate-sets";
 import { makePeriod, round2 } from "./ng/engine";
+import { seedRemittances } from "./remittances";
+import { toBatch, withImportedStaff, type ImportCtx, type StagedRow } from "./starter-import";
+import { handoverQueue, hireRefs, hrHiresFrom, joinerExceptions, stageHandover, type HrHire } from "./onboarding-handover";
 import {
   buildPayslips,
   calculateRun,
@@ -44,9 +57,15 @@ import {
   type TenantPayrollData,
 } from "./run-builder";
 import { validateRun, blockingExceptions } from "./validation";
-import { ESS_PAYSLIPS_HREF, PAYROLL_DOCUMENT_TYPE, SALARY_CHANGE_DOCUMENT_TYPE } from "./constants";
+import { diffElement, diffRateSet } from "./config";
+import { salaryImpact } from "./salary-impact";
+import type { RemittanceRow } from "./remittance-centre";
+import { ESS_PAYSLIPS_HREF, PAYROLL_DOCUMENT_TYPE, PAYROLL_HREF, SALARY_CHANGE_DOCUMENT_TYPE } from "./constants";
 import type {
+  ConfigChange,
   EmployeeMode,
+  PaymentBatch,
+  SalaryLine,
   EmployeeTaxProfile,
   PayComputation,
   PayElement,
@@ -74,6 +93,9 @@ import type {
  * viewer's branch/role-scoped view. Who may SEE it is enforced by the
  * `time-payroll.payroll` permission and, for payslips, by ownership.
  */
+
+/** Roles that may release payment (Finance / Payment Authoriser). System administrators get no payroll approval rights by default. */
+export const PAYMENT_AUTHORISER_ROLES = ["ROLE-FIN", "ROLE-EXEC"];
 
 const ngn = (n: number) => `₦${n.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const LOCKED: PayrollRun["status"][] = ["finalized", "disbursed"];
@@ -118,11 +140,24 @@ function buildTenantSeed(state: RootState, bundle: LocaleBundle): TenantPayroll 
   const history = seedHistory({ tenantId: bundle.tenant.id, bundle, base, loans: resolvedLoans(state, bundle), today: new Date() });
   const data = { ...base, ...history };
   // Validate the seeded draft so the Exceptions tab is populated on first open.
-  const runs = history.runs.map((r) => (r.status === "draft" ? withValidation(r, data, bundle) : r));
-  return { ...data, runs, audit: [], remittances: {} };
+  const runs = history.runs.map((r) => (r.status === "draft" ? withValidation(r, data, bundle, hrHiresOf(state)) : r));
+  const finance = bundle.roles.find((r) => r.id === "ROLE-FIN")?.linkedEmployeeId;
+  const remitter = bundle.employees.find((e) => e.id === finance)?.fullName ?? "Finance";
+  return { ...data, runs, audit: [], remittances: seedRemittances(runs, remitter, new Date().toISOString().slice(0, 10)) };
 }
 
-export function withValidation(run: PayrollRun, data: TenantPayrollData, bundle: LocaleBundle): PayrollRun {
+/** Staff the new-starter import brought onto payroll for the current tenant (not in the HR bundle). */
+export function selectPayrollImportedStaff(s: RootState) {
+  const tenantId = s.locale.data?.tenant.id;
+  return tenantId ? s.payroll.byTenant[tenantId]?.imports?.flatMap((b) => b.employees) : undefined;
+}
+
+/** Everyone HR is onboarding or has onboarded — the joiners check and the hand-over read this. */
+export function hrHiresOf(state: RootState): HrHire[] {
+  return hrHiresFrom(state.onboardingRecords.records, state.onboardingRecords.cleared);
+}
+
+export function withValidation(run: PayrollRun, data: TenantPayrollData, bundle: LocaleBundle, hires: HrHire[] = []): PayrollRun {
   const previous = new Map<string, PayComputation>();
   const previousPayment = new Map<string, PaymentSnapshot>();
   for (const re of run.employees) {
@@ -138,6 +173,7 @@ export function withValidation(run: PayrollRun, data: TenantPayrollData, bundle:
     previous,
     previousPayment,
     settings: data.settings,
+    joiners: run.status === "draft" ? joinerExceptions(run, hires, new Set(bundle.employees.map((e) => e.id))) : [],
   });
   return { ...run, exceptions };
 }
@@ -145,6 +181,15 @@ export function withValidation(run: PayrollRun, data: TenantPayrollData, bundle:
 /** Earlier regular runs that aren't finalized yet — months must be closed in order. */
 export function openEarlierRuns(data: Pick<TenantPayrollData, "runs">, run: Pick<PayrollRun, "id" | "period">): PayrollRun[] {
   return data.runs.filter((r) => r.id !== run.id && r.type === "regular" && !LOCKED.includes(r.status) && periodKey(r.period) < periodKey(run.period));
+}
+
+/** The earliest regular run before `period` that's still open — a new month can't start until it closes. */
+export function openRegularRunBefore(data: Pick<TenantPayrollData, "runs"> | null, period: Pick<PayPeriod, "year" | "month">): PayrollRun | null {
+  return (
+    (data?.runs ?? [])
+      .filter((r) => r.type === "regular" && !LOCKED.includes(r.status) && periodKey(r.period) < periodKey(period))
+      .sort((a, b) => periodKey(a.period) - periodKey(b.period))[0] ?? null
+  );
 }
 
 export interface TenantPayrollView {
@@ -168,22 +213,25 @@ export function useTenantPayroll(opts: { enabled?: boolean } = {}): TenantPayrol
   const dispatch = useAppDispatch();
   // Triggers the locale load; payroll itself reads the raw, unscoped bundle.
   const { loading } = useUnscopedLocaleSection((b) => b.tenant.id);
-  const bundle = useAppSelector((s) => s.locale.data);
-  const tenantId = bundle?.tenant.id ?? null;
+  const rawBundle = useAppSelector((s) => s.locale.data);
+  const tenantId = rawBundle?.tenant.id ?? null;
   const data = useAppSelector((s) => (enabled && tenantId ? s.payroll.byTenant[tenantId] ?? null : null));
-  const supported = isPayrollCountry(bundle);
+  const supported = isPayrollCountry(rawBundle);
+  const imports = data?.imports;
+  // Payroll works from the HR records plus anyone imported through the starter template.
+  const bundle = useMemo(() => (rawBundle ? withImportedStaff(rawBundle, imports) : rawBundle), [rawBundle, imports]);
 
   useEffect(() => {
-    if (!enabled || !bundle || !tenantId || data || !supported || seeding.has(tenantId)) return;
+    if (!enabled || !rawBundle || !tenantId || data || !supported || seeding.has(tenantId)) return;
     seeding.add(tenantId);
     try {
       if (!store.getState().payroll.byTenant[tenantId]) {
-        dispatch(seedTenantPayroll({ tenantId, data: buildTenantSeed(store.getState(), bundle) }));
+        dispatch(seedTenantPayroll({ tenantId, data: buildTenantSeed(store.getState(), rawBundle) }));
       }
     } finally {
       seeding.delete(tenantId);
     }
-  }, [enabled, bundle, tenantId, data, supported, dispatch]);
+  }, [enabled, rawBundle, tenantId, data, supported, dispatch]);
 
   return useMemo(
     () => ({ tenantId, bundle, data, loading: loading || (enabled && supported && !data), supported }),
@@ -211,20 +259,33 @@ export function usePayrollActions() {
     /** Latest tenant payroll + bundle, read at call time (no stale closures). */
     const live = () => {
       const s = store.getState();
-      const bundle = s.locale.data;
       const data = tenantId ? s.payroll.byTenant[tenantId] : undefined;
-      return bundle && data ? { s, bundle, data } : null;
+      const bundle = s.locale.data && data ? withImportedStaff(s.locale.data, data.imports) : null;
+      return bundle && data ? { s, bundle, data, hires: hrHiresOf(s) } : null;
     };
     const find = (runId: string) => live()?.data.runs.find((r) => r.id === runId);
     const save = (run: PayrollRun, note: string) => tenantId && dispatch(saveRun({ tenantId, actor: actor.name, note, run }));
     const log = (action: string, extra: { runId?: string; employeeId?: string; detail?: string } = {}) =>
       tenantId && dispatch(logPayroll({ tenantId, actor: actor.name, action, ...extra }));
 
+    /**
+     * Re-run the checks on a draft without recalculating — used when something
+     * outside payroll changes (a hire clears onboarding). Saves only on change.
+     */
+    function revalidate(runId: string): void {
+      const l = live();
+      const run = l?.data.runs.find((r) => r.id === runId);
+      if (!l || !run || run.status !== "draft") return;
+      const next = withValidation(run, l.data, l.bundle, l.hires);
+      const key = (r: PayrollRun) => r.exceptions.map((e) => e.id).sort().join("|");
+      if (key(next) !== key(run)) save(next, "Re-checked joiners from onboarding");
+    }
+
     /** Recalculate + revalidate a draft run and save it. */
     function recalc(run: PayrollRun, note: string): PayrollRun | undefined {
       const l = live();
       if (!l) return;
-      const validated = withValidation(calculateRun({ ...run, status: "draft" }, l.data, l.bundle), l.data, l.bundle);
+      const validated = withValidation(calculateRun({ ...run, status: "draft" }, l.data, l.bundle), l.data, l.bundle, l.hires);
       save(validated, note);
       return validated;
     }
@@ -267,6 +328,8 @@ export function usePayrollActions() {
       if (!l || !tenantId) return { reason: "Payroll isn't loaded yet." };
       if (type === "regular" && l.data.runs.some((r) => r.type === "regular" && periodKey(r.period) === periodKey(period)))
         return { reason: `A regular run for ${period.label} already exists.` };
+      const blocking = type === "regular" ? openRegularRunBefore(l.data, period) : null;
+      if (blocking) return { reason: `Finish ${blocking.period.label} first — months are paid and closed in order.` };
       const run = newRun({
         tenantId,
         type,
@@ -279,7 +342,7 @@ export function usePayrollActions() {
         today: new Date(),
         ...extra,
       });
-      const validated = withValidation(run, l.data, l.bundle);
+      const validated = withValidation(run, l.data, l.bundle, l.hires);
       save(validated, `Created ${run.title}`);
       return { run: validated };
     }
@@ -322,6 +385,38 @@ export function usePayrollActions() {
         return null;
       }
       return requestsForRun(store.getState(), run.id)[0]?.id ?? null;
+    }
+
+    /** Adds imported people to a draft run with their period inputs (recurring deductions etc.). */
+    function addStartersToRun(runId: string, employeeIds: string[]) {
+      const l = live();
+      const run = find(runId);
+      if (!l || !run || run.status !== "draft" || !tenantId) return;
+      const ids = new Set(employeeIds);
+      const fresh = newRun({
+        tenantId,
+        type: run.type,
+        period: run.period,
+        preparedBy: run.preparedBy,
+        bundle: l.bundle,
+        data: l.data,
+        loans: resolvedLoans(l.s, l.bundle),
+        expenses: payableExpenses(l.s),
+        today: new Date(),
+        id: run.id,
+      });
+      const have = new Set(run.employees.map((e) => e.employeeId));
+      const joining = fresh.employees.filter((e) => ids.has(e.employeeId) && !have.has(e.employeeId));
+      if (!joining.length) return;
+      return recalc(
+        {
+          ...run,
+          employees: [...run.employees, ...joining],
+          inputs: [...run.inputs, ...fresh.inputs.filter((i) => ids.has(i.employeeId) && !have.has(i.employeeId))],
+          inputNotes: [...(run.inputNotes ?? []), ...(fresh.inputNotes ?? []).filter((n) => ids.has(n.employeeId) && !have.has(n.employeeId))],
+        },
+        `Added ${joining.length} imported starter${joining.length === 1 ? "" : "s"}`,
+      );
     }
 
     return {
@@ -413,7 +508,7 @@ export function usePayrollActions() {
       },
 
       setPayDate(runId: string, payDate: string) {
-        return editDraft(runId, `Pay date set to ${payDate}`, (r) => ({ ...r, period: { ...r.period, payDate } }));
+        return editDraft(runId, `Pay date set to ${payDate}`, (r) => ({ ...r, period: { ...r.period, payDate, scheduledPayDate: undefined, payDateNote: undefined } }));
       },
 
       setMode(runId: string, employeeId: string, mode: EmployeeMode) {
@@ -460,6 +555,49 @@ export function usePayrollActions() {
           inputs: [...r.inputs, { ...input, id: `IN-${Date.now().toString(36)}-${r.inputs.length}` }],
           employees: r.employees.map((e) => (e.employeeId === input.employeeId ? { ...e, included: true } : e)),
         }));
+        return { ok: true };
+      },
+
+      /**
+       * Reversal: on an adjustment run, back out everything an employee was
+       * paid in the period being corrected — each earning reversed under its
+       * own element, so tax and pension reverse with the same treatment.
+       */
+      reversePay(runId: string, employeeId: string): ActionResult {
+        const l = live();
+        const run = find(runId);
+        if (!l || !run || run.status !== "draft" || run.type !== "adjustment" || !run.parentRunId) return { ok: false, reason: "Reversals are made on a draft adjustment run." };
+        const parent = l.data.runs.find((r) => r.id === run.parentRunId);
+        const paid = parent?.employees.find((e) => e.employeeId === employeeId && e.included)?.computation;
+        if (!parent || !paid) return { ok: false, reason: "That employee wasn't paid in the run being corrected." };
+        if (run.inputs.some((i) => i.employeeId === employeeId && i.refId === `REV:${parent.id}`)) return { ok: false, reason: "Already reversed on this run." };
+        const elements = new Map(l.data.elements.map((e) => [e.code, e]));
+        const inputs: PeriodInput[] = paid.lines
+          .filter((x) => x.category === "earning" && x.amount > 0 && !elements.get(x.code)?.preTax)
+          .map((x, i) => {
+            const el = elements.get(x.code);
+            const byUnits = el?.calculationType === "rate_x_units" && x.units;
+            return {
+              id: `IN-REV-${Date.now().toString(36)}-${i}`,
+              employeeId,
+              code: x.code,
+              ...(byUnits ? { units: -x.units! } : { amount: -x.amount }),
+              description: `Reversal of ${x.name} — ${parent.title}`,
+              source: "adjustment" as const,
+              refId: `REV:${parent.id}`,
+            };
+          });
+        if (!inputs.length) return { ok: false, reason: "Nothing to reverse." };
+        editDraft(runId, `Reversed ${parent.title} pay for an employee`, (r) => {
+          const have = r.employees.some((e) => e.employeeId === employeeId);
+          return {
+            ...r,
+            inputs: [...r.inputs, ...inputs],
+            employees: have
+              ? r.employees.map((e) => (e.employeeId === employeeId ? { ...e, included: true } : e))
+              : [...r.employees, { employeeId, included: true, mode: "auto" as const, computation: null, attendance: { workingDays: 0, daysWorked: 0, paidLeaveDays: 0, unpaidLeaveDays: 0, overtimeHours: 0 } }],
+          };
+        });
         return { ok: true };
       },
 
@@ -564,13 +702,16 @@ export function usePayrollActions() {
 
         // Loans: post each payroll deduction as a repayment on the loan record.
         const loans = new Map(resolvedLoans(l.s, l.bundle).map((x) => [x.id, x]));
+        // Loans brought forward by the starter import live in payroll, not in the HR loan records.
+        const importedLoans = new Set((l.data.imports ?? []).flatMap((b) => (b.loans ?? []).map((x) => x.id)));
         for (const re of finalized.employees) {
           for (const line of re.computation?.lines ?? []) {
             if (line.source === "loan" && line.refId) {
               const loan = loans.get(line.refId);
               if (!loan) continue;
               const repaid = Math.min(loan.amount, round2(loan.amountRepaid + line.amount));
-              dispatch(updateRecord({ key: "loans", id: loan.id, patch: { amountRepaid: repaid, status: repaid >= loan.amount ? "closed" : loan.status, issuedAt: loan.issuedAt } }));
+              if (importedLoans.has(loan.id)) dispatch(recordImportedLoanRepayment({ tenantId, loanId: loan.id, amountRepaid: repaid }));
+              else dispatch(updateRecord({ key: "loans", id: loan.id, patch: { amountRepaid: repaid, status: repaid >= loan.amount ? "closed" : loan.status, issuedAt: loan.issuedAt } }));
               loans.set(loan.id, { ...loan, amountRepaid: repaid });
             }
             // Expenses: mark claims paid through payroll as reimbursed, so Finance can't pay them twice.
@@ -633,16 +774,70 @@ export function usePayrollActions() {
         dispatch(markRemitted({ tenantId, actor: actor.name, key, reference, date }));
       },
 
-      updateSettings(changes: Partial<PayrollSettings>) {
+      /**
+       * Change settings. Calculation settings apply from `effectiveFrom`
+       * (default: the earliest open pay period), so finalized history and
+       * any re-run of an earlier month keep the rules they were paid under.
+       */
+      updateSettings(changes: Partial<PayrollSettings>, opts: { effectiveFrom?: string } = {}) {
         if (!tenantId) return;
-        dispatch(updatePayrollSettings({ tenantId, actor: actor.name, changes }));
-        const calcKeys: (keyof PayrollSettings)[] = ["taxMethod", "prorationBasis", "nhisEnabled", "nhfBasis", "groupLife", "itfApplicable", "deductLoansViaPayroll", "payExpensesViaPayroll", "allowPayeRefunds", "employmentTypeRules", "enabledGroups", "basicMin", "basicMax", "varianceThresholdPct"];
-        if (Object.keys(changes).some((k) => calcKeys.includes(k as keyof PayrollSettings))) markStale("payroll settings changed");
+        const l = live();
+        const effectiveFrom = opts.effectiveFrom ?? (l ? earliestOpenRun(l.data)?.period.start : undefined) ?? new Date().toISOString().slice(0, 10);
+        dispatch(updatePayrollSettings({ tenantId, actor: actor.name, actorId: actor.employeeId, changes, effectiveFrom }));
+        const calcKeys: (keyof PayrollSettings)[] = ["taxMethod", "prorationBasis", "nhisEnabled", "nhfBasis", "groupLife", "itfApplicable", "deductLoansViaPayroll", "payExpensesViaPayroll", "allowPayeRefunds", "employmentTypeRules", "enabledGroups", "basicMin", "basicMax", "varianceThresholdPct", "leaveAllowance"];
+        if (Object.keys(changes).some((k) => calcKeys.includes(k as keyof PayrollSettings))) markStale("payroll settings changed", (r) => r.period.end >= effectiveFrom);
       },
 
-      upsertElement(element: PayElement) {
-        if (!tenantId) return;
-        dispatch(upsertElement({ tenantId, actor: actor.name, element }));
+      /**
+       * Add or change a pay element from `effectiveFrom`. Elements marked
+       * "second approver" (and every change to one) wait for another payroll
+       * settings user to approve; the rest apply at once and are logged.
+       */
+      upsertElement(element: PayElement, opts: { effectiveFrom?: string } = {}): { pending: boolean } {
+        const l = live();
+        if (!tenantId || !l) return { pending: false };
+        const before = l.data.elements.find((e) => e.code === element.code) ?? null;
+        const effectiveFrom = opts.effectiveFrom ?? element.effectiveFrom ?? earliestOpenRun(l.data)?.period.start ?? new Date().toISOString().slice(0, 10);
+        const needsSecond = element.approval === "two_person" || before?.approval === "two_person";
+        const now = new Date().toISOString();
+        const change: ConfigChange = {
+          id: `CFG-${Date.now().toString(36)}`,
+          area: "element",
+          target: element.code,
+          summary: `${before ? "Changed" : "New"} pay element ${element.code} — ${element.name}`,
+          changes: diffElement(before, element),
+          effectiveFrom,
+          requestedBy: actor.name,
+          requestedById: actor.employeeId,
+          requestedAt: now,
+          status: needsSecond ? "pending" : "applied",
+          ...(needsSecond ? { payload: { element } } : { approvedBy: actor.name, approvedAt: now, approvalNote: "Applied by a payroll settings administrator" }),
+        };
+        dispatch(addConfigChange({ tenantId, change }));
+        if (!needsSecond) {
+          dispatch(upsertElement({ tenantId, actor: actor.name, element, effectiveFrom }));
+          markStale(`pay element ${element.code} changed`, (r) => r.period.end >= effectiveFrom);
+        }
+        return { pending: needsSecond };
+      },
+
+      /** Approve or reject someone else's pending configuration change. Approving applies it. */
+      decideConfigChange(id: string, approved: boolean, note?: string): ActionResult {
+        const l = live();
+        const c = l?.data.configChanges?.find((x) => x.id === id);
+        if (!tenantId || !l || !c || c.status !== "pending") return { ok: false, reason: "That change is no longer waiting for approval." };
+        if (c.requestedBy === actor.name || (c.requestedById && c.requestedById === actor.employeeId)) return { ok: false, reason: "A second person must approve a change you made." };
+        dispatch(decideConfigChange({ tenantId, actor: actor.name, actorId: actor.employeeId, id, approved, note }));
+        if (!approved) return { ok: true };
+        if (c.payload?.element) {
+          dispatch(upsertElement({ tenantId, actor: actor.name, element: c.payload.element, effectiveFrom: c.effectiveFrom }));
+          markStale(`pay element ${c.payload.element.code} changed`, (r) => r.period.end >= c.effectiveFrom);
+        }
+        if (c.payload?.rateSet) {
+          dispatch(addRateSet({ tenantId, actor: actor.name, rateSet: { ...c.payload.rateSet, createdBy: `${c.requestedBy} · approved by ${actor.name}` } }));
+          markStale("a new statutory rate set was approved", (r) => r.period.end >= c.effectiveFrom);
+        }
+        return { ok: true };
       },
 
       /**
@@ -656,7 +851,15 @@ export function usePayrollActions() {
         const id = `SS-${structure.employeeId}-${n}-${Date.now().toString(36).slice(-4)}`;
         const emp = l.bundle.employees.find((e) => e.id === structure.employeeId);
         const monthly = round2(structure.lines.reduce((s, x) => s + x.amount, 0));
-        dispatch(addSalaryStructure({ tenantId, actor: actor.name, structure: { ...structure, id, effectiveTo: null, status: "pending", approvedBy: "", approvedAt: "" } }));
+        const impact = structure.impact ?? (emp ? salaryImpact(l.data, emp, structure.lines, structure.effectiveFrom) : undefined);
+        const diff = (k: "gross" | "net" | "paye" | "employerCost") => (impact ? `${ngn(impact.before[k])} → ${ngn(impact.after[k])}` : "—");
+        dispatch(
+          addSalaryStructure({
+            tenantId,
+            actor: actor.name,
+            structure: { ...structure, id, effectiveTo: null, status: "pending", approvedBy: "", approvedAt: "", proposedBy: actor.name, proposedAt: new Date().toISOString(), impact },
+          }),
+        );
         try {
           await dispatch(
             submitApproval({
@@ -669,6 +872,11 @@ export function usePayrollActions() {
                 "Effective from": structure.effectiveFrom,
                 "New monthly gross": ngn(monthly),
                 Reason: structure.reason,
+                "Gross pay (monthly)": diff("gross"),
+                "PAYE (monthly)": diff("paye"),
+                "Net pay (monthly)": diff("net"),
+                "Cost to employer (monthly)": diff("employerCost"),
+                ...(structure.evidence ? { "Supporting evidence": structure.evidence.fileName } : {}),
                 ...Object.fromEntries(structure.lines.map((x) => [l.data.elements.find((e) => e.code === x.code)?.name ?? x.code, ngn(x.amount)])),
               },
               submitter: { employeeId: actor.employeeId, name: actor.name, initials: user?.initials ?? "HR", departmentName: user?.departmentName ?? "Human Resources" },
@@ -686,15 +894,281 @@ export function usePayrollActions() {
         markStale("an employee's tax or bank details changed", (r) => r.employees.some((e) => e.employeeId === employeeId && e.included));
       },
 
+      /** A new statutory rate set. Statutory changes always need a second person to approve. */
       addRateSet(rateSet: StatutoryRateSet) {
+        const l = live();
+        if (!tenantId || !l) return;
+        const before = [...l.data.rateSets].sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
+        dispatch(
+          addConfigChange({
+            tenantId,
+            change: {
+              id: `CFG-${Date.now().toString(36)}`,
+              area: "rate_set",
+              target: rateSet.id,
+              summary: `New statutory rate set — ${rateSet.label}`,
+              changes: diffRateSet(before, rateSet),
+              effectiveFrom: rateSet.effectiveFrom,
+              requestedBy: actor.name,
+              requestedById: actor.employeeId,
+              requestedAt: new Date().toISOString(),
+              status: "pending",
+              payload: { rateSet },
+            },
+          }),
+        );
+      },
+
+      /**
+       * A bulk salary review (annual review, promotions, restructuring): one
+       * new structure version per employee, all approved together through a
+       * single salary change request.
+       */
+      async requestBulkSalaryChange(args: {
+        items: { employeeId: string; lines: SalaryLine[] }[];
+        effectiveFrom: string;
+        reason: string;
+        evidence?: { fileName: string; uploadedAt: string } | null;
+      }): Promise<ActionResult> {
+        const l = live();
+        if (!l || !tenantId) return { ok: false, reason: "Payroll isn't loaded yet." };
+        if (!args.items.length) return { ok: false, reason: "Nobody is selected." };
+        const batchId = `SSB-${Date.now().toString(36).toUpperCase()}`;
+        const people = new Map(l.bundle.employees.map((e) => [e.id, e]));
+        let before = 0, after = 0, costBefore = 0, costAfter = 0;
+        args.items.forEach((it, i) => {
+          const emp = people.get(it.employeeId);
+          const cur = l.data.structures.filter((s) => s.employeeId === it.employeeId);
+          const impact = emp ? salaryImpact(l.data, emp, it.lines, args.effectiveFrom) : undefined;
+          before += impact?.before.gross ?? 0;
+          after += impact?.after.gross ?? 0;
+          costBefore += impact?.before.employerCost ?? 0;
+          costAfter += impact?.after.employerCost ?? 0;
+          dispatch(
+            addSalaryStructure({
+              tenantId,
+              actor: actor.name,
+              structure: {
+                id: `SS-${it.employeeId}-${cur.length + 1}-${batchId.slice(-4)}${i}`,
+                employeeId: it.employeeId,
+                effectiveFrom: args.effectiveFrom,
+                effectiveTo: null,
+                currency: cur[0]?.currency ?? "NGN",
+                lines: it.lines,
+                reason: args.reason,
+                approvedBy: "",
+                approvedAt: "",
+                status: "pending",
+                proposedBy: actor.name,
+                proposedAt: new Date().toISOString(),
+                evidence: args.evidence ?? null,
+                impact,
+                batchId,
+              },
+            }),
+          );
+        });
+        try {
+          await dispatch(
+            submitApproval({
+              documentType: SALARY_CHANGE_DOCUMENT_TYPE,
+              documentId: batchId,
+              documentTitle: `Salary review — ${args.items.length} employee${args.items.length === 1 ? "" : "s"}`,
+              documentSummary: `${args.reason} · effective ${args.effectiveFrom} · monthly gross ${ngn(before)} → ${ngn(after)}`,
+              payloadSnapshot: {
+                Employees: args.items.length,
+                "Effective from": args.effectiveFrom,
+                Reason: args.reason,
+                "Monthly gross": `${ngn(before)} → ${ngn(after)}`,
+                "Monthly increase": ngn(round2(after - before)),
+                "Monthly cost to employer": `${ngn(costBefore)} → ${ngn(costAfter)}`,
+                "Annual cost increase": ngn(round2((costAfter - costBefore) * 12)),
+                ...(args.evidence ? { "Supporting evidence": args.evidence.fileName } : {}),
+              },
+              submitter: { employeeId: actor.employeeId, name: actor.name, initials: user?.initials ?? "HR", departmentName: user?.departmentName ?? "Human Resources" },
+            }),
+          ).unwrap();
+        } catch {
+          return { ok: false, reason: "No approval chain is set up for salary changes." };
+        }
+        log("Bulk salary review sent for approval", { detail: `${batchId} · ${args.items.length} employees · ${args.reason}` });
+        return { ok: true };
+      },
+
+      // ── Statutory remittances ─────────────────────────────────────────────
+
+      /** Payment instruction sent to the bank / authority (not yet confirmed). */
+      submitRemittance(key: string, reference: string, date: string) {
         if (!tenantId) return;
-        dispatch(addRateSet({ tenantId, actor: actor.name, rateSet }));
-        markStale("a new statutory rate set was added", (r) => r.period.end >= rateSet.effectiveFrom);
+        dispatch(updateRemittance({ tenantId, actor: actor.name, key, note: "Remittance payment instruction sent", patch: { status: "submitted", reference, date, submittedAt: new Date().toISOString(), by: actor.name, at: new Date().toISOString() } }));
+      },
+
+      /** Payment confirmed: reference, date, amount actually paid and (ideally) the bank receipt. */
+      recordRemittancePayment(key: string, p: { reference: string; date: string; amountPaid: number; receipt?: RemittanceRecord["receipt"]; note?: string }) {
+        if (!tenantId) return;
+        dispatch(updateRemittance({ tenantId, actor: actor.name, key, note: "Recorded statutory remittance payment", patch: { status: "paid", reference: p.reference, date: p.date, amountPaid: p.amountPaid, receipt: p.receipt ?? null, note: p.note, by: actor.name, at: new Date().toISOString() } }));
+      },
+
+      attachRemittanceReceipt(key: string, receipt: NonNullable<RemittanceRecord["receipt"]>) {
+        if (!tenantId) return;
+        dispatch(updateRemittance({ tenantId, actor: actor.name, key, note: "Uploaded remittance receipt", patch: { receipt } }));
+      },
+
+      /** Match the amount paid against the liability. Needs the receipt and a full payment. */
+      reconcileRemittance(row: RemittanceRow): ActionResult {
+        if (!tenantId) return { ok: false, reason: "Payroll isn't loaded yet." };
+        if (!row.record || row.record.status === "submitted") return { ok: false, reason: "Record the payment first." };
+        if (!row.record.receipt) return { ok: false, reason: "Upload the bank receipt or authority acknowledgement first." };
+        if (row.outstanding > 0.5) return { ok: false, reason: `₦${row.outstanding.toLocaleString("en-NG")} is still outstanding — record the balance before reconciling.` };
+        dispatch(updateRemittance({ tenantId, actor: actor.name, key: row.key, note: "Remittance reconciled", patch: { status: "reconciled", reconciledBy: actor.name, reconciledAt: new Date().toISOString() } }));
+        return { ok: true };
+      },
+
+      clearRemittance(key: string) {
+        if (!tenantId) return;
+        dispatch(clearRemittance({ tenantId, actor: actor.name, key }));
+      },
+
+      /** Remind payroll and finance users of upcoming and overdue remittances (once per stage). */
+      sendRemittanceReminders(due: { key: string; row: RemittanceRow; stage: "upcoming" | "today" | "overdue" }[]) {
+        if (!tenantId) return;
+        for (const { key, row, stage } of due) {
+          dispatch(
+            pushNotification({
+              title: stage === "overdue" ? `Overdue: ${row.title} for ${row.monthLabel}` : stage === "today" ? `Due today: ${row.title} for ${row.monthLabel}` : `${row.title} due in ${row.daysToDue} day${row.daysToDue === 1 ? "" : "s"}`,
+              description: `${ngn(row.outstanding)} to ${row.to} — due ${row.due}.`,
+              type: stage === "overdue" ? "warning" : "info",
+              recipientRoleIds: ["ROLE-HRADMIN", "ROLE-FIN"],
+              href: `${PAYROLL_HREF}?tab=remittances`,
+            }),
+          );
+          dispatch(markReminderSent({ tenantId, key }));
+        }
+      },
+
+      // ── Payment release ───────────────────────────────────────────────────
+
+      /**
+       * Payment authorisation: a Finance / Payment Authoriser who neither
+       * prepared, submitted, finalized nor approved the run releases the money.
+       */
+      authorisePayment(runId: string): ActionResult {
+        const l = live();
+        const run = find(runId);
+        if (!l || !run || !tenantId || run.status !== "finalized") return { ok: false, reason: "Only a finalized run can be released for payment." };
+        if (!actor.employeeId) return { ok: false, reason: "Sign in with an employee account to authorise payment." };
+        if (!PAYMENT_AUTHORISER_ROLES.includes(actor.roleId ?? "")) return { ok: false, reason: "Only a Finance / Payment Authoriser can release payment." };
+        const req = run.approvalRequestId ? l.s.approvals.requests.find((r) => r.id === run.approvalRequestId) : undefined;
+        const approvers = new Set((req?.history ?? []).filter((h) => h.type === "approved").map((h) => h.actorEmployeeId));
+        if (run.approvedBy?.employeeId) approvers.add(run.approvedBy.employeeId);
+        const conflicted = [run.preparedBy.employeeId, run.finalizedBy?.employeeId, req?.submittedBy.employeeId].includes(actor.employeeId) || approvers.has(actor.employeeId);
+        if (conflicted) return { ok: false, reason: "You prepared or approved this run — someone else must release the payment (segregation of duties)." };
+        const payable = run.employees.filter((e) => e.included && e.computation && e.computation.net > 0);
+        const payment: PaymentBatch = {
+          status: "authorised",
+          amount: round2(payable.reduce((s, e) => s + e.computation!.net, 0)),
+          count: payable.length,
+          authorisedBy: { employeeId: actor.employeeId, name: actor.name },
+          authorisedAt: new Date().toISOString(),
+          results: {},
+        };
+        dispatch(setPayment({ tenantId, actor: actor.name, runId, payment, note: `Payment batch authorised — ${ngn(payment.amount)} to ${payment.count} accounts` }));
+        return { ok: true };
+      },
+
+      /** The NIBSS file was sent to the bank. */
+      submitPayment(runId: string, bankReference: string): ActionResult {
+        const run = find(runId);
+        if (!tenantId || !run?.payment || run.payment.status !== "authorised") return { ok: false, reason: "Authorise the payment batch first." };
+        dispatch(setPayment({ tenantId, actor: actor.name, runId, payment: { ...run.payment, status: "submitted", submittedAt: new Date().toISOString(), bankReference }, note: `Payment file submitted to the bank (${bankReference})` }));
+        return { ok: true };
+      },
+
+      /**
+       * The bank's settlement report: every account paid except the listed
+       * rejections. Settled = reconciled when what the bank paid equals the
+       * approved net pay of the accounts it paid.
+       */
+      recordSettlement(runId: string, rejected: { employeeId: string; reason: string }[]): ActionResult {
+        const run = find(runId);
+        if (!tenantId || !run?.payment || run.payment.status === "awaiting_authorisation" || run.payment.status === "authorised") return { ok: false, reason: "Submit the payment file to the bank first." };
+        const rej = new Map(rejected.map((r) => [r.employeeId, r.reason]));
+        const results: PaymentBatch["results"] = {};
+        let settled = 0;
+        for (const e of run.employees.filter((x) => x.included && x.computation && x.computation.net > 0)) {
+          const reason = rej.get(e.employeeId);
+          const prev = run.payment.results[e.employeeId];
+          results[e.employeeId] = reason ? { status: "rejected", reason, resolvedBy: prev?.resolvedBy } : { status: "paid" };
+          if (!reason) settled += e.computation!.net;
+        }
+        dispatch(
+          setPayment({
+            tenantId,
+            actor: actor.name,
+            runId,
+            payment: { ...run.payment, status: "settled", results, settledAmount: round2(settled), reconciledAt: new Date().toISOString(), reconciledBy: actor.name },
+            note: `Bank settlement reconciled — ${ngn(round2(settled))} paid${rejected.length ? `, ${rejected.length} rejected` : ""}`,
+            disbursed: true,
+          }),
+        );
+        return { ok: true };
+      },
+
+      /** A rejected payment was paid another way (corrected account, off-cycle run). */
+      resolveRejectedPayment(runId: string, employeeId: string, how: string) {
+        const run = find(runId);
+        const r = run?.payment?.results[employeeId];
+        if (!tenantId || !run?.payment || r?.status !== "rejected") return;
+        dispatch(setPayment({ tenantId, actor: actor.name, runId, payment: { ...run.payment, results: { ...run.payment.results, [employeeId]: { ...r, resolvedBy: how } } }, note: `Rejected payment resolved — ${how}` }));
       },
 
       setVerificationRevoked(payslipId: string, revoked: boolean) {
         if (!tenantId) return;
         dispatch(setVerificationRevoked({ tenantId, actor: actor.name, payslipId, revoked }));
+      },
+
+      /**
+       * Bulk new-starter import: saves every row that passed the checks and,
+       * when `runId` is an open draft, adds the starters to it straight away
+       * (their recurring deductions gathered like anyone else's).
+       */
+      importStarters(rows: StagedRow[], fileName: string, opts: { runId?: string } = {}): { ok: true; batchId: string; count: number } | { ok: false; reason: string } {
+        const l = live();
+        if (!l || !tenantId) return { ok: false, reason: "Payroll isn't loaded yet." };
+        const ready = rows.filter((r) => r.record);
+        if (!ready.length) return { ok: false, reason: "No rows are ready to import." };
+        const run = opts.runId ? l.data.runs.find((r) => r.id === opts.runId && r.status === "draft") : undefined;
+        const batchId = `IMP-${Date.now().toString(36).toUpperCase()}`;
+        const { batch, structures, profiles, openingYtd } = toBatch(ready, { id: batchId, fileName, importedBy: actor.name, runId: run?.id });
+        dispatch(importStarters({ tenantId, actor: actor.name, batch, structures, profiles, openingYtd }));
+        if (run) addStartersToRun(run.id, batch.employees.map((e) => e.id));
+        // Joiners set up now no longer count as "not in payroll" on open drafts.
+        for (const r of live()?.data.runs ?? []) if (r.status === "draft" && r.id !== run?.id) revalidate(r.id);
+        return { ok: true, batchId, count: batch.employees.length };
+      },
+
+      revalidate,
+
+      addStartersToRun,
+
+      /** Undo an import: takes the people out of open runs, then drops them. Blocked once any of them was paid. */
+      removeStarterImport(batchId: string): ActionResult {
+        const l = live();
+        const batch = l?.data.imports?.find((b) => b.id === batchId);
+        if (!l || !tenantId || !batch) return { ok: false, reason: "Import not found." };
+        const ids = new Set(batch.employees.map((e) => e.id));
+        const paid = l.data.runs.find((r) => LOCKED.includes(r.status) && r.employees.some((e) => ids.has(e.employeeId) && e.included));
+        if (paid) return { ok: false, reason: `${paid.title} already paid some of these employees — correct them with an adjustment instead.` };
+        for (const r of l.data.runs) {
+          if (LOCKED.includes(r.status) || !r.employees.some((e) => ids.has(e.employeeId))) continue;
+          if (r.status === "in_review" || r.status === "approved") cancelOpenRequests(r.id);
+          recalc(
+            { ...r, employees: r.employees.filter((e) => !ids.has(e.employeeId)), inputs: r.inputs.filter((i) => !ids.has(i.employeeId)), inputNotes: (r.inputNotes ?? []).filter((n) => !ids.has(n.employeeId)) },
+            `Removed ${ids.size} imported starters`,
+          );
+        }
+        dispatch(removeStarterImport({ tenantId, actor: actor.name, batchId }));
+        return { ok: true };
       },
 
       /** Drop the tenant's payroll and reseed the demo history. */
@@ -707,6 +1181,51 @@ export function usePayrollActions() {
 }
 
 // ── Read helpers ────────────────────────────────────────────────────────────
+
+/** The earliest open regular run — the month new starters join. */
+export function earliestOpenRun(data: Pick<TenantPayroll, "runs"> | null): PayrollRun | null {
+  return (
+    [...(data?.runs ?? [])].filter((r) => r.type === "regular" && !LOCKED.includes(r.status)).sort((a, b) => periodKey(a.period) - periodKey(b.period))[0] ?? null
+  );
+}
+
+/** Build the starter-import check context for the current tenant. */
+export function importCtxFor(view: Pick<TenantPayrollView, "data" | "bundle">, importedBy: string, hires: HrHire[] = []): ImportCtx | null {
+  const { data, bundle } = view;
+  if (!data || !bundle) return null;
+  const openRun = earliestOpenRun(data);
+  return {
+    bundle,
+    elements: data.elements,
+    settings: data.settings,
+    rateSets: data.rateSets,
+    structures: data.structures,
+    period: openRun?.period ?? null,
+    year: openRun?.period.year ?? new Date().getFullYear(),
+    importedBy,
+    batchId: "",
+    hrHires: hireRefs(hires),
+  };
+}
+
+/**
+ * HR onboarding → payroll hand-over: everyone HR hired, who of them payroll
+ * still has to set up, and their onboarding details already run through the
+ * starter checks.
+ */
+export function useOnboardingHandover(opts: { enabled?: boolean } = {}) {
+  const view = useTenantPayroll(opts);
+  const actor = useCurrentActor();
+  const records = useAppSelector((s) => s.onboardingRecords.records);
+  const cleared = useAppSelector((s) => s.onboardingRecords.cleared);
+  const hires = useMemo(() => hrHiresFrom(records, cleared), [records, cleared]);
+  return useMemo(() => {
+    const ctx = importCtxFor(view, actor.name);
+    if (!ctx || !view.bundle) return { hires, queue: [] as HrHire[], staged: [] as StagedRow[], ctx: null };
+    const queue = handoverQueue(hires, new Set(view.bundle.employees.map((e) => e.id)), ctx.period);
+    return { hires, queue, staged: stageHandover(queue, ctx), ctx };
+  }, [view, actor.name, hires]);
+}
 
 export function useRun(runId: string) {
   const view = useTenantPayroll();

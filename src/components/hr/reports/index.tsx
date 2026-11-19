@@ -18,6 +18,7 @@ import { exportCsv } from "@/src/lib/reports/export";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import type { AnyReportDef } from "@/src/lib/reports/types";
 import { CustomReportModal } from "./components/custom-report-modal";
+import { reportInCountry, useReportContext } from "@/src/lib/reports/use-report-context";
 
 const EXPORT_FORMAT_COUNT = 5; // CSV, Excel, JSON, Image, PDF
 const WIDE_COLUMN_PREVIEW = 4;
@@ -123,6 +124,7 @@ export function ReportsPage() {
   const accessLevelId = useAppSelector((s) => s.auth.user?.accessLevelId);
   const levels = useAppSelector((s) => s.accessLevels.levels);
   const { data: bundle, loading } = useLocaleSection<LocaleBundle>((b) => b);
+  const { ctx, payrollLoading } = useReportContext();
   const [customOpen, setCustomOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -134,8 +136,8 @@ export function ReportsPage() {
       if (!accessLevelId || !level) return true;
       return !!level.permissions.find((p) => p.module === mod)?.access;
     };
-    return ALL_REPORTS.filter((r) => canView(r.permission));
-  }, [accessLevelId, levels]);
+    return ALL_REPORTS.filter((r) => canView(r.permission) && reportInCountry(r, ctx));
+  }, [accessLevelId, levels, ctx]);
 
   const rowsByReport = useMemo(() => {
     if (!bundle) return null;
@@ -143,13 +145,13 @@ export function ReportsPage() {
     let totalRecords = 0;
     let totalColumns = 0;
     for (const r of visibleReports) {
-      const rows = r.select(bundle);
+      const rows = r.select(bundle, ctx);
       map.set(r.id, rows);
       totalRecords += rows.length;
       totalColumns += r.columns.length;
     }
     return { map, totalRecords, totalColumns };
-  }, [bundle, visibleReports]);
+  }, [bundle, visibleReports, ctx]);
 
   const filteredReports = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -203,7 +205,7 @@ export function ReportsPage() {
         }
       />
 
-      {loading || !bundle ? (
+      {loading || payrollLoading || !bundle ? (
         <div className="grid grid-cols-12 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="col-span-12 h-40 sm:col-span-6 lg:col-span-4" />

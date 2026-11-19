@@ -462,6 +462,13 @@ export interface ManualOnboardingData {
   taxId: string;
   pensionId: string;
   nhfNumber: string;
+  /** Payroll hand-over (NG): Pension Fund Administrator, BVN, NIBSS bank code, monthly pay split. */
+  pfaName?: string;
+  bvn?: string;
+  bankCode?: string;
+  monthlyBasic?: string;
+  monthlyHousing?: string;
+  monthlyTransport?: string;
   emergencyContactName: string;
   emergencyContactRelationship: string;
   emergencyContactPhone: string;
@@ -526,5 +533,28 @@ export interface BulkOnboardingRow {
   assetCategory: string;
   assetSerialNumber: string;
   assetAssignedDate: string;
+  /**
+   * Optional payroll columns (NG). Filled ones travel with the hire to payroll
+   * when onboarding hands them over, so they arrive ready to pay.
+   */
+  payroll?: BulkPayrollFields;
   workflowTemplateId?: string;
+}
+
+export interface BulkPayrollFields {
+  /** Annual gross salary — used when the monthly split isn't given. */
+  salary: string;
+  monthlyBasic: string;
+  monthlyHousing: string;
+  monthlyTransport: string;
+  state: string;
+  taxId: string;
+  pfaName: string;
+  rsaPin: string;
+  nhfNumber: string;
+  bankName: string;
+  bankCode: string;
+  accountNumber: string;
+  accountName: string;
+  bvn: string;
 }

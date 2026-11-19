@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type {
+  ConfigChange,
   EmployeeTaxProfile,
   PayElement,
   PayrollAuditEntry,
@@ -8,8 +9,12 @@ import type {
   Payslip,
   SalaryStructure,
   StatutoryRateSet,
+  YtdTotals,
+  PaymentBatch,
 } from "@/src/lib/payroll/types";
+import { CALC_SETTING_KEYS, diffSettings, versionElement } from "@/src/lib/payroll/config";
 import type { TenantPayrollData } from "@/src/lib/payroll/run-builder";
+import type { StarterImportBatch } from "@/src/lib/payroll/starter-import";
 
 /**
  * Payroll — per-tenant state for the demo. In production every field here is
@@ -22,17 +27,39 @@ import type { TenantPayrollData } from "@/src/lib/payroll/run-builder";
  * Adjustment run.
  */
 
+/**
+ * What's been done about one statutory remittance. Absent = calculated only.
+ * `submitted` = payment instruction sent; `paid` = confirmed by evidence;
+ * `reconciled` = the amount paid matched against the liability.
+ * Records saved before the lifecycle existed have no `status` and count as paid.
+ */
 export interface RemittanceRecord {
+  status?: "submitted" | "paid" | "reconciled";
   reference: string;
+  /** Date paid (or instructed, while submitted). */
   date: string;
   by: string;
   at: string;
+  /** Amount actually paid. Absent on older records = the full liability. */
+  amountPaid?: number;
+  /** The bank receipt / authority acknowledgement. */
+  receipt?: { fileName: string; uploadedAt: string; dataUrl?: string } | null;
+  submittedAt?: string;
+  reconciledBy?: string;
+  reconciledAt?: string;
+  note?: string;
 }
 
 export type TenantPayroll = TenantPayrollData & {
   audit: PayrollAuditEntry[];
   /** "YYYY-MM:item" → proof the remittance was paid to the authority. */
   remittances?: Record<string, RemittanceRecord>;
+  /** Employees brought in through the new-starter template (payroll-only until the HR sync exists). */
+  imports?: StarterImportBatch[];
+  /** Every change to payroll configuration: who, what, when, effective date, approved by. */
+  configChanges?: ConfigChange[];
+  /** Remittance reminders already sent, by "YYYY-MM:item:daysBefore". */
+  remindersSent?: Record<string, string>;
 };
 
 export interface PayrollState {
@@ -41,7 +68,7 @@ export interface PayrollState {
 }
 
 /** Bump to reseed every tenant (drops local payroll edits). */
-export const PAYROLL_SEED_VERSION = 4;
+export const PAYROLL_SEED_VERSION = 7;
 
 const initialState: PayrollState = { byTenant: {}, seedVersion: PAYROLL_SEED_VERSION };
 
@@ -91,14 +118,52 @@ const slice = createSlice({
       delete state.byTenant[action.payload.tenantId];
     },
 
-    updatePayrollSettings(state, action: PayloadAction<Tenant & Actor & { changes: Partial<PayrollSettings> }>) {
+    /**
+     * Settings change. Calculation settings are effective-dated: the old values
+     * are kept as a version so periods before `effectiveFrom` keep them.
+     */
+    updatePayrollSettings(state, action: PayloadAction<Tenant & Actor & { changes: Partial<PayrollSettings>; effectiveFrom?: string; actorId?: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
-      t.settings = { ...t.settings, ...action.payload.changes };
-      log(t, action.payload.tenantId, action.payload.actor, "Updated payroll settings", { detail: Object.keys(action.payload.changes).join(", ") });
+      const { changes, actor } = action.payload;
+      const diff = diffSettings(t.settings, changes);
+      const now = new Date().toISOString();
+      const effectiveFrom = action.payload.effectiveFrom ?? now.slice(0, 10);
+      const before = t.settings;
+      t.settings = { ...t.settings, ...changes };
+      if (Object.keys(changes).some((k) => CALC_SETTING_KEYS.includes(k as keyof PayrollSettings))) {
+        // First change: the original settings applied from the beginning.
+        t.settingsVersions ??= [{ effectiveFrom: "0000-01-01", settings: before, changedBy: "System", changedAt: "2026-01-01T00:00:00.000Z" }];
+        // The change applies from its date onward, including to versions already dated later.
+        t.settingsVersions = t.settingsVersions.map((v) => (v.effectiveFrom >= effectiveFrom ? { ...v, settings: { ...v.settings, ...changes } } : v));
+        if (!t.settingsVersions.some((v) => v.effectiveFrom === effectiveFrom)) {
+          const base = [...t.settingsVersions].sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom)).filter((v) => v.effectiveFrom <= effectiveFrom).pop()?.settings ?? before;
+          t.settingsVersions.push({ effectiveFrom, settings: { ...base, ...changes }, changedBy: actor, changedAt: now });
+        }
+      }
+      if (diff.length) {
+        t.configChanges ??= [];
+        t.configChanges.unshift({
+          id: uid("CFG"),
+          area: "settings",
+          target: "settings",
+          summary: `Payroll settings: ${diff.map((d) => d.field).join(", ")}`,
+          changes: diff,
+          effectiveFrom,
+          requestedBy: actor,
+          requestedById: action.payload.actorId,
+          requestedAt: now,
+          status: "applied",
+          approvedBy: actor,
+          approvedAt: now,
+          approvalNote: "Applied by a payroll settings administrator",
+        });
+      }
+      log(t, action.payload.tenantId, actor, "Updated payroll settings", { detail: diff.map((d) => `${d.field}: ${d.before} → ${d.after}`).join("; ") || Object.keys(changes).join(", ") });
     },
 
-    upsertElement(state, action: PayloadAction<Tenant & Actor & { element: PayElement }>) {
+    /** Add or change a pay element from `effectiveFrom`; earlier periods keep the old rules. */
+    upsertElement(state, action: PayloadAction<Tenant & Actor & { element: PayElement; effectiveFrom?: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
       const el = action.payload.element;
@@ -106,7 +171,7 @@ const slice = createSlice({
       if (i >= 0) {
         // Statutory elements are system-owned.
         if (t.elements[i].statutory && !el.statutory) return;
-        t.elements[i] = el;
+        t.elements[i] = versionElement(t.elements[i], el, action.payload.effectiveFrom ?? new Date().toISOString().slice(0, 10));
       } else t.elements.push({ ...el, custom: true });
       log(t, action.payload.tenantId, action.payload.actor, i >= 0 ? "Edited pay element" : "Added pay element", { detail: `${el.code} — ${el.name}` });
     },
@@ -143,7 +208,7 @@ const slice = createSlice({
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
       t.remittances ??= {};
-      t.remittances[action.payload.key] = { reference: action.payload.reference, date: action.payload.date, by: action.payload.actor, at: new Date().toISOString() };
+      t.remittances[action.payload.key] = { ...t.remittances[action.payload.key], status: "paid", reference: action.payload.reference, date: action.payload.date, by: action.payload.actor, at: new Date().toISOString() };
       log(t, action.payload.tenantId, action.payload.actor, "Recorded statutory remittance", { detail: `${action.payload.key} · ${action.payload.reference}` });
     },
 
@@ -159,7 +224,7 @@ const slice = createSlice({
     addRateSet(state, action: PayloadAction<Tenant & Actor & { rateSet: StatutoryRateSet }>) {
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
-      t.rateSets.push(action.payload.rateSet);
+      t.rateSets = [...t.rateSets.filter((r) => r.id !== action.payload.rateSet.id), action.payload.rateSet];
       log(t, action.payload.tenantId, action.payload.actor, "Added statutory rate set", { detail: `${action.payload.rateSet.label} from ${action.payload.rateSet.effectiveFrom}` });
     },
 
@@ -212,6 +277,108 @@ const slice = createSlice({
       log(t, action.payload.tenantId, action.payload.actor, action.payload.revoked ? "Revoked payslip verification" : "Restored payslip verification", { employeeId: p.employeeId, detail: p.reference });
     },
 
+    /** Bulk new-starter import: the people, their salary structures, profiles and year to date, in one step. */
+    importStarters(
+      state,
+      action: PayloadAction<Tenant & Actor & { batch: StarterImportBatch; structures: SalaryStructure[]; profiles: EmployeeTaxProfile[]; openingYtd: Record<string, YtdTotals> }>,
+    ) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      const { batch, structures, profiles, openingYtd } = action.payload;
+      const ids = new Set(batch.employees.map((e) => e.id));
+      t.imports = [...(t.imports ?? []), batch];
+      t.structures = [...t.structures.filter((s) => !ids.has(s.employeeId)), ...structures];
+      t.profiles = [...t.profiles.filter((p) => !ids.has(p.employeeId)), ...profiles];
+      Object.assign(t.openingYtd, openingYtd);
+      log(t, action.payload.tenantId, action.payload.actor, "Imported new starters", { detail: `${batch.employees.length} employees from ${batch.fileName}` });
+    },
+
+    /** A payroll deduction repaid part of a loan brought forward by the starter import. */
+    recordImportedLoanRepayment(state, action: PayloadAction<Tenant & { loanId: string; amountRepaid: number }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      for (const b of t?.imports ?? []) {
+        const loan = (b.loans ?? []).find((l) => l.id === action.payload.loanId);
+        if (!loan) continue;
+        loan.amountRepaid = Math.min(loan.amount, action.payload.amountRepaid);
+        if (loan.amountRepaid >= loan.amount) loan.status = "closed";
+      }
+    },
+
+    /** Undo an import. The screen first takes the people out of open runs; locked runs block it. */
+    removeStarterImport(state, action: PayloadAction<Tenant & Actor & { batchId: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const batch = t?.imports?.find((b) => b.id === action.payload.batchId);
+      if (!t || !batch) return;
+      const ids = new Set(batch.employees.map((e) => e.id));
+      if (t.runs.some((r) => LOCKED.includes(r.status) && r.employees.some((e) => ids.has(e.employeeId) && e.included))) return;
+      t.imports = (t.imports ?? []).filter((b) => b.id !== batch.id);
+      t.structures = t.structures.filter((s) => !ids.has(s.employeeId));
+      t.profiles = t.profiles.filter((p) => !ids.has(p.employeeId));
+      for (const id of ids) delete t.openingYtd[id];
+      log(t, action.payload.tenantId, action.payload.actor, "Removed imported starters", { detail: `${batch.employees.length} employees from ${batch.fileName}` });
+    },
+
+    /** Record a configuration change (pending ones wait for a second person). */
+    addConfigChange(state, action: PayloadAction<Tenant & { change: ConfigChange }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.configChanges ??= [];
+      t.configChanges.unshift(action.payload.change);
+      log(t, action.payload.tenantId, action.payload.change.requestedBy, action.payload.change.status === "pending" ? "Configuration change sent for approval" : "Configuration changed", { detail: action.payload.change.summary });
+    },
+
+    /** A second person decides a pending change. Never the person who asked for it. */
+    decideConfigChange(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; approved: boolean; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const c = t?.configChanges?.find((x) => x.id === action.payload.id);
+      if (!t || !c || c.status !== "pending") return;
+      if (c.requestedBy === action.payload.actor || (c.requestedById && c.requestedById === action.payload.actorId)) return;
+      c.status = action.payload.approved ? "applied" : "rejected";
+      c.approvedBy = action.payload.actor;
+      c.approvedAt = new Date().toISOString();
+      c.approvalNote = action.payload.note;
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.approved ? "Approved configuration change" : "Rejected configuration change", { detail: c.summary });
+    },
+
+    /** Remittance lifecycle: submitted, then paid (with evidence), then reconciled. */
+    updateRemittance(state, action: PayloadAction<Tenant & Actor & { key: string; patch: Partial<RemittanceRecord>; note: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.remittances ??= {};
+      const cur = t.remittances[action.payload.key];
+      t.remittances[action.payload.key] = { ...(cur ?? { reference: "", date: "", by: action.payload.actor, at: new Date().toISOString() }), ...action.payload.patch };
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.note, { detail: action.payload.key });
+    },
+
+    /** Remove a remittance record entered in error (never once reconciled). */
+    clearRemittance(state, action: PayloadAction<Tenant & Actor & { key: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const cur = t?.remittances?.[action.payload.key];
+      if (!t || !cur || cur.status === "reconciled") return;
+      delete t.remittances![action.payload.key];
+      log(t, action.payload.tenantId, action.payload.actor, "Cleared remittance record", { detail: action.payload.key });
+    },
+
+    markReminderSent(state, action: PayloadAction<Tenant & { key: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.remindersSent ??= {};
+      t.remindersSent[action.payload.key] = new Date().toISOString();
+    },
+
+    /** Payment batch on a locked run: authorisation, submission, settlement. Figures never change. */
+    setPayment(state, action: PayloadAction<Tenant & Actor & { runId: string; payment: PaymentBatch; note: string; disbursed?: boolean }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const run = t?.runs.find((r) => r.id === action.payload.runId);
+      if (!t || !run || !LOCKED.includes(run.status)) return;
+      run.payment = action.payload.payment;
+      if (action.payload.disbursed && run.status === "finalized") {
+        run.status = "disbursed";
+        run.disbursedAt = new Date().toISOString();
+      }
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.note, { runId: run.id });
+    },
+
     logPayroll(state, action: PayloadAction<Tenant & Actor & { action: string; runId?: string; employeeId?: string; detail?: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
@@ -222,6 +389,12 @@ const slice = createSlice({
 });
 
 export const {
+  addConfigChange,
+  decideConfigChange,
+  updateRemittance,
+  clearRemittance,
+  markReminderSent,
+  setPayment,
   hydratePayroll,
   seedTenantPayroll,
   resetTenantPayroll,
@@ -237,6 +410,9 @@ export const {
   addPayslips,
   setVerificationRevoked,
   logPayroll,
+  importStarters,
+  removeStarterImport,
+  recordImportedLoanRepayment,
 } = slice.actions;
 
 export default slice.reducer;
