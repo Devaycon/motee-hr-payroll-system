@@ -74,6 +74,7 @@ export const ALL_MODULES: ModuleEntry[] = [
   // runs without being able to change how pay is calculated.
   { id: "time-payroll.payroll",          label: "Payroll",          group: "Time & Payroll", link: "/time-payroll/payroll" },
   { id: "time-payroll.payroll-settings", label: "Payroll Settings", group: "Time & Payroll", link: "/time-payroll/payroll/settings" },
+  { id: "time-payroll.payroll-calculator", label: "Payroll Calculator", group: "Time & Payroll", link: "/time-payroll/payroll-calculator" },
 
   // Operations
   { id: "operations.assets",     label: "Asset Management",       group: "Operations", link: "/operations/assets" },

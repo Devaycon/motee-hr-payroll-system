@@ -105,6 +105,9 @@ const MODULE_ACCESS: Record<string, RoleSlug[]> = {
   // changes - statutory rates and controlled pay elements - so it needs the
   // settings too. A change is never approved by the person who made it.
   "time-payroll.payroll-settings":   ["SUPER-ADMIN","HR-ADMIN","FINANCE","AUDITOR"],
+  // The calculator uses only figures typed in or uploaded — no stored pay —
+  // so HR managers get it too (salary offers, reviews).
+  "time-payroll.payroll-calculator": ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","FINANCE","EXECUTIVE","AUDITOR"],
   // Operations
   "operations.assets":               ["SUPER-ADMIN","HR-ADMIN","IT-ADMIN","AUDITOR","READ-ONLY"],
   "operations.documents":            ["SUPER-ADMIN","HR-ADMIN","HR-MANAGER","AUDITOR","READ-ONLY"],
@@ -150,6 +153,7 @@ const ROLE_MODULES: Partial<Record<RoleSlug, string[]>> = {
     "time-payroll.expenses",
     "time-payroll.payroll",
     "time-payroll.payroll-settings",
+    "time-payroll.payroll-calculator",
     "operations.reports",
     "operations.analytics",
     "operations.documents",
