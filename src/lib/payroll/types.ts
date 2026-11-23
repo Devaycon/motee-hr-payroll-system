@@ -417,6 +417,9 @@ export interface PeriodInput {
   source: LineSource;
   /** Reference back to the module record (loan id, expense id). */
   refId?: string;
+  /** Who put it on the run and when (manual inputs; module inputs fall back to the run build). */
+  addedBy?: string;
+  addedAt?: string;
 }
 
 // ── Calculation output ──────────────────────────────────────────────────────

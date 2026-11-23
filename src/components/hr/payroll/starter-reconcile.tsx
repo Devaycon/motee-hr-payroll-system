@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { Fragment, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Download, ExternalLink, UserPlus } from "lucide-react";
+import { ArrowLeft, ExternalLink, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { PAYROLL_HREF } from "@/src/lib/payroll/constants";
-import { writeTable } from "@/src/lib/payroll/exports";
+import { writeTable, type ExportFormat } from "@/src/lib/payroll/exports";
 import { RECON_FIELDS, RECON_TOLERANCE, reconcileBatch, type ReconRow } from "@/src/lib/payroll/starter-import";
 import { usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import { cn } from "@/src/lib/utils";
 import { NotSupported, RunStatusBadge, fmtDate, money } from "./components/shared";
+import { DownloadMenu } from "./components/row-actions";
 
 type Status = "match" | "explained" | "investigate" | "no_expected" | "not_in_run";
 const statusOf = (r: ReconRow): Status => (r.status === "variance" ? (r.explained ? "explained" : "investigate") : r.status);
@@ -94,7 +95,7 @@ export function StarterReconcilePage({ batchId }: { batchId: string }) {
     router.replace(`?${p.toString()}`);
   };
 
-  const download = () => {
+  const download = (format: ExportFormat) => {
     const headers = ["Employee ID", "Name", "Department", "Status", ...RECON_FIELDS.flatMap((f) => [`${f.label} expected`, `${f.label} MOTEE`, `${f.label} difference`]), "Why"];
     const table = rows.map((r) => [
       r.employeeNumber,
@@ -104,7 +105,7 @@ export function StarterReconcilePage({ batchId }: { batchId: string }) {
       ...RECON_FIELDS.flatMap((f) => [r.figures[f.key].expected ?? "", r.figures[f.key].actual, r.figures[f.key].diff ?? ""]),
       r.explanations.join(" "),
     ]);
-    writeTable(`starter-reconciliation-${batch.id}`, "Reconciliation", { headers, data: table, preamble: [[`Reconciliation — ${batch.fileName}`], [`${run?.title ?? "No run"} · tolerance ₦${RECON_TOLERANCE}`], []] }, "xlsx");
+    writeTable(`starter-reconciliation-${batch.id}`, "Reconciliation", { headers, data: table, preamble: [[`Reconciliation — ${batch.fileName}`], [`${run?.title ?? "No run"} · tolerance ₦${RECON_TOLERANCE}`], []] }, format);
     actions.logExport(run?.id ?? "", `Starter reconciliation — ${batch.fileName}`);
     toast.success("Reconciliation downloaded");
   };
@@ -144,9 +145,7 @@ export function StarterReconcilePage({ batchId }: { batchId: string }) {
               <UserPlus className="h-4 w-4" /> Add to {openRun.title}
             </Button>
           )}
-          <Button variant="outline" className="gap-2" onClick={download}>
-            <Download className="h-4 w-4" /> Download
-          </Button>
+          <DownloadMenu onDownload={download} />
         </div>
       </div>
 

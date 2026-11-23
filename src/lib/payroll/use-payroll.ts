@@ -601,7 +601,7 @@ export function usePayrollActions() {
           return { ok: false, reason: `The input cut-off for ${run.period.label} was ${cutoff}. Add it to next month's run, or override.` };
         editDraft(runId, `Added pay input${opts.override ? " after the input cut-off (override)" : ""}`, (r) => ({
           ...r,
-          inputs: [...r.inputs, { ...input, id: `IN-${Date.now().toString(36)}-${r.inputs.length}` }],
+          inputs: [...r.inputs, { ...input, id: `IN-${Date.now().toString(36)}-${r.inputs.length}`, addedBy: input.addedBy ?? actor.name, addedAt: input.addedAt ?? new Date().toISOString() }],
           employees: r.employees.map((e) => (e.employeeId === input.employeeId ? { ...e, included: true } : e)),
         }));
         return { ok: true };

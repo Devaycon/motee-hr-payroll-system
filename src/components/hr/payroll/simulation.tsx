@@ -3,27 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowLeft,
-  CalendarClock,
-  CheckCircle2,
-  ChevronDown,
-  Circle,
-  Download,
-  FlaskConical,
-  Gift,
-  Landmark,
-  Plus,
-  Printer,
-  RotateCcw,
-  Save,
-  Send,
-  Settings2,
-  Trash2,
-  Users,
-  Wallet,
-  X,
-} from "lucide-react";
+import { ArrowLeft, CalendarClock, CheckCircle2, ChevronDown, Circle, FlaskConical, Gift, Landmark, Plus, Printer, RotateCcw, Save, Send, Settings2, Trash2, Users, Wallet, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -34,7 +14,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
 import { EmployeePicker } from "@/src/components/shared/employee-picker";
 import { PAYROLL_HREF, PAYROLL_MODULE, PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
-import { writeTable } from "@/src/lib/payroll/exports";
+import { writeTable, type ExportFormat } from "@/src/lib/payroll/exports";
 import {
   DEDUCTION_LABELS,
   EMPLOYER_KEYS,
@@ -62,6 +42,7 @@ import { cn } from "@/src/lib/utils";
 import { BarList, ChartCard, ColumnChart, Figure, compactNaira } from "./components/charts";
 import { PayrollCycle } from "./components/payroll-cycle";
 import { NotSupported, fmtDate, money, pctArrow } from "./components/shared";
+import { DownloadMenu } from "./components/row-actions";
 
 const ALL = "__all__";
 const CURRENT = "__current__";
@@ -142,7 +123,7 @@ export function PayrollSimulationPage() {
     toast.success(asNew || !loadedId ? "Scenario saved" : "Scenario updated");
   };
 
-  const exportXlsx = () => {
+  const exportTable = (format: ExportFormat) => {
     const rows = FIGURE_SECTIONS.flatMap((s) => s.rows.filter((r) => r.always || result.base[r.key] || result.sim[r.key]).map((r) => [s.title, r.label, result.base[r.key], result.sim[r.key], result.delta[r.key]]));
     writeTable(
       `payroll-simulation-${(name || "scenario").replace(/\W+/g, "-").toLowerCase()}`,
@@ -166,9 +147,9 @@ export function PayrollSimulationPage() {
           [],
         ],
       },
-      "xlsx",
+      format,
     );
-    actions.logExport("", `Payroll simulation — ${name || "unsaved scenario"}`);
+    actions.logExport("", `Payroll simulation — ${name || "unsaved scenario"} (${format.toUpperCase()})`);
     toast.success("Simulation downloaded");
   };
 
@@ -226,8 +207,8 @@ export function PayrollSimulationPage() {
           {current && (current.status === "draft" || current.status === "rejected") && (
             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { actions.submitScenario(current.id); toast.success("Sent for management review"); }}><Send className="h-3.5 w-3.5" /> Submit for review</Button>
           )}
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={exportXlsx}><Download className="h-3.5 w-3.5" /> Excel</Button>
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => window.print()}><Printer className="h-3.5 w-3.5" /> PDF</Button>
+          <DownloadMenu label="Export" onDownload={exportTable} />
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => window.print()}><Printer className="h-3.5 w-3.5" /> Print page</Button>
         </div>
       </div>
 

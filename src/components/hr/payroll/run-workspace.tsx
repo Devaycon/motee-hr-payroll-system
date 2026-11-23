@@ -4,27 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  BadgeCheck,
-  CheckCircle2,
-  CircleAlert,
-  FilePlus2,
-  Lock,
-  RefreshCw,
-  Send,
-  Trash2,
-  Upload,
-  Wallet,
-  Printer,
-  UserPlus,
-  Calculator,
-  RotateCcw,
-  Eye,
-  FileText,
-  MoreHorizontal,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeft, BadgeCheck, CheckCircle2, CircleAlert, FilePlus2, Lock, RefreshCw, Send, Trash2, Upload, Wallet, Printer, UserPlus, Calculator, RotateCcw, Eye, FileText, MoreHorizontal, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -73,6 +53,10 @@ import { inputSourceOf, type PayrollException, type PayrollRun, type PeriodInput
 import { openEarlierRuns, useCurrentActor, usePayrollActions, useRun, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import { cn } from "@/src/lib/utils";
 import { PaymentPanel } from "./payment-panel";
+import { BREAKDOWN_VIEWS, breakdownTable, buildBreakdown, type BreakdownView } from "@/src/lib/payroll/breakdowns";
+import { writeTable } from "@/src/lib/payroll/exports";
+import { RowActions, type RowAction } from "./components/row-actions";
+import { ExceptionDetailModal, InputDetailModal } from "./run-drilldowns";
 import { NotSupported, PipelineStepper, RunExportsMenu, RunStatusBadge, RunTypeBadge, Stat, fmtDate, money } from "./components/shared";
 
 export function RunWorkspacePage({ runId }: { runId: string }) {
@@ -100,6 +84,23 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
 
   const people = useMemo(() => new Map((bundle?.employees ?? []).map((e) => [e.id, e])), [bundle]);
   const profiles = useMemo(() => new Map((data?.profiles ?? []).map((p) => [p.employeeId, p])), [data]);
+  /** ⋯ on each money card: open the breakdown, or download it. */
+  const cardActions = (view: BreakdownView): RowAction[] => {
+    const meta = BREAKDOWN_VIEWS.find((v) => v.key === view)!;
+    return [
+      { label: "View breakdown", icon: Eye, href: `${PAYROLL_HREF}/${run?.id}/breakdown?view=${view}` },
+      {
+        label: "Download breakdown",
+        download: {
+          onDownload: (f) => {
+            if (!run) return;
+            writeTable(`${run.period.year}-${String(run.period.month).padStart(2, "0")}-${view}-breakdown`, `${meta.label} breakdown — ${run.title}`, breakdownTable(buildBreakdown(view, run, { people, profiles }), meta.groupBy), f);
+            actions.logExport(run.id, `${meta.label} breakdown (${f.toUpperCase()})`);
+          },
+        },
+      },
+    ];
+  };
   // Joiners check: re-run when HR onboarding moves (a hire clears, a new one starts this month).
   const onboardingKey = useAppSelector((s) => `${s.onboardingRecords.records.map((r) => `${r.id}:${r.status}:${r.startDate}`).join(",")}|${s.onboardingRecords.cleared.map((c) => c.id).join(",")}`);
   const isDraft = run?.status === "draft";
@@ -274,12 +275,12 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Employees" value={run.totals.employees} sub={`${run.employees.length - included.length} not in this run`} />
-        <Stat label="Gross pay" value={money(run.totals.gross)} href={`${PAYROLL_HREF}/${run.id}/breakdown?view=gross`} />
-        <Stat label="Deductions" value={money(run.totals.deductions)} sub={`incl. PAYE ${money(run.totals.paye, 0)}`} tone="warn" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=deductions`} />
-        <Stat label="PAYE" value={money(run.totals.paye)} sub="By State IRS" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=paye`} />
-        <Stat label="Net pay" value={money(run.totals.net)} sub="Names, banks and accounts" tone="good" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=net`} />
-        <Stat label="Pension" value={money(run.totals.pensionEmployee + run.totals.pensionEmployer)} sub="Employee + employer, by PFA" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=pension`} />
-        <Stat label="Employer cost" value={money(run.totals.employerCost)} sub="Pension, NSITF, ITF" />
+        <Stat label="Gross pay" value={money(run.totals.gross)} href={`${PAYROLL_HREF}/${run.id}/breakdown?view=gross`} actions={cardActions("gross")} />
+        <Stat label="Deductions" value={money(run.totals.deductions)} sub={`incl. PAYE ${money(run.totals.paye, 0)}`} tone="warn" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=deductions`} actions={cardActions("deductions")} />
+        <Stat label="PAYE" value={money(run.totals.paye)} sub="By State IRS" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=paye`} actions={cardActions("paye")} />
+        <Stat label="Net pay" value={money(run.totals.net)} sub="Names, banks and accounts" tone="good" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=net`} actions={cardActions("net")} />
+        <Stat label="Pension" value={money(run.totals.pensionEmployee + run.totals.pensionEmployer)} sub="Employee + employer, by PFA" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=pension`} actions={cardActions("pension")} />
+        <Stat label="Employer cost" value={money(run.totals.employerCost)} sub="Pension, NSITF, ITF, group life" href={`${PAYROLL_HREF}/${run.id}/breakdown?view=employer`} actions={cardActions("employer")} />
         <Stat
           label="Exceptions"
           value={`${errors.length} / ${warnings.length}`}
@@ -860,6 +861,7 @@ function EmployeesTable({ run, editable, people }: { run: PayrollRun; editable: 
 // ── Exceptions ──────────────────────────────────────────────────────────────
 
 function ExceptionsList({ run, people, editable, onAck }: { run: PayrollRun; people: Map<string, { fullName: string }>; editable: boolean; onAck: (e: PayrollException) => void }) {
+  const [detail, setDetail] = useState<PayrollException | null>(null);
   if (!run.exceptions.length)
     return (
       <div className="flex flex-col items-center gap-2 rounded-xl border bg-card border-dashed p-12 text-center">
@@ -871,6 +873,7 @@ function ExceptionsList({ run, people, editable, onAck }: { run: PayrollRun; peo
   const sorted = [...run.exceptions].sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1));
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
+      <ExceptionDetailModal run={run} exception={detail} onClose={() => setDetail(null)} onAcknowledge={onAck} editable={editable} />
       {sorted.map((e) => (
         <div key={e.id} className="flex items-start justify-between gap-4 border-b px-4 py-3 last:border-0">
           <div className="flex items-start gap-3">
@@ -899,11 +902,19 @@ function ExceptionsList({ run, people, editable, onAck }: { run: PayrollRun; peo
               )}
             </div>
           </div>
-          {editable && !e.acknowledged && (
-            <Button size="sm" variant="outline" className="h-7 shrink-0 text-[11px]" onClick={() => onAck(e)}>
-              Acknowledge
-            </Button>
-          )}
+          <RowActions
+            label="Exception actions"
+            actions={[
+              { label: "View details", icon: Eye, onSelect: () => setDetail(e) },
+              ...(editable && !e.acknowledged ? [{ label: "Acknowledge…", icon: CheckCircle2, onSelect: () => onAck(e) }] : []),
+              ...(e.employeeId && people.has(e.employeeId)
+                ? [
+                    { label: "Employee's pay this month", icon: Wallet, href: `${PAYROLL_HREF}/${run.id}/employees/${e.employeeId}`, separated: true },
+                    { label: "Employee profile", icon: UserRound, href: `/organization/employees/${e.employeeId}` },
+                  ]
+                : []),
+            ]}
+          />
         </div>
       ))}
     </div>
@@ -1000,8 +1011,10 @@ const SOURCE_STYLES: Record<PeriodInput["source"], string> = {
 };
 
 function InputsList({ run, people, editable, onAdd, onRemove }: { run: PayrollRun; people: Map<string, { fullName: string }>; editable: boolean; onAdd: () => void; onRemove: (id: string) => void }) {
+  const [detail, setDetail] = useState<PeriodInput | null>(null);
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
+      <InputDetailModal run={run} input={detail} onClose={() => setDetail(null)} />
       <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
         <p className="text-xs text-muted-foreground">
           One-period items on top of salary structures — pulled from Loans, Expenses and Attendance, plus anything added by hand.
@@ -1025,15 +1038,23 @@ function InputsList({ run, people, editable, onAdd, onRemove }: { run: PayrollRu
           <tbody>
             {run.inputs.map((i) => (
               <tr key={i.id} className="border-t">
-                <td className="px-4 py-2 font-medium">{people.get(i.employeeId)?.fullName ?? i.employeeId}</td>
+                <td className="px-4 py-2">
+                  <span className="font-medium">{people.get(i.employeeId)?.fullName ?? i.employeeId}</span>
+                  {i.addedBy && <span className="block text-[10px] text-muted-foreground">added by {i.addedBy}{i.addedAt ? ` · ${fmtDate(i.addedAt)}` : ""}</span>}
+                </td>
                 <td className="px-4 py-2 font-mono text-[11px]">{i.code}</td>
                 <td className="max-w-72 truncate px-4 py-2 text-muted-foreground">{i.description ?? "—"}</td>
                 <td className="px-4 py-2"><Badge variant="outline" className={cn("text-[10px] capitalize", SOURCE_STYLES[i.source])}>{i.source}</Badge></td>
                 <td className="px-4 py-2 text-right tabular-nums">{i.amount !== undefined ? money(i.amount) : `${i.units} ${i.code === "UNPAID_LEAVE" ? "days" : "hrs"}`}</td>
                 <td className="px-2 py-2">
-                  {editable && (i.source === "manual" || i.source === "adjustment") && (
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onRemove(i.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                  )}
+                  <RowActions
+                    label="Input actions"
+                    actions={[
+                      { label: "View details", icon: Eye, onSelect: () => setDetail(i) },
+                      { label: "Employee's pay this month", icon: Wallet, href: `${PAYROLL_HREF}/${run.id}/employees/${i.employeeId}` },
+                      ...(editable && (i.source === "manual" || i.source === "adjustment") ? [{ label: "Remove input", icon: Trash2, onSelect: () => onRemove(i.id), tone: "danger" as const, separated: true }] : []),
+                    ]}
+                  />
                 </td>
               </tr>
             ))}

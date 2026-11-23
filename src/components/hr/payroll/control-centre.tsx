@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, Banknote, CalendarClock, CheckCircle2, CircleDashed, GitPullRequestArrow, ShieldAlert, Sparkles, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowRight, Banknote, CalendarClock, CheckCircle2, CircleDashed, GitPullRequestArrow, ShieldAlert, Sparkles, XCircle, Eye, FileSpreadsheet, FileText, ShieldCheck } from "lucide-react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { PAYROLL_HREF } from "@/src/lib/payroll/constants";
 import { explainVariance } from "@/src/lib/payroll/intelligence";
@@ -12,6 +12,8 @@ import { cn } from "@/src/lib/utils";
 import { BarList, compactNaira } from "./components/charts";
 import { RunStatusBadge, fmtDate, money } from "./components/shared";
 import { RemittanceBadge, useRemittanceRows } from "./remittance-centre";
+import { RowActions } from "./components/row-actions";
+import { downloadRemittanceSchedule, remittanceStatement } from "@/src/lib/payroll/remittances";
 
 type Check = { label: string; state: "done" | "todo" | "blocked"; detail: string; href?: string };
 
@@ -28,6 +30,7 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
   const requests = useAppSelector((s) => s.approvals.requests);
   const roles = bundle?.roles ?? [];
   const { rows, projected } = useRemittanceRows();
+  const remCtx = { people: new Map((bundle?.employees ?? []).map((e) => [e.id, e])), profiles: new Map((data?.profiles ?? []).map((p) => [p.employeeId, p])), settings: data?.settings };
 
   if (!data || !bundle) return null;
 
@@ -185,7 +188,27 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
             {deadlines.map((r) => (
               <li key={r.key + (r.projected ? ":p" : "")} className="flex items-center justify-between gap-2">
                 <span className="min-w-0 truncate"><span className={cn("tabular-nums", r.overdue && "font-medium text-rose-600")}>{fmtDate(r.due)}</span> · {r.title} <span className="text-muted-foreground">({r.monthLabel}{r.projected ? ", estimate" : ""})</span></span>
-                <span className="flex shrink-0 items-center gap-1.5"><span className="tabular-nums">{compactNaira(r.outstanding)}</span>{!r.projected && <RemittanceBadge status={r.status} />}</span>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  <span className="tabular-nums">{compactNaira(r.outstanding)}</span>
+                  {!r.projected && <RemittanceBadge status={r.status} />}
+                  <RowActions
+                    label={`${r.title} actions`}
+                    actions={
+                      r.projected
+                        ? [{ label: "Open the run (estimate)", icon: Eye, href: `${PAYROLL_HREF}/${r.runs[0]?.id ?? ""}` }]
+                        : [
+                            { label: "View in Remittance Centre", icon: Eye, href: `${PAYROLL_HREF}?tab=remittances` },
+                            {
+                              label: "Download schedule",
+                              icon: FileSpreadsheet,
+                              download: { onDownload: (f) => { const st = remittanceStatement(r.item, r.runs, remCtx); if (st) downloadRemittanceSchedule(st, f); } },
+                            },
+                            { label: "Liability statement (PDF)", icon: FileText, href: `${PAYROLL_HREF}/remittances/${r.month}/statement?item=${r.item}` },
+                            ...(r.record && r.record.status !== "submitted" ? [{ label: "Payment confirmation (PDF)", icon: ShieldCheck, href: `${PAYROLL_HREF}/remittances/${r.month}/statement?item=${r.item}&doc=receipt` }] : []),
+                          ]
+                    }
+                  />
+                </span>
               </li>
             ))}
             {!deadlines.length && <li className="text-muted-foreground">Nothing outstanding.</li>}

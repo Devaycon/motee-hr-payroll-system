@@ -394,6 +394,7 @@ const grievanceReport = defineReport<GrvRow>({
 // ── Document Acknowledgement ────────────────────────────────────────────────
 interface DocAckRow {
   document: string;
+  employeeId: string;
   employeeNumber: string;
   employee: string;
   department: string;
@@ -439,6 +440,7 @@ const documentAckReport = defineReport<DocAckRow>({
         const acknowledged = hashPct(`${e.id}:${policy.name}`) < 75;
         rows.push({
           document: policy.name,
+          employeeId: e.id,
           employeeNumber: e.employeeNumber,
           employee: e.fullName,
           department: e.departmentName,
@@ -452,7 +454,7 @@ const documentAckReport = defineReport<DocAckRow>({
   },
   columns: [
     { key: "document", header: "Document", value: (r) => r.document },
-    { key: "employee", header: "Employee", value: (r) => r.employee },
+    { key: "employee", header: "Employee", value: (r) => r.employee, href: (r) => `/organization/employees/${r.employeeId}` },
     { key: "department", header: "Department", value: (r) => r.department },
     { key: "assignedOn", header: "Assigned", value: (r) => r.assignedOn },
     { key: "status", header: "Status", value: (r) => r.status },

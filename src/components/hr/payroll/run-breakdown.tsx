@@ -13,7 +13,7 @@ import { Label } from "@/src/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/src/components/ui/dropdown-menu";
 import { PAYROLL_HREF } from "@/src/lib/payroll/constants";
 import { BREAKDOWN_VIEWS, breakdownTable, buildBreakdown, isBreakdownView, type BreakdownRow, type BreakdownView } from "@/src/lib/payroll/breakdowns";
-import { writeTable } from "@/src/lib/payroll/exports";
+import { writeTable, type ExportFormat } from "@/src/lib/payroll/exports";
 import { usePayrollActions, useRun } from "@/src/lib/payroll/use-payroll";
 import { cn } from "@/src/lib/utils";
 import { NotSupported, RunStatusBadge, money } from "./components/shared";
@@ -64,7 +64,7 @@ export function RunBreakdownPage({ runId }: { runId: string }) {
     p.set("view", v);
     router.replace(`?${p.toString()}`);
   };
-  const download = (format: "csv" | "xlsx") => {
+  const download = (format: ExportFormat) => {
     const filtered = { ...breakdown, rows: shown, totals: Object.fromEntries(numericCols.map((c) => [c.key, sumOf(shown, c.key)])) };
     writeTable(`${run.period.year}-${String(run.period.month).padStart(2, "0")}-${view}-breakdown`, `${meta.label} breakdown`, breakdownTable(filtered, meta.groupBy), format);
     actions.logExport(run.id, `${meta.label} breakdown (${format.toUpperCase()})`);
@@ -94,12 +94,13 @@ export function RunBreakdownPage({ runId }: { runId: string }) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem className="text-xs" onClick={() => download("xlsx")}>Excel (XLSX)</DropdownMenuItem>
             <DropdownMenuItem className="text-xs" onClick={() => download("csv")}>CSV</DropdownMenuItem>
+            <DropdownMenuItem className="text-xs" onClick={() => download("pdf")}>PDF</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
       {/* View switcher doubles as a summary of every total in the run. */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {BREAKDOWN_VIEWS.map((v) => {
           const total = v.key === view ? breakdown.totals[breakdown.totalKey] : null;
           const figure =
@@ -107,6 +108,7 @@ export function RunBreakdownPage({ runId }: { runId: string }) {
             : v.key === "deductions" ? run.totals.deductions
             : v.key === "net" ? run.totals.net
             : v.key === "paye" ? run.totals.paye
+            : v.key === "employer" ? run.totals.employerCost
             : total;
           return (
             <button

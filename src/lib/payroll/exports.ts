@@ -282,7 +282,55 @@ export function buildExport(kind: ExportKind, ctx: ExportCtx): ExportTable {
   }
 }
 
-export function writeTable(name: string, sheet: string, t: ExportTable, format: "csv" | "xlsx") {
+export type ExportFormat = "csv" | "xlsx" | "pdf";
+
+export const FORMAT_LABELS: Record<ExportFormat, string> = { xlsx: "Excel (XLSX)", csv: "CSV", pdf: "PDF" };
+
+const escHtml = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const pdfCell = (v: Cell) => (typeof v === "number" ? (Number.isInteger(v) && Math.abs(v) < 10_000 ? String(v) : v.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : v);
+
+/**
+ * PDF of any export: the preamble as a heading block, the table, the trailer
+ * as a bold total row. Opens the browser's print-to-PDF, the same mechanism
+ * as report PDFs (no extra dependency).
+ */
+export function printTable(sheet: string, t: ExportTable): boolean {
+  if (typeof window === "undefined") return false;
+  const w = window.open("", "_blank", "width=1100,height=800");
+  if (!w) return false;
+  const pre = (t.preamble ?? []).filter((r) => r.some((c) => String(c).trim() !== ""));
+  const heading = pre.map((r, i) => `<div class="${i === 0 ? "h1" : "meta"}">${r.filter((c) => String(c).trim() !== "").map((c) => escHtml(pdfCell(c))).join(" &nbsp;·&nbsp; ")}</div>`).join("");
+  const isNum = t.headers.map((_, i) => t.data.some((r) => typeof r[i] === "number"));
+  const row = (r: Cell[], cls = "") => `<tr class="${cls}">${t.headers.map((_, i) => `<td class="${isNum[i] ? "n" : ""}">${escHtml(pdfCell(r[i] ?? ""))}</td>`).join("")}</tr>`;
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>${escHtml(sheet)}</title>
+<style>
+  *{box-sizing:border-box;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  body{margin:24px;color:#0f172a;}
+  .h1{font-size:18px;font-weight:700;margin-bottom:4px;}
+  .meta{color:#475569;font-size:12px;margin-bottom:2px;}
+  .head{margin-bottom:14px;}
+  .gen{color:#94a3b8;font-size:10px;margin-top:6px;}
+  table{width:100%;border-collapse:collapse;font-size:10.5px;}
+  th,td{text-align:left;padding:5px 6px;border-bottom:1px solid #e2e8f0;vertical-align:top;}
+  th{background:#f1f5f9;color:#334155;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  tr.total td{font-weight:700;border-top:2px solid #334155;}
+  @page{size:landscape;margin:12mm;}
+</style></head><body>
+  <div class="head">${heading || `<div class="h1">${escHtml(sheet)}</div>`}<div class="gen">MOTEE Payroll · generated ${escHtml(new Date().toLocaleString("en-GB"))} · ${t.data.length} rows</div></div>
+  <table><thead><tr>${t.headers.map((h, i) => `<th class="${isNum[i] ? "n" : ""}">${escHtml(h)}</th>`).join("")}</tr></thead>
+  <tbody>${t.data.map((r) => row(r)).join("")}${(t.trailer ?? []).map((r) => row(r, "total")).join("")}</tbody></table>
+  <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
+</body></html>`);
+  w.document.close();
+  return true;
+}
+
+export function writeTable(name: string, sheet: string, t: ExportTable, format: ExportFormat) {
+  if (format === "pdf") {
+    printTable(sheet, t);
+    return;
+  }
   const aoa: Cell[][] = [...(t.preamble ?? []), t.headers, ...t.data, ...(t.trailer ?? [])];
   if (format === "xlsx") {
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -296,7 +344,7 @@ export function writeTable(name: string, sheet: string, t: ExportTable, format: 
 }
 
 /** Downloads a run export. Returns anyone left out of the file, so the UI can say so. */
-export function downloadExport(kind: ExportKind, ctx: ExportCtx, format: "csv" | "xlsx" = "csv"): string[] {
+export function downloadExport(kind: ExportKind, ctx: ExportCtx, format: ExportFormat = "csv"): string[] {
   const t = buildExport(kind, ctx);
   writeTable(`${monthLabel(ctx.run)}-${kind}`, EXPORT_LABELS[kind], t, format);
   return t.excluded ?? [];
@@ -325,8 +373,8 @@ export function buildFormH1(year: number, payslips: Payslip[], employerTaxId: st
   };
 }
 
-export function downloadFormH1(year: number, payslips: Payslip[], employerTaxId: string) {
-  writeTable(`${year}-form-h1`, `Form H1 ${year}`, buildFormH1(year, payslips, employerTaxId), "xlsx");
+export function downloadFormH1(year: number, payslips: Payslip[], employerTaxId: string, format: ExportFormat = "xlsx") {
+  writeTable(`${year}-form-h1`, `Form H1 ${year}`, buildFormH1(year, payslips, employerTaxId), format);
 }
 
 // ── Manual upload templates ────────────────────────────────────────────────

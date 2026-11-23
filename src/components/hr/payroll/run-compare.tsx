@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Fragment, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Download, Search, TriangleAlert } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Eye, Filter, Search, SearchCheck, TriangleAlert, UserRound, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -15,6 +15,7 @@ import {
   KIND_LABELS,
   NATURE_LABELS,
   REASON_LABELS,
+  REASON_NATURE,
   REASON_ORDER,
   SOURCE_LABELS,
   compareRuns,
@@ -24,7 +25,7 @@ import {
   type TotalsLine,
   type VarianceReason,
 } from "@/src/lib/payroll/comparison";
-import { writeTable } from "@/src/lib/payroll/exports";
+import { writeTable, type ExportFormat } from "@/src/lib/payroll/exports";
 import { comparisonCtxOf, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import type { PayrollRun } from "@/src/lib/payroll/types";
 import { cn } from "@/src/lib/utils";
@@ -33,6 +34,7 @@ import { NotSupported, RunStatusBadge, fmtDate, money, pctArrow } from "./compon
 import { InvestigationsPanel, RaiseInvestigationDialog, type InvestigationDraft } from "./investigations";
 import { VarianceSummary } from "./variance-summary";
 import { PayrollCycle } from "./components/payroll-cycle";
+import { DetailModal, DownloadMenu, RowActions } from "./components/row-actions";
 
 const signed = (n: number, dp = 2) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${money(Math.abs(n), dp)}`;
 
@@ -81,6 +83,8 @@ export function RunComparePage() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [draft, setDraft] = useState<InvestigationDraft | null>(null);
+  const [empDetail, setEmpDetail] = useState<EmployeeVariance | null>(null);
+  const [reasonDetail, setReasonDetail] = useState<VarianceReason | null>(null);
 
   const runs = useMemo(
     () => [...(data?.runs ?? [])].filter((r) => r.employees.some((e) => e.computation)).sort((a, b) => b.period.year * 100 + b.period.month - (a.period.year * 100 + a.period.month) || b.createdAt.localeCompare(a.createdAt)),
@@ -100,7 +104,7 @@ export function RunComparePage() {
     router.replace(`?${p.toString()}`);
   };
 
-  const exportXlsx = () => {
+  const exportTable = (format: ExportFormat) => {
     if (!cmp) return;
     const headers = ["Employee ID", "Name", "Department", "Cost centre", `Gross ${cmp.previous.title}`, `Gross ${cmp.current.title}`, "Change", "Change %", ...REASON_ORDER.map((r) => REASON_LABELS[r]), "Explanation", "Movements (element · kind · source)", "Unexplained"];
     const rows = cmp.employees.map((e) => [
@@ -137,9 +141,9 @@ export function RunComparePage() {
           [],
         ],
       },
-      "xlsx",
+      format,
     );
-    actions.logExport(cmp.current.id, `Payroll comparison against ${cmp.previous.title}`);
+    actions.logExport(cmp.current.id, `Payroll comparison against ${cmp.previous.title} (${format.toUpperCase()})`);
     toast.success("Comparison downloaded");
   };
 
@@ -157,9 +161,7 @@ export function RunComparePage() {
         <span className="text-xs text-muted-foreground">against</span>
         <RunPicker label="Previous" runs={runs.filter((r) => r.id !== current?.id)} value={previous?.id} onChange={(id) => pickRun("previous", id)} />
         {cmp && (
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={exportXlsx}>
-            <Download className="h-3.5 w-3.5" /> Download
-          </Button>
+          <DownloadMenu onDownload={exportTable} />
         )}
       </div>
     </div>
@@ -246,11 +248,11 @@ export function RunComparePage() {
           <div className="mt-4 flex flex-1 flex-col gap-2 text-xs">
             <BridgeRow label={`${previous.title} gross`} value={money(gross.previous)} strong />
             {cmp.bridge.map((b) => (
+              <div key={b.reason} className="flex items-start gap-1">
               <button
-                key={b.reason}
                 type="button"
                 onClick={() => toggleReason(b.reason)}
-                className={cn("grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 rounded-md px-2 py-1.5 text-left transition hover:bg-muted/60", reason === b.reason && "bg-muted")}
+                className={cn("grid flex-1 grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 rounded-md px-2 py-1.5 text-left transition hover:bg-muted/60", reason === b.reason && "bg-muted")}
               >
                 <span className="flex flex-wrap items-center gap-1.5">
                   <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium", REASON_TONE[b.reason])}>{REASON_LABELS[b.reason]}</span>
@@ -262,6 +264,16 @@ export function RunComparePage() {
                   <span className={cn("block h-full rounded-full", b.amount >= 0 ? "bg-emerald-500" : "bg-rose-500")} style={{ width: `${(Math.abs(b.amount) / bridgeMax) * 100}%` }} />
                 </span>
               </button>
+              <RowActions
+                className="mt-1"
+                label={`${REASON_LABELS[b.reason]} actions`}
+                actions={[
+                  { label: `View the ${b.employees} employee${b.employees === 1 ? "" : "s"}`, icon: Eye, onSelect: () => setReasonDetail(b.reason) },
+                  { label: reason === b.reason ? "Clear table filter" : "Filter the table", icon: Filter, onSelect: () => toggleReason(b.reason) },
+                  { label: "Investigate this movement", icon: SearchCheck, onSelect: () => investigate(null, b.reason), separated: true },
+                ]}
+              />
+              </div>
             ))}
             {cmp.bridge.length === 0 && <p className="px-2 text-muted-foreground">No change in gross pay.</p>}
             <BridgeRow label={`${current.title} gross`} value={money(gross.current)} strong />
@@ -365,7 +377,17 @@ export function RunComparePage() {
                         <p className={cn("mt-1 text-[11px]", Math.abs(e.unexplained) >= 0.005 ? "text-amber-800 dark:text-amber-300" : "text-muted-foreground")}>{e.explanation}</p>
                       </td>
                       <td className="px-3 py-2 text-right">
-                        <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => investigate(e)}>Investigate</Button>
+                        <RowActions
+                          label={`${e.name} actions`}
+                          actions={[
+                            { label: "View details", icon: Eye, onSelect: () => setEmpDetail(e) },
+                            { label: isOpen ? "Hide transactions" : "Show transactions", icon: ChevronDown, onSelect: toggle },
+                            { label: "Pay this month", icon: Wallet, href: `${PAYROLL_HREF}/${current.id}/employees/${e.employeeId}`, separated: true },
+                            ...(cmp.employees.some((x) => x.employeeId === e.employeeId && x.previousGross !== null) ? [{ label: `Pay in ${previous.period.label}`, icon: Wallet, href: `${PAYROLL_HREF}/${previous.id}/employees/${e.employeeId}` }] : []),
+                            { label: "Employee profile", icon: UserRound, href: `/organization/employees/${e.employeeId}` },
+                            { label: "Investigate", icon: SearchCheck, onSelect: () => investigate(e), separated: true },
+                          ]}
+                        />
                       </td>
                     </tr>
                     {isOpen && (
@@ -385,6 +407,41 @@ export function RunComparePage() {
       </div>
 
       <InvestigationsPanel runId={current.id} />
+      {empDetail && (
+        <DetailModal
+          wide
+          open
+          onClose={() => setEmpDetail(null)}
+          title={empDetail.name}
+          description={`${empDetail.employeeNumber} · ${empDetail.department} · ${empDetail.costCentre} — ${previous.period.label} against ${current.period.label}`}
+          facts={[
+            { label: `Gross ${previous.period.label.split(" ")[0]}`, value: empDetail.previousGross === null ? "—" : money(empDetail.previousGross) },
+            { label: `Gross ${current.period.label.split(" ")[0]}`, value: empDetail.currentGross === null ? "—" : money(empDetail.currentGross) },
+            { label: "Gross variance", value: `${signed(empDetail.change)} ${pctArrow(empDetail.pct)}`, tone: empDetail.change < 0 ? "bad" : "good" },
+            { label: "Net pay change", value: empDetail.previousNet === null || empDetail.currentNet === null ? "—" : signed(empDetail.currentNet - empDetail.previousNet) },
+          ]}
+          actions={
+            <>
+              <Button size="sm" variant="outline" asChild><Link href={`${PAYROLL_HREF}/${current.id}/employees/${empDetail.employeeId}`}>Pay this month</Link></Button>
+              <Button size="sm" variant="outline" asChild><Link href={`/organization/employees/${empDetail.employeeId}`}>Employee profile</Link></Button>
+              <Button size="sm" onClick={() => { const x = empDetail; setEmpDetail(null); investigate(x); }}>Investigate</Button>
+            </>
+          }
+        >
+          <p className={cn("rounded-lg border p-3 text-sm", Math.abs(empDetail.unexplained) >= 0.005 && "border-amber-500/40 bg-amber-500/5")}>{empDetail.explanation}</p>
+          <EmployeeDrillDown e={empDetail} previous={previous} current={current} />
+        </DetailModal>
+      )}
+      {reasonDetail && (
+        <ReasonDetail
+          reason={reasonDetail}
+          employees={cmp.employees.filter((x) => x.reasons[reasonDetail] !== undefined)}
+          previous={previous}
+          current={current}
+          onClose={() => setReasonDetail(null)}
+          onEmployee={(x) => { setReasonDetail(null); setEmpDetail(x); }}
+        />
+      )}
       <RaiseInvestigationDialog draft={draft} onClose={() => setDraft(null)} />
     </div>
   );
@@ -436,6 +493,59 @@ function EmployeeDrillDown({ e, previous, current }: { e: EmployeeVariance; prev
         </ul>
       </div>
     </div>
+  );
+}
+
+/** Everyone behind one reason in the bridge (e.g. the 7 with unpaid leave & lateness), with the days, hours and source records. */
+function ReasonDetail({ reason, employees, previous, current, onClose, onEmployee }: { reason: VarianceReason; employees: EmployeeVariance[]; previous: PayrollRun; current: PayrollRun; onClose: () => void; onEmployee: (e: EmployeeVariance) => void }) {
+  const total = employees.reduce((s, e) => s + (e.reasons[reason] ?? 0), 0);
+  const units = (n?: number) => (n === undefined ? "—" : String(n));
+  const isDays = reason === "attendance";
+  return (
+    <DetailModal
+      wide
+      open
+      onClose={onClose}
+      title={`${REASON_LABELS[reason]} · ${employees.length} employee${employees.length === 1 ? "" : "s"}`}
+      description={`${previous.period.label} → ${current.period.label}. ${NATURE_LABELS[REASON_NATURE[reason]]} movement.`}
+      facts={[
+        { label: "Net movement", value: signed(total), tone: total < 0 ? "bad" : "good" },
+        { label: "Employees", value: String(employees.length) },
+        { label: "Increases", value: String(employees.filter((e) => (e.reasons[reason] ?? 0) > 0).length) },
+        { label: "Decreases", value: String(employees.filter((e) => (e.reasons[reason] ?? 0) < 0).length) },
+      ]}
+    >
+      <div className="overflow-x-auto rounded-lg border">
+        <table className="w-full min-w-[720px] text-xs">
+          <thead className="bg-muted/40 text-left text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 font-medium">Employee</th>
+              <th className="px-3 py-2 font-medium">Item</th>
+              <th className="px-3 py-2 text-right font-medium">{isDays ? "Days / hrs" : "Units"} {previous.period.label.split(" ")[0].slice(0, 3)} → {current.period.label.split(" ")[0].slice(0, 3)}</th>
+              <th className="px-3 py-2 text-right font-medium">Amount</th>
+              <th className="px-3 py-2 font-medium">Source</th>
+              <th className="w-8" />
+            </tr>
+          </thead>
+          <tbody>
+            {employees.flatMap((e) =>
+              e.movements
+                .filter((m) => m.reason === reason)
+                .map((m, i) => (
+                  <tr key={`${e.employeeId}-${m.code}-${i}`} className="border-t align-top">
+                    <td className="px-3 py-2">{i === 0 && <><span className="font-medium">{e.name}</span><span className="block text-[10px] text-muted-foreground">{e.employeeNumber} · {e.department}</span></>}</td>
+                    <td className="px-3 py-2">{m.name}<span className="block text-[10px] text-muted-foreground">{KIND_LABELS[m.kind]}</span></td>
+                    <td className="px-3 py-2 text-right tabular-nums">{m.previousUnits !== undefined || m.currentUnits !== undefined ? `${units(m.previousUnits)} → ${units(m.currentUnits)}` : "—"}</td>
+                    <td className={cn("px-3 py-2 text-right font-medium tabular-nums", m.change < 0 ? "text-rose-600" : "text-emerald-700")}>{signed(m.change)}<span className="block text-[10px] font-normal text-muted-foreground">{money(m.previous)} → {money(m.current)}</span></td>
+                    <td className="px-3 py-2 text-[11px]"><span className={cn(!m.source.confirmed && "font-medium text-amber-700")}>{SOURCE_LABELS[m.source.type]}</span><span className="block text-[10px] text-muted-foreground">{m.source.detail}</span></td>
+                    <td className="px-1 py-2">{i === 0 && <RowActions label={`${e.name} actions`} actions={[{ label: "View details", icon: Eye, onSelect: () => onEmployee(e) }, { label: "Pay this month", icon: Wallet, href: `${PAYROLL_HREF}/${current.id}/employees/${e.employeeId}` }, { label: "Employee profile", icon: UserRound, href: `/organization/employees/${e.employeeId}` }]} />}</td>
+                  </tr>
+                )),
+            )}
+          </tbody>
+        </table>
+      </div>
+    </DetailModal>
   );
 }
 

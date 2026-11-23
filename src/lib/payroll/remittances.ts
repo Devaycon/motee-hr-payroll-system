@@ -1,5 +1,5 @@
 import type { LocaleEmployee } from "@/src/lib/types/locale";
-import { remittanceAmounts, remittanceCalendar, writeTable, type ExportTable, type RemittanceItem } from "./exports";
+import { remittanceAmounts, remittanceCalendar, writeTable, type ExportFormat, type ExportTable, type RemittanceItem } from "./exports";
 import { round2 } from "./ng/engine";
 import { previousWorkingDay } from "./ng/calendar";
 import { paymentSnapshot } from "./run-builder";
@@ -174,12 +174,12 @@ export function remittanceStatement(item: RemittanceItem, runs: PayrollRun[], ct
   };
 }
 
-export function downloadRemittanceSchedule(st: RemittanceStatement, format: "csv" | "xlsx" = "xlsx") {
+export function downloadRemittanceSchedule(st: RemittanceStatement, format: ExportFormat = "xlsx") {
   writeTable(`${st.month}-${st.item}-remittance`, `${st.title} ${st.month}`, st.table, format);
 }
 
 /** Every remittance for the month in one workbook-style CSV/XLSX download, one after the other. */
-export function downloadAllRemittances(statements: RemittanceStatement[], month: string, format: "csv" | "xlsx" = "xlsx") {
+export function downloadAllRemittances(statements: RemittanceStatement[], month: string, format: ExportFormat = "xlsx") {
   const data: Cell[][] = [];
   for (const st of statements) {
     data.push([`${st.title} — ${st.to}`, `Due ${st.due}`, `Total ${st.total}`], st.table.headers, ...st.table.data, ...(st.table.trailer ?? []), []);

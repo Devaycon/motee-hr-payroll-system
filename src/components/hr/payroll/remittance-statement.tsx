@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, FileSpreadsheet, Printer } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { PAYROLL_HREF } from "@/src/lib/payroll/constants";
@@ -13,6 +13,7 @@ import { companySnapshot } from "@/src/lib/payroll/run-builder";
 import { usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import { cn } from "@/src/lib/utils";
 import { NotSupported, fmtDate, money } from "./components/shared";
+import { DownloadMenu } from "./components/row-actions";
 
 /**
  * A printable remittance statement (what's owed to one authority for a pay
@@ -112,9 +113,7 @@ export function RemittanceStatementPage({ month }: { month: string }) {
               Payment confirmation
             </button>
           </div>
-          <Button size="sm" variant="outline" className="gap-1.5" disabled={!st.contributors} onClick={() => downloadRemittanceSchedule(st, "xlsx")}>
-            <FileSpreadsheet className="h-3.5 w-3.5" /> Schedule (XLSX)
-          </Button>
+          <DownloadMenu label="Schedule" disabled={!st.contributors} onDownload={(f) => downloadRemittanceSchedule(st, f)} />
           <Button size="sm" className="gap-1.5" onClick={print}>
             <Printer className="h-3.5 w-3.5" /> Print / Save as PDF
           </Button>

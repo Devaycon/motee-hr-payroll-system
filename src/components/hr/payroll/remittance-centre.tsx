@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { BellRing, CalendarDays, ChevronDown, ChevronRight, Download, FileCheck2, FileSpreadsheet, FileText, Paperclip, Send, ShieldCheck, Users } from "lucide-react";
+import { BellRing, CalendarDays, ChevronDown, ChevronRight, FileCheck2, FileSpreadsheet, FileText, Paperclip, Send, ShieldCheck, Users, Eye, Banknote } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -10,6 +10,7 @@ import { Label } from "@/src/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
 import { HrStatCardsGrid, type HrStatCardItem } from "@/src/components/shared/hr-stat-card";
 import { PAYROLL_HREF, PAYROLL_MODULE } from "@/src/lib/payroll/constants";
+import { DownloadMenu, RowActions } from "./components/row-actions";
 import { REMITTANCE_ITEMS, downloadAllRemittances, downloadRemittanceSchedule, remittanceStatement, type RemittanceCtx } from "@/src/lib/payroll/remittances";
 import { REMITTANCE_STATUS_META, projectedRows, remindersDue, remittanceRows, summarise, type RemittanceRow, type RemittanceStatus } from "@/src/lib/payroll/remittance-centre";
 import { usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
@@ -156,18 +157,14 @@ export function RemittanceCentre() {
                   <p className="text-sm font-semibold">{label}</p>
                   <p className="text-xs text-muted-foreground">{monthRuns.length} finalized run{monthRuns.length === 1 ? "" : "s"} · {monthRuns.map((r) => r.title).join(", ")}</p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 gap-1.5 text-xs"
-                  onClick={() => {
+                <DownloadMenu
+                  label="All schedules"
+                  onDownload={(f) => {
                     const all = REMITTANCE_ITEMS.map((i) => remittanceStatement(i, monthRuns, ctx)).filter((x) => !!x && x.total > 0);
-                    downloadAllRemittances(all as NonNullable<(typeof all)[number]>[], month);
-                    actions.logExport("", `All statutory remittance schedules — ${label}`);
+                    downloadAllRemittances(all as NonNullable<(typeof all)[number]>[], month, f);
+                    actions.logExport("", `All statutory remittance schedules — ${label} (${f.toUpperCase()})`);
                   }}
-                >
-                  <Download className="h-3.5 w-3.5" /> All schedules
-                </Button>
+                />
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px] text-xs">
@@ -198,29 +195,32 @@ export function RemittanceCentre() {
                             <td className="px-3 py-2.5"><RemittanceBadge status={r.status} />{r.overdue && r.record?.status === "submitted" && <span className="ml-1 text-[10px] text-muted-foreground">(instruction sent)</span>}</td>
                             <td className={cn("px-3 py-2.5 text-right tabular-nums", r.outstanding > 0 && "font-medium")}>{r.liability > 0 ? money(r.outstanding) : "—"}</td>
                             <td className="px-3 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
-                              {canEdit && r.liability > 0 && r.status !== "reconciled" && (
-                                <div className="flex justify-end gap-1">
-                                  {(r.status === "calculated" || (r.status === "overdue" && !r.record)) && (
-                                    <Button size="sm" variant="ghost" className="h-7 gap-1 text-[11px]" onClick={() => openDialog("submit", r)}><Send className="h-3 w-3" /> Submitted</Button>
-                                  )}
-                                  {r.outstanding > 0 && (
-                                    <Button size="sm" variant={r.overdue ? "default" : "outline"} className="h-7 text-[11px]" onClick={() => openDialog("pay", r)}>Record payment</Button>
-                                  )}
-                                  {r.status === "paid" && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-7 gap-1 text-[11px]"
-                                      onClick={() => {
-                                        const res = actions.reconcileRemittance(r);
-                                        if (res.ok) toast.success(`${r.title} reconciled`);
-                                        else toast.error(res.reason);
-                                      }}
-                                    >
-                                      <ShieldCheck className="h-3 w-3" /> Reconcile
-                                    </Button>
-                                  )}
-                                </div>
+                              {r.liability > 0 && (
+                                <RowActions
+                                  label={`${r.title} actions`}
+                                  actions={[
+                                    { label: expanded ? "Hide details" : "View details", icon: Eye, onSelect: () => setOpen(expanded ? null : r.key) },
+                                    {
+                                      label: "Download schedule",
+                                      icon: FileSpreadsheet,
+                                      download: {
+                                        onDownload: (f) => {
+                                          const st = remittanceStatement(r.item, r.runs, ctx);
+                                          if (!st) return;
+                                          downloadRemittanceSchedule(st, f);
+                                          actions.logExport("", `${r.title} schedule — ${r.monthLabel} (${f.toUpperCase()})`);
+                                        },
+                                      },
+                                    },
+                                    { label: "Liability statement (PDF)", icon: FileText, href: `${PAYROLL_HREF}/remittances/${r.month}/statement?item=${r.item}` },
+                                    ...(r.record && r.record.status !== "submitted" ? [{ label: "Payment confirmation (PDF)", icon: ShieldCheck, href: `${PAYROLL_HREF}/remittances/${r.month}/statement?item=${r.item}&doc=receipt` }] : []),
+                                    ...(canEdit && r.status !== "reconciled" && (r.status === "calculated" || (r.status === "overdue" && !r.record)) ? [{ label: "Mark instruction sent", icon: Send, onSelect: () => openDialog("submit", r), separated: true }] : []),
+                                    ...(canEdit && r.status !== "reconciled" && r.outstanding > 0 ? [{ label: "Record payment", icon: Banknote, onSelect: () => openDialog("pay", r) }] : []),
+                                    ...(canEdit && r.status === "paid"
+                                      ? [{ label: "Reconcile", icon: ShieldCheck, onSelect: () => { const res = actions.reconcileRemittance(r); if (res.ok) toast.success(`${r.title} reconciled`); else toast.error(res.reason); } }]
+                                      : []),
+                                  ]}
+                                />
                               )}
                             </td>
                           </tr>
@@ -340,9 +340,7 @@ function Detail({ row, ctx, canEdit }: { row: RemittanceRow; ctx: RemittanceCtx;
               <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" asChild>
                 <Link href={`${PAYROLL_HREF}/remittances/${row.month}/statement?item=${row.item}`}><FileText className="h-3 w-3" /> Liability statement</Link>
               </Button>
-              <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={() => { if (st) { downloadRemittanceSchedule(st, "xlsx"); actions.logExport("", `${row.title} schedule — ${row.monthLabel}`); } }}>
-                <FileSpreadsheet className="h-3 w-3" /> Schedule
-              </Button>
+              <DownloadMenu size="xs" label="Schedule" disabled={!st} onDownload={(f) => { if (st) { downloadRemittanceSchedule(st, f); actions.logExport("", `${row.title} schedule — ${row.monthLabel} (${f.toUpperCase()})`); } }} />
               {confirmed && (
                 <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" asChild>
                   <Link href={`${PAYROLL_HREF}/remittances/${row.month}/statement?item=${row.item}&doc=receipt`}><ShieldCheck className="h-3 w-3" /> Payment confirmation</Link>

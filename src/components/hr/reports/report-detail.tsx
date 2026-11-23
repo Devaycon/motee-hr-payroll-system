@@ -187,7 +187,7 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
         })}
       </div>
 
-      <ReportTable columns={def.columns} rows={filteredRows} />
+      <ReportTable columns={def.columns} rows={filteredRows} rowActions={def.rowActions} />
     </div>
   );
 }
