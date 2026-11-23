@@ -11,6 +11,7 @@ import type {
   StatutoryRateSet,
   YtdTotals,
   PaymentBatch,
+  VarianceInvestigation,
 } from "@/src/lib/payroll/types";
 import { CALC_SETTING_KEYS, diffSettings, versionElement } from "@/src/lib/payroll/config";
 import type { TenantPayrollData } from "@/src/lib/payroll/run-builder";
@@ -60,6 +61,8 @@ export type TenantPayroll = TenantPayrollData & {
   configChanges?: ConfigChange[];
   /** Remittance reminders already sent, by "YYYY-MM:item:daysBefore". */
   remindersSent?: Record<string, string>;
+  /** Payroll movements under investigation: owner, evidence, resolution and sign-off. */
+  investigations?: VarianceInvestigation[];
 };
 
 export interface PayrollState {
@@ -68,7 +71,7 @@ export interface PayrollState {
 }
 
 /** Bump to reseed every tenant (drops local payroll edits). */
-export const PAYROLL_SEED_VERSION = 7;
+export const PAYROLL_SEED_VERSION = 8;
 
 const initialState: PayrollState = { byTenant: {}, seedVersion: PAYROLL_SEED_VERSION };
 
@@ -379,6 +382,82 @@ const slice = createSlice({
       log(t, action.payload.tenantId, action.payload.actor, action.payload.note, { runId: run.id });
     },
 
+    // ── Variance investigations ───────────────────────────────────────────────
+
+    openInvestigation(state, action: PayloadAction<Tenant & Actor & { investigation: VarianceInvestigation }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      const inv = action.payload.investigation;
+      t.investigations ??= [];
+      if (t.investigations.some((x) => x.id === inv.id)) return;
+      t.investigations.unshift(inv);
+      log(t, action.payload.tenantId, action.payload.actor, "Opened variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${inv.title} (owner ${inv.ownerName})` });
+    },
+
+    /** Owner, due date or status (open ↔ investigating). Resolution has its own step. */
+    updateInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; patch: Partial<Pick<VarianceInvestigation, "status" | "ownerId" | "ownerName" | "dueDate">>; note: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv || inv.status === "resolved" || action.payload.patch.status === "resolved") return;
+      Object.assign(inv, action.payload.patch);
+      inv.history.push({ at: new Date().toISOString(), actor: action.payload.actor, action: action.payload.note });
+      log(t, action.payload.tenantId, action.payload.actor, "Updated variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${action.payload.note}` });
+    },
+
+    addInvestigationComment(state, action: PayloadAction<Tenant & Actor & { id: string; commentId: string; text: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv || !action.payload.text.trim()) return;
+      const at = new Date().toISOString();
+      inv.comments.push({ id: action.payload.commentId, at, by: action.payload.actor, text: action.payload.text.trim() });
+      inv.history.push({ at, actor: action.payload.actor, action: "Commented" });
+      if (inv.status === "open") {
+        inv.status = "investigating";
+        inv.history.push({ at, actor: action.payload.actor, action: "Moved to Under investigation" });
+      }
+    },
+
+    attachInvestigationDocument(state, action: PayloadAction<Tenant & Actor & { id: string; document: VarianceInvestigation["documents"][number] }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv) return;
+      inv.documents.push(action.payload.document);
+      inv.history.push({ at: action.payload.document.uploadedAt, actor: action.payload.actor, action: `Attached ${action.payload.document.fileName}` });
+    },
+
+    resolveInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; note: string; outcome: "legitimate" | "error" }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv || inv.status === "resolved" || !action.payload.note.trim()) return;
+      const at = new Date().toISOString();
+      inv.status = "resolved";
+      inv.resolutionNote = action.payload.note.trim();
+      inv.outcome = action.payload.outcome;
+      inv.resolvedBy = action.payload.actor;
+      inv.resolvedById = action.payload.actorId;
+      inv.resolvedAt = at;
+      inv.signOff = undefined;
+      inv.history.push({ at, actor: action.payload.actor, action: `Resolved — ${action.payload.outcome === "legitimate" ? "movement is legitimate" : "payroll error, correction needed"}`, note: inv.resolutionNote });
+      log(t, action.payload.tenantId, action.payload.actor, "Resolved variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${inv.resolutionNote}` });
+    },
+
+    /** A second person accepts the resolution or reopens it. Never the person who resolved it. */
+    signOffInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; decision: "accepted" | "reopened"; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv || inv.status !== "resolved" || inv.signOff?.decision === "accepted") return;
+      if (inv.resolvedBy === action.payload.actor || (inv.resolvedById && inv.resolvedById === action.payload.actorId)) return;
+      const at = new Date().toISOString();
+      inv.signOff = { by: action.payload.actor, byId: action.payload.actorId, at, decision: action.payload.decision, note: action.payload.note };
+      if (action.payload.decision === "reopened") {
+        inv.status = "investigating";
+        inv.history.push({ at, actor: action.payload.actor, action: "Reopened the investigation", note: action.payload.note });
+      } else {
+        inv.history.push({ at, actor: action.payload.actor, action: "Signed off the resolution", note: action.payload.note });
+      }
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.decision === "accepted" ? "Signed off variance investigation" : "Reopened variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: inv.id });
+    },
+
     logPayroll(state, action: PayloadAction<Tenant & Actor & { action: string; runId?: string; employeeId?: string; detail?: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
@@ -389,6 +468,12 @@ const slice = createSlice({
 });
 
 export const {
+  openInvestigation,
+  updateInvestigation,
+  addInvestigationComment,
+  attachInvestigationDocument,
+  resolveInvestigation,
+  signOffInvestigation,
   addConfigChange,
   decideConfigChange,
   updateRemittance,

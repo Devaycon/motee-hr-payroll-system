@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
 import { AlertTriangle, ArrowRight, Banknote, CalendarClock, CheckCircle2, CircleDashed, GitPullRequestArrow, ShieldAlert, Sparkles, XCircle } from "lucide-react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { PAYROLL_HREF } from "@/src/lib/payroll/constants";
 import { explainVariance } from "@/src/lib/payroll/intelligence";
 import { EXCEPTION_RULE_LABELS } from "@/src/lib/payroll/validation";
-import { useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { INVESTIGATIONS_HREF, comparisonCtxOf, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import type { PayrollRun } from "@/src/lib/payroll/types";
 import { cn } from "@/src/lib/utils";
 import { BarList, compactNaira } from "./components/charts";
@@ -29,7 +28,6 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
   const requests = useAppSelector((s) => s.approvals.requests);
   const roles = bundle?.roles ?? [];
   const { rows, projected } = useRemittanceRows();
-  const people = useMemo(() => new Map((bundle?.employees ?? []).map((e) => [e.id, e])), [bundle]);
 
   if (!data || !bundle) return null;
 
@@ -37,7 +35,7 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
   const lockedUnpaid = runs.find((r) => r.status === "finalized" || (r.status === "disbursed" && r.payment && r.payment.status !== "settled")) ?? null;
   const run = current ?? lockedUnpaid;
   const previous = run ? runs.filter((r) => r.type === "regular" && r.id !== run.id && r.period.year * 100 + r.period.month < run.period.year * 100 + run.period.month && (r.status === "finalized" || r.status === "disbursed"))[0] : undefined;
-  const story = run && previous && run.type === "regular" ? explainVariance(run, previous, { people, elements: data.elements, structures: data.structures }) : null;
+  const story = run && previous && run.type === "regular" ? explainVariance(run, previous, comparisonCtxOf(data, bundle)) : null;
 
   const errors = run?.exceptions.filter((e) => e.severity === "error" && !e.acknowledged) ?? [];
   const warnings = run?.exceptions.filter((e) => e.severity === "warning") ?? [];
@@ -203,10 +201,19 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
                 <BarList rows={story.drivers.slice(0, 5).map((d) => ({ label: d.label, value: d.amount, sub: `${d.employees}` }))} emptyText="No movement." />
                 <ul className="space-y-1 text-[11px]">
                   {story.topEmployees.slice(0, 5).map((e) => (
-                    <li key={e.name} className="flex justify-between gap-2"><span className="truncate">{e.name}</span><span className={cn("tabular-nums", e.change < 0 && "text-rose-600")}>{e.change > 0 ? "+" : ""}{compactNaira(e.change)}</span></li>
+                    <li key={e.employeeId} className="flex justify-between gap-2"><span className="truncate">{e.name}</span><span className={cn("tabular-nums", e.change < 0 && "text-rose-600")}>{e.change > 0 ? "+" : ""}{compactNaira(e.change)}</span></li>
                   ))}
                 </ul>
               </div>
+              <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2 text-[11px]">
+                <span className={cn(story.comparison.reconciliation.balanced ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400")}>
+                  {story.comparison.reconciliation.balanced ? "Reconciled to the register" : "Not fully reconciled"}
+                </span>
+                {Math.abs(story.comparison.reconciliation.unexplained) >= 0.005 && <span className="text-amber-700 dark:text-amber-400">{compactNaira(story.comparison.reconciliation.unexplained)} unclassified</span>}
+                <Link href={`${INVESTIGATIONS_HREF}?status=open`} className="text-muted-foreground hover:text-foreground hover:underline">
+                  {(data.investigations ?? []).filter((i) => i.status !== "resolved").length} open investigation{(data.investigations ?? []).filter((i) => i.status !== "resolved").length === 1 ? "" : "s"}
+                </Link>
+              </p>
             </>
           ) : (
             <p className="text-xs text-muted-foreground">Once a month is finalized, the next month&apos;s changes are explained here.</p>

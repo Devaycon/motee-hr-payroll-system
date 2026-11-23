@@ -28,7 +28,8 @@ import {
   yearToDate,
   type CostDimension,
 } from "@/src/lib/payroll/intelligence";
-import { usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { INVESTIGATIONS_HREF, comparisonCtxOf, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { VarianceSummary } from "./variance-summary";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
 import { cn } from "@/src/lib/utils";
@@ -62,7 +63,7 @@ export function PayrollIntelligence() {
   const selRun = regularOf(selected);
   const prevBucket = months[months.indexOf(selected!) - 1];
   const prevRun = regularOf(prevBucket);
-  const story = selRun && prevRun ? explainVariance(selRun, prevRun, { people, elements: data.elements, structures: data.structures }) : null;
+  const story = selRun && prevRun ? explainVariance(selRun, prevRun, comparisonCtxOf(data, bundle)) : null;
   const cost = costBy(selected, dim, bundle, states);
   const heads = headcountMovement(months).slice(-12);
   const ot = overtimeCost(months, data.elements).slice(-12);
@@ -96,12 +97,15 @@ export function PayrollIntelligence() {
         <div className="flex flex-wrap items-start justify-between gap-2">
           <p className="flex items-center gap-1.5 text-sm font-semibold"><Sparkles className="h-4 w-4 text-primary" /> Why {selected?.label} changed</p>
           {selRun && prevRun && (
-            <Link href={`${PAYROLL_HREF}/compare?current=${selRun.id}&previous=${prevRun.id}`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">Full comparison <ArrowRight className="h-3 w-3" /></Link>
+            <span className="flex items-center gap-3">
+              <Link href={`${INVESTIGATIONS_HREF}?run=${selRun.id}`} className="text-xs text-muted-foreground hover:text-foreground hover:underline">Investigations</Link>
+              <Link href={`${PAYROLL_HREF}/compare?current=${selRun.id}&previous=${prevRun.id}`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">Waterfall & full comparison <ArrowRight className="h-3 w-3" /></Link>
+            </span>
           )}
         </div>
         {story ? (
           <>
-            <p className="mt-1 text-sm">{story.headline}</p>
+            <div className="mt-3"><VarianceSummary cmp={story.comparison} investigations={data.investigations} /></div>
             <div className="mt-3 grid gap-4 md:grid-cols-3">
               <div>
                 <p className="mb-2 text-[11px] font-medium text-muted-foreground">By reason</p>
@@ -111,8 +115,8 @@ export function PayrollIntelligence() {
                 <p className="mb-2 text-[11px] font-medium text-muted-foreground">Employees who moved it most</p>
                 <ul className="space-y-1.5 text-xs">
                   {story.topEmployees.map((e) => (
-                    <li key={e.name} className="flex justify-between gap-2">
-                      <span className="min-w-0"><span className="font-medium">{e.name}</span><span className="block truncate text-[10px] text-muted-foreground">{e.why}</span></span>
+                    <li key={e.employeeId} className="flex justify-between gap-2">
+                      <span className="min-w-0"><span className="font-medium">{e.name}</span><span className="block text-[10px] text-muted-foreground">{e.why}</span></span>
                       <span className={cn("shrink-0 tabular-nums", e.change < 0 && "text-rose-600")}>{e.change > 0 ? "+" : ""}{compactNaira(e.change)}</span>
                     </li>
                   ))}

@@ -26,6 +26,10 @@ export const money = (n: number, dp = 2) =>
   `₦${n.toLocaleString("en-NG", { minimumFractionDigits: dp, maximumFractionDigits: dp })}`;
 export const compact = (n: number) =>
   Math.abs(n) >= 1_000_000 ? `₦${(n / 1_000_000).toFixed(2)}m` : Math.abs(n) >= 10_000 ? `₦${(n / 1000).toFixed(1)}k` : money(n, 0);
+/** "▲ 9.0%" / "▼ 37.5%" — direction by arrow, never by a +/− sign (client request). */
+export const pctArrow = (p: number | null | undefined, dp = 1) => (p === null || p === undefined ? "—" : p === 0 ? `${(0).toFixed(dp)}%` : `${p > 0 ? "▲" : "▼"} ${Math.abs(p).toFixed(dp)}%`);
+/** "▲ ₦150,000.00" — an amount's direction by arrow. */
+export const moneyArrow = (n: number, dp = 2) => (Math.abs(n) < 0.005 ? money(0, dp) : `${n > 0 ? "▲" : "▼"} ${money(Math.abs(n), dp)}`);
 export const fmtDate = (iso?: string) =>
   iso ? new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
 

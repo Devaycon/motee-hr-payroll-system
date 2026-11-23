@@ -10,6 +10,12 @@ import { updateClaim } from "@/src/lib/stores/expenses-slice";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { withApproval } from "@/src/lib/loans/loans";
 import {
+  addInvestigationComment,
+  attachInvestigationDocument,
+  openInvestigation as openInvestigationAction,
+  resolveInvestigation as resolveInvestigationAction,
+  signOffInvestigation as signOffInvestigationAction,
+  updateInvestigation,
   addConfigChange,
   clearRemittance,
   decideConfigChange,
@@ -42,6 +48,7 @@ import { SEED_PAY_ELEMENTS } from "./elements-seed";
 import { DEFAULT_PAYROLL_SETTINGS, NG_RATE_SETS } from "./ng/rate-sets";
 import { makePeriod, round2 } from "./ng/engine";
 import { seedRemittances } from "./remittances";
+import { seedInvestigations } from "./seed-intelligence";
 import { toBatch, withImportedStaff, type ImportCtx, type StagedRow } from "./starter-import";
 import { handoverQueue, hireRefs, hrHiresFrom, joinerExceptions, stageHandover, type HrHire } from "./onboarding-handover";
 import {
@@ -79,7 +86,9 @@ import type {
   RunActor,
   SalaryStructure,
   StatutoryRateSet,
+  VarianceInvestigation,
 } from "./types";
+import type { ComparisonCtx } from "./comparison";
 
 /**
  * The only door the payroll screens use. Today it reads and writes the
@@ -143,7 +152,21 @@ function buildTenantSeed(state: RootState, bundle: LocaleBundle): TenantPayroll 
   const runs = history.runs.map((r) => (r.status === "draft" ? withValidation(r, data, bundle, hrHiresOf(state)) : r));
   const finance = bundle.roles.find((r) => r.id === "ROLE-FIN")?.linkedEmployeeId;
   const remitter = bundle.employees.find((e) => e.id === finance)?.fullName ?? "Finance";
-  return { ...data, runs, audit: [], remittances: seedRemittances(runs, remitter, new Date().toISOString().slice(0, 10)) };
+  return { ...data, runs, audit: [], remittances: seedRemittances(runs, remitter, new Date().toISOString().slice(0, 10)), investigations: seedInvestigations({ ...data, runs }, bundle, new Date()) };
+}
+
+export const INVESTIGATIONS_HREF = `${PAYROLL_HREF}/investigations`;
+
+/** Everything a run comparison needs to attribute movements to their source. */
+export function comparisonCtxOf(data: TenantPayroll, bundle: LocaleBundle): ComparisonCtx {
+  return {
+    people: new Map(bundle.employees.map((e) => [e.id, e])),
+    elements: data.elements,
+    structures: data.structures,
+    imports: data.imports,
+    audit: data.audit,
+    costCentres: new Map(bundle.departments.map((d) => [d.name, d.costCenter])),
+  };
 }
 
 /** Staff the new-starter import brought onto payroll for the current tenant (not in the HR bundle). */
@@ -753,6 +776,106 @@ export function usePayrollActions() {
 
       logExport(runId: string, what: string) {
         log(`Exported ${what}`, { runId });
+      },
+
+      // ── Variance investigations ───────────────────────────────────────────
+
+      /** Raise an investigation on a payroll movement and tell the owner. Returns its id. */
+      openInvestigation(input: Pick<VarianceInvestigation, "runId" | "previousRunId" | "periodLabel" | "employeeId" | "employeeName" | "reason" | "amount" | "title" | "finding" | "ownerId" | "ownerName" | "dueDate">): string | null {
+        if (!tenantId) return null;
+        const now = new Date().toISOString();
+        const id = `INV-${Date.now().toString(36).toUpperCase()}`;
+        const investigation: VarianceInvestigation = {
+          ...input,
+          id,
+          status: "open",
+          createdBy: actor.name,
+          createdById: actor.employeeId,
+          createdAt: now,
+          comments: [],
+          documents: [],
+          history: [{ at: now, actor: actor.name, action: `Opened and assigned to ${input.ownerName}`, note: input.finding }],
+        };
+        dispatch(openInvestigationAction({ tenantId, actor: actor.name, investigation }));
+        if (input.ownerId && input.ownerId !== actor.employeeId) {
+          dispatch(
+            pushNotification({
+              title: `Payroll variance assigned to you: ${input.title}`,
+              description: `${input.periodLabel} · ${ngn(input.amount)} — raised by ${actor.name}.`,
+              type: "warning",
+              recipientEmployeeIds: [input.ownerId],
+              href: `${INVESTIGATIONS_HREF}/${id}`,
+            }),
+          );
+        }
+        return id;
+      },
+
+      assignInvestigation(id: string, ownerId: string, ownerName: string) {
+        if (!tenantId) return;
+        dispatch(updateInvestigation({ tenantId, actor: actor.name, id, patch: { ownerId, ownerName }, note: `Reassigned to ${ownerName}` }));
+        if (ownerId !== actor.employeeId) {
+          dispatch(pushNotification({ title: "Payroll variance investigation assigned to you", description: `${id} — reassigned by ${actor.name}.`, type: "warning", recipientEmployeeIds: [ownerId], href: `${INVESTIGATIONS_HREF}/${id}` }));
+        }
+      },
+
+      setInvestigationStatus(id: string, status: "open" | "investigating") {
+        if (!tenantId) return;
+        dispatch(updateInvestigation({ tenantId, actor: actor.name, id, patch: { status }, note: status === "investigating" ? "Moved to Under investigation" : "Moved back to Open" }));
+      },
+
+      commentOnInvestigation(id: string, text: string) {
+        if (!tenantId || !text.trim()) return;
+        dispatch(addInvestigationComment({ tenantId, actor: actor.name, id, commentId: `C-${Date.now().toString(36)}`, text }));
+        const inv = live()?.data.investigations?.find((x) => x.id === id);
+        const to = [inv?.ownerId, inv?.createdById].filter((x): x is string => !!x && x !== actor.employeeId);
+        if (inv && to.length) {
+          dispatch(pushNotification({ title: `New comment on ${inv.title}`, description: `${actor.name}: ${text.trim().slice(0, 120)}`, type: "info", recipientEmployeeIds: [...new Set(to)], href: `${INVESTIGATIONS_HREF}/${id}` }));
+        }
+      },
+
+      attachToInvestigation(id: string, file: { fileName: string; dataUrl?: string }) {
+        if (!tenantId) return;
+        dispatch(attachInvestigationDocument({ tenantId, actor: actor.name, id, document: { id: `D-${Date.now().toString(36)}`, fileName: file.fileName, dataUrl: file.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: actor.name } }));
+      },
+
+      /** Record the finding; Finance (and whoever raised it) is asked to sign it off. */
+      resolveInvestigation(id: string, note: string, outcome: "legitimate" | "error"): ActionResult {
+        if (!tenantId) return { ok: false, reason: "No tenant." };
+        if (!note.trim()) return { ok: false, reason: "Write a resolution note first." };
+        dispatch(resolveInvestigationAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, note, outcome }));
+        const inv = live()?.data.investigations?.find((x) => x.id === id);
+        dispatch(
+          pushNotification({
+            title: `Sign-off needed: ${inv?.title ?? id}`,
+            description: `${actor.name} resolved it as ${outcome === "legitimate" ? "a legitimate movement" : "a payroll error"}. A second person must sign it off.`,
+            type: "info",
+            recipientRoleIds: ["ROLE-FIN"],
+            recipientEmployeeIds: inv?.createdById && inv.createdById !== actor.employeeId ? [inv.createdById] : undefined,
+            href: `${INVESTIGATIONS_HREF}/${id}`,
+          }),
+        );
+        return { ok: true };
+      },
+
+      /** Accept or reopen a resolution. The person who resolved it cannot sign it off. */
+      signOffInvestigation(id: string, decision: "accepted" | "reopened", note?: string): ActionResult {
+        const inv = live()?.data.investigations?.find((x) => x.id === id);
+        if (!tenantId || !inv) return { ok: false, reason: "Investigation not found." };
+        if (inv.status !== "resolved") return { ok: false, reason: "Only a resolved investigation can be signed off." };
+        if (inv.resolvedBy === actor.name || (inv.resolvedById && inv.resolvedById === actor.employeeId)) return { ok: false, reason: "You resolved this investigation, so another person must sign it off." };
+        if (decision === "reopened" && !note?.trim()) return { ok: false, reason: "Give a reason for reopening it." };
+        dispatch(signOffInvestigationAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, decision, note }));
+        dispatch(
+          pushNotification({
+            title: decision === "accepted" ? `Resolution signed off: ${inv.title}` : `Investigation reopened: ${inv.title}`,
+            description: decision === "accepted" ? `Signed off by ${actor.name}.` : `${actor.name}: ${note}`,
+            type: decision === "accepted" ? "success" : "warning",
+            recipientEmployeeIds: [inv.ownerId],
+            href: `${INVESTIGATIONS_HREF}/${id}`,
+          }),
+        );
+        return { ok: true };
       },
 
       /** Re-notifies the employee that an issued payslip is ready (demo: in-app notification). */

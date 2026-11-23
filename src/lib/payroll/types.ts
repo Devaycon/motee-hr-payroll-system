@@ -813,3 +813,51 @@ export interface PayrollAuditEntry {
   employeeId?: string;
   detail?: string;
 }
+
+// ── Variance investigation ──────────────────────────────────────────────────
+
+export type InvestigationStatus = "open" | "investigating" | "resolved";
+
+export interface InvestigationEvent {
+  at: string;
+  actor: string;
+  action: string;
+  note?: string;
+}
+
+/**
+ * A payroll movement someone must explain: who owns it, what they found,
+ * the evidence, and a second person's sign-off on the resolution.
+ */
+export interface VarianceInvestigation {
+  id: string;
+  /** The month being explained and the month it's compared with. */
+  runId: string;
+  previousRunId: string;
+  periodLabel: string;
+  employeeId?: string;
+  employeeName?: string;
+  /** Variance reason key (comparison.ts), when raised from a reason. */
+  reason?: string;
+  amount: number;
+  title: string;
+  /** What the system found (the movement explanation at the time it was raised). */
+  finding: string;
+  status: InvestigationStatus;
+  ownerId: string;
+  ownerName: string;
+  createdBy: string;
+  createdById?: string;
+  createdAt: string;
+  dueDate?: string;
+  comments: { id: string; at: string; by: string; text: string }[];
+  documents: { id: string; fileName: string; uploadedAt: string; uploadedBy: string; dataUrl?: string }[];
+  resolutionNote?: string;
+  /** "legitimate" — the movement is correct; "error" — needs a correction. */
+  outcome?: "legitimate" | "error";
+  resolvedBy?: string;
+  resolvedById?: string;
+  resolvedAt?: string;
+  signOff?: { by: string; byId?: string; at: string; decision: "accepted" | "reopened"; note?: string };
+  history: InvestigationEvent[];
+}

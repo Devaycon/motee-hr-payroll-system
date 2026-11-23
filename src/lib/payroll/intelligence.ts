@@ -1,7 +1,7 @@
 import type { LocaleBundle, LocaleEmployee } from "@/src/lib/types/locale";
-import { compareRuns, REASON_LABELS, type RunComparison } from "./comparison";
+import { compareRuns, naira2, REASON_LABELS, type ComparisonCtx, type RunComparison, type VarianceReason } from "./comparison";
 import { round2 } from "./ng/engine";
-import type { PayComputation, PayrollAuditEntry, PayrollRun, PayrollSettings, PayElement, SalaryStructure, YtdTotals } from "./types";
+import type { PayComputation, PayrollAuditEntry, PayrollRun, PayrollSettings, PayElement, SalaryStructure, VarianceInvestigation, YtdTotals } from "./types";
 
 /**
  * Payroll Intelligence: the analytics behind the Intelligence tab and the
@@ -448,41 +448,171 @@ export function forecastVsBudget(months: MonthBucket[], structures: SalaryStruct
 
 export interface VarianceStory {
   comparison: RunComparison;
+  /** Professional, figure-exact paragraph explaining the gross movement. */
   headline: string;
-  drivers: { label: string; amount: number; employees: number }[];
-  topEmployees: { name: string; change: number; why: string }[];
+  drivers: { reason: VarianceReason; label: string; amount: number; employees: number }[];
+  topEmployees: { employeeId: string; name: string; change: number; why: string }[];
   topElements: { label: string; change: number }[];
 }
 
-const naira = (n: number) => {
-  const a = Math.abs(n);
-  const v = a >= 1_000_000 ? `₦${(a / 1_000_000).toFixed(a >= 10_000_000 ? 1 : 2)}m` : a >= 1000 ? `₦${Math.round(a / 1000).toLocaleString("en-NG")}k` : `₦${Math.round(a)}`;
-  return v;
-};
+const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+/** Counts up to ten in words ("five employees"), digits above. */
+export const countWords = (n: number, noun: string) => `${n <= 10 ? WORDS[n] : n} ${noun}${n === 1 ? "" : "s"}`;
+const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const andList = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
+
+/** What a reason's movement means, for the narrative ("the non-recurrence of one-off payments"). */
+function driverPhrase(reason: VarianceReason, amount: number): string {
+  const up = amount > 0;
+  switch (reason) {
+    case "one_off":
+      return up ? "new one-off payments" : "the non-recurrence of one-off payments";
+    case "joiner":
+      return "new joiners";
+    case "leaver":
+      return "leavers";
+    case "salary_change":
+      return up ? "salary increases" : "salary reductions";
+    case "proration":
+      return "part-month (pro-rated) pay";
+    case "overtime":
+      return up ? "higher overtime and shift pay" : "lower overtime and shift pay";
+    case "attendance":
+      return up ? "lower unpaid leave and lateness deductions" : "unpaid leave and lateness deductions";
+    case "expenses":
+      return "expense reimbursements";
+    default:
+      return "movements with no confirmed source";
+  }
+}
+
+/**
+ * The narrative a finance reader expects. Every figure comes from the
+ * bridge, which reconciles to the register; nothing is inferred beyond it.
+ */
+export function varianceNarrative(cmp: RunComparison): string {
+  const g = cmp.totals.find((t) => t.key === "gross");
+  const change = g?.change ?? 0;
+  const prevLabel = cmp.previous.period.label;
+  if (Math.abs(change) < 0.005) return `Gross payroll is unchanged from ${prevLabel} at ${naira2(g?.current ?? 0)}.`;
+  const up = change > 0;
+  const pct = g && g.pct !== null ? ` (${Math.abs(g.pct).toFixed(2)}%)` : "";
+  const parts = [`Gross payroll ${up ? "increased" : "decreased"} by ${naira2(change)}${pct} compared with ${prevLabel}.`];
+  const steps = [...cmp.bridge].filter((b) => b.reason !== "other").sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+  const same = steps.filter((b) => Math.sign(b.amount) === Math.sign(change));
+  const against = steps.filter((b) => Math.sign(b.amount) !== Math.sign(change) && Math.abs(b.amount) >= 0.005);
+  const primary = same[0];
+  if (primary) {
+    parts.push(
+      `The primary driver was ${driverPhrase(primary.reason, primary.amount)} affecting ${countWords(primary.employees, "employee")}, accounting for ${primary.amount < 0 ? "a reduction" : "an increase"} of ${naira2(primary.amount)}.`,
+    );
+  }
+  if (same.length > 1) {
+    const rest = same.slice(1).map((b) => `${driverPhrase(b.reason, b.amount)} (${naira2(b.amount)}, ${countWords(b.employees, "employee")})`);
+    parts.push(`Further ${up ? "increases" : "reductions"} came from ${andList(rest)}.`);
+  }
+  if (against.length) {
+    const offs = against.map((b) => `${b.amount > 0 ? "an increase" : "a reduction"} of ${naira2(b.amount)} relating to ${REASON_LABELS[b.reason].toLowerCase().replace(" & ", " and ")} (${countWords(b.employees, "employee")})`);
+    parts.push(`This was partially offset by ${andList(offs)}.`);
+  }
+  const r = cmp.reconciliation;
+  if (Math.abs(r.unexplained) >= 0.005) {
+    parts.push(`${naira2(r.unexplained)} across ${countWords(r.unexplainedEmployees, "employee")} could not be traced to a confirmed source and requires investigation.`);
+  }
+  parts.push(r.balanced ? "The identified movements reconcile in full to the payroll register." : `An unreconciled difference of ${naira2(r.difference)} remains against the payroll register.`);
+  return parts.join(" ");
+}
 
 /**
  * Explains a month-on-month payroll change: rather than "₦4.5m more", which
  * reasons, employees and pay elements made up the difference.
  */
-export function explainVariance(current: PayrollRun, previous: PayrollRun, ctx: { people: Map<string, LocaleEmployee>; elements: PayElement[]; structures: SalaryStructure[] }): VarianceStory {
+export function explainVariance(current: PayrollRun, previous: PayrollRun, ctx: ComparisonCtx): VarianceStory {
   const comparison = compareRuns(current, previous, ctx);
-  const g = comparison.totals.find((t) => t.key === "gross");
-  const change = g?.change ?? 0;
-  const drivers = comparison.bridge.filter((b) => Math.abs(b.amount) >= 1).sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount)).map((b) => ({ label: REASON_LABELS[b.reason], amount: b.amount, employees: b.employees }));
-  const lead = drivers.slice(0, 3).map((d) => `${d.label.toLowerCase()} ${d.amount >= 0 ? "+" : "−"}${naira(d.amount)} (${d.employees} ${d.employees === 1 ? "person" : "people"})`);
-  const headline =
-    Math.abs(change) < 1
-      ? `Gross pay is unchanged from ${previous.period.label}.`
-      : `Gross pay is ${change > 0 ? "up" : "down"} ${naira(change)}${g?.pct !== null && g?.pct !== undefined ? ` (${g.pct > 0 ? "+" : ""}${g.pct}%)` : ""} on ${previous.period.label}${lead.length ? `, driven by ${lead.join(", ")}` : ""}.`;
+  const drivers = comparison.bridge
+    .filter((b) => Math.abs(b.amount) >= 1)
+    .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+    .map((b) => ({ reason: b.reason, label: REASON_LABELS[b.reason], amount: b.amount, employees: b.employees }));
   return {
     comparison,
-    headline,
+    headline: varianceNarrative(comparison),
     drivers,
     topEmployees: [...comparison.employees]
       .filter((e) => Math.abs(e.change) >= 1)
       .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
       .slice(0, 6)
-      .map((e) => ({ name: e.name, change: e.change, why: e.notes[0] ?? Object.keys(e.reasons).map((r) => REASON_LABELS[r as keyof typeof REASON_LABELS]).join(", ") })),
+      .map((e) => ({ employeeId: e.employeeId, name: e.name, change: e.change, why: e.explanation })),
     topElements: [...comparison.earnings].filter((e) => Math.abs(e.change) >= 1).sort((a, b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 6).map((e) => ({ label: e.label, change: e.change })),
   };
 }
+
+// Intelligence summary ───────────────────────────────────────────────────────
+
+export interface Insight {
+  tone: "down" | "up" | "info" | "ok" | "warn";
+  title: string;
+  text: string;
+}
+
+export interface IntelligenceSummary {
+  grossChange: number;
+  grossPct: number | null;
+  employeesAffected: number;
+  categories: number;
+  balanced: boolean;
+  unexplained: number;
+  openInvestigations: number;
+  insights: Insight[];
+}
+
+/** The headline tiles and the "intelligence generated" list for one comparison. */
+export function intelligenceSummary(cmp: RunComparison, investigations: VarianceInvestigation[] = []): IntelligenceSummary {
+  const g = cmp.totals.find((t) => t.key === "gross");
+  const change = g?.change ?? 0;
+  const steps = [...cmp.bridge].sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+  const primary = steps.find((b) => Math.sign(b.amount) === Math.sign(change) && b.reason !== "other");
+  const offset = steps.find((b) => Math.sign(b.amount) !== Math.sign(change) && b.reason !== "other" && Math.abs(b.amount) >= 0.005);
+  const r = cmp.reconciliation;
+  const open = investigations.filter((i) => i.runId === cmp.current.id && i.status !== "resolved");
+  const insights: Insight[] = [];
+  if (primary) {
+    insights.push({
+      tone: primary.amount < 0 ? "down" : "up",
+      title: `Primary driver: ${REASON_LABELS[primary.reason]}`,
+      text: `${capitalise(countWords(primary.employees, "employee"))} account for ${naira2(primary.amount)} of the ${change < 0 ? "reduction" : "increase"}.`,
+    });
+  }
+  if (offset) {
+    insights.push({
+      tone: "info",
+      title: `Offsetting movement: ${REASON_LABELS[offset.reason]}`,
+      text: `${capitalise(countWords(offset.employees, "employee"))} account for ${offset.amount > 0 ? "an increase" : "a reduction"} of ${naira2(offset.amount)}.`,
+    });
+  }
+  const recurring = cmp.bridge.filter((b) => b.nature === "recurring").reduce((s, b) => s + b.amount, 0);
+  if (Math.abs(recurring) >= 1) {
+    insights.push({ tone: "info", title: "Recurring effect", text: `${naira2(recurring)} of the movement ${recurring > 0 ? "adds to" : "comes off"} every future month (joiners, leavers, salary changes).` });
+  } else if (Math.abs(change) >= 1) {
+    insights.push({ tone: "info", title: "No recurring effect", text: "Every movement this month is non-recurring, so next month's base payroll is unchanged." });
+  }
+  if (Math.abs(r.unexplained) >= 0.005) {
+    insights.push({ tone: "warn", title: "Unclassified movement", text: `${naira2(r.unexplained)} across ${countWords(r.unexplainedEmployees, "employee")} has no confirmed source and requires investigation.` });
+  }
+  if (open.length) insights.push({ tone: "warn", title: "Open investigations", text: `${capitalise(countWords(open.length, "investigation"))} still open for ${cmp.current.period.label}.` });
+  insights.push(
+    r.balanced
+      ? { tone: "ok", title: "Reconciliation check", text: "The identified movements reconcile to the reported gross payroll difference." }
+      : { tone: "warn", title: "Reconciliation check", text: `${naira2(r.difference)} of the gross difference is not attributed to a reason.` },
+  );
+  return {
+    grossChange: change,
+    grossPct: g?.pct ?? null,
+    employeesAffected: cmp.employees.filter((e) => Math.abs(e.change) >= 0.005).length,
+    categories: cmp.bridge.length,
+    balanced: r.balanced,
+    unexplained: r.unexplained,
+    openInvestigations: open.length,
+    insights,
+  };
+}
+
