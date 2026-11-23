@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
-import { ArrowRight, Banknote, CalendarClock, ChevronDown, Eye, FlaskConical, PiggyBank, GitCompareArrows, Landmark, MoreHorizontal, Plus, Settings2, ShieldCheck, Trash2, UserPlus, Users } from "lucide-react";
+import { ArrowRight, Banknote, CalendarClock, ChevronDown, Eye, FlaskConical, PiggyBank, GitCompareArrows, Landmark, MoreHorizontal, Plus, Settings2, ShieldCheck, Trash2, UserPlus, Users, Calculator } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -154,6 +154,11 @@ export function PayrollPage() {
           {canCreate && (
             <Button variant="outline" className="gap-2" asChild>
               <Link href={`${PAYROLL_HREF}/simulate`}><FlaskConical className="h-4 w-4" /> Simulate</Link>
+            </Button>
+          )}
+          {canCreate && (
+            <Button variant="outline" className="gap-2" asChild>
+              <Link href={`${PAYROLL_HREF}/calculator`}><Calculator className="h-4 w-4" /> Payslip calculator</Link>
             </Button>
           )}
           <Button variant="outline" className="gap-2" asChild>

@@ -150,3 +150,52 @@ describe("D2 · AVC self-service", () => {
     expect(st.byTenant[tenantId].profiles[0].avc).toEqual({ mode: "fixed", value: 25_000, startDate: "2026-12-01", mandate: { reference: "M1", signedOn: "2026-11-23" } });
   });
 });
+
+// ── D3 · payslip simulation calculator ──────────────────────────────────────
+
+import { calculate, linesForGross, recurringDeductions } from "./calculator";
+import { monthOn } from "./salary-impact";
+import { adjustLines } from "./salary-impact";
+
+describe("D3 · payslip calculator", () => {
+  const emp = bundle.employees.find((e) => nov.employees.some((x) => x.employeeId === e.id && x.computation))!;
+  const current = structures.find((s) => s.employeeId === emp.id)!;
+  const date = "2026-12-01";
+  const isFixed = (code: string) => SEED_PAY_ELEMENTS.some((e) => e.code === code && e.calculationType === "fixed" && (e.group === "core" || e.group === "allowances"));
+
+  it("the current side is the employee's ordinary month on the live engine", () => {
+    const r = calculate(data, bundle, { employeeId: emp.id, lines: current.lines, date, deductions: [] })!;
+    const m = monthOn(data, emp, current.lines, date);
+    expect(r.current!.gross).toBe(m.gross);
+    expect(r.current!.net).toBe(m.net);
+    expect(r.proposed.net).toBe(r.current!.net);
+  });
+
+  it("a raise flows through PAYE, pension, net pay and the employer's cost", () => {
+    const raised = adjustLines(current.lines, "percent", 30, isFixed);
+    const r = calculate(data, bundle, { employeeId: emp.id, lines: raised, date, deductions: [] })!;
+    expect(r.proposed.gross).toBe(monthOn(data, emp, raised, date).gross);
+    expect(r.proposed.paye).toBeGreaterThan(r.current!.paye);
+    expect(r.proposed.net).toBeGreaterThan(r.current!.net);
+    expect(r.proposed.costToEmployer).toBeGreaterThan(r.current!.costToEmployer);
+    expect(r.rows.find((x) => x.code === "PENSION_ER")!.proposed).toBeGreaterThan(r.rows.find((x) => x.code === "PENSION_ER")!.current);
+  });
+
+  it("HMO and AVC changes apply to the proposed side only", () => {
+    const d2 = { ...data, settings: { ...data.settings, hmo: DEMO_HMO_SETTINGS } };
+    const r = calculate(d2, bundle, { employeeId: emp.id, lines: current.lines, date, deductions: [], hmo: { planId: "HMO-SILVER", coverage: "individual", dependants: 0 }, avc: { mode: "fixed", value: 20_000 } })!;
+    expect(r.rows.find((x) => x.code === "HMO_EE")).toMatchObject({ current: 0, proposed: 4_500 });
+    expect(r.rows.find((x) => x.code === "HMO_ER")).toMatchObject({ current: 0, proposed: 10_500 });
+    expect(r.rows.find((x) => x.code === "VOL_PENSION")?.proposed).toBe(20_000);
+    expect(r.proposed.gross).toBe(r.current!.gross);
+  });
+
+  it("models a new hire from gross alone, and saves nothing", () => {
+    const before = JSON.stringify(data.structures);
+    const r = calculate(data, bundle, { lines: linesForGross(data, 650_000), date, deductions: [] })!;
+    expect(r.current).toBeNull();
+    expect(r.proposed.gross).toBeCloseTo(650_000, 0);
+    expect(JSON.stringify(data.structures)).toBe(before);
+    expect(Array.isArray(recurringDeductions(data, emp.id))).toBe(true);
+  });
+});

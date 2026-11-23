@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Fragment, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Eye, Filter, Search, SearchCheck, TriangleAlert, UserRound, Wallet } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Eye, Filter, Search, SearchCheck, TriangleAlert, UserRound, Wallet, Calculator } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -385,6 +385,7 @@ export function RunComparePage() {
                             { label: "Pay this month", icon: Wallet, href: `${PAYROLL_HREF}/${current.id}/employees/${e.employeeId}`, separated: true },
                             ...(cmp.employees.some((x) => x.employeeId === e.employeeId && x.previousGross !== null) ? [{ label: `Pay in ${previous.period.label}`, icon: Wallet, href: `${PAYROLL_HREF}/${previous.id}/employees/${e.employeeId}` }] : []),
                             { label: "Employee profile", icon: UserRound, href: `/organization/employees/${e.employeeId}` },
+                            { label: "Model a pay change", icon: Calculator, href: `${PAYROLL_HREF}/calculator?employee=${e.employeeId}` },
                             { label: "Investigate", icon: SearchCheck, onSelect: () => investigate(e), separated: true },
                           ]}
                         />

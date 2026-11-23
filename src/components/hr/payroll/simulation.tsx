@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, CalendarClock, CheckCircle2, ChevronDown, Circle, FlaskConical, Gift, Landmark, Plus, Printer, RotateCcw, Save, Send, Settings2, Trash2, Users, Wallet, X } from "lucide-react";
+import { ArrowLeft, CalendarClock, CheckCircle2, ChevronDown, Circle, FlaskConical, Gift, Landmark, Plus, Printer, RotateCcw, Save, Send, Settings2, Trash2, Users, Wallet, X, Calculator } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -183,6 +183,7 @@ export function PayrollSimulationPage() {
             <SelectContent>{regular.map((r) => <SelectItem key={r.id} value={r.id} className="text-xs">{r.title}</SelectItem>)}</SelectContent>
           </Select>
           <Button variant="outline" size="sm" className="gap-1.5" disabled={!changed && !loadedId} onClick={() => open(null)}><RotateCcw className="h-3.5 w-3.5" /> New</Button>
+          <Button variant="outline" size="sm" className="gap-1.5" asChild><Link href={`${PAYROLL_HREF}/calculator`}><Calculator className="h-3.5 w-3.5" /> One employee</Link></Button>
         </div>
       </div>
 
