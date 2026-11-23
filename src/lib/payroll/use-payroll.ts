@@ -10,6 +10,26 @@ import { updateClaim } from "@/src/lib/stores/expenses-slice";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { withApproval } from "@/src/lib/loans/loans";
 import {
+  decideAvcRequest as decideAvcRequestAction,
+  submitAvcRequest as submitAvcRequestAction,
+  addForecastSnapshot as addForecastSnapshotAction,
+  addPlannedHire as addPlannedHireAction,
+  decideBudgetVersion as decideBudgetVersionAction,
+  deleteBudgetVersion as deleteBudgetVersionAction,
+  markBudgetAlertSent as markBudgetAlertSentAction,
+  removePlannedHire as removePlannedHireAction,
+  saveBudgetVersion as saveBudgetVersionAction,
+  submitBudgetVersion as submitBudgetVersionAction,
+  decideScenario as decideScenarioAction,
+  deleteScenario as deleteScenarioAction,
+  saveScenario as saveScenarioAction,
+  submitScenario as submitScenarioAction,
+  addInvestigationComment,
+  attachInvestigationDocument,
+  openInvestigation as openInvestigationAction,
+  resolveInvestigation as resolveInvestigationAction,
+  signOffInvestigation as signOffInvestigationAction,
+  updateInvestigation,
   addConfigChange,
   clearRemittance,
   decideConfigChange,
@@ -42,6 +62,8 @@ import { SEED_PAY_ELEMENTS } from "./elements-seed";
 import { DEFAULT_PAYROLL_SETTINGS, NG_RATE_SETS } from "./ng/rate-sets";
 import { makePeriod, round2 } from "./ng/engine";
 import { seedRemittances } from "./remittances";
+import { DEMO_HMO_SETTINGS, demoHmoEnrolment } from "./hmo";
+import { seedBudgets, seedInvestigations, seedScenarios } from "./seed-intelligence";
 import { toBatch, withImportedStaff, type ImportCtx, type StagedRow } from "./starter-import";
 import { handoverQueue, hireRefs, hrHiresFrom, joinerExceptions, stageHandover, type HrHire } from "./onboarding-handover";
 import {
@@ -79,7 +101,12 @@ import type {
   RunActor,
   SalaryStructure,
   StatutoryRateSet,
+  VarianceInvestigation,
+  AvcRequest,
 } from "./types";
+import type { ComparisonCtx } from "./comparison";
+import type { SavedScenario } from "./simulation";
+import { buildForecast, snapshotOf, type BudgetVersion, type ForecastSnapshot, type PlannedHire, type RequisitionRef } from "./budget";
 
 /**
  * The only door the payroll screens use. Today it reads and writes the
@@ -129,13 +156,16 @@ export function requestsForRun(state: RootState, runId: string): ApprovalRequest
 }
 
 function buildTenantSeed(state: RootState, bundle: LocaleBundle): TenantPayroll {
-  const settings = DEFAULT_PAYROLL_SETTINGS;
+  const settings = { ...DEFAULT_PAYROLL_SETTINGS, hmo: DEMO_HMO_SETTINGS };
+  // HMO cover starts this month, so finalized history is unchanged and the open run shows it.
+  const now = new Date();
+  const hmoFrom = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
   const base = {
     elements: SEED_PAY_ELEMENTS,
     rateSets: NG_RATE_SETS,
     settings,
     structures: bundle.employees.map((e) => seedStructure(e, settings)),
-    profiles: bundle.employees.map(seedProfile),
+    profiles: bundle.employees.map((e, i) => ({ ...seedProfile(e), hmo: demoHmoEnrolment(i, hmoFrom) })),
   };
   const history = seedHistory({ tenantId: bundle.tenant.id, bundle, base, loans: resolvedLoans(state, bundle), today: new Date() });
   const data = { ...base, ...history };
@@ -143,7 +173,33 @@ function buildTenantSeed(state: RootState, bundle: LocaleBundle): TenantPayroll 
   const runs = history.runs.map((r) => (r.status === "draft" ? withValidation(r, data, bundle, hrHiresOf(state)) : r));
   const finance = bundle.roles.find((r) => r.id === "ROLE-FIN")?.linkedEmployeeId;
   const remitter = bundle.employees.find((e) => e.id === finance)?.fullName ?? "Finance";
-  return { ...data, runs, audit: [], remittances: seedRemittances(runs, remitter, new Date().toISOString().slice(0, 10)) };
+  return { ...data, runs, audit: [], remittances: seedRemittances(runs, remitter, new Date().toISOString().slice(0, 10)), investigations: seedInvestigations({ ...data, runs }, bundle, new Date()), scenarios: seedScenarios({ ...data, runs }, bundle, new Date()), ...seedBudgets({ ...data, runs }, bundle, new Date()) };
+}
+
+export const INVESTIGATIONS_HREF = `${PAYROLL_HREF}/investigations`;
+
+/** Approved, still-open requisitions in Recruitment — planned hires the forecast should include. */
+export function activeRequisitions(state: RootState): RequisitionRef[] {
+  return activeRequisitionsFrom(state.requisitions.byCountry[state.locale.country], state.approvals.requests);
+}
+
+export function activeRequisitionsFrom(list: RootState["requisitions"]["byCountry"][string] | undefined, requests: ApprovalRequest[]): RequisitionRef[] {
+  const approved = new Set(requests.filter((r) => r.status === "approved").map((r) => r.id));
+  return (list ?? [])
+    .filter((r) => r.lifecycleStatus === "active" && !!r.approvalRequestId && approved.has(r.approvalRequestId))
+    .map((r) => ({ id: r.id, title: r.title, department: r.department, numberOfPositions: r.numberOfPositions, salaryMin: r.salaryMin, salaryMax: r.salaryMax, startDate: r.startDate }));
+}
+
+/** Everything a run comparison needs to attribute movements to their source. */
+export function comparisonCtxOf(data: TenantPayroll, bundle: LocaleBundle): ComparisonCtx {
+  return {
+    people: new Map(bundle.employees.map((e) => [e.id, e])),
+    elements: data.elements,
+    structures: data.structures,
+    imports: data.imports,
+    audit: data.audit,
+    costCentres: new Map(bundle.departments.map((d) => [d.name, d.costCenter])),
+  };
 }
 
 /** Staff the new-starter import brought onto payroll for the current tenant (not in the HR bundle). */
@@ -552,7 +608,7 @@ export function usePayrollActions() {
           return { ok: false, reason: `The input cut-off for ${run.period.label} was ${cutoff}. Add it to next month's run, or override.` };
         editDraft(runId, `Added pay input${opts.override ? " after the input cut-off (override)" : ""}`, (r) => ({
           ...r,
-          inputs: [...r.inputs, { ...input, id: `IN-${Date.now().toString(36)}-${r.inputs.length}` }],
+          inputs: [...r.inputs, { ...input, id: `IN-${Date.now().toString(36)}-${r.inputs.length}`, addedBy: input.addedBy ?? actor.name, addedAt: input.addedAt ?? new Date().toISOString() }],
           employees: r.employees.map((e) => (e.employeeId === input.employeeId ? { ...e, included: true } : e)),
         }));
         return { ok: true };
@@ -699,6 +755,11 @@ export function usePayrollActions() {
         const payslips = buildPayslips({ run: finalized, bundle: l.bundle, data: l.data, status: "final", approvedBy: approvers.join(" · ") || run.approvedBy?.name || null, generatedAt: now });
         save(finalized, `Finalized — ${payslips.length} payslips issued`);
         dispatch(addPayslips({ tenantId, payslips }));
+        if (finalized.type === "regular") {
+          const after = live();
+          const f = after ? buildForecast({ data: after.data, bundle: after.bundle, requisitions: activeRequisitions(after.s), alertPct: after.data.settings.budgetAlertPct }) : null;
+          if (f) dispatch(addForecastSnapshotAction({ tenantId, snapshot: snapshotOf(f, "month_closed", actor.name) }));
+        }
 
         // Loans: post each payroll deduction as a repayment on the loan record.
         const loans = new Map(resolvedLoans(l.s, l.bundle).map((x) => [x.id, x]));
@@ -755,6 +816,290 @@ export function usePayrollActions() {
         log(`Exported ${what}`, { runId });
       },
 
+      // ── Voluntary pension requests ──────────────────────────────────────────
+
+      /** The signed-in employee asks to start, change or stop their AVC. HR and Payroll are notified. */
+      requestAvcChange(input: Pick<AvcRequest, "action" | "mode" | "value" | "effectiveFrom" | "note">): ActionResult {
+        const l = live();
+        if (!tenantId || !l || !actor.employeeId) return { ok: false, reason: "Sign in as an employee to make a request." };
+        if (input.action === "set" && !(input.value > 0)) return { ok: false, reason: "Enter the amount or percentage." };
+        const now = new Date().toISOString();
+        const request: AvcRequest = {
+          ...input,
+          id: `AVC-${Date.now().toString(36).toUpperCase()}`,
+          employeeId: actor.employeeId,
+          employeeName: actor.name,
+          mandate: { reference: `MANDATE-${actor.employeeId}-${now.slice(0, 10)}`, signedOn: now.slice(0, 10) },
+          requestedAt: now,
+          status: "pending",
+        };
+        dispatch(submitAvcRequestAction({ tenantId, actor: actor.name, request }));
+        dispatch(
+          pushNotification({
+            title: `Voluntary pension request from ${actor.name}`,
+            description: input.action === "stop" ? `Stop from ${input.effectiveFrom}.` : `${input.mode === "percent" ? `${input.value}% of pensionable pay` : ngn(input.value)} a month from ${input.effectiveFrom}.`,
+            type: "info",
+            recipientRoleIds: ["ROLE-HRADMIN", "ROLE-FIN"],
+            href: `${PAYROLL_HREF}/settings?tab=profiles`,
+          }),
+        );
+        return { ok: true };
+      },
+
+      decideAvcRequest(id: string, approved: boolean, note?: string): ActionResult {
+        const l = live();
+        const r = l?.data.avcRequests?.find((x) => x.id === id);
+        if (!tenantId || !r) return { ok: false, reason: "Request not found." };
+        if (r.employeeId === actor.employeeId) return { ok: false, reason: "You can't approve your own request." };
+        if (!approved && !note?.trim()) return { ok: false, reason: "Give a reason for rejecting it." };
+        dispatch(decideAvcRequestAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, approved, note }));
+        if (approved) markStale("an employee's voluntary pension changed", (run) => run.employees.some((e) => e.employeeId === r.employeeId && e.included) && run.period.end >= r.effectiveFrom);
+        dispatch(
+          pushNotification({
+            title: approved ? "Your voluntary pension request was approved" : "Your voluntary pension request was not approved",
+            description: approved ? (r.action === "stop" ? `It stops from ${r.effectiveFrom}.` : `It starts from ${r.effectiveFrom} and is relieved from PAYE.`) : note ?? "",
+            type: approved ? "success" : "warning",
+            recipientEmployeeIds: [r.employeeId],
+            href: ESS_PAYSLIPS_HREF,
+          }),
+        );
+        return { ok: true };
+      },
+
+      // ── Budget & forecasting ────────────────────────────────────────────────
+
+      saveBudgetVersion(version: BudgetVersion) {
+        if (tenantId) dispatch(saveBudgetVersionAction({ tenantId, actor: actor.name, version }));
+      },
+
+      submitBudgetVersion(id: string) {
+        if (!tenantId) return;
+        dispatch(submitBudgetVersionAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id }));
+        const v = live()?.data.budgets?.find((x) => x.id === id);
+        dispatch(pushNotification({ title: `Payroll budget to approve: ${v?.name ?? id}`, description: `${actor.name} submitted it. A second person must approve it.`, type: "info", recipientRoleIds: ["ROLE-FIN", "ROLE-EXEC"], href: `${PAYROLL_HREF}/budget/edit?version=${id}` }));
+      },
+
+      decideBudgetVersion(id: string, approved: boolean, note?: string): ActionResult {
+        const v = live()?.data.budgets?.find((x) => x.id === id);
+        if (!tenantId || !v) return { ok: false, reason: "Budget not found." };
+        if (v.status !== "submitted") return { ok: false, reason: "Only a submitted budget can be approved." };
+        if (v.submittedBy === actor.name || (v.submittedById && v.submittedById === actor.employeeId)) return { ok: false, reason: "You submitted this budget, so another person must approve it." };
+        dispatch(decideBudgetVersionAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, approved, note }));
+        if (v.createdById) dispatch(pushNotification({ title: approved ? `Payroll budget approved: ${v.name}` : `Payroll budget returned: ${v.name}`, description: approved ? `Approved by ${actor.name}.` : `${actor.name}: ${note ?? ""}`, type: approved ? "success" : "warning", recipientEmployeeIds: [v.createdById], href: `${PAYROLL_HREF}/budget/edit?version=${id}` }));
+        return { ok: true };
+      },
+
+      deleteBudgetVersion(id: string) {
+        if (tenantId) dispatch(deleteBudgetVersionAction({ tenantId, actor: actor.name, id }));
+      },
+
+      addPlannedHire(hire: Omit<PlannedHire, "id" | "addedBy" | "addedAt">) {
+        if (tenantId) dispatch(addPlannedHireAction({ tenantId, actor: actor.name, hire: { ...hire, id: `PH-${Date.now().toString(36)}`, addedBy: actor.name, addedAt: new Date().toISOString() } }));
+      },
+
+      removePlannedHire(id: string) {
+        if (tenantId) dispatch(removePlannedHireAction({ tenantId, actor: actor.name, id }));
+      },
+
+      /** Freeze the current forecast for later comparison. */
+      takeForecastSnapshot(trigger: ForecastSnapshot["trigger"] = "manual"): boolean {
+        const l = live();
+        if (!tenantId || !l) return false;
+        const f = buildForecast({ data: l.data, bundle: l.bundle, requisitions: activeRequisitions(l.s), alertPct: l.data.settings.budgetAlertPct });
+        if (!f) return false;
+        dispatch(addForecastSnapshotAction({ tenantId, snapshot: snapshotOf(f, trigger, actor.name) }));
+        return true;
+      },
+
+      /** Alert department heads and Finance, once per breach, when a department is forecast over budget. */
+      sendBudgetAlerts(alerts: { key: string; department: string; variance: number; variancePct: number }[]) {
+        const l = live();
+        if (!tenantId || !l) return;
+        for (const a of alerts) {
+          if (l.data.budgetAlertsSent?.[a.key]) continue;
+          const head = l.bundle.departments.find((d) => d.name === a.department)?.headEmployeeId;
+          dispatch(
+            pushNotification({
+              title: `${a.department} is forecast over its payroll budget`,
+              description: `Projected ${ngn(a.variance)} (${a.variancePct.toFixed(1)}%) over budget for the year. Review the drivers in Budget & Forecasting.`,
+              type: "warning",
+              recipientRoleIds: ["ROLE-FIN", "ROLE-HRADMIN"],
+              recipientEmployeeIds: head ? [head] : undefined,
+              href: `${PAYROLL_HREF}/budget?department=${encodeURIComponent(a.department)}`,
+            }),
+          );
+          dispatch(markBudgetAlertSentAction({ tenantId, key: a.key }));
+        }
+      },
+
+      // ── Saved simulation scenarios ──────────────────────────────────────────
+
+      /** Save (create or update) a scenario. Returns its id. */
+      saveScenario(input: Pick<SavedScenario, "name" | "description" | "scenario" | "baseRunId" | "snapshot"> & { id?: string }): string | null {
+        if (!tenantId) return null;
+        const now = new Date().toISOString();
+        const prev = input.id ? live()?.data.scenarios?.find((x) => x.id === input.id) : undefined;
+        const id = prev?.id ?? `SCN-${Date.now().toString(36).toUpperCase()}`;
+        const scenario: SavedScenario = {
+          id,
+          name: input.name.trim() || "Untitled scenario",
+          description: input.description,
+          scenario: input.scenario,
+          baseRunId: input.baseRunId,
+          snapshot: input.snapshot,
+          createdBy: prev?.createdBy ?? actor.name,
+          createdById: prev?.createdById ?? actor.employeeId,
+          createdAt: prev?.createdAt ?? now,
+          updatedAt: now,
+          status: "draft",
+          history: prev?.history ?? [],
+        };
+        dispatch(saveScenarioAction({ tenantId, actor: actor.name, scenario }));
+        return id;
+      },
+
+      deleteScenario(id: string) {
+        if (tenantId) dispatch(deleteScenarioAction({ tenantId, actor: actor.name, id }));
+      },
+
+      /** Send a scenario for management review; Finance and the Executive are notified. */
+      submitScenario(id: string, note?: string) {
+        if (!tenantId) return;
+        dispatch(submitScenarioAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, note }));
+        const sc = live()?.data.scenarios?.find((x) => x.id === id);
+        dispatch(
+          pushNotification({
+            title: `Payroll scenario for review: ${sc?.name ?? id}`,
+            description: `${actor.name} submitted a simulation for management review. It is not committed to payroll.`,
+            type: "info",
+            recipientRoleIds: ["ROLE-FIN", "ROLE-EXEC"],
+            href: `${PAYROLL_HREF}/simulate?scenario=${id}`,
+          }),
+        );
+      },
+
+      /** Approve for planning or reject. The person who submitted it cannot decide it. */
+      decideScenario(id: string, approved: boolean, note?: string): ActionResult {
+        const sc = live()?.data.scenarios?.find((x) => x.id === id);
+        if (!tenantId || !sc) return { ok: false, reason: "Scenario not found." };
+        if (sc.status !== "submitted") return { ok: false, reason: "Only a submitted scenario can be reviewed." };
+        if (sc.submittedBy === actor.name || (sc.submittedById && sc.submittedById === actor.employeeId)) return { ok: false, reason: "You submitted this scenario, so another person must review it." };
+        if (!approved && !note?.trim()) return { ok: false, reason: "Give a reason for rejecting it." };
+        dispatch(decideScenarioAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, approved, note }));
+        if (sc.createdById) {
+          dispatch(
+            pushNotification({
+              title: approved ? `Scenario approved for planning: ${sc.name}` : `Scenario rejected: ${sc.name}`,
+              description: approved ? `${actor.name} approved it for planning. Live payroll is unchanged.` : `${actor.name}: ${note}`,
+              type: approved ? "success" : "warning",
+              recipientEmployeeIds: [sc.createdById],
+              href: `${PAYROLL_HREF}/simulate?scenario=${id}`,
+            }),
+          );
+        }
+        return { ok: true };
+      },
+
+      // ── Variance investigations ───────────────────────────────────────────
+
+      /** Raise an investigation on a payroll movement and tell the owner. Returns its id. */
+      openInvestigation(input: Pick<VarianceInvestigation, "runId" | "previousRunId" | "periodLabel" | "employeeId" | "employeeName" | "reason" | "amount" | "title" | "finding" | "ownerId" | "ownerName" | "dueDate">): string | null {
+        if (!tenantId) return null;
+        const now = new Date().toISOString();
+        const id = `INV-${Date.now().toString(36).toUpperCase()}`;
+        const investigation: VarianceInvestigation = {
+          ...input,
+          id,
+          status: "open",
+          createdBy: actor.name,
+          createdById: actor.employeeId,
+          createdAt: now,
+          comments: [],
+          documents: [],
+          history: [{ at: now, actor: actor.name, action: `Opened and assigned to ${input.ownerName}`, note: input.finding }],
+        };
+        dispatch(openInvestigationAction({ tenantId, actor: actor.name, investigation }));
+        if (input.ownerId && input.ownerId !== actor.employeeId) {
+          dispatch(
+            pushNotification({
+              title: `Payroll variance assigned to you: ${input.title}`,
+              description: `${input.periodLabel} · ${ngn(input.amount)} — raised by ${actor.name}.`,
+              type: "warning",
+              recipientEmployeeIds: [input.ownerId],
+              href: `${INVESTIGATIONS_HREF}/${id}`,
+            }),
+          );
+        }
+        return id;
+      },
+
+      assignInvestigation(id: string, ownerId: string, ownerName: string) {
+        if (!tenantId) return;
+        dispatch(updateInvestigation({ tenantId, actor: actor.name, id, patch: { ownerId, ownerName }, note: `Reassigned to ${ownerName}` }));
+        if (ownerId !== actor.employeeId) {
+          dispatch(pushNotification({ title: "Payroll variance investigation assigned to you", description: `${id} — reassigned by ${actor.name}.`, type: "warning", recipientEmployeeIds: [ownerId], href: `${INVESTIGATIONS_HREF}/${id}` }));
+        }
+      },
+
+      setInvestigationStatus(id: string, status: "open" | "investigating") {
+        if (!tenantId) return;
+        dispatch(updateInvestigation({ tenantId, actor: actor.name, id, patch: { status }, note: status === "investigating" ? "Moved to Under investigation" : "Moved back to Open" }));
+      },
+
+      commentOnInvestigation(id: string, text: string) {
+        if (!tenantId || !text.trim()) return;
+        dispatch(addInvestigationComment({ tenantId, actor: actor.name, id, commentId: `C-${Date.now().toString(36)}`, text }));
+        const inv = live()?.data.investigations?.find((x) => x.id === id);
+        const to = [inv?.ownerId, inv?.createdById].filter((x): x is string => !!x && x !== actor.employeeId);
+        if (inv && to.length) {
+          dispatch(pushNotification({ title: `New comment on ${inv.title}`, description: `${actor.name}: ${text.trim().slice(0, 120)}`, type: "info", recipientEmployeeIds: [...new Set(to)], href: `${INVESTIGATIONS_HREF}/${id}` }));
+        }
+      },
+
+      attachToInvestigation(id: string, file: { fileName: string; dataUrl?: string }) {
+        if (!tenantId) return;
+        dispatch(attachInvestigationDocument({ tenantId, actor: actor.name, id, document: { id: `D-${Date.now().toString(36)}`, fileName: file.fileName, dataUrl: file.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: actor.name } }));
+      },
+
+      /** Record the finding; Finance (and whoever raised it) is asked to sign it off. */
+      resolveInvestigation(id: string, note: string, outcome: "legitimate" | "error"): ActionResult {
+        if (!tenantId) return { ok: false, reason: "No tenant." };
+        if (!note.trim()) return { ok: false, reason: "Write a resolution note first." };
+        dispatch(resolveInvestigationAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, note, outcome }));
+        const inv = live()?.data.investigations?.find((x) => x.id === id);
+        dispatch(
+          pushNotification({
+            title: `Sign-off needed: ${inv?.title ?? id}`,
+            description: `${actor.name} resolved it as ${outcome === "legitimate" ? "a legitimate movement" : "a payroll error"}. A second person must sign it off.`,
+            type: "info",
+            recipientRoleIds: ["ROLE-FIN"],
+            recipientEmployeeIds: inv?.createdById && inv.createdById !== actor.employeeId ? [inv.createdById] : undefined,
+            href: `${INVESTIGATIONS_HREF}/${id}`,
+          }),
+        );
+        return { ok: true };
+      },
+
+      /** Accept or reopen a resolution. The person who resolved it cannot sign it off. */
+      signOffInvestigation(id: string, decision: "accepted" | "reopened", note?: string): ActionResult {
+        const inv = live()?.data.investigations?.find((x) => x.id === id);
+        if (!tenantId || !inv) return { ok: false, reason: "Investigation not found." };
+        if (inv.status !== "resolved") return { ok: false, reason: "Only a resolved investigation can be signed off." };
+        if (inv.resolvedBy === actor.name || (inv.resolvedById && inv.resolvedById === actor.employeeId)) return { ok: false, reason: "You resolved this investigation, so another person must sign it off." };
+        if (decision === "reopened" && !note?.trim()) return { ok: false, reason: "Give a reason for reopening it." };
+        dispatch(signOffInvestigationAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, decision, note }));
+        dispatch(
+          pushNotification({
+            title: decision === "accepted" ? `Resolution signed off: ${inv.title}` : `Investigation reopened: ${inv.title}`,
+            description: decision === "accepted" ? `Signed off by ${actor.name}.` : `${actor.name}: ${note}`,
+            type: decision === "accepted" ? "success" : "warning",
+            recipientEmployeeIds: [inv.ownerId],
+            href: `${INVESTIGATIONS_HREF}/${id}`,
+          }),
+        );
+        return { ok: true };
+      },
+
       /** Re-notifies the employee that an issued payslip is ready (demo: in-app notification). */
       resendPayslip(p: Payslip) {
         dispatch(
@@ -784,7 +1129,7 @@ export function usePayrollActions() {
         const l = live();
         const effectiveFrom = opts.effectiveFrom ?? (l ? earliestOpenRun(l.data)?.period.start : undefined) ?? new Date().toISOString().slice(0, 10);
         dispatch(updatePayrollSettings({ tenantId, actor: actor.name, actorId: actor.employeeId, changes, effectiveFrom }));
-        const calcKeys: (keyof PayrollSettings)[] = ["taxMethod", "prorationBasis", "nhisEnabled", "nhfBasis", "groupLife", "itfApplicable", "deductLoansViaPayroll", "payExpensesViaPayroll", "allowPayeRefunds", "employmentTypeRules", "enabledGroups", "basicMin", "basicMax", "varianceThresholdPct", "leaveAllowance"];
+        const calcKeys: (keyof PayrollSettings)[] = ["taxMethod", "prorationBasis", "nhisEnabled", "nhfBasis", "groupLife", "itfApplicable", "deductLoansViaPayroll", "payExpensesViaPayroll", "allowPayeRefunds", "employmentTypeRules", "enabledGroups", "basicMin", "basicMax", "varianceThresholdPct", "leaveAllowance", "hmo"];
         if (Object.keys(changes).some((k) => calcKeys.includes(k as keyof PayrollSettings))) markStale("payroll settings changed", (r) => r.period.end >= effectiveFrom);
       },
 

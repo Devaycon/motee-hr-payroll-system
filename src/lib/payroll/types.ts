@@ -160,6 +160,8 @@ export interface EmployeeTaxProfile {
   nhfNumber: string;
   nhfEligible: boolean;
   nhisEnrolled: boolean;
+  /** Private health plan (HMO) enrolment — see `settings.hmo`. */
+  hmo?: HmoEnrolment | null;
   /** Annual rent paid — drives Rent Relief (20%, capped). */
   annualRentDeclared: number;
   rentEvidence: { fileName: string; uploadedAt: string } | null;
@@ -256,6 +258,13 @@ export interface EmploymentTypeRule {
 
 export interface PayslipDisplayOptions {
   showEmployerContributions: boolean;
+  /**
+   * Which employer lines appear under "Paid by your employer". Missing =
+   * the default (pension and health on; NSITF, ITF and group life off —
+   * company levies many employers don't show). Display only: every line is
+   * still calculated, remitted and reported.
+   */
+  employerLines?: Partial<Record<string, boolean>>;
   showTaxBreakdown: boolean;
   showLeaveBalance: boolean;
   insights: Record<InsightType, boolean>;
@@ -297,6 +306,8 @@ export interface PayrollSettings {
   /** Day of month after which inputs for the period are locked. */
   inputCutoffDay: number;
   nhisEnabled: boolean;
+  /** HMO providers and plans (private health insurance by plan and funding policy). */
+  hmo?: HmoSettings;
   /**
    * Base for the 2.5% NHF deduction. The Business Facilitation Act 2022 points
    * to gross; many employers still use basic. Optional so settings saved
@@ -344,6 +355,8 @@ export interface PayrollSettings {
   enabledGroups: PayElementGroup[];
   /** Approved payroll budget (gross + employer cost) per month, for forecast vs budget. Optional. */
   budget?: PayrollBudget;
+  /** Variance % at which a department's forecast counts as over budget and managers are alerted. Default 5. */
+  budgetAlertPct?: number;
   /** Days before a remittance deadline that payroll and finance users are reminded. Optional (default 5). */
   remittanceReminderDays?: number;
 }
@@ -415,6 +428,9 @@ export interface PeriodInput {
   source: LineSource;
   /** Reference back to the module record (loan id, expense id). */
   refId?: string;
+  /** Who put it on the run and when (manual inputs; module inputs fall back to the run build). */
+  addedBy?: string;
+  addedAt?: string;
 }
 
 // ── Calculation output ──────────────────────────────────────────────────────
@@ -812,4 +828,120 @@ export interface PayrollAuditEntry {
   runId?: string;
   employeeId?: string;
   detail?: string;
+}
+
+// ── Variance investigation ──────────────────────────────────────────────────
+
+export type InvestigationStatus = "open" | "investigating" | "resolved";
+
+export interface InvestigationEvent {
+  at: string;
+  actor: string;
+  action: string;
+  note?: string;
+}
+
+/**
+ * A payroll movement someone must explain: who owns it, what they found,
+ * the evidence, and a second person's sign-off on the resolution.
+ */
+export interface VarianceInvestigation {
+  id: string;
+  /** The month being explained and the month it's compared with. */
+  runId: string;
+  previousRunId: string;
+  periodLabel: string;
+  employeeId?: string;
+  employeeName?: string;
+  /** Variance reason key (comparison.ts), when raised from a reason. */
+  reason?: string;
+  amount: number;
+  title: string;
+  /** What the system found (the movement explanation at the time it was raised). */
+  finding: string;
+  status: InvestigationStatus;
+  ownerId: string;
+  ownerName: string;
+  createdBy: string;
+  createdById?: string;
+  createdAt: string;
+  dueDate?: string;
+  comments: { id: string; at: string; by: string; text: string }[];
+  documents: { id: string; fileName: string; uploadedAt: string; uploadedBy: string; dataUrl?: string }[];
+  resolutionNote?: string;
+  /** "legitimate" — the movement is correct; "error" — needs a correction. */
+  outcome?: "legitimate" | "error";
+  resolvedBy?: string;
+  resolvedById?: string;
+  resolvedAt?: string;
+  signOff?: { by: string; byId?: string; at: string; decision: "accepted" | "reopened"; note?: string };
+  history: InvestigationEvent[];
+}
+
+// ── HMO (private health insurance) ──────────────────────────────────────────
+
+export interface HmoProvider {
+  id: string;
+  name: string;
+  /** Where the premiums are remitted. */
+  bankName?: string;
+  accountNumber?: string;
+}
+
+export interface HmoPlan {
+  id: string;
+  providerId: string;
+  name: string;
+  /** Premiums are quoted per month or per year. */
+  premiumPeriod: "monthly" | "annual";
+  /** `fixed`: ₦ premiums. `percent_of_basic`: premiums are % of monthly basic. */
+  basis: "fixed" | "percent_of_basic";
+  individualPremium: number;
+  familyPremium: number;
+  /** Added per dependant on top of the cover premium (₦, same period). */
+  dependantPremium: number;
+  funding: "employer" | "employee" | "shared";
+  /** Employer's share for `shared` funding, %. */
+  employerSharePct: number;
+  /** Employee's share is deducted before tax (like NHIA). */
+  employeeShareRelieved: boolean;
+  /** Employer's share is a taxable benefit to the employee. */
+  employerShareTaxable: boolean;
+  active?: boolean;
+}
+
+export interface HmoSettings {
+  providers: HmoProvider[];
+  plans: HmoPlan[];
+}
+
+export interface HmoEnrolment {
+  planId: string;
+  coverage: "individual" | "family";
+  dependants: number;
+  /** ISO dates the cover starts / ends. */
+  from?: string;
+  to?: string;
+}
+
+// ── Voluntary pension — employee requests ───────────────────────────────────
+
+/** An employee asks to start, change or stop their voluntary pension (AVC). HR approves. */
+export interface AvcRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  /** `stop` ends the current AVC from `effectiveFrom`. */
+  action: "set" | "stop";
+  mode: "fixed" | "percent";
+  value: number;
+  effectiveFrom: string;
+  /** The employee's signed authority (mandate) — required to deduct. */
+  mandate: { reference: string; signedOn: string };
+  note?: string;
+  requestedAt: string;
+  status: "pending" | "approved" | "rejected";
+  decidedBy?: string;
+  decidedAt?: string;
+  decisionNote?: string;
 }

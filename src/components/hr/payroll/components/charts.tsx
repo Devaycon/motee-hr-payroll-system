@@ -124,6 +124,106 @@ export function ColumnChart({
   );
 }
 
+export interface WaterfallBar {
+  key: string;
+  label: string;
+  /** Totals: the level. Steps: the movement. */
+  value: number;
+  start: number;
+  end: number;
+  type: "total" | "step";
+  sub?: string;
+}
+
+/**
+ * Opening total → each movement floating from the running level → closing
+ * total. Movements are small against a payroll, so the value axis starts
+ * just below the lowest level and the total bars carry a visible axis break.
+ * Every step is a button when `onSelect` is given.
+ */
+export function WaterfallChart({
+  bars,
+  height = 220,
+  format = compactNaira,
+  selected,
+  onSelect,
+}: {
+  bars: WaterfallBar[];
+  height?: number;
+  format?: (n: number) => string;
+  selected?: string | null;
+  onSelect?: (key: string) => void;
+}) {
+  const [hover, setHover] = useState<number | null>(null);
+  const levels = bars.flatMap((b) => (b.type === "total" ? [b.end] : [b.start, b.end]));
+  const top = Math.max(...levels);
+  const bottom = Math.min(...levels);
+  const range = Math.max(top - bottom, top * 0.02, 1);
+  const lo = Math.max(0, bottom - range * 0.6);
+  const hi = top + range * 0.25;
+  const y = (v: number) => ((v - lo) / (hi - lo)) * 100;
+  const broken = lo > 0;
+  return (
+    <div className="space-y-2">
+      <Legend
+        items={[
+          { label: "Payroll total", className: SERIES[0].dot },
+          { label: "Increase", className: SERIES[1].dot },
+          { label: "Decrease", className: SERIES[3].dot },
+        ]}
+      />
+      <div className="relative flex items-end gap-3 border-b border-border/70 pt-5" style={{ height }} role="img" aria-label="Waterfall: opening payroll, each movement, closing payroll">
+        {bars.map((b, i) => {
+          const from = b.type === "total" ? lo : Math.min(b.start, b.end);
+          const to = b.type === "total" ? b.end : Math.max(b.start, b.end);
+          const tone = b.type === "total" ? SERIES[0].bar : b.value >= 0 ? SERIES[1].bar : SERIES[3].bar;
+          const clickable = !!onSelect && b.type === "step";
+          const Tag = clickable ? "button" : "div";
+          return (
+            <Tag
+              key={b.key}
+              type={clickable ? "button" : undefined}
+              onClick={clickable ? () => onSelect!(b.key) : undefined}
+              onMouseEnter={() => setHover(i)}
+              onMouseLeave={() => setHover(null)}
+              className={cn("relative h-full flex-1 rounded-md outline-none", clickable && "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring", selected === b.key && "bg-muted/70")}
+              aria-label={`${b.label}: ${format(b.value)}`}
+            >
+              {hover === i && (
+                <Tip lines={[b.label, b.type === "total" ? format(b.value) : `${b.value >= 0 ? "Increase" : "Decrease"} ${format(Math.abs(b.value))}`, ...(b.sub ? [b.sub] : []), ...(b.type === "step" ? [`Running total ${format(b.end)}`] : [])]} />
+              )}
+              {/* Connector from the previous bar's level */}
+              {i > 0 && <span className="absolute -left-3 w-3 border-t border-dashed border-muted-foreground/50" style={{ bottom: `${y(b.type === "total" ? b.end : b.start)}%` }} />}
+              <span
+                className={cn("absolute inset-x-[18%] rounded-[4px]", tone, hover === i && "brightness-110")}
+                style={{ bottom: `${y(from)}%`, height: `max(3px, ${y(to) - y(from)}%)` }}
+              >
+                {b.type === "total" && broken && (
+                  <svg className="absolute -bottom-px left-0 h-2 w-full text-card" viewBox="0 0 20 4" preserveAspectRatio="none" aria-hidden>
+                    <path d="M0 4 L2.5 1 L5 4 L7.5 1 L10 4 L12.5 1 L15 4 L17.5 1 L20 4 Z" fill="currentColor" />
+                  </svg>
+                )}
+              </span>
+              <span className="absolute inset-x-0 text-center text-[10px] font-medium tabular-nums text-foreground" style={{ bottom: `calc(${y(to)}% + 4px)` }}>
+                {b.type === "step" ? `${b.value >= 0 ? "▲" : "▼"} ${format(Math.abs(b.value))}` : format(b.value)}
+              </span>
+            </Tag>
+          );
+        })}
+      </div>
+      <div className="flex gap-3">
+        {bars.map((b) => (
+          <span key={b.key} className="flex-1 text-center text-[10px] leading-tight text-muted-foreground">
+            {b.label}
+            {b.sub && <span className="block">{b.sub}</span>}
+          </span>
+        ))}
+      </div>
+      {broken && <p className="text-[10px] text-muted-foreground">Value axis starts at {format(lo)} so movements are visible; the break on the total bars marks this.</p>}
+    </div>
+  );
+}
+
 /** Horizontal bars for ranked categories (cost by department, branch…). */
 export function BarList({ rows, format = compactNaira, emptyText = "Nothing to show." }: { rows: { label: string; value: number; sub?: string }[]; format?: (n: number) => string; emptyText?: string }) {
   const max = Math.max(1, ...rows.map((r) => Math.abs(r.value)));

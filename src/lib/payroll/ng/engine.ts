@@ -18,6 +18,7 @@ import type {
 } from "../types";
 import { nonWorkingReason, previousWorkingDay } from "./calendar";
 import { bandLabel, groupLifeOf, nhfBasisOf, ruleFor } from "./rate-sets";
+import { hmoSplit } from "../hmo";
 
 /**
  * Nigeria gross-to-net engine. Pure: same inputs, same payslip, every time —
@@ -90,6 +91,7 @@ export const RELIEF = {
   pension: "Pension contribution (8%)",
   nhf: "National Housing Fund (2.5%)",
   nhis: "Health insurance (NHIA)",
+  hmo: "HMO premium (employee share)",
   vol: "Voluntary pension",
   rent: "Rent relief (20% of rent, max ₦500k)",
   life: "Life assurance premium",
@@ -465,6 +467,26 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
       );
   }
 
+  // HMO (private health plan): premium by plan, coverage and funding policy — monthly runs only.
+  const hmo =
+    regular && rule.regime !== "wht"
+      ? hmoSplit(settings.hmo, profile?.hmo, sumBy((l) => l.amount > 0 && (l.code === "BASIC" || l.code === "CONSOLIDATED")), period.end)
+      : null;
+  if (hmo && hmo.employee > 0 && !lines.some((l) => l.code === "HMO_EE"))
+    lines.push(
+      lineFor(elements.get("HMO_EE"), "HMO_EE", hmo.employee, {
+        name: elements.get("HMO_EE")?.name ?? "HMO (Employee Share)",
+        category: "deduction",
+        group: "other_deductions",
+        statutory: false,
+        taxable: false,
+        note: hmo.note,
+        refId: hmo.plan.id,
+      }),
+    );
+  // An employer share the plan treats as a benefit is taxable income (not paid in cash).
+  const hmoBenefit = hmo && hmo.plan.employerShareTaxable ? hmo.employer : 0;
+
   if (rule.regime === "wht") {
     const wht = asUploaded ? uploaded("WHT") : round2(payrollGross * rateSet.whtRate);
     if (wht && !asUploaded) statutory.push(lineFor(elements.get("WHT"), "WHT", wht, { note: `${rateSet.whtRate * 100}% of gross` }));
@@ -474,6 +496,7 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
     if (pensionEe) addRelief(RELIEF.pension, pensionEe, pensionEe * 12);
     if (nhf) addRelief(RELIEF.nhf, nhf, nhf * 12);
     if (nhisEe) addRelief(RELIEF.nhis, nhisEe, nhisEe * 12);
+    if (hmo && hmo.employee > 0 && hmo.plan.employeeShareRelieved) addRelief(RELIEF.hmo, hmo.employee, hmo.employee * 12);
     // AVC is relieved from PAYE unless the tenant's adviser says otherwise (Payroll Settings).
     if (volPension && settings.avcTaxRelieved !== false) addRelief(RELIEF.vol, volPension, volPension * 12);
 
@@ -490,7 +513,7 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
     }
 
     const reliefTotal = Object.values(periodReliefs).reduce((s, v) => s + v, 0);
-    const periodChargeable = round2(Math.max(0, taxableGross - reliefTotal));
+    const periodChargeable = round2(Math.max(0, taxableGross + hmoBenefit - reliefTotal));
     const annualisedChargeable = round2(periodChargeable * 12);
     const annual = bandTax(annualisedChargeable, rateSet.payeBands);
     const cumulativeChargeable = round2(ytdBefore.chargeable + periodChargeable);
@@ -532,6 +555,7 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
 
     breakdown = {
       ...breakdown,
+      periodTaxableGross: round2(taxableGross + hmoBenefit),
       periodChargeable,
       annualisedChargeable,
       bands: annual.lines.map((b) => ({ ...b, taxable: round2(b.taxable), tax: round2(b.tax) })),
@@ -556,6 +580,18 @@ export function computeEmployeePay(args: ComputeArgs): PayComputation {
     const er = round2(nhisBase * rateSet.nhisEmployerRate);
     if (er) employer.push(lineFor(elements.get("NHIS_ER"), "NHIS_ER", er));
   }
+  if (hmo && hmo.employer > 0)
+    employer.push(
+      lineFor(elements.get("HMO_ER"), "HMO_ER", hmo.employer, {
+        name: elements.get("HMO_ER")?.name ?? "HMO (Employer Share)",
+        category: "employer",
+        group: "employer",
+        statutory: false,
+        taxable: false,
+        note: hmo.note,
+        refId: hmo.plan.id,
+      }),
+    );
   if (rule.regime !== "wht" && payrollGross > 0) {
     employer.push(lineFor(elements.get("NSITF"), "NSITF", payrollGross * rateSet.nsitfRate, { note: "1% of monthly payroll" }));
     if (settings.itfApplicable) employer.push(lineFor(elements.get("ITF"), "ITF", payrollGross * rateSet.itfRate, { note: "1% of payroll (accrued monthly)" }));

@@ -52,6 +52,7 @@ import {
   LayoutGrid,
   HandCoins,
   Wallet,
+  Calculator,
 } from "lucide-react";
 import type { CountryKey } from "@/src/lib/types/locale";
 
@@ -342,6 +343,14 @@ export const routes: Route[] = [
     icon: Wallet,
     label: "Payroll",
     link: "/time-payroll/payroll",
+    countries: ["ng"],
+  },
+  {
+    // Take-home pay and employer cost for any salary (the website calculator). Gated by `time-payroll.payroll-calculator`.
+    group: "Employee Services",
+    icon: Calculator,
+    label: "Payroll Calculator",
+    link: "/time-payroll/payroll-calculator",
     countries: ["ng"],
   },
 

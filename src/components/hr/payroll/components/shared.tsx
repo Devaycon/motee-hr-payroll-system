@@ -11,11 +11,17 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { cn } from "@/src/lib/utils";
+import { RowActions, type RowAction } from "./row-actions";
 import { RUN_PIPELINE, RUN_STATUS_LABELS, RUN_STATUS_STYLES } from "@/src/lib/payroll/constants";
-import { downloadExport, EXPORT_LABELS, type ExportKind } from "@/src/lib/payroll/exports";
+import { downloadExport, EXPORT_LABELS, FORMAT_LABELS, writeWorkbook, type ExportFormat, type ExportKind } from "@/src/lib/payroll/exports";
+import { buildPayrollExtract } from "@/src/lib/payroll/extract";
+import { defaultPreviousRun } from "@/src/lib/payroll/comparison";
 import { companySnapshot } from "@/src/lib/payroll/run-builder";
 import { useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import type { PayrollRun, PayrollRunStatus } from "@/src/lib/payroll/types";
@@ -26,6 +32,10 @@ export const money = (n: number, dp = 2) =>
   `₦${n.toLocaleString("en-NG", { minimumFractionDigits: dp, maximumFractionDigits: dp })}`;
 export const compact = (n: number) =>
   Math.abs(n) >= 1_000_000 ? `₦${(n / 1_000_000).toFixed(2)}m` : Math.abs(n) >= 10_000 ? `₦${(n / 1000).toFixed(1)}k` : money(n, 0);
+/** "▲ 9.0%" / "▼ 37.5%" — direction by arrow, never by a +/− sign (client request). */
+export const pctArrow = (p: number | null | undefined, dp = 1) => (p === null || p === undefined ? "—" : p === 0 ? `${(0).toFixed(dp)}%` : `${p > 0 ? "▲" : "▼"} ${Math.abs(p).toFixed(dp)}%`);
+/** "▲ ₦150,000.00" — an amount's direction by arrow. */
+export const moneyArrow = (n: number, dp = 2) => (Math.abs(n) < 0.005 ? money(0, dp) : `${n > 0 ? "▲" : "▼"} ${money(Math.abs(n), dp)}`);
 export const fmtDate = (iso?: string) =>
   iso ? new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
 
@@ -91,7 +101,16 @@ export function RunExportsMenu({
   // …and only once a Payment Authoriser has released it (runs paid before payment batches existed keep their file).
   const released = locked && (!!run.payment || run.status === "disbursed");
   const { data, bundle } = useTenantPayroll();
-  const go = (kind: ExportKind, format: "csv" | "xlsx") => {
+  const extract = (format: ExportFormat) => {
+    const company = bundle ? companySnapshot(bundle) : undefined;
+    const costCentres = new Map((bundle?.departments ?? []).map((d) => [d.name, d.costCenter]));
+    const previous = data ? defaultPreviousRun(data.runs, run) : null;
+    const sheets = buildPayrollExtract({ run, people, profiles, settings: data?.settings, company, costCentres, elements: data?.elements, previous });
+    writeWorkbook(`${run.period.year}-${String(run.period.month).padStart(2, "0")}-payroll-extract`, sheets, format, `${company?.legalName ?? "Payroll"} — ${run.period.label} payroll extract`);
+    onExport?.(`Payroll extract (${format.toUpperCase()})`);
+    if (format !== "pdf") toast.success("Payroll extract downloaded", { description: format === "xlsx" ? `${sheets.length} sheets: ${sheets.map((x) => x.name).join(", ")}` : "Main extract sheet" });
+  };
+  const go = (kind: ExportKind, format: ExportFormat) => {
     const company = bundle ? companySnapshot(bundle) : undefined;
     const costCentres = new Map((bundle?.departments ?? []).map((d) => [d.name, d.costCenter]));
     const excluded = downloadExport(kind, { run, people, profiles, settings: data?.settings, company, costCentres, elements: data?.elements }, format);
@@ -108,16 +127,48 @@ export function RunExportsMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel className="text-xs">Statutory & bank files</DropdownMenuLabel>
-        {(Object.keys(EXPORT_LABELS) as ExportKind[]).map((k) => (
-          <DropdownMenuItem key={k} onClick={() => go(k, k === "nibss" ? "csv" : "xlsx")} className="gap-2 text-xs" disabled={!released && k === "nibss"}>
-            {k === "nibss" ? <Globe2 className="h-3.5 w-3.5" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
-            {EXPORT_LABELS[k]}
-            <span className="ml-auto text-[10px] text-muted-foreground">{k === "nibss" ? (released ? "CSV" : locked ? "Authorise first" : "After finalize") : "XLSX"}</span>
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuLabel className="text-xs">Payroll extract</DropdownMenuLabel>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="gap-2 text-xs">
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Payroll extract (Head Office format)
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            {(["xlsx", "csv", "pdf"] as ExportFormat[]).map((f) => (
+              <DropdownMenuItem key={f} className="text-xs" onClick={() => extract(f)}>
+                {f === "xlsx" ? "Excel workbook — extract + PAYE, NHF, NSITF, pension, HMO, bank" : f === "csv" ? "CSV — main extract only" : "PDF — every schedule"}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => go("register", "csv")} className="text-xs">Payroll register (CSV)</DropdownMenuItem>
+        <DropdownMenuLabel className="text-xs">Statutory & bank files</DropdownMenuLabel>
+        {(Object.keys(EXPORT_LABELS) as ExportKind[]).map((k) =>
+          k === "nibss" && !released ? (
+            <DropdownMenuItem key={k} className="gap-2 text-xs" disabled>
+              <Globe2 className="h-3.5 w-3.5" /> {EXPORT_LABELS[k]}
+              <span className="ml-auto text-[10px] text-muted-foreground">{locked ? "Authorise first" : "After finalize"}</span>
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuSub key={k}>
+              <DropdownMenuSubTrigger className="gap-2 text-xs">
+                {k === "nibss" ? <Globe2 className="h-3.5 w-3.5" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
+                {EXPORT_LABELS[k]}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {(k === "nibss" ? (["csv", "pdf"] as ExportFormat[]) : (["xlsx", "csv", "pdf"] as ExportFormat[])).map((f) => (
+                  <DropdownMenuItem key={f} className="text-xs" onClick={() => go(k, f)}>{k === "nibss" && f === "csv" ? "NIBSS file (CSV)" : FORMAT_LABELS[f]}</DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ),
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="text-xs">Payroll register</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            {(["xlsx", "csv", "pdf"] as ExportFormat[]).map((f) => <DropdownMenuItem key={f} className="text-xs" onClick={() => go("register", f)}>{FORMAT_LABELS[f]}</DropdownMenuItem>)}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -142,6 +193,7 @@ export function Stat({
   tone,
   href,
   onClick,
+  actions,
 }: {
   label: string;
   value: string | number;
@@ -150,8 +202,28 @@ export function Stat({
   /** Makes the card a link to its drill-down. */
   href?: string;
   onClick?: () => void;
+  /** ⋯ menu in the card header (drill-down and downloads). */
+  actions?: RowAction[];
 }) {
   const interactive = !!(href || onClick);
+  if (actions?.length) {
+    return (
+      <div className="group relative min-w-0 flex-1 rounded-xl bg-card px-4 py-3 text-left ring-1 ring-foreground/10 transition hover:ring-primary/50">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+          <RowActions actions={actions} label={`${label} actions`} className="-mr-2 -mt-1.5" />
+        </div>
+        {href ? (
+          <Link href={href} className="block focus-visible:outline-none">
+            <p className={cn("mt-0.5 truncate text-lg font-semibold tabular-nums hover:text-primary", tone === "good" && "text-emerald-600", tone === "warn" && "text-amber-600")}>{value}</p>
+          </Link>
+        ) : (
+          <p className={cn("mt-0.5 truncate text-lg font-semibold tabular-nums", tone === "good" && "text-emerald-600", tone === "warn" && "text-amber-600")}>{value}</p>
+        )}
+        {sub && <p className="truncate text-[11px] text-muted-foreground">{sub}</p>}
+      </div>
+    );
+  }
   const body = (
     <>
       <p className="flex items-center justify-between gap-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">

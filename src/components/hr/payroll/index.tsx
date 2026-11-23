@@ -4,24 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  ArrowRight,
-  Banknote,
-  CalendarClock,
-  ChevronDown,
-  Eye,
-  FileSpreadsheet,
-  FlaskConical,
-  GitCompareArrows,
-  Landmark,
-  MoreHorizontal,
-  Plus,
-  Settings2,
-  ShieldCheck,
-  Trash2,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { ArrowRight, Banknote, CalendarClock, ChevronDown, Eye, FlaskConical, PiggyBank, GitCompareArrows, Landmark, MoreHorizontal, Plus, Settings2, ShieldCheck, Trash2, UserPlus, Users, Calculator } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -42,6 +25,7 @@ import { APPROVAL_CHAIN_TAB_ITEM, useHasApprovalChainTab } from "@/src/component
 import { useCan } from "@/src/lib/permissions/use-can";
 import { PAYROLL_DOCUMENT_TYPE, PAYROLL_HREF, PAYROLL_MODULE, PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
 import { downloadFormH1 } from "@/src/lib/payroll/exports";
+import { payrollCostYtd } from "@/src/lib/payroll/drilldowns";
 import { companySnapshot } from "@/src/lib/payroll/run-builder";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
 import { nextPeriod, openRegularRunBefore, useOnboardingHandover, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
@@ -51,6 +35,7 @@ import { PayrollControlCentre } from "./control-centre";
 import { PayrollIntelligence } from "./intelligence";
 import { RemittanceCentre, useRemittanceReminders } from "./remittance-centre";
 import { NotSupported, PipelineStepper, RunStatusBadge, RunTypeBadge, compact, fmtDate, money } from "./components/shared";
+import { DownloadMenu } from "./components/row-actions";
 
 /**
  * Time & Payroll → Payroll. Runs list, the run in progress, remittance
@@ -81,13 +66,8 @@ export function PayrollPage() {
   const lastPaid = runs.find((r) => r.status === "disbursed" || r.status === "finalized") ?? null;
   const year = current?.period.year ?? lastPaid?.period.year ?? new Date().getFullYear();
 
-  // Gross pay + employer pension for the year: opening balances plus every final payslip.
-  const ytdCost = !data
-    ? 0
-    : Object.values(data.openingYtd).filter((y) => y.year === year).reduce((s, y) => s + y.gross + y.pensionEmployer, 0) +
-      data.payslips
-        .filter((p) => p.status === "final" && p.period.year === year && p.computation.period)
-        .reduce((s, p) => s + p.computation.period.gross + p.computation.period.pensionEmployer, 0);
+  // Gross pay + every employer contribution for the year: balances brought forward plus every final payslip.
+  const ytdCost = !data || !bundle ? 0 : payrollCostYtd(year, data.payslips, data.openingYtd, new Map(bundle.employees.map((e) => [e.id, e]))).total;
 
   if (!supported && bundle) return <Shell><NotSupported /></Shell>;
   if (loading || !data) {
@@ -114,10 +94,10 @@ export function PayrollPage() {
     {
       label: "Payroll Cost YTD",
       value: compact(ytdCost),
-      sub: `Gross pay + employer pension, ${year}`,
+      sub: `Gross pay + employer contributions, ${year}`,
       icon: Landmark,
       tone: "blue",
-      link: "?tab=intelligence",
+      link: `${PAYROLL_HREF}/cost?year=${year}`,
     },
     {
       label: "On Payroll",
@@ -176,17 +156,23 @@ export function PayrollPage() {
               <Link href={`${PAYROLL_HREF}/simulate`}><FlaskConical className="h-4 w-4" /> Simulate</Link>
             </Button>
           )}
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => {
-              downloadFormH1(year, data.payslips, bundle ? companySnapshot(bundle).taxId : "");
-              actions.logExport("", `Form H1 ${year}`);
-              toast.success(`Form H1 for ${year} downloaded`, { description: "Annual PAYE return per employee, grouped by State IRS. File by 31 January." });
-            }}
-          >
-            <FileSpreadsheet className="h-4 w-4" /> Form H1 {year}
+          {canCreate && (
+            <Button variant="outline" className="gap-2" asChild>
+              <Link href={`${PAYROLL_HREF}/calculator`}><Calculator className="h-4 w-4" /> Payslip calculator</Link>
+            </Button>
+          )}
+          <Button variant="outline" className="gap-2" asChild>
+            <Link href={`${PAYROLL_HREF}/budget`}><PiggyBank className="h-4 w-4" /> Budget</Link>
           </Button>
+          <DownloadMenu
+            label={`Form H1 ${year}`}
+            title="Annual PAYE return, by State IRS"
+            onDownload={(f) => {
+              downloadFormH1(year, data.payslips, bundle ? companySnapshot(bundle).taxId : "", f);
+              actions.logExport("", `Form H1 ${year} (${f.toUpperCase()})`);
+              if (f !== "pdf") toast.success(`Form H1 for ${year} downloaded`, { description: "Annual PAYE return per employee, grouped by State IRS. File by 31 January." });
+            }}
+          />
           {canCreate && (
             <Button variant="outline" className="gap-2" asChild>
               <Link href={`${PAYROLL_HREF}/import`}>

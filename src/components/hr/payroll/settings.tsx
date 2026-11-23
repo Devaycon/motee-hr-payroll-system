@@ -12,6 +12,8 @@ import { Label } from "@/src/components/ui/label";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Switch } from "@/src/components/ui/switch";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { HmoEnrolmentFields, HmoSettingsTab } from "./settings-hmo";
+import { AvcRequestsPanel } from "./avc-requests";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +35,7 @@ import { ListPagination } from "@/src/components/shared/list-pagination";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { PAYROLL_HREF, PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
 import { ELEMENT_GROUP_LABELS, ELEMENT_GROUP_ORDER } from "@/src/lib/payroll/elements-seed";
-import { bandLabel, groupLifeOf, leaveAllowanceOf, nhfBasisOf } from "@/src/lib/payroll/ng/rate-sets";
+import { bandLabel, groupLifeOf, leaveAllowanceOf, nhfBasisOf, EMPLOYER_LINE_LABELS, employerLineShown } from "@/src/lib/payroll/ng/rate-sets";
 import { round2 } from "@/src/lib/payroll/ng/engine";
 import { structureOn } from "@/src/lib/payroll/run-builder";
 import { calcLabel, diffElement, taxTreatmentOf } from "@/src/lib/payroll/config";
@@ -80,6 +82,7 @@ export function PayrollSettingsPage() {
             { value: "structures", label: "Salary Structures" },
             { value: "profiles", label: "Tax & Statutory Profiles" },
             { value: "rates", label: "Statutory Rates" },
+            { value: "hmo", label: "Health (HMO)" },
             { value: "payslip", label: "Payslip" },
             { value: "history", label: `Change History${pendingChanges ? ` (${pendingChanges} pending)` : ""}` },
           ]}
@@ -87,8 +90,9 @@ export function PayrollSettingsPage() {
         <TabsContent value="general" className="mt-4"><General settings={data.settings} employmentTypes={bundle.employmentTypes} canEdit={canEdit} /></TabsContent>
         <TabsContent value="elements" className="mt-4"><Elements elements={data.elements} enabled={data.settings.enabledGroups} canEdit={canEdit} /></TabsContent>
         <TabsContent value="structures" className="mt-4"><Structures canEdit={canEdit} /></TabsContent>
-        <TabsContent value="profiles" className="mt-4"><Profiles canEdit={canEdit} focus={params.get("employee")} /></TabsContent>
+        <TabsContent value="profiles" className="mt-4 space-y-4"><AvcRequestsPanel canEdit={canEdit} /><Profiles canEdit={canEdit} focus={params.get("employee")} /></TabsContent>
         <TabsContent value="rates" className="mt-4"><Rates rateSets={data.rateSets} settings={data.settings} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="hmo" className="mt-4"><HmoSettingsTab settings={data.settings} canEdit={canEdit} /></TabsContent>
         <TabsContent value="payslip" className="mt-4"><PayslipOptions settings={data.settings} canEdit={canEdit} /></TabsContent>
         <TabsContent value="history" className="mt-4"><ConfigHistory canEdit={canEdit} /></TabsContent>
       </Tabs>
@@ -872,6 +876,10 @@ function ProfileDialog({ profile, name, canEdit, onClose }: { profile: EmployeeT
           <Row label="Enrolled in NHIA"><Switch checked={p.nhisEnrolled} disabled={!canEdit} onCheckedChange={(v) => setP({ ...p, nhisEnrolled: v })} /></Row>
         </div>
         <div className="space-y-2 rounded-lg border bg-card p-3">
+          <p className="text-xs font-medium">Private health plan (HMO)</p>
+          <HmoEnrolmentFields profile={p} canEdit={canEdit} onChange={(hmo) => setP({ ...p, hmo })} />
+        </div>
+        <div className="space-y-2 rounded-lg border bg-card p-3">
           <Row label="Voluntary pension (AVC)" hint="Extra contribution to the employee's RSA, deducted from pay each month, remitted to the PFA with the mandatory 8% and relieved from PAYE.">
             <div className="flex items-center gap-2">
               <Select
@@ -1151,6 +1159,18 @@ function PayslipOptions({ settings, canEdit }: { settings: PayrollSettings; canE
             <Switch checked={p[s.key]} disabled={!canEdit} onCheckedChange={(v) => set({ [s.key]: v })} />
           </Row>
         ))}
+      </Card>
+      <Card title="Employer lines on the payslip" description="Which employer contributions appear under “Paid by your employer”. Hiding a line changes the payslip only — it is still calculated, remitted and shown on the employer's breakdowns and statutory reports.">
+        {EMPLOYER_LINE_LABELS.map((l) => (
+          <Row key={l.code} label={l.label} hint={l.hint}>
+            <Switch
+              checked={employerLineShown(p, l.code)}
+              disabled={!canEdit || !p.showEmployerContributions}
+              onCheckedChange={(v) => set({ employerLines: { ...(p.employerLines ?? {}), [l.code]: v } })}
+            />
+          </Row>
+        ))}
+        {!p.showEmployerContributions && <p className="text-[11px] text-muted-foreground">Employer contributions are switched off for the whole payslip.</p>}
       </Card>
       <Card title="“Your pay at a glance” insights" description="Plain-English explanations computed once when the payslip is issued. Nothing predictive and no advice.">
         {(Object.keys(INSIGHT_LABELS) as InsightType[]).map((k) => (

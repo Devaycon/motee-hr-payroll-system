@@ -19,6 +19,14 @@ export interface ReportColumn<T> {
   value: (row: T) => string | number;
   /** Render through the locale currency formatter. */
   money?: boolean;
+  /** Drill-down: the cell links here (e.g. the employee's profile). */
+  href?: (row: T) => string | undefined;
+}
+
+/** One item in a report row's ⋯ actions menu. */
+export interface ReportRowAction {
+  label: string;
+  href: string;
 }
 
 export interface ReportFilterDef<T> {
@@ -196,6 +204,8 @@ export interface ReportDef<T> {
   analytics: (rows: T[], bundle: LocaleBundle, ctx: ReportContext) => ReportAnalytics;
   /** Dedicated single-dimension deep-dive pages, each with several graphs of its own. */
   breakdowns?: ReportBreakdownDef<T>[];
+  /** ⋯ menu on each row (drill-downs). */
+  rowActions?: (row: T) => ReportRowAction[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

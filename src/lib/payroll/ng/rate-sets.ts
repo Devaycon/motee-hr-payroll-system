@@ -113,6 +113,23 @@ export const leaveAllowanceOf = (s: PayrollSettings): LeaveAllowancePolicy => ({
 export const nhfBasisOf = (s: PayrollSettings): NhfBasis => s.nhfBasis ?? DEFAULT_NHF_BASIS;
 export const groupLifeOf = (s: PayrollSettings): GroupLifeSettings => ({ ...DEFAULT_GROUP_LIFE, ...s.groupLife });
 
+/** Employer lines shown on payslips by default. NSITF, ITF and group life are company levies, hidden unless the employer chooses to show them. */
+export const DEFAULT_EMPLOYER_LINES: Record<string, boolean> = { PENSION_ER: true, NHIS_ER: true, HMO_ER: true, NSITF: false, ITF: false, GROUP_LIFE: false };
+
+export const EMPLOYER_LINE_LABELS: { code: string; label: string; hint: string }[] = [
+  { code: "PENSION_ER", label: "Employer pension", hint: "The employer's 10% to the employee's RSA — usually shown." },
+  { code: "HMO_ER", label: "HMO (employer share)", hint: "The employer's share of the health plan premium." },
+  { code: "NHIS_ER", label: "NHIA (employer)", hint: "Statutory health insurance, employer share." },
+  { code: "NSITF", label: "NSITF", hint: "Employees' compensation levy — a company liability." },
+  { code: "ITF", label: "ITF", hint: "Industrial Training Fund levy — a company liability." },
+  { code: "GROUP_LIFE", label: "Group life assurance", hint: "Employer-paid life cover premium." },
+];
+
+/** Whether an employer line shows on the payslip. */
+export function employerLineShown(display: { employerLines?: Partial<Record<string, boolean>> } | undefined, code: string): boolean {
+  return display?.employerLines?.[code] ?? DEFAULT_EMPLOYER_LINES[code] ?? true;
+}
+
 export const DEFAULT_PAYROLL_SETTINGS: PayrollSettings = {
   taxMethod: "cumulative",
   prorationBasis: "calendar_days",
@@ -140,6 +157,7 @@ export const DEFAULT_PAYROLL_SETTINGS: PayrollSettings = {
   employmentTypeRules: NG_EMPLOYMENT_TYPE_RULES,
   payslip: {
     showEmployerContributions: true,
+    employerLines: { ...DEFAULT_EMPLOYER_LINES },
     showTaxBreakdown: true,
     showLeaveBalance: true,
     insights: {

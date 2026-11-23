@@ -282,12 +282,108 @@ export function buildExport(kind: ExportKind, ctx: ExportCtx): ExportTable {
   }
 }
 
-export function writeTable(name: string, sheet: string, t: ExportTable, format: "csv" | "xlsx") {
+export type ExportFormat = "csv" | "xlsx" | "pdf";
+
+export const FORMAT_LABELS: Record<ExportFormat, string> = { xlsx: "Excel (XLSX)", csv: "CSV", pdf: "PDF" };
+
+const escHtml = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const pdfCell = (v: Cell) => (typeof v === "number" ? (Number.isInteger(v) && Math.abs(v) < 10_000 ? String(v) : v.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : v);
+
+/**
+ * PDF of any export: the preamble as a heading block, the table, the trailer
+ * as a bold total row. Opens the browser's print-to-PDF, the same mechanism
+ * as report PDFs (no extra dependency).
+ */
+export function printTable(sheet: string, t: ExportTable): boolean {
+  return printTables(sheet, [{ name: sheet, table: t }]);
+}
+
+/** Several tables in one print-to-PDF document, each starting on a new page (a multi-sheet workbook as a PDF). */
+export function printTables(title: string, sections: { name: string; table: ExportTable }[]): boolean {
+  if (typeof window === "undefined") return false;
+  const w = window.open("", "_blank", "width=1100,height=800");
+  if (!w) return false;
+  const body = sections
+    .map(({ name, table: t }, si) => {
+      const pre = (t.preamble ?? []).filter((r) => r.some((c) => String(c).trim() !== ""));
+      const heading = pre.map((r, i) => `<div class="${i === 0 ? "h1" : "meta"}">${r.filter((c) => String(c).trim() !== "").map((c) => escHtml(pdfCell(c))).join(" &nbsp;·&nbsp; ")}</div>`).join("");
+      const isNum = t.headers.map((_, i) => t.data.some((r) => typeof r[i] === "number"));
+      const wide = t.headers.length > 24;
+      const row = (r: Cell[], cls = "") => `<tr class="${cls}">${t.headers.map((_, i) => `<td class="${isNum[i] ? "n" : ""}">${escHtml(pdfCell(r[i] ?? ""))}</td>`).join("")}</tr>`;
+      const trailer = (t.trailer ?? []).map((r) => row(r, r.some((c) => /TOTAL/i.test(String(c))) ? "total" : r.some((c) => String(c).trim() === "EXITED") ? "section" : "")).join("");
+      return `<section class="${si > 0 ? "break" : ""} ${wide ? "wide" : ""}">
+  <div class="head">${heading || `<div class="h1">${escHtml(name)}</div>`}<div class="gen">${escHtml(name)} · MOTEE Payroll · generated ${escHtml(new Date().toLocaleString("en-GB"))} · ${t.data.length} rows</div></div>
+  <table><thead><tr>${t.headers.map((h, i) => `<th class="${isNum[i] ? "n" : ""}">${escHtml(h)}</th>`).join("")}</tr></thead>
+  <tbody>${t.data.map((r) => row(r)).join("")}${trailer}</tbody></table></section>`;
+    })
+    .join("");
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>${escHtml(title)}</title>
+<style>
+  *{box-sizing:border-box;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  body{margin:24px;color:#0f172a;}
+  .h1{font-size:18px;font-weight:700;margin-bottom:4px;}
+  .meta{color:#475569;font-size:12px;margin-bottom:2px;}
+  .head{margin-bottom:14px;}
+  .gen{color:#94a3b8;font-size:10px;margin-top:6px;}
+  table{width:100%;border-collapse:collapse;font-size:10.5px;}
+  th,td{text-align:left;padding:5px 6px;border-bottom:1px solid #e2e8f0;vertical-align:top;}
+  th{background:#f1f5f9;color:#334155;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  tr.total td{font-weight:700;border-top:2px solid #334155;}
+  tr.section td{font-weight:700;padding-top:14px;}
+  section.wide table{font-size:6.5px;} section.wide th{font-size:6px;} section.wide th, section.wide td{padding:2px 3px;}
+  section.break{page-break-before:always;break-before:page;}
+  @page{size:landscape;margin:10mm;}
+</style></head><body>${body}
+  <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
+</body></html>`);
+  w.document.close();
+  return true;
+}
+
+const sheetOf = (t: ExportTable) => {
+  const aoa: Cell[][] = [...(t.preamble ?? []), t.headers, ...t.data, ...(t.trailer ?? [])];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  // Readable column widths: the longer of the header and the widest value (capped).
+  ws["!cols"] = t.headers.map((h, i) => ({ wch: Math.min(40, Math.max(8, h.length + 2, ...t.data.slice(0, 200).map((r) => String(r[i] ?? "").length + 2))) }));
+  return ws;
+};
+
+/**
+ * A multi-sheet export: Excel gets every sheet in one workbook, PDF prints
+ * every sheet as its own section, CSV carries the first (main) sheet.
+ */
+export function writeWorkbook(name: string, sheets: { name: string; table: ExportTable }[], format: ExportFormat, title = name) {
+  if (!sheets.length) return;
+  if (format === "pdf") {
+    printTables(title, sheets);
+    return;
+  }
+  if (format === "csv") {
+    writeTable(name, sheets[0].name, sheets[0].table, "csv");
+    return;
+  }
+  const wb = XLSX.utils.book_new();
+  const used = new Set<string>();
+  for (const s of sheets) {
+    let n = s.name.replace(/[\\/?*[\]:]/g, " ").slice(0, 31);
+    while (used.has(n)) n = `${n.slice(0, 28)} ${used.size}`;
+    used.add(n);
+    XLSX.utils.book_append_sheet(wb, sheetOf(s.table), n);
+  }
+  XLSX.writeFile(wb, `${name}.xlsx`);
+}
+
+export function writeTable(name: string, sheet: string, t: ExportTable, format: ExportFormat) {
+  if (format === "pdf") {
+    printTable(sheet, t);
+    return;
+  }
   const aoa: Cell[][] = [...(t.preamble ?? []), t.headers, ...t.data, ...(t.trailer ?? [])];
   if (format === "xlsx") {
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const ws = sheetOf(t);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, sheet.slice(0, 31));
+    XLSX.utils.book_append_sheet(wb, ws, sheet.replace(/[\\/?*[\]:]/g, " ").slice(0, 31));
     XLSX.writeFile(wb, `${name}.xlsx`);
     return;
   }
@@ -296,7 +392,7 @@ export function writeTable(name: string, sheet: string, t: ExportTable, format: 
 }
 
 /** Downloads a run export. Returns anyone left out of the file, so the UI can say so. */
-export function downloadExport(kind: ExportKind, ctx: ExportCtx, format: "csv" | "xlsx" = "csv"): string[] {
+export function downloadExport(kind: ExportKind, ctx: ExportCtx, format: ExportFormat = "csv"): string[] {
   const t = buildExport(kind, ctx);
   writeTable(`${monthLabel(ctx.run)}-${kind}`, EXPORT_LABELS[kind], t, format);
   return t.excluded ?? [];
@@ -325,8 +421,8 @@ export function buildFormH1(year: number, payslips: Payslip[], employerTaxId: st
   };
 }
 
-export function downloadFormH1(year: number, payslips: Payslip[], employerTaxId: string) {
-  writeTable(`${year}-form-h1`, `Form H1 ${year}`, buildFormH1(year, payslips, employerTaxId), "xlsx");
+export function downloadFormH1(year: number, payslips: Payslip[], employerTaxId: string, format: ExportFormat = "xlsx") {
+  writeTable(`${year}-form-h1`, `Form H1 ${year}`, buildFormH1(year, payslips, employerTaxId), format);
 }
 
 // ── Manual upload templates ────────────────────────────────────────────────
@@ -343,7 +439,7 @@ export function downloadTemplate(layout: "long" | "wide", employees: { employeeN
 
 // ── Remittances ─────────────────────────────────────────────────────────────
 
-export type RemittanceItem = "pension" | "avc" | "paye" | "nhf" | "nsitf" | "itf";
+export type RemittanceItem = "pension" | "avc" | "paye" | "nhf" | "nsitf" | "itf" | "hmo";
 
 /** Statutory remittance due dates for a pay month. */
 export function remittanceCalendar(period: Pick<PayrollRun["period"], "year" | "month" | "payDate">) {
@@ -358,12 +454,13 @@ export function remittanceCalendar(period: Pick<PayrollRun["period"], "year" | "
     { key: "nhf" as const, item: "NHF", to: "Federal Mortgage Bank of Nigeria", due: iso(next.y, next.m, Math.min(28, new Date(Date.UTC(next.y, next.m, 0)).getUTCDate())), basis: "Within one month of deduction" },
     { key: "nsitf" as const, item: "NSITF", to: "Nigeria Social Insurance Trust Fund", due: iso(next.y, next.m, 16), basis: "Monthly, by the 16th" },
     { key: "itf" as const, item: "ITF", to: "Industrial Training Fund", due: iso(period.year + 1, 4, 1), basis: "Annual — by 1 April for the previous year" },
+    { key: "hmo" as const, item: "HMO premiums", to: "Each employee's HMO provider", due: iso(next.y, next.m, 7), basis: "Employee and employer shares, by the 7th of the following month (per provider agreement)" },
   ];
 }
 
 /** What each remittance amounts to for a month, summed across every finalized run in it. */
 export function remittanceAmounts(runs: PayrollRun[]): Record<RemittanceItem, number> {
-  const t: Record<RemittanceItem, number> = { pension: 0, avc: 0, paye: 0, nhf: 0, nsitf: 0, itf: 0 };
+  const t: Record<RemittanceItem, number> = { pension: 0, avc: 0, paye: 0, nhf: 0, nsitf: 0, itf: 0, hmo: 0 };
   for (const run of runs) {
     for (const e of run.employees) {
       const c = e.included ? e.computation : null;
@@ -374,6 +471,7 @@ export function remittanceAmounts(runs: PayrollRun[]): Record<RemittanceItem, nu
       t.nhf += amt(c.lines, "NHF");
       t.nsitf += amt(c.lines, "NSITF");
       t.itf += amt(c.lines, "ITF");
+      t.hmo += amt(c.lines, "HMO_EE") + amt(c.lines, "HMO_ER");
     }
   }
   for (const k of Object.keys(t) as RemittanceItem[]) t[k] = round2(t[k]);

@@ -19,6 +19,7 @@ import { useAppSelector } from "@/src/lib/stores/hooks";
 import { ESS_PAYSLIPS_HREF, essPayslipHref } from "@/src/lib/payroll/constants";
 import { useDraftPayslip, useEmployeePayslipList, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import { cn } from "@/src/lib/utils";
+import { MyAvcCard } from "@/src/components/hr/payroll/avc-requests";
 
 const money = (n: number) => `₦${n.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmt = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -92,6 +93,8 @@ export function MyPayslipsPage() {
           ]}
         />
       )}
+
+      <MyAvcCard latest={latest ?? payslips[0]} />
 
       {draftRun && draftNet !== undefined && (
         <Link

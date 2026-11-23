@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeCheck, Banknote, CheckCircle2, CircleDashed, Download, Landmark, ShieldCheck, XCircle } from "lucide-react";
+import { BadgeCheck, Banknote, CheckCircle2, CircleDashed, Landmark, ShieldCheck, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -9,12 +9,13 @@ import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
 import { companySnapshot } from "@/src/lib/payroll/run-builder";
-import { downloadExport } from "@/src/lib/payroll/exports";
+import { downloadExport, type ExportFormat } from "@/src/lib/payroll/exports";
 import { PAYMENT_AUTHORISER_ROLES, useCurrentActor, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import type { PayrollRun } from "@/src/lib/payroll/types";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
 import { cn } from "@/src/lib/utils";
 import { fmtDate, money } from "./components/shared";
+import { DownloadMenu } from "./components/row-actions";
 
 /**
  * Bank payment of a finalized run: Finance authorises the batch (never the
@@ -43,10 +44,10 @@ export function PaymentPanel({ run, people }: { run: PayrollRun; people: Map<str
     { label: "Reconcile settlement", done: pay?.status === "settled" || legacy, detail: pay?.reconciledAt ? `${pay.reconciledBy} · ${fmtDate(pay.reconciledAt)}` : "Match the bank report to approved net pay" },
   ];
 
-  const nibss = () => {
+  const nibss = (format: ExportFormat = "csv") => {
     const profiles = new Map((data?.profiles ?? []).map((p) => [p.employeeId, p]));
-    const excluded = downloadExport("nibss", { run, people, profiles, settings: data?.settings, company: bundle ? companySnapshot(bundle) : undefined, elements: data?.elements }, "csv");
-    actions.logExport(run.id, "NIBSS bulk payment file (CSV)");
+    const excluded = downloadExport("nibss", { run, people, profiles, settings: data?.settings, company: bundle ? companySnapshot(bundle) : undefined, elements: data?.elements }, format);
+    actions.logExport(run.id, `NIBSS bulk payment file (${format.toUpperCase()})`);
     if (excluded.length) toast.warning(`${excluded.length} account${excluded.length === 1 ? "" : "s"} left out of the file`, { description: excluded.slice(0, 3).join(" · ") });
     else toast.success("NIBSS payment file downloaded");
   };
@@ -97,7 +98,7 @@ export function PaymentPanel({ run, people }: { run: PayrollRun; people: Map<str
             </div>
           ) : pay.status === "authorised" ? (
             <div className="flex flex-wrap items-end gap-2">
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={nibss}><Download className="h-3.5 w-3.5" /> NIBSS file</Button>
+              <DownloadMenu label="NIBSS file" formats={["csv", "pdf"]} onDownload={nibss} />
               <div className="space-y-1">
                 <Label htmlFor="bank-ref" className="text-[11px]">Bank batch reference</Label>
                 <Input id="bank-ref" className="h-8 w-48 text-xs" value={bankRef} onChange={(e) => setBankRef(e.target.value)} placeholder="e.g. NIP-BATCH-88213" />
@@ -116,7 +117,7 @@ export function PaymentPanel({ run, people }: { run: PayrollRun; people: Map<str
             </div>
           ) : pay.status === "submitted" ? (
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={nibss}><Download className="h-3.5 w-3.5" /> NIBSS file</Button>
+              <DownloadMenu label="NIBSS file" formats={["csv", "pdf"]} onDownload={nibss} />
               <Button size="sm" className="gap-1.5" onClick={() => { setRejected({}); setSettling(true); }}><Landmark className="h-3.5 w-3.5" /> Reconcile bank settlement</Button>
             </div>
           ) : (

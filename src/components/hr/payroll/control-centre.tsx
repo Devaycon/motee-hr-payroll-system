@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { AlertTriangle, ArrowRight, Banknote, CalendarClock, CheckCircle2, CircleDashed, GitPullRequestArrow, ShieldAlert, Sparkles, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowRight, Banknote, CalendarClock, CheckCircle2, CircleDashed, GitPullRequestArrow, ShieldAlert, Sparkles, XCircle, Eye, FileSpreadsheet, FileText, ShieldCheck } from "lucide-react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { PAYROLL_HREF } from "@/src/lib/payroll/constants";
 import { explainVariance } from "@/src/lib/payroll/intelligence";
 import { EXCEPTION_RULE_LABELS } from "@/src/lib/payroll/validation";
-import { useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { INVESTIGATIONS_HREF, comparisonCtxOf, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import type { PayrollRun } from "@/src/lib/payroll/types";
 import { cn } from "@/src/lib/utils";
 import { BarList, compactNaira } from "./components/charts";
 import { RunStatusBadge, fmtDate, money } from "./components/shared";
 import { RemittanceBadge, useRemittanceRows } from "./remittance-centre";
+import { RowActions } from "./components/row-actions";
+import { downloadRemittanceSchedule, remittanceStatement } from "@/src/lib/payroll/remittances";
 
 type Check = { label: string; state: "done" | "todo" | "blocked"; detail: string; href?: string };
 
@@ -29,7 +30,7 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
   const requests = useAppSelector((s) => s.approvals.requests);
   const roles = bundle?.roles ?? [];
   const { rows, projected } = useRemittanceRows();
-  const people = useMemo(() => new Map((bundle?.employees ?? []).map((e) => [e.id, e])), [bundle]);
+  const remCtx = { people: new Map((bundle?.employees ?? []).map((e) => [e.id, e])), profiles: new Map((data?.profiles ?? []).map((p) => [p.employeeId, p])), settings: data?.settings };
 
   if (!data || !bundle) return null;
 
@@ -37,7 +38,7 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
   const lockedUnpaid = runs.find((r) => r.status === "finalized" || (r.status === "disbursed" && r.payment && r.payment.status !== "settled")) ?? null;
   const run = current ?? lockedUnpaid;
   const previous = run ? runs.filter((r) => r.type === "regular" && r.id !== run.id && r.period.year * 100 + r.period.month < run.period.year * 100 + run.period.month && (r.status === "finalized" || r.status === "disbursed"))[0] : undefined;
-  const story = run && previous && run.type === "regular" ? explainVariance(run, previous, { people, elements: data.elements, structures: data.structures }) : null;
+  const story = run && previous && run.type === "regular" ? explainVariance(run, previous, comparisonCtxOf(data, bundle)) : null;
 
   const errors = run?.exceptions.filter((e) => e.severity === "error" && !e.acknowledged) ?? [];
   const warnings = run?.exceptions.filter((e) => e.severity === "warning") ?? [];
@@ -187,7 +188,27 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
             {deadlines.map((r) => (
               <li key={r.key + (r.projected ? ":p" : "")} className="flex items-center justify-between gap-2">
                 <span className="min-w-0 truncate"><span className={cn("tabular-nums", r.overdue && "font-medium text-rose-600")}>{fmtDate(r.due)}</span> · {r.title} <span className="text-muted-foreground">({r.monthLabel}{r.projected ? ", estimate" : ""})</span></span>
-                <span className="flex shrink-0 items-center gap-1.5"><span className="tabular-nums">{compactNaira(r.outstanding)}</span>{!r.projected && <RemittanceBadge status={r.status} />}</span>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  <span className="tabular-nums">{compactNaira(r.outstanding)}</span>
+                  {!r.projected && <RemittanceBadge status={r.status} />}
+                  <RowActions
+                    label={`${r.title} actions`}
+                    actions={
+                      r.projected
+                        ? [{ label: "Open the run (estimate)", icon: Eye, href: `${PAYROLL_HREF}/${r.runs[0]?.id ?? ""}` }]
+                        : [
+                            { label: "View in Remittance Centre", icon: Eye, href: `${PAYROLL_HREF}?tab=remittances` },
+                            {
+                              label: "Download schedule",
+                              icon: FileSpreadsheet,
+                              download: { onDownload: (f) => { const st = remittanceStatement(r.item, r.runs, remCtx); if (st) downloadRemittanceSchedule(st, f); } },
+                            },
+                            { label: "Liability statement (PDF)", icon: FileText, href: `${PAYROLL_HREF}/remittances/${r.month}/statement?item=${r.item}` },
+                            ...(r.record && r.record.status !== "submitted" ? [{ label: "Payment confirmation (PDF)", icon: ShieldCheck, href: `${PAYROLL_HREF}/remittances/${r.month}/statement?item=${r.item}&doc=receipt` }] : []),
+                          ]
+                    }
+                  />
+                </span>
               </li>
             ))}
             {!deadlines.length && <li className="text-muted-foreground">Nothing outstanding.</li>}
@@ -203,10 +224,19 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
                 <BarList rows={story.drivers.slice(0, 5).map((d) => ({ label: d.label, value: d.amount, sub: `${d.employees}` }))} emptyText="No movement." />
                 <ul className="space-y-1 text-[11px]">
                   {story.topEmployees.slice(0, 5).map((e) => (
-                    <li key={e.name} className="flex justify-between gap-2"><span className="truncate">{e.name}</span><span className={cn("tabular-nums", e.change < 0 && "text-rose-600")}>{e.change > 0 ? "+" : ""}{compactNaira(e.change)}</span></li>
+                    <li key={e.employeeId} className="flex justify-between gap-2"><span className="truncate">{e.name}</span><span className={cn("tabular-nums", e.change < 0 && "text-rose-600")}>{e.change > 0 ? "+" : ""}{compactNaira(e.change)}</span></li>
                   ))}
                 </ul>
               </div>
+              <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2 text-[11px]">
+                <span className={cn(story.comparison.reconciliation.balanced ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400")}>
+                  {story.comparison.reconciliation.balanced ? "Reconciled to the register" : "Not fully reconciled"}
+                </span>
+                {Math.abs(story.comparison.reconciliation.unexplained) >= 0.005 && <span className="text-amber-700 dark:text-amber-400">{compactNaira(story.comparison.reconciliation.unexplained)} unclassified</span>}
+                <Link href={`${INVESTIGATIONS_HREF}?status=open`} className="text-muted-foreground hover:text-foreground hover:underline">
+                  {(data.investigations ?? []).filter((i) => i.status !== "resolved").length} open investigation{(data.investigations ?? []).filter((i) => i.status !== "resolved").length === 1 ? "" : "s"}
+                </Link>
+              </p>
             </>
           ) : (
             <p className="text-xs text-muted-foreground">Once a month is finalized, the next month&apos;s changes are explained here.</p>

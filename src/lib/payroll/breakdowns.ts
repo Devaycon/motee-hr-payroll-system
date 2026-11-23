@@ -11,7 +11,7 @@ import type { EmployeeTaxProfile, PayrollRun, PayslipLine } from "./types";
  * download show the same numbers.
  */
 
-export type BreakdownView = "gross" | "deductions" | "net" | "paye" | "pension" | "third-party";
+export type BreakdownView = "gross" | "deductions" | "net" | "paye" | "pension" | "employer" | "third-party";
 
 export const BREAKDOWN_VIEWS: { key: BreakdownView; label: string; groupBy: string | null; blurb: string }[] = [
   { key: "gross", label: "Gross pay", groupBy: "Department", blurb: "Employee earnings: basic salary, allowances, overtime and bonuses." },
@@ -19,6 +19,7 @@ export const BREAKDOWN_VIEWS: { key: BreakdownView; label: string; groupBy: stri
   { key: "net", label: "Net pay", groupBy: "Bank", blurb: "Employee number, name, bank, masked account number and amount payable." },
   { key: "paye", label: "PAYE", groupBy: "State IRS", blurb: "Employee-level taxable income, reliefs, tax calculation and PAYE due." },
   { key: "pension", label: "Pension", groupBy: "PFA", blurb: "Employee, employer and voluntary contributions, by PFA." },
+  { key: "employer", label: "Employer cost", groupBy: "Department", blurb: "What the company pays on top of gross pay: employer pension, NSITF, ITF, health insurance and group life — never deducted from employees." },
   { key: "third-party", label: "Third-party", groupBy: "Payee", blurb: "Deductions paid on to others — cooperatives, unions, lenders, courts." },
 ];
 
@@ -71,6 +72,7 @@ export const THIRD_PARTY_PAYEE: Record<string, string> = {
   EMERGENCY_LOAN: "Company (emergency loan)",
   OVERPAYMENT: "Company (overpayment recovery)",
   OTHER_DED: "Other",
+  HMO_EE: "HMO provider",
 };
 
 /** Deductions that are reductions of pay, not money paid on to anyone. */
@@ -128,7 +130,7 @@ export function buildBreakdown(view: BreakdownView, run: PayrollRun, ctx: Breakd
         { key: "pension", label: "Pension (8%)", numeric: true },
         { key: "avc", label: "Voluntary pension", numeric: true },
         { key: "nhf", label: "NHF", numeric: true },
-        { key: "nhis", label: "Health insurance", numeric: true },
+        { key: "nhis", label: "Health insurance / HMO", numeric: true },
         { key: "loans", label: "Loans", numeric: true },
         { key: "advances", label: "Salary advances", numeric: true },
         { key: "other", label: "Other deductions", numeric: true },
@@ -139,7 +141,7 @@ export function buildBreakdown(view: BreakdownView, run: PayrollRun, ctx: Breakd
         const b = base(re);
         const advances = amt(c.lines, "SALARY_ADVANCE");
         const loans = c.lines.filter((l) => l.category === "deduction" && (l.source === "loan" || /LOAN/.test(l.code)) && l.code !== "SALARY_ADVANCE").reduce((s, l) => s + l.amount, 0);
-        const named = amt(c.lines, "PAYE") + amt(c.lines, "WHT") + amt(c.lines, "PENSION_EE") + amt(c.lines, "VOL_PENSION") + amt(c.lines, "NHF") + amt(c.lines, "NHIS_EE") + advances + loans;
+        const named = amt(c.lines, "PAYE") + amt(c.lines, "WHT") + amt(c.lines, "PENSION_EE") + amt(c.lines, "VOL_PENSION") + amt(c.lines, "NHF") + amt(c.lines, "NHIS_EE") + amt(c.lines, "HMO_EE") + advances + loans;
         return {
           id: re.employeeId,
           ...b,
@@ -149,7 +151,7 @@ export function buildBreakdown(view: BreakdownView, run: PayrollRun, ctx: Breakd
             pension: round2(amt(c.lines, "PENSION_EE")),
             avc: round2(amt(c.lines, "VOL_PENSION")),
             nhf: round2(amt(c.lines, "NHF")),
-            nhis: round2(amt(c.lines, "NHIS_EE")),
+            nhis: round2(amt(c.lines, "NHIS_EE") + amt(c.lines, "HMO_EE")),
             loans: round2(loans),
             advances: round2(advances),
             other: round2(c.totalDeductions - named),
@@ -236,6 +238,43 @@ export function buildBreakdown(view: BreakdownView, run: PayrollRun, ctx: Breakd
           };
         })
         .filter((r) => Number(r.cells.total) > 0);
+      totalKey = "total";
+      break;
+    }
+    case "employer": {
+      const known = ["PENSION_ER", "NSITF", "ITF", "NHIS_ER", "HMO_ER", "GROUP_LIFE"];
+      columns = [
+        { key: "gross", label: "Gross pay", numeric: true },
+        { key: "PENSION_ER", label: "Employer pension (10%)", numeric: true },
+        { key: "NSITF", label: "NSITF (1%)", numeric: true },
+        { key: "ITF", label: "ITF (1%)", numeric: true },
+        { key: "health", label: "Health insurance / HMO", numeric: true },
+        { key: "GROUP_LIFE", label: "Group life", numeric: true },
+        { key: "other", label: "Other employer", numeric: true },
+        { key: "total", label: "Employer contributions", numeric: true },
+        { key: "cost", label: "Total cost to employer", numeric: true },
+      ];
+      rows = included.map((re) => {
+        const c = re.computation!;
+        const b = base(re);
+        const er = c.lines.filter((l) => l.category === "employer");
+        return {
+          id: re.employeeId,
+          ...b,
+          group: b.department,
+          cells: {
+            gross: c.gross,
+            PENSION_ER: round2(amt(er, "PENSION_ER")),
+            NSITF: round2(amt(er, "NSITF")),
+            ITF: round2(amt(er, "ITF")),
+            health: round2(amt(er, "NHIS_ER") + amt(er, "HMO_ER")),
+            GROUP_LIFE: round2(amt(er, "GROUP_LIFE")),
+            other: round2(er.filter((l) => !known.includes(l.code)).reduce((s, l) => s + l.amount, 0)),
+            total: c.employerCost,
+            cost: round2(c.gross + c.employerCost),
+          },
+        };
+      });
       totalKey = "total";
       break;
     }

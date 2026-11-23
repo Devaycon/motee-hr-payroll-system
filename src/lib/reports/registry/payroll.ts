@@ -44,6 +44,8 @@ export interface PayrollRow {
   period: string;
   runType: string;
   reference: string;
+  employeeId: string;
+  payslipId: string;
   employeeNumber: string;
   name: string;
   department: string;
@@ -68,6 +70,8 @@ export interface PayrollRow {
   pensionEr: number;
   nsitf: number;
   itf: number;
+  hmoEe: number;
+  hmoEr: number;
   employerCost: number;
   totalCost: number;
 }
@@ -92,6 +96,8 @@ function selectPayroll(payroll: Parameters<AnyReportDef["select"]>[1]["payroll"]
         period: p.period.label,
         runType: RUN_TYPE_LABEL[p.runType] ?? p.runType,
         reference: p.reference,
+        employeeId: p.employeeId,
+        payslipId: p.id,
         employeeNumber: p.employee.employeeNumber,
         name: p.employee.fullName,
         department: p.employee.departmentName || "Unassigned",
@@ -115,6 +121,8 @@ function selectPayroll(payroll: Parameters<AnyReportDef["select"]>[1]["payroll"]
         net: c.net,
         pensionEr: round(amt(c.lines, "PENSION_ER")),
         nsitf: round(amt(c.lines, "NSITF")),
+        hmoEe: round(amt(c.lines, "HMO_EE")),
+        hmoEr: round(amt(c.lines, "HMO_ER")),
         itf: round(amt(c.lines, "ITF")),
         employerCost: c.employerCost,
         totalCost: round(c.gross + c.employerCost),
@@ -144,12 +152,16 @@ const payrollReport = defineReport<PayrollRow>({
   permission: "time-payroll.payroll",
   countries: ["ng"],
   select: (_b, ctx) => selectPayroll(ctx.payroll),
+  rowActions: (r) => [
+    { label: "View payslip", href: `/organization/employees/${r.employeeId}/payslips/${encodeURIComponent(r.payslipId)}` },
+    { label: "View profile", href: `/organization/employees/${r.employeeId}` },
+  ],
   columns: [
     { key: "period", header: "Pay Month", value: (r) => r.period },
     { key: "runType", header: "Run", value: (r) => r.runType },
     { key: "reference", header: "Payslip", value: (r) => r.reference },
     { key: "employeeNumber", header: "Employee ID", value: (r) => r.employeeNumber },
-    { key: "name", header: "Employee", value: (r) => r.name },
+    { key: "name", header: "Employee", value: (r) => r.name, href: (r) => (r.employeeId ? `/organization/employees/${r.employeeId}` : undefined) },
     { key: "department", header: "Department", value: (r) => r.department },
     { key: "employmentType", header: "Employment Type", value: (r) => r.employmentType },
     { key: "state", header: "Tax State", value: (r) => r.state },
@@ -171,6 +183,8 @@ const payrollReport = defineReport<PayrollRow>({
     { key: "pensionEr", header: "Employer Pension", value: (r) => r.pensionEr, money: true },
     { key: "nsitf", header: "NSITF", value: (r) => r.nsitf, money: true },
     { key: "itf", header: "ITF", value: (r) => r.itf, money: true },
+    { key: "hmoEe", header: "HMO (employee)", value: (r) => r.hmoEe, money: true },
+    { key: "hmoEr", header: "HMO (employer)", value: (r) => r.hmoEr, money: true },
     { key: "employerCost", header: "Employer Cost", value: (r) => r.employerCost, money: true },
     { key: "totalCost", header: "Total Cost", value: (r) => r.totalCost, money: true },
   ],

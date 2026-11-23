@@ -11,10 +11,14 @@ import type {
   StatutoryRateSet,
   YtdTotals,
   PaymentBatch,
+  VarianceInvestigation,
+  AvcRequest,
 } from "@/src/lib/payroll/types";
 import { CALC_SETTING_KEYS, diffSettings, versionElement } from "@/src/lib/payroll/config";
 import type { TenantPayrollData } from "@/src/lib/payroll/run-builder";
 import type { StarterImportBatch } from "@/src/lib/payroll/starter-import";
+import type { SavedScenario } from "@/src/lib/payroll/simulation";
+import type { BudgetVersion, ForecastSnapshot, PlannedHire } from "@/src/lib/payroll/budget";
 
 /**
  * Payroll — per-tenant state for the demo. In production every field here is
@@ -60,6 +64,20 @@ export type TenantPayroll = TenantPayrollData & {
   configChanges?: ConfigChange[];
   /** Remittance reminders already sent, by "YYYY-MM:item:daysBefore". */
   remindersSent?: Record<string, string>;
+  /** Payroll movements under investigation: owner, evidence, resolution and sign-off. */
+  investigations?: VarianceInvestigation[];
+  /** Saved payroll simulations — never applied to live payroll. */
+  scenarios?: SavedScenario[];
+  /** Payroll budget versions; one approved version per fiscal year. */
+  budgets?: BudgetVersion[];
+  /** Hires Finance plans outside Recruitment. */
+  plannedHires?: PlannedHire[];
+  /** Forecasts kept for comparison (rolling forecast history). */
+  forecastSnapshots?: ForecastSnapshot[];
+  /** Budget alerts already sent, by key. */
+  budgetAlertsSent?: Record<string, string>;
+  /** Employees' requests to start, change or stop voluntary pension. */
+  avcRequests?: AvcRequest[];
 };
 
 export interface PayrollState {
@@ -68,7 +86,7 @@ export interface PayrollState {
 }
 
 /** Bump to reseed every tenant (drops local payroll edits). */
-export const PAYROLL_SEED_VERSION = 7;
+export const PAYROLL_SEED_VERSION = 11;
 
 const initialState: PayrollState = { byTenant: {}, seedVersion: PAYROLL_SEED_VERSION };
 
@@ -379,6 +397,275 @@ const slice = createSlice({
       log(t, action.payload.tenantId, action.payload.actor, action.payload.note, { runId: run.id });
     },
 
+    // ── Variance investigations ───────────────────────────────────────────────
+
+    openInvestigation(state, action: PayloadAction<Tenant & Actor & { investigation: VarianceInvestigation }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      const inv = action.payload.investigation;
+      t.investigations ??= [];
+      if (t.investigations.some((x) => x.id === inv.id)) return;
+      t.investigations.unshift(inv);
+      log(t, action.payload.tenantId, action.payload.actor, "Opened variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${inv.title} (owner ${inv.ownerName})` });
+    },
+
+    /** Owner, due date or status (open ↔ investigating). Resolution has its own step. */
+    updateInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; patch: Partial<Pick<VarianceInvestigation, "status" | "ownerId" | "ownerName" | "dueDate">>; note: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv || inv.status === "resolved" || action.payload.patch.status === "resolved") return;
+      Object.assign(inv, action.payload.patch);
+      inv.history.push({ at: new Date().toISOString(), actor: action.payload.actor, action: action.payload.note });
+      log(t, action.payload.tenantId, action.payload.actor, "Updated variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${action.payload.note}` });
+    },
+
+    addInvestigationComment(state, action: PayloadAction<Tenant & Actor & { id: string; commentId: string; text: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv || !action.payload.text.trim()) return;
+      const at = new Date().toISOString();
+      inv.comments.push({ id: action.payload.commentId, at, by: action.payload.actor, text: action.payload.text.trim() });
+      inv.history.push({ at, actor: action.payload.actor, action: "Commented" });
+      if (inv.status === "open") {
+        inv.status = "investigating";
+        inv.history.push({ at, actor: action.payload.actor, action: "Moved to Under investigation" });
+      }
+    },
+
+    attachInvestigationDocument(state, action: PayloadAction<Tenant & Actor & { id: string; document: VarianceInvestigation["documents"][number] }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv) return;
+      inv.documents.push(action.payload.document);
+      inv.history.push({ at: action.payload.document.uploadedAt, actor: action.payload.actor, action: `Attached ${action.payload.document.fileName}` });
+    },
+
+    resolveInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; note: string; outcome: "legitimate" | "error" }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv || inv.status === "resolved" || !action.payload.note.trim()) return;
+      const at = new Date().toISOString();
+      inv.status = "resolved";
+      inv.resolutionNote = action.payload.note.trim();
+      inv.outcome = action.payload.outcome;
+      inv.resolvedBy = action.payload.actor;
+      inv.resolvedById = action.payload.actorId;
+      inv.resolvedAt = at;
+      inv.signOff = undefined;
+      inv.history.push({ at, actor: action.payload.actor, action: `Resolved — ${action.payload.outcome === "legitimate" ? "movement is legitimate" : "payroll error, correction needed"}`, note: inv.resolutionNote });
+      log(t, action.payload.tenantId, action.payload.actor, "Resolved variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${inv.resolutionNote}` });
+    },
+
+    /** A second person accepts the resolution or reopens it. Never the person who resolved it. */
+    signOffInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; decision: "accepted" | "reopened"; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv || inv.status !== "resolved" || inv.signOff?.decision === "accepted") return;
+      if (inv.resolvedBy === action.payload.actor || (inv.resolvedById && inv.resolvedById === action.payload.actorId)) return;
+      const at = new Date().toISOString();
+      inv.signOff = { by: action.payload.actor, byId: action.payload.actorId, at, decision: action.payload.decision, note: action.payload.note };
+      if (action.payload.decision === "reopened") {
+        inv.status = "investigating";
+        inv.history.push({ at, actor: action.payload.actor, action: "Reopened the investigation", note: action.payload.note });
+      } else {
+        inv.history.push({ at, actor: action.payload.actor, action: "Signed off the resolution", note: action.payload.note });
+      }
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.decision === "accepted" ? "Signed off variance investigation" : "Reopened variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: inv.id });
+    },
+
+    // ── Saved simulation scenarios ────────────────────────────────────────────
+
+    /** Create or update a scenario. Editing one under review or approved sends it back to draft. */
+    saveScenario(state, action: PayloadAction<Tenant & Actor & { scenario: SavedScenario }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.scenarios ??= [];
+      const next = action.payload.scenario;
+      const i = t.scenarios.findIndex((x) => x.id === next.id);
+      const now = new Date().toISOString();
+      if (i >= 0) {
+        const prev = t.scenarios[i];
+        const reopened = prev.status !== "draft";
+        t.scenarios[i] = {
+          ...next,
+          status: "draft",
+          review: reopened ? undefined : prev.review,
+          history: [...prev.history, { at: now, actor: action.payload.actor, action: reopened ? `Edited — back to draft (was ${prev.status})` : "Edited" }],
+        };
+      } else {
+        t.scenarios.unshift({ ...next, history: [{ at: now, actor: action.payload.actor, action: "Created" }] });
+      }
+      log(t, action.payload.tenantId, action.payload.actor, i >= 0 ? "Updated payroll scenario" : "Saved payroll scenario", { detail: `${next.id} — ${next.name}` });
+    },
+
+    deleteScenario(state, action: PayloadAction<Tenant & Actor & { id: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const sc = t?.scenarios?.find((x) => x.id === action.payload.id);
+      if (!t || !sc || sc.status === "approved") return;
+      t.scenarios = t.scenarios!.filter((x) => x.id !== sc.id);
+      log(t, action.payload.tenantId, action.payload.actor, "Deleted payroll scenario", { detail: `${sc.id} — ${sc.name}` });
+    },
+
+    submitScenario(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const sc = t?.scenarios?.find((x) => x.id === action.payload.id);
+      if (!t || !sc || (sc.status !== "draft" && sc.status !== "rejected")) return;
+      const now = new Date().toISOString();
+      sc.status = "submitted";
+      sc.submittedBy = action.payload.actor;
+      sc.submittedById = action.payload.actorId;
+      sc.submittedAt = now;
+      sc.review = undefined;
+      sc.history.push({ at: now, actor: action.payload.actor, action: "Submitted for management review", note: action.payload.note });
+      log(t, action.payload.tenantId, action.payload.actor, "Submitted payroll scenario for review", { detail: `${sc.id} — ${sc.name}` });
+    },
+
+    /** Approve for planning or reject. Never by the person who submitted it. Never touches live payroll. */
+    decideScenario(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; approved: boolean; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const sc = t?.scenarios?.find((x) => x.id === action.payload.id);
+      if (!t || !sc || sc.status !== "submitted") return;
+      if (sc.submittedBy === action.payload.actor || (sc.submittedById && sc.submittedById === action.payload.actorId)) return;
+      const now = new Date().toISOString();
+      sc.status = action.payload.approved ? "approved" : "rejected";
+      sc.review = { by: action.payload.actor, byId: action.payload.actorId, at: now, note: action.payload.note };
+      sc.history.push({ at: now, actor: action.payload.actor, action: action.payload.approved ? "Approved for planning" : "Rejected", note: action.payload.note });
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.approved ? "Approved payroll scenario" : "Rejected payroll scenario", { detail: `${sc.id} — ${sc.name}` });
+    },
+
+    // ── Budget & forecasting ──────────────────────────────────────────────────
+
+    /** Create or edit a budget version. Approved versions are never edited — copy them into a new version. */
+    saveBudgetVersion(state, action: PayloadAction<Tenant & Actor & { version: BudgetVersion }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.budgets ??= [];
+      const v = action.payload.version;
+      const i = t.budgets.findIndex((x) => x.id === v.id);
+      const now = new Date().toISOString();
+      if (i >= 0) {
+        const prev = t.budgets[i];
+        if (prev.status === "approved" || prev.status === "superseded") return;
+        t.budgets[i] = { ...v, status: "draft", updatedAt: now, history: [...prev.history, { at: now, actor: action.payload.actor, action: prev.status === "submitted" ? "Edited — back to draft" : "Edited" }] };
+      } else {
+        t.budgets.unshift({ ...v, status: "draft", createdAt: now, updatedAt: now, history: [{ at: now, actor: action.payload.actor, action: "Created" }] });
+      }
+      log(t, action.payload.tenantId, action.payload.actor, i >= 0 ? "Updated payroll budget" : "Created payroll budget", { detail: `${v.id} — ${v.name}` });
+    },
+
+    submitBudgetVersion(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const v = t?.budgets?.find((x) => x.id === action.payload.id);
+      if (!t || !v || v.status !== "draft") return;
+      const now = new Date().toISOString();
+      v.status = "submitted";
+      v.submittedBy = action.payload.actor;
+      v.submittedById = action.payload.actorId;
+      v.submittedAt = now;
+      v.history.push({ at: now, actor: action.payload.actor, action: "Submitted for approval" });
+      log(t, action.payload.tenantId, action.payload.actor, "Submitted payroll budget for approval", { detail: `${v.id} — ${v.name}` });
+    },
+
+    /** Approve (superseding the previous approved version for the year, which is kept) or return to draft. Never by the submitter. */
+    decideBudgetVersion(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; approved: boolean; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const v = t?.budgets?.find((x) => x.id === action.payload.id);
+      if (!t || !v || v.status !== "submitted") return;
+      if (v.submittedBy === action.payload.actor || (v.submittedById && v.submittedById === action.payload.actorId)) return;
+      const now = new Date().toISOString();
+      if (action.payload.approved) {
+        for (const o of t.budgets!) {
+          if (o.id !== v.id && o.fiscalYear === v.fiscalYear && o.status === "approved") {
+            o.status = "superseded";
+            o.history.push({ at: now, actor: action.payload.actor, action: `Superseded by ${v.name}` });
+          }
+        }
+        v.status = "approved";
+        v.approvedBy = action.payload.actor;
+        v.approvedById = action.payload.actorId;
+        v.approvedAt = now;
+      } else {
+        v.status = "draft";
+      }
+      v.history.push({ at: now, actor: action.payload.actor, action: action.payload.approved ? "Approved" : "Returned to draft", note: action.payload.note });
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.approved ? "Approved payroll budget" : "Returned payroll budget", { detail: `${v.id} — ${v.name}` });
+    },
+
+    deleteBudgetVersion(state, action: PayloadAction<Tenant & Actor & { id: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const v = t?.budgets?.find((x) => x.id === action.payload.id);
+      if (!t || !v || v.status !== "draft") return;
+      t.budgets = t.budgets!.filter((x) => x.id !== v.id);
+      log(t, action.payload.tenantId, action.payload.actor, "Deleted draft payroll budget", { detail: `${v.id} — ${v.name}` });
+    },
+
+    addPlannedHire(state, action: PayloadAction<Tenant & Actor & { hire: PlannedHire }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.plannedHires = [...(t.plannedHires ?? []), action.payload.hire];
+      log(t, action.payload.tenantId, action.payload.actor, "Added planned hire", { detail: `${action.payload.hire.count} × ${action.payload.hire.title} (${action.payload.hire.department}) from ${action.payload.hire.startMonth}` });
+    },
+
+    removePlannedHire(state, action: PayloadAction<Tenant & Actor & { id: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const h = t?.plannedHires?.find((x) => x.id === action.payload.id);
+      if (!t || !h) return;
+      t.plannedHires = t.plannedHires!.filter((x) => x.id !== h.id);
+      log(t, action.payload.tenantId, action.payload.actor, "Removed planned hire", { detail: `${h.count} × ${h.title}` });
+    },
+
+    /** Keep a copy of the forecast (the latest 24). */
+    addForecastSnapshot(state, action: PayloadAction<Tenant & { snapshot: ForecastSnapshot }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.forecastSnapshots = [action.payload.snapshot, ...(t.forecastSnapshots ?? [])].slice(0, 24);
+      log(t, action.payload.tenantId, action.payload.snapshot.takenBy, "Saved forecast snapshot", { detail: action.payload.snapshot.label });
+    },
+
+    markBudgetAlertSent(state, action: PayloadAction<Tenant & { key: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.budgetAlertsSent ??= {};
+      t.budgetAlertsSent[action.payload.key] = new Date().toISOString();
+    },
+
+    // ── Voluntary pension requests (self-service) ─────────────────────────────
+
+    submitAvcRequest(state, action: PayloadAction<Tenant & Actor & { request: AvcRequest }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      const r = action.payload.request;
+      // One open request per employee: a new one replaces the pending one.
+      t.avcRequests = [r, ...(t.avcRequests ?? []).filter((x) => !(x.employeeId === r.employeeId && x.status === "pending"))];
+      log(t, action.payload.tenantId, action.payload.actor, "Voluntary pension change requested", { employeeId: r.employeeId, detail: r.action === "stop" ? `Stop from ${r.effectiveFrom}` : `${r.mode === "percent" ? `${r.value}%` : `₦${r.value}`} from ${r.effectiveFrom}` });
+    },
+
+    /** HR decides. Approval writes the AVC (with its mandate) to the employee's profile. Never by the employee themself. */
+    decideAvcRequest(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; approved: boolean; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const r = t?.avcRequests?.find((x) => x.id === action.payload.id);
+      if (!t || !r || r.status !== "pending" || (action.payload.actorId && action.payload.actorId === r.employeeId)) return;
+      r.status = action.payload.approved ? "approved" : "rejected";
+      r.decidedBy = action.payload.actor;
+      r.decidedAt = new Date().toISOString();
+      r.decisionNote = action.payload.note;
+      if (action.payload.approved) {
+        const p = t.profiles.find((x) => x.employeeId === r.employeeId);
+        if (p) {
+          if (r.action === "stop") {
+            if (p.avc) {
+              const d = new Date(`${r.effectiveFrom}T00:00:00Z`);
+              d.setUTCDate(d.getUTCDate() - 1);
+              p.avc = { ...p.avc, endDate: d.toISOString().slice(0, 10) };
+            }
+          } else {
+            p.avc = { mode: r.mode, value: r.value, startDate: r.effectiveFrom, mandate: r.mandate };
+          }
+        }
+      }
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.approved ? "Approved voluntary pension request" : "Rejected voluntary pension request", { employeeId: r.employeeId, detail: r.id });
+    },
+
     logPayroll(state, action: PayloadAction<Tenant & Actor & { action: string; runId?: string; employeeId?: string; detail?: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
@@ -389,6 +676,26 @@ const slice = createSlice({
 });
 
 export const {
+  submitAvcRequest,
+  decideAvcRequest,
+  saveBudgetVersion,
+  submitBudgetVersion,
+  decideBudgetVersion,
+  deleteBudgetVersion,
+  addPlannedHire,
+  removePlannedHire,
+  addForecastSnapshot,
+  markBudgetAlertSent,
+  saveScenario,
+  deleteScenario,
+  submitScenario,
+  decideScenario,
+  openInvestigation,
+  updateInvestigation,
+  addInvestigationComment,
+  attachInvestigationDocument,
+  resolveInvestigation,
+  signOffInvestigation,
   addConfigChange,
   decideConfigChange,
   updateRemittance,

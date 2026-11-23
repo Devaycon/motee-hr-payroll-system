@@ -62,6 +62,8 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // ── Employees / Headcount ───────────────────────────────────────────────────
 interface EmpRow {
+  /** System id — for drill-downs to the profile. */
+  employeeId: string;
   employeeNumber: string;
   fullName: string;
   department: string;
@@ -119,6 +121,7 @@ function selectEmployeeRows(b: LocaleBundle): EmpRow[] {
         )
       : 0;
     return {
+      employeeId: e.id,
       employeeNumber: e.employeeNumber,
       fullName: e.fullName,
       department: e.departmentName,
@@ -142,8 +145,8 @@ function selectEmployeeRows(b: LocaleBundle): EmpRow[] {
 }
 
 const EMPLOYEE_COLUMNS: ReportColumn<EmpRow>[] = [
-  { key: "employeeNumber", header: "Employee ID", value: (r) => r.employeeNumber },
-  { key: "fullName", header: "Name", value: (r) => r.fullName },
+  { key: "employeeNumber", header: "Employee ID", value: (r) => r.employeeNumber, href: (r) => (r.employeeId ? `/organization/employees/${r.employeeId}` : undefined) },
+  { key: "fullName", header: "Name", value: (r) => r.fullName, href: (r) => (r.employeeId ? `/organization/employees/${r.employeeId}` : undefined) },
   { key: "department", header: "Department", value: (r) => r.department },
   { key: "jobTitle", header: "Job Title", value: (r) => r.jobTitle },
   { key: "employmentType", header: "Type", value: (r) => r.employmentType },
@@ -258,6 +261,10 @@ const genderSplitReport = defineReport<EmpRow>({
   select: selectEmployeeRows,
   columns: EMPLOYEE_COLUMNS,
   filters: EMPLOYEE_FILTERS,
+  rowActions: (r) => [
+    { label: "View profile", href: `/organization/employees/${r.employeeId}` },
+    { label: "Payslips", href: `/organization/employees/${r.employeeId}?module=payslips` },
+  ],
   searchText: employeeSearchText,
   analytics: (rows) => {
     const total = rows.length || 1;
