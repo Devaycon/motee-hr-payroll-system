@@ -10,6 +10,14 @@ import { updateClaim } from "@/src/lib/stores/expenses-slice";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { withApproval } from "@/src/lib/loans/loans";
 import {
+  addForecastSnapshot as addForecastSnapshotAction,
+  addPlannedHire as addPlannedHireAction,
+  decideBudgetVersion as decideBudgetVersionAction,
+  deleteBudgetVersion as deleteBudgetVersionAction,
+  markBudgetAlertSent as markBudgetAlertSentAction,
+  removePlannedHire as removePlannedHireAction,
+  saveBudgetVersion as saveBudgetVersionAction,
+  submitBudgetVersion as submitBudgetVersionAction,
   decideScenario as decideScenarioAction,
   deleteScenario as deleteScenarioAction,
   saveScenario as saveScenarioAction,
@@ -52,7 +60,7 @@ import { SEED_PAY_ELEMENTS } from "./elements-seed";
 import { DEFAULT_PAYROLL_SETTINGS, NG_RATE_SETS } from "./ng/rate-sets";
 import { makePeriod, round2 } from "./ng/engine";
 import { seedRemittances } from "./remittances";
-import { seedInvestigations, seedScenarios } from "./seed-intelligence";
+import { seedBudgets, seedInvestigations, seedScenarios } from "./seed-intelligence";
 import { toBatch, withImportedStaff, type ImportCtx, type StagedRow } from "./starter-import";
 import { handoverQueue, hireRefs, hrHiresFrom, joinerExceptions, stageHandover, type HrHire } from "./onboarding-handover";
 import {
@@ -94,6 +102,7 @@ import type {
 } from "./types";
 import type { ComparisonCtx } from "./comparison";
 import type { SavedScenario } from "./simulation";
+import { buildForecast, snapshotOf, type BudgetVersion, type ForecastSnapshot, type PlannedHire, type RequisitionRef } from "./budget";
 
 /**
  * The only door the payroll screens use. Today it reads and writes the
@@ -157,10 +166,22 @@ function buildTenantSeed(state: RootState, bundle: LocaleBundle): TenantPayroll 
   const runs = history.runs.map((r) => (r.status === "draft" ? withValidation(r, data, bundle, hrHiresOf(state)) : r));
   const finance = bundle.roles.find((r) => r.id === "ROLE-FIN")?.linkedEmployeeId;
   const remitter = bundle.employees.find((e) => e.id === finance)?.fullName ?? "Finance";
-  return { ...data, runs, audit: [], remittances: seedRemittances(runs, remitter, new Date().toISOString().slice(0, 10)), investigations: seedInvestigations({ ...data, runs }, bundle, new Date()), scenarios: seedScenarios({ ...data, runs }, bundle, new Date()) };
+  return { ...data, runs, audit: [], remittances: seedRemittances(runs, remitter, new Date().toISOString().slice(0, 10)), investigations: seedInvestigations({ ...data, runs }, bundle, new Date()), scenarios: seedScenarios({ ...data, runs }, bundle, new Date()), ...seedBudgets({ ...data, runs }, bundle, new Date()) };
 }
 
 export const INVESTIGATIONS_HREF = `${PAYROLL_HREF}/investigations`;
+
+/** Approved, still-open requisitions in Recruitment — planned hires the forecast should include. */
+export function activeRequisitions(state: RootState): RequisitionRef[] {
+  return activeRequisitionsFrom(state.requisitions.byCountry[state.locale.country], state.approvals.requests);
+}
+
+export function activeRequisitionsFrom(list: RootState["requisitions"]["byCountry"][string] | undefined, requests: ApprovalRequest[]): RequisitionRef[] {
+  const approved = new Set(requests.filter((r) => r.status === "approved").map((r) => r.id));
+  return (list ?? [])
+    .filter((r) => r.lifecycleStatus === "active" && !!r.approvalRequestId && approved.has(r.approvalRequestId))
+    .map((r) => ({ id: r.id, title: r.title, department: r.department, numberOfPositions: r.numberOfPositions, salaryMin: r.salaryMin, salaryMax: r.salaryMax, startDate: r.startDate }));
+}
 
 /** Everything a run comparison needs to attribute movements to their source. */
 export function comparisonCtxOf(data: TenantPayroll, bundle: LocaleBundle): ComparisonCtx {
@@ -727,6 +748,11 @@ export function usePayrollActions() {
         const payslips = buildPayslips({ run: finalized, bundle: l.bundle, data: l.data, status: "final", approvedBy: approvers.join(" · ") || run.approvedBy?.name || null, generatedAt: now });
         save(finalized, `Finalized — ${payslips.length} payslips issued`);
         dispatch(addPayslips({ tenantId, payslips }));
+        if (finalized.type === "regular") {
+          const after = live();
+          const f = after ? buildForecast({ data: after.data, bundle: after.bundle, requisitions: activeRequisitions(after.s), alertPct: after.data.settings.budgetAlertPct }) : null;
+          if (f) dispatch(addForecastSnapshotAction({ tenantId, snapshot: snapshotOf(f, "month_closed", actor.name) }));
+        }
 
         // Loans: post each payroll deduction as a repayment on the loan record.
         const loans = new Map(resolvedLoans(l.s, l.bundle).map((x) => [x.id, x]));
@@ -781,6 +807,72 @@ export function usePayrollActions() {
 
       logExport(runId: string, what: string) {
         log(`Exported ${what}`, { runId });
+      },
+
+      // ── Budget & forecasting ────────────────────────────────────────────────
+
+      saveBudgetVersion(version: BudgetVersion) {
+        if (tenantId) dispatch(saveBudgetVersionAction({ tenantId, actor: actor.name, version }));
+      },
+
+      submitBudgetVersion(id: string) {
+        if (!tenantId) return;
+        dispatch(submitBudgetVersionAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id }));
+        const v = live()?.data.budgets?.find((x) => x.id === id);
+        dispatch(pushNotification({ title: `Payroll budget to approve: ${v?.name ?? id}`, description: `${actor.name} submitted it. A second person must approve it.`, type: "info", recipientRoleIds: ["ROLE-FIN", "ROLE-EXEC"], href: `${PAYROLL_HREF}/budget/edit?version=${id}` }));
+      },
+
+      decideBudgetVersion(id: string, approved: boolean, note?: string): ActionResult {
+        const v = live()?.data.budgets?.find((x) => x.id === id);
+        if (!tenantId || !v) return { ok: false, reason: "Budget not found." };
+        if (v.status !== "submitted") return { ok: false, reason: "Only a submitted budget can be approved." };
+        if (v.submittedBy === actor.name || (v.submittedById && v.submittedById === actor.employeeId)) return { ok: false, reason: "You submitted this budget, so another person must approve it." };
+        dispatch(decideBudgetVersionAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, approved, note }));
+        if (v.createdById) dispatch(pushNotification({ title: approved ? `Payroll budget approved: ${v.name}` : `Payroll budget returned: ${v.name}`, description: approved ? `Approved by ${actor.name}.` : `${actor.name}: ${note ?? ""}`, type: approved ? "success" : "warning", recipientEmployeeIds: [v.createdById], href: `${PAYROLL_HREF}/budget/edit?version=${id}` }));
+        return { ok: true };
+      },
+
+      deleteBudgetVersion(id: string) {
+        if (tenantId) dispatch(deleteBudgetVersionAction({ tenantId, actor: actor.name, id }));
+      },
+
+      addPlannedHire(hire: Omit<PlannedHire, "id" | "addedBy" | "addedAt">) {
+        if (tenantId) dispatch(addPlannedHireAction({ tenantId, actor: actor.name, hire: { ...hire, id: `PH-${Date.now().toString(36)}`, addedBy: actor.name, addedAt: new Date().toISOString() } }));
+      },
+
+      removePlannedHire(id: string) {
+        if (tenantId) dispatch(removePlannedHireAction({ tenantId, actor: actor.name, id }));
+      },
+
+      /** Freeze the current forecast for later comparison. */
+      takeForecastSnapshot(trigger: ForecastSnapshot["trigger"] = "manual"): boolean {
+        const l = live();
+        if (!tenantId || !l) return false;
+        const f = buildForecast({ data: l.data, bundle: l.bundle, requisitions: activeRequisitions(l.s), alertPct: l.data.settings.budgetAlertPct });
+        if (!f) return false;
+        dispatch(addForecastSnapshotAction({ tenantId, snapshot: snapshotOf(f, trigger, actor.name) }));
+        return true;
+      },
+
+      /** Alert department heads and Finance, once per breach, when a department is forecast over budget. */
+      sendBudgetAlerts(alerts: { key: string; department: string; variance: number; variancePct: number }[]) {
+        const l = live();
+        if (!tenantId || !l) return;
+        for (const a of alerts) {
+          if (l.data.budgetAlertsSent?.[a.key]) continue;
+          const head = l.bundle.departments.find((d) => d.name === a.department)?.headEmployeeId;
+          dispatch(
+            pushNotification({
+              title: `${a.department} is forecast over its payroll budget`,
+              description: `Projected ${ngn(a.variance)} (${a.variancePct.toFixed(1)}%) over budget for the year. Review the drivers in Budget & Forecasting.`,
+              type: "warning",
+              recipientRoleIds: ["ROLE-FIN", "ROLE-HRADMIN"],
+              recipientEmployeeIds: head ? [head] : undefined,
+              href: `${PAYROLL_HREF}/budget?department=${encodeURIComponent(a.department)}`,
+            }),
+          );
+          dispatch(markBudgetAlertSentAction({ tenantId, key: a.key }));
+        }
       },
 
       // ── Saved simulation scenarios ──────────────────────────────────────────

@@ -30,6 +30,7 @@ import {
 } from "@/src/lib/payroll/intelligence";
 import { INVESTIGATIONS_HREF, comparisonCtxOf, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import { VarianceSummary } from "./variance-summary";
+import { budgetFor } from "@/src/lib/payroll/budget";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
 import { cn } from "@/src/lib/utils";
@@ -75,7 +76,7 @@ export function PayrollIntelligence() {
   const corr = correctionRate(data.runs);
   const proc = processingTimes(data.runs);
   const ytd = yearToDate(year, data.payslips, data.openingYtd);
-  const fc = forecastVsBudget(months, data.structures, data.settings, year);
+  const fc = forecastVsBudget(months, data.structures, data.settings, year, (m) => budgetFor(data.budgets, data.settings, m));
   const selG2n = g2n.find((m) => m.month === selected?.month);
 
   return (
@@ -247,7 +248,9 @@ export function PayrollIntelligence() {
           title={`Forecast against budget · ${year}`}
           description="Actual cost for paid months; the rest forecast from the latest run plus approved and pending salary changes."
           right={
-            canSettings && (
+            <div className="flex items-center gap-2">
+            <Link href={`${PAYROLL_HREF}/budget`} className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">Budget & Forecasting <ArrowRight className="h-3 w-3" /></Link>
+            {canSettings && !data.budgets?.some((b) => b.status === "approved") && (
               <form
                 className="flex items-center gap-1.5"
                 onSubmit={(e) => {
@@ -262,7 +265,8 @@ export function PayrollIntelligence() {
                 <Input className="h-7 w-32 text-[11px]" placeholder={data.settings.budget ? `Budget ${compactNaira(data.settings.budget.monthly)}/mo` : "Monthly budget ₦"} value={budgetText ?? ""} onChange={(e) => setBudgetText(e.target.value)} />
                 <Button size="sm" variant="outline" className="h-7 text-[11px]" type="submit">Set</Button>
               </form>
-            )
+            )}
+            </div>
           }
         >
           <ColumnChart

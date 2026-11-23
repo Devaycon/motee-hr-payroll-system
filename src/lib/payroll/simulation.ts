@@ -233,6 +233,8 @@ export interface ForecastMonth {
   delta: number;
   headcount: number;
   oneOff: number;
+  /** Scenario cost to employer by department (after transfers). */
+  byDepartment: Record<string, number>;
 }
 
 export interface CostMeasures {
@@ -449,7 +451,7 @@ export function simulate(data: TenantPayrollData, bundle: LocaleBundle, baseRun:
   // Month by month: states repeat, so cache them by what's in force.
   let forecast: ForecastMonth[] = [];
   if (opts.forecast !== false) {
-    const cache = new Map<string, { cost: number; heads: number; oneOff: number }>();
+    const cache = new Map<string, { cost: number; heads: number; oneOff: number; byDepartment: Record<string, number> }>();
     forecast = months.map(({ key }) => {
       const sig = JSON.stringify(stateSignature(scenario, key, first));
       let v = cache.get(sig);
@@ -457,10 +459,12 @@ export function simulate(data: TenantPayrollData, bundle: LocaleBundle, baseRun:
         const withOne = state(key);
         const cost = total(withOne).employerCost;
         const noOne = total(state(key, false)).employerCost;
-        v = { cost, heads: heads(withOne), oneOff: round2(cost - noOne) };
+        const byDepartment: Record<string, number> = {};
+        for (const r of withOne) byDepartment[r.department] = round2((byDepartment[r.department] ?? 0) + r.sim.employerCost);
+        v = { cost, heads: heads(withOne), oneOff: round2(cost - noOne), byDepartment };
         cache.set(sig, v);
       }
-      return { month: key, label: monthLabel(key), short: monthLabel(key, "short"), base: baseTotal.employerCost, scenario: round2(v.cost), delta: round2(v.cost - baseTotal.employerCost), headcount: v.heads, oneOff: v.oneOff };
+      return { month: key, label: monthLabel(key), short: monthLabel(key, "short"), base: baseTotal.employerCost, scenario: round2(v.cost), delta: round2(v.cost - baseTotal.employerCost), headcount: v.heads, oneOff: v.oneOff, byDepartment: v.byDepartment };
     });
   }
   const total12Base = round2(baseTotal.employerCost * 12);

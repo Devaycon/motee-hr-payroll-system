@@ -344,6 +344,8 @@ export interface PayrollSettings {
   enabledGroups: PayElementGroup[];
   /** Approved payroll budget (gross + employer cost) per month, for forecast vs budget. Optional. */
   budget?: PayrollBudget;
+  /** Variance % at which a department's forecast counts as over budget and managers are alerted. Default 5. */
+  budgetAlertPct?: number;
   /** Days before a remittance deadline that payroll and finance users are reminded. Optional (default 5). */
   remittanceReminderDays?: number;
 }

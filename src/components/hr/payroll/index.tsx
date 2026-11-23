@@ -11,7 +11,7 @@ import {
   ChevronDown,
   Eye,
   FileSpreadsheet,
-  FlaskConical,
+  FlaskConical, PiggyBank,
   GitCompareArrows,
   Landmark,
   MoreHorizontal,
@@ -176,6 +176,9 @@ export function PayrollPage() {
               <Link href={`${PAYROLL_HREF}/simulate`}><FlaskConical className="h-4 w-4" /> Simulate</Link>
             </Button>
           )}
+          <Button variant="outline" className="gap-2" asChild>
+            <Link href={`${PAYROLL_HREF}/budget`}><PiggyBank className="h-4 w-4" /> Budget</Link>
+          </Button>
           <Button
             variant="outline"
             className="gap-2"

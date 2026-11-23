@@ -417,12 +417,13 @@ export interface ForecastRow {
  * of the year, the latest run's cost plus the monthly effect of approved and
  * pending salary changes from their effective month.
  */
-export function forecastVsBudget(months: MonthBucket[], structures: SalaryStructure[], settings: PayrollSettings, year: number): { rows: ForecastRow[]; actualYtd: number; forecastYear: number; budgetYear: number | null } {
+export function forecastVsBudget(months: MonthBucket[], structures: SalaryStructure[], settings: PayrollSettings, year: number, budgetLookup?: (month: string) => number | null): { rows: ForecastRow[]; actualYtd: number; forecastYear: number; budgetYear: number | null } {
   const g2n = grossToNet(months.filter((m) => m.month.startsWith(String(year))));
   const actual = new Map(g2n.filter((m) => m.final).map((m) => [m.month, m.gross + m.employerCost]));
   const latest = [...g2n].reverse().find((m) => m.gross > 0);
   const base = latest ? latest.gross + latest.employerCost : 0;
-  const budgetOf = (month: string) => (settings.budget ? settings.budget.months[month] ?? (settings.budget.monthly || null) : null);
+  // An approved budget version (Budget & Forecasting) wins; otherwise the simple monthly budget in settings.
+  const budgetOf = budgetLookup ?? ((month: string) => (settings.budget ? settings.budget.months[month] ?? (settings.budget.monthly || null) : null));
   const rows: ForecastRow[] = [];
   for (let m = 1; m <= 12; m++) {
     const month = `${year}-${String(m).padStart(2, "0")}`;

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import nigeria from "@/src/data/locale/nigeria.json";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import reducer, {
+  decideBudgetVersion,
+  saveBudgetVersion,
+  submitBudgetVersion,
   decideScenario,
   saveScenario,
   submitScenario,
@@ -17,7 +20,8 @@ import { round2 } from "./ng/engine";
 import { seedHistory, seedProfile, seedStructure } from "./run-builder";
 import { compareRuns, type ComparisonCtx } from "./comparison";
 import { intelligenceSummary, varianceNarrative } from "./intelligence";
-import { seedInvestigations, seedScenarios } from "./seed-intelligence";
+import { seedBudgets, seedInvestigations, seedScenarios } from "./seed-intelligence";
+import { budgetAlerts, budgetFor, buildForecast, snapshotOf, type BudgetVersion } from "./budget";
 import { EMPLOYER_KEYS, EMPTY_SCENARIO, simulate, type SavedScenario } from "./simulation";
 import type { PayrollRun, SalaryStructure, VarianceInvestigation } from "./types";
 
@@ -284,5 +288,79 @@ describe("payroll simulation", () => {
     // Editing an approved scenario sends it back to draft.
     st = reducer(st, saveScenario({ tenantId, actor: "A", scenario: { ...scn, name: "y" } }));
     expect(st.byTenant[tenantId].scenarios![0].status).toBe("draft");
+  });
+});
+
+describe("budget & forecasting", () => {
+  const data = { ...base, ...history };
+  const seeded = seedBudgets(data, bundle, today);
+  const withBudgets = { ...data, ...seeded };
+  const f = buildForecast({ data: withBudgets, bundle })!;
+
+  it("uses actuals for closed months, the open run for the current month, and the forecast after", () => {
+    const kinds = Object.fromEntries(f.year.map((r) => [r.month, r.kind]));
+    expect(kinds["2026-10"]).toBe("actual");
+    expect(kinds["2026-11"]).toBe("in_progress");
+    expect(kinds["2026-12"]).toBe("forecast");
+    expect(kinds["2026-01"]).toBe("none");
+    expect(f.year.find((r) => r.month === "2026-10")!.value).toBe(round2(oct.totals.gross + oct.totals.employerCost));
+  });
+
+  it("department projections add up to the total, and the approved budget is read by department", () => {
+    expect(round2(f.departments.reduce((s, d) => s + d.projected, 0))).toBe(f.totals.projected);
+    const d = f.departments[0];
+    expect(budgetFor(withBudgets.budgets, settings, "2026-12", d.department)).toBeGreaterThan(0);
+    expect(budgetFor(withBudgets.budgets, settings, "2026-12")).toBe(round2(withBudgets.budgets[0].lines.reduce((s, l) => s + l.months["2026-12"], 0)));
+  });
+
+  it("flags the tightly budgeted department as over budget and alerts once per breach", () => {
+    expect(f.departments.some((d) => d.status === "over")).toBe(true);
+    const alerts = budgetAlerts(f, withBudgets.budgets[0].id);
+    expect(alerts.length).toBeGreaterThan(0);
+    expect(new Set(alerts.map((a) => a.key)).size).toBe(alerts.length);
+  });
+
+  it("includes planned recruitment from its start month and explains it as a driver", () => {
+    const g = buildForecast({ data: withBudgets, bundle, fiscalYear: 2027 })!;
+    const hire = seeded.plannedHires[0];
+    const jan = g.year.find((r) => r.month === "2027-01")!.value!;
+    const feb = g.year.find((r) => r.month === "2027-02")!.value!;
+    expect(feb).toBeGreaterThan(jan + hire.monthlyGross);
+    expect(g.drivers.find((d) => d.kind === "hires")?.byDepartment[hire.department]).toBeGreaterThan(0);
+  });
+
+  it("takes requisitions from Recruitment as planned hires", () => {
+    const g = buildForecast({ data: { ...withBudgets, plannedHires: [] }, bundle, requisitions: [{ id: "R1", title: "Analyst", department: bundle.departments[0].name, numberOfPositions: 2, salaryMin: 6_000_000, salaryMax: 7_200_000, startDate: "2026-03-01" }] })!;
+    expect(g.hires).toEqual([expect.objectContaining({ id: "R1", source: "requisition", count: 2, monthlyGross: 550_000, late: true })]);
+  });
+
+  it("a scenario overlay raises the forecast but never touches the base", () => {
+    const sc = seedScenarios(data, bundle, today);
+    const g = buildForecast({ data: { ...withBudgets, scenarios: sc }, bundle, scenarioId: "SCN-DEMO-10" })!;
+    expect(g.totals.projected).toBeGreaterThan(f.totals.projected);
+    expect(g.year.find((r) => r.month === "2026-10")!.value).toBe(f.year.find((r) => r.month === "2026-10")!.value);
+  });
+
+  it("snapshots keep the forecast as it stood", () => {
+    const snap = snapshotOf(f, "manual", "Tester");
+    expect(snap.total).toBe(f.totals.projected);
+    expect(snap.months.some((m) => m.kind === "forecast")).toBe(true);
+  });
+
+  it("approving a budget supersedes the previous approved version, which is kept; the submitter cannot approve", () => {
+    const tenantId = "T1";
+    const v2: BudgetVersion = { ...withBudgets.budgets[0], id: "BUD-NEW", name: "Revised", status: "draft", history: [] };
+    let st: PayrollState = { seedVersion: 10, byTenant: { [tenantId]: { audit: [], runs: [], budgets: [withBudgets.budgets[0]] } as unknown as TenantPayroll } };
+    st = reducer(st, saveBudgetVersion({ tenantId, actor: "A", version: v2 }));
+    st = reducer(st, submitBudgetVersion({ tenantId, actor: "A", actorId: "EA", id: "BUD-NEW" }));
+    st = reducer(st, decideBudgetVersion({ tenantId, actor: "A", actorId: "EA", id: "BUD-NEW", approved: true }));
+    expect(st.byTenant[tenantId].budgets!.find((b) => b.id === "BUD-NEW")!.status).toBe("submitted");
+    st = reducer(st, decideBudgetVersion({ tenantId, actor: "B", actorId: "EB", id: "BUD-NEW", approved: true }));
+    const bs = st.byTenant[tenantId].budgets!;
+    expect(bs.find((b) => b.id === "BUD-NEW")!.status).toBe("approved");
+    expect(bs.find((b) => b.id === withBudgets.budgets[0].id)!.status).toBe("superseded");
+    // An approved version can't be edited in place.
+    st = reducer(st, saveBudgetVersion({ tenantId, actor: "A", version: { ...v2, name: "Changed" } }));
+    expect(st.byTenant[tenantId].budgets!.find((b) => b.id === "BUD-NEW")!.name).toBe("Revised");
   });
 });

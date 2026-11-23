@@ -17,6 +17,7 @@ import { CALC_SETTING_KEYS, diffSettings, versionElement } from "@/src/lib/payro
 import type { TenantPayrollData } from "@/src/lib/payroll/run-builder";
 import type { StarterImportBatch } from "@/src/lib/payroll/starter-import";
 import type { SavedScenario } from "@/src/lib/payroll/simulation";
+import type { BudgetVersion, ForecastSnapshot, PlannedHire } from "@/src/lib/payroll/budget";
 
 /**
  * Payroll — per-tenant state for the demo. In production every field here is
@@ -66,6 +67,14 @@ export type TenantPayroll = TenantPayrollData & {
   investigations?: VarianceInvestigation[];
   /** Saved payroll simulations — never applied to live payroll. */
   scenarios?: SavedScenario[];
+  /** Payroll budget versions; one approved version per fiscal year. */
+  budgets?: BudgetVersion[];
+  /** Hires Finance plans outside Recruitment. */
+  plannedHires?: PlannedHire[];
+  /** Forecasts kept for comparison (rolling forecast history). */
+  forecastSnapshots?: ForecastSnapshot[];
+  /** Budget alerts already sent, by key. */
+  budgetAlertsSent?: Record<string, string>;
 };
 
 export interface PayrollState {
@@ -74,7 +83,7 @@ export interface PayrollState {
 }
 
 /** Bump to reseed every tenant (drops local payroll edits). */
-export const PAYROLL_SEED_VERSION = 9;
+export const PAYROLL_SEED_VERSION = 10;
 
 const initialState: PayrollState = { byTenant: {}, seedVersion: PAYROLL_SEED_VERSION };
 
@@ -521,6 +530,102 @@ const slice = createSlice({
       log(t, action.payload.tenantId, action.payload.actor, action.payload.approved ? "Approved payroll scenario" : "Rejected payroll scenario", { detail: `${sc.id} — ${sc.name}` });
     },
 
+    // ── Budget & forecasting ──────────────────────────────────────────────────
+
+    /** Create or edit a budget version. Approved versions are never edited — copy them into a new version. */
+    saveBudgetVersion(state, action: PayloadAction<Tenant & Actor & { version: BudgetVersion }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.budgets ??= [];
+      const v = action.payload.version;
+      const i = t.budgets.findIndex((x) => x.id === v.id);
+      const now = new Date().toISOString();
+      if (i >= 0) {
+        const prev = t.budgets[i];
+        if (prev.status === "approved" || prev.status === "superseded") return;
+        t.budgets[i] = { ...v, status: "draft", updatedAt: now, history: [...prev.history, { at: now, actor: action.payload.actor, action: prev.status === "submitted" ? "Edited — back to draft" : "Edited" }] };
+      } else {
+        t.budgets.unshift({ ...v, status: "draft", createdAt: now, updatedAt: now, history: [{ at: now, actor: action.payload.actor, action: "Created" }] });
+      }
+      log(t, action.payload.tenantId, action.payload.actor, i >= 0 ? "Updated payroll budget" : "Created payroll budget", { detail: `${v.id} — ${v.name}` });
+    },
+
+    submitBudgetVersion(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const v = t?.budgets?.find((x) => x.id === action.payload.id);
+      if (!t || !v || v.status !== "draft") return;
+      const now = new Date().toISOString();
+      v.status = "submitted";
+      v.submittedBy = action.payload.actor;
+      v.submittedById = action.payload.actorId;
+      v.submittedAt = now;
+      v.history.push({ at: now, actor: action.payload.actor, action: "Submitted for approval" });
+      log(t, action.payload.tenantId, action.payload.actor, "Submitted payroll budget for approval", { detail: `${v.id} — ${v.name}` });
+    },
+
+    /** Approve (superseding the previous approved version for the year, which is kept) or return to draft. Never by the submitter. */
+    decideBudgetVersion(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; approved: boolean; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const v = t?.budgets?.find((x) => x.id === action.payload.id);
+      if (!t || !v || v.status !== "submitted") return;
+      if (v.submittedBy === action.payload.actor || (v.submittedById && v.submittedById === action.payload.actorId)) return;
+      const now = new Date().toISOString();
+      if (action.payload.approved) {
+        for (const o of t.budgets!) {
+          if (o.id !== v.id && o.fiscalYear === v.fiscalYear && o.status === "approved") {
+            o.status = "superseded";
+            o.history.push({ at: now, actor: action.payload.actor, action: `Superseded by ${v.name}` });
+          }
+        }
+        v.status = "approved";
+        v.approvedBy = action.payload.actor;
+        v.approvedById = action.payload.actorId;
+        v.approvedAt = now;
+      } else {
+        v.status = "draft";
+      }
+      v.history.push({ at: now, actor: action.payload.actor, action: action.payload.approved ? "Approved" : "Returned to draft", note: action.payload.note });
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.approved ? "Approved payroll budget" : "Returned payroll budget", { detail: `${v.id} — ${v.name}` });
+    },
+
+    deleteBudgetVersion(state, action: PayloadAction<Tenant & Actor & { id: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const v = t?.budgets?.find((x) => x.id === action.payload.id);
+      if (!t || !v || v.status !== "draft") return;
+      t.budgets = t.budgets!.filter((x) => x.id !== v.id);
+      log(t, action.payload.tenantId, action.payload.actor, "Deleted draft payroll budget", { detail: `${v.id} — ${v.name}` });
+    },
+
+    addPlannedHire(state, action: PayloadAction<Tenant & Actor & { hire: PlannedHire }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.plannedHires = [...(t.plannedHires ?? []), action.payload.hire];
+      log(t, action.payload.tenantId, action.payload.actor, "Added planned hire", { detail: `${action.payload.hire.count} × ${action.payload.hire.title} (${action.payload.hire.department}) from ${action.payload.hire.startMonth}` });
+    },
+
+    removePlannedHire(state, action: PayloadAction<Tenant & Actor & { id: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const h = t?.plannedHires?.find((x) => x.id === action.payload.id);
+      if (!t || !h) return;
+      t.plannedHires = t.plannedHires!.filter((x) => x.id !== h.id);
+      log(t, action.payload.tenantId, action.payload.actor, "Removed planned hire", { detail: `${h.count} × ${h.title}` });
+    },
+
+    /** Keep a copy of the forecast (the latest 24). */
+    addForecastSnapshot(state, action: PayloadAction<Tenant & { snapshot: ForecastSnapshot }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.forecastSnapshots = [action.payload.snapshot, ...(t.forecastSnapshots ?? [])].slice(0, 24);
+      log(t, action.payload.tenantId, action.payload.snapshot.takenBy, "Saved forecast snapshot", { detail: action.payload.snapshot.label });
+    },
+
+    markBudgetAlertSent(state, action: PayloadAction<Tenant & { key: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.budgetAlertsSent ??= {};
+      t.budgetAlertsSent[action.payload.key] = new Date().toISOString();
+    },
+
     logPayroll(state, action: PayloadAction<Tenant & Actor & { action: string; runId?: string; employeeId?: string; detail?: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
@@ -531,6 +636,14 @@ const slice = createSlice({
 });
 
 export const {
+  saveBudgetVersion,
+  submitBudgetVersion,
+  decideBudgetVersion,
+  deleteBudgetVersion,
+  addPlannedHire,
+  removePlannedHire,
+  addForecastSnapshot,
+  markBudgetAlertSent,
   saveScenario,
   deleteScenario,
   submitScenario,
