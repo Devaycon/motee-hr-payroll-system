@@ -57,7 +57,8 @@ import { BREAKDOWN_VIEWS, breakdownTable, buildBreakdown, type BreakdownView } f
 import { writeTable } from "@/src/lib/payroll/exports";
 import { RowActions, type RowAction } from "./components/row-actions";
 import { ExceptionDetailModal, InputDetailModal } from "./run-drilldowns";
-import { NotSupported, PipelineStepper, RunExportsMenu, RunStatusBadge, RunTypeBadge, Stat, fmtDate, money } from "./components/shared";
+import { NetChangeDetailModal } from "./net-change-detail";
+import { NotSupported, PipelineStepper, RunExportsMenu, RunStatusBadge, RunTypeBadge, Stat, fmtDate, money, pctArrow } from "./components/shared";
 
 export function RunWorkspacePage({ runId }: { runId: string }) {
   const router = useRouter();
@@ -946,6 +947,7 @@ function AckDialog({ exception, onClose, onConfirm }: { exception: PayrollExcept
 // ── Variance ────────────────────────────────────────────────────────────────
 
 function VarianceTable({ run, people, data, threshold }: { run: PayrollRun; people: Map<string, { fullName: string; departmentName: string }>; data: import("@/src/lib/payroll/run-builder").TenantPayrollData; threshold: number }) {
+  const [detail, setDetail] = useState<string | null>(null);
   const rows = run.employees
     .filter((e) => e.included && e.computation)
     .map((e) => {
@@ -961,6 +963,7 @@ function VarianceTable({ run, people, data, threshold }: { run: PayrollRun; peop
   const totalNow = rows.reduce((s, r) => s + r.now, 0);
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
+      <NetChangeDetailModal run={run} employeeId={detail} onClose={() => setDetail(null)} />
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
         <p className="text-xs text-muted-foreground">Net pay against each employee&apos;s previous payslip. Changes over {threshold}% are flagged for review.</p>
         <div className="flex items-center gap-3">
@@ -977,6 +980,7 @@ function VarianceTable({ run, people, data, threshold }: { run: PayrollRun; peop
             <th className="px-4 py-2 text-right font-medium">Last net</th>
             <th className="px-4 py-2 text-right font-medium">This net</th>
             <th className="px-4 py-2 text-right font-medium">Change</th>
+            <th className="w-10" />
           </tr>
         </thead>
         <tbody>
@@ -989,7 +993,17 @@ function VarianceTable({ run, people, data, threshold }: { run: PayrollRun; peop
               <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">{r.before === null ? "New" : money(r.before)}</td>
               <td className="px-4 py-2 text-right tabular-nums">{money(r.now)}</td>
               <td className={cn("px-4 py-2 text-right tabular-nums", r.pctChange !== null && Math.abs(r.pctChange) > threshold && "font-semibold text-amber-600")}>
-                {r.change === null ? "—" : `${r.change >= 0 ? "+" : "−"}${money(Math.abs(r.change))} (${r.pctChange!.toFixed(1)}%)`}
+                {r.change === null ? "—" : `${r.change >= 0 ? "+" : "−"}${money(Math.abs(r.change))} (${pctArrow(r.pctChange)})`}
+              </td>
+              <td className="px-2 py-2">
+                <RowActions
+                  label={`${r.name} actions`}
+                  actions={[
+                    { label: "View details", icon: Eye, onSelect: () => setDetail(r.id) },
+                    { label: "Pay this month", icon: Wallet, href: `${PAYROLL_HREF}/${run.id}/employees/${r.id}` },
+                    { label: "Employee profile", icon: UserRound, href: `/organization/employees/${r.id}` },
+                  ]}
+                />
               </td>
             </tr>
           ))}
