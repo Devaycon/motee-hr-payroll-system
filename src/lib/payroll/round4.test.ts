@@ -199,3 +199,59 @@ describe("D3 · payslip calculator", () => {
     expect(Array.isArray(recurringDeductions(data, emp.id))).toBe(true);
   });
 });
+
+// ── Payroll extract (client's Head Office template) ─────────────────────────
+
+import { buildPayrollExtract } from "./extract";
+
+describe("payroll extract", () => {
+  const oct = run(10);
+  const sheets = buildPayrollExtract({ run: nov, previous: oct, people, profiles, settings, company: { legalName: "Test Co", taxId: "1" } });
+  const main = sheets[0].table;
+  const col = (h: string) => main.headers.indexOf(h);
+  const n = (v: unknown) => Number(v) || 0;
+
+  it("has the Head Office heading and one row per paid employee", () => {
+    for (const h of ["SN", "Staff Number", "Department", "Staff Name", "BANK", "BANK ACCOUNT", "PFA", "PEN NUMBER", "TAX IDENTIFICATION NUMBER", "Days Present at Work", "Pro-rating Factor", "Basic Allowance", "Housing", "Transport", "Total Monthly Gross", "Pension", "PAYE", "Total Deductions", "NET PAY", "Employer Pension Con", "NSITF", "ITF", "Group Life Insurance", "Total Employee Cost", "REMARK"])
+      expect(col(h)).toBeGreaterThanOrEqual(0);
+    expect(main.data).toHaveLength(nov.employees.filter((e) => e.included && e.computation).length);
+    expect(main.preamble![0][0]).toBe("TEST CO - NOVEMBER 2026 PAYROLL");
+  });
+
+  it("every row adds up: earnings = gross, gross − deductions = net, gross + employer = total cost", () => {
+    const earn = main.headers.slice(col("Basic Allowance"), col("Total Allowances (Gross Pay)")).filter((h) => h !== "Total Monthly Gross");
+    const ded = main.headers.slice(col("Pension"), col("Total Deductions")).filter((h) => h !== "Crcy");
+    const er = main.headers.slice(col("Employer Pension Con"), col("Total Employee Cost"));
+    for (const r of main.data) {
+      const gross = n(r[col("Total Allowances (Gross Pay)")]);
+      expect(round2(earn.reduce((s, h) => s + n(r[main.headers.indexOf(h)]), 0))).toBe(round2(gross));
+      expect(round2(ded.reduce((s, h) => s + n(r[main.headers.indexOf(h)]), 0))).toBe(n(r[col("Total Deductions")]));
+      expect(round2(gross + n(r[col("Total Deductions")]))).toBe(n(r[col("NET PAY")]));
+      expect(round2(gross + er.reduce((s, h) => s + n(r[main.headers.indexOf(h)]), 0))).toBe(n(r[col("Total Employee Cost")]));
+    }
+  });
+
+  it("the TOTAL row ties to the run, and statutory sheets tie to the remittances", () => {
+    const t = main.trailer![0];
+    expect(t[col("Total Allowances (Gross Pay)")]).toBe(round2(nov.totals.gross));
+    expect(t[col("NET PAY")]).toBe(round2(nov.totals.net));
+    const amounts = remittanceAmounts([nov]);
+    const total = (name: string, idx: number) => sheets.find((s) => s.name === name)!.table.trailer![0][idx];
+    expect(total("PAYE", 5)).toBe(amounts.paye);
+    expect(total("NHF", 4)).toBe(amounts.nhf);
+    expect(total("NSITF", 4)).toBe(amounts.nsitf);
+    const pen = sheets.find((s) => s.name === "PENSION")!.table.trailer![0];
+    const noPin = sheets.find((s) => s.name === "NO PIN")!.table.trailer![0];
+    expect(round2(n(pen[1]) + n(pen[2]) + n(noPin[1]) + n(noPin[2]))).toBe(amounts.pension);
+    expect(sheets.map((s) => s.name)).toEqual(expect.arrayContaining(["PAYE", "NHF", "NSITF", "PENSION", "NO PIN", "PENSION PYMT SCHEDULE", "BANK SCHEDULE"]));
+  });
+
+  it("lists leavers under EXITED", () => {
+    const leaver = oct.employees.find((e) => e.included && e.computation)!;
+    const nov2 = { ...nov, employees: nov.employees.map((e) => (e.employeeId === leaver.employeeId ? { ...e, included: false } : e)) };
+    const t = buildPayrollExtract({ run: nov2, previous: oct, people, profiles, settings })[0].table;
+    const i = t.trailer!.findIndex((r) => r[1] === "EXITED");
+    expect(i).toBeGreaterThan(0);
+    expect(t.trailer![i + 1][3]).toBe(people.get(leaver.employeeId)?.fullName);
+  });
+});

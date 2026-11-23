@@ -19,7 +19,9 @@ import {
 import { cn } from "@/src/lib/utils";
 import { RowActions, type RowAction } from "./row-actions";
 import { RUN_PIPELINE, RUN_STATUS_LABELS, RUN_STATUS_STYLES } from "@/src/lib/payroll/constants";
-import { downloadExport, EXPORT_LABELS, FORMAT_LABELS, type ExportFormat, type ExportKind } from "@/src/lib/payroll/exports";
+import { downloadExport, EXPORT_LABELS, FORMAT_LABELS, writeWorkbook, type ExportFormat, type ExportKind } from "@/src/lib/payroll/exports";
+import { buildPayrollExtract } from "@/src/lib/payroll/extract";
+import { defaultPreviousRun } from "@/src/lib/payroll/comparison";
 import { companySnapshot } from "@/src/lib/payroll/run-builder";
 import { useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import type { PayrollRun, PayrollRunStatus } from "@/src/lib/payroll/types";
@@ -99,6 +101,15 @@ export function RunExportsMenu({
   // …and only once a Payment Authoriser has released it (runs paid before payment batches existed keep their file).
   const released = locked && (!!run.payment || run.status === "disbursed");
   const { data, bundle } = useTenantPayroll();
+  const extract = (format: ExportFormat) => {
+    const company = bundle ? companySnapshot(bundle) : undefined;
+    const costCentres = new Map((bundle?.departments ?? []).map((d) => [d.name, d.costCenter]));
+    const previous = data ? defaultPreviousRun(data.runs, run) : null;
+    const sheets = buildPayrollExtract({ run, people, profiles, settings: data?.settings, company, costCentres, elements: data?.elements, previous });
+    writeWorkbook(`${run.period.year}-${String(run.period.month).padStart(2, "0")}-payroll-extract`, sheets, format, `${company?.legalName ?? "Payroll"} — ${run.period.label} payroll extract`);
+    onExport?.(`Payroll extract (${format.toUpperCase()})`);
+    if (format !== "pdf") toast.success("Payroll extract downloaded", { description: format === "xlsx" ? `${sheets.length} sheets: ${sheets.map((x) => x.name).join(", ")}` : "Main extract sheet" });
+  };
   const go = (kind: ExportKind, format: ExportFormat) => {
     const company = bundle ? companySnapshot(bundle) : undefined;
     const costCentres = new Map((bundle?.departments ?? []).map((d) => [d.name, d.costCenter]));
@@ -116,6 +127,20 @@ export function RunExportsMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuLabel className="text-xs">Payroll extract</DropdownMenuLabel>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="gap-2 text-xs">
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Payroll extract (Head Office format)
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            {(["xlsx", "csv", "pdf"] as ExportFormat[]).map((f) => (
+              <DropdownMenuItem key={f} className="text-xs" onClick={() => extract(f)}>
+                {f === "xlsx" ? "Excel workbook — extract + PAYE, NHF, NSITF, pension, HMO, bank" : f === "csv" ? "CSV — main extract only" : "PDF — every schedule"}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs">Statutory & bank files</DropdownMenuLabel>
         {(Object.keys(EXPORT_LABELS) as ExportKind[]).map((k) =>
           k === "nibss" && !released ? (

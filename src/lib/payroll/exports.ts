@@ -295,14 +295,29 @@ const pdfCell = (v: Cell) => (typeof v === "number" ? (Number.isInteger(v) && Ma
  * as report PDFs (no extra dependency).
  */
 export function printTable(sheet: string, t: ExportTable): boolean {
+  return printTables(sheet, [{ name: sheet, table: t }]);
+}
+
+/** Several tables in one print-to-PDF document, each starting on a new page (a multi-sheet workbook as a PDF). */
+export function printTables(title: string, sections: { name: string; table: ExportTable }[]): boolean {
   if (typeof window === "undefined") return false;
   const w = window.open("", "_blank", "width=1100,height=800");
   if (!w) return false;
-  const pre = (t.preamble ?? []).filter((r) => r.some((c) => String(c).trim() !== ""));
-  const heading = pre.map((r, i) => `<div class="${i === 0 ? "h1" : "meta"}">${r.filter((c) => String(c).trim() !== "").map((c) => escHtml(pdfCell(c))).join(" &nbsp;·&nbsp; ")}</div>`).join("");
-  const isNum = t.headers.map((_, i) => t.data.some((r) => typeof r[i] === "number"));
-  const row = (r: Cell[], cls = "") => `<tr class="${cls}">${t.headers.map((_, i) => `<td class="${isNum[i] ? "n" : ""}">${escHtml(pdfCell(r[i] ?? ""))}</td>`).join("")}</tr>`;
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>${escHtml(sheet)}</title>
+  const body = sections
+    .map(({ name, table: t }, si) => {
+      const pre = (t.preamble ?? []).filter((r) => r.some((c) => String(c).trim() !== ""));
+      const heading = pre.map((r, i) => `<div class="${i === 0 ? "h1" : "meta"}">${r.filter((c) => String(c).trim() !== "").map((c) => escHtml(pdfCell(c))).join(" &nbsp;·&nbsp; ")}</div>`).join("");
+      const isNum = t.headers.map((_, i) => t.data.some((r) => typeof r[i] === "number"));
+      const wide = t.headers.length > 24;
+      const row = (r: Cell[], cls = "") => `<tr class="${cls}">${t.headers.map((_, i) => `<td class="${isNum[i] ? "n" : ""}">${escHtml(pdfCell(r[i] ?? ""))}</td>`).join("")}</tr>`;
+      const trailer = (t.trailer ?? []).map((r) => row(r, r.some((c) => /TOTAL/i.test(String(c))) ? "total" : r.some((c) => String(c).trim() === "EXITED") ? "section" : "")).join("");
+      return `<section class="${si > 0 ? "break" : ""} ${wide ? "wide" : ""}">
+  <div class="head">${heading || `<div class="h1">${escHtml(name)}</div>`}<div class="gen">${escHtml(name)} · MOTEE Payroll · generated ${escHtml(new Date().toLocaleString("en-GB"))} · ${t.data.length} rows</div></div>
+  <table><thead><tr>${t.headers.map((h, i) => `<th class="${isNum[i] ? "n" : ""}">${escHtml(h)}</th>`).join("")}</tr></thead>
+  <tbody>${t.data.map((r) => row(r)).join("")}${trailer}</tbody></table></section>`;
+    })
+    .join("");
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>${escHtml(title)}</title>
 <style>
   *{box-sizing:border-box;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
   body{margin:24px;color:#0f172a;}
@@ -315,15 +330,48 @@ export function printTable(sheet: string, t: ExportTable): boolean {
   th{background:#f1f5f9;color:#334155;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;}
   td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
   tr.total td{font-weight:700;border-top:2px solid #334155;}
-  @page{size:landscape;margin:12mm;}
-</style></head><body>
-  <div class="head">${heading || `<div class="h1">${escHtml(sheet)}</div>`}<div class="gen">MOTEE Payroll · generated ${escHtml(new Date().toLocaleString("en-GB"))} · ${t.data.length} rows</div></div>
-  <table><thead><tr>${t.headers.map((h, i) => `<th class="${isNum[i] ? "n" : ""}">${escHtml(h)}</th>`).join("")}</tr></thead>
-  <tbody>${t.data.map((r) => row(r)).join("")}${(t.trailer ?? []).map((r) => row(r, "total")).join("")}</tbody></table>
+  tr.section td{font-weight:700;padding-top:14px;}
+  section.wide table{font-size:6.5px;} section.wide th{font-size:6px;} section.wide th, section.wide td{padding:2px 3px;}
+  section.break{page-break-before:always;break-before:page;}
+  @page{size:landscape;margin:10mm;}
+</style></head><body>${body}
   <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
 </body></html>`);
   w.document.close();
   return true;
+}
+
+const sheetOf = (t: ExportTable) => {
+  const aoa: Cell[][] = [...(t.preamble ?? []), t.headers, ...t.data, ...(t.trailer ?? [])];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  // Readable column widths: the longer of the header and the widest value (capped).
+  ws["!cols"] = t.headers.map((h, i) => ({ wch: Math.min(40, Math.max(8, h.length + 2, ...t.data.slice(0, 200).map((r) => String(r[i] ?? "").length + 2))) }));
+  return ws;
+};
+
+/**
+ * A multi-sheet export: Excel gets every sheet in one workbook, PDF prints
+ * every sheet as its own section, CSV carries the first (main) sheet.
+ */
+export function writeWorkbook(name: string, sheets: { name: string; table: ExportTable }[], format: ExportFormat, title = name) {
+  if (!sheets.length) return;
+  if (format === "pdf") {
+    printTables(title, sheets);
+    return;
+  }
+  if (format === "csv") {
+    writeTable(name, sheets[0].name, sheets[0].table, "csv");
+    return;
+  }
+  const wb = XLSX.utils.book_new();
+  const used = new Set<string>();
+  for (const s of sheets) {
+    let n = s.name.replace(/[\\/?*[\]:]/g, " ").slice(0, 31);
+    while (used.has(n)) n = `${n.slice(0, 28)} ${used.size}`;
+    used.add(n);
+    XLSX.utils.book_append_sheet(wb, sheetOf(s.table), n);
+  }
+  XLSX.writeFile(wb, `${name}.xlsx`);
 }
 
 export function writeTable(name: string, sheet: string, t: ExportTable, format: ExportFormat) {
@@ -333,9 +381,9 @@ export function writeTable(name: string, sheet: string, t: ExportTable, format: 
   }
   const aoa: Cell[][] = [...(t.preamble ?? []), t.headers, ...t.data, ...(t.trailer ?? [])];
   if (format === "xlsx") {
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const ws = sheetOf(t);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, sheet.slice(0, 31));
+    XLSX.utils.book_append_sheet(wb, ws, sheet.replace(/[\\/?*[\]:]/g, " ").slice(0, 31));
     XLSX.writeFile(wb, `${name}.xlsx`);
     return;
   }
