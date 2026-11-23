@@ -13,7 +13,7 @@ import type { RemittanceRecord } from "@/src/lib/stores/payroll-slice";
  * `remittanceAmounts`, which the Statutory Remittances tab shows.
  */
 
-export const REMITTANCE_ITEMS: RemittanceItem[] = ["paye", "pension", "avc", "nhf", "nsitf", "itf"];
+export const REMITTANCE_ITEMS: RemittanceItem[] = ["paye", "pension", "avc", "nhf", "nsitf", "itf", "hmo"];
 
 export interface RemittanceCtx {
   people: Map<string, LocaleEmployee>;
@@ -124,6 +124,18 @@ export function remittanceStatement(item: RemittanceItem, runs: PayrollRun[], ct
           group = "Industrial Training Fund";
           nums = [gross, amt(c.lines, "ITF")];
           break;
+        case "hmo": {
+          const ee = amt(c.lines, "HMO_EE");
+          const er = amt(c.lines, "HMO_ER");
+          if (!ee && !er) continue;
+          // Grouped by provider: the plan id rides on the line's refId.
+          const planId = c.lines.find((l) => l.code === "HMO_EE" || l.code === "HMO_ER")?.refId;
+          const plan = ctx.settings?.hmo?.plans.find((x) => x.id === planId);
+          group = ctx.settings?.hmo?.providers.find((x) => x.id === plan?.providerId)?.name ?? "HMO provider";
+          cols = [plan?.name ?? "—"];
+          nums = [ee, er, ee + er];
+          break;
+        }
       }
       const key = `${group}|${re.employeeId}`;
       const prev = acc.get(key);
@@ -139,6 +151,7 @@ export function remittanceStatement(item: RemittanceItem, runs: PayrollRun[], ct
     nhf: ["Payee", "Employee ID", "Name", "NHF number", "NHF base", "NHF (2.5%)"],
     nsitf: ["Payee", "Employee ID", "Name", "Monthly emoluments", "Employer contribution (1%)"],
     itf: ["Payee", "Employee ID", "Name", "Monthly emoluments", "Employer contribution (1%)"],
+    hmo: ["HMO provider", "Employee ID", "Name", "Plan", "Employee share", "Employer share", "Premium"],
   };
   const groupRef = (g: string): string | undefined =>
     item === "paye" ? ids?.stateTaxIds?.[g] : item === "pension" || item === "avc" ? ids?.pencomEmployerCode : item === "nsitf" ? ids?.nsitfCode : undefined;
@@ -187,7 +200,7 @@ export function downloadAllRemittances(statements: RemittanceStatement[], month:
   writeTable(`${month}-statutory-remittances`, `Remittances ${month}`, { headers: [`Statutory remittances — ${month}`], data }, format);
 }
 
-const REF_PREFIX: Record<RemittanceItem, string> = { paye: "IRS", pension: "PEN", avc: "AVC", nhf: "NHF", nsitf: "NSITF", itf: "ITF" };
+const REF_PREFIX: Record<RemittanceItem, string> = { paye: "IRS", pension: "PEN", avc: "AVC", nhf: "NHF", nsitf: "NSITF", itf: "ITF", hmo: "HMO" };
 
 /**
  * Demo history: every finalized month except the latest has its remittances

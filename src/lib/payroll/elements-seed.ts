@@ -230,12 +230,14 @@ export const SEED_PAY_ELEMENTS: PayElement[] = [
     { code: "OVERPAYMENT", name: "Overpayment Recovery" },
     { code: "COURT_ORDER", name: "Court-Ordered Deduction" },
     { code: "OTHER_DED", name: "Other Deduction", recurring: true },
+    { code: "HMO_EE", name: "HMO (Employee Share)", recurring: true, description: "Employee's share of the health plan premium, per the HMO plan and funding policy." },
   ]),
 
   // Employer contributions — a cost to the employer, never deducted from pay
   ...[
     { code: "PENSION_ER", name: "Pension (Employer)" },
     { code: "NHIS_ER", name: "Health Insurance (Employer)" },
+    { code: "HMO_ER", name: "HMO (Employer Share)" },
     { code: "NSITF", name: "NSITF (Employee Compensation)" },
     { code: "ITF", name: "Industrial Training Fund" },
     { code: "GROUP_LIFE", name: "Group Life Assurance" },

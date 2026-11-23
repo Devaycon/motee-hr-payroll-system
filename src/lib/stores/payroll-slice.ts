@@ -12,6 +12,7 @@ import type {
   YtdTotals,
   PaymentBatch,
   VarianceInvestigation,
+  AvcRequest,
 } from "@/src/lib/payroll/types";
 import { CALC_SETTING_KEYS, diffSettings, versionElement } from "@/src/lib/payroll/config";
 import type { TenantPayrollData } from "@/src/lib/payroll/run-builder";
@@ -75,6 +76,8 @@ export type TenantPayroll = TenantPayrollData & {
   forecastSnapshots?: ForecastSnapshot[];
   /** Budget alerts already sent, by key. */
   budgetAlertsSent?: Record<string, string>;
+  /** Employees' requests to start, change or stop voluntary pension. */
+  avcRequests?: AvcRequest[];
 };
 
 export interface PayrollState {
@@ -83,7 +86,7 @@ export interface PayrollState {
 }
 
 /** Bump to reseed every tenant (drops local payroll edits). */
-export const PAYROLL_SEED_VERSION = 10;
+export const PAYROLL_SEED_VERSION = 11;
 
 const initialState: PayrollState = { byTenant: {}, seedVersion: PAYROLL_SEED_VERSION };
 
@@ -626,6 +629,43 @@ const slice = createSlice({
       t.budgetAlertsSent[action.payload.key] = new Date().toISOString();
     },
 
+    // ── Voluntary pension requests (self-service) ─────────────────────────────
+
+    submitAvcRequest(state, action: PayloadAction<Tenant & Actor & { request: AvcRequest }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      const r = action.payload.request;
+      // One open request per employee: a new one replaces the pending one.
+      t.avcRequests = [r, ...(t.avcRequests ?? []).filter((x) => !(x.employeeId === r.employeeId && x.status === "pending"))];
+      log(t, action.payload.tenantId, action.payload.actor, "Voluntary pension change requested", { employeeId: r.employeeId, detail: r.action === "stop" ? `Stop from ${r.effectiveFrom}` : `${r.mode === "percent" ? `${r.value}%` : `₦${r.value}`} from ${r.effectiveFrom}` });
+    },
+
+    /** HR decides. Approval writes the AVC (with its mandate) to the employee's profile. Never by the employee themself. */
+    decideAvcRequest(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; approved: boolean; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const r = t?.avcRequests?.find((x) => x.id === action.payload.id);
+      if (!t || !r || r.status !== "pending" || (action.payload.actorId && action.payload.actorId === r.employeeId)) return;
+      r.status = action.payload.approved ? "approved" : "rejected";
+      r.decidedBy = action.payload.actor;
+      r.decidedAt = new Date().toISOString();
+      r.decisionNote = action.payload.note;
+      if (action.payload.approved) {
+        const p = t.profiles.find((x) => x.employeeId === r.employeeId);
+        if (p) {
+          if (r.action === "stop") {
+            if (p.avc) {
+              const d = new Date(`${r.effectiveFrom}T00:00:00Z`);
+              d.setUTCDate(d.getUTCDate() - 1);
+              p.avc = { ...p.avc, endDate: d.toISOString().slice(0, 10) };
+            }
+          } else {
+            p.avc = { mode: r.mode, value: r.value, startDate: r.effectiveFrom, mandate: r.mandate };
+          }
+        }
+      }
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.approved ? "Approved voluntary pension request" : "Rejected voluntary pension request", { employeeId: r.employeeId, detail: r.id });
+    },
+
     logPayroll(state, action: PayloadAction<Tenant & Actor & { action: string; runId?: string; employeeId?: string; detail?: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
@@ -636,6 +676,8 @@ const slice = createSlice({
 });
 
 export const {
+  submitAvcRequest,
+  decideAvcRequest,
   saveBudgetVersion,
   submitBudgetVersion,
   decideBudgetVersion,

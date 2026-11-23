@@ -10,6 +10,8 @@ import { updateClaim } from "@/src/lib/stores/expenses-slice";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { withApproval } from "@/src/lib/loans/loans";
 import {
+  decideAvcRequest as decideAvcRequestAction,
+  submitAvcRequest as submitAvcRequestAction,
   addForecastSnapshot as addForecastSnapshotAction,
   addPlannedHire as addPlannedHireAction,
   decideBudgetVersion as decideBudgetVersionAction,
@@ -60,6 +62,7 @@ import { SEED_PAY_ELEMENTS } from "./elements-seed";
 import { DEFAULT_PAYROLL_SETTINGS, NG_RATE_SETS } from "./ng/rate-sets";
 import { makePeriod, round2 } from "./ng/engine";
 import { seedRemittances } from "./remittances";
+import { DEMO_HMO_SETTINGS, demoHmoEnrolment } from "./hmo";
 import { seedBudgets, seedInvestigations, seedScenarios } from "./seed-intelligence";
 import { toBatch, withImportedStaff, type ImportCtx, type StagedRow } from "./starter-import";
 import { handoverQueue, hireRefs, hrHiresFrom, joinerExceptions, stageHandover, type HrHire } from "./onboarding-handover";
@@ -99,6 +102,7 @@ import type {
   SalaryStructure,
   StatutoryRateSet,
   VarianceInvestigation,
+  AvcRequest,
 } from "./types";
 import type { ComparisonCtx } from "./comparison";
 import type { SavedScenario } from "./simulation";
@@ -152,13 +156,16 @@ export function requestsForRun(state: RootState, runId: string): ApprovalRequest
 }
 
 function buildTenantSeed(state: RootState, bundle: LocaleBundle): TenantPayroll {
-  const settings = DEFAULT_PAYROLL_SETTINGS;
+  const settings = { ...DEFAULT_PAYROLL_SETTINGS, hmo: DEMO_HMO_SETTINGS };
+  // HMO cover starts this month, so finalized history is unchanged and the open run shows it.
+  const now = new Date();
+  const hmoFrom = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
   const base = {
     elements: SEED_PAY_ELEMENTS,
     rateSets: NG_RATE_SETS,
     settings,
     structures: bundle.employees.map((e) => seedStructure(e, settings)),
-    profiles: bundle.employees.map(seedProfile),
+    profiles: bundle.employees.map((e, i) => ({ ...seedProfile(e), hmo: demoHmoEnrolment(i, hmoFrom) })),
   };
   const history = seedHistory({ tenantId: bundle.tenant.id, bundle, base, loans: resolvedLoans(state, bundle), today: new Date() });
   const data = { ...base, ...history };
@@ -809,6 +816,56 @@ export function usePayrollActions() {
         log(`Exported ${what}`, { runId });
       },
 
+      // ── Voluntary pension requests ──────────────────────────────────────────
+
+      /** The signed-in employee asks to start, change or stop their AVC. HR and Payroll are notified. */
+      requestAvcChange(input: Pick<AvcRequest, "action" | "mode" | "value" | "effectiveFrom" | "note">): ActionResult {
+        const l = live();
+        if (!tenantId || !l || !actor.employeeId) return { ok: false, reason: "Sign in as an employee to make a request." };
+        if (input.action === "set" && !(input.value > 0)) return { ok: false, reason: "Enter the amount or percentage." };
+        const now = new Date().toISOString();
+        const request: AvcRequest = {
+          ...input,
+          id: `AVC-${Date.now().toString(36).toUpperCase()}`,
+          employeeId: actor.employeeId,
+          employeeName: actor.name,
+          mandate: { reference: `MANDATE-${actor.employeeId}-${now.slice(0, 10)}`, signedOn: now.slice(0, 10) },
+          requestedAt: now,
+          status: "pending",
+        };
+        dispatch(submitAvcRequestAction({ tenantId, actor: actor.name, request }));
+        dispatch(
+          pushNotification({
+            title: `Voluntary pension request from ${actor.name}`,
+            description: input.action === "stop" ? `Stop from ${input.effectiveFrom}.` : `${input.mode === "percent" ? `${input.value}% of pensionable pay` : ngn(input.value)} a month from ${input.effectiveFrom}.`,
+            type: "info",
+            recipientRoleIds: ["ROLE-HRADMIN", "ROLE-FIN"],
+            href: `${PAYROLL_HREF}/settings?tab=profiles`,
+          }),
+        );
+        return { ok: true };
+      },
+
+      decideAvcRequest(id: string, approved: boolean, note?: string): ActionResult {
+        const l = live();
+        const r = l?.data.avcRequests?.find((x) => x.id === id);
+        if (!tenantId || !r) return { ok: false, reason: "Request not found." };
+        if (r.employeeId === actor.employeeId) return { ok: false, reason: "You can't approve your own request." };
+        if (!approved && !note?.trim()) return { ok: false, reason: "Give a reason for rejecting it." };
+        dispatch(decideAvcRequestAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, approved, note }));
+        if (approved) markStale("an employee's voluntary pension changed", (run) => run.employees.some((e) => e.employeeId === r.employeeId && e.included) && run.period.end >= r.effectiveFrom);
+        dispatch(
+          pushNotification({
+            title: approved ? "Your voluntary pension request was approved" : "Your voluntary pension request was not approved",
+            description: approved ? (r.action === "stop" ? `It stops from ${r.effectiveFrom}.` : `It starts from ${r.effectiveFrom} and is relieved from PAYE.`) : note ?? "",
+            type: approved ? "success" : "warning",
+            recipientEmployeeIds: [r.employeeId],
+            href: ESS_PAYSLIPS_HREF,
+          }),
+        );
+        return { ok: true };
+      },
+
       // ── Budget & forecasting ────────────────────────────────────────────────
 
       saveBudgetVersion(version: BudgetVersion) {
@@ -1072,7 +1129,7 @@ export function usePayrollActions() {
         const l = live();
         const effectiveFrom = opts.effectiveFrom ?? (l ? earliestOpenRun(l.data)?.period.start : undefined) ?? new Date().toISOString().slice(0, 10);
         dispatch(updatePayrollSettings({ tenantId, actor: actor.name, actorId: actor.employeeId, changes, effectiveFrom }));
-        const calcKeys: (keyof PayrollSettings)[] = ["taxMethod", "prorationBasis", "nhisEnabled", "nhfBasis", "groupLife", "itfApplicable", "deductLoansViaPayroll", "payExpensesViaPayroll", "allowPayeRefunds", "employmentTypeRules", "enabledGroups", "basicMin", "basicMax", "varianceThresholdPct", "leaveAllowance"];
+        const calcKeys: (keyof PayrollSettings)[] = ["taxMethod", "prorationBasis", "nhisEnabled", "nhfBasis", "groupLife", "itfApplicable", "deductLoansViaPayroll", "payExpensesViaPayroll", "allowPayeRefunds", "employmentTypeRules", "enabledGroups", "basicMin", "basicMax", "varianceThresholdPct", "leaveAllowance", "hmo"];
         if (Object.keys(changes).some((k) => calcKeys.includes(k as keyof PayrollSettings))) markStale("payroll settings changed", (r) => r.period.end >= effectiveFrom);
       },
 

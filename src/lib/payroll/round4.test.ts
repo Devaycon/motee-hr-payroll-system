@@ -68,3 +68,85 @@ describe("D1 · drill-downs", () => {
     expect(slips[0].computation.lines.some((l) => l.code === "NSITF")).toBe(true);
   });
 });
+
+// ── D2 · payslip employer lines, HMO, AVC requests ──────────────────────────
+
+import { DEMO_HMO_SETTINGS, demoHmoEnrolment, hmoSplit } from "./hmo";
+import { DEFAULT_EMPLOYER_LINES, employerLineShown } from "./ng/rate-sets";
+import { remittanceStatement } from "./remittances";
+import { remittanceAmounts } from "./exports";
+import reducer, { decideAvcRequest, submitAvcRequest, type PayrollState, type TenantPayroll } from "@/src/lib/stores/payroll-slice";
+import type { HmoPlan, HmoSettings } from "./types";
+
+describe("D2 · HMO", () => {
+  const plan = (c: Partial<HmoPlan>): HmoSettings => ({
+    providers: [{ id: "P", name: "Test HMO" }],
+    plans: [{ id: "X", providerId: "P", name: "Plan", premiumPeriod: "annual", basis: "fixed", individualPremium: 120_000, familyPremium: 300_000, dependantPremium: 24_000, funding: "employer", employerSharePct: 100, employeeShareRelieved: true, employerShareTaxable: false, ...c }],
+  });
+  const enrol = { planId: "X", coverage: "individual" as const, dependants: 0 };
+
+  it("matches the client's three examples on a ₦120,000 a year premium", () => {
+    expect(hmoSplit(plan({ funding: "employer" }), enrol, 0, "2026-11-30")).toMatchObject({ premium: 10_000, employer: 10_000, employee: 0 });
+    expect(hmoSplit(plan({ funding: "shared", employerSharePct: 70 }), enrol, 0, "2026-11-30")).toMatchObject({ premium: 10_000, employer: 7_000, employee: 3_000 });
+    expect(hmoSplit(plan({ funding: "employee" }), enrol, 0, "2026-11-30")).toMatchObject({ premium: 10_000, employer: 0, employee: 10_000 });
+  });
+
+  it("adds family cover and dependants, and respects the start date", () => {
+    expect(hmoSplit(plan({}), { planId: "X", coverage: "family", dependants: 2 }, 0, "2026-11-30")!.premium).toBe(25_000 + 4_000);
+    expect(hmoSplit(plan({}), { ...enrol, from: "2026-12-01" }, 0, "2026-11-30")).toBeNull();
+    expect(hmoSplit(plan({ basis: "percent_of_basic", individualPremium: 2 }), enrol, 500_000, "2026-11-30")!.premium).toBe(10_000);
+  });
+
+  // Payroll with demo HMO cover from November.
+  const hmoSettings = { ...settings, hmo: DEMO_HMO_SETTINGS };
+  const hmoProfiles = bundle.employees.map((e, i) => ({ ...seedProfile(e), hmo: demoHmoEnrolment(i, "2026-11-01") }));
+  const hmoBase = { ...base, settings: hmoSettings, profiles: hmoProfiles };
+  const h = seedHistory({ tenantId: bundle.tenant.id, bundle, base: hmoBase, loans: bundle.loans ?? [], today });
+  const hNov = h.runs.find((r) => r.type === "regular" && r.period.month === 11)!;
+  const hOct = h.runs.find((r) => r.type === "regular" && r.period.month === 10)!;
+
+  it("deducts the employee share with PAYE relief and adds the employer share to employer cost", () => {
+    const shared = hNov.employees.find((e) => e.computation?.lines.some((l) => l.code === "HMO_EE") && e.computation.lines.some((l) => l.code === "HMO_ER"))!;
+    const c = shared.computation!;
+    const plain = nov.employees.find((e) => e.employeeId === shared.employeeId)!.computation!;
+    const ee = c.lines.find((l) => l.code === "HMO_EE")!.amount;
+    const er = c.lines.find((l) => l.code === "HMO_ER")!.amount;
+    expect(c.tax.reliefs.find((r) => r.label === "HMO premium (employee share)")?.period).toBe(ee);
+    expect(c.gross).toBe(plain.gross);
+    expect(round2(c.employerCost - plain.employerCost)).toBe(er);
+    expect(c.lines.find((l) => l.code === "PAYE")!.amount).toBeLessThan(plain.lines.find((l) => l.code === "PAYE")!.amount);
+    // October is before cover started — unchanged.
+    expect(hOct.employees.some((e) => e.computation?.lines.some((l) => l.code.startsWith("HMO_")))).toBe(false);
+  });
+
+  it("remits premiums to each provider, employee and employer shares together", () => {
+    const ctx = { people, profiles: new Map(hmoProfiles.map((p) => [p.employeeId, p])), settings: hmoSettings };
+    const st = remittanceStatement("hmo", [hNov], ctx)!;
+    expect(st.total).toBe(remittanceAmounts([hNov]).hmo);
+    expect(st.total).toBeGreaterThan(0);
+    expect(new Set(st.table.data.map((r) => r[0]))).toEqual(new Set(["Lagoon Health HMO", "Crestline Care HMO"]));
+  });
+});
+
+describe("D2 · payslip employer lines", () => {
+  it("hides NSITF, ITF and group life by default and shows pension and HMO", () => {
+    expect(DEFAULT_EMPLOYER_LINES).toMatchObject({ PENSION_ER: true, HMO_ER: true, NSITF: false, ITF: false, GROUP_LIFE: false });
+    expect(employerLineShown(undefined, "NSITF")).toBe(false);
+    expect(employerLineShown({ employerLines: { NSITF: true } }, "NSITF")).toBe(true);
+    expect(employerLineShown({}, "PENSION_ER")).toBe(true);
+  });
+});
+
+describe("D2 · AVC self-service", () => {
+  it("approval writes the AVC and its mandate to the profile; the employee can't approve their own", () => {
+    const tenantId = "T1";
+    const emp = profilesList[0].employeeId;
+    let st: PayrollState = { seedVersion: 11, byTenant: { [tenantId]: { audit: [], runs: [], profiles: [{ ...profilesList[0], avc: null }] } as unknown as TenantPayroll } };
+    const request = { id: "A1", employeeId: emp, employeeName: "E", action: "set" as const, mode: "fixed" as const, value: 25_000, effectiveFrom: "2026-12-01", mandate: { reference: "M1", signedOn: "2026-11-23" }, requestedAt: "2026-11-23T10:00:00Z", status: "pending" as const };
+    st = reducer(st, submitAvcRequest({ tenantId, actor: "E", request }));
+    st = reducer(st, decideAvcRequest({ tenantId, actor: "E", actorId: emp, id: "A1", approved: true }));
+    expect(st.byTenant[tenantId].avcRequests![0].status).toBe("pending");
+    st = reducer(st, decideAvcRequest({ tenantId, actor: "HR", actorId: "HR1", id: "A1", approved: true }));
+    expect(st.byTenant[tenantId].profiles[0].avc).toEqual({ mode: "fixed", value: 25_000, startDate: "2026-12-01", mandate: { reference: "M1", signedOn: "2026-11-23" } });
+  });
+});

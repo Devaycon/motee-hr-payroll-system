@@ -391,7 +391,7 @@ export function downloadTemplate(layout: "long" | "wide", employees: { employeeN
 
 // ── Remittances ─────────────────────────────────────────────────────────────
 
-export type RemittanceItem = "pension" | "avc" | "paye" | "nhf" | "nsitf" | "itf";
+export type RemittanceItem = "pension" | "avc" | "paye" | "nhf" | "nsitf" | "itf" | "hmo";
 
 /** Statutory remittance due dates for a pay month. */
 export function remittanceCalendar(period: Pick<PayrollRun["period"], "year" | "month" | "payDate">) {
@@ -406,12 +406,13 @@ export function remittanceCalendar(period: Pick<PayrollRun["period"], "year" | "
     { key: "nhf" as const, item: "NHF", to: "Federal Mortgage Bank of Nigeria", due: iso(next.y, next.m, Math.min(28, new Date(Date.UTC(next.y, next.m, 0)).getUTCDate())), basis: "Within one month of deduction" },
     { key: "nsitf" as const, item: "NSITF", to: "Nigeria Social Insurance Trust Fund", due: iso(next.y, next.m, 16), basis: "Monthly, by the 16th" },
     { key: "itf" as const, item: "ITF", to: "Industrial Training Fund", due: iso(period.year + 1, 4, 1), basis: "Annual — by 1 April for the previous year" },
+    { key: "hmo" as const, item: "HMO premiums", to: "Each employee's HMO provider", due: iso(next.y, next.m, 7), basis: "Employee and employer shares, by the 7th of the following month (per provider agreement)" },
   ];
 }
 
 /** What each remittance amounts to for a month, summed across every finalized run in it. */
 export function remittanceAmounts(runs: PayrollRun[]): Record<RemittanceItem, number> {
-  const t: Record<RemittanceItem, number> = { pension: 0, avc: 0, paye: 0, nhf: 0, nsitf: 0, itf: 0 };
+  const t: Record<RemittanceItem, number> = { pension: 0, avc: 0, paye: 0, nhf: 0, nsitf: 0, itf: 0, hmo: 0 };
   for (const run of runs) {
     for (const e of run.employees) {
       const c = e.included ? e.computation : null;
@@ -422,6 +423,7 @@ export function remittanceAmounts(runs: PayrollRun[]): Record<RemittanceItem, nu
       t.nhf += amt(c.lines, "NHF");
       t.nsitf += amt(c.lines, "NSITF");
       t.itf += amt(c.lines, "ITF");
+      t.hmo += amt(c.lines, "HMO_EE") + amt(c.lines, "HMO_ER");
     }
   }
   for (const k of Object.keys(t) as RemittanceItem[]) t[k] = round2(t[k]);

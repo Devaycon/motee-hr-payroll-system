@@ -135,6 +135,8 @@ const SETTING_LABELS: Partial<Record<keyof PayrollSettings, string>> = {
   employerIds: "Employer registrations",
   enabledGroups: "Enabled element groups",
   budget: "Payroll budget",
+  hmo: "HMO providers & plans",
+  budgetAlertPct: "Budget alert threshold",
   remittanceReminderDays: "Remittance reminder",
 };
 
@@ -167,6 +169,7 @@ export const CALC_SETTING_KEYS: (keyof PayrollSettings)[] = [
   "enabledGroups",
   "leaveAllowance",
   "avcTaxRelieved",
+  "hmo",
 ];
 
 /**

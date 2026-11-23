@@ -70,6 +70,8 @@ export interface PayrollRow {
   pensionEr: number;
   nsitf: number;
   itf: number;
+  hmoEe: number;
+  hmoEr: number;
   employerCost: number;
   totalCost: number;
 }
@@ -119,6 +121,8 @@ function selectPayroll(payroll: Parameters<AnyReportDef["select"]>[1]["payroll"]
         net: c.net,
         pensionEr: round(amt(c.lines, "PENSION_ER")),
         nsitf: round(amt(c.lines, "NSITF")),
+        hmoEe: round(amt(c.lines, "HMO_EE")),
+        hmoEr: round(amt(c.lines, "HMO_ER")),
         itf: round(amt(c.lines, "ITF")),
         employerCost: c.employerCost,
         totalCost: round(c.gross + c.employerCost),
@@ -179,6 +183,8 @@ const payrollReport = defineReport<PayrollRow>({
     { key: "pensionEr", header: "Employer Pension", value: (r) => r.pensionEr, money: true },
     { key: "nsitf", header: "NSITF", value: (r) => r.nsitf, money: true },
     { key: "itf", header: "ITF", value: (r) => r.itf, money: true },
+    { key: "hmoEe", header: "HMO (employee)", value: (r) => r.hmoEe, money: true },
+    { key: "hmoEr", header: "HMO (employer)", value: (r) => r.hmoEr, money: true },
     { key: "employerCost", header: "Employer Cost", value: (r) => r.employerCost, money: true },
     { key: "totalCost", header: "Total Cost", value: (r) => r.totalCost, money: true },
   ],

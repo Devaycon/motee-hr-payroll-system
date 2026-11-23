@@ -72,6 +72,7 @@ export const THIRD_PARTY_PAYEE: Record<string, string> = {
   EMERGENCY_LOAN: "Company (emergency loan)",
   OVERPAYMENT: "Company (overpayment recovery)",
   OTHER_DED: "Other",
+  HMO_EE: "HMO provider",
 };
 
 /** Deductions that are reductions of pay, not money paid on to anyone. */
@@ -129,7 +130,7 @@ export function buildBreakdown(view: BreakdownView, run: PayrollRun, ctx: Breakd
         { key: "pension", label: "Pension (8%)", numeric: true },
         { key: "avc", label: "Voluntary pension", numeric: true },
         { key: "nhf", label: "NHF", numeric: true },
-        { key: "nhis", label: "Health insurance", numeric: true },
+        { key: "nhis", label: "Health insurance / HMO", numeric: true },
         { key: "loans", label: "Loans", numeric: true },
         { key: "advances", label: "Salary advances", numeric: true },
         { key: "other", label: "Other deductions", numeric: true },
@@ -140,7 +141,7 @@ export function buildBreakdown(view: BreakdownView, run: PayrollRun, ctx: Breakd
         const b = base(re);
         const advances = amt(c.lines, "SALARY_ADVANCE");
         const loans = c.lines.filter((l) => l.category === "deduction" && (l.source === "loan" || /LOAN/.test(l.code)) && l.code !== "SALARY_ADVANCE").reduce((s, l) => s + l.amount, 0);
-        const named = amt(c.lines, "PAYE") + amt(c.lines, "WHT") + amt(c.lines, "PENSION_EE") + amt(c.lines, "VOL_PENSION") + amt(c.lines, "NHF") + amt(c.lines, "NHIS_EE") + advances + loans;
+        const named = amt(c.lines, "PAYE") + amt(c.lines, "WHT") + amt(c.lines, "PENSION_EE") + amt(c.lines, "VOL_PENSION") + amt(c.lines, "NHF") + amt(c.lines, "NHIS_EE") + amt(c.lines, "HMO_EE") + advances + loans;
         return {
           id: re.employeeId,
           ...b,
@@ -150,7 +151,7 @@ export function buildBreakdown(view: BreakdownView, run: PayrollRun, ctx: Breakd
             pension: round2(amt(c.lines, "PENSION_EE")),
             avc: round2(amt(c.lines, "VOL_PENSION")),
             nhf: round2(amt(c.lines, "NHF")),
-            nhis: round2(amt(c.lines, "NHIS_EE")),
+            nhis: round2(amt(c.lines, "NHIS_EE") + amt(c.lines, "HMO_EE")),
             loans: round2(loans),
             advances: round2(advances),
             other: round2(c.totalDeductions - named),

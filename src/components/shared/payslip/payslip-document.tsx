@@ -14,6 +14,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import { amountInWords } from "@/src/lib/payroll/amount-in-words";
 import { ELEMENT_GROUP_LABELS, ELEMENT_GROUP_ORDER } from "@/src/lib/payroll/elements-seed";
+import { employerLineShown } from "@/src/lib/payroll/ng/rate-sets";
 import { verifyHref } from "@/src/lib/payroll/constants";
 import type { Payslip, PayslipInsight, PayslipLine } from "@/src/lib/payroll/types";
 import { PayslipQr } from "./payslip-qr";
@@ -148,7 +149,9 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
     .filter((l) => l.statutory || l.group === "statutory")
     .sort((a, b) => (STAT_ORDER.indexOf(a.code) + 99) % 99 - (STAT_ORDER.indexOf(b.code) + 99) % 99);
   const other = deductions.filter((l) => !(l.statutory || l.group === "statutory"));
-  const employer = c.lines.filter((l) => l.category === "employer");
+  // Only the employer lines the company shows on payslips (NSITF, ITF and group life are hidden by default).
+  const employer = c.lines.filter((l) => l.category === "employer" && employerLineShown(display, l.code));
+  const employerShown = employer.reduce((s, l) => s + l.amount, 0);
 
   const tax = c.lines.filter((l) => l.code === "PAYE" || l.code === "WHT").reduce((s, l) => s + l.amount, 0);
   const pension = c.lines.filter((l) => l.code === "PENSION_EE" || l.code === "VOL_PENSION").reduce((s, l) => s + l.amount, 0);
@@ -432,7 +435,7 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
 
             {display.showEmployerContributions && employer.length > 0 && (
               <div>
-                <SectionTitle accent="#94a3b8" right={<span className="text-[0.6rem] tabular-nums text-slate-500">{money(c.employerCost)}</span>}>
+                <SectionTitle accent="#94a3b8" right={<span className="text-[0.6rem] tabular-nums text-slate-500">{money(employerShown)}</span>}>
                   Paid by your employer
                 </SectionTitle>
                 <div className="space-y-[0.15rem]">
@@ -444,7 +447,7 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
                   ))}
                 </div>
                 <p className="mt-1 text-[0.58rem] italic text-slate-500">Not deducted from your pay — shown for transparency.</p>
-                {payslip.runType === "regular" && groupLifeCover > 0 && (
+                {payslip.runType === "regular" && groupLifeCover > 0 && employerLineShown(display, "GROUP_LIFE") && (
                   <p className="mt-1 text-[0.58rem] text-slate-500">
                     Group life cover: <span className="font-semibold tabular-nums text-slate-700">{whole(groupLifeCover)}</span> (3× annual pay, an employer-paid policy).
                   </p>
