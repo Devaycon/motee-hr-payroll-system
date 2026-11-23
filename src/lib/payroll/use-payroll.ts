@@ -10,6 +10,10 @@ import { updateClaim } from "@/src/lib/stores/expenses-slice";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { withApproval } from "@/src/lib/loans/loans";
 import {
+  decideScenario as decideScenarioAction,
+  deleteScenario as deleteScenarioAction,
+  saveScenario as saveScenarioAction,
+  submitScenario as submitScenarioAction,
   addInvestigationComment,
   attachInvestigationDocument,
   openInvestigation as openInvestigationAction,
@@ -48,7 +52,7 @@ import { SEED_PAY_ELEMENTS } from "./elements-seed";
 import { DEFAULT_PAYROLL_SETTINGS, NG_RATE_SETS } from "./ng/rate-sets";
 import { makePeriod, round2 } from "./ng/engine";
 import { seedRemittances } from "./remittances";
-import { seedInvestigations } from "./seed-intelligence";
+import { seedInvestigations, seedScenarios } from "./seed-intelligence";
 import { toBatch, withImportedStaff, type ImportCtx, type StagedRow } from "./starter-import";
 import { handoverQueue, hireRefs, hrHiresFrom, joinerExceptions, stageHandover, type HrHire } from "./onboarding-handover";
 import {
@@ -89,6 +93,7 @@ import type {
   VarianceInvestigation,
 } from "./types";
 import type { ComparisonCtx } from "./comparison";
+import type { SavedScenario } from "./simulation";
 
 /**
  * The only door the payroll screens use. Today it reads and writes the
@@ -152,7 +157,7 @@ function buildTenantSeed(state: RootState, bundle: LocaleBundle): TenantPayroll 
   const runs = history.runs.map((r) => (r.status === "draft" ? withValidation(r, data, bundle, hrHiresOf(state)) : r));
   const finance = bundle.roles.find((r) => r.id === "ROLE-FIN")?.linkedEmployeeId;
   const remitter = bundle.employees.find((e) => e.id === finance)?.fullName ?? "Finance";
-  return { ...data, runs, audit: [], remittances: seedRemittances(runs, remitter, new Date().toISOString().slice(0, 10)), investigations: seedInvestigations({ ...data, runs }, bundle, new Date()) };
+  return { ...data, runs, audit: [], remittances: seedRemittances(runs, remitter, new Date().toISOString().slice(0, 10)), investigations: seedInvestigations({ ...data, runs }, bundle, new Date()), scenarios: seedScenarios({ ...data, runs }, bundle, new Date()) };
 }
 
 export const INVESTIGATIONS_HREF = `${PAYROLL_HREF}/investigations`;
@@ -776,6 +781,74 @@ export function usePayrollActions() {
 
       logExport(runId: string, what: string) {
         log(`Exported ${what}`, { runId });
+      },
+
+      // ── Saved simulation scenarios ──────────────────────────────────────────
+
+      /** Save (create or update) a scenario. Returns its id. */
+      saveScenario(input: Pick<SavedScenario, "name" | "description" | "scenario" | "baseRunId" | "snapshot"> & { id?: string }): string | null {
+        if (!tenantId) return null;
+        const now = new Date().toISOString();
+        const prev = input.id ? live()?.data.scenarios?.find((x) => x.id === input.id) : undefined;
+        const id = prev?.id ?? `SCN-${Date.now().toString(36).toUpperCase()}`;
+        const scenario: SavedScenario = {
+          id,
+          name: input.name.trim() || "Untitled scenario",
+          description: input.description,
+          scenario: input.scenario,
+          baseRunId: input.baseRunId,
+          snapshot: input.snapshot,
+          createdBy: prev?.createdBy ?? actor.name,
+          createdById: prev?.createdById ?? actor.employeeId,
+          createdAt: prev?.createdAt ?? now,
+          updatedAt: now,
+          status: "draft",
+          history: prev?.history ?? [],
+        };
+        dispatch(saveScenarioAction({ tenantId, actor: actor.name, scenario }));
+        return id;
+      },
+
+      deleteScenario(id: string) {
+        if (tenantId) dispatch(deleteScenarioAction({ tenantId, actor: actor.name, id }));
+      },
+
+      /** Send a scenario for management review; Finance and the Executive are notified. */
+      submitScenario(id: string, note?: string) {
+        if (!tenantId) return;
+        dispatch(submitScenarioAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, note }));
+        const sc = live()?.data.scenarios?.find((x) => x.id === id);
+        dispatch(
+          pushNotification({
+            title: `Payroll scenario for review: ${sc?.name ?? id}`,
+            description: `${actor.name} submitted a simulation for management review. It is not committed to payroll.`,
+            type: "info",
+            recipientRoleIds: ["ROLE-FIN", "ROLE-EXEC"],
+            href: `${PAYROLL_HREF}/simulate?scenario=${id}`,
+          }),
+        );
+      },
+
+      /** Approve for planning or reject. The person who submitted it cannot decide it. */
+      decideScenario(id: string, approved: boolean, note?: string): ActionResult {
+        const sc = live()?.data.scenarios?.find((x) => x.id === id);
+        if (!tenantId || !sc) return { ok: false, reason: "Scenario not found." };
+        if (sc.status !== "submitted") return { ok: false, reason: "Only a submitted scenario can be reviewed." };
+        if (sc.submittedBy === actor.name || (sc.submittedById && sc.submittedById === actor.employeeId)) return { ok: false, reason: "You submitted this scenario, so another person must review it." };
+        if (!approved && !note?.trim()) return { ok: false, reason: "Give a reason for rejecting it." };
+        dispatch(decideScenarioAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, approved, note }));
+        if (sc.createdById) {
+          dispatch(
+            pushNotification({
+              title: approved ? `Scenario approved for planning: ${sc.name}` : `Scenario rejected: ${sc.name}`,
+              description: approved ? `${actor.name} approved it for planning. Live payroll is unchanged.` : `${actor.name}: ${note}`,
+              type: approved ? "success" : "warning",
+              recipientEmployeeIds: [sc.createdById],
+              href: `${PAYROLL_HREF}/simulate?scenario=${id}`,
+            }),
+          );
+        }
+        return { ok: true };
       },
 
       // ── Variance investigations ───────────────────────────────────────────

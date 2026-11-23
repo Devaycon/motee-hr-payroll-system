@@ -16,6 +16,7 @@ import type {
 import { CALC_SETTING_KEYS, diffSettings, versionElement } from "@/src/lib/payroll/config";
 import type { TenantPayrollData } from "@/src/lib/payroll/run-builder";
 import type { StarterImportBatch } from "@/src/lib/payroll/starter-import";
+import type { SavedScenario } from "@/src/lib/payroll/simulation";
 
 /**
  * Payroll — per-tenant state for the demo. In production every field here is
@@ -63,6 +64,8 @@ export type TenantPayroll = TenantPayrollData & {
   remindersSent?: Record<string, string>;
   /** Payroll movements under investigation: owner, evidence, resolution and sign-off. */
   investigations?: VarianceInvestigation[];
+  /** Saved payroll simulations — never applied to live payroll. */
+  scenarios?: SavedScenario[];
 };
 
 export interface PayrollState {
@@ -71,7 +74,7 @@ export interface PayrollState {
 }
 
 /** Bump to reseed every tenant (drops local payroll edits). */
-export const PAYROLL_SEED_VERSION = 8;
+export const PAYROLL_SEED_VERSION = 9;
 
 const initialState: PayrollState = { byTenant: {}, seedVersion: PAYROLL_SEED_VERSION };
 
@@ -458,6 +461,66 @@ const slice = createSlice({
       log(t, action.payload.tenantId, action.payload.actor, action.payload.decision === "accepted" ? "Signed off variance investigation" : "Reopened variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: inv.id });
     },
 
+    // ── Saved simulation scenarios ────────────────────────────────────────────
+
+    /** Create or update a scenario. Editing one under review or approved sends it back to draft. */
+    saveScenario(state, action: PayloadAction<Tenant & Actor & { scenario: SavedScenario }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t) return;
+      t.scenarios ??= [];
+      const next = action.payload.scenario;
+      const i = t.scenarios.findIndex((x) => x.id === next.id);
+      const now = new Date().toISOString();
+      if (i >= 0) {
+        const prev = t.scenarios[i];
+        const reopened = prev.status !== "draft";
+        t.scenarios[i] = {
+          ...next,
+          status: "draft",
+          review: reopened ? undefined : prev.review,
+          history: [...prev.history, { at: now, actor: action.payload.actor, action: reopened ? `Edited — back to draft (was ${prev.status})` : "Edited" }],
+        };
+      } else {
+        t.scenarios.unshift({ ...next, history: [{ at: now, actor: action.payload.actor, action: "Created" }] });
+      }
+      log(t, action.payload.tenantId, action.payload.actor, i >= 0 ? "Updated payroll scenario" : "Saved payroll scenario", { detail: `${next.id} — ${next.name}` });
+    },
+
+    deleteScenario(state, action: PayloadAction<Tenant & Actor & { id: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const sc = t?.scenarios?.find((x) => x.id === action.payload.id);
+      if (!t || !sc || sc.status === "approved") return;
+      t.scenarios = t.scenarios!.filter((x) => x.id !== sc.id);
+      log(t, action.payload.tenantId, action.payload.actor, "Deleted payroll scenario", { detail: `${sc.id} — ${sc.name}` });
+    },
+
+    submitScenario(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const sc = t?.scenarios?.find((x) => x.id === action.payload.id);
+      if (!t || !sc || (sc.status !== "draft" && sc.status !== "rejected")) return;
+      const now = new Date().toISOString();
+      sc.status = "submitted";
+      sc.submittedBy = action.payload.actor;
+      sc.submittedById = action.payload.actorId;
+      sc.submittedAt = now;
+      sc.review = undefined;
+      sc.history.push({ at: now, actor: action.payload.actor, action: "Submitted for management review", note: action.payload.note });
+      log(t, action.payload.tenantId, action.payload.actor, "Submitted payroll scenario for review", { detail: `${sc.id} — ${sc.name}` });
+    },
+
+    /** Approve for planning or reject. Never by the person who submitted it. Never touches live payroll. */
+    decideScenario(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; approved: boolean; note?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const sc = t?.scenarios?.find((x) => x.id === action.payload.id);
+      if (!t || !sc || sc.status !== "submitted") return;
+      if (sc.submittedBy === action.payload.actor || (sc.submittedById && sc.submittedById === action.payload.actorId)) return;
+      const now = new Date().toISOString();
+      sc.status = action.payload.approved ? "approved" : "rejected";
+      sc.review = { by: action.payload.actor, byId: action.payload.actorId, at: now, note: action.payload.note };
+      sc.history.push({ at: now, actor: action.payload.actor, action: action.payload.approved ? "Approved for planning" : "Rejected", note: action.payload.note });
+      log(t, action.payload.tenantId, action.payload.actor, action.payload.approved ? "Approved payroll scenario" : "Rejected payroll scenario", { detail: `${sc.id} — ${sc.name}` });
+    },
+
     logPayroll(state, action: PayloadAction<Tenant & Actor & { action: string; runId?: string; employeeId?: string; detail?: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       if (!t) return;
@@ -468,6 +531,10 @@ const slice = createSlice({
 });
 
 export const {
+  saveScenario,
+  deleteScenario,
+  submitScenario,
+  decideScenario,
   openInvestigation,
   updateInvestigation,
   addInvestigationComment,

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import nigeria from "@/src/data/locale/nigeria.json";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import reducer, {
+  decideScenario,
+  saveScenario,
+  submitScenario,
   openInvestigation,
   resolveInvestigation,
   signOffInvestigation,
@@ -14,7 +17,8 @@ import { round2 } from "./ng/engine";
 import { seedHistory, seedProfile, seedStructure } from "./run-builder";
 import { compareRuns, type ComparisonCtx } from "./comparison";
 import { intelligenceSummary, varianceNarrative } from "./intelligence";
-import { seedInvestigations } from "./seed-intelligence";
+import { seedInvestigations, seedScenarios } from "./seed-intelligence";
+import { EMPLOYER_KEYS, EMPTY_SCENARIO, simulate, type SavedScenario } from "./simulation";
 import type { PayrollRun, SalaryStructure, VarianceInvestigation } from "./types";
 
 /**
@@ -195,5 +199,90 @@ describe("investigation workflow", () => {
     expect(seeded).toHaveLength(1);
     expect(seeded[0].runId).toBe(nov.id);
     expect(seeded[0].finding).toMatch(/^Gross pay (in|de)creased by/);
+  });
+});
+
+describe("payroll simulation", () => {
+  const data = { ...base, ...history };
+  const sim = (c: Partial<typeof EMPTY_SCENARIO>) => simulate(data, bundle, nov, { ...EMPTY_SCENARIO, ...c });
+  const none = sim({});
+
+  it("cost to employer is gross plus employer contributions — employee pension and NHF are not added", () => {
+    const er = round2(EMPLOYER_KEYS.reduce((s, k) => s + none.base[k], 0));
+    expect(none.base.employerContributions).toBe(er);
+    expect(none.base.employerCost).toBe(round2(none.base.gross + er));
+    expect(none.base.employerCost).not.toBe(round2(none.base.gross + none.base.pension + none.base.nhf));
+    expect(none.base.net).toBe(round2(none.base.gross - none.base.paye - none.base.pensionEmployee - none.base.nhf - none.base.otherDeductions));
+  });
+
+  it("an empty scenario changes nothing in any month", () => {
+    expect(none.delta.employerCost).toBe(0);
+    expect(none.forecast).toHaveLength(12);
+    expect(none.forecast.every((m) => m.delta === 0)).toBe(true);
+    expect(none.measures.total12Change).toBe(0);
+  });
+
+  it("a one-off bonus is counted once, never annualised", () => {
+    const r = sim({ bonusPct: 50, bonusMonth: none.months[2].key });
+    expect(r.measures.monthlyRecurringChange).toBe(0);
+    expect(r.measures.oneOffImpact).toBeGreaterThan(0);
+    expect(r.measures.annualisedRecurring).toBe(0);
+    expect(r.forecast.filter((m) => m.delta !== 0).map((m) => m.month)).toEqual([none.months[2].key]);
+    expect(r.measures.total12Change).toBe(r.measures.oneOffImpact);
+  });
+
+  it("a recurring change applies from its effective month", () => {
+    const from = none.months[5].key;
+    const r = sim({ increasePct: 10, increaseFrom: from });
+    expect(r.measures.monthlyRecurringChange).toBeGreaterThan(0);
+    expect(r.forecast.slice(0, 5).every((m) => m.delta === 0)).toBe(true);
+    expect(r.forecast.slice(5).every((m) => m.delta === r.measures.monthlyRecurringChange)).toBe(true);
+    expect(r.measures.total12Change).toBe(round2(r.measures.monthlyRecurringChange * 7));
+    expect(r.measures.annualisedRecurring).toBe(round2(r.measures.monthlyRecurringChange * 12));
+  });
+
+  it("a transfer moves cost between departments without changing the total", () => {
+    const emp = bundle.employees.find((e) => nov.employees.some((x) => x.employeeId === e.id && x.computation))!;
+    const to = bundle.departments.find((d) => d.name !== emp.departmentName)!.name;
+    const r = sim({ transfers: [{ id: "t", employeeId: emp.id, department: to, fromMonth: none.months[0].key }] });
+    expect(r.delta.employerCost).toBe(0);
+    const moved = r.byDepartment.filter((d) => Math.abs(d.delta) >= 1);
+    expect(moved.map((d) => d.department).sort()).toEqual([emp.departmentName, to].sort());
+    expect(round2(moved.reduce((s, d) => s + d.delta, 0))).toBe(0);
+  });
+
+  it("custom deductions reduce net pay only", () => {
+    const r = sim({ deductions: [{ id: "d", kind: "loan", amount: 10_000, scope: { department: "", grade: "", employeeIds: [] }, fromMonth: none.months[0].key }] });
+    expect(r.delta.employerCost).toBe(0);
+    expect(r.delta.gross).toBe(0);
+    expect(r.delta.net).toBe(-10_000 * r.baseHeadcount);
+  });
+
+  it("a component adjustment moves only that component", () => {
+    const r = sim({ adjustments: [{ id: "a", component: "housing", mode: "percent", value: 10, scope: { department: "", grade: "", employeeIds: [] }, fromMonth: none.months[0].key }] });
+    expect(r.delta.housing).toBeGreaterThan(0);
+    expect(r.delta.basic).toBe(0);
+    expect(r.delta.transport).toBe(0);
+  });
+
+  it("the seeded scenarios carry their headline figures", () => {
+    const seeded = seedScenarios(data, bundle, today);
+    expect(seeded.map((s) => s.status)).toEqual(["approved", "draft"]);
+    expect(seeded[1].snapshot!.monthlyChange).toBeGreaterThan(seeded[0].snapshot!.monthlyChange);
+  });
+
+  it("the person who submitted a scenario cannot approve it", () => {
+    const tenantId = "T1";
+    const scn: SavedScenario = { id: "S1", name: "x", description: "", scenario: EMPTY_SCENARIO, baseRunId: nov.id, createdBy: "A", createdAt: "", updatedAt: "", status: "draft", history: [] };
+    let st: PayrollState = { seedVersion: 9, byTenant: { [tenantId]: { audit: [], runs: [] } as unknown as TenantPayroll } };
+    st = reducer(st, saveScenario({ tenantId, actor: "A", scenario: scn }));
+    st = reducer(st, submitScenario({ tenantId, actor: "A", actorId: "EA", id: "S1" }));
+    st = reducer(st, decideScenario({ tenantId, actor: "A", actorId: "EA", id: "S1", approved: true }));
+    expect(st.byTenant[tenantId].scenarios![0].status).toBe("submitted");
+    st = reducer(st, decideScenario({ tenantId, actor: "B", actorId: "EB", id: "S1", approved: true }));
+    expect(st.byTenant[tenantId].scenarios![0].status).toBe("approved");
+    // Editing an approved scenario sends it back to draft.
+    st = reducer(st, saveScenario({ tenantId, actor: "A", scenario: { ...scn, name: "y" } }));
+    expect(st.byTenant[tenantId].scenarios![0].status).toBe("draft");
   });
 });

@@ -1,6 +1,7 @@
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import { compareRuns, defaultPreviousRun, REASON_LABELS } from "./comparison";
 import type { TenantPayrollData } from "./run-builder";
+import { EMPTY_SCENARIO, latestBaseRun, simulate, type SavedScenario } from "./simulation";
 import type { VarianceInvestigation } from "./types";
 
 /**
@@ -56,4 +57,42 @@ export function seedInvestigations(data: TenantPayrollData, bundle: LocaleBundle
       ],
     },
   ];
+}
+
+/** Two salary-review scenarios (5% and 10%), one already approved for planning. */
+export function seedScenarios(data: TenantPayrollData, bundle: LocaleBundle, today: Date): SavedScenario[] {
+  const base = latestBaseRun(data.runs);
+  if (!base) return [];
+  const role = (id: string) => {
+    const e = bundle.employees.find((x) => x.id === bundle.roles.find((r) => r.id === id)?.linkedEmployeeId);
+    return e ? { id: e.id, name: e.fullName } : { id: "", name: id === "ROLE-FIN" ? "Finance" : "HR Admin" };
+  };
+  const hr = role("ROLE-HRADMIN");
+  const fin = role("ROLE-FIN");
+  const day = (offset: number) => new Date(today.getTime() + offset * 86_400_000).toISOString();
+  const make = (id: string, name: string, pct: number, approved: boolean): SavedScenario => {
+    const scenario = { ...EMPTY_SCENARIO, increasePct: pct };
+    const r = simulate(data, bundle, base, scenario);
+    const history: SavedScenario["history"] = [{ at: day(-6), actor: hr.name, action: "Created" }];
+    if (approved) {
+      history.push({ at: day(-5), actor: hr.name, action: "Submitted for management review" });
+      history.push({ at: day(-4), actor: fin.name, action: "Approved for planning", note: "Use for the 2027 budget." });
+    }
+    return {
+      id,
+      name,
+      description: `${pct}% on all fixed recurring pay from ${r.months[0].label}`,
+      scenario,
+      baseRunId: base.id,
+      createdBy: hr.name,
+      createdById: hr.id,
+      createdAt: day(-6),
+      updatedAt: day(-6),
+      status: approved ? "approved" : "draft",
+      ...(approved ? { submittedBy: hr.name, submittedById: hr.id, submittedAt: day(-5), review: { by: fin.name, byId: fin.id, at: day(-4), note: "Use for the 2027 budget." } } : {}),
+      snapshot: { monthlyCost: r.sim.employerCost, monthlyChange: r.measures.monthlyRecurringChange, total12Change: r.measures.total12Change, headcount: r.simHeadcount },
+      history,
+    };
+  };
+  return [make("SCN-DEMO-05", "Salary review — 5%", 5, true), make("SCN-DEMO-10", "Salary review — 10%", 10, false)];
 }

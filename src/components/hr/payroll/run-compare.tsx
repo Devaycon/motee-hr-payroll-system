@@ -32,6 +32,7 @@ import { WaterfallChart, compactNaira } from "./components/charts";
 import { NotSupported, RunStatusBadge, fmtDate, money, pctArrow } from "./components/shared";
 import { InvestigationsPanel, RaiseInvestigationDialog, type InvestigationDraft } from "./investigations";
 import { VarianceSummary } from "./variance-summary";
+import { PayrollCycle } from "./components/payroll-cycle";
 
 const signed = (n: number, dp = 2) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${money(Math.abs(n), dp)}`;
 
@@ -210,6 +211,7 @@ export function RunComparePage() {
   return (
     <div className="flex flex-col gap-5 pb-10">
       {header}
+      <PayrollCycle current="analyse" />
 
       <VarianceSummary cmp={cmp} investigations={data.investigations} onInvestigateUnclassified={() => investigate(null)} />
 
