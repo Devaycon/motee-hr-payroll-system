@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useMyClockLive } from "@/src/lib/attendance/use-my-clock";
 import {
   clockIn as clockInAction,
   clockOut as clockOutAction,
@@ -89,6 +90,9 @@ export function MyAttendancePage() {
     employeeId ? s.attendance.sessions[employeeId] : undefined,
   );
   const timesheets = useAppSelector((s) => s.attendance.timesheets);
+  // Signed in: today's clock state from the API (punches go out through the
+  // attendance listener).
+  useMyClockLive(employeeId, todayIso);
   // HR's Deduction Policy (Attendance module) owns the grace period now — the
   // constant stays as the fallback default so this still works before the
   // slice has hydrated.
