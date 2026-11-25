@@ -92,6 +92,7 @@ export const SELF_SERVICE_LIVE_LINKS: readonly string[] = [
   "/time-off/balance",
   "/time-off/request",
   "/time-off/attendance",
+  "/growth/performance",
 ];
 
 export function isSelfServiceLivePath(pathname: string): boolean {
