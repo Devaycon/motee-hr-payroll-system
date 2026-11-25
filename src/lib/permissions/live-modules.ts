@@ -45,6 +45,7 @@ export const LIVE_LINKS: readonly string[] = [
   "/time-payroll/expenses",
   "/time-payroll/sickness",
   "/time-payroll/shifts",
+  "/time-payroll/occupational-health",
   "/admin/access-levels",
   "/admin/users",
   "/admin/audit-trail",

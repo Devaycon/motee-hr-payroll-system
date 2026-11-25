@@ -59,6 +59,7 @@ import { erCasesApiListener } from "./er-cases-api-listener";
 import { expensesApiListener } from "./expenses-api-listener";
 import { attendanceMineListener } from "./attendance-mine-listener";
 import { shiftsApiListener } from "./shifts-api-listener";
+import { ohApiListener } from "./oh-api-listener";
 
 export const store = configureStore({
   reducer: {
@@ -122,6 +123,7 @@ export const store = configureStore({
         expensesApiListener.middleware,
         attendanceMineListener.middleware,
         shiftsApiListener.middleware,
+        ohApiListener.middleware,
       )
       .concat(api.middleware),
 });

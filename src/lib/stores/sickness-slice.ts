@@ -303,6 +303,12 @@ const slice = createSlice({
       else state.ohEdits[action.payload.id] = { ...(state.ohEdits[action.payload.id] ?? {}), ...action.payload.changes };
     },
 
+    /** Signed in: the OH cases on the API replace the locally raised ones. */
+    replaceOhFromApi(state, action: PayloadAction<OHReferral[]>) {
+      state.ohCases = action.payload;
+      for (const c of action.payload) delete state.ohEdits[c.id];
+    },
+
     /** Anonymise closed records past the retention period. */
     purgeExpired(state, action: PayloadAction<{ tenantId: string; before: string } & Actor>) {
       let n = 0;
@@ -340,6 +346,7 @@ export const {
   setThresholds,
   referToOH,
   updateOHCase,
+  replaceOhFromApi,
   purgeExpired,
 } = slice.actions;
 export default slice.reducer;
