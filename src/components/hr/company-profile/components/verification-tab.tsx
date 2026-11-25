@@ -27,6 +27,8 @@ type VerificationDocProps = {
   setStatus: (v: VerificationStage) => void;
   file: string | null;
   setFile: (v: string | null) => void;
+  /** Receives the picked file itself (the API uploads it on submit). */
+  onUpload?: (file: File | null) => void;
   history: VerificationHistoryEntry[];
 };
 
@@ -40,6 +42,7 @@ function VerificationDocCard({
   setStatus,
   file,
   setFile,
+  onUpload,
   history,
 }: VerificationDocProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -102,7 +105,10 @@ function VerificationDocCard({
                   variant="ghost"
                   size="icon"
                   className="size-6 text-muted-foreground"
-                  onClick={() => setFile(null)}
+                  onClick={() => {
+                    setFile(null);
+                    onUpload?.(null);
+                  }}
                 >
                   <X className="size-3" />
                 </Button>
@@ -125,7 +131,11 @@ function VerificationDocCard({
             accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
             className="hidden"
             onChange={(e) => {
-              if (e.target.files?.[0]) setFile(e.target.files[0].name);
+              const picked = e.target.files?.[0];
+              if (picked) {
+                setFile(picked.name);
+                onUpload?.(picked);
+              }
             }}
           />
         </div>
@@ -202,6 +212,7 @@ type VerificationTabProps = {
   setCacStatus: (v: VerificationStage) => void;
   cacFile: string | null;
   setCacFile: (v: string | null) => void;
+  onCacUpload?: (file: File | null) => void;
   cacHistory: VerificationHistoryEntry[];
   tinLabel: string;
   tinDescription: string;
@@ -212,6 +223,7 @@ type VerificationTabProps = {
   setTinStatus: (v: VerificationStage) => void;
   tinFile: string | null;
   setTinFile: (v: string | null) => void;
+  onTinUpload?: (file: File | null) => void;
   tinHistory: VerificationHistoryEntry[];
 };
 
@@ -225,6 +237,7 @@ export function VerificationTab({
   setCacStatus,
   cacFile,
   setCacFile,
+  onCacUpload,
   cacHistory,
   tinLabel,
   tinDescription,
@@ -235,6 +248,7 @@ export function VerificationTab({
   setTinStatus,
   tinFile,
   setTinFile,
+  onTinUpload,
   tinHistory,
 }: VerificationTabProps) {
   return (
@@ -249,6 +263,7 @@ export function VerificationTab({
         setStatus={setCacStatus}
         file={cacFile}
         setFile={setCacFile}
+        onUpload={onCacUpload}
         history={cacHistory}
       />
       <VerificationDocCard
@@ -261,6 +276,7 @@ export function VerificationTab({
         setStatus={setTinStatus}
         file={tinFile}
         setFile={setTinFile}
+        onUpload={onTinUpload}
         history={tinHistory}
       />
     </div>

@@ -22,6 +22,7 @@ export const LIVE_LINKS: readonly string[] = [
   "/organization/employee-checklist",
   "/organization/loans",
   "/organization/headcount",
+  "/organization/company",
   "/operations/workforce",
   "/talent/onboarding",
   "/talent/offboarding",

@@ -1,7 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useCompanyProfile, useCompanyVerification } from "./hooks";
+import { useState, type SetStateAction } from "react";
+import { toast } from "sonner";
+import {
+  useCompanyActions,
+  useCompanyNotice,
+  useCompanyProfile,
+  useCompanyVerification,
+} from "./hooks";
+import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
+import type { VerificationKind } from "@/src/types/company";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import type {
@@ -17,6 +25,8 @@ import { OrganogramTab } from "./components/organogram-tab";
 export function CompanyProfilePage() {
   const { data: profileFromLocale } = useCompanyProfile();
   const { data: verification } = useCompanyVerification();
+  const actions = useCompanyActions();
+  const notice = useCompanyNotice();
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
     name: "",
@@ -36,6 +46,21 @@ export function CompanyProfilePage() {
     setProfile(profileFromLocale);
     setProfileDraft(profileFromLocale);
   }
+
+  // Signed in, saving the profile writes it to the API before the local copy
+  // changes; a refused save leaves the form as it was.
+  const saveProfile = (next: SetStateAction<ProfileData>) => {
+    const value = typeof next === "function" ? next(profile) : next;
+    if (!actions.live) {
+      setProfile(value);
+      return;
+    }
+    void actions.saveProfile(value).then((ok) => {
+      if (!ok) return;
+      setProfile(value);
+      toast.success("Company profile saved");
+    });
+  };
 
   // Registration (CAC / Companies House) + Tax (TIN / VAT) state, seeded from the
   // active country's companyVerification block in the JSON bundle.
@@ -66,6 +91,30 @@ export function CompanyProfilePage() {
     setTinHistory(t.history);
   }
 
+  // The picked supporting documents, uploaded when the card is submitted.
+  const [cacUpload, setCacUpload] = useState<File | null>(null);
+  const [tinUpload, setTinUpload] = useState<File | null>(null);
+
+  /** Signed in, "Submit for Verification" saves and submits through the API. */
+  const submitter =
+    (
+      kind: VerificationKind,
+      number: string,
+      upload: File | null,
+      setStatus: (v: VerificationStage) => void,
+    ) =>
+    (status: VerificationStage) => {
+      if (!actions.live || status !== "Submitted") {
+        setStatus(status);
+        return;
+      }
+      void actions.submit(kind, number, upload).then((ok) => {
+        if (!ok) return;
+        setStatus("Submitted");
+        toast.success("Submitted for verification");
+      });
+    };
+
   const reg = verification?.registration;
   const tax = verification?.tax;
 
@@ -74,6 +123,21 @@ export function CompanyProfilePage() {
   );
   const [editingAnnouncement, setEditingAnnouncement] = useState(false);
   const [announcementDraft, setAnnouncementDraft] = useState(announcement);
+  // Signed in, the pinned notice is the server one.
+  const [seenNotice, setSeenNotice] = useState<string | undefined>(undefined);
+  if (notice.text !== undefined && notice.text !== seenNotice) {
+    setSeenNotice(notice.text);
+    setAnnouncement(notice.text);
+    setAnnouncementDraft(notice.text);
+  }
+  // The API has no endpoint to change the pinned notice.
+  const saveAnnouncement = (v: string) => {
+    if (notice.live) {
+      notifyNotIntegrated("Editing the pinned notice");
+      return;
+    }
+    setAnnouncement(v);
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -107,7 +171,7 @@ export function CompanyProfilePage() {
             profile={profile}
             profileDraft={profileDraft}
             setProfileDraft={setProfileDraft}
-            setProfile={setProfile}
+            setProfile={saveProfile}
             cacLabel={reg?.label ?? "Registration"}
             cacStatus={cacStatus}
             cacNumber={cacNumber}
@@ -125,9 +189,10 @@ export function CompanyProfilePage() {
             cacNumber={cacNumber}
             setCacNumber={setCacNumber}
             cacStatus={cacStatus}
-            setCacStatus={setCacStatus}
+            setCacStatus={submitter("registration", cacNumber, cacUpload, setCacStatus)}
             cacFile={cacFile}
             setCacFile={setCacFile}
+            onCacUpload={setCacUpload}
             cacHistory={cacHistory}
             tinLabel={tax?.label ?? "Tax ID"}
             tinDescription={tax?.description ?? ""}
@@ -135,9 +200,10 @@ export function CompanyProfilePage() {
             tinNumber={tinNumber}
             setTinNumber={setTinNumber}
             tinStatus={tinStatus}
-            setTinStatus={setTinStatus}
+            setTinStatus={submitter("tax", tinNumber, tinUpload, setTinStatus)}
             tinFile={tinFile}
             setTinFile={setTinFile}
+            onTinUpload={setTinUpload}
             tinHistory={tinHistory}
           />
         </TabsContent>
@@ -145,7 +211,7 @@ export function CompanyProfilePage() {
         <TabsContent value="announcement" className="mt-0">
           <AnnouncementTab
             announcement={announcement}
-            setAnnouncement={setAnnouncement}
+            setAnnouncement={saveAnnouncement}
             editing={editingAnnouncement}
             setEditing={setEditingAnnouncement}
             draft={announcementDraft}

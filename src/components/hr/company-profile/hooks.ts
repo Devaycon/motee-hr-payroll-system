@@ -2,7 +2,26 @@
 
 // The company profile describes the whole company — including its full list of
 // sites — so it never narrows to the branch the navbar is scoped to.
+import { useCallback, useMemo } from "react";
 import { useUnscopedLocaleSection as useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { useApiRunner, useIsLive } from "@/src/lib/live/use-is-live";
+import {
+  orgChartFromApi,
+  profileFromApi,
+  profileToRequest,
+  verificationFromApi,
+} from "@/src/lib/company/api-mapping";
+import {
+  useGetCompanyNoticeQuery,
+  useGetCompanyOrgChartQuery,
+  useGetCompanyQuery,
+  useGetCompanyVerificationQuery,
+  useSaveCompanyVerificationMutation,
+  useSubmitCompanyVerificationMutation,
+  useUpdateCompanyMutation,
+} from "@/src/store/services/company";
+import { useGetFilesQuery, useUploadFileMutation } from "@/src/store/services/files";
+import type { VerificationKind } from "@/src/types/company";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import type {
   ProfileData,
@@ -52,8 +71,17 @@ function buildProfile(bundle: LocaleBundle): ProfileData {
   };
 }
 
+/** The company profile: from `GET /company` when signed in, the bundle otherwise. */
 export function useCompanyProfile() {
-  return useLocaleSection<ProfileData>(buildProfile);
+  const live = useIsLive();
+  const demo = useLocaleSection<ProfileData>(buildProfile);
+  const api = useGetCompanyQuery(undefined, { skip: !live });
+  const liveData = useMemo(
+    () => (api.data?.data ? profileFromApi(api.data.data) : null),
+    [api.data],
+  );
+  if (!live) return demo;
+  return { data: liveData, loading: api.isLoading, error: null };
 }
 
 /** Fallback field config when a bundle has no companyVerification block. */
@@ -74,7 +102,28 @@ function fallbackField(
   };
 }
 
+/** Registration and tax verification: from the API when signed in. */
 export function useCompanyVerification() {
+  const live = useIsLive();
+  const demo = useDemoCompanyVerification();
+  const api = useGetCompanyVerificationQuery(undefined, { skip: !live });
+  const files = useGetFilesQuery(
+    { purpose: "companyVerificationDocument" },
+    { skip: !live },
+  );
+  const liveData = useMemo(() => {
+    const rows = api.data?.data;
+    if (!rows) return null;
+    const names = Object.fromEntries(
+      (files.data?.data ?? []).map((f) => [f.id, f.fileName]),
+    );
+    return verificationFromApi(rows, names);
+  }, [api.data, files.data]);
+  if (!live) return demo;
+  return { data: liveData, loading: api.isLoading, error: null };
+}
+
+function useDemoCompanyVerification() {
   return useLocaleSection<CompanyVerificationData>((bundle) => {
     const profile = bundle.companyProfile as RawProfile;
     const regNumber = profile.registrationNumber ?? "—";
@@ -105,8 +154,19 @@ interface RawOrgEntry {
   level?: number;
 }
 
-/** Leadership-overview org chart (top ~3 tiers) built from the active bundle. */
+/** Leadership-overview org chart (top ~3 tiers); from the API when signed in. */
 export function useOrgChart() {
+  const live = useIsLive();
+  const demo = useDemoOrgChart();
+  const api = useGetCompanyOrgChartQuery({ maxLevel: 3 }, { skip: !live });
+  const liveNodes = useMemo(
+    () => (api.data?.data ? orgChartFromApi(api.data.data) : []),
+    [api.data],
+  );
+  return live ? liveNodes : demo;
+}
+
+function useDemoOrgChart() {
   const { data } = useLocaleSection<OrgNode[]>((bundle) => {
     const empById = new Map(bundle.employees.map((e) => [e.id, e]));
     const org = (bundle.orgStructure ?? []) as unknown as RawOrgEntry[];
@@ -125,4 +185,60 @@ export function useOrgChart() {
       });
   });
   return data ?? [];
+}
+
+/**
+ * The pinned company notice. Signed out `text` is undefined and the page keeps
+ * its demo copy; signed in it is the server notice ("" when nothing is pinned).
+ */
+export function useCompanyNotice(): { live: boolean; text: string | undefined } {
+  const live = useIsLive();
+  const api = useGetCompanyNoticeQuery(undefined, { skip: !live });
+  const notice = api.data?.data;
+  let text: string | undefined;
+  if (live) text = notice ? [notice.title, notice.body].filter(Boolean).join(" — ") : "";
+  return { live, text };
+}
+
+/** Writes for the company profile page. Each resolves true on success. */
+export function useCompanyActions() {
+  const live = useIsLive();
+  const run = useApiRunner();
+  const current = useGetCompanyQuery(undefined, { skip: !live });
+  const [updateCompany] = useUpdateCompanyMutation();
+  const [saveVerification] = useSaveCompanyVerificationMutation();
+  const [submitVerification] = useSubmitCompanyVerificationMutation();
+  const [upload] = useUploadFileMutation();
+
+  const saveProfile = useCallback(
+    (p: ProfileData) =>
+      run(
+        () => updateCompany(profileToRequest(p, current.data?.data)).unwrap(),
+        "Could not save the company profile.",
+      ),
+    [run, updateCompany, current.data],
+  );
+
+  /** Saves the number (and an uploaded document), then submits it for review. */
+  const submit = useCallback(
+    (kind: VerificationKind, number: string, file: File | null) =>
+      run(async () => {
+        let documentFileId: string | undefined;
+        if (file) {
+          const stored = await upload({
+            file,
+            purpose: "companyVerificationDocument",
+          }).unwrap();
+          documentFileId = stored.data.id;
+        }
+        await saveVerification({
+          kind,
+          body: { number: number || null, ...(documentFileId ? { documentFileId } : {}) },
+        }).unwrap();
+        await submitVerification(kind).unwrap();
+      }, "Could not submit the document for verification."),
+    [run, upload, saveVerification, submitVerification],
+  );
+
+  return { live, saveProfile, submit };
 }
