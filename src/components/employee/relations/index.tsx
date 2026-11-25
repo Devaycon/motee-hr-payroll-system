@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { caseRaised } from "@/src/lib/notifications/er-cases";
-import { useCasesData } from "@/src/components/hr/grievance/hooks";
+import { useCasesData, useErCasesLive } from "@/src/components/hr/grievance/hooks";
 import { seedCountry, addCase } from "@/src/lib/stores/er-cases-slice";
 import { MY_NAME, MY_INITIALS, MY_DEPT } from "./components/data";
 import type { ERCase, NewERCase } from "./components/data";
@@ -24,11 +24,13 @@ export function EmployeeRelationsPage() {
   const { data } = useCasesData();
   const casesByCountry = useAppSelector((s) => s.erCases.byCountry[country]);
 
+  // Signed in: your own cases (`/er-cases/mine`) instead of the demo seed.
+  const live = useErCasesLive("mine");
   useEffect(() => {
-    if (data && !casesByCountry) {
+    if (!live && data && !casesByCountry) {
       dispatch(seedCountry({ country, cases: data }));
     }
-  }, [data, casesByCountry, country, dispatch]);
+  }, [live, data, casesByCountry, country, dispatch]);
 
   const allCases = casesByCountry ?? [];
 

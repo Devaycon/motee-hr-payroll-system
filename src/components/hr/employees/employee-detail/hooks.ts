@@ -1,5 +1,10 @@
 "use client";
 
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetEmployeeNotesQuery } from "@/src/store/services/employee-notes";
+import { useGetCertificationsQuery } from "@/src/store/services/certifications";
+import { certificationFromApi } from "@/src/lib/learning/api-mapping";
+import { noteFromApi } from "@/src/lib/employees/notes-mapping";
 import { useMemo } from "react";
 // The detail page is about one named person, so it must resolve even when the
 // navbar is scoped to a different branch — every read here is unscoped.
@@ -470,11 +475,32 @@ export function useEmployeeLearn(id: string) {
   );
 }
 export function useEmployeeTraining(id: string) {
-  return useEmployeeCollection<RawCertification>(
+  const demo = useEmployeeCollection<RawCertification>(
     "learning.certifications",
     id,
     (b) => (b.learning as { certifications?: RawCertification[] })?.certifications ?? [],
   );
+  // Signed in: the employee's certificates on the API (edits on top).
+  const live = useIsLive();
+  const edits = useAppSelector((s) => s.collectionEdits);
+  const q = useGetCertificationsQuery(
+    { EmployeeId: id, PageSize: 200 },
+    { skip: !live || !isServerId(id) },
+  );
+  const liveRows = useMemo(
+    () =>
+      q.data?.data
+        ? applyCollection(
+            q.data.data.items.map(
+              (c): RawCertification => ({ ...certificationFromApi(c), certificateUrl: "", courseId: c.courseId ?? null }),
+            ),
+            "learning.certifications",
+            edits,
+          ).filter((c) => c.employeeId === id)
+        : null,
+    [q.data, edits, id],
+  );
+  return live ? { data: liveRows, loading: q.isLoading, error: null } : demo;
 }
 // ── qualifications, skills & loans ──────────────────────────────────────────
 export function useEmployeeEducation(id: string) {
@@ -799,11 +825,25 @@ export function useEmployeeMedical(id: string) {
   };
 }
 export function useEmployeeNotes(id: string) {
-  const res = useEmployeeCollection<LocaleEmployeeNote>(
+  const demo = useEmployeeCollection<LocaleEmployeeNote>(
     "employeeNotes",
     id,
     (b) => b.employeeNotes ?? [],
   );
+  // Signed in: the notes on the API, with this session's unsent edits on top.
+  const live = useIsLive();
+  const edits = useAppSelector((s) => s.collectionEdits);
+  const q = useGetEmployeeNotesQuery(id, { skip: !live || !isServerId(id) });
+  const liveRows = useMemo(
+    () =>
+      q.data?.data
+        ? applyCollection(q.data.data.map(noteFromApi), "employeeNotes", edits).filter(
+            (n) => n.employeeId === id,
+          )
+        : null,
+    [q.data, edits, id],
+  );
+  const res = live ? { data: liveRows, loading: q.isLoading, error: null } : demo;
   const data = useMemo(
     () =>
       res.data

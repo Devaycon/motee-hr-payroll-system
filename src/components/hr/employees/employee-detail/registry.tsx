@@ -182,6 +182,9 @@ const INTEGRATED_MODULE_KEYS = new Set<string>([
   "team",
   "medical",
   "permissions",
+  // On the API since 2026-11-25.
+  "notes",
+  "training",
 ]);
 
 // One wrapped component per module, built once, so a held module is not

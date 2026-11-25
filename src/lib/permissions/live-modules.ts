@@ -48,6 +48,7 @@ export const LIVE_LINKS: readonly string[] = [
   "/admin/users",
   "/admin/audit-trail",
   "/admin/settings",
+  "/admin/grievance",
 ];
 
 /**
@@ -82,6 +83,7 @@ export const SELF_SERVICE_LIVE_LINKS: readonly string[] = [
   "/company/community",
   "/company/helpdesk",
   "/company/knowledge",
+  "/company/relations",
 ];
 
 export function isSelfServiceLivePath(pathname: string): boolean {

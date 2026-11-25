@@ -79,7 +79,11 @@ export function initErCasesPersistence(): void {
   let putTimer: ReturnType<typeof setTimeout> | null = null;
 
   store.subscribe(() => {
-    const byCountry = store.getState().erCases.byCountry;
+    const state = store.getState();
+    // Signed in, the cases are the server's (and confidential): they are
+    // never copied into the demo snapshot on this machine.
+    if (state.session?.is_loggedIn) return;
+    const byCountry = state.erCases.byCountry;
     if (byCountry === last) return;
     last = byCountry;
     const snap: Snapshot = { byCountry };
