@@ -13,6 +13,13 @@ import { CONTRACTS } from "@/src/data/contracts-demo";
 import type { Contract } from "@/src/lib/types/contracts";
 import { useContracts } from "@/src/components/hr/contracts/hooks";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { toast } from "sonner";
+import { useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import { toContract } from "@/src/lib/contracts/api-mapping";
+import {
+  useGetMyContractsQuery,
+  useSignMyContractMutation,
+} from "@/src/store/services/contracts";
 
 export default function MyContractsPage() {
   const { data: localeContracts } = useContracts();
@@ -31,6 +38,17 @@ export default function MyContractsPage() {
           (c) => c.employeeName === FALLBACK_EMPLOYEE && !c.isArchived,
         ),
   );
+
+  // Signed in: your own contracts (`/contracts/mine`), signed through the API.
+  const live = useIsLive();
+  const mine = useGetMyContractsQuery(undefined, { skip: !live });
+  const [signMine] = useSignMyContractMutation();
+  const send = useLiveSender(["Contracts"]);
+  const [seenMine, setSeenMine] = useState<typeof mine.data>(undefined);
+  if (mine.data && mine.data !== seenMine) {
+    setSeenMine(mine.data);
+    setContracts(mine.data.data.map(toContract).filter((c) => !c.isArchived));
+  }
 
   const myContracts = contracts;
 
@@ -62,6 +80,16 @@ export default function MyContractsPage() {
   }
 
   function handleSignConfirm(contractId: string) {
+    if (live) {
+      // Signed as the signed-in employee; the contract is re-read afterwards.
+      void send(
+        () =>
+          signMine({ id: contractId, body: { signedAs: employeeName ?? "Employee" } }).unwrap(),
+        "Could not sign the contract.",
+      ).then((ok) => {
+        if (ok) toast.success("Contract signed");
+      });
+    }
     setContracts((prev) =>
       prev.map((c) =>
         c.id === contractId

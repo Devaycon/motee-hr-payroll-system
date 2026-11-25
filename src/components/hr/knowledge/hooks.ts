@@ -161,7 +161,8 @@ export function useKnowledgeActions() {
               "Could not change the featured flag.",
             )
           : skip,
-      read: (id: string) => (on(id) ? send(() => markRead(id).unwrap(), "") : skip),
+      // A read is best-effort: no message if it does not register.
+      read: (id: string) => (on(id) ? markRead(id).then(() => true) : skip),
       vote: (id: string, v: "helpful" | "notHelpful" | null) =>
         on(id)
           ? send(

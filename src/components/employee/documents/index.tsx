@@ -72,6 +72,13 @@ import {
 } from "./components/doc-modals";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
+import { myDocumentFromApi } from "@/src/lib/documents/mine-mapping";
+import {
+  useAcknowledgeMyDocumentMutation,
+  useGetMyDocumentsQuery,
+} from "@/src/store/services/documents";
 import { submitSelfServiceDocument } from "@/src/lib/stores/my-documents-slice";
 
 /** The slice a KPI card drills the document library down to. */
@@ -106,6 +113,25 @@ export function MyDocumentsPage() {
   const user = useAppSelector((s) => s.auth.user);
   const [docs, setDocs] = useState<EmployeeDocument[]>(DEMO_DOCUMENTS);
   const [folders, setFolders] = useState<DocFolder[]>(DEMO_FOLDERS);
+  // Signed in: the documents HR has shared with or assigned to you
+  // (`/documents/mine`). Your own folders, uploads and deletions have no
+  // self-service endpoint, so those controls answer "not integrated".
+  const live = useIsLive();
+  const mine = useGetMyDocumentsQuery(undefined, { skip: !live });
+  const [ackMine] = useAcknowledgeMyDocumentMutation();
+  const send = useLiveSender(["Documents"]);
+  const [seenMine, setSeenMine] = useState<typeof mine.data>(undefined);
+  if (mine.data && mine.data !== seenMine) {
+    setSeenMine(mine.data);
+    setDocs(mine.data.data.map(myDocumentFromApi));
+    setFolders([]);
+  }
+  const sharedWithMe = live ? docs : SHARED_WITH_ME;
+  const blockedLive = (label: string) => {
+    if (!live) return false;
+    notifyNotIntegrated(label);
+    return true;
+  };
 
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   /** Drill-down set by the KPI cards; "all" shows the folder as-is. */
@@ -136,6 +162,12 @@ export function MyDocumentsPage() {
 
   const [previewDoc, setPreviewDoc] = useState<EmployeeDocument | null>(null);
   const [sharedAckedIds, setSharedAckedIds] = useState<string[]>([]);
+  // Signed in, what you have already acknowledged comes from the server.
+  const [seenAcks, setSeenAcks] = useState<typeof mine.data>(undefined);
+  if (mine.data && mine.data !== seenAcks) {
+    setSeenAcks(mine.data);
+    setSharedAckedIds(mine.data.data.filter((d) => d.acknowledgedByMe).map((d) => d.id));
+  }
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   function handleSignDoc(doc: EmployeeDocument) {
@@ -158,7 +190,7 @@ export function MyDocumentsPage() {
     : isTrashView
     ? docs.filter((d) => d.isTrashed)
     : isSharedView
-      ? SHARED_WITH_ME.filter(
+      ? sharedWithMe.filter(
           (d) =>
             d.name.toLowerCase().includes(search.toLowerCase()) &&
             (typeFilter === "All Types" || d.type === typeFilter),
@@ -191,26 +223,31 @@ export function MyDocumentsPage() {
   }
 
   function handleAcknowledgeShared(id: string) {
+    if (live) void send(() => ackMine(id).unwrap(), "Could not record your acknowledgement.");
     setSharedAckedIds((prev) => [...prev, id]);
   }
 
   function handleDeleteDoc(id: string) {
+    if (blockedLive("Deleting a document")) return;
     setDocs((prev) =>
       prev.map((d) => (d.id === id ? { ...d, isTrashed: true } : d)),
     );
   }
 
   function handleRestoreDoc(id: string) {
+    if (blockedLive("Restoring a document")) return;
     setDocs((prev) =>
       prev.map((d) => (d.id === id ? { ...d, isTrashed: false } : d)),
     );
   }
 
   function handlePermanentDeleteDoc(id: string) {
+    if (blockedLive("Deleting a document")) return;
     setDocs((prev) => prev.filter((d) => d.id !== id));
   }
 
   function handleDeleteFolder(id: string) {
+    if (blockedLive("Your own folders")) return;
     setFolders((prev) =>
       prev.map((f) => (f.id === id ? { ...f, isTrashed: true } : f)),
     );
@@ -222,6 +259,7 @@ export function MyDocumentsPage() {
 
   function handleUploadSubmit() {
     if (!uploadName || !uploadType) return;
+    if (blockedLive("Uploading your own documents")) return;
     const newDoc: EmployeeDocument = {
       id: `d-${Date.now()}`,
       name: uploadName,
@@ -275,6 +313,7 @@ export function MyDocumentsPage() {
 
   function handleCreateFolder() {
     if (!newFolderName.trim()) return;
+    if (blockedLive("Your own folders")) return;
     const newFolder: DocFolder = {
       id: `f-${Date.now()}`,
       name: newFolderName.trim(),
@@ -289,6 +328,7 @@ export function MyDocumentsPage() {
 
   function handleMoveDoc() {
     if (!moveDoc) return;
+    if (blockedLive("Your own folders")) return;
     setDocs((prev) =>
       prev.map((d) =>
         d.id === moveDoc.id
