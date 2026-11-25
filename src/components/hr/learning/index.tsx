@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useLearning } from "./hooks";
+import { useLearningActions } from "@/src/lib/learning/use-learning-live";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { useAppSelector } from "@/src/lib/stores/hooks";
@@ -46,10 +47,12 @@ export function LearningPage() {
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [hydrated, setHydrated] = useState(false);
-  // Seed local working state from the loaded demo data once.
-  if (data && !hydrated) {
-    setHydrated(true);
+  const [hydrated, setHydrated] = useState<typeof data>(null);
+  // Seed local working state from the loaded data. Signed out that happens
+  // once; signed in, again after every change the API confirms.
+  const actions = useLearningActions();
+  if (data && (!hydrated || (actions.live && data !== hydrated))) {
+    setHydrated(data);
     setCourses(data.courses);
     setEnrollments(data.enrollments);
   }
@@ -115,6 +118,7 @@ export function LearningPage() {
   }
 
   function handleSaveCourse(data: NewCourse) {
+    void actions.saveCourse(data, editingCourse?.id);
     if (editingCourse) {
       setCourses((prev) =>
         prev.map((c) => (c.id === editingCourse.id ? { ...c, ...data } : c)),
@@ -132,15 +136,23 @@ export function LearningPage() {
   }
 
   function handleDeleteCourse(id: string) {
+    void actions.deleteCourse(id);
     setCourses((prev) => prev.filter((c) => c.id !== id));
   }
 
   function handleManageQuiz(course: Course) {
     setQuizCourse(course);
     setQuizModalOpen(true);
+    // Signed in, the questions are read when the builder opens.
+    if (actions.live && course.quiz) {
+      void actions.withQuiz(course).then((full) =>
+        setQuizCourse((current) => (current?.id === full.id ? full : current)),
+      );
+    }
   }
 
   function handleSaveQuiz(courseId: string, quiz: CourseQuiz) {
+    void actions.saveQuiz(courseId, quiz);
     setCourses((prev) => prev.map((c) => (c.id === courseId ? { ...c, quiz } : c)));
   }
 
@@ -156,6 +168,11 @@ export function LearningPage() {
   }) {
     const course = courses.find((c) => c.id === input.courseId);
     if (!course) return;
+    void actions.assign(
+      input.courseId,
+      input.trainees.map((t) => t.employeeId),
+      input.dueDate,
+    );
     const today = new Date().toISOString().split("T")[0];
     const newEnrollments: Enrollment[] = input.trainees.map((t, i) => ({
       id: `enr-${Date.now()}-${i}`,
@@ -182,6 +199,7 @@ export function LearningPage() {
   }
 
   function handleDeleteEnrollment(id: string) {
+    void actions.deleteEnrollment(id);
     setEnrollments((prev) => prev.filter((e) => e.id !== id));
   }
 

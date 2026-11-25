@@ -135,14 +135,11 @@ export function PeopleTabLayout() {
         <DataQualityTile />
       </Cell>
       <Cell span={3}>
-        <DemoOnly>
-          <CertificationComplianceTile />
-        </DemoOnly>
+        {/* Live: certificates and courses from the learning API. */}
+        <CertificationComplianceTile />
       </Cell>
       <Cell span={3}>
-        <DemoOnly>
-          <MandatoryTrainingTile />
-        </DemoOnly>
+        <MandatoryTrainingTile />
       </Cell>
       <Cell span={3}>
         {/* Live: reads the loan register from the API. */}
