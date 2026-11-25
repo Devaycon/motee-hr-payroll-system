@@ -1,5 +1,7 @@
 "use client";
 
+import { useProjectsLive } from "@/src/lib/projects/use-projects-live";
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -76,6 +78,8 @@ function matchesProjectCardFilter(
 }
 
 export function ProjectsPage() {
+  // Signed in: projects and their records are mirrored from the API.
+  useProjectsLive();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { format } = useCurrency();

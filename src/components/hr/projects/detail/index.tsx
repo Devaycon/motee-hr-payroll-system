@@ -1,5 +1,7 @@
 "use client";
 
+import { useProjectsLive } from "@/src/lib/projects/use-projects-live";
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CircleDollarSign, Clock, Target, Users } from "lucide-react";
@@ -49,6 +51,8 @@ function utilisationLabel(pct: number): string {
 }
 
 export function ProjectDetail({ projectId }: { projectId: string }) {
+  // Signed in: projects and their records are mirrored from the API.
+  useProjectsLive();
   const router = useRouter();
   const { format } = useCurrency();
   const project = useAppSelector((s) =>

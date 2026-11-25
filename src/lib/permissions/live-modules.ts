@@ -18,6 +18,7 @@ export const LIVE_LINKS: readonly string[] = [
   "/workspace/community",
   "/workspace/suggestions",
   "/workspace/surveys",
+  "/workspace/projects",
   "/organization/branches",
   "/organization/departments",
   "/organization/employees",
