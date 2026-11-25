@@ -1,5 +1,7 @@
 "use client";
 
+import { useWorkflowsLive } from "@/src/lib/workflows/use-workflows-live";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -32,6 +34,8 @@ import { WorkflowCard } from "./components/workflow-card";
 import type { Workflow as WorkflowType } from "@/src/lib/types/workflows";
 
 export function WorkflowsHub() {
+  // Signed in: workflows and runs are mirrored from the API.
+  useWorkflowsLive();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const workflows = useAppSelector((s) => s.workflows.workflows);

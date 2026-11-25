@@ -6,6 +6,8 @@ import { PageTabsList } from "@/src/components/shared/page-tabs";
 import type { Course } from "@/src/lib/types/learning";
 import { MY_ENROLLMENTS, COURSES } from "./components/data";
 import type { MyEnrollment } from "./components/data";
+import type { CourseQuiz } from "@/src/lib/types/learning";
+import { useMyLearning, useMyLearningActions } from "@/src/lib/learning/use-learning-live";
 import {
   TrainingStatCards,
   matchesTrainingCardFilter,
@@ -24,6 +26,17 @@ import { CourseDetailModal } from "./components/course-detail-modal";
 
 export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
   const [enrollments, setEnrollments] = useState<MyEnrollment[]>(MY_ENROLLMENTS);
+  // Signed in: your enrolments and the library from `GET /learning/mine`,
+  // re-read after every change; quizzes are asked and graded by the server.
+  const mine = useMyLearning();
+  const actions = useMyLearningActions();
+  const [seenMine, setSeenMine] = useState<typeof mine.rows>(null);
+  if (mine.rows && mine.rows !== seenMine) {
+    setSeenMine(mine.rows);
+    setEnrollments(mine.rows as unknown as MyEnrollment[]);
+  }
+  const COURSES_SHOWN = mine.live ? (mine.courses ?? []) : COURSES;
+  const [liveQuiz, setLiveQuiz] = useState<{ enrollmentId: string; quiz: CourseQuiz } | null>(null);
   // Controlled so the KPI cards can drill into a tab, not just a filter.
   const [activeTab, setActiveTab] = useState("my-learning");
   /** Drill-down set by the KPI cards; "all" shows everything assigned. */
@@ -53,11 +66,21 @@ export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
     matchesTrainingCardFilter(e, cardFilter, now),
   );
 
-  const quizForCourse = (courseId?: string) =>
-    COURSES.find((c) => c.id === courseId)?.quiz ?? null;
+  const quizForCourse = (courseId?: string) => {
+    if (mine.live) {
+      return liveQuiz && selectedEnrollment?.courseId === courseId ? liveQuiz.quiz : null;
+    }
+    return COURSES.find((c) => c.id === courseId)?.quiz ?? null;
+  };
 
   function openPlayer(enrollment: MyEnrollment) {
     setSelectedEnrollment(enrollment);
+    if (mine.live) {
+      setLiveQuiz(null);
+      void actions.quiz(enrollment.id).then((quiz) => {
+        if (quiz) setLiveQuiz({ enrollmentId: enrollment.id, quiz });
+      });
+    }
     setAssessmentSubmitted(false);
     setAnswers({});
     setAssessmentScore(null);
@@ -67,6 +90,7 @@ export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
   // Persist watched progress + resume position; bump status to in_progress.
   function handleSaveProgress(percent: number, positionSeconds: number) {
     const newProgress = Math.round(percent);
+    if (selectedEnrollment) void actions.progress(selectedEnrollment.id, newProgress, positionSeconds);
     setEnrollments((prev) =>
       prev.map((e) =>
         e.id === selectedEnrollment?.id
@@ -87,6 +111,7 @@ export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
   function handleCompleteTraining() {
     const quiz = quizForCourse(selectedEnrollment?.courseId);
     const today = new Date().toISOString().split("T")[0];
+    if (selectedEnrollment) void actions.progress(selectedEnrollment.id, 100);
     setEnrollments((prev) =>
       prev.map((e) =>
         e.id === selectedEnrollment?.id
@@ -112,6 +137,16 @@ export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
     if (!selectedEnrollment) return;
     const quiz = quizForCourse(selectedEnrollment.courseId);
     if (!quiz) return;
+    if (mine.live) {
+      // Graded on the server; the enrolment is re-read afterwards.
+      void actions.attempt(selectedEnrollment.id, answers).then((result) => {
+        if (!result) return;
+        setAssessmentScore(result.score);
+        setAssessmentPassed(result.passed);
+        setAssessmentSubmitted(true);
+      });
+      return;
+    }
     const totalPoints = quiz.questions.reduce((s, q) => s + q.points, 0) || 1;
     const earned = quiz.questions.reduce(
       (s, q) => s + (answers[q.id] === q.correctIndex ? q.points : 0),
@@ -147,6 +182,7 @@ export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
 
   function handleConfirmEnroll() {
     if (!selectedCourse) return;
+    void actions.enroll(selectedCourse.id);
     const newEnrollment: MyEnrollment = {
       id: `me-${Date.now()}`,
       courseId: selectedCourse.id,
@@ -230,7 +266,7 @@ export function EmployeeTraining({ embedded = false }: { embedded?: boolean }) {
 
         <TabsContent value="library" className="mt-5">
           <LibraryTab
-            courses={COURSES}
+            courses={COURSES_SHOWN}
             enrolledCourseIds={enrolledCourseIds}
             enrolledCourseId={enrolledCourseId}
             librarySearch={librarySearch}

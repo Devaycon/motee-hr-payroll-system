@@ -25,6 +25,7 @@ import {
 import { useCurrency } from "@/src/lib/hooks/use-currency";
 import { formatDate } from "@/src/lib/utils/format-date";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useMyExpenseClaimsLive } from "@/src/lib/expenses/use-my-claims";
 import { addClaim, updateClaim } from "@/src/lib/stores/expenses-slice";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import {
@@ -78,6 +79,8 @@ export function ExpensesPage() {
   // Claims live in the store rather than local state so a claim survives the
   // trip to its detail page (and a refresh, and a deep link).
   const allClaims = useAppSelector((s) => s.expenses.claims);
+  // Signed in: your claims from the API are mirrored into the store.
+  useMyExpenseClaimsLive();
   const user = useAppSelector((s) => s.auth.user);
   const bundle = useAppSelector((s) => s.locale.data);
   const actor = user?.name ?? "You";

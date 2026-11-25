@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { useLiveSuggestions } from "@/src/lib/engagement/use-engagement";
 import type {
   Suggestion,
   SuggestionCategory,
@@ -77,6 +78,10 @@ function buildSuggestions(bundle: LocaleBundle): Suggestion[] {
   });
 }
 
+/** Every suggestion: from the API when signed in, the bundle otherwise. */
 export function useSuggestions() {
-  return useLocaleSection<Suggestion[]>(buildSuggestions);
+  const demo = useLocaleSection<Suggestion[]>(buildSuggestions);
+  const live = useLiveSuggestions("You");
+  if (!live.live) return demo;
+  return { data: live.data, loading: !live.data, error: null };
 }

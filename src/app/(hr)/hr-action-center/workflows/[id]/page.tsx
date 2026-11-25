@@ -4,10 +4,13 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { WorkflowBuilder } from "@/src/components/hr/workflows/workflow-builder";
+import { useWorkflowsLive } from "@/src/lib/workflows/use-workflows-live";
 
 export default function EditWorkflowRoute() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  // Signed in, a deep link still finds the workflow (read from the API).
+  useWorkflowsLive();
   const workflow = useAppSelector((s) =>
     s.workflows.workflows.find((w) => w.id === params.id),
   );

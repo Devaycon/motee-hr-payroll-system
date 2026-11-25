@@ -20,7 +20,8 @@ export type NotificationKind =
   | "timesheetDue"
   | "reviewOverdue"
   | "goalOverdue"
-  | "openClockSession";
+  | "openClockSession"
+  | "noteReminderDue";
 
 export type NotificationSeverity =
   | "info"

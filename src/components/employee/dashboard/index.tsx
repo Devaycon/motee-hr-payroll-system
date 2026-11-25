@@ -14,6 +14,8 @@ import { RecentActivity } from "./components/recent-activity";
 import { QuickLinks } from "./components/quick-links";
 import { MyTasks } from "./components/my-tasks";
 import { TodayShiftCard } from "@/src/components/employee/shifts/components/today-shift-card";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
+import { useLiveEmployeeDashboard } from "./live";
 
 export function EmployeeDashboard() {
   const user = useAppSelector((s) => s.auth.user);
@@ -25,36 +27,41 @@ export function EmployeeDashboard() {
     year: "numeric",
   });
   const firstName = user?.name?.split(" ")[0] ?? "James";
+  // Signed in: the cards below read the API; the ones with no endpoint
+  // (day at a glance, team on leave, recent activity) stay blurred.
+  const live = useLiveEmployeeDashboard();
+  const gate = (label: string, node: React.ReactNode) =>
+    live.live ? <NotIntegrated label={label}>{node}</NotIntegrated> : node;
 
   return (
     <div className="flex flex-col gap-6">
       <WelcomeBanner name={firstName} dayName={dayName} dateStr={dateStr} />
       <div className="flex flex-col gap-3">
-        <StatCards />
+        {gate("Day at a glance", <StatCards />)}
         <MyProfileStats />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <LeaveBalanceCards />
+        <LeaveBalanceCards items={live.live ? (live.leaveBalances ?? []) : undefined} />
         <QuickLinks />
       </div>
 
       <TodayShiftCard />
 
       <div className="grid grid-cols-3 gap-4">
-        <PendingItems />
-        <MyTasks />
+        <PendingItems items={live.live ? (live.pendingItems ?? []) : undefined} />
+        <MyTasks items={live.live ? (live.myTasks ?? []) : undefined} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <AnnouncementsFeed />
-        <UpcomingEvents />
+        <AnnouncementsFeed items={live.live ? (live.announcements ?? []) : undefined} />
+        <UpcomingEvents items={live.live ? (live.upcomingEvents ?? []) : undefined} />
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <RecentKudos />
-        <TeamOnLeave />
-        <RecentActivity />
+        <RecentKudos items={live.live ? (live.recentKudos ?? []) : undefined} />
+        {gate("Team on leave", <TeamOnLeave />)}
+        {gate("Recent activity", <RecentActivity />)}
       </div>
     </div>
   );

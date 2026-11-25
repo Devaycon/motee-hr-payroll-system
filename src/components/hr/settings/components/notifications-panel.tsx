@@ -31,9 +31,11 @@ import { TIMEZONES, LANGUAGES } from "../data";
 interface Props {
   prefs: NotificationPrefs;
   onChange: (updated: NotificationPrefs) => void;
+  /** Signed in: saves to the API; the success toast waits for it. */
+  onSave?: (updated: NotificationPrefs) => Promise<boolean>;
 }
 
-export function NotificationsPanel({ prefs, onChange }: Props) {
+export function NotificationsPanel({ prefs, onChange, onSave }: Props) {
   const [modules, setModules] = useState<NotificationModule[]>(prefs.modules);
   const [digest, setDigest] = useState<DigestFrequency>(prefs.digestFrequency);
   const [timezone, setTimezone] = useState(prefs.timezone);
@@ -53,6 +55,16 @@ export function NotificationsPanel({ prefs, onChange }: Props) {
 
   function handleSave() {
     setSaving(true);
+    if (onSave) {
+      const next = { modules, digestFrequency: digest, timezone, language };
+      void onSave(next).then((ok) => {
+        setSaving(false);
+        if (!ok) return;
+        onChange(next);
+        toast.success("Notification preferences saved.");
+      });
+      return;
+    }
     setTimeout(() => {
       onChange({ modules, digestFrequency: digest, timezone, language });
       setSaving(false);

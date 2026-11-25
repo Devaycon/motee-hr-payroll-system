@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import type { PickListApi } from "../live";
 import { Plus, Pencil, Trash2, Star, ListChecks } from "lucide-react";
 import {
   Card,
@@ -51,10 +52,18 @@ import type { PickList, PickListOption } from "../types";
 
 interface Props {
   lists: PickList[];
+  /** Signed in: each change goes to the API first. */
+  api?: PickListApi;
 }
 
-export function PickListPanel({ lists: initial }: Props) {
+export function PickListPanel({ lists: initial, api }: Props) {
   const [lists, setLists] = useState<PickList[]>(initial);
+  // Signed in, the server copy replaces the local one after every change.
+  const [seen, setSeen] = useState(initial);
+  if (initial !== seen) {
+    setSeen(initial);
+    setLists(initial);
+  }
   const [activeId, setActiveId] = useState(initial[0]?.id ?? "");
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -94,6 +103,18 @@ export function PickListPanel({ lists: initial }: Props) {
       return;
     }
 
+    if (api) {
+      const call = editing
+        ? api.update(activeId, editing.id, trimmed)
+        : api.add(activeId, trimmed);
+      void call.then((ok) => {
+        if (!ok) return;
+        toast.success(editing ? "Value updated." : "Value added.");
+        setDialogOpen(false);
+      });
+      return;
+    }
+
     setLists((prev) =>
       prev.map((l) => {
         if (l.id !== activeId) return l;
@@ -123,6 +144,12 @@ export function PickListPanel({ lists: initial }: Props) {
   }
 
   function handleDelete(option: PickListOption) {
+    if (api) {
+      void api.remove(activeId, option.id).then((ok) => {
+        if (ok) toast.success("Value deleted.");
+      });
+      return;
+    }
     setLists((prev) =>
       prev.map((l) => {
         if (l.id !== activeId) return l;
@@ -138,6 +165,12 @@ export function PickListPanel({ lists: initial }: Props) {
   }
 
   function handleSetDefault(option: PickListOption) {
+    if (api) {
+      void api.setDefault(activeId, option.id).then((ok) => {
+        if (ok) toast.success(`"${option.value}" set as default.`);
+      });
+      return;
+    }
     setLists((prev) =>
       prev.map((l) =>
         l.id === activeId

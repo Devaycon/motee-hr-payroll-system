@@ -91,14 +91,19 @@ function daysUntil(isoDate: string): string {
   return `In ${diff}d`;
 }
 
-export function UpcomingEvents() {
+export function UpcomingEvents({
+  items = EMPLOYEE_UPCOMING_EVENTS,
+}: {
+  /** Signed in: the live list (the demo list otherwise). */
+  items?: typeof EMPLOYEE_UPCOMING_EVENTS;
+} = {}) {
   const [view, setView] = useState<"list" | "calendar">("list");
   const [calYear, setCalYear] = useState(2026);
   const [calMonth, setCalMonth] = useState(3);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<EventType>("all");
 
-  const visibleEvents = EMPLOYEE_UPCOMING_EVENTS.filter(
+  const visibleEvents = items.filter(
     (e) => typeFilter === "all" || e.type === typeFilter,
   );
 
@@ -109,7 +114,7 @@ export function UpcomingEvents() {
     year: "numeric",
   });
 
-  const eventsByDate = EMPLOYEE_UPCOMING_EVENTS.reduce<
+  const eventsByDate = items.reduce<
     Record<string, typeof EMPLOYEE_UPCOMING_EVENTS>
   >((acc, ev) => {
     if (!acc[ev.isoDate]) acc[ev.isoDate] = [];

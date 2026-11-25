@@ -7,6 +7,8 @@ import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { LEAVE_POLICIES, LEAVE_REQUESTS, LEAVE_TYPE_LABELS } from "@/src/data/leave-demo";
 import { MY_BALANCES as SEED_BALANCES, MY_HISTORY as SEED_HISTORY, TYPE_COLORS } from "./components/data";
 import { useMyLeaveBalances, useMyLeaveHistory } from "./hooks";
+import { useMyLeave } from "@/src/lib/leave/use-my-leave";
+import type { BalanceEntry, HistoryEntry } from "./components/data";
 import {
   LeaveStatCards,
   LEAVE_HISTORY_FILTER_LABELS,
@@ -27,8 +29,23 @@ import type { LeaveTypeName } from "@/src/lib/types/leave";
 export function MyLeaveBalancePage() {
   useMyLeaveBalances();
   useMyLeaveHistory();
-  const MY_BALANCES = SEED_BALANCES;
-  const MY_HISTORY = SEED_HISTORY;
+  // Signed in: your balances and requests from the API.
+  const myLeave = useMyLeave();
+  const MY_BALANCES: BalanceEntry[] = myLeave.live ? (myLeave.balances ?? []) : SEED_BALANCES;
+  const MY_HISTORY: HistoryEntry[] = myLeave.live
+    ? (myLeave.requests ?? []).map((r) => ({
+        id: r.id,
+        leaveType: r.leaveType,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        totalDays: r.totalDays,
+        status: r.status,
+        notes: r.notes,
+        approvedBy: r.approvedBy,
+        rejectionReason: r.rejectionReason,
+        submittedAt: r.submittedAt,
+      }))
+    : SEED_HISTORY;
   const [policyPlan, setPolicyPlan] = useState<(typeof LEAVE_POLICIES)[0] | null>(null);
   const [expandedType, setExpandedType] = useState<LeaveTypeName | null>(null);
   // Controlled so the balance cards can open the entitlement or history.

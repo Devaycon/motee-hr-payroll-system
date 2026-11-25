@@ -1,7 +1,7 @@
 # MOTEE HRIS — Integrated API Endpoints Log
 
-> **Branch:** `feat/temitope-branch` · **Base commit:** `76ab733` + the 2026-11-08 integration · **Updated:** 2026-11-08
-> **Source of truth:** `src/store/services/*.ts` (RTK Query), checked against the live spec at `https://api.develop.moteesolutionsltd.com/openapi/v1.json` (416 operations — every one now has a hook). Usage was traced to the screens, hooks and listeners that call each endpoint.
+> **Branch:** `feat/temitope-branch` · **Updated:** 2026-11-25 (spec grew to 640 operations)
+> **Source of truth:** `src/store/services/*.ts` (RTK Query), checked against the live spec at `https://api.develop.moteesolutionsltd.com/openapi/v1.json` (640 operations — every one has a hook). Usage was traced to the screens, hooks and listeners that call each endpoint.
 
 ---
 
@@ -12,11 +12,10 @@
 | Base URL | `NEXT_PUBLIC_MOTEE_BASE_URL` (from `.env.local`) |
 | API prefix | `/api/v1` |
 | Auth | `Authorization: Bearer <token>`, auto-refresh on 401 via `POST /api/v1/auth/refresh` |
-| Service files | 50 |
-| Unique backend endpoints | **416** (415 in services + the token refresh) |
-| ✅ Live — called by the app | **289** |
-| 🔁 Live via the collection helper | **24** (paged list endpoints read in full by `collections.ts` / `employee-directory.ts`) |
-| ⚪ Defined but not called yet | **103** (self-service `/mine` endpoints, and actions with no control on the approved screens — see section 3) |
+| Service files | 74 (21 new on 2026-11-25, plus 2 workspace loaders) |
+| Unique backend endpoints | **640** |
+| ✅ + 🔁 Live — called by the app | **about 507** (153 + 13 of the 224 new ones; the rest as before plus 28 previously idle hooks) |
+| ⚪ Defined but not called yet | **at most 133** (75 older ones and 58 of the new ones — sections 3.1, 3.2, 3.2b and 3.6) |
 
 ### Change log
 
@@ -26,6 +25,7 @@
 | 2026-10-24 | **+57 endpoints:** Attendance, corrections, timesheets, work schedules (31) and Performance goals, reviews, feedback (26). HR **Attendance** and **Performance** pages switched to live. |
 | 2026-10-30 | **+94 endpoints:** Announcements (11), Calendar (6), Candidates (13), Interviews (6), Requisitions (11), Contracts (13), Dashboard (2), Documents (17), Expense claims (10), Notifications (5). Switched to live: **Dashboard** (People and Attendance tabs), **Calendar**, **Announcements**, **Recruitment**, **Contracts**, **Documents**, **Expense Claims**, and the notifications bell. Existing schemas gained `dottedLineManagerId`/`dottedLineManagerName` (employees), `accessLevelId` (invite), `emailSentAt`/`accessLevelName` (pending invitation), `reviewUnavailableReason` (onboarding) and the `companyDocument` file purpose. |
 | 2026-11-08 | **+114 endpoints:** Benefit plans (13), Diversity (3), Employee checklist (12), Employment types (7), Headcount (7), Hire tracker (1), Kudos (12), Loans (12), Positions (10), Sickness (16), Tasks (10), Workforce (3), Workforce requests (8). Switched to live: **Employment Types**, **Roles & Positions**, **Benefits**, **Employee Checklist**, **Loans**, **Headcount Planning**, **Workforce Planning** (except Skills Gap), **Hire Tracker**, **Workforce Requests**, **Kudos**, **Sickness & Absence** (except Schemes and Approval Chain), **My Work** (Personal tasks tab), the dashboard **Sickness** tab and **Loans** tile, and the first self-service pages: My Tasks, My Loans, Diversity, Sickness, Community (Kudos tab). Existing schemas: `CalendarCategory` gained `sickness`. |
+| 2026-11-25 | **+224 endpoints (640 in all):** Account settings (5), Certifications (6), Community (12), Company (8), Employee notes (5), EOR + EOR invoices (19), ER cases (18), Help desk (10), Knowledge (13), Learning (17), My reminders (1), Occupational health (13), Pick lists (6), Platform verifications (2), Projects + documents/go-live/risks/time (34), Settings (7), Shifts (5), Suggestions (13), Surveys (12), Workflows (7), Workflow runs (11). Switched to live — HR: **Company Profile**, **Settings**, **Help Desk**, **Knowledge Base**, **Community**, **Suggestions**, **Surveys**, **EOR** (+ dashboard map), **Learning & Development** (+ certification and mandatory-training tiles), **Employee Relations** (`/admin/grievance`), **Occupational Health** (+ dashboard OH tiles), **Shifts**, **Projects**, **Workflows**, the My Work workflow tabs, and the employee profile's **Notes & Reminders** and **Certifications** modules. Self-service: Dashboard, Events, Attendance clock, Shifts, Leave balance, Leave request, Expenses, Documents, Contracts, Assets, My Profile, Org chart, Announcements, Knowledge, Community (feed + suggestions), Help desk, Relations, Performance and Training. Existing schemas only gained enum values: `FilePurpose` (+`projectDocument`, `caseEvidence`, `companyVerificationDocument`) and `NotificationKind` (+`noteReminderDue`). |
 
 ### Status legend
 
@@ -39,9 +39,9 @@
 
 From `src/lib/permissions/live-modules.ts` (everything else is shown blurred as "not integrated"):
 
-`/welcome` · `/hr` (People, Attendance and Sickness tabs; the other tabs and the EOR map, certification, mandatory training, Occupational Health and untaken-leave tiles stay blurred) · `/hr-action-center/events` · `/hr-action-center/tasks` (Personal tasks tab only) · `/workspace/kudos` · `/organization/employment-types` · `/organization/roles` · `/organization/benefit-plans` · `/organization/employee-checklist` · `/organization/loans` · `/organization/headcount` · `/operations/workforce` (except Skills Gap) · `/talent/hire-tracker` · `/talent/workforce-requests` · `/time-payroll/sickness` (except `/schemes` and `/approval-chain`, listed in `DEMO_ONLY_LINKS`) · `/workspace/announcements` · `/organization/branches` · `/organization/departments` · `/organization/employees` · `/talent/onboarding` · `/talent/offboarding` · `/talent/performance` · `/talent/recruitment` · `/operations/assets` · `/operations/contracts` · `/operations/documents` (except the **My Documents** review queue) · `/time-payroll/leave` (except **Schemes**) · `/time-payroll/attendance` (except **Deduction Policy** and **Presence Checks**) · `/time-payroll/expenses` · `/admin/access-levels` · `/admin/users` · `/admin/audit-trail`
+`/welcome` · `/hr` (People, Attendance and Sickness tabs; the other tabs and the EOR map, certification, mandatory training, Occupational Health and untaken-leave tiles stay blurred) · `/hr-action-center/events` · `/hr-action-center/tasks` (Personal tasks tab only) · `/workspace/kudos` · `/organization/employment-types` · `/organization/roles` · `/organization/benefit-plans` · `/organization/employee-checklist` · `/organization/loans` · `/organization/headcount` · `/operations/workforce` (except Skills Gap) · `/talent/hire-tracker` · `/talent/workforce-requests` · `/time-payroll/sickness` (except `/schemes` and `/approval-chain`, listed in `DEMO_ONLY_LINKS`) · `/workspace/announcements` · `/organization/branches` · `/organization/departments` · `/organization/employees` · `/talent/onboarding` · `/talent/offboarding` · `/talent/performance` · `/talent/recruitment` · `/operations/assets` · `/operations/contracts` · `/operations/documents` (except the **My Documents** review queue) · `/time-payroll/leave` (except **Schemes**) · `/time-payroll/attendance` (except **Deduction Policy** and **Presence Checks**) · `/time-payroll/expenses` · `/admin/access-levels` · `/admin/users` · `/admin/audit-trail` · **2026-11-25:** `/organization/company` · `/organization/eor` · `/admin/settings` (2FA, API keys, billing history and clearing demo data blurred inline) · `/admin/grievance` · `/workspace/helpdesk` (FAQ blurred) · `/workspace/knowledge` · `/workspace/community` · `/workspace/suggestions` · `/workspace/surveys` · `/workspace/projects` · `/talent/training` · `/time-payroll/shifts` · `/time-payroll/occupational-health` · `/hr-action-center/workflows`
 
-Self-service pages lifted out of the blur by `SELF_SERVICE_LIVE_LINKS` (same file): `/employee/tasks`, `/employee/loans`, `/profile/diversity`, `/time-off/sickness`, `/company/community` (Kudos tab only).
+Self-service pages lifted out of the blur by `SELF_SERVICE_LIVE_LINKS` (same file): `/employee/dashboard` (day at a glance, team on leave and recent activity blurred), `/employee/tasks`, `/employee/loans`, `/employee/events`, `/employee/documents`, `/employee/expenses`, `/time-off/attendance`, `/time-off/shifts`, `/time-off/balance`, `/time-off/request`, `/time-off/sickness`, `/profile/my-profile`, `/profile/diversity`, `/profile/contracts`, `/profile/documents`, `/profile/assets`, `/company/org-chart`, `/company/announcements`, `/company/knowledge`, `/company/community`, `/company/helpdesk` (FAQ blurred), `/company/relations`, `/growth/performance`, `/growth/training`. **Still blurred:** `/employee/submissions` (see 3.1).
 
 Also live outside the HR shell: auth pages, company setup wizard, the new-joiner (`/join`) flow, the platform console (`platform-live`), and the notifications panel in every navbar.
 
@@ -682,21 +682,352 @@ HR screen: `components/hr/performance` (Reviews and Goals tabs). Data mapping in
 
 ---
 
+### 2026-11-25 modules
+
+The tables below are generated from the code: **Used in** lists the files (outside the service layer) that call each hook. 🔁 means the list is read in full by a loader (`collections.ts` or a `*-workspace.ts` file) rather than through the paged hook.
+
+### 2.61 Company — `company.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/company` | `useGetCompanyQuery` | `components/hr/company-profile/hooks` | ✅ |
+| 2 | PUT | `/company` | `useUpdateCompanyMutation` | `components/hr/company-profile/hooks` | ✅ |
+| 3 | GET | `/company/org-chart` | `useGetCompanyOrgChartQuery` | `components/hr/company-profile/hooks` | ✅ |
+| 4 | GET | `/company/notice` | `useGetCompanyNoticeQuery` | `components/hr/company-profile/hooks` | ✅ |
+| 5 | GET | `/company/verification` | `useGetCompanyVerificationQuery` | `components/hr/company-profile/hooks` | ✅ |
+| 6 | PUT | `/company/verification/{kind}` | `useSaveCompanyVerificationMutation` | `components/hr/company-profile/hooks` | ✅ |
+| 7 | POST | `/company/verification/{kind}/submit` | `useSubmitCompanyVerificationMutation` | `components/hr/company-profile/hooks` | ✅ |
+| 8 | POST | `/company/verification/{kind}/withdraw` | `useWithdrawCompanyVerificationMutation` | — | ⚪ |
+
+### 2.62 Settings — `settings.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/settings/modules` | `useGetModuleSettingsQuery` | `components/hr/settings/live` | ✅ |
+| 2 | PUT | `/settings/modules` | `useUpdateModuleSettingsMutation` | `components/hr/settings/live` | ✅ |
+| 3 | GET | `/settings/password-policy` | `useGetPasswordPolicyQuery` | `components/hr/settings/live` | ✅ |
+| 4 | PUT | `/settings/password-policy` | `useUpdatePasswordPolicyMutation` | `components/hr/settings/live` | ✅ |
+| 5 | GET | `/settings/holiday-years` | `useGetHolidayYearsQuery` | `components/hr/settings/live` | ✅ |
+| 6 | PUT | `/settings/holiday-year` | `useUpdateHolidayYearMutation` | `components/hr/settings/live` | ✅ |
+| 7 | GET | `/settings/subscription` | `useGetSubscriptionQuery` | `components/hr/settings/live` | ✅ |
+
+### 2.63 Pick lists — `pick-lists.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/settings/pick-lists` | `useGetPickListsQuery` | `components/hr/settings/live` | ✅ |
+| 2 | GET | `/settings/pick-lists/{key}` | `useGetPickListQuery` | — | ⚪ |
+| 3 | POST | `/settings/pick-lists/{key}/options` | `useAddPickListOptionMutation` | `components/hr/settings/live` | ✅ |
+| 4 | PUT | `/settings/pick-lists/{key}/options/{id}` | `useUpdatePickListOptionMutation` | `components/hr/settings/live` | ✅ |
+| 5 | DELETE | `/settings/pick-lists/{key}/options/{id}` | `useDeletePickListOptionMutation` | `components/hr/settings/live` | ✅ |
+| 6 | PUT | `/settings/pick-lists/{key}/options/{id}/default` | `useSetDefaultPickListOptionMutation` | `components/hr/settings/live` | ✅ |
+
+### 2.64 Account settings (your own) — `account-settings.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/settings/me/notifications` | `useGetMyNotificationSettingsQuery` | `components/hr/settings/live` | ✅ |
+| 2 | PUT | `/settings/me/notifications` | `useUpdateMyNotificationSettingsMutation` | `components/hr/settings/live` | ✅ |
+| 3 | GET | `/settings/me/sessions` | `useGetMySessionsQuery` | `components/hr/settings/live` | ✅ |
+| 4 | DELETE | `/settings/me/sessions/{id}` | `useRevokeMySessionMutation` | `components/hr/settings/live` | ✅ |
+| 5 | GET | `/settings/me/activity` | `useGetMyAccountActivityQuery` | `components/hr/settings/live` | ✅ |
+
+### 2.65 Help desk — `helpdesk.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/helpdesk` | `useGetHelpdeskTicketsQuery` | `store/services/collections (full read)` | 🔁 |
+| 2 | POST | `/helpdesk` | `useCreateHelpdeskTicketMutation` | `components/hr/helpdesk/hooks` | ✅ |
+| 3 | GET | `/helpdesk/summary` | `useGetHelpdeskSummaryQuery` | — | ⚪ |
+| 4 | GET | `/helpdesk/mine` | `useGetMyHelpdeskTicketsQuery` | `components/hr/helpdesk/hooks` | ✅ |
+| 5 | GET | `/helpdesk/{id}` | `useGetHelpdeskTicketQuery` | — | ⚪ |
+| 6 | DELETE | `/helpdesk/{id}` | `useDeleteHelpdeskTicketMutation` | `components/hr/helpdesk/hooks` | ✅ |
+| 7 | POST | `/helpdesk/{id}/messages` | `useReplyToHelpdeskTicketMutation` | `components/hr/helpdesk/hooks` | ✅ |
+| 8 | POST | `/helpdesk/{id}/status` | `useSetHelpdeskTicketStatusMutation` | `components/hr/helpdesk/hooks` | ✅ |
+| 9 | POST | `/helpdesk/{id}/priority` | `useSetHelpdeskTicketPriorityMutation` | `components/hr/helpdesk/hooks` | ✅ |
+| 10 | POST | `/helpdesk/{id}/assign` | `useAssignHelpdeskTicketMutation` | `components/hr/helpdesk/hooks` | ✅ |
+
+### 2.66 Knowledge base — `knowledge.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/knowledge` | `useGetKnowledgeArticlesQuery` | `components/hr/knowledge/hooks` | ✅ |
+| 2 | POST | `/knowledge` | `useCreateKnowledgeArticleMutation` | `components/hr/knowledge/hooks` | ✅ |
+| 3 | GET | `/knowledge/published` | `useGetPublishedKnowledgeArticlesQuery` | `components/hr/knowledge/hooks` | ✅ |
+| 4 | GET | `/knowledge/summary` | `useGetKnowledgeSummaryQuery` | — | ⚪ |
+| 5 | GET | `/knowledge/{id}` | `useGetKnowledgeArticleQuery` | — | ⚪ |
+| 6 | PUT | `/knowledge/{id}` | `useUpdateKnowledgeArticleMutation` | `components/hr/knowledge/hooks` | ✅ |
+| 7 | DELETE | `/knowledge/{id}` | `useDeleteKnowledgeArticleMutation` | `components/hr/knowledge/hooks` | ✅ |
+| 8 | POST | `/knowledge/{id}/status` | `useSetKnowledgeArticleStatusMutation` | `components/hr/knowledge/hooks` | ✅ |
+| 9 | POST | `/knowledge/{id}/feature` | `useFeatureKnowledgeArticleMutation` | `components/hr/knowledge/hooks` | ✅ |
+| 10 | DELETE | `/knowledge/{id}/feature` | `useUnfeatureKnowledgeArticleMutation` | `components/hr/knowledge/hooks` | ✅ |
+| 11 | POST | `/knowledge/{id}/read` | `useMarkKnowledgeArticleReadMutation` | `components/hr/knowledge/hooks` | ✅ |
+| 12 | POST | `/knowledge/{id}/feedback` | `useSendKnowledgeArticleFeedbackMutation` | `components/hr/knowledge/hooks` | ✅ |
+| 13 | DELETE | `/knowledge/{id}/feedback` | `useClearKnowledgeArticleFeedbackMutation` | `components/hr/knowledge/hooks` | ✅ |
+
+### 2.67 Community feed — `community.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/community` | `useGetCommunityPostsQuery` | `store/services/collections (full read)` | 🔁 |
+| 2 | POST | `/community` | `useCreateCommunityPostMutation` | `lib/engagement/use-engagement` | ✅ |
+| 3 | GET | `/community/summary` | `useGetCommunitySummaryQuery` | — | ⚪ |
+| 4 | GET | `/community/{id}` | `useGetCommunityPostQuery` | — | ⚪ |
+| 5 | PUT | `/community/{id}` | `useUpdateCommunityPostMutation` | — | ⚪ |
+| 6 | DELETE | `/community/{id}` | `useDeleteCommunityPostMutation` | `lib/engagement/use-engagement` | ✅ |
+| 7 | POST | `/community/{id}/pin` | `usePinCommunityPostMutation` | `lib/engagement/use-engagement` | ✅ |
+| 8 | DELETE | `/community/{id}/pin` | `useUnpinCommunityPostMutation` | `lib/engagement/use-engagement` | ✅ |
+| 9 | POST | `/community/{id}/like` | `useLikeCommunityPostMutation` | `lib/engagement/use-engagement` | ✅ |
+| 10 | POST | `/community/{id}/comments` | `useCommentOnCommunityPostMutation` | `lib/engagement/use-engagement` | ✅ |
+| 11 | DELETE | `/community/{id}/comments/{commentId}` | `useDeleteCommunityCommentMutation` | — | ⚪ |
+| 12 | POST | `/community/{id}/poll-votes` | `useVoteOnCommunityPollMutation` | `lib/engagement/use-engagement` | ✅ |
+
+### 2.68 Suggestions — `suggestions.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/suggestions` | `useGetSuggestionsQuery` | `store/services/collections (full read)` | 🔁 |
+| 2 | POST | `/suggestions` | `useCreateSuggestionMutation` | `lib/engagement/use-engagement` | ✅ |
+| 3 | GET | `/suggestions/summary` | `useGetSuggestionSummaryQuery` | — | ⚪ |
+| 4 | GET | `/suggestions/mine` | `useGetMySuggestionsQuery` | — | ⚪ |
+| 5 | GET | `/suggestions/{id}` | `useGetSuggestionQuery` | — | ⚪ |
+| 6 | PUT | `/suggestions/{id}/status` | `useSetSuggestionStatusMutation` | `lib/engagement/use-engagement` | ✅ |
+| 7 | PUT | `/suggestions/{id}/priority` | `useSetSuggestionPriorityMutation` | `lib/engagement/use-engagement` | ✅ |
+| 8 | PUT | `/suggestions/{id}/response` | `useSetSuggestionResponseMutation` | `lib/engagement/use-engagement` | ✅ |
+| 9 | POST | `/suggestions/{id}/feature` | `useFeatureSuggestionMutation` | `lib/engagement/use-engagement` | ✅ |
+| 10 | DELETE | `/suggestions/{id}/feature` | `useUnFeatureSuggestionMutation` | `lib/engagement/use-engagement` | ✅ |
+| 11 | POST | `/suggestions/{id}/upvote` | `useUpvoteSuggestionMutation` | `lib/engagement/use-engagement` | ✅ |
+| 12 | POST | `/suggestions/{id}/comments` | `useCommentOnSuggestionMutation` | `lib/engagement/use-engagement` | ✅ |
+| 13 | DELETE | `/suggestions/{id}/comments/{commentId}` | `useDeleteSuggestionCommentMutation` | — | ⚪ |
+
+### 2.69 Surveys — `surveys.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/surveys` | `useGetSurveysQuery` | `store/services/collections (full read)` | 🔁 |
+| 2 | POST | `/surveys` | `useCreateSurveyMutation` | `components/hr/surveys/hooks` | ✅ |
+| 3 | GET | `/surveys/summary` | `useGetSurveySummaryQuery` | — | ⚪ |
+| 4 | GET | `/surveys/engagement-trend` | `useGetEngagementTrendQuery` | `components/hr/surveys/hooks` | ✅ |
+| 5 | GET | `/surveys/mine` | `useGetMySurveysQuery` | — | ⚪ |
+| 6 | GET | `/surveys/{id}` | `useGetSurveyQuery` | — | ⚪ |
+| 7 | PUT | `/surveys/{id}` | `useUpdateSurveyMutation` | `components/hr/surveys/hooks` | ✅ |
+| 8 | DELETE | `/surveys/{id}` | `useDeleteSurveyMutation` | `components/hr/surveys/hooks` | ✅ |
+| 9 | GET | `/surveys/{id}/results` | `useGetSurveyResultsQuery` | `components/hr/surveys/hooks` | ✅ |
+| 10 | GET | `/surveys/{id}/my-response` | `useGetMySurveyResponseQuery` | — | ⚪ |
+| 11 | POST | `/surveys/{id}/status` | `useSetSurveyStatusMutation` | `components/hr/surveys/hooks` | ✅ |
+| 12 | POST | `/surveys/{id}/responses` | `useSubmitSurveyResponseMutation` | — | ⚪ |
+
+### 2.70 Employer of Record — `eor.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/eor/providers` | `useGetEorProvidersQuery` | `lib/eor/use-eor` | ✅ |
+| 2 | POST | `/eor/providers` | `useCreateEorProviderMutation` | `lib/eor/use-eor` | ✅ |
+| 3 | GET | `/eor/providers/{id}` | `useGetEorProviderQuery` | — | ⚪ |
+| 4 | PUT | `/eor/providers/{id}` | `useUpdateEorProviderMutation` | `lib/eor/use-eor` | ✅ |
+| 5 | DELETE | `/eor/providers/{id}` | `useDeleteEorProviderMutation` | `lib/eor/use-eor` | ✅ |
+| 6 | GET | `/eor/workers` | `useGetEorWorkersQuery` | `store/services/collections (full read)` | 🔁 |
+| 7 | POST | `/eor/workers` | `useCreateEorWorkerMutation` | `lib/eor/use-eor` | ✅ |
+| 8 | GET | `/eor/workers/{id}` | `useGetEorWorkerQuery` | — | ⚪ |
+| 9 | PUT | `/eor/workers/{id}` | `useUpdateEorWorkerMutation` | `lib/eor/use-eor` | ✅ |
+| 10 | DELETE | `/eor/workers/{id}` | `useDeleteEorWorkerMutation` | `lib/eor/use-eor` | ✅ |
+| 11 | POST | `/eor/workers/{id}/end` | `useEndEorWorkerMutation` | — | ⚪ |
+| 12 | GET | `/eor/summary` | `useGetEorSummaryQuery` | — | ⚪ |
+| 13 | GET | `/eor/compliance` | `useGetEorComplianceQuery` | — | ⚪ |
+| 14 | PUT | `/eor/workers/{id}/compliance/{key}` | `useUpdateEorWorkerComplianceMutation` | — | ⚪ |
+| 15 | GET | `/eor/invoices` | `useGetEorInvoicesQuery` | `lib/eor/use-eor` | ✅ |
+| 16 | POST | `/eor/invoices` | `useCreateEorInvoiceMutation` | — | ⚪ |
+| 17 | PUT | `/eor/invoices/{id}` | `useUpdateEorInvoiceMutation` | — | ⚪ |
+| 18 | DELETE | `/eor/invoices/{id}` | `useDeleteEorInvoiceMutation` | — | ⚪ |
+| 19 | POST | `/eor/invoices/{id}/settle` | `useSettleEorInvoiceMutation` | — | ⚪ |
+
+### 2.71 Learning — `learning.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/learning/courses` | `useGetLearningCoursesQuery` | `store/services/collections (full read)` | 🔁 |
+| 2 | POST | `/learning/courses` | `useCreateLearningCourseMutation` | `lib/learning/use-learning-live` | ✅ |
+| 3 | GET | `/learning/courses/{id}` | `useGetLearningCourseQuery` | — | ⚪ |
+| 4 | PUT | `/learning/courses/{id}` | `useUpdateLearningCourseMutation` | `lib/learning/use-learning-live` | ✅ |
+| 5 | DELETE | `/learning/courses/{id}` | `useDeleteLearningCourseMutation` | `lib/learning/use-learning-live` | ✅ |
+| 6 | GET | `/learning/summary` | `useGetLearningSummaryQuery` | — | ⚪ |
+| 7 | GET | `/learning/compliance` | `useGetLearningComplianceQuery` | — | ⚪ |
+| 8 | GET | `/learning/courses/{id}/quiz` | `useGetLearningCourseQuizQuery` | `lib/learning/use-learning-live` | ✅ |
+| 9 | PUT | `/learning/courses/{id}/quiz` | `useSaveLearningCourseQuizMutation` | `lib/learning/use-learning-live` | ✅ |
+| 10 | GET | `/learning/enrollments` | `useGetLearningEnrollmentsQuery` | `store/services/collections (full read)` | 🔁 |
+| 11 | POST | `/learning/courses/{id}/enrollments` | `useEnrollInLearningCourseMutation` | `lib/learning/use-learning-live` | ✅ |
+| 12 | PATCH | `/learning/enrollments/{enrollmentId}/progress` | `useUpdateLearningEnrollmentProgressMutation` | `lib/learning/use-learning-live` | ✅ |
+| 13 | PATCH | `/learning/enrollments/{enrollmentId}/status` | `useUpdateLearningEnrollmentStatusMutation` | — | ⚪ |
+| 14 | DELETE | `/learning/enrollments/{enrollmentId}` | `useDeleteLearningEnrollmentMutation` | `lib/learning/use-learning-live` | ✅ |
+| 15 | GET | `/learning/mine` | `useGetMyLearningQuery` | `lib/learning/use-learning-live` | ✅ |
+| 16 | GET | `/learning/mine/{enrollmentId}/quiz` | `useGetMyLearningQuizQuery` | `lib/learning/use-learning-live` | ✅ |
+| 17 | POST | `/learning/mine/{enrollmentId}/attempts` | `useSubmitMyLearningQuizAttemptMutation` | `lib/learning/use-learning-live` | ✅ |
+
+### 2.72 Certifications — `certifications.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/certifications` | `useGetCertificationsQuery` | `components/hr/employees/employee-detail/hooks` | ✅ |
+| 2 | POST | `/certifications` | `useCreateCertificationMutation` | `lib/learning/use-learning-live`, `lib/stores/collection-api-listener` | ✅ |
+| 3 | GET | `/certifications/summary` | `useGetCertificationSummaryQuery` | — | ⚪ |
+| 4 | GET | `/certifications/mine` | `useGetMyCertificationsQuery` | `lib/learning/use-learning-live` | ✅ |
+| 5 | PUT | `/certifications/{id}` | `useUpdateCertificationMutation` | `lib/learning/use-learning-live`, `lib/stores/collection-api-listener` | ✅ |
+| 6 | DELETE | `/certifications/{id}` | `useDeleteCertificationMutation` | `lib/learning/use-learning-live`, `lib/stores/collection-api-listener` | ✅ |
+
+### 2.73 Employee notes — `employee-notes.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/employees/{employeeId}/notes` | `useGetEmployeeNotesQuery` | `components/hr/employees/employee-detail/hooks` | ✅ |
+| 2 | POST | `/employees/{employeeId}/notes` | `useAddEmployeeNoteMutation` | `lib/stores/collection-api-listener` | ✅ |
+| 3 | PUT | `/employees/{employeeId}/notes/{noteId}` | `useUpdateEmployeeNoteMutation` | `lib/stores/collection-api-listener` | ✅ |
+| 4 | DELETE | `/employees/{employeeId}/notes/{noteId}` | `useDeleteEmployeeNoteMutation` | `lib/stores/collection-api-listener` | ✅ |
+| 5 | POST | `/employees/{employeeId}/notes/{noteId}/pin` | `usePinEmployeeNoteMutation` | — | ⚪ |
+
+### 2.74 Employee Relations cases — `er-cases.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/er-cases` | `useGetErCasesQuery` | `store/services/collections (full read)` | 🔁 |
+| 2 | POST | `/er-cases` | `useCreateErCaseMutation` | `lib/stores/er-cases-api-listener` | ✅ |
+| 3 | GET | `/er-cases/summary` | `useGetErCaseSummaryQuery` | — | ⚪ |
+| 4 | GET | `/er-cases/mine` | `useGetMyErCasesQuery` | `components/hr/grievance/hooks` | ✅ |
+| 5 | GET | `/er-cases/{id}` | `useGetErCaseQuery` | `components/hr/grievance/hooks` | ✅ |
+| 6 | PUT | `/er-cases/{id}` | `useUpdateErCaseMutation` | `lib/stores/er-cases-api-listener` | ✅ |
+| 7 | DELETE | `/er-cases/{id}` | `useDeleteErCaseMutation` | `lib/stores/er-cases-api-listener` | ✅ |
+| 8 | GET | `/er-cases/{id}/activity` | `useGetErCaseActivityQuery` | `components/hr/grievance/hooks` | ✅ |
+| 9 | PATCH | `/er-cases/{id}/stage` | `useMoveErCaseStageMutation` | `lib/stores/er-cases-api-listener` | ✅ |
+| 10 | POST | `/er-cases/{id}/notes` | `useAddErCaseNoteMutation` | `lib/stores/er-cases-api-listener` | ✅ |
+| 11 | DELETE | `/er-cases/{id}/notes/{noteId}` | `useDeleteErCaseNoteMutation` | — | ⚪ |
+| 12 | POST | `/er-cases/{id}/meetings` | `useAddErCaseMeetingMutation` | `lib/stores/er-cases-api-listener` | ✅ |
+| 13 | DELETE | `/er-cases/{id}/meetings/{meetingId}` | `useDeleteErCaseMeetingMutation` | — | ⚪ |
+| 14 | POST | `/er-cases/{id}/evidence` | `useAddErCaseEvidenceMutation` | — | ⚪ |
+| 15 | GET | `/er-cases/{id}/evidence/{evidenceId}/download` | `useDownloadErCaseEvidenceMutation` | — | ⚪ |
+| 16 | DELETE | `/er-cases/{id}/evidence/{evidenceId}` | `useDeleteErCaseEvidenceMutation` | — | ⚪ |
+| 17 | GET | `/employees/{employeeId}/grievances` | `useGetEmployeeGrievancesQuery` | — | ⚪ |
+| 18 | GET | `/employees/{employeeId}/disciplinaries` | `useGetEmployeeDisciplinariesQuery` | — | ⚪ |
+
+### 2.75 Occupational health — `occupational-health.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/occupational-health` | `useGetOhReferralsQuery` | `store/services/collections (full read)` | 🔁 |
+| 2 | POST | `/occupational-health` | `useCreateOhReferralMutation` | `lib/stores/oh-api-listener` | ✅ |
+| 3 | GET | `/occupational-health/{id}` | `useGetOhReferralQuery` | — | ⚪ |
+| 4 | PUT | `/occupational-health/{id}` | `useUpdateOhReferralMutation` | `lib/stores/oh-api-listener` | ✅ |
+| 5 | DELETE | `/occupational-health/{id}` | `useDeleteOhReferralMutation` | — | ⚪ |
+| 6 | GET | `/occupational-health/summary` | `useGetOhSummaryQuery` | — | ⚪ |
+| 7 | GET | `/occupational-health/candidates` | `useGetOhCandidatesQuery` | — | ⚪ |
+| 8 | GET | `/occupational-health/{id}/history` | `useGetOhReferralHistoryQuery` | — | ⚪ |
+| 9 | POST | `/occupational-health/{id}/stage` | `useMoveOhReferralStageMutation` | `lib/stores/oh-api-listener` | ✅ |
+| 10 | POST | `/occupational-health/{id}/adjustments` | `useAddOhAdjustmentMutation` | `lib/stores/oh-api-listener` | ✅ |
+| 11 | PUT | `/occupational-health/{id}/adjustments/{adjustmentId}` | `useUpdateOhAdjustmentMutation` | `lib/stores/oh-api-listener` | ✅ |
+| 12 | DELETE | `/occupational-health/{id}/adjustments/{adjustmentId}` | `useDeleteOhAdjustmentMutation` | — | ⚪ |
+| 13 | POST | `/occupational-health/{id}/adjustments/{adjustmentId}/stage` | `useMoveOhAdjustmentStageMutation` | `lib/stores/oh-api-listener` | ✅ |
+
+### 2.76 Shifts — `shifts.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/shifts/roster` | `useGetShiftRosterQuery` | `lib/shifts/use-shifts-live` | ✅ |
+| 2 | GET | `/shifts/mine` | `useGetMyShiftsQuery` | `lib/shifts/use-shifts-live` | ✅ |
+| 3 | POST | `/shifts/assignments` | `useCreateShiftAssignmentMutation` | `lib/stores/shifts-api-listener` | ✅ |
+| 4 | POST | `/shifts/assignments/{id}/cancel` | `useCancelShiftAssignmentMutation` | `lib/stores/shifts-api-listener` | ✅ |
+| 5 | DELETE | `/shifts/assignments/{id}` | `useDeleteShiftAssignmentMutation` | `lib/stores/shifts-api-listener` | ✅ |
+
+### 2.77 Projects — `projects.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/projects/{projectId}/documents` | `useGetProjectDocumentsQuery` | `store/services/*-workspace (full read)` | 🔁 |
+| 2 | POST | `/projects/{projectId}/documents` | `useAddProjectDocumentMutation` | — | ⚪ |
+| 3 | GET | `/projects/{projectId}/documents/{documentId}/download` | `useDownloadProjectDocumentMutation` | — | ⚪ |
+| 4 | DELETE | `/projects/{projectId}/documents/{documentId}` | `useDeleteProjectDocumentMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 5 | GET | `/projects/{projectId}/go-live` | `useGetProjectGoLiveQuery` | `store/services/*-workspace (full read)` | 🔁 |
+| 6 | PUT | `/projects/{projectId}/go-live/{itemKey}` | `useUpdateProjectGoLiveItemMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 7 | GET | `/projects/{projectId}/risks` | `useGetProjectRisksQuery` | `store/services/*-workspace (full read)` | 🔁 |
+| 8 | POST | `/projects/{projectId}/risks` | `useAddProjectRiskMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 9 | GET | `/projects/{projectId}/risks/tally` | `useGetProjectRiskTallyQuery` | — | ⚪ |
+| 10 | PUT | `/projects/{projectId}/risks/{riskId}` | `useUpdateProjectRiskMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 11 | DELETE | `/projects/{projectId}/risks/{riskId}` | `useDeleteProjectRiskMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 12 | GET | `/projects` | `useGetProjectsQuery` | `store/services/projects-workspace` | ✅ |
+| 13 | POST | `/projects` | `useCreateProjectMutation` | `lib/stores/projects-api-listener`, `store/services/projects-workspace` | ✅ |
+| 14 | GET | `/projects/summary` | `useGetProjectSummaryQuery` | — | ⚪ |
+| 15 | GET | `/projects/{id}` | `useGetProjectQuery` | `store/services/projects-workspace` | ✅ |
+| 16 | PUT | `/projects/{id}` | `useUpdateProjectMutation` | `lib/stores/projects-api-listener`, `store/services/projects-workspace` | ✅ |
+| 17 | DELETE | `/projects/{id}` | `useDeleteProjectMutation` | `lib/stores/projects-api-listener`, `store/services/projects-workspace` | ✅ |
+| 18 | POST | `/projects/{id}/tasks` | `useAddProjectTaskMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 19 | PUT | `/projects/{id}/tasks/{taskId}` | `useUpdateProjectTaskMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 20 | DELETE | `/projects/{id}/tasks/{taskId}` | `useDeleteProjectTaskMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 21 | PATCH | `/projects/{id}/tasks/{taskId}/status` | `useSetProjectTaskStatusMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 22 | PATCH | `/projects/{id}/tasks/{taskId}/progress` | `useSetProjectTaskProgressMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 23 | POST | `/projects/{id}/milestones` | `useAddProjectMilestoneMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 24 | PUT | `/projects/{id}/milestones/{milestoneId}` | `useUpdateProjectMilestoneMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 25 | DELETE | `/projects/{id}/milestones/{milestoneId}` | `useDeleteProjectMilestoneMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 26 | POST | `/projects/{id}/milestones/{milestoneId}/toggle` | `useToggleProjectMilestoneMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 27 | PUT | `/projects/{id}/milestones/{milestoneId}/approval` | `useSetProjectMilestoneApprovalMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 28 | PUT | `/projects/{id}/allocations` | `useSetProjectAllocationMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 29 | DELETE | `/projects/{id}/allocations/{employeeId}` | `useRemoveProjectAllocationMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 30 | GET | `/projects/{projectId}/time` | `useGetProjectTimeEntriesQuery` | `store/services/*-workspace (full read)` | 🔁 |
+| 31 | POST | `/projects/{projectId}/time` | `useLogProjectTimeMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 32 | GET | `/projects/{projectId}/time/tally` | `useGetProjectTimeTallyQuery` | — | ⚪ |
+| 33 | PATCH | `/projects/{projectId}/time/{entryId}/status` | `useSetProjectTimeEntryStatusMutation` | `lib/stores/projects-api-listener` | ✅ |
+| 34 | DELETE | `/projects/{projectId}/time/{entryId}` | `useDeleteProjectTimeEntryMutation` | `lib/stores/projects-api-listener` | ✅ |
+
+### 2.78 Workflows — `workflows.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/workflows` | `useGetWorkflowsQuery` | `store/services/workflows-workspace` | ✅ |
+| 2 | POST | `/workflows` | `useCreateWorkflowMutation` | `lib/stores/workflows-api-listener`, `store/services/workflows-workspace` | ✅ |
+| 3 | GET | `/workflows/summary` | `useGetWorkflowSummaryQuery` | — | ⚪ |
+| 4 | GET | `/workflows/{id}` | `useGetWorkflowQuery` | `store/services/workflows-workspace` | ✅ |
+| 5 | PUT | `/workflows/{id}` | `useUpdateWorkflowMutation` | `lib/stores/workflows-api-listener`, `store/services/workflows-workspace` | ✅ |
+| 6 | DELETE | `/workflows/{id}` | `useDeleteWorkflowMutation` | `lib/stores/workflows-api-listener`, `store/services/workflows-workspace` | ✅ |
+| 7 | PATCH | `/workflows/{id}/status` | `useSetWorkflowStatusMutation` | `lib/stores/workflows-api-listener` | ✅ |
+
+### 2.79 Workflow runs — `workflow-runs.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/workflow-runs` | `useGetWorkflowRunsQuery` | `store/services/workflows-workspace` | ✅ |
+| 2 | POST | `/workflow-runs` | `useStartWorkflowRunMutation` | `lib/stores/workflows-api-listener`, `store/services/workflows-workspace` | ✅ |
+| 3 | GET | `/workflow-runs/my-work` | `useGetMyWorkflowWorkQuery` | — | ⚪ |
+| 4 | GET | `/workflow-runs/{id}` | `useGetWorkflowRunQuery` | `store/services/workflows-workspace` | ✅ |
+| 5 | POST | `/workflow-runs/{id}/tasks/{taskId}/start` | `useStartWorkflowRunTaskMutation` | `lib/stores/workflows-api-listener` | ✅ |
+| 6 | POST | `/workflow-runs/{id}/tasks/{taskId}/submit` | `useSubmitWorkflowRunTaskMutation` | `lib/stores/workflows-api-listener` | ✅ |
+| 7 | POST | `/workflow-runs/{id}/tasks/{taskId}/approve` | `useApproveWorkflowRunTaskMutation` | `lib/stores/workflows-api-listener` | ✅ |
+| 8 | POST | `/workflow-runs/{id}/tasks/{taskId}/reject` | `useRejectWorkflowRunTaskMutation` | `lib/stores/workflows-api-listener` | ✅ |
+| 9 | POST | `/workflow-runs/{id}/tasks/{taskId}/skip` | `useSkipWorkflowRunTaskMutation` | `lib/stores/workflows-api-listener` | ✅ |
+| 10 | POST | `/workflow-runs/{id}/tasks/{taskId}/reassign` | `useReassignWorkflowRunTaskMutation` | `lib/stores/workflows-api-listener` | ✅ |
+| 11 | POST | `/workflow-runs/{id}/cancel` | `useCancelWorkflowRunMutation` | `lib/stores/workflows-api-listener` | ✅ |
+
+### 2.80 My reminders — `my-reminders.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/my-reminders` | `useGetMyRemindersQuery` | `components/employee/dashboard/live` | ✅ |
+
+### 2.81 Platform verifications — `platform-verifications.ts`
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/platform/verifications` | `useGetPlatformVerificationsQuery` | — | ⚪ |
+| 2 | POST | `/platform/tenants/{tenantId}/verification/{kind}/review` | `useReviewTenantVerificationMutation` | — | ⚪ |
+
+---
+
 ## 3. Defined but not called yet (⚪)
 
 These hooks exist and point at real endpoints, but nothing calls them yet. They're ready to use when needed.
 
-### 3.1 Waiting on the self-service portal (36)
+### 3.1 Self-service portal — what is still idle (9 of the original 36, plus submissions)
 
-Most of the employee portal is still shown as "not integrated" (only the pages in `SELF_SERVICE_LIVE_LINKS` are live), so these `/mine` endpoints wait for it:
+Since 2026-11-25 the employee portal is live (section 1). Still not called:
 
-- **Attendance (13):** `/attendance/mine` (+ `/days`, `/summary`, `/clock-in`, `/break/start`, `/break/end`, `/clock-out`, `/location`), `/attendance/corrections/mine` (GET, POST), `/attendance/timesheets/mine` (+ `/submit`), `/attendance/schedules/mine`
-- **Performance (10):** `/performance/reviews/mine` (+ self-assessment PUT/POST), `/performance/goals/mine` (GET, POST), `/performance/feedback/mine`, `/performance/feedback/requests/mine`, `/requests/awaiting-me`, `POST /requests`, `/requests/{id}/decline`
-- **Announcements (3):** `/announcements/feed`, `/feed/{id}/view`, `/feed/{id}/acknowledge`
-- **Contracts (2):** `/contracts/mine`, `/contracts/mine/{id}/sign`
-- **Documents (2):** `/documents/mine`, `/documents/mine/{id}/acknowledge`
-- **Expense claims (6):** `/expenses/claims/mine` (GET, POST, PUT, DELETE, `/submit`, `/withdraw`)
-- **Notifications (0):** the panel is shared, so the bell is already live in both shells
+- **Attendance (5):** `/attendance/mine/days`, `/attendance/mine/summary`, `GET /attendance/corrections/mine`, `GET /attendance/timesheets/mine`, `/attendance/schedules/mine` — the page's history, timesheet list and insights still read the attendance store; only today's punch is read from the API.
+- **Performance (4):** `/performance/feedback/mine`, `/feedback/requests/mine`, `/feedback/requests/awaiting-me`, `/feedback/requests/{id}/decline` — received feedback has no mapping onto the page yet.
+- **Submissions:** `/employee/submissions` stays blurred. The API has no "my submissions" list (only `/approvals/my-queue` and per-subject approvals), and the page's intake creates approval requests of any type, which only the demo approvals engine supports. Each module's own requests (leave, expenses, loans, sickness, ER cases) are live on their pages.
 
 ### 3.2 No matching element in the HR screens (44)
 
@@ -781,6 +1112,46 @@ Every endpoint answers 401 without a token, so the routes exist, but none of the
 - **Workforce requests:** mirrored into the slice so the hire tracker and requisition builder see them. "Create requisition" calls `/convert` instead of opening the (still demo) requisition builder. A cancelled request shows as Rejected.
 - **Employee checklist:** deleting an item that hires have already completed retires it instead (the server's `canDelete`).
 - **Positions:** the server works out a position's status from its holders, so the form's filled/vacant choice is not sent. Headcount stays as the server holds it (the form has no field for it).
+
+---
+
+### 3.6 2026-11-25 endpoints with no control on the approved screens (58)
+
+Hooks exist; the frozen UI has no control (summary tallies the screens work out themselves, single-record reads the lists already cover, and actions with no button):
+
+- **certifications (1):** `GET /certifications/summary`
+- **community (4):** `GET /community/summary`, `GET /community/{id}`, `PUT /community/{id}`, `DELETE /community/{id}/comments/{commentId}`
+- **company (1):** `POST /company/verification/{kind}/withdraw`
+- **employee-notes (1):** `POST /employees/{employeeId}/notes/{noteId}/pin`
+- **eor (10):** `GET /eor/providers/{id}`, `GET /eor/workers/{id}`, `POST /eor/workers/{id}/end`, `GET /eor/summary`, `GET /eor/compliance`, `PUT /eor/workers/{id}/compliance/{key}`, `POST /eor/invoices`, `PUT /eor/invoices/{id}`, `DELETE /eor/invoices/{id}`, `POST /eor/invoices/{id}/settle`
+- **er-cases (8):** `GET /er-cases/summary`, `DELETE /er-cases/{id}/notes/{noteId}`, `DELETE /er-cases/{id}/meetings/{meetingId}`, `POST /er-cases/{id}/evidence`, `GET /er-cases/{id}/evidence/{evidenceId}/download`, `DELETE /er-cases/{id}/evidence/{evidenceId}`, `GET /employees/{employeeId}/grievances`, `GET /employees/{employeeId}/disciplinaries`
+- **helpdesk (2):** `GET /helpdesk/summary`, `GET /helpdesk/{id}`
+- **knowledge (2):** `GET /knowledge/summary`, `GET /knowledge/{id}`
+- **learning (4):** `GET /learning/courses/{id}`, `GET /learning/summary`, `GET /learning/compliance`, `PATCH /learning/enrollments/{enrollmentId}/status`
+- **occupational-health (6):** `GET /occupational-health/{id}`, `DELETE /occupational-health/{id}`, `GET /occupational-health/summary`, `GET /occupational-health/candidates`, `GET /occupational-health/{id}/history`, `DELETE /occupational-health/{id}/adjustments/{adjustmentId}`
+- **pick-lists (1):** `GET /settings/pick-lists/{key}`
+- **platform-verifications (2):** `GET /platform/verifications`, `POST /platform/tenants/{tenantId}/verification/{kind}/review`
+- **projects (5):** `POST /projects/{projectId}/documents`, `GET /projects/{projectId}/documents/{documentId}/download`, `GET /projects/{projectId}/risks/tally`, `GET /projects/summary`, `GET /projects/{projectId}/time/tally`
+- **suggestions (4):** `GET /suggestions/summary`, `GET /suggestions/mine`, `GET /suggestions/{id}`, `DELETE /suggestions/{id}/comments/{commentId}`
+- **surveys (5):** `GET /surveys/summary`, `GET /surveys/mine`, `GET /surveys/{id}`, `GET /surveys/{id}/my-response`, `POST /surveys/{id}/responses`
+- **workflow-runs (1):** `GET /workflow-runs/my-work`
+- **workflows (1):** `GET /workflows/summary`
+
+Notably: there is no survey-taking screen in the portal (`/surveys/mine`, `my-response`, `responses`), no mounted platform console (`/platform/verifications`), no evidence upload on ER cases (the form collects names, not files), no project-document upload (same), no EOR invoice form, and no note-pin control.
+
+### 3.7 2026-11-25 modules — not yet checked with a real login
+
+- **How writes work:** the slice-backed screens (ER cases, expenses, shifts, projects, workflows/runs, occupational health, attendance clock, profile notes/certificates) change their store first; a listener (`src/lib/stores/*-api-listener.ts`, `attendance-mine-listener.ts`, `collection-api-listener.ts`) sends the change and the data is re-read. A refused call shows the server's message and the server copy comes back. Hook-direct screens (company, settings, help desk, knowledge, community, suggestions, surveys, EOR, learning) use `useLiveSender` from `src/lib/live/use-is-live.ts`.
+- **Local caches:** once signed in, ER cases, expenses, shifts, projects, workflows and runs are no longer written to localStorage / the local `.data` snapshot.
+- **Workflow runs:** signed in, the demo run engine (`workflow-runs-listener.ts`) stands down — the server starts runs from its own triggers. Role-based run assignees come back as names only. The "Run" dialog still only sends notifications (it has no subject to start a run against). Demo approvals are left out of the My Work lists.
+- **Names → ids:** where a form holds a person's name (help desk assignee, ER investigator/owner/panel, OH case owner, suggestion/case submitter) the id is looked up in the live directory by full name; an unknown name is sent as null.
+- **EOR:** an engagement needs an existing employee (matched by email, then name). `countryOfEngagement` is sent as the country name; the spec does not say whether it wants a name or a code.
+- **Shift templates** are the attendance work schedules; the API has no colour, so one is picked by position. An employee who cannot list schedules gets templates built from their own roster.
+- **Surveys:** the results modal is fed by unrolling `/surveys/{id}/results` tallies back into anonymous responses.
+- **Community / suggestions:** like, vote and upvote lists are rebuilt from the API's counts and "mine" flags; the like/upvote endpoints are assumed to toggle.
+- **Holiday year:** the API derives every cycle from one start day, so only editing a cycle is offered (add/activate/remove answer "not integrated"). Company holidays have no update endpoint: an edit deletes and re-creates. Digest frequencies `hourly`/`never` are sent as `realtime`/`weekly`.
+- **Learning:** quizzes are asked and graded by the server; the attempt limit is the server's.
+- **Leave:** the self-service request list and balance cards read `/mine`; cancelling goes through the leave listener.
 
 ---
 

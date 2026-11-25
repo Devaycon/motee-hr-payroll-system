@@ -31,6 +31,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { cn } from "@/src/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { useMyExpenseClaimsLive } from "@/src/lib/expenses/use-my-claims";
 import { deleteClaim, withdrawClaim } from "@/src/lib/stores/expenses-slice";
 import { useCurrency } from "@/src/lib/hooks/use-currency";
 import { formatDate } from "@/src/lib/utils/format-date";
@@ -67,6 +68,8 @@ export function ExpenseClaimDetailPage({ claimId }: ExpenseClaimDetailPageProps)
   const dispatch = useAppDispatch();
   const { format, code } = useCurrency();
   const stages = useExpenseStages();
+  // Signed in: a deep link still finds the claim (read from the API).
+  useMyExpenseClaimsLive();
   const ready = useAppSelector((s) => s.expenses.status === "ready");
   const claim = useAppSelector((s) =>
     s.expenses.claims.find((c) => c.id === claimId),

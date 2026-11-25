@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useSuggestions } from "./hooks";
+import { useSuggestionActions } from "@/src/lib/engagement/use-engagement";
+import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
 import { Lightbulb, Plus, ChevronUp, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
@@ -46,6 +48,8 @@ import type {
 
 export function SuggestionsPage() {
   const { data, loading } = useSuggestions();
+  // Signed in, each change below is also sent to the API.
+  const actions = useSuggestionActions();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   useEffect(() => {
     if (data) setSuggestions(data);
@@ -65,6 +69,7 @@ export function SuggestionsPage() {
   const [detailOpen, setDetailOpen] = useState(false);
 
   function handleCreate(data: NewSuggestion) {
+    void actions.create(data);
     const now = new Date().toISOString().split("T")[0];
     const id = `SUG-${String(suggestions.length + 1).padStart(3, "0")}`;
     const newSuggestion: Suggestion = {
@@ -91,6 +96,7 @@ export function SuggestionsPage() {
   }
 
   function handleUpvote(id: string) {
+    void actions.upvote(id);
     setSuggestions((prev) =>
       prev.map((s) => {
         if (s.id !== id) return s;
@@ -107,6 +113,7 @@ export function SuggestionsPage() {
   }
 
   function handleUpdateStatus(id: string, status: SuggestionStatus) {
+    void actions.status(id, status);
     setSuggestions((prev) =>
       prev.map((s) => {
         if (s.id !== id) return s;
@@ -128,6 +135,7 @@ export function SuggestionsPage() {
   }
 
   function handleUpdatePriority(id: string, priority: SuggestionPriority) {
+    void actions.priority(id, priority);
     setSuggestions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, priority } : s)),
     );
@@ -137,6 +145,11 @@ export function SuggestionsPage() {
   }
 
   function handleSaveAdminResponse(id: string, response: string) {
+    const current = suggestions.find((s) => s.id === id);
+    void actions.response(id, {
+      adminResponse: response,
+      implementationNotes: current?.implementationNotes,
+    });
     setSuggestions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, adminResponse: response } : s)),
     );
@@ -146,6 +159,11 @@ export function SuggestionsPage() {
   }
 
   function handleSaveImplementationNotes(id: string, notes: string) {
+    const current = suggestions.find((s) => s.id === id);
+    void actions.response(id, {
+      adminResponse: current?.adminResponse,
+      implementationNotes: notes,
+    });
     setSuggestions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, implementationNotes: notes } : s)),
     );
@@ -155,6 +173,7 @@ export function SuggestionsPage() {
   }
 
   function handleToggleFeatured(id: string) {
+    void actions.featured(id, !suggestions.find((s) => s.id === id)?.isFeatured);
     setSuggestions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, isFeatured: !s.isFeatured } : s)),
     );
@@ -170,6 +189,7 @@ export function SuggestionsPage() {
   }
 
   function handleAddComment(id: string, message: string) {
+    void actions.comment(id, message);
     const now = new Date().toISOString().split("T")[0];
     const comment = {
       id: `c-${Date.now()}`,
@@ -193,6 +213,11 @@ export function SuggestionsPage() {
   }
 
   function handleDelete(id: string) {
+    // The API keeps every suggestion; there is no delete endpoint.
+    if (actions.live) {
+      notifyNotIntegrated("Deleting a suggestion");
+      return;
+    }
     setSuggestions((prev) => prev.filter((s) => s.id !== id));
     if (detailOpen && detailSuggestion?.id === id) {
       setDetailOpen(false);

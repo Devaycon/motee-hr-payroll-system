@@ -119,9 +119,8 @@ export function PeopleTabLayout() {
         </div>
       </Cell>
       <Cell span={6}>
-        <DemoOnly>
-          <EorMapCard />
-        </DemoOnly>
+        {/* Live: EOR engagements from the API. */}
+        <EorMapCard />
       </Cell>
 
       <Cell span={6}>
@@ -136,14 +135,11 @@ export function PeopleTabLayout() {
         <DataQualityTile />
       </Cell>
       <Cell span={3}>
-        <DemoOnly>
-          <CertificationComplianceTile />
-        </DemoOnly>
+        {/* Live: certificates and courses from the learning API. */}
+        <CertificationComplianceTile />
       </Cell>
       <Cell span={3}>
-        <DemoOnly>
-          <MandatoryTrainingTile />
-        </DemoOnly>
+        <MandatoryTrainingTile />
       </Cell>
       <Cell span={3}>
         {/* Live: reads the loan register from the API. */}
@@ -190,10 +186,8 @@ export function SicknessTabLayout() {
           <AverageSpellTile />
         </Cell>
         <Cell span={3}>
-          {/* Occupational Health is not on the API yet. */}
-          <DemoOnly>
-            <OhCasesTile />
-          </DemoOnly>
+          {/* Live: OH cases from the occupational health API. */}
+          <OhCasesTile />
         </Cell>
         <Cell span={12}>
           <SicknessHeroRing />
@@ -205,9 +199,7 @@ export function SicknessTabLayout() {
           <SicknessByReasonTile />
         </Cell>
         <Cell span={4}>
-          <DemoOnly>
-            <OhFitnessTile />
-          </DemoOnly>
+          <OhFitnessTile />
         </Cell>
         <Cell span={3}>
           <AbsenceFrequencyTile />

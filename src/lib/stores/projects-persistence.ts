@@ -51,6 +51,8 @@ export function initProjectsPersistence(): void {
   let lastProjects: Project[] | null = null;
   let lastTimesheets: TimesheetEntry[] | null = null;
   store.subscribe(() => {
+    // Signed in, projects are the server's: never cached on this machine.
+    if (store.getState().session?.is_loggedIn) return;
     const { projects, timesheets } = store.getState().projects;
     if (projects === lastProjects && timesheets === lastTimesheets) return;
     lastProjects = projects;

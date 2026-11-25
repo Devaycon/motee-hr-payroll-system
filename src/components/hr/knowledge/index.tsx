@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useKnowledgeArticles } from "./hooks";
+import { useKnowledgeActions, useKnowledgeArticles } from "./hooks";
 import { BookOpen, Plus, TrendingUp } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
@@ -32,6 +32,8 @@ import type { KnowledgeArticle, NewArticle, ArticleStatus } from "./types";
 
 export function KnowledgePage() {
   const { data, loading } = useKnowledgeArticles();
+  // Signed in, each change below is also sent to the API.
+  const actions = useKnowledgeActions();
   const [articles, setArticles] = useState<KnowledgeArticle[]>([]);
   useEffect(() => {
     if (data) setArticles(data);
@@ -42,6 +44,7 @@ export function KnowledgePage() {
   const [viewOpen, setViewOpen] = useState(false);
 
   function handleCreate(data: NewArticle) {
+    void actions.create(data);
     const now = "2026-04-04";
     const id = `KB-${String(articles.length + 1).padStart(3, "0")}`;
     const newArticle: KnowledgeArticle = {
@@ -66,6 +69,7 @@ export function KnowledgePage() {
 
   function handleEdit(data: NewArticle) {
     if (!editArticle) return;
+    void actions.update(editArticle.id, data);
     setArticles((prev) =>
       prev.map((a) =>
         a.id === editArticle.id
@@ -97,10 +101,12 @@ export function KnowledgePage() {
   }
 
   function handleDelete(id: string) {
+    void actions.remove(id);
     setArticles((prev) => prev.filter((a) => a.id !== id));
   }
 
   function handleToggleStatus(id: string, newStatus: ArticleStatus) {
+    void actions.status(id, newStatus);
     setArticles((prev) =>
       prev.map((a) =>
         a.id === id
@@ -119,12 +125,15 @@ export function KnowledgePage() {
   }
 
   function handleToggleFeatured(id: string) {
+    const current = articles.find((a) => a.id === id);
+    void actions.featured(id, !current?.isFeatured);
     setArticles((prev) =>
       prev.map((a) => (a.id === id ? { ...a, isFeatured: !a.isFeatured } : a)),
     );
   }
 
   function handleVote(id: string, vote: "helpful" | "notHelpful") {
+    void actions.vote(id, vote);
     setArticles((prev) =>
       prev.map((a) =>
         a.id === id
@@ -145,6 +154,7 @@ export function KnowledgePage() {
   }
 
   function handleView(article: KnowledgeArticle) {
+    void actions.read(article.id);
     setArticles((prev) =>
       prev.map((a) => (a.id === article.id ? { ...a, views: a.views + 1 } : a)),
     );

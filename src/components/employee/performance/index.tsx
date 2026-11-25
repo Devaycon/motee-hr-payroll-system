@@ -14,6 +14,7 @@ import type {
 } from "@/src/lib/types/performance";
 import { EMPTY_SELF_ASSESSMENT } from "./components/data";
 import { useMyPerformance, usePerformanceActions } from "./hooks";
+import { useMyPerformanceActions } from "@/src/lib/performance/use-my-performance-live";
 import { daysUntil } from "./components/helpers";
 import {
   PerformanceStatCards,
@@ -32,6 +33,8 @@ import { ReviewDetailModal } from "./components/review-detail-modal";
 import { PeerFeedbackModal } from "./components/peer-feedback-modal";
 
 export function MyPerformancePage() {
+  // Signed in, each change below goes to the API instead of the demo store.
+  const liveActions = useMyPerformanceActions();
   const { employeeId, me, data, colleagues, loading } = useMyPerformance();
   const actions = usePerformanceActions();
   const goals = data?.goals ?? [];
@@ -98,10 +101,14 @@ export function MyPerformancePage() {
       toast.error("Enter a progress value between 0 and 100.");
       return;
     }
-    actions.updateGoalProgress(progressGoal, {
-      progress: value,
-      note: progressNote,
-    });
+    if (liveActions.live) {
+      void liveActions.updateGoalProgress(progressGoal, value, progressNote);
+    } else {
+      actions.updateGoalProgress(progressGoal, {
+        progress: value,
+        note: progressNote,
+      });
+    }
     toast.success(value >= 100 ? "Goal completed." : "Progress updated.");
     setProgressGoalId(null);
     setNewProgress("");
@@ -115,7 +122,7 @@ export function MyPerformancePage() {
     dueDate: string;
   }) {
     if (!employeeId) return;
-    actions.createGoal({
+    const goal = {
       employeeId,
       employeeName: me?.fullName ?? "",
       employeeInitials: me?.initials,
@@ -124,32 +131,43 @@ export function MyPerformancePage() {
       description: input.desc || undefined,
       category: input.category,
       dueDate: input.dueDate,
-    });
+    };
+    if (liveActions.live) void liveActions.createGoal(goal);
+    else actions.createGoal(goal);
     toast.success("Goal added.");
     setNewGoalOpen(false);
   }
 
   function handleSaveDraft() {
     if (!currentReview) return;
-    actions.saveSelfAssessment(currentReview.id, assessment, {
-      submit: false,
-      selfRating: selfRating ?? undefined,
-    });
+    if (liveActions.live) {
+      void liveActions.selfAssessment(currentReview.id, assessment, { submit: false, selfRating });
+    } else {
+      actions.saveSelfAssessment(currentReview.id, assessment, {
+        submit: false,
+        selfRating: selfRating ?? undefined,
+      });
+    }
     toast.success("Draft saved.");
   }
 
   function handleSubmitAssessment() {
     if (!currentReview || !selfRating) return;
-    actions.saveSelfAssessment(currentReview.id, assessment, {
-      submit: true,
-      selfRating,
-    });
+    if (liveActions.live) {
+      void liveActions.selfAssessment(currentReview.id, assessment, { submit: true, selfRating });
+    } else {
+      actions.saveSelfAssessment(currentReview.id, assessment, {
+        submit: true,
+        selfRating,
+      });
+    }
     toast.success(`Self-assessment submitted to ${currentReview.reviewer}.`);
   }
 
   function handleRequestFeedback(fromEmployeeId: string, context: string) {
     if (!employeeId) return;
-    actions.requestFeedback({ toEmployeeId: employeeId, fromEmployeeId, context });
+    if (liveActions.live) void liveActions.requestFeedback(fromEmployeeId, context);
+    else actions.requestFeedback({ toEmployeeId: employeeId, fromEmployeeId, context });
   }
 
   const header = (

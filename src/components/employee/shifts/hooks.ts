@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useShiftsLive } from "@/src/lib/shifts/use-shifts-live";
 import { useMyEmployeeRecord } from "@/src/components/employee/profile/hooks";
 import { isoDateOf } from "@/src/lib/types/attendance";
 import { resolveShiftForDate } from "@/src/lib/stores/shifts-selectors";
@@ -18,6 +19,8 @@ export function useMyShiftIdentity() {
 }
 
 export function useShiftTemplates() {
+  // Signed in: your shifts (`/shifts/mine`) are mirrored from the API.
+  useShiftsLive("mine");
   return useAppSelector((s) => s.shifts.templates);
 }
 

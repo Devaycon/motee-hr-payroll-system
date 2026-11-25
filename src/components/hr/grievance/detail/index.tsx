@@ -71,7 +71,7 @@ import {
   PRIORITY_CONFIG,
   PRIORITY_OPTIONS,
 } from "../data";
-import { useCasesData } from "../hooks";
+import { useCasesData, useErCaseDetailLive, useErCasesLive } from "../hooks";
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -86,11 +86,14 @@ export function CaseDetailPage({ caseId }: { caseId: string }) {
   // Seeds the shared slice the same way the list page does, so opening this
   // detail page directly (not via "View" from the table) still finds data.
   const { data, loading } = useCasesData();
+  // Signed in: the register and this case's full detail from the API.
+  const live = useErCasesLive("all");
+  useErCaseDetailLive(caseId);
   useEffect(() => {
-    if (data && !casesByCountry) {
+    if (!live && data && !casesByCountry) {
       dispatch(seedCountry({ country, cases: data }));
     }
-  }, [data, casesByCountry, country, dispatch]);
+  }, [live, data, casesByCountry, country, dispatch]);
 
   const caseData = (casesByCountry ?? []).find((c) => c.id === caseId) ?? null;
 

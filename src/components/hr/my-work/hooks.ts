@@ -1,5 +1,7 @@
 "use client";
 
+import { useWorkflowsLive } from "@/src/lib/workflows/use-workflows-live";
+
 import { useMemo } from "react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { useCurrentUser } from "@/src/lib/auth/demo-identity";
@@ -77,6 +79,9 @@ export interface MyWork {
  * appeared anywhere, because no run was ever saved. This merges the two.
  */
 export function useMyWork(): MyWork {
+  // Signed in: runs come from the API. Approvals are still the demo engine,
+  // so they are left out of the live work lists.
+  const live = useWorkflowsLive();
   const user = useCurrentUser();
   const employeeId = user?.employeeId;
   const roleId = user?.roleId;
@@ -85,7 +90,7 @@ export function useMyWork(): MyWork {
   const runs = useAppSelector((s) => s.workflowRuns.byCountry[country]);
 
   return useMemo(() => {
-    const approvals: WorkItem[] = requests
+    const approvals: WorkItem[] = (live ? [] : requests)
       .filter((r) => isCurrentApprover(r, employeeId, roleId))
       .map((request) => ({
         kind: "approval" as const,
@@ -122,5 +127,5 @@ export function useMyWork(): MyWork {
       others: others.sort(order),
       employeeId,
     };
-  }, [requests, runs, employeeId, roleId]);
+  }, [live, requests, runs, employeeId, roleId]);
 }

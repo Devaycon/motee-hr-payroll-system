@@ -58,6 +58,8 @@ export function initExpensesPersistence(): void {
 
   let last = store.getState().expenses;
   store.subscribe(() => {
+    // Signed in, the claims are the server's: never cached on this machine.
+    if (store.getState().session?.is_loggedIn) return;
     const s = store.getState().expenses;
     if (
       s.claims === last.claims &&

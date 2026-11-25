@@ -146,6 +146,18 @@ const attendanceSlice = createSlice({
     },
 
     /** Drops a session so a new day starts clean. */
+    /**
+     * Signed in: today's state as the server holds it (a punch made on
+     * another device). Not an action the attendance listener sends on.
+     */
+    adoptServerSession(state, action: PayloadAction<ClockSession>) {
+      const current = state.sessions[action.payload.employeeId];
+      state.sessions[action.payload.employeeId] = {
+        ...action.payload,
+        logId: current?.date === action.payload.date ? current.logId : undefined,
+      };
+    },
+
     clearSession(state, action: PayloadAction<string>) {
       delete state.sessions[action.payload];
     },
@@ -244,6 +256,7 @@ export const {
   endBreak,
   clockOut,
   setLocation,
+  adoptServerSession,
   clearSession,
   upsertTimesheet,
   submitTimesheet,

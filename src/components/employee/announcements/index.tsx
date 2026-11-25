@@ -7,6 +7,13 @@ import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { ANNOUNCEMENTS as DEMO_ANNOUNCEMENTS, MY_DEPT as DEMO_DEPT } from "./components/data";
 import type { Announcement, AnnouncementType } from "./components/data";
 import { useAnnouncements } from "@/src/components/hr/announcements/hooks";
+import { useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import { toAnnouncement } from "@/src/lib/announcements/api-mapping";
+import {
+  useAcknowledgeAnnouncementMutation,
+  useGetAnnouncementFeedQuery,
+  useMarkAnnouncementViewedMutation,
+} from "@/src/store/services/announcements";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { PendingAckBanner } from "./components/pending-ack-banner";
 import { SearchFilter } from "./components/search-filter";
@@ -15,12 +22,21 @@ import { AnnouncementDetailModal } from "./components/announcement-detail-modal"
 
 export function EmployeeAnnouncements() {
   const { data: localeAnnouncements } = useAnnouncements();
+  // Signed in: your feed (`/announcements/feed`) — published, in your
+  // audience — with views and acknowledgements sent to the API.
+  const live = useIsLive();
+  const feed = useGetAnnouncementFeedQuery(undefined, { skip: !live });
+  const [markViewed] = useMarkAnnouncementViewedMutation();
+  const [acknowledge] = useAcknowledgeAnnouncementMutation();
+  const send = useLiveSender(["Announcements"]);
   const userDept = useAppSelector((s) => s.auth.user?.departmentName);
   const MY_DEPT = userDept ?? DEMO_DEPT;
   const ANNOUNCEMENTS = (
-    localeAnnouncements && localeAnnouncements.length
-      ? localeAnnouncements
-      : DEMO_ANNOUNCEMENTS
+    live
+      ? (feed.data?.data ?? []).map(toAnnouncement)
+      : localeAnnouncements && localeAnnouncements.length
+        ? localeAnnouncements
+        : DEMO_ANNOUNCEMENTS
   ) as unknown as Announcement[];
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<AnnouncementType | "all">("all");
@@ -28,14 +44,24 @@ export function EmployeeAnnouncements() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState<Set<string>>(new Set());
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [seenFeed, setSeenFeed] = useState<typeof feed.data>(undefined);
+  if (feed.data && feed.data !== seenFeed) {
+    setSeenFeed(feed.data);
+    setAcknowledged(
+      new Set(feed.data.data.filter((a) => a.acknowledgedByMe).map((a) => a.id)),
+    );
+  }
 
   function openAnnouncement(a: Announcement) {
     setSelected(a);
     setDetailOpen(true);
     setReadIds((prev) => new Set([...prev, a.id]));
+    // A view is best-effort: no message if it does not register.
+    if (live) void markViewed(a.id);
   }
 
   function handleAcknowledge(id: string) {
+    if (live) void send(() => acknowledge(id).unwrap(), "Could not record your acknowledgement.");
     setAcknowledged((prev) => new Set([...prev, id]));
   }
 

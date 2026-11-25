@@ -366,6 +366,14 @@ const projectsSlice = createSlice({
     },
 
     // ── Go-Live Readiness (§14) ────────────────────────────────────────────
+    /** Signed in: every project and its records from the API replace the store. */
+    replaceFromApi(state, action: PayloadAction<ProjectsState>) {
+      state.projects = action.payload.projects;
+      state.timesheets = action.payload.timesheets;
+      state.risks = action.payload.risks;
+      state.documents = action.payload.documents;
+      state.goLiveChecklists = action.payload.goLiveChecklists;
+    },
     updateGoLiveItem(
       state,
       action: PayloadAction<{
@@ -409,6 +417,7 @@ export const {
   addProjectDocument,
   deleteProjectDocument,
   updateGoLiveItem,
+  replaceFromApi,
 } = projectsSlice.actions;
 export default projectsSlice.reducer;
 export type { ProjectsState };

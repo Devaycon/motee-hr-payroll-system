@@ -77,9 +77,22 @@ const collectionEditsSlice = createSlice({
       if (!state.removed[key]) state.removed[key] = [];
       if (!state.removed[key].includes(id)) state.removed[key].push(id);
     },
+
+    /**
+     * Forgets this session's local copy of a record once the API holds it,
+     * so the server's version shows instead (no tombstone is left).
+     */
+    settleRecord(
+      state,
+      action: PayloadAction<{ key: string; id: string }>,
+    ) {
+      const { key, id } = action.payload;
+      if (state.added[key]) state.added[key] = state.added[key].filter((r) => r.id !== id);
+      if (state.edits[key]) delete state.edits[key][id];
+    },
   },
 });
 
-export const { hydrate, addRecord, updateRecord, removeRecord } =
+export const { hydrate, addRecord, updateRecord, removeRecord, settleRecord } =
   collectionEditsSlice.actions;
 export default collectionEditsSlice.reducer;

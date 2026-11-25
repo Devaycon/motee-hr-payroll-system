@@ -192,6 +192,12 @@ const workflowRunsSlice = createSlice({
       task.assigneeName = action.payload.name;
     },
 
+    /** Signed in: the runs on the API replace the country's bucket. */
+    replaceFromApi(state, action: PayloadAction<{ country: string; runs: WorkflowRun[] }>) {
+      state.byCountry[action.payload.country] = action.payload.runs;
+      state.status = "ready";
+    },
+
     cancelRun(state, action: PayloadAction<{ country: string; runId: string }>) {
       const run = state.byCountry[action.payload.country]?.find(
         (r) => r.id === action.payload.runId,
@@ -211,6 +217,7 @@ export const {
   skipTask,
   reassignTask,
   cancelRun,
+  replaceFromApi,
 } = workflowRunsSlice.actions;
 
 export default workflowRunsSlice.reducer;

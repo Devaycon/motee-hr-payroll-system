@@ -54,8 +54,14 @@ const CATEGORY_STYLES: Record<string, string> = {
 
 let taskCounter = 100;
 
-export function MyTasks() {
-  const [assignedTasks] = useState(EMPLOYEE_TASKS);
+export function MyTasks({
+  items = EMPLOYEE_TASKS,
+}: {
+  /** Signed in: the live list (the demo list otherwise). */
+  items?: typeof EMPLOYEE_TASKS;
+} = {}) {
+  // The list follows its source (the API re-reads after every change).
+  const assignedTasks = items;
   const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
   const [detailTask, setDetailTask] = useState<EmployeeTask | null>(null);
 

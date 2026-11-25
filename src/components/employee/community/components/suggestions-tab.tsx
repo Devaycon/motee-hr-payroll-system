@@ -46,10 +46,24 @@ import {
   MY_DEPT,
   formatDate,
 } from "./data";
+import {
+  useLiveSuggestions,
+  useSuggestionActions,
+} from "@/src/lib/engagement/use-engagement";
 
 export function SuggestionsTab() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>(SUGGESTIONS);
   const [upvoted, setUpvoted] = useState<Set<string>>(new Set());
+  // Signed in: every suggestion from the API, with your own upvotes.
+  const live = useLiveSuggestions(MY_INITIALS);
+  const actions = useSuggestionActions();
+  const [seenLive, setSeenLive] = useState<typeof live.data>(null);
+  if (live.data && live.data !== seenLive) {
+    setSeenLive(live.data);
+    const rows = live.data as unknown as Suggestion[];
+    setSuggestions(rows);
+    setUpvoted(new Set(rows.filter((s) => s.upvotedBy.includes(MY_INITIALS)).map((s) => s.id)));
+  }
   const [catFilter, setCatFilter] = useState<SuggestionCategory | "all">("all");
   const [statusFilter, setStatusFilter] = useState<SuggestionStatus | "all">(
     "all",
@@ -67,6 +81,7 @@ export function SuggestionsTab() {
   const stats = computeSuggestionStats(suggestions);
 
   function toggleUpvote(id: string) {
+    void actions.upvote(id);
     setUpvoted((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -84,6 +99,12 @@ export function SuggestionsTab() {
 
   function submitSuggestion() {
     if (!newTitle.trim() || !newDesc.trim()) return;
+    void actions.create({
+      title: newTitle,
+      description: newDesc,
+      category: newCat,
+      isAnonymous: newAnon,
+    });
     const ns: Suggestion = {
       id: `SUG-NEW-${Date.now()}`,
       title: newTitle,

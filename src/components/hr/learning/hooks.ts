@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { useLiveLearning } from "@/src/lib/learning/use-learning-live";
 import type {
   Course,
   CourseCategory,
@@ -191,6 +193,23 @@ function buildLearning(bundle: LocaleBundle): LearningData {
   };
 }
 
+/**
+ * Courses, enrolments, certificates and the people in scope. Signed in the
+ * first three come from the API; the people are the (live) employee list.
+ */
 export function useLearning() {
-  return useLocaleSection<LearningData>(buildLearning);
+  const demo = useLocaleSection<LearningData>(buildLearning);
+  const live = useLiveLearning();
+  const data = useMemo<LearningData | null>(() => {
+    if (!live.live) return demo.data;
+    if (!demo.data || !live.courses || !live.enrollments) return null;
+    return {
+      ...demo.data,
+      courses: live.courses,
+      enrollments: live.enrollments,
+      certifications: live.certifications ?? [],
+    };
+  }, [live, demo.data]);
+  if (!live.live) return demo;
+  return { data, loading: live.loading || !data, error: null };
 }

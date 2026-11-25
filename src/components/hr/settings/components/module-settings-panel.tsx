@@ -15,9 +15,11 @@ import type { ModuleSetting } from "../types";
 
 interface Props {
   modules: ModuleSetting[];
+  /** Signed in: persists the whole list; the change only lands on success. */
+  onSave?: (next: ModuleSetting[]) => Promise<boolean>;
 }
 
-export function ModuleSettingsPanel({ modules: initial }: Props) {
+export function ModuleSettingsPanel({ modules: initial, onSave }: Props) {
   const [modules, setModules] = useState<ModuleSetting[]>(initial);
 
   function update(
@@ -25,18 +27,17 @@ export function ModuleSettingsPanel({ modules: initial }: Props) {
     key: "enabled" | "showInSidebar",
     value: boolean,
   ) {
-    setModules((prev) =>
-      prev.map((m) => {
-        if (m.id !== id) return m;
-        // Disabling a module also hides it from the sidebar.
-        if (key === "enabled" && !value) {
-          return { ...m, enabled: false, showInSidebar: false };
-        }
-        return { ...m, [key]: value };
-      }),
-    );
+    const next = modules.map((m) => {
+      if (m.id !== id) return m;
+      // Disabling a module also hides it from the sidebar.
+      if (key === "enabled" && !value) {
+        return { ...m, enabled: false, showInSidebar: false };
+      }
+      return { ...m, [key]: value };
+    });
     const mod = modules.find((m) => m.id === id);
-    toast.success(
+    const done = () =>
+      toast.success(
       `${mod?.name ?? "Module"} ${
         key === "enabled"
           ? value
@@ -47,6 +48,16 @@ export function ModuleSettingsPanel({ modules: initial }: Props) {
             : "hidden from sidebar"
       }.`,
     );
+    if (!onSave) {
+      setModules(next);
+      done();
+      return;
+    }
+    void onSave(next).then((ok) => {
+      if (!ok) return;
+      setModules(next);
+      done();
+    });
   }
 
   return (

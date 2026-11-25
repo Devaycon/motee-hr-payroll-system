@@ -1,5 +1,8 @@
 "use client";
 
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+
 import { CalendarOff } from "lucide-react";
 import {
   Tabs,
@@ -27,6 +30,8 @@ const ACTIVE_TRIGGER =
   "text-sm px-3 data-[state=active]:bg-[#FE8F44]! data-[state=active]:text-white! data-[state=active]:shadow-none!";
 
 export function IntegrationsCategory() {
+  const live = useIsLive();
+  const apiSetup = <ApiSetupPanel apiKeys={API_KEYS} usageLogs={API_USAGE_LOGS} />;
   return (
     <Tabs defaultValue="api">
       <TabsList className="h-9">
@@ -55,7 +60,8 @@ export function IntegrationsCategory() {
       </TabsList>
 
       <TabsContent value="api" className="mt-6">
-        <ApiSetupPanel apiKeys={API_KEYS} usageLogs={API_USAGE_LOGS} />
+        {/* API keys have no endpoint yet: blurred once signed in. */}
+        {live ? <NotIntegrated label="API keys">{apiSetup}</NotIntegrated> : apiSetup}
       </TabsContent>
 
       <TabsContent value="calendar" className="mt-6">

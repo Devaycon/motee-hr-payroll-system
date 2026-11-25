@@ -7,6 +7,7 @@ import {
   usePerformanceData,
 } from "@/src/lib/performance/use-performance";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
+import { useMyPerformanceLive } from "@/src/lib/performance/use-my-performance-live";
 
 export { usePerformanceActions };
 
@@ -25,7 +26,15 @@ export interface Colleague {
 export function useMyPerformance() {
   const employeeId = useAppSelector((s) => s.auth.user?.employeeId);
   const directory = useAppSelector((s) => s.locale.data?.employees);
-  const { data, loading } = usePerformanceData({ scope: false });
+  const demo = usePerformanceData({ scope: false });
+  // Signed in: your goals and reviews from the `/mine` endpoints.
+  const liveMine = useMyPerformanceLive();
+  const data = liveMine.live
+    ? liveMine.goals && liveMine.reviews
+      ? { goals: liveMine.goals, reviews: liveMine.reviews, feedback: [], feedbackRequests: [] }
+      : null
+    : demo.data;
+  const loading = liveMine.live ? !data : demo.loading;
 
   const mine = useMemo(() => {
     if (!data || !employeeId) return null;

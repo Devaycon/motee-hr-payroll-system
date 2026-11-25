@@ -46,6 +46,11 @@ import { formatDate } from "../utils";
 
 interface Props {
   holidays: CompanyHoliday[];
+  /** Signed in: public holidays on the API (an edit replaces the holiday). */
+  live?: {
+    save: (holiday: CompanyHoliday, existingId?: string) => Promise<boolean>;
+    remove: (id: string) => Promise<boolean>;
+  };
 }
 
 interface FormState {
@@ -62,7 +67,7 @@ const EMPTY: FormState = {
   excludedDepartments: "",
 };
 
-export function CompanyHolidaysPanel({ holidays: initial }: Props) {
+export function CompanyHolidaysPanel({ holidays: initial, live }: Props) {
   const [holidays, setHolidays] = useState<CompanyHoliday[]>(initial);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CompanyHoliday | null>(null);
@@ -98,6 +103,22 @@ export function CompanyHolidaysPanel({ holidays: initial }: Props) {
       .map((d) => d.trim())
       .filter(Boolean);
 
+    if (live) {
+      const item: CompanyHoliday = {
+        id: editing?.id ?? "",
+        name: form.name.trim(),
+        date: form.date,
+        nonWorking: form.nonWorking,
+        excludedDepartments: excluded,
+      };
+      void live.save(item, editing?.id).then((ok) => {
+        if (!ok) return;
+        toast.success(editing ? "Holiday updated." : "Holiday added.");
+        setOpen(false);
+      });
+      return;
+    }
+
     if (editing) {
       setHolidays((prev) =>
         prev.map((h) =>
@@ -130,6 +151,12 @@ export function CompanyHolidaysPanel({ holidays: initial }: Props) {
   }
 
   function handleDelete(holiday: CompanyHoliday) {
+    if (live) {
+      void live.remove(holiday.id).then((ok) => {
+        if (ok) toast.success("Holiday deleted.");
+      });
+      return;
+    }
     setHolidays((prev) => prev.filter((h) => h.id !== holiday.id));
     toast.success("Holiday deleted.");
   }

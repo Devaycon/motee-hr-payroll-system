@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useHelpdeskTickets } from "./hooks";
+import { useHelpdeskActions, useHelpdeskTickets } from "./hooks";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { HeadphonesIcon, Plus, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { useAppDispatch } from "@/src/lib/stores/hooks";
@@ -52,6 +53,8 @@ import type {
 export function HelpdeskPage() {
   const dispatch = useAppDispatch();
   const { data, loading } = useHelpdeskTickets();
+  // Signed in, each change below is also sent to the API.
+  const actions = useHelpdeskActions();
   const [tickets, setTickets] = useState<HelpDeskTicket[]>([]);
   useEffect(() => {
     if (data) setTickets(data);
@@ -68,6 +71,7 @@ export function HelpdeskPage() {
   const [detailOpen, setDetailOpen] = useState(false);
 
   function handleCreate(data: NewTicket) {
+    void actions.create(data);
     const now = "2026-04-04";
     const id = `HD-${String(tickets.length + 1).padStart(3, "0")}`;
     const slaMap: Record<string, string> = {
@@ -110,6 +114,7 @@ export function HelpdeskPage() {
   }
 
   function handleUpdateStatus(id: string, status: TicketStatus) {
+    void actions.status(id, status);
     const now = "2026-04-04";
     const previous = tickets.find((t) => t.id === id);
     setTickets((prev) =>
@@ -131,6 +136,7 @@ export function HelpdeskPage() {
   }
 
   function handleUpdatePriority(id: string, priority: TicketPriority) {
+    void actions.priority(id, priority);
     setTickets((prev) =>
       prev.map((t) => (t.id === id ? { ...t, priority } : t)),
     );
@@ -138,6 +144,7 @@ export function HelpdeskPage() {
   }
 
   function handleAssign(id: string, agentName: string, agentInitials: string) {
+    void actions.assign(id, agentName);
     let assignedTicket: HelpDeskTicket | undefined;
     setTickets((prev) =>
       prev.map((t) => {
@@ -156,6 +163,7 @@ export function HelpdeskPage() {
   }
 
   function handleReply(id: string, content: string, isInternalNote: boolean) {
+    void actions.reply(id, content, isInternalNote);
     const now = "2026-04-04";
     const newMessage: TicketMessage = {
       id: `m-${Date.now()}`,
@@ -191,6 +199,7 @@ export function HelpdeskPage() {
   }
 
   function handleDelete(id: string) {
+    void actions.remove(id);
     setTickets((prev) => prev.filter((t) => t.id !== id));
     if (detailOpen && detailTicket?.id === id) {
       setDetailOpen(false);
@@ -328,10 +337,14 @@ export function HelpdeskPage() {
         </TabsContent>
 
         <TabsContent value="faq" className="mt-4">
-          <FAQPanel
-            articles={faqArticles}
-            onMarkHelpful={handleMarkFaqHelpful}
-          />
+          {actions.live ? (
+            // The FAQ has no endpoint of its own yet.
+            <NotIntegrated label="Help desk FAQ">
+              <FAQPanel articles={faqArticles} onMarkHelpful={handleMarkFaqHelpful} />
+            </NotIntegrated>
+          ) : (
+            <FAQPanel articles={faqArticles} onMarkHelpful={handleMarkFaqHelpful} />
+          )}
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-4">

@@ -43,10 +43,17 @@ import {
   timeAgo,
   formatDate,
 } from "./data";
+import {
+  useCommunityActions,
+  useLiveCommunityPosts,
+} from "@/src/lib/engagement/use-engagement";
 
 export function CommunityTab() {
   const [posts, setPosts] = useState<CommunityPost[]>(POSTS);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  // Signed in: the feed from the API, re-read after every change.
+  const feed = useLiveCommunityPosts(MY_INITIALS);
+  const actions = useCommunityActions();
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>(
     {},
   );
@@ -63,6 +70,21 @@ export function CommunityTab() {
   const [newPollQuestion, setNewPollQuestion] = useState("");
   const [newPollOptions, setNewPollOptions] = useState(["", ""]);
   const [votedPolls, setVotedPolls] = useState<Record<string, string>>({});
+  const [seenFeed, setSeenFeed] = useState<typeof feed.posts>(null);
+  if (feed.posts && feed.posts !== seenFeed) {
+    setSeenFeed(feed.posts);
+    const livePosts = feed.posts as unknown as CommunityPost[];
+    setPosts(livePosts);
+    setLikedPosts(new Set(livePosts.filter((p) => p.likes.includes(MY_INITIALS)).map((p) => p.id)));
+    setVotedPolls(
+      Object.fromEntries(
+        livePosts.flatMap((p) => {
+          const mine = p.pollOptions?.find((o) => o.votes.includes(MY_INITIALS));
+          return mine ? [[p.id, mine.id]] : [];
+        }),
+      ),
+    );
+  }
 
   const stats = computeFeedStats(posts);
 
@@ -79,6 +101,7 @@ export function CommunityTab() {
   });
 
   function toggleLike(postId: string) {
+    void actions.like(postId);
     setLikedPosts((prev) => {
       const next = new Set(prev);
       if (next.has(postId)) next.delete(postId);
@@ -102,6 +125,7 @@ export function CommunityTab() {
   function submitComment(postId: string) {
     const msg = (commentInputs[postId] ?? "").trim();
     if (!msg) return;
+    void actions.comment(postId, msg);
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id !== postId) return p;
@@ -126,6 +150,7 @@ export function CommunityTab() {
 
   function votePoll(postId: string, optionId: string) {
     if (votedPolls[postId]) return;
+    void actions.vote(postId, optionId);
     setVotedPolls((prev) => ({ ...prev, [postId]: optionId }));
     setPosts((prev) =>
       prev.map((p) => {
@@ -142,6 +167,14 @@ export function CommunityTab() {
 
   function submitPost() {
     if (!newPostContent.trim()) return;
+    void actions.create({
+      type: newPostType,
+      content: newPostContent,
+      eventDate: newPostType === "event" ? newEventDate : undefined,
+      eventLocation: newPostType === "event" ? newEventLocation : undefined,
+      pollQuestion: newPostType === "poll" ? newPollQuestion : undefined,
+      pollOptions: newPostType === "poll" ? newPollOptions.filter((o) => o.trim()) : undefined,
+    });
     const newPost: CommunityPost = {
       id: `post-new-${Date.now()}`,
       type: newPostType,

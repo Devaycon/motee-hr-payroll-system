@@ -6,7 +6,10 @@ export type FilePurpose =
   | "employeeDocument"
   | "companyDocument"
   | "approvalAttachment"
-  | "export";
+  | "export"
+  | "projectDocument"
+  | "caseEvidence"
+  | "companyVerificationDocument";
 
 export interface StoredFileDto {
   id: string;

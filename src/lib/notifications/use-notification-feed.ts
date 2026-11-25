@@ -28,6 +28,7 @@ const TYPE_BY_KIND: Record<NotificationDto["kind"], NotifType> = {
   openClockSession: "calendar",
   reviewOverdue: "trending",
   goalOverdue: "trending",
+  noteReminderDue: "calendar",
 };
 
 function toNotification(dto: NotificationDto): Notification {

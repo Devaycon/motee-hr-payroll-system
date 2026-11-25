@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useSurveys } from "./hooks";
+import { useSurveyActions, useSurveys } from "./hooks";
 import { ClipboardList, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
@@ -48,8 +48,11 @@ export function SurveysPage() {
   const [editSurvey, setEditSurvey] = useState<Survey | null>(null);
   const [resultsSurvey, setResultsSurvey] = useState<Survey | null>(null);
   const [resultsOpen, setResultsOpen] = useState(false);
+  // Signed in, each change below is also sent to the API.
+  const actions = useSurveyActions();
 
   function handleCreate(data: NewSurvey) {
+    void actions.create(data);
     const now = new Date().toISOString().split("T")[0];
     const id = `SRV-${String(surveys.length + 1).padStart(3, "0")}`;
     const newSurvey: Survey = {
@@ -86,6 +89,7 @@ export function SurveysPage() {
 
   function handleEdit(data: NewSurvey) {
     if (!editSurvey) return;
+    void actions.update(editSurvey.id, data);
     setSurveys((prev) =>
       prev.map((s) => {
         if (s.id !== editSurvey.id) return s;
@@ -118,6 +122,7 @@ export function SurveysPage() {
   }
 
   function handleCloseSurvey(survey: Survey) {
+    void actions.status(survey.id, "closed");
     setSurveys((prev) =>
       prev.map((s) => (s.id === survey.id ? { ...s, status: "closed" } : s)),
     );
@@ -125,6 +130,7 @@ export function SurveysPage() {
   }
 
   function handleArchive(survey: Survey) {
+    void actions.status(survey.id, "archived");
     setSurveys((prev) =>
       prev.map((s) =>
         s.id === survey.id ? { ...s, isArchived: true, status: "archived" } : s,
@@ -134,6 +140,7 @@ export function SurveysPage() {
   }
 
   function handleDelete(survey: Survey) {
+    void actions.remove(survey.id);
     setSurveys((prev) => prev.filter((s) => s.id !== survey.id));
     toast.error(`Survey &ldquo;${survey.title}&rdquo; deleted.`);
   }
@@ -141,6 +148,12 @@ export function SurveysPage() {
   function handleViewResults(survey: Survey) {
     setResultsSurvey(survey);
     setResultsOpen(true);
+    // Signed in, the tally comes from the server once it answers.
+    if (actions.live) {
+      void actions.withResults(survey).then((full) =>
+        setResultsSurvey((current) => (current?.id === full.id ? full : current)),
+      );
+    }
   }
 
   function openEdit(survey: Survey) {

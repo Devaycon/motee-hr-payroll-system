@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useCasesData } from "./hooks";
+import { useCasesData, useErCasesLive } from "./hooks";
 import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
@@ -41,11 +41,13 @@ export function GrievancePage() {
   const country = useAppSelector((s) => s.locale.country);
   const casesByCountry = useAppSelector((s) => s.erCases.byCountry[country]);
 
+  // Signed in, the register comes from the API instead of the demo seed.
+  const live = useErCasesLive("all");
   useEffect(() => {
-    if (data && !casesByCountry) {
+    if (!live && data && !casesByCountry) {
       dispatch(seedCountry({ country, cases: data }));
     }
-  }, [data, casesByCountry, country, dispatch]);
+  }, [live, data, casesByCountry, country, dispatch]);
 
   const cases = useMemo(() => casesByCountry ?? [], [casesByCountry]);
 

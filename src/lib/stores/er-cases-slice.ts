@@ -18,6 +18,26 @@ interface ERCasesState {
 
 const initialState: ERCasesState = { byCountry: {}, status: "idle" };
 
+/** Fields only a case's detail read carries (not the register row). */
+const DETAIL_KEYS: (keyof ERCase)[] = [
+  "description",
+  "investigationDueDate",
+  "outcomeDueDate",
+  "witnesses",
+  "evidence",
+  "hearingDate",
+  "hearingPanel",
+  "hearingPanelIds",
+  "suspensionDays",
+  "appealReviewer",
+  "appealReviewerId",
+  "appealGrounds",
+  "retentionPeriod",
+  "notes",
+  "meetings",
+  "activity",
+];
+
 const slice = createSlice({
   name: "erCases",
   initialState,
@@ -78,6 +98,47 @@ const slice = createSlice({
         c.updatedAt = new Date().toISOString().split("T")[0];
       }
     },
+    /**
+     * Signed in: the register from the API replaces the bucket. Rows carry no
+     * notes, meetings or evidence, so those (read with a case's detail) are
+     * kept for cases already loaded.
+     */
+    replaceFromApi(
+      state,
+      action: PayloadAction<{ country: string; cases: ERCase[] }>,
+    ) {
+      const before = new Map((state.byCountry[action.payload.country] ?? []).map((c) => [c.id, c]));
+      const merged = action.payload.cases.map((row) => {
+        const known = before.get(row.id);
+        if (!known) return row;
+        const detail: Partial<ERCase> = {};
+        for (const k of DETAIL_KEYS) {
+          if (known[k] !== undefined) (detail as Record<string, unknown>)[k] = known[k];
+        }
+        return { ...row, ...detail };
+      });
+      // A case raised here is sent straight away and re-read with its server
+      // id, so anything not on the server (including demo seed) is dropped.
+      state.byCountry[action.payload.country] = merged;
+      state.status = "ready";
+    },
+    /** Signed in: one case's full detail from the API. */
+    upsertFromApi(state, action: PayloadAction<{ country: string; case: ERCase }>) {
+      const list = (state.byCountry[action.payload.country] ??= []);
+      const i = list.findIndex((c) => c.id === action.payload.case.id);
+      if (i >= 0) list[i] = action.payload.case;
+      else list.unshift(action.payload.case);
+    },
+    /** A case created here now has its server id. */
+    adoptServerId(
+      state,
+      action: PayloadAction<{ country: string; localId: string; serverId: string; caseNumber?: string }>,
+    ) {
+      const c = state.byCountry[action.payload.country]?.find((x) => x.id === action.payload.localId);
+      if (!c) return;
+      c.id = action.payload.serverId;
+      if (action.payload.caseNumber) c.caseNumber = action.payload.caseNumber;
+    },
     deleteCase(
       state,
       action: PayloadAction<{ country: string; id: string }>,
@@ -100,6 +161,9 @@ export const {
   updateCase,
   addNote,
   deleteCase,
+  replaceFromApi,
+  upsertFromApi,
+  adoptServerId,
 } = slice.actions;
 
 export default slice.reducer;

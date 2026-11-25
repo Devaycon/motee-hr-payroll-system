@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
 import { Plus, Pencil, Trash2, CalendarRange, CheckCircle2 } from "lucide-react";
 import {
   Card,
@@ -37,6 +38,11 @@ import { formatDate } from "../utils";
 
 interface Props {
   cycles: HolidayYearConfig[];
+  /**
+   * Signed in: the API derives every cycle from one start day, so editing a
+   * cycle moves the start; adding, activating and removing are not offered.
+   */
+  onSetStart?: (startDate: string) => Promise<boolean>;
 }
 
 interface FormState {
@@ -47,7 +53,7 @@ interface FormState {
 
 const EMPTY: FormState = { label: "", startDate: "", endDate: "" };
 
-export function HolidayYearPanel({ cycles: initial }: Props) {
+export function HolidayYearPanel({ cycles: initial, onSetStart }: Props) {
   const [cycles, setCycles] = useState<HolidayYearConfig[]>(initial);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<HolidayYearConfig | null>(null);
@@ -55,6 +61,10 @@ export function HolidayYearPanel({ cycles: initial }: Props) {
   const [error, setError] = useState("");
 
   function openAdd() {
+    if (onSetStart) {
+      notifyNotIntegrated("Adding a holiday year");
+      return;
+    }
     setEditing(null);
     setForm(EMPTY);
     setError("");
@@ -82,6 +92,15 @@ export function HolidayYearPanel({ cycles: initial }: Props) {
       return;
     }
 
+    if (editing && onSetStart) {
+      void onSetStart(form.startDate).then((ok) => {
+        if (!ok) return;
+        toast.success("Holiday year updated.");
+        setOpen(false);
+      });
+      return;
+    }
+
     if (editing) {
       setCycles((prev) =>
         prev.map((c) =>
@@ -106,11 +125,19 @@ export function HolidayYearPanel({ cycles: initial }: Props) {
   }
 
   function handleActivate(id: string) {
+    if (onSetStart) {
+      notifyNotIntegrated("Choosing the active holiday year");
+      return;
+    }
     setCycles((prev) => prev.map((c) => ({ ...c, isActive: c.id === id })));
     toast.success("Active holiday year updated.");
   }
 
   function handleDelete(cycle: HolidayYearConfig) {
+    if (onSetStart) {
+      notifyNotIntegrated("Removing a holiday year");
+      return;
+    }
     setCycles((prev) => prev.filter((c) => c.id !== cycle.id));
     toast.success("Holiday year removed.");
   }

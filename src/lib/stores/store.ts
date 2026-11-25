@@ -54,6 +54,14 @@ import leaveSchemesReducer from "./leave-schemes-slice";
 import chatReducer from "./chat-slice";
 import { sicknessListener } from "./sickness-listener";
 import { sicknessApiListener } from "./sickness-api-listener";
+import { collectionApiListener } from "./collection-api-listener";
+import { erCasesApiListener } from "./er-cases-api-listener";
+import { expensesApiListener } from "./expenses-api-listener";
+import { attendanceMineListener } from "./attendance-mine-listener";
+import { shiftsApiListener } from "./shifts-api-listener";
+import { ohApiListener } from "./oh-api-listener";
+import { projectsApiListener } from "./projects-api-listener";
+import { workflowsApiListener } from "./workflows-api-listener";
 
 export const store = configureStore({
   reducer: {
@@ -112,6 +120,14 @@ export const store = configureStore({
         sicknessListener.middleware,
         sicknessApiListener.middleware,
         recruitmentListener.middleware,
+        collectionApiListener.middleware,
+        erCasesApiListener.middleware,
+        expensesApiListener.middleware,
+        attendanceMineListener.middleware,
+        shiftsApiListener.middleware,
+        ohApiListener.middleware,
+        projectsApiListener.middleware,
+        workflowsApiListener.middleware,
       )
       .concat(api.middleware),
 });
