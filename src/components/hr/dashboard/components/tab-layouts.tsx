@@ -119,9 +119,8 @@ export function PeopleTabLayout() {
         </div>
       </Cell>
       <Cell span={6}>
-        <DemoOnly>
-          <EorMapCard />
-        </DemoOnly>
+        {/* Live: EOR engagements from the API. */}
+        <EorMapCard />
       </Cell>
 
       <Cell span={6}>

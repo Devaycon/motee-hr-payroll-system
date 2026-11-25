@@ -20,11 +20,29 @@ import { WorkerModal } from "./components/worker-modal";
 import { ProviderModal } from "./components/provider-modal";
 import { WorkerDetail } from "./components/worker-detail";
 import { EOR_WORKERS, EOR_PROVIDERS, EOR_INVOICES } from "./data";
+import { useEorActions, useLiveEor } from "@/src/lib/eor/use-eor";
 import type { EorWorker, EorProvider } from "./types";
 
 export function EorPage() {
   const [workers, setWorkers] = useState<EorWorker[]>(EOR_WORKERS);
   const [providers, setProviders] = useState<EorProvider[]>(EOR_PROVIDERS);
+  // Signed in: the API copy replaces the demo one, and is re-read after
+  // every change sent below.
+  const eor = useLiveEor();
+  const actions = useEorActions();
+  const [seen, setSeen] = useState<{ w: typeof eor.workers; p: typeof eor.providers }>({
+    w: null,
+    p: null,
+  });
+  if (eor.workers && eor.workers !== seen.w) {
+    setSeen((s) => ({ ...s, w: eor.workers }));
+    setWorkers(eor.workers);
+  }
+  if (eor.providers && eor.providers !== seen.p) {
+    setSeen((s) => ({ ...s, p: eor.providers }));
+    setProviders(eor.providers);
+  }
+  const invoices = eor.live ? (eor.invoices ?? []) : EOR_INVOICES;
 
   // Controlled so the KPI cards can drill into a tab, not just a filter.
   const [activeTab, setActiveTab] = useState("workers");
@@ -58,6 +76,7 @@ export function EorPage() {
     setWorkerModalOpen(true);
   }
   function saveWorker(worker: EorWorker) {
+    void actions.saveWorker(worker);
     setWorkers((prev) => {
       const exists = prev.some((w) => w.id === worker.id);
       return exists
@@ -66,6 +85,7 @@ export function EorPage() {
     });
   }
   function deleteWorker(id: string) {
+    void actions.deleteWorker(id);
     setWorkers((prev) => prev.filter((w) => w.id !== id));
   }
 
@@ -79,6 +99,7 @@ export function EorPage() {
     setProviderModalOpen(true);
   }
   function saveProvider(provider: EorProvider) {
+    void actions.saveProvider(provider);
     setProviders((prev) => {
       const exists = prev.some((p) => p.id === provider.id);
       return exists
@@ -87,6 +108,7 @@ export function EorPage() {
     });
   }
   function deleteProvider(id: string) {
+    void actions.deleteProvider(id);
     setProviders((prev) => prev.filter((p) => p.id !== id));
   }
 
@@ -169,7 +191,7 @@ export function EorPage() {
               label: `Providers (${visibleProviders.length})`,
             },
             { value: "compliance", label: "Compliance" },
-            { value: "billing", label: `Billing (${EOR_INVOICES.length})` },
+            { value: "billing", label: `Billing (${invoices.length})` },
           ]}
         />
 
@@ -197,7 +219,7 @@ export function EorPage() {
         </TabsContent>
 
         <TabsContent value="billing" className="mt-4">
-          <InvoicesTable invoices={EOR_INVOICES} />
+          <InvoicesTable invoices={invoices} />
         </TabsContent>
       </Tabs>
 

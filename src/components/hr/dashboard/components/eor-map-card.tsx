@@ -13,6 +13,7 @@ import worldTopo from "world-atlas/countries-110m.json";
 import { Button } from "@/src/components/ui/button";
 import { ChartCard } from "@/src/components/shared/charts";
 import { EOR_WORKERS } from "@/src/data/eor-demo";
+import { useLiveEor } from "@/src/lib/eor/use-eor";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 8;
@@ -43,9 +44,12 @@ interface CountryCount {
 }
 
 function useEorByCountry(): CountryCount[] {
+  // Signed in: the EOR engagements on the API; the demo workers otherwise.
+  const eor = useLiveEor();
+  const workers = eor.live ? (eor.workers ?? []) : EOR_WORKERS;
   return useMemo(() => {
     const byCode = new Map<string, CountryCount>();
-    for (const w of EOR_WORKERS) {
+    for (const w of workers) {
       const existing = byCode.get(w.countryCode);
       if (existing) {
         existing.count += 1;
@@ -58,7 +62,7 @@ function useEorByCountry(): CountryCount[] {
       }
     }
     return [...byCode.values()].sort((a, b) => b.count - a.count);
-  }, []);
+  }, [workers]);
 }
 
 /** Three-step shade by headcount — enough to read "more vs fewer" at a glance. */
