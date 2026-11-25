@@ -109,6 +109,8 @@ workflowRunsListener.startListening({
   actionCreator: approveStep,
   effect: async (action, api) => {
     const state = api.getState() as RootState;
+    // Signed in, the server starts runs from these events itself.
+    if (state.session?.is_loggedIn) return;
     const request = state.approvals.requests.find(
       (r) => r.id === action.payload.requestId,
     );
@@ -160,6 +162,8 @@ workflowRunsListener.startListening({
   effect: async (action, api) => {
     if (action.payload.stage !== "hired") return;
     const state = api.getState() as RootState;
+    // Signed in, the server starts runs from these events itself.
+    if (state.session?.is_loggedIn) return;
     const country = action.payload.country;
     const bucket = state.recruitment.byCountry[country];
     const workflow = workflowById(state, PREBOARDING_WF);
@@ -217,6 +221,8 @@ workflowRunsListener.startListening({
   matcher: isAnyOf(addRecord, addRecords),
   effect: async (action, api) => {
     const state = api.getState() as RootState;
+    // Signed in, the server starts runs from these events itself.
+    if (state.session?.is_loggedIn) return;
     const country = state.locale.country;
     const workflow = workflowById(state, ONBOARDING_WF);
     if (!workflow) return;

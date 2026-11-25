@@ -196,6 +196,11 @@ const workflowsSlice = createSlice({
       wf.lastModifiedAt = nowIso().slice(0, 10);
     },
 
+    /** Signed in: the workflows on the API replace the store. */
+    replaceFromApi(state, action: PayloadAction<Workflow[]>) {
+      state.workflows = action.payload;
+    },
+
     deleteWorkflow(state, action: PayloadAction<string>) {
       const wf = state.workflows.find((w) => w.id === action.payload);
       if (!wf || wf.kind === "system") return;
@@ -210,5 +215,6 @@ export const {
   updateWorkflow,
   setWorkflowStatus,
   deleteWorkflow,
+  replaceFromApi,
 } = workflowsSlice.actions;
 export default workflowsSlice.reducer;

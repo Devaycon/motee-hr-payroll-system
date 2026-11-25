@@ -17,6 +17,13 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { MyTasksPanel } from "@/src/components/employee/tasks";
 import { NotIntegrated } from "@/src/components/shared/not-integrated";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+
+/** Blurred as "not integrated" in the demo; the plain list once signed in. */
+function LiveGate({ live, children }: { live: boolean; children: React.ReactNode }) {
+  if (live) return <>{children}</>;
+  return <NotIntegrated label="Approvals and workflow tasks">{children}</NotIntegrated>;
+}
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { useCurrentUser } from "@/src/lib/auth/demo-identity";
 import {
@@ -120,6 +127,8 @@ function EmptyState({ message, hint }: { message: string; hint: string }) {
  * answer "who is doing what" - "Adaeze has three, IT has two" does.
  */
 export function MyWorkPage({ embedded = false }: { embedded?: boolean } = {}) {
+  // Signed in, workflow tasks run on the API (approvals are left out).
+  const workLive = useIsLive();
   const dispatch = useAppDispatch();
   const user = useCurrentUser();
   const country = useAppSelector((s) => s.locale.country);
@@ -176,7 +185,7 @@ export function MyWorkPage({ embedded = false }: { embedded?: boolean } = {}) {
 
         <TabsContent value="todo" className="mt-4">
           {/* Approvals and workflow runs are not on the API yet. */}
-          <NotIntegrated label="Approvals and workflow tasks">
+          <LiveGate live={workLive}>
             {todo.length === 0 ? (
               <EmptyState
                 message="Nothing is waiting on you"
@@ -193,12 +202,12 @@ export function MyWorkPage({ embedded = false }: { embedded?: boolean } = {}) {
                 ))}
               </ul>
             )}
-          </NotIntegrated>
+          </LiveGate>
         </TabsContent>
 
         <TabsContent value="review" className="mt-4">
           {/* Approvals and workflow runs are not on the API yet. */}
-          <NotIntegrated label="Approvals and workflow tasks">
+          <LiveGate live={workLive}>
             {review.length === 0 ? (
               <EmptyState
                 message="No tasks awaiting your review"
@@ -211,7 +220,7 @@ export function MyWorkPage({ embedded = false }: { embedded?: boolean } = {}) {
                 ))}
               </ul>
             )}
-          </NotIntegrated>
+          </LiveGate>
         </TabsContent>
 
         {/* Personal tasks, as in self-service My Tasks — assigned work is under To do. */}
@@ -221,7 +230,7 @@ export function MyWorkPage({ embedded = false }: { embedded?: boolean } = {}) {
 
         <TabsContent value="others" className="mt-4">
           {/* Approvals and workflow runs are not on the API yet. */}
-          <NotIntegrated label="Approvals and workflow tasks">
+          <LiveGate live={workLive}>
             {others.length === 0 ? (
               <EmptyState
                 message="No open workflow tasks anywhere"
@@ -234,7 +243,7 @@ export function MyWorkPage({ embedded = false }: { embedded?: boolean } = {}) {
                 ))}
               </ul>
             )}
-          </NotIntegrated>
+          </LiveGate>
         </TabsContent>
       </Tabs>
     </div>

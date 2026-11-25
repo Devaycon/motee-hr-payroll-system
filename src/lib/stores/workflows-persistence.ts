@@ -48,6 +48,8 @@ export function initWorkflowsPersistence(): void {
 
   let lastWorkflows: Workflow[] | null = null;
   store.subscribe(() => {
+    // Signed in, workflows are the server's: never cached on this machine.
+    if (store.getState().session?.is_loggedIn) return;
     const { workflows } = store.getState().workflows;
     if (workflows === lastWorkflows) return;
     lastWorkflows = workflows;

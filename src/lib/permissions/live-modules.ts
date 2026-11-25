@@ -11,6 +11,7 @@ export const LIVE_LINKS: readonly string[] = [
   "/hr",
   "/hr-action-center/events",
   "/hr-action-center/tasks",
+  "/hr-action-center/workflows",
   "/workspace/announcements",
   "/workspace/kudos",
   "/workspace/helpdesk",

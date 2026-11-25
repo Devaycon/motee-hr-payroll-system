@@ -85,6 +85,8 @@ export function initWorkflowRunsPersistence(): void {
   let putTimer: ReturnType<typeof setTimeout> | null = null;
 
   store.subscribe(() => {
+    // Signed in, runs are the server's: never cached on this machine.
+    if (store.getState().session?.is_loggedIn) return;
     const byCountry = store.getState().workflowRuns.byCountry;
     if (byCountry === last) return;
     last = byCountry;
