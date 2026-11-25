@@ -14,7 +14,12 @@ import { Separator } from "@/src/components/ui/separator";
 import { cn } from "@/src/lib/utils";
 import { EMPLOYEE_PENDING_ITEMS } from "@/src/data/employee-dashboard-demo";
 
-export function PendingItems() {
+export function PendingItems({
+  items = EMPLOYEE_PENDING_ITEMS,
+}: {
+  /** Signed in: the live list (the demo list otherwise). */
+  items?: typeof EMPLOYEE_PENDING_ITEMS;
+} = {}) {
   return (
     // The "Pending Actions" KPI card links to #pending — this is its target.
     <Card id="pending" className="col-span-2 scroll-mt-20">
@@ -25,13 +30,13 @@ export function PendingItems() {
           </div>
           <CardTitle className="text-sm font-medium">Pending Items</CardTitle>
           <span className="flex items-center justify-center min-w-4 h-4 rounded-full bg-[#7F77DD] text-white text-[10px] font-semibold px-1">
-            {EMPLOYEE_PENDING_ITEMS.length}
+            {items.length}
           </span>
         </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
         <div className="flex flex-col gap-1">
-          {EMPLOYEE_PENDING_ITEMS.map((item, idx) => (
+          {items.map((item, idx) => (
             <div key={item.id}>
               {idx > 0 && <Separator className="my-2" />}
               <div className="flex items-center justify-between gap-3">

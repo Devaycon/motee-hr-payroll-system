@@ -12,7 +12,12 @@ import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { EMPLOYEE_LEAVE_BALANCES } from "@/src/data/employee-dashboard-demo";
 
-export function LeaveBalanceCards() {
+export function LeaveBalanceCards({
+  items = EMPLOYEE_LEAVE_BALANCES,
+}: {
+  /** Signed in: the live list (the demo list otherwise). */
+  items?: typeof EMPLOYEE_LEAVE_BALANCES;
+} = {}) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between px-4 pt-4 pb-3">
@@ -35,7 +40,7 @@ export function LeaveBalanceCards() {
       </CardHeader>
       <CardContent className="px-4 pb-4">
         <div className="flex flex-col gap-3">
-          {EMPLOYEE_LEAVE_BALANCES.map((bal) => {
+          {items.map((bal) => {
             const remaining = bal.total - bal.used - bal.pending;
             const usedPct = Math.round((bal.used / bal.total) * 100);
             return (

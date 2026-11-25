@@ -13,7 +13,12 @@ import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { Separator } from "@/src/components/ui/separator";
 import { EMPLOYEE_RECENT_KUDOS } from "@/src/data/employee-dashboard-demo";
 
-export function RecentKudos() {
+export function RecentKudos({
+  items = EMPLOYEE_RECENT_KUDOS,
+}: {
+  /** Signed in: the live list (the demo list otherwise). */
+  items?: typeof EMPLOYEE_RECENT_KUDOS;
+} = {}) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between px-4 pt-4 pb-3">
@@ -38,7 +43,7 @@ export function RecentKudos() {
       </CardHeader>
       <CardContent className="px-4 pb-4">
         <div className="flex flex-col gap-1">
-          {EMPLOYEE_RECENT_KUDOS.map((k, idx) => (
+          {items.map((k, idx) => (
             <div key={k.id}>
               {idx > 0 && <Separator className="my-2" />}
               <div className="flex items-start gap-3">

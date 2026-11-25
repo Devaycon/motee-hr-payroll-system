@@ -19,8 +19,13 @@ import {
   ANNOUNCEMENT_TYPE_LABELS,
 } from "@/src/data/announcements-demo";
 
-export function AnnouncementsFeed() {
-  const published = ANNOUNCEMENTS.filter((a) => a.status === "published").slice(
+export function AnnouncementsFeed({
+  items = ANNOUNCEMENTS,
+}: {
+  /** Signed in: the live list (the demo list otherwise). */
+  items?: typeof ANNOUNCEMENTS;
+} = {}) {
+  const published = items.filter((a) => a.status === "published").slice(
     0,
     3,
   );
