@@ -6,7 +6,12 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { Plus } from "lucide-react";
 import { TICKETS as SEED_TICKETS, computeHelpdeskStats, MY_INITIALS as DEMO_INITIALS } from "./components/data";
-import { useHelpdeskTickets } from "@/src/components/hr/helpdesk/hooks";
+import {
+  useHelpdeskActions,
+  useHelpdeskTickets,
+  useMyHelpdeskTickets,
+} from "@/src/components/hr/helpdesk/hooks";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { pushNotification } from "@/src/lib/stores/notifications-slice";
 import { caseRaised } from "@/src/lib/notifications/helpdesk";
@@ -27,6 +32,9 @@ import { NewCaseModal } from "./components/new-case-modal";
 export function EmployeeHelpdeskPage() {
   const dispatch = useAppDispatch();
   const { data: localeTickets } = useHelpdeskTickets();
+  // Signed in: the caller's own cases from `GET /helpdesk/mine`.
+  const mine = useMyHelpdeskTickets();
+  const actions = useHelpdeskActions();
   const myInitials =
     useAppSelector((s) => s.auth.user?.initials) ?? DEMO_INITIALS;
   const [activeTab, setActiveTab] = useState<"faq" | "my-cases">("faq");
@@ -43,10 +51,32 @@ export function EmployeeHelpdeskPage() {
   /** Drill-down set by the KPI cards; "all" shows every case. */
   const [cardFilter, setCardFilter] = useState<HelpdeskCardFilter>("all");
 
-  const myTickets = tickets.filter((t) => t.submitterInitials === myInitials);
+  // Re-seed from the server whenever it answers (and after every change).
+  const [seenMine, setSeenMine] = useState<typeof mine.data>(null);
+  if (mine.live && mine.data && mine.data !== seenMine) {
+    setSeenMine(mine.data);
+    setTickets(mine.data as unknown as HelpDeskTicket[]);
+  }
+
+  const myTickets = mine.live
+    ? tickets
+    : tickets.filter((t) => t.submitterInitials === myInitials);
   const stats = computeHelpdeskStats(myTickets);
 
   function handleCreated(ticket: HelpDeskTicket) {
+    // Raised as the signed-in employee (no submitter id).
+    void actions.create(
+      {
+        subject: ticket.subject,
+        description: ticket.description,
+        category: ticket.category,
+        priority: ticket.priority,
+        submitterName: ticket.submitterName,
+        submitterDept: ticket.submitterDept,
+        submitterInitials: ticket.submitterInitials,
+      },
+      null,
+    );
     setTickets((prev) => [ticket, ...prev]);
     setActiveTab("my-cases");
     // §9.1 — the requester gets their Ref # in the confirmation notification.
@@ -54,6 +84,7 @@ export function EmployeeHelpdeskPage() {
   }
 
   function handleReply(ticketId: string, message: TicketMessage) {
+    void actions.reply(ticketId, message.content, false);
     setTickets((prev) =>
       prev.map((t) =>
         t.id === ticketId
@@ -84,6 +115,7 @@ export function EmployeeHelpdeskPage() {
   }
 
   function handleReopen(ticketId: string) {
+    void actions.status(ticketId, "open");
     setTickets((prev) =>
       prev.map((t) =>
         t.id === ticketId
@@ -154,7 +186,13 @@ export function EmployeeHelpdeskPage() {
           ]}
         />
         <TabsContent value="faq" className="mt-6">
-          <FaqPanel onSubmitCase={() => setShowNewCaseModal(true)} />
+          {mine.live ? (
+            <NotIntegrated label="Help desk FAQ">
+              <FaqPanel onSubmitCase={() => setShowNewCaseModal(true)} />
+            </NotIntegrated>
+          ) : (
+            <FaqPanel onSubmitCase={() => setShowNewCaseModal(true)} />
+          )}
         </TabsContent>
         <TabsContent value="my-cases" className="mt-6">
           <TicketList

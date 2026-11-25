@@ -13,6 +13,8 @@ export const LIVE_LINKS: readonly string[] = [
   "/hr-action-center/tasks",
   "/workspace/announcements",
   "/workspace/kudos",
+  "/workspace/helpdesk",
+  "/workspace/knowledge",
   "/organization/branches",
   "/organization/departments",
   "/organization/employees",
@@ -72,6 +74,8 @@ export const SELF_SERVICE_LIVE_LINKS: readonly string[] = [
   "/profile/diversity",
   "/time-off/sickness",
   "/company/community",
+  "/company/helpdesk",
+  "/company/knowledge",
 ];
 
 export function isSelfServiceLivePath(pathname: string): boolean {

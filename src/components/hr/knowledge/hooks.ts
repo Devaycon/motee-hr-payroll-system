@@ -1,6 +1,23 @@
 "use client";
 
+import { useMemo } from "react";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { isServerId, useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import { articleFromApi, articleToRequest } from "@/src/lib/knowledge/api-mapping";
+import {
+  useClearKnowledgeArticleFeedbackMutation,
+  useCreateKnowledgeArticleMutation,
+  useDeleteKnowledgeArticleMutation,
+  useFeatureKnowledgeArticleMutation,
+  useGetKnowledgeArticlesQuery,
+  useGetPublishedKnowledgeArticlesQuery,
+  useMarkKnowledgeArticleReadMutation,
+  useSendKnowledgeArticleFeedbackMutation,
+  useSetKnowledgeArticleStatusMutation,
+  useUnfeatureKnowledgeArticleMutation,
+  useUpdateKnowledgeArticleMutation,
+} from "@/src/store/services/knowledge";
+import type { NewArticle } from "@/src/lib/types/knowledge";
 import type {
   ArticleCategory,
   ArticleStatus,
@@ -71,6 +88,89 @@ function buildArticles(bundle: LocaleBundle): KnowledgeArticle[] {
   });
 }
 
+/** Every article (HR): from the API when signed in, the bundle otherwise. */
 export function useKnowledgeArticles() {
-  return useLocaleSection<KnowledgeArticle[]>(buildArticles);
+  const live = useIsLive();
+  const demo = useLocaleSection<KnowledgeArticle[]>(buildArticles);
+  const q = useGetKnowledgeArticlesQuery({ PageSize: 500 }, { skip: !live });
+  const data = useMemo(
+    () => (q.data?.data ? q.data.data.articles.items.map(articleFromApi) : null),
+    [q.data],
+  );
+  if (!live) return demo;
+  return { data, loading: q.isLoading, error: null };
+}
+
+/**
+ * The published articles an employee can read, with their own vote. Signed
+ * out `live` is false and the employee page keeps its demo list.
+ */
+export function usePublishedKnowledgeArticles() {
+  const live = useIsLive();
+  const q = useGetPublishedKnowledgeArticlesQuery({ PageSize: 500 }, { skip: !live });
+  const data = useMemo(() => {
+    const items = q.data?.data?.articles.items;
+    if (!items) return null;
+    return {
+      articles: items.map(articleFromApi),
+      votes: Object.fromEntries(
+        items
+          .filter((a) => a.myVote)
+          .map((a) => [a.id, a.myVote === "helpful" ? "up" : "down"] as const),
+      ) as Record<string, "up" | "down" | null>,
+    };
+  }, [q.data]);
+  return { live, data };
+}
+
+/** Sends the knowledge screens' changes to the API (no-ops signed out). */
+export function useKnowledgeActions() {
+  const live = useIsLive();
+  const send = useLiveSender(["Knowledge"]);
+  const [create] = useCreateKnowledgeArticleMutation();
+  const [update] = useUpdateKnowledgeArticleMutation();
+  const [remove] = useDeleteKnowledgeArticleMutation();
+  const [setStatus] = useSetKnowledgeArticleStatusMutation();
+  const [feature] = useFeatureKnowledgeArticleMutation();
+  const [unfeature] = useUnfeatureKnowledgeArticleMutation();
+  const [markRead] = useMarkKnowledgeArticleReadMutation();
+  const [vote] = useSendKnowledgeArticleFeedbackMutation();
+  const [clearVote] = useClearKnowledgeArticleFeedbackMutation();
+  const on = (id: string) => live && isServerId(id);
+  const skip = Promise.resolve(true);
+
+  return useMemo(
+    () => ({
+      live,
+      create: (a: NewArticle) =>
+        live ? send(() => create(articleToRequest(a)).unwrap(), "Could not save the article.") : skip,
+      update: (id: string, a: NewArticle) =>
+        on(id)
+          ? send(() => update({ id, body: articleToRequest(a) }).unwrap(), "Could not save the article.")
+          : skip,
+      remove: (id: string) =>
+        on(id) ? send(() => remove(id).unwrap(), "Could not delete the article.") : skip,
+      status: (id: string, status: ArticleStatus) =>
+        on(id)
+          ? send(() => setStatus({ id, body: { status } }).unwrap(), "Could not change the status.")
+          : skip,
+      featured: (id: string, isFeatured: boolean) =>
+        on(id)
+          ? send(
+              () => (isFeatured ? feature(id) : unfeature(id)).unwrap(),
+              "Could not change the featured flag.",
+            )
+          : skip,
+      read: (id: string) => (on(id) ? send(() => markRead(id).unwrap(), "") : skip),
+      vote: (id: string, v: "helpful" | "notHelpful" | null) =>
+        on(id)
+          ? send(
+              () => (v ? vote({ id, body: { vote: v } }) : clearVote(id)).unwrap(),
+              "Could not record your feedback.",
+            )
+          : skip,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [live, send, create, update, remove, setStatus, feature, unfeature, markRead, vote, clearVote],
+  );
 }

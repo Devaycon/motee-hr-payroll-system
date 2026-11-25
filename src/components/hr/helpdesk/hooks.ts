@@ -1,7 +1,31 @@
 "use client";
 
+import { useMemo } from "react";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import {
+  isServerId,
+  useIsLive,
+  useLiveSender,
+  usePeopleDirectory,
+} from "@/src/lib/live/use-is-live";
+import {
+  categoryToApi,
+  priorityToApi,
+  statusToApi,
+  ticketFromApi,
+} from "@/src/lib/helpdesk/api-mapping";
+import { useGetAllHelpdeskTicketsQuery } from "@/src/store/services/collections";
+import {
+  useAssignHelpdeskTicketMutation,
+  useCreateHelpdeskTicketMutation,
+  useDeleteHelpdeskTicketMutation,
+  useGetMyHelpdeskTicketsQuery,
+  useReplyToHelpdeskTicketMutation,
+  useSetHelpdeskTicketPriorityMutation,
+  useSetHelpdeskTicketStatusMutation,
+} from "@/src/store/services/helpdesk";
 import type {
+  NewTicket,
   HelpDeskTicket,
   TicketCategory,
   TicketPriority,
@@ -136,6 +160,102 @@ function buildTickets(bundle: LocaleBundle): HelpDeskTicket[] {
   });
 }
 
+/** Every case: from the API when signed in, the bundle otherwise. */
 export function useHelpdeskTickets() {
-  return useLocaleSection<HelpDeskTicket[]>(buildTickets);
+  const live = useIsLive();
+  const demo = useLocaleSection<HelpDeskTicket[]>(buildTickets);
+  const q = useGetAllHelpdeskTicketsQuery(undefined, { skip: !live });
+  const data = useMemo(() => (q.data ? q.data.map(ticketFromApi) : null), [q.data]);
+  if (!live) return demo;
+  return { data, loading: q.isLoading, error: null };
+}
+
+/** The signed-in employee's own cases (`GET /helpdesk/mine`). */
+export function useMyHelpdeskTickets() {
+  const live = useIsLive();
+  const q = useGetMyHelpdeskTicketsQuery(undefined, { skip: !live });
+  const data = useMemo(
+    () => (q.data?.data ? q.data.data.map(ticketFromApi) : null),
+    [q.data],
+  );
+  return { live, data, loading: q.isLoading };
+}
+
+/**
+ * Sends the help desk screens' changes to the API. The screens update their
+ * local copy first; a refused call refetches, replacing it with the server's.
+ * Every action is a no-op signed out.
+ */
+export function useHelpdeskActions() {
+  const live = useIsLive();
+  const send = useLiveSender(["Helpdesk"]);
+  const people = usePeopleDirectory();
+  const [create] = useCreateHelpdeskTicketMutation();
+  const [setStatus] = useSetHelpdeskTicketStatusMutation();
+  const [setPriority] = useSetHelpdeskTicketPriorityMutation();
+  const [assign] = useAssignHelpdeskTicketMutation();
+  const [reply] = useReplyToHelpdeskTicketMutation();
+  const [remove] = useDeleteHelpdeskTicketMutation();
+
+  return useMemo(
+    () => ({
+      live,
+      create: (t: NewTicket, onBehalfOf?: string | null) =>
+        live
+          ? send(
+              () =>
+                create({
+                  subject: t.subject,
+                  description: t.description,
+                  category: categoryToApi(t.category),
+                  priority: priorityToApi(t.priority),
+                  // `null` raises it as the signed-in employee; left out, the
+                  // submitter picked on the form is looked up by name.
+                  submitterEmployeeId:
+                    onBehalfOf === undefined
+                      ? (people.idOf(t.submitterName) ?? null)
+                      : onBehalfOf,
+                }).unwrap(),
+              "Could not raise the case.",
+            )
+          : Promise.resolve(true),
+      status: (id: string, status: TicketStatus) =>
+        live && isServerId(id)
+          ? send(
+              () => setStatus({ id, body: { status: statusToApi(status) } }).unwrap(),
+              "Could not change the case status.",
+            )
+          : Promise.resolve(true),
+      priority: (id: string, priority: TicketPriority) =>
+        live && isServerId(id)
+          ? send(
+              () => setPriority({ id, body: { priority: priorityToApi(priority) } }).unwrap(),
+              "Could not change the priority.",
+            )
+          : Promise.resolve(true),
+      assign: (id: string, agentName: string) =>
+        live && isServerId(id)
+          ? send(
+              () =>
+                assign({
+                  id,
+                  body: { assigneeEmployeeId: people.idOf(agentName) ?? null },
+                }).unwrap(),
+              "Could not assign the case.",
+            )
+          : Promise.resolve(true),
+      reply: (id: string, body: string, isInternalNote: boolean) =>
+        live && isServerId(id)
+          ? send(
+              () => reply({ id, body: { body, isInternalNote } }).unwrap(),
+              "Could not send the reply.",
+            )
+          : Promise.resolve(true),
+      remove: (id: string) =>
+        live && isServerId(id)
+          ? send(() => remove(id).unwrap(), "Could not delete the case.")
+          : Promise.resolve(true),
+    }),
+    [live, send, people, create, setStatus, setPriority, assign, reply, remove],
+  );
 }

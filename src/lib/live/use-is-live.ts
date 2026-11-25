@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import api from "@/src/store/services/api";
+
+type TagType = Parameters<typeof api.util.invalidateTags>[0][number] & string;
 import { getApiErrorMessage } from "@/src/lib/utils";
 
 /**
@@ -35,6 +38,46 @@ export function useApiRunner() {
     },
     [],
   );
+}
+
+/**
+ * For screens that change their local copy first and send the change after:
+ * a refused call shows the server's message and refetches the given tags, so
+ * the local copy is replaced by the server's again. Resolves true on success.
+ */
+export function useLiveSender(tags: readonly TagType[]) {
+  const dispatch = useAppDispatch();
+  const key = tags.join("|");
+  return useCallback(
+    async (call: () => Promise<unknown>, failure: string): Promise<boolean> => {
+      try {
+        await call();
+        return true;
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, failure));
+        dispatch(api.util.invalidateTags(key.split("|") as TagType[]));
+        return false;
+      }
+    },
+    [dispatch, key],
+  );
+}
+
+/** The directory (live employees when signed in), for name ↔ id lookups. */
+export function usePeopleDirectory() {
+  const employees = useAppSelector((s) => s.locale.data?.employees);
+  return useMemo(() => {
+    const list = employees ?? [];
+    const byId = new Map(list.map((e) => [e.id, e]));
+    const byName = new Map(list.map((e) => [e.fullName.trim().toLowerCase(), e]));
+    return {
+      list,
+      byId,
+      /** The employee id for a display name, or undefined when unknown. */
+      idOf: (name: string | null | undefined) =>
+        name ? byName.get(name.trim().toLowerCase())?.id : undefined,
+    };
+  }, [employees]);
 }
 
 /** Unwraps `{ data: { data } }` from an RTK Query result. */

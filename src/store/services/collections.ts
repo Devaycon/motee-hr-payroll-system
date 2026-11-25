@@ -28,6 +28,19 @@ import type { TaskItemDto } from "@/src/types/tasks";
 import type { WorkforceRequestDto } from "@/src/types/workforce-requests";
 import type { ChecklistHireDto } from "@/src/types/employee-checklist";
 import type { HeadcountPlanBoardDto } from "@/src/types/headcount";
+import type { CertificationDto } from "@/src/types/certifications";
+import type { PostDto } from "@/src/types/community";
+import type { EorWorkerDto } from "@/src/types/eor";
+import type { CaseRowDto } from "@/src/types/er-cases";
+import type { TicketDto } from "@/src/types/helpdesk";
+import type { CourseRowDto } from "@/src/types/learning";
+import type { EnrollmentDto } from "@/src/types/learning";
+import type { OhCaseDto } from "@/src/types/occupational-health";
+import type { ProjectRowDto } from "@/src/types/projects";
+import type { SuggestionDto } from "@/src/types/suggestions";
+import type { SurveyDto } from "@/src/types/surveys";
+import type { WorkflowRowDto } from "@/src/types/workflows";
+import type { RunRowDto } from "@/src/types/workflow-runs";
 import type { ApiResponse } from "@/src/types/api";
 
 /**
@@ -221,6 +234,71 @@ export const collectionsApi = api.injectEndpoints({
         fetchAllPages<TaskItemDto>(baseQuery, `${API_PREFIX}/tasks/assigned-by-me`, "pascal"),
       providesTags: ["Tasks"],
     }),
+    getAllCertifications: builder.query<CertificationDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<CertificationDto>(baseQuery, `${API_PREFIX}/certifications`, "pascal"),
+      providesTags: ["Certifications"],
+    }),
+    getAllCommunityPosts: builder.query<PostDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<PostDto>(baseQuery, `${API_PREFIX}/community`, "pascal"),
+      providesTags: ["Community"],
+    }),
+    getAllEorWorkers: builder.query<EorWorkerDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<EorWorkerDto>(baseQuery, `${API_PREFIX}/eor/workers`, "pascal"),
+      providesTags: ["Eor"],
+    }),
+    getAllErCases: builder.query<CaseRowDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<CaseRowDto>(baseQuery, `${API_PREFIX}/er-cases`, "pascal"),
+      providesTags: ["ErCases"],
+    }),
+    getAllHelpdeskTickets: builder.query<TicketDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<TicketDto>(baseQuery, `${API_PREFIX}/helpdesk`, "pascal"),
+      providesTags: ["Helpdesk"],
+    }),
+    getAllLearningCourses: builder.query<CourseRowDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<CourseRowDto>(baseQuery, `${API_PREFIX}/learning/courses`, "pascal"),
+      providesTags: ["Learning"],
+    }),
+    getAllLearningEnrollments: builder.query<EnrollmentDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<EnrollmentDto>(baseQuery, `${API_PREFIX}/learning/enrollments`, "pascal"),
+      providesTags: ["Learning"],
+    }),
+    getAllOhReferrals: builder.query<OhCaseDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<OhCaseDto>(baseQuery, `${API_PREFIX}/occupational-health`, "pascal"),
+      providesTags: ["OccupationalHealth"],
+    }),
+    getAllProjects: builder.query<ProjectRowDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<ProjectRowDto>(baseQuery, `${API_PREFIX}/projects`, "pascal"),
+      providesTags: ["Projects"],
+    }),
+    getAllSuggestions: builder.query<SuggestionDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<SuggestionDto>(baseQuery, `${API_PREFIX}/suggestions`, "pascal"),
+      providesTags: ["Suggestions"],
+    }),
+    getAllSurveys: builder.query<SurveyDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<SurveyDto>(baseQuery, `${API_PREFIX}/surveys`, "pascal"),
+      providesTags: ["Surveys"],
+    }),
+    getAllWorkflows: builder.query<WorkflowRowDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<WorkflowRowDto>(baseQuery, `${API_PREFIX}/workflows`, "pascal"),
+      providesTags: ["Workflows"],
+    }),
+    getAllWorkflowRuns: builder.query<RunRowDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<RunRowDto>(baseQuery, `${API_PREFIX}/workflow-runs`, "pascal"),
+      providesTags: ["WorkflowRuns"],
+    }),
     getAllWorkforceRequests: builder.query<WorkforceRequestDto[], void>({
       queryFn: (_arg, _api, _extraOptions, baseQuery) =>
         fetchAllPages<WorkforceRequestDto>(baseQuery, `${API_PREFIX}/workforce-requests`, "pascal"),
@@ -277,4 +355,17 @@ export const {
   useGetAllWorkforceRequestsQuery,
   useGetAllChecklistHiresQuery,
   useGetHeadcountPlanBoardsQuery,
+  useGetAllCertificationsQuery,
+  useGetAllCommunityPostsQuery,
+  useGetAllEorWorkersQuery,
+  useGetAllErCasesQuery,
+  useGetAllHelpdeskTicketsQuery,
+  useGetAllLearningCoursesQuery,
+  useGetAllLearningEnrollmentsQuery,
+  useGetAllOhReferralsQuery,
+  useGetAllProjectsQuery,
+  useGetAllSuggestionsQuery,
+  useGetAllSurveysQuery,
+  useGetAllWorkflowsQuery,
+  useGetAllWorkflowRunsQuery,
 } = collectionsApi;

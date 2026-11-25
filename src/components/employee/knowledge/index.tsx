@@ -8,20 +8,36 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { ARTICLES as SEED_ARTICLES, ARTICLE_CATEGORY_CONFIG } from "./components/data";
 import type { KnowledgeArticle, ArticleCategory } from "./components/data";
-import { useKnowledgeArticles } from "@/src/components/hr/knowledge/hooks";
+import {
+  useKnowledgeActions,
+  useKnowledgeArticles,
+  usePublishedKnowledgeArticles,
+} from "@/src/components/hr/knowledge/hooks";
 import { CategoryStatCards } from "./components/category-stat-cards";
 import { ArticleList } from "./components/article-list";
 import { ArticleReader } from "./components/article-reader";
 
 export function EmployeeKnowledgeBase() {
   const { data: localeArticles } = useKnowledgeArticles();
+  // Signed in: the published articles from the API, with your own votes.
+  const published = usePublishedKnowledgeArticles();
+  const actions = useKnowledgeActions();
   const ARTICLES = (
-    localeArticles && localeArticles.length ? localeArticles : SEED_ARTICLES
+    published.live
+      ? (published.data?.articles ?? [])
+      : localeArticles && localeArticles.length
+        ? localeArticles
+        : SEED_ARTICLES
   ) as unknown as KnowledgeArticle[];
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<ArticleCategory | "all">("all");
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [helpfulVotes, setHelpfulVotes] = useState<Record<string, "up" | "down" | null>>({});
+  const [seenVotes, setSeenVotes] = useState<Record<string, "up" | "down" | null> | null>(null);
+  if (published.data && published.data.votes !== seenVotes) {
+    setSeenVotes(published.data.votes);
+    setHelpfulVotes(published.data.votes);
+  }
   const [openArticle, setOpenArticle] = useState<KnowledgeArticle | null>(null);
 
   const publishedArticles = ARTICLES.filter((a) => a.status === "published");
@@ -59,10 +75,13 @@ export function EmployeeKnowledgeBase() {
   }
 
   function vote(id: string, dir: "up" | "down") {
+    const next = helpfulVotes[id] === dir ? null : dir;
+    void actions.vote(id, next === "up" ? "helpful" : next === "down" ? "notHelpful" : null);
     setHelpfulVotes((prev) => ({ ...prev, [id]: prev[id] === dir ? null : dir }));
   }
 
   function handleOpenArticle(a: KnowledgeArticle) {
+    void actions.read(a.id);
     setOpenArticle(a);
   }
 
