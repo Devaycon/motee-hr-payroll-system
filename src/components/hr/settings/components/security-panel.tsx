@@ -52,9 +52,18 @@ const SESSION_TIMEOUT_OPTIONS = [
 interface Props {
   security: SecuritySettings;
   onChange: (updated: SecuritySettings) => void;
+  /** Signed in: the password policy and session timeout go to the API. */
+  onSavePolicy?: (policy: PasswordPolicy) => Promise<boolean>;
+  /** Signed in: signs one of your sessions out. */
+  onRevokeDevice?: (id: string) => Promise<boolean>;
 }
 
-export function SecurityPanel({ security, onChange }: Props) {
+export function SecurityPanel({
+  security,
+  onChange,
+  onSavePolicy,
+  onRevokeDevice,
+}: Props) {
   const [policy, setPolicy] = useState<PasswordPolicy>(security.passwordPolicy);
   const [devices, setDevices] = useState(security.trustedDevices);
   const [savingPolicy, setSavingPolicy] = useState(false);
@@ -68,6 +77,15 @@ export function SecurityPanel({ security, onChange }: Props) {
 
   function handleSavePolicy() {
     setSavingPolicy(true);
+    if (onSavePolicy) {
+      void onSavePolicy(policy).then((ok) => {
+        setSavingPolicy(false);
+        if (!ok) return;
+        onChange({ ...security, passwordPolicy: policy });
+        toast.success("Security settings saved.");
+      });
+      return;
+    }
     setTimeout(() => {
       onChange({
         ...security,
@@ -79,6 +97,14 @@ export function SecurityPanel({ security, onChange }: Props) {
   }
 
   function handleRevokeDevice(id: string) {
+    if (onRevokeDevice) {
+      void onRevokeDevice(id).then((ok) => {
+        if (!ok) return;
+        setDevices((prev) => prev.filter((d) => d.id !== id));
+        toast.success("Device revoked.");
+      });
+      return;
+    }
     const updated = devices.filter((d) => d.id !== id);
     setDevices(updated);
     onChange({ ...security, trustedDevices: updated });

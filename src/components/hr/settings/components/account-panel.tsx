@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { Download, Trash2, RotateCcw, Zap, Users } from "lucide-react";
 import {
   Card,
@@ -28,6 +29,8 @@ import type { AccountSettings, BillingRecord } from "../types";
 interface Props {
   account: AccountSettings;
   billing: BillingRecord[];
+  /** Signed in: billing history and clearing demo data have no endpoint. */
+  live?: boolean;
 }
 
 const PLAN_COLORS: Record<string, string> = {
@@ -39,7 +42,7 @@ const PLAN_COLORS: Record<string, string> = {
     "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400",
 };
 
-export function AccountPanel({ account, billing }: Props) {
+export function AccountPanel({ account, billing, live = false }: Props) {
   const [clearLoading, setClearLoading] = useState(false);
 
   function handleClearDemo() {
@@ -50,7 +53,12 @@ export function AccountPanel({ account, billing }: Props) {
     }, 800);
   }
 
-  const seatsPercent = Math.round((account.usedSeats / account.seats) * 100);
+  const seatsPercent = account.seats
+    ? Math.round((account.usedSeats / account.seats) * 100)
+    : 0;
+  // Signed in, the sections with no endpoint stay visible but blurred.
+  const gate = (label: string, node: React.ReactNode) =>
+    live ? <NotIntegrated label={label}>{node}</NotIntegrated> : node;
 
   return (
     <div className="space-y-6">
@@ -133,6 +141,8 @@ export function AccountPanel({ account, billing }: Props) {
         </CardContent>
       </Card>
 
+      {gate(
+        "Billing history",
       <Card className="border-0 shadow-sm ring-1 ring-border">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Billing History</CardTitle>
@@ -202,7 +212,10 @@ export function AccountPanel({ account, billing }: Props) {
           </div>
         </CardContent>
       </Card>
+      )}
 
+      {gate(
+        "Clearing demo data",
       <Card className="border-0 shadow-sm ring-1 ring-destructive/30">
         <CardHeader className="pb-3">
           <CardTitle className="text-base text-destructive">
@@ -282,6 +295,7 @@ export function AccountPanel({ account, billing }: Props) {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

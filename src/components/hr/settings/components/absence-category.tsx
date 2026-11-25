@@ -8,8 +8,12 @@ import { HolidayYearPanel } from "./holiday-year-panel";
 import { CompanyHolidaysPanel } from "./company-holidays-panel";
 import { BlackoutPanel } from "./blackout-panel";
 import { HOLIDAY_YEARS, COMPANY_HOLIDAYS, BLACKOUT_PERIODS } from "../data";
+import { useLiveBlackouts, useLiveCompanyHolidays, useLiveHolidayYear } from "../live";
 
 export function AbsenceCategory() {
+  const year = useLiveHolidayYear();
+  const holidays = useLiveCompanyHolidays();
+  const blackouts = useLiveBlackouts();
   return (
     <Tabs defaultValue="patterns">
       <PageTabsList
@@ -45,15 +49,27 @@ export function AbsenceCategory() {
       </TabsContent>
 
       <TabsContent value="year" className="mt-6">
-        <HolidayYearPanel cycles={HOLIDAY_YEARS} />
+        <HolidayYearPanel
+          key={`year-${year.version}`}
+          cycles={year.cycles ?? HOLIDAY_YEARS}
+          onSetStart={year.live ? year.setStart : undefined}
+        />
       </TabsContent>
 
       <TabsContent value="holidays" className="mt-6">
-        <CompanyHolidaysPanel holidays={COMPANY_HOLIDAYS} />
+        <CompanyHolidaysPanel
+          key={`holidays-${holidays.version}`}
+          holidays={holidays.holidays ?? COMPANY_HOLIDAYS}
+          live={holidays.live ? holidays : undefined}
+        />
       </TabsContent>
 
       <TabsContent value="blackout" className="mt-6">
-        <BlackoutPanel periods={BLACKOUT_PERIODS} />
+        <BlackoutPanel
+          key={`blackout-${blackouts.version}`}
+          periods={blackouts.periods ?? BLACKOUT_PERIODS}
+          live={blackouts.live ? blackouts : undefined}
+        />
       </TabsContent>
 
       <TabsContent value="presence" className="mt-6">

@@ -40,6 +40,7 @@ export const LIVE_LINKS: readonly string[] = [
   "/admin/access-levels",
   "/admin/users",
   "/admin/audit-trail",
+  "/admin/settings",
 ];
 
 /**

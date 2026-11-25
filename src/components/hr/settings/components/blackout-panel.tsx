@@ -37,6 +37,11 @@ import { formatDate } from "../utils";
 
 interface Props {
   periods: BlackoutPeriod[];
+  /** Signed in: leave blackouts on the API. */
+  live?: {
+    save: (period: BlackoutPeriod, existingId?: string) => Promise<boolean>;
+    remove: (id: string) => Promise<boolean>;
+  };
 }
 
 interface FormState {
@@ -48,7 +53,7 @@ interface FormState {
 
 const EMPTY: FormState = { name: "", startDate: "", endDate: "", reason: "" };
 
-export function BlackoutPanel({ periods: initial }: Props) {
+export function BlackoutPanel({ periods: initial, live }: Props) {
   const [periods, setPeriods] = useState<BlackoutPeriod[]>(initial);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<BlackoutPeriod | null>(null);
@@ -84,6 +89,22 @@ export function BlackoutPanel({ periods: initial }: Props) {
       return;
     }
 
+    if (live) {
+      const item: BlackoutPeriod = {
+        id: editing?.id ?? "",
+        name: form.name.trim(),
+        startDate: form.startDate,
+        endDate: form.endDate,
+        reason: form.reason.trim() || undefined,
+      };
+      void live.save(item, editing?.id).then((ok) => {
+        if (!ok) return;
+        toast.success(editing ? "Blackout period updated." : "Blackout period added.");
+        setOpen(false);
+      });
+      return;
+    }
+
     if (editing) {
       setPeriods((prev) =>
         prev.map((p) =>
@@ -116,6 +137,12 @@ export function BlackoutPanel({ periods: initial }: Props) {
   }
 
   function handleDelete(period: BlackoutPeriod) {
+    if (live) {
+      void live.remove(period.id).then((ok) => {
+        if (ok) toast.success("Blackout period removed.");
+      });
+      return;
+    }
     setPeriods((prev) => prev.filter((p) => p.id !== period.id));
     toast.success("Blackout period removed.");
   }
