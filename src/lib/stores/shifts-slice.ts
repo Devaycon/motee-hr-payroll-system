@@ -104,6 +104,14 @@ const shiftsSlice = createSlice({
         (a) => a.templateId !== action.payload,
       );
     },
+    /** Signed in: templates and assignments from the API replace the store. */
+    replaceFromApi(
+      state,
+      action: PayloadAction<{ templates: ShiftTemplate[]; assignments: ShiftAssignment[] }>,
+    ) {
+      state.templates = action.payload.templates;
+      state.assignments = action.payload.assignments;
+    },
     /** Assigns (or reassigns) one employee to one template on one date. */
     setAssignment(
       state,
@@ -165,6 +173,7 @@ export const {
   setAssignment,
   clearAssignment,
   setAssignmentStatus,
+  replaceFromApi,
 } = shiftsSlice.actions;
 
 export { DEFAULT_TEMPLATES };

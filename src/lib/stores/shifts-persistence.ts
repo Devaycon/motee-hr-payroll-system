@@ -51,6 +51,8 @@ export function initShiftsPersistence(): void {
   let lastTemplates: ShiftTemplate[] | null = null;
   let lastAssignments: ShiftAssignment[] | null = null;
   store.subscribe(() => {
+    // Signed in, shifts are the server's: never cached on this machine.
+    if (store.getState().session?.is_loggedIn) return;
     const { templates, assignments } = store.getState().shifts;
     if (templates === lastTemplates && assignments === lastAssignments) return;
     lastTemplates = templates;

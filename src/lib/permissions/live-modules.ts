@@ -44,6 +44,7 @@ export const LIVE_LINKS: readonly string[] = [
   "/time-payroll/attendance",
   "/time-payroll/expenses",
   "/time-payroll/sickness",
+  "/time-payroll/shifts",
   "/admin/access-levels",
   "/admin/users",
   "/admin/audit-trail",
@@ -97,6 +98,7 @@ export const SELF_SERVICE_LIVE_LINKS: readonly string[] = [
   "/profile/assets",
   "/company/org-chart",
   "/profile/my-profile",
+  "/time-off/shifts",
 ];
 
 export function isSelfServiceLivePath(pathname: string): boolean {

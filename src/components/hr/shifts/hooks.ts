@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { useShiftsLive } from "@/src/lib/shifts/use-shifts-live";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
 import type { NewShiftTemplate } from "@/src/lib/types/shifts";
@@ -13,6 +14,8 @@ import {
 } from "@/src/lib/stores/shifts-slice";
 
 export function useShiftTemplates() {
+  // Signed in: the roster and work schedules are mirrored from the API.
+  useShiftsLive("all");
   return useAppSelector((s) => s.shifts.templates);
 }
 
