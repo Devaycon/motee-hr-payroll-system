@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Badge } from "@/src/components/ui/badge";
-import { ENGAGEMENT_TREND_DATA } from "../data";
+import { useEngagementTrendData } from "../hooks";
 
 type DeptKey = "engineering" | "marketing" | "sales" | "hr" | "operations";
 
@@ -27,6 +27,7 @@ const DEPT_OPTIONS: { value: DeptKey | "all"; label: string }[] = [
 
 export function EngagementTrend() {
   const [dept, setDept] = useState<DeptKey | "all">("all");
+  const ENGAGEMENT_TREND_DATA = useEngagementTrendData();
 
   const latestScore = ENGAGEMENT_TREND_DATA[ENGAGEMENT_TREND_DATA.length - 1];
   const prevScore = ENGAGEMENT_TREND_DATA[ENGAGEMENT_TREND_DATA.length - 2];

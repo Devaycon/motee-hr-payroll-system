@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+import { useLiveCommunityPosts } from "@/src/lib/engagement/use-engagement";
 import type {
   CelebrationEntry,
   CelebrationKind,
@@ -142,6 +144,18 @@ function buildCommunity(bundle: LocaleBundle): CommunityData {
   return { posts, celebrations, directory };
 }
 
+/**
+ * The feed, celebrations and directory. Signed in the posts come from the
+ * API; celebrations and the directory are worked out from the (live)
+ * employee list as before.
+ */
 export function useCommunity() {
-  return useLocaleSection<CommunityData>(buildCommunity);
+  const demo = useLocaleSection<CommunityData>(buildCommunity);
+  const feed = useLiveCommunityPosts("You");
+  const data = useMemo(() => {
+    if (!feed.live) return demo.data;
+    if (!demo.data || !feed.posts) return null;
+    return { ...demo.data, posts: feed.posts };
+  }, [feed.live, feed.posts, demo.data]);
+  return { ...demo, data, loading: demo.loading || (feed.live && !feed.posts) };
 }

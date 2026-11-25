@@ -7,8 +7,10 @@ import { CommunityTab } from "./components/community-tab";
 import { KudosTab } from "./components/kudos-tab";
 import { SuggestionsTab } from "./components/suggestions-tab";
 import { NotIntegrated } from "@/src/components/shared/not-integrated";
+import { useIsLive } from "@/src/lib/live/use-is-live";
 
 export function EmployeeCommunityPage() {
+  const live = useIsLive();
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -29,18 +31,26 @@ export function EmployeeCommunityPage() {
           ]}
         />
         <TabsContent value="community" className="mt-6">
-          {/* The community feed is not on the API yet. */}
-          <NotIntegrated label="Community feed">
+          {/* Signed in the feed runs on the API; the demo keeps the blur. */}
+          {live ? (
             <CommunityTab />
-          </NotIntegrated>
+          ) : (
+            <NotIntegrated label="Community feed">
+              <CommunityTab />
+            </NotIntegrated>
+          )}
         </TabsContent>
         <TabsContent value="kudos" className="mt-6">
           <KudosTab />
         </TabsContent>
         <TabsContent value="suggestions" className="mt-6">
-          <NotIntegrated label="Suggestions">
+          {live ? (
             <SuggestionsTab />
-          </NotIntegrated>
+          ) : (
+            <NotIntegrated label="Suggestions">
+              <SuggestionsTab />
+            </NotIntegrated>
+          )}
         </TabsContent>
       </Tabs>
     </div>

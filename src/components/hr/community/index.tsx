@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useCommunity } from "./hooks";
+import { useCommunityActions } from "@/src/lib/engagement/use-engagement";
 import {
   Users,
   Plus,
@@ -31,8 +32,11 @@ export function CommunityPage() {
     if (data) setPosts(data.posts);
   }, [data]);
   const [formOpen, setFormOpen] = useState(false);
+  // Signed in, each change below is also sent to the API.
+  const actions = useCommunityActions();
 
   const handleCreate = (newPost: NewPost) => {
+    void actions.create(newPost);
     const pollOptions =
       newPost.type === "poll" && newPost.pollOptions
         ? newPost.pollOptions.map((label, i) => ({
@@ -69,10 +73,12 @@ export function CommunityPage() {
   };
 
   const handleDelete = (id: string) => {
+    void actions.remove(id);
     setPosts((prev) => prev.filter((p) => p.id !== id));
   };
 
   const handleTogglePin = (id: string) => {
+    void actions.pin(id, !posts.find((p) => p.id === id)?.isPinned);
     setPosts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, isPinned: !p.isPinned } : p)),
     );
@@ -81,6 +87,7 @@ export function CommunityPage() {
   const CURRENT_USER = "You";
 
   const handleLike = (id: string) => {
+    void actions.like(id);
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id !== id) return p;
@@ -96,6 +103,7 @@ export function CommunityPage() {
   };
 
   const handleComment = (id: string, message: string) => {
+    void actions.comment(id, message);
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id !== id) return p;
@@ -118,6 +126,7 @@ export function CommunityPage() {
   };
 
   const handlePollVote = (postId: string, optionId: string) => {
+    void actions.vote(postId, optionId);
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id !== postId || !p.pollOptions) return p;
