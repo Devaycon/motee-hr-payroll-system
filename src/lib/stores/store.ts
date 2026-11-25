@@ -56,6 +56,7 @@ import { sicknessListener } from "./sickness-listener";
 import { sicknessApiListener } from "./sickness-api-listener";
 import { collectionApiListener } from "./collection-api-listener";
 import { erCasesApiListener } from "./er-cases-api-listener";
+import { expensesApiListener } from "./expenses-api-listener";
 
 export const store = configureStore({
   reducer: {
@@ -116,6 +117,7 @@ export const store = configureStore({
         recruitmentListener.middleware,
         collectionApiListener.middleware,
         erCasesApiListener.middleware,
+        expensesApiListener.middleware,
       )
       .concat(api.middleware),
 });

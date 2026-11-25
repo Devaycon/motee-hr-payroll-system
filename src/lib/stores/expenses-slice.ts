@@ -378,6 +378,12 @@ const expensesSlice = createSlice({
       });
     },
 
+    /** Signed in: your claims from `GET /expenses/claims/mine` replace the store. */
+    replaceFromApi(state, action: PayloadAction<ExpenseClaim[]>) {
+      state.claims = action.payload;
+      state.status = "ready";
+    },
+
     deleteClaim(state, action: PayloadAction<string>) {
       // Drafts only — a claim under review or already decided is a record.
       state.claims = state.claims.filter(
@@ -398,6 +404,7 @@ export const {
   returnClaim,
   withdrawClaim,
   deleteClaim,
+  replaceFromApi,
 } = expensesSlice.actions;
 
 export default expensesSlice.reducer;
