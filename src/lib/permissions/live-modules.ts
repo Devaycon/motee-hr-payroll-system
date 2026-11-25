@@ -93,6 +93,10 @@ export const SELF_SERVICE_LIVE_LINKS: readonly string[] = [
   "/time-off/request",
   "/time-off/attendance",
   "/growth/performance",
+  "/employee/events",
+  "/profile/assets",
+  "/company/org-chart",
+  "/profile/my-profile",
 ];
 
 export function isSelfServiceLivePath(pathname: string): boolean {
