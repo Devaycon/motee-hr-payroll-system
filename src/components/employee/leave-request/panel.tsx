@@ -26,7 +26,8 @@ import type {
   LeaveRequestEntry,
 } from "./components/types";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
-import { addRequest } from "@/src/lib/stores/leave-slice";
+import { addRequest, cancelRequest } from "@/src/lib/stores/leave-slice";
+import { useMyLeave } from "@/src/lib/leave/use-my-leave";
 
 const STATUS_ICON: Record<LeaveStatus, React.ReactNode> = {
   approved: <CheckCircle2 className="w-3.5 h-3.5 text-[#1D9E75]" />,
@@ -37,6 +38,18 @@ const STATUS_ICON: Record<LeaveStatus, React.ReactNode> = {
   rejected: <XCircle className="w-3.5 h-3.5 text-red-500" />,
   cancelled: <XCircle className="w-3.5 h-3.5 text-muted-foreground" />,
 };
+
+/** The panel's balance cards from the API balances (zero where you have none). */
+function liveBalances(rows: ReturnType<typeof useMyLeave>["balances"]): LeaveBalance {
+  const base = buildMyBalances(undefined);
+  for (const key of Object.keys(base) as (keyof LeaveBalance)[]) {
+    base[key] = { total: 0, used: 0, pending: 0 };
+  }
+  for (const r of rows ?? []) {
+    base[r.type] = { total: r.totalEntitlement, used: r.daysUsed, pending: r.daysPending };
+  }
+  return base;
+}
 
 function buildMyBalances(employeeName: string | undefined): LeaveBalance {
   const base: LeaveBalance = {
@@ -69,7 +82,9 @@ export function LeaveRequestPanel() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const employeeName = user?.name;
-  const MY_BALANCES = buildMyBalances(employeeName);
+  // Signed in: your balances and requests from the API.
+  const myLeave = useMyLeave();
+  const MY_BALANCES = myLeave.live ? liveBalances(myLeave.balances) : buildMyBalances(employeeName);
   const initialRequests: LeaveRequestEntry[] = LEAVE_REQUESTS.filter(
     (r) => r.employeeName === employeeName,
   ).map((r) => ({
@@ -89,6 +104,17 @@ export function LeaveRequestPanel() {
     submittedAt: r.submittedAt,
   }));
   const [requests, setRequests] = useState<LeaveRequestEntry[]>(initialRequests);
+  const [seenLive, setSeenLive] = useState<typeof myLeave.requests>(null);
+  if (myLeave.requests && myLeave.requests !== seenLive) {
+    setSeenLive(myLeave.requests);
+    setRequests(
+      myLeave.requests.map((r) => ({
+        ...r,
+        contactAddress: "",
+        contactPhone: "",
+      })) as unknown as LeaveRequestEntry[],
+    );
+  }
   const [formOpen, setFormOpen] = useState(false);
   const [detailReq, setDetailReq] = useState<LeaveRequestEntry | null>(null);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
@@ -136,6 +162,8 @@ export function LeaveRequestPanel() {
   }
 
   function handleCancel(id: string) {
+    // The leave listener sends the cancellation to the API when signed in.
+    if (myLeave.live) dispatch(cancelRequest({ id, actor: user?.name ?? "Employee" }));
     setRequests((prev) =>
       prev.map((r) =>
         r.id === id ? { ...r, status: "cancelled" as LeaveStatus } : r,

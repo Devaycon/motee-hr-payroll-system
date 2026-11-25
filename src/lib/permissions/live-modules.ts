@@ -89,6 +89,8 @@ export const SELF_SERVICE_LIVE_LINKS: readonly string[] = [
   "/profile/documents",
   "/employee/documents",
   "/employee/expenses",
+  "/time-off/balance",
+  "/time-off/request",
 ];
 
 export function isSelfServiceLivePath(pathname: string): boolean {
