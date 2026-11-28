@@ -6,6 +6,8 @@ import {
   type HrStatCardItem,
 } from "@/src/components/shared/hr-stat-card";
 import type { AttendanceRecord, TimesheetRecord } from "../types";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetAttendanceSummaryQuery } from "@/src/store/services/attendance";
 
 /** The slice a KPI card drills into. */
 export type AttendanceCardFilter =
@@ -57,15 +59,15 @@ export function StatCards({
   cardFilter,
   onDrillDown,
 }: StatCardsProps) {
-  const presentCount = records.filter((r) =>
-    matchesAttendanceCardFilter(r, "present"),
-  ).length;
-  const absentCount = records.filter((r) =>
-    matchesAttendanceCardFilter(r, "absent"),
-  ).length;
-  const lateCount = records.filter((r) =>
-    matchesAttendanceCardFilter(r, "late"),
-  ).length;
+  // Signed in: today's company-wide figures from GET /attendance/summary.
+  const today = new Date().toISOString().slice(0, 10);
+  const server = useGetAttendanceSummaryQuery({ From: today, To: today }, { skip: !useIsLive() }).data?.data;
+  const presentCount =
+    server?.daysPresent ?? records.filter((r) => matchesAttendanceCardFilter(r, "present")).length;
+  const absentCount =
+    server?.daysAbsent ?? records.filter((r) => matchesAttendanceCardFilter(r, "absent")).length;
+  const lateCount =
+    server?.daysLate ?? records.filter((r) => matchesAttendanceCardFilter(r, "late")).length;
   const pendingApprovals = timesheets.filter(
     (t) => t.status === "submitted",
   ).length;

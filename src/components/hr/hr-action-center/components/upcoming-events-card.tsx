@@ -11,26 +11,10 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
-import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
+// Shared with the dashboard: GET /calendar/upcoming signed in, the demo bundle signed out.
+import { useUpcomingEvents } from "@/src/components/hr/dashboard/components/upcoming-events-card";
 import { formatDate } from "@/src/lib/utils/format-date";
 import { cn } from "@/src/lib/utils";
-
-interface UpcomingEvent {
-  id: string;
-  title: string;
-  date: string;
-  type: string;
-  daysUntil: number;
-}
-
-interface RawEvent {
-  id?: string;
-  title?: string;
-  type?: string;
-  start?: string;
-  date?: string;
-  location?: string;
-}
 
 const TYPE_STYLES: Record<string, string> = {
   birthday: "border-pink-500/30 bg-pink-500/10 text-pink-600 dark:text-pink-400",
@@ -40,6 +24,8 @@ const TYPE_STYLES: Record<string, string> = {
   reminder: "border-sky-500/30 bg-sky-500/10 text-sky-600",
   training: "border-teal-500/30 bg-teal-500/10 text-teal-600",
   meeting: "border-[#7F77DD]/30 bg-[#7F77DD]/10 text-[#7F77DD]",
+  starter: "border-lime-500/30 bg-lime-500/10 text-lime-700 dark:text-lime-400",
+  leaver: "border-stone-500/30 bg-stone-500/10 text-stone-600 dark:text-stone-400",
 };
 
 function relativeLabel(days: number) {
@@ -48,81 +34,6 @@ function relativeLabel(days: number) {
   return `In ${days} days`;
 }
 
-/** Days until the next occurrence of a month-day (MM-DD) relative to ref. */
-function daysUntilAnnual(monthDay: string, ref: Date): number | null {
-  const [, mm, dd] = monthDay.split("-").map((n) => Number(n));
-  if (!mm || !dd) return null;
-  let next = new Date(ref.getFullYear(), mm - 1, dd);
-  if (next.getTime() < ref.getTime()) {
-    next = new Date(ref.getFullYear() + 1, mm - 1, dd);
-  }
-  return Math.round((next.getTime() - ref.getTime()) / 86_400_000);
-}
-
-function useUpcomingEvents() {
-  return useLocaleSection<UpcomingEvent[]>((bundle) => {
-    const refIso =
-      bundle._meta.referenceDate ?? new Date().toISOString().slice(0, 10);
-    const ref = new Date(`${refIso}T00:00:00`);
-
-    const calendarEvents = ((bundle.events ?? []) as RawEvent[])
-      .map((raw, i) => {
-        const date = (raw.start ?? raw.date ?? "").slice(0, 10);
-        return {
-          id: raw.id ?? `ev-${i + 1}`,
-          title: raw.title ?? "Event",
-          date,
-          type: raw.type ?? "meeting",
-        };
-      })
-      .filter((e) => e.date)
-      .map((e) => {
-        const d = new Date(`${e.date}T00:00:00`);
-        const daysUntil = Math.round(
-          (d.getTime() - ref.getTime()) / 86_400_000,
-        );
-        return { ...e, daysUntil };
-      });
-
-    // Birthdays & work anniversaries are recurring annual events — derive the
-    // next occurrence within the window from the employee roster.
-    const peopleEvents: UpcomingEvent[] = [];
-    for (const emp of bundle.employees) {
-      if (emp.dateOfBirth) {
-        const days = daysUntilAnnual(emp.dateOfBirth.slice(5), ref);
-        if (days !== null) {
-          peopleEvents.push({
-            id: `bday-${emp.id}`,
-            title: `${emp.fullName}'s birthday`,
-            date: new Date(ref.getTime() + days * 86_400_000)
-              .toISOString()
-              .slice(0, 10),
-            type: "birthday",
-            daysUntil: days,
-          });
-        }
-      }
-      if (emp.startDate) {
-        const days = daysUntilAnnual(emp.startDate.slice(5), ref);
-        if (days !== null) {
-          peopleEvents.push({
-            id: `anniv-${emp.id}`,
-            title: `${emp.fullName}'s work anniversary`,
-            date: new Date(ref.getTime() + days * 86_400_000)
-              .toISOString()
-              .slice(0, 10),
-            type: "anniversary",
-            daysUntil: days,
-          });
-        }
-      }
-    }
-
-    return [...calendarEvents, ...peopleEvents]
-      .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 7)
-      .sort((a, b) => a.daysUntil - b.daysUntil);
-  });
-}
 
 export function UpcomingEventsCard() {
   const { data, loading } = useUpcomingEvents();

@@ -79,6 +79,40 @@ const SPECIAL = new Set([
   "employmentTypeId",
 ]);
 
+/**
+ * The names the API may use for a profile path in a change request: the path
+ * itself, or the employee-record property it is saved to (with or without its
+ * nested object). Compared loosely (case and punctuation ignored).
+ */
+export function serverKeyCandidates(path: string): string[] {
+  const out = [path];
+  if (path in DIRECT) out.push(DIRECT[path]);
+  if (path in BANK) out.push(BANK[path], `bankDetails.${BANK[path]}`);
+  if (path in IDENTITY) {
+    out.push(IDENTITY[path], `identityDocuments.${IDENTITY[path]}`);
+  }
+  return out;
+}
+
+const loose = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** Whether the API's change-request key names this profile path. */
+export function isSameField(path: string, serverKey: string): boolean {
+  const k = loose(serverKey);
+  return serverKeyCandidates(path).some((c) => loose(c) === k);
+}
+
+/** The profile path a change-request key from the API refers to. */
+export function profilePathForServerKey(serverKey: string): string {
+  const paths = [
+    ...Object.keys(DIRECT),
+    ...Object.keys(BANK),
+    ...Object.keys(IDENTITY),
+    "photoUrl",
+  ];
+  return paths.find((p) => isSameField(p, serverKey)) ?? serverKey;
+}
+
 /** Whether an edit to this path is saved by the API at all. */
 export function isServerField(field: string): boolean {
   return (

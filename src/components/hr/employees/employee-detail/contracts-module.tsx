@@ -10,6 +10,9 @@ import { UnsignedContractsTable } from "@/src/components/employee/contracts/comp
 import { ContractDetailModal } from "@/src/components/hr/contracts/components/contract-detail-modal";
 import { ContractLetterModal } from "@/src/components/hr/contracts/components/contract-letter-modal";
 import { useContracts } from "@/src/components/hr/contracts/hooks";
+import { useIsLive, useMyEmployeeId } from "@/src/lib/live/use-is-live";
+import { toContract } from "@/src/lib/contracts/api-mapping";
+import { useGetMyContractsQuery } from "@/src/store/services/contracts";
 import type { Contract } from "@/src/lib/types/contracts";
 import type { ModuleProps } from "./modules";
 import { Section, Empty } from "./ui";
@@ -21,15 +24,24 @@ import { Section, Empty } from "./ui";
 export function ContractsModule({ employee }: ModuleProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: localeContracts } = useContracts();
+  // Your own profile reads `/contracts/mine`; the company register
+  // (`/contracts`) is for HR only.
+  const live = useIsLive();
+  const myEmployeeId = useMyEmployeeId();
+  const own = live && employee.id === myEmployeeId;
+  const { data: localeContracts } = useContracts({ skip: own });
+  const mine = useGetMyContractsQuery(undefined, { skip: !own });
   const [signed, setSigned] = useState<Record<string, Contract>>({});
 
   const source = useMemo(
     () =>
-      (localeContracts ?? [])
-        .filter((c) => c.employeeName === employee.fullName && !c.isArchived)
+      (own
+        ? (mine.data?.data ?? []).map(toContract)
+        : (localeContracts ?? []).filter((c) => c.employeeName === employee.fullName)
+      )
+        .filter((c) => !c.isArchived)
         .map((c) => signed[c.id] ?? c),
-    [localeContracts, employee.fullName, signed],
+    [own, mine.data, localeContracts, employee.fullName, signed],
   );
 
   const [activeTab, setActiveTab] = useState("all");

@@ -12,6 +12,8 @@ import type {
   GetOhReferralsParams,
   GetOhReferralsResponse,
   GetOhSummaryResponse,
+  LinkAbsencesRequest,
+  LinkOhAbsencesResponse,
   MoveOhAdjustmentStageResponse,
   MoveOhReferralStageResponse,
   OhReferralRequest,
@@ -124,6 +126,15 @@ export const occupationalHealthApi = api.injectEndpoints({
       }),
       invalidatesTags: ["OccupationalHealth"],
     }),
+    // PUT /api/v1/occupational-health/{id}/sickness-records — replaces the whole set
+    linkOhAbsences: builder.mutation<LinkOhAbsencesResponse, { id: string; body: LinkAbsencesRequest }>({
+      query: ({ id, body }) => ({
+        url: `${API_PREFIX}/occupational-health/${id}/sickness-records`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["OccupationalHealth", "Sickness"],
+    }),
     // POST /api/v1/occupational-health/{id}/adjustments/{adjustmentId}/stage
     moveOhAdjustmentStage: builder.mutation<MoveOhAdjustmentStageResponse, { id: string; adjustmentId: string; body: AdjustmentStageRequest }>({
       query: ({ id, adjustmentId, body }) => ({
@@ -155,4 +166,5 @@ export const {
   useUpdateOhAdjustmentMutation,
   useDeleteOhAdjustmentMutation,
   useMoveOhAdjustmentStageMutation,
+  useLinkOhAbsencesMutation,
 } = occupationalHealthApi;

@@ -24,13 +24,19 @@ import { ChatPanel } from "@/src/components/shared/chat-panel";
 import { openChat } from "@/src/lib/stores/chat-slice";
 import { useAppDispatch } from "@/src/lib/stores/hooks";
 import { NotificationsPanel } from "@/src/components/shared/notifications-panel";
+import { useNotificationFeed } from "@/src/lib/notifications/use-notification-feed";
+import { useIsLive } from "@/src/lib/live/use-is-live";
 import { ScreenShareModal } from "@/src/components/shared/screen-share-modal";
 import { SendKudosModal } from "@/src/components/hr/kudos/components/send-kudos-modal";
+import { useKudosActions } from "@/src/components/hr/kudos/hooks";
 import type { NewKudos } from "@/src/components/hr/kudos/types";
 import {
   useCurrentUser,
   DEMO_IDENTITY_PLACEHOLDER,
 } from "@/src/lib/auth/demo-identity";
+
+/** The navbar only sends kudos; it needs no feed to pin or react against. */
+const NO_POSTS: never[] = [];
 
 const formatDate = (date: Date) =>
   date.toLocaleDateString("en-GB", {
@@ -54,6 +60,10 @@ const Navbar = () => {
   const [notifOpen, setNotifOpen] = useState(false);
   const [screenShareOpen, setScreenShareOpen] = useState(false);
   const [kudosOpen, setKudosOpen] = useState(false);
+  const live = useIsLive();
+  const { unreadCount } = useNotificationFeed();
+  // Signed out, the approved demo badge; signed in, the real unread count.
+  const bellBadge = live ? unreadCount : 3;
   // Same resolution as the admin navbar, so switching portals never looks like
   // it switched who you are.
   const user = useCurrentUser();
@@ -61,7 +71,15 @@ const Navbar = () => {
   const userInitials = user?.initials ?? DEMO_IDENTITY_PLACEHOLDER.initials;
   const userSubtitle = user?.jobTitle ?? DEMO_IDENTITY_PLACEHOLDER.jobTitle;
 
-  function handleSendKudos(data: NewKudos) {
+  // Signed in, sent exactly as the Kudos page sends it (POST /kudos); the
+  // modal stays open if the server refuses it.
+  const { send: sendKudos } = useKudosActions(NO_POSTS);
+
+  async function handleSendKudos(data: NewKudos) {
+    if (live) {
+      if (await sendKudos(data)) setKudosOpen(false);
+      return;
+    }
     toast.success(`Kudos sent to ${data.recipientName}! 🌟`);
     setKudosOpen(false);
   }
@@ -143,9 +161,11 @@ const Navbar = () => {
               className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-background border border-border text-muted-foreground hover:text-foreground transition-colors"
             >
               <Bell size={16} />
-              <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-[#50D34C] px-1 text-[10px] font-semibold text-white">
-                3
-              </span>
+              {bellBadge > 0 && (
+                <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-[#50D34C] px-1 text-[10px] font-semibold text-white">
+                  {bellBadge > 99 ? "99+" : bellBadge}
+                </span>
+              )}
             </button>
           </div>
 

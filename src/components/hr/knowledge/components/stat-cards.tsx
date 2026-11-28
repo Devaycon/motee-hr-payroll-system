@@ -4,13 +4,20 @@ import { BookOpen, CheckCircle2, Eye, FileEdit } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { computeKbStats } from "../data";
 import type { KnowledgeArticle } from "../types";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetKnowledgeSummaryQuery } from "@/src/store/services/knowledge";
 
 interface StatCardsProps {
   articles: KnowledgeArticle[];
 }
 
 export function StatCards({ articles }: StatCardsProps) {
-  const stats = computeKbStats(articles);
+  const local = computeKbStats(articles);
+  // Signed in: the server's tally (GET /knowledge/summary).
+  const server = useGetKnowledgeSummaryQuery(undefined, { skip: !useIsLive() }).data?.data;
+  const stats = server
+    ? { ...local, total: server.total, published: server.published, drafts: server.drafts, totalViews: server.totalViews }
+    : local;
 
   const cards = [
     {

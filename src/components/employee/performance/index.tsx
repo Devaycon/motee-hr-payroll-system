@@ -31,11 +31,15 @@ import { ProgressUpdateModal } from "./components/progress-update-modal";
 import { NewGoalModal } from "./components/new-goal-modal";
 import { ReviewDetailModal } from "./components/review-detail-modal";
 import { PeerFeedbackModal } from "./components/peer-feedback-modal";
+import {
+  GiveFeedbackModal,
+  type GiveFeedbackTarget,
+} from "./components/give-feedback-modal";
 
 export function MyPerformancePage() {
   // Signed in, each change below goes to the API instead of the demo store.
   const liveActions = useMyPerformanceActions();
-  const { employeeId, me, data, colleagues, loading } = useMyPerformance();
+  const { employeeId, me, data, colleagues, loading, awaitingMe } = useMyPerformance();
   const actions = usePerformanceActions();
   const goals = data?.goals ?? [];
   const currentReview = data?.currentReview ?? null;
@@ -53,6 +57,7 @@ export function MyPerformancePage() {
   const [newGoalOpen, setNewGoalOpen] = useState(false);
   const [reviewDetail, setReviewDetail] = useState<PerformanceReview | null>(null);
   const [peerModal, setPeerModal] = useState(false);
+  const [giving, setGiving] = useState<GiveFeedbackTarget | null>(null);
 
   const [newProgress, setNewProgress] = useState("");
   const [progressNote, setProgressNote] = useState("");
@@ -243,6 +248,24 @@ export function MyPerformancePage() {
             onGoToGoals={() => setTab("goals")}
             onGoalDetail={(g) => setGoalDetailId(g.id)}
             onPeerModal={() => setPeerModal(true)}
+            awaitingMe={awaitingMe}
+            onGiveFeedback={(ask) =>
+              setGiving(
+                ask
+                  ? {
+                      requestId: ask.id,
+                      aboutEmployeeId: ask.askedById,
+                      aboutName: ask.askedByName,
+                      context: ask.context,
+                    }
+                  : {},
+              )
+            }
+            onDeclineAsk={(ask) => {
+              void liveActions.declineFeedbackRequest(ask.id).then((ok) => {
+                if (ok) toast.success(`Declined ${ask.askedByName}'s request.`);
+              });
+            }}
           />
         </TabsContent>
 
@@ -313,6 +336,20 @@ export function MyPerformancePage() {
         onClose={() => setReviewDetail(null)}
       />
 
+      <GiveFeedbackModal
+        target={giving}
+        colleagues={colleagues}
+        onClose={() => setGiving(null)}
+        onSend={async (aboutId, message, requestId) => {
+          if (!liveActions.live) {
+            toast.success("Feedback sent.");
+            return true;
+          }
+          const ok = await liveActions.giveFeedback(aboutId, message, requestId);
+          if (ok) toast.success("Feedback sent.");
+          return ok;
+        }}
+      />
       <PeerFeedbackModal
         open={peerModal}
         onClose={() => setPeerModal(false)}

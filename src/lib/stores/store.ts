@@ -62,6 +62,8 @@ import { shiftsApiListener } from "./shifts-api-listener";
 import { ohApiListener } from "./oh-api-listener";
 import { projectsApiListener } from "./projects-api-listener";
 import { workflowsApiListener } from "./workflows-api-listener";
+import { approvalsApiListener } from "./approvals-api-listener";
+import { changeRequestsApiListener } from "./change-requests-api-listener";
 
 export const store = configureStore({
   reducer: {
@@ -128,6 +130,8 @@ export const store = configureStore({
         ohApiListener.middleware,
         projectsApiListener.middleware,
         workflowsApiListener.middleware,
+        approvalsApiListener.middleware,
+        changeRequestsApiListener.middleware,
       )
       .concat(api.middleware),
 });

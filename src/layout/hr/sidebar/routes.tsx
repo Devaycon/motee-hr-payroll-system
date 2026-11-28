@@ -51,6 +51,7 @@ import {
   FileSignature,
   LayoutGrid,
   HandCoins,
+  FileClock,
 } from "lucide-react";
 
 export interface RouteChild {
@@ -194,6 +195,12 @@ export const routes: Route[] = [
     icon: Users,
     label: "Employees",
     link: "/organization/employees",
+  },
+  {
+    group: "Employee Management",
+    icon: FileClock,
+    label: "Profile Change Requests",
+    link: "/organization/change-requests",
   },
   {
     group: "Employee Management",

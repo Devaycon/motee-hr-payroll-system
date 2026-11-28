@@ -8,6 +8,35 @@ import { ChartCard, HeroRingCard, chartColor, NIVO_THEME } from "@/src/component
 import { resourcingSummaryProps } from "@/src/components/shared/charts/resourcing-summary";
 import { useRecruitment } from "@/src/components/hr/recruitment/hooks";
 import type { RequisitionStatus } from "@/src/lib/types/recruitment";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetWorkforceHiringQuery } from "@/src/store/services/workforce";
+
+/**
+ * Open roles per department, most first. Signed in: the open vacancies from
+ * GET /workforce/hiring; signed out: the demo requisitions.
+ */
+function useOpenRolesByDepartment(): { loading: boolean; rows: { department: string; value: number }[] } {
+  const live = useIsLive();
+  const hiring = useGetWorkforceHiringQuery(undefined, { skip: !live });
+  const { loading, bucket } = useRecruitment();
+  const rows = useMemo(() => {
+    if (live) {
+      return (hiring.data?.data ?? [])
+        .filter((r) => r.openVacancies > 0)
+        .map((r) => ({ department: r.departmentName, value: r.openVacancies }))
+        .sort((a, b) => b.value - a.value);
+    }
+    const byDept = new Map<string, number>();
+    for (const r of bucket.requisitions) {
+      if (!OPEN_STATUSES.includes(r.status)) continue;
+      byDept.set(r.department, (byDept.get(r.department) ?? 0) + 1);
+    }
+    return [...byDept.entries()]
+      .map(([department, value]) => ({ department, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [live, hiring.data, bucket.requisitions]);
+  return { loading: live ? hiring.isLoading : loading, rows };
+}
 
 /** Requisition statuses that still represent a role actively being filled. */
 const OPEN_STATUSES: RequisitionStatus[] = [
@@ -19,20 +48,7 @@ const OPEN_STATUSES: RequisitionStatus[] = [
 
 /** Open requisitions grouped by department. */
 export function OpenRolesChart() {
-  const { loading, bucket } = useRecruitment();
-
-  const rows = useMemo(() => {
-    const open = bucket.requisitions.filter((r) =>
-      OPEN_STATUSES.includes(r.status),
-    );
-    const byDept = new Map<string, number>();
-    for (const r of open) {
-      byDept.set(r.department, (byDept.get(r.department) ?? 0) + 1);
-    }
-    return [...byDept.entries()]
-      .map(([department, value]) => ({ department, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [bucket.requisitions]);
+  const { loading, rows } = useOpenRolesByDepartment();
 
   if (loading) {
     return <Skeleton className="h-48 w-full rounded-xl" />;
@@ -81,22 +97,18 @@ export function OpenRolesChart() {
 
 /** The Resourcing tab's hero card: open demand by department, with the same rings/summary/ranked-breakdown pattern used across the dashboard. */
 export function ResourcingHeroRing() {
-  const { loading, bucket } = useRecruitment();
+  const { loading, rows } = useOpenRolesByDepartment();
 
   if (loading) {
     return <Skeleton className="h-64 w-full rounded-xl" />;
   }
 
-  const open = bucket.requisitions.filter((r) =>
-    OPEN_STATUSES.includes(r.status),
-  );
-  const byDept = new Map<string, number>();
-  for (const r of open) {
-    byDept.set(r.department, (byDept.get(r.department) ?? 0) + 1);
-  }
-  const segments = [...byDept.entries()]
-    .map(([label, value], i) => ({ key: label, label, value, color: chartColor(i) }))
-    .sort((a, b) => b.value - a.value);
+  const segments = rows.map((r, i) => ({
+    key: r.department,
+    label: r.department,
+    value: r.value,
+    color: chartColor(i),
+  }));
 
   if (segments.length === 0) return null;
 

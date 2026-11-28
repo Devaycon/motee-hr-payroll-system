@@ -1,5 +1,7 @@
 "use client";
 
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetProjectRiskTallyQuery } from "@/src/store/services/projects";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
@@ -63,10 +65,26 @@ export function RisksPanel({ project }: { project: Project }) {
     s.projects.risks.filter((r) => r.projectId === project.id),
   );
   const [editing, setEditing] = useState<ProjectRisk | "new" | null>(null);
+  // Signed in: the register's counts (GET /projects/{id}/risks/tally).
+  const tally = useGetProjectRiskTallyQuery(project.id, {
+    skip: !useIsLive() || !isServerId(project.id),
+  }).data?.data;
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-2">
+        {tally ? (
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">{tally.open}</span> open of {tally.total}
+            {" · "}
+            <span className="font-medium text-foreground">{tally.issues}</span> issues
+            {tally.highImpactOpen > 0 && (
+              <span className="text-destructive"> · {tally.highImpactOpen} high-impact open</span>
+            )}
+          </p>
+        ) : (
+          <span />
+        )}
         <Button size="sm" className="gap-1.5" onClick={() => setEditing("new")}>
           <Plus className="h-3.5 w-3.5" />
           Add risk / issue

@@ -219,6 +219,8 @@ sicknessListener.startListening({
     const requestId = (action.payload as { requestId?: string }).requestId;
     const req = state.approvals.requests.find((r) => r.id === requestId);
     if (!req || req.documentType !== "sickness_absence") return;
+    // A server approval updates its absence on the server; only demo ones are echoed here.
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.id)) return;
     const status =
       req.status === "approved" ? "approved" : req.status === "rejected" ? "rejected" : req.status === "cancelled" ? "cancelled" : "awaiting_approval";
     const actor = (action.payload as { actorName?: string }).actorName ?? "Approver";

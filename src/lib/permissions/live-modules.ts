@@ -9,9 +9,16 @@
 export const LIVE_LINKS: readonly string[] = [
   "/welcome",
   "/hr",
+  // GET /dashboard/lifecycle since 2026-11-27.
+  "/lifecycle",
   "/hr-action-center/events",
   "/hr-action-center/tasks",
   "/hr-action-center/workflows",
+  // The HR Action Centre itself: alerts from GET /dashboard/hr-actions since
+  // 2026-11-27; its upcoming events, checklist and recent activity stay held.
+  "/hr-action-center",
+  // GET /approvals since 2026-11-27 (New Submission and Approval Chains stay held).
+  "/hr-action-center/submissions",
   "/workspace/announcements",
   "/workspace/kudos",
   "/workspace/helpdesk",
@@ -22,7 +29,12 @@ export const LIVE_LINKS: readonly string[] = [
   "/workspace/projects",
   "/organization/branches",
   "/organization/departments",
+  // Reads the live directory; reporting-line edits save as the employee's
+  // managerId (2026-11-27).
+  "/organization/structure",
   "/organization/employees",
+  // GET /change-requests and approve/reject since 2026-11-27.
+  "/organization/change-requests",
   "/organization/employment-types",
   "/organization/roles",
   "/organization/benefit-plans",
@@ -42,6 +54,12 @@ export const LIVE_LINKS: readonly string[] = [
   "/operations/assets",
   "/operations/contracts",
   "/operations/documents",
+  // GET /reports/datasets, POST /reports/run and /reports/export since
+  // 2026-11-27. Analytics (charts) has no endpoint and stays held.
+  "/operations/reports",
+  // Docu-Sign signs in the browser; "Save to Documents" is filed on the API by
+  // the Documents page (fileSigned: POST /files + /documents).
+  "/sign",
   "/time-payroll/leave",
   "/time-payroll/attendance",
   "/time-payroll/expenses",
@@ -85,6 +103,8 @@ export const SELF_SERVICE_LIVE_LINKS: readonly string[] = [
   "/time-off/sickness",
   "/growth/training",
   "/company/community",
+  // GET /surveys/mine, /surveys/{id}, /my-response, POST responses (2026-11-28).
+  "/company/surveys",
   "/company/helpdesk",
   "/company/knowledge",
   "/company/relations",
@@ -103,6 +123,8 @@ export const SELF_SERVICE_LIVE_LINKS: readonly string[] = [
   "/profile/my-profile",
   "/time-off/shifts",
   "/employee/dashboard",
+  // GET /approvals/mine + /approvals/my-queue since 2026-11-27.
+  "/employee/submissions",
 ];
 
 export function isSelfServiceLivePath(pathname: string): boolean {

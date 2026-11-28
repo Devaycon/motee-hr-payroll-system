@@ -1,8 +1,11 @@
 "use client";
 
-import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { isServerId, useIsLive, useMyEmployeeId } from "@/src/lib/live/use-is-live";
 import { useGetEmployeeNotesQuery } from "@/src/store/services/employee-notes";
-import { useGetCertificationsQuery } from "@/src/store/services/certifications";
+import {
+  useGetCertificationsQuery,
+  useGetMyCertificationsQuery,
+} from "@/src/store/services/certifications";
 import { certificationFromApi } from "@/src/lib/learning/api-mapping";
 import { noteFromApi } from "@/src/lib/employees/notes-mapping";
 import { useMemo } from "react";
@@ -483,24 +486,31 @@ export function useEmployeeTraining(id: string) {
   // Signed in: the employee's certificates on the API (edits on top).
   const live = useIsLive();
   const edits = useAppSelector((s) => s.collectionEdits);
-  const q = useGetCertificationsQuery(
+  // Your own profile reads `/certifications/mine`; the register
+  // (`/certifications`) answers 403 to an ordinary employee since 28 Nov.
+  const myEmployeeId = useMyEmployeeId();
+  const own = live && id === myEmployeeId;
+  const all = useGetCertificationsQuery(
     { EmployeeId: id, PageSize: 200 },
-    { skip: !live || !isServerId(id) },
+    { skip: !live || !isServerId(id) || own },
   );
+  const mine = useGetMyCertificationsQuery(undefined, { skip: !own });
+  const items = own ? mine.data?.data : all.data?.data.items;
+  const loading = own ? mine.isLoading : all.isLoading;
   const liveRows = useMemo(
     () =>
-      q.data?.data
+      items
         ? applyCollection(
-            q.data.data.items.map(
+            items.map(
               (c): RawCertification => ({ ...certificationFromApi(c), certificateUrl: "", courseId: c.courseId ?? null }),
             ),
             "learning.certifications",
             edits,
           ).filter((c) => c.employeeId === id)
         : null,
-    [q.data, edits, id],
+    [items, edits, id],
   );
-  return live ? { data: liveRows, loading: q.isLoading, error: null } : demo;
+  return live ? { data: liveRows, loading, error: null } : demo;
 }
 // ── qualifications, skills & loans ──────────────────────────────────────────
 export function useEmployeeEducation(id: string) {

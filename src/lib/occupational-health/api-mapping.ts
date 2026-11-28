@@ -74,6 +74,7 @@ export function ohCaseFromApi(dto: OhCaseDto, history: OhHistoryDto[] = []): OHR
       ? { label: dto.nextAction.label, owner: dto.nextAction.owner, due: day(dto.nextAction.due) ?? "" }
       : undefined,
     reviewDate: day(dto.reviewDate),
+    linkedSicknessIds: (dto.linkedAbsences ?? []).map((a) => a.id),
     history: history.map((h, i) => ({
       id: `${dto.id}-h${i}`,
       at: h.at,

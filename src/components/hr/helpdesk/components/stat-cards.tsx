@@ -12,6 +12,8 @@ import {
 } from "@/src/components/shared/hr-stat-card";
 import { computeHelpdeskStats } from "../data";
 import type { HelpDeskTicket } from "../types";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetHelpdeskSummaryQuery } from "@/src/store/services/helpdesk";
 
 /** The slice a KPI card drills the All Cases table down to. */
 export type HelpdeskCardFilter = "all" | "resolved_today" | "overdue";
@@ -56,7 +58,14 @@ export function StatCards({
   cardFilter,
   onDrillDown,
 }: StatCardsProps) {
-  const { total, open, resolvedToday, overdue } = computeHelpdeskStats(tickets);
+  const local = computeHelpdeskStats(tickets);
+  // Signed in: the server's tally (GET /helpdesk/summary) covers every ticket,
+  // not just the ones loaded; "resolved today" has no server field.
+  const server = useGetHelpdeskSummaryQuery(undefined, { skip: !useIsLive() }).data?.data;
+  const total = server?.total ?? local.total;
+  const open = server ? server.open + server.inProgress + server.pending + server.awaitingEmployee : local.open;
+  const overdue = server?.overdue ?? local.overdue;
+  const { resolvedToday } = local;
 
   const cards: HrStatCardItem[] = [
     {

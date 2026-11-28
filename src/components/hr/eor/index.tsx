@@ -1,5 +1,8 @@
 "use client";
 
+import { isServerId, usePeopleDirectory } from "@/src/lib/live/use-is-live";
+import { useGetEorProviderQuery, useGetEorWorkerQuery } from "@/src/store/services/eor";
+import { providerFromApi, workerFromApi } from "@/src/lib/eor/api-mapping";
 import { useState } from "react";
 import { Globe2 } from "lucide-react";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
@@ -16,6 +19,11 @@ import { WorkersTable } from "./components/workers-table";
 import { ProvidersTable } from "./components/providers-table";
 import { ComplianceTable } from "./components/compliance-table";
 import { InvoicesTable } from "./components/invoices-table";
+import { InvoiceModal } from "./components/invoice-modal";
+import { PromptDialog, type PromptRequest } from "@/src/components/shared/prompt-dialog";
+import { toast } from "sonner";
+import type { EorInvoice } from "./types";
+import type { ComplianceState } from "@/src/types/eor";
 import { WorkerModal } from "./components/worker-modal";
 import { ProviderModal } from "./components/provider-modal";
 import { WorkerDetail } from "./components/worker-detail";
@@ -43,6 +51,14 @@ export function EorPage() {
     setProviders(eor.providers);
   }
   const invoices = eor.live ? (eor.invoices ?? []) : EOR_INVOICES;
+  const [invoiceModal, setInvoiceModal] = useState<{ invoice: EorInvoice | null } | null>(null);
+  const [prompt, setPrompt] = useState<PromptRequest | null>(null);
+  const COMPLIANCE_TO_API: Record<string, ComplianceState> = {
+    complete: "complete",
+    pending: "pending",
+    action_required: "actionRequired",
+    not_applicable: "notApplicable",
+  };
 
   // Controlled so the KPI cards can drill into a tab, not just a filter.
   const [activeTab, setActiveTab] = useState("workers");
@@ -64,7 +80,28 @@ export function EorPage() {
   const [editingProvider, setEditingProvider] = useState<EorProvider | null>(null);
 
   // Derive the detail worker from state so edits reflect immediately.
-  const detailWorker = workers.find((w) => w.id === detailId) ?? null;
+  const listWorker = workers.find((w) => w.id === detailId) ?? null;
+  // Signed in: the opened worker and their provider are read fresh
+  // (GET /eor/workers/{id}, GET /eor/providers/{id}).
+  const people = usePeopleDirectory();
+  const workerQ = useGetEorWorkerQuery(detailId ?? "", {
+    skip: !eor.live || !detailId || !isServerId(detailId),
+  });
+  const detailWorker =
+    workerQ.data?.data && listWorker
+      ? {
+          ...listWorker,
+          ...workerFromApi(workerQ.data.data, people.byId.get(workerQ.data.data.employeeId)),
+          // The compliance board's checklist stays the fresher one.
+          compliance: listWorker.compliance,
+        }
+      : listWorker;
+  const providerQ = useGetEorProviderQuery(detailWorker?.providerId ?? "", {
+    skip: !eor.live || !detailWorker || !isServerId(detailWorker.providerId),
+  });
+  const detailProvider = providerQ.data?.data
+    ? providerFromApi(providerQ.data.data)
+    : providers.find((p) => p.id === detailWorker?.providerId);
 
   // ── Worker CRUD ──
   function openAddWorker() {
@@ -117,9 +154,23 @@ export function EorPage() {
       <>
         <WorkerDetail
           worker={detailWorker}
-          provider={providers.find((p) => p.id === detailWorker.providerId)}
+          provider={detailProvider}
           onBack={() => setDetailId(null)}
           onEdit={() => openEditWorker(detailWorker)}
+          onEnd={
+            eor.live
+              ? async (endDate, reason) => {
+                  const ok = await actions.endWorker(detailWorker.id, endDate, reason);
+                  if (ok) toast.success(`${detailWorker.name}'s engagement ends ${endDate}`);
+                  return ok;
+                }
+              : undefined
+          }
+          onSetCompliance={
+            eor.live
+              ? (key, status) => actions.setCompliance(detailWorker.id, key, COMPLIANCE_TO_API[status])
+              : undefined
+          }
         />
         <WorkerModal
           open={workerModalOpen}
@@ -219,7 +270,46 @@ export function EorPage() {
         </TabsContent>
 
         <TabsContent value="billing" className="mt-4">
-          <InvoicesTable invoices={invoices} />
+          <InvoicesTable
+            invoices={invoices}
+            onNew={eor.live ? () => setInvoiceModal({ invoice: null }) : undefined}
+            onEdit={eor.live ? (invoice) => setInvoiceModal({ invoice }) : undefined}
+            onSettle={
+              eor.live
+                ? (inv) =>
+                    setPrompt({
+                      title: `Mark ${inv.providerName} ${inv.period} as paid?`,
+                      inputLabel: "Paid on",
+                      initialValue: new Date().toISOString().slice(0, 10),
+                      confirmLabel: "Mark as paid",
+                      onConfirm: (paidOn) => actions.settleInvoice(inv.id, paidOn),
+                    })
+                : undefined
+            }
+            onDelete={
+              eor.live
+                ? (inv) =>
+                    setPrompt({
+                      title: `Delete the ${inv.period} invoice from ${inv.providerName}?`,
+                      confirmLabel: "Delete",
+                      destructive: true,
+                      onConfirm: () => actions.deleteInvoice(inv.id),
+                    })
+                : undefined
+            }
+          />
+          <InvoiceModal
+            open={!!invoiceModal}
+            invoice={invoiceModal?.invoice ?? null}
+            providers={providers}
+            onClose={() => setInvoiceModal(null)}
+            onSave={async (body, id) => {
+              const ok = await actions.saveInvoice(body, id);
+              if (ok) toast.success(id ? "Invoice saved" : "Invoice added");
+              return ok;
+            }}
+          />
+          <PromptDialog request={prompt} onClose={() => setPrompt(null)} />
         </TabsContent>
       </Tabs>
 

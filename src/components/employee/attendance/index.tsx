@@ -6,6 +6,7 @@ import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { useMyClockLive } from "@/src/lib/attendance/use-my-clock";
+import { useMyAttendanceLive } from "@/src/lib/attendance/use-my-attendance-live";
 import {
   clockIn as clockInAction,
   clockOut as clockOutAction,
@@ -61,7 +62,7 @@ import { TimesheetDetailModal } from "./components/timesheet-detail-modal";
 
 export function MyAttendancePage() {
   const dispatch = useAppDispatch();
-  const { employeeId, employee, workPattern } = useMyAttendanceIdentity();
+  const { employeeId, employee, workPattern: contractPattern } = useMyAttendanceIdentity();
 
   const [now, setNow] = useState(() => new Date());
   const [tab, setTab] = useState("today");
@@ -96,11 +97,38 @@ export function MyAttendancePage() {
   // HR's Deduction Policy (Attendance module) owns the grace period now — the
   // constant stays as the fallback default so this still works before the
   // slice has hydrated.
-  const graceMinutes = useAppSelector(
+  const policyGrace = useAppSelector(
     (s) => s.attendanceDeductionPolicy.policy.graceMinutes ?? LATE_GRACE_MINUTES,
   );
 
-  const { data: logs } = useMyTimeLogs(employeeId);
+  const weekStarts = useMemo(
+    () => recentWeekStarts(todayIso, TIMESHEET_WEEKS),
+    [todayIso],
+  );
+  const activeWeekStart =
+    weekStarts[Math.min(Math.abs(weekOffset), weekStarts.length - 1)];
+
+  // Signed in: history, this week's totals, the timesheet, correction status
+  // and the assigned schedule come from the employee's own API routes.
+  const liveAttendance = useMyAttendanceLive({
+    employeeId,
+    from: weekStarts[weekStarts.length - 1] ?? todayIso,
+    to: todayIso,
+    thisWeekStart: weekStartOf(todayIso),
+    activeWeekStart,
+    basePattern: contractPattern,
+  });
+  const workPattern = liveAttendance.workPattern ?? contractPattern;
+  const graceMinutes = liveAttendance.graceMinutes ?? policyGrace;
+
+  const { data: sessionLogs } = useMyTimeLogs(employeeId);
+  // Rows clocked in this session win over the server's copy of that day.
+  const logs = useMemo(() => {
+    if (!liveAttendance.logs) return sessionLogs;
+    const byDate = new Map(liveAttendance.logs.map((l) => [l.date, l]));
+    for (const l of sessionLogs ?? []) byDate.set(l.date, l);
+    return [...byDate.values()].sort((a, b) => b.date.localeCompare(a.date));
+  }, [liveAttendance.logs, sessionLogs]);
   const { openDay, closeDay } = useTimeLogWriter();
 
   // A session from a previous day is history, not today's clock.
@@ -160,13 +188,6 @@ export function MyAttendancePage() {
 
   // ── week assembly ─────────────────────────────────────────────────────────
 
-  const weekStarts = useMemo(
-    () => recentWeekStarts(todayIso, TIMESHEET_WEEKS),
-    [todayIso],
-  );
-  const activeWeekStart =
-    weekStarts[Math.min(Math.abs(weekOffset), weekStarts.length - 1)];
-
   const activeWeek = useMemo(
     () => buildWeek(logs ?? [], activeWeekStart, workPattern),
     [logs, activeWeekStart, workPattern],
@@ -196,9 +217,17 @@ export function MyAttendancePage() {
   const currentWeekTotals = weeklyTotals(currentWeek.entries, contractedWeekly);
 
   const activeTimesheet =
+    liveAttendance.timesheet ??
     timesheets.find(
       (t) => t.weekStart === activeWeekStart && t.employeeName === employee?.fullName,
-    ) ?? null;
+    ) ??
+    null;
+  // Signed in, this week's totals are the server's.
+  const summary = liveAttendance.summary;
+  const weekHours = summary?.totalHours ?? currentWeekTotals.totalHours;
+  const weekPunctuality = summary
+    ? Math.round(summary.punctualityRate <= 1 ? summary.punctualityRate * 100 : summary.punctualityRate)
+    : punctualityRate(currentWeek.entries);
 
   const missingDays = activeWeek.entries.filter((e) => !e.clockIn).length;
 
@@ -415,13 +444,10 @@ export function MyAttendancePage() {
 
       <AttendanceStatCards
         hoursToday={workedHours}
-        weekHours={currentWeekTotals.totalHours}
+        weekHours={weekHours}
         contractedWeekly={contractedWeekly}
-        overtimeHours={overtimeHours(
-          currentWeekTotals.totalHours,
-          contractedWeekly,
-        )}
-        punctuality={punctualityRate(currentWeek.entries)}
+        overtimeHours={summary?.overtimeHours ?? overtimeHours(weekHours, contractedWeekly)}
+        punctuality={weekPunctuality}
         filter={filter}
         onDrillDown={handleDrillDown}
       />
@@ -506,6 +532,7 @@ export function MyAttendancePage() {
             onWeekOffsetChange={setWeekOffset}
             onClearFilter={() => setFilter("all")}
             onRequestCorrection={setCorrecting}
+            corrections={liveAttendance.correctionsByDate}
             onSubmit={() => setSubmitOpen(true)}
             onViewTimesheet={setDetailTs}
           />

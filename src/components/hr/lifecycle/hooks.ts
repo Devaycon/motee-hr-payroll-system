@@ -4,6 +4,60 @@ import { useMemo } from "react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { isOpenOffboardingStatus } from "@/src/lib/types/offboarding";
 import { isRecruitingVacancy } from "@/src/lib/types/recruitment";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetLifecycleDashboardQuery } from "@/src/store/services/dashboard";
+import type { LifecycleStageDto } from "@/src/types/dashboard";
+
+/**
+ * The server's stage keys (not listed in the spec) onto the page's stages,
+ * compared with case, spaces, dashes and underscores removed. Keys with no
+ * stage on the page (e.g. people who left this period) are not shown.
+ */
+const STAGE_ALIASES: Record<string, string> = {
+  workforceplanning: "workforce-planning",
+  workforcerequests: "workforce-planning",
+  workforce: "workforce-planning",
+  requisition: "requisition",
+  requisitions: "requisition",
+  openrequisitions: "requisition",
+  attract: "attract",
+  vacancies: "attract",
+  openvacancies: "attract",
+  select: "select",
+  selection: "select",
+  candidates: "select",
+  preemployment: "pre-employment",
+  preboarding: "pre-employment",
+  onboard: "onboard",
+  onboarding: "onboard",
+  developperformretain: "develop-perform-retain",
+  active: "develop-perform-retain",
+  employed: "develop-perform-retain",
+  offboard: "offboard",
+  offboarding: "offboard",
+};
+
+const STAGE_LABELS: Record<string, (n: number) => string> = {
+  "workforce-planning": (n) => `${n} activities in progress`,
+  requisition: (n) => `${n} active`,
+  attract: (n) => `${n} open vacanc${n === 1 ? "y" : "ies"}`,
+  select: (n) => `${n} candidates in selection`,
+  "pre-employment": (n) => `${n} in checks`,
+  onboard: (n) => `${n} new starter${n === 1 ? "" : "s"} onboarding`,
+  "develop-perform-retain": (n) => `${n} active employee${n === 1 ? "" : "s"}`,
+  offboard: (n) => `${n} leaving`,
+};
+
+function metricsFromApi(stages: LifecycleStageDto[]): LifecycleMetrics {
+  const metrics: LifecycleMetrics = {};
+  for (const s of stages) {
+    const id = STAGE_ALIASES[s.key.toLowerCase().replace(/[^a-z]/g, "")];
+    if (!id || s.count <= 0) continue;
+    const count = (metrics[id]?.count ?? 0) + s.count;
+    metrics[id] = { count, label: STAGE_LABELS[id](count) };
+  }
+  return metrics;
+}
 
 export interface LifecycleMetric {
   count: number;
@@ -19,6 +73,9 @@ export type LifecycleMetrics = Record<string, LifecycleMetric | undefined>;
  * before clicking into the real workflow.
  */
 export function useLifecycleMetrics(): LifecycleMetrics {
+  // Signed in: one summary call (GET /dashboard/lifecycle) instead of the slices.
+  const live = useIsLive();
+  const server = useGetLifecycleDashboardQuery(undefined, { skip: !live });
   const country = useAppSelector((s) => s.locale.country);
   const workforceRequests = useAppSelector(
     (s) => s.workforceRequests.byCountry[country],
@@ -29,6 +86,7 @@ export function useLifecycleMetrics(): LifecycleMetrics {
   const offboardingRecords = useAppSelector((s) => s.offboarding.records);
 
   return useMemo(() => {
+    if (live) return server.data?.data ? metricsFromApi(server.data.data.stages) : {};
     const metrics: LifecycleMetrics = {};
 
     const openWorkforceRequests = (workforceRequests ?? []).filter(
@@ -116,5 +174,5 @@ export function useLifecycleMetrics(): LifecycleMetrics {
     }
 
     return metrics;
-  }, [workforceRequests, requisitions, recruitment, onboardingRecords, offboardingRecords]);
+  }, [live, server.data, workforceRequests, requisitions, recruitment, onboardingRecords, offboardingRecords]);
 }

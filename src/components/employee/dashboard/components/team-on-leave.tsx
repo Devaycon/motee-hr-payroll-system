@@ -20,7 +20,11 @@ const LEAVE_TYPE_COLORS: Record<string, string> = {
   Compassionate: "border-amber-500/30 bg-amber-500/10 text-amber-600",
 };
 
-export function TeamOnLeave() {
+type TeamMember = (typeof TEAM_ON_LEAVE)[number];
+
+/** `items` = your team's leave from the API; undefined signed out (demo list). */
+export function TeamOnLeave({ items }: { items?: TeamMember[] } = {}) {
+  const team = items ?? TEAM_ON_LEAVE;
   return (
     <Card>
       <CardHeader className="flex flex-row items-center px-4 pt-4 pb-3">
@@ -34,13 +38,13 @@ export function TeamOnLeave() {
         </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
-        {TEAM_ON_LEAVE.length === 0 ? (
+        {team.length === 0 ? (
           <p className="text-xs text-muted-foreground">
             All team members are in today.
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            {TEAM_ON_LEAVE.map((member) => (
+            {team.map((member) => (
               <div
                 key={member.id}
                 className="flex items-center justify-between gap-3"

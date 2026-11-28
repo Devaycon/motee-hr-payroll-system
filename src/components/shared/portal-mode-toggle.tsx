@@ -4,7 +4,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { ShieldCheck, UserCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
+import { toast } from "sonner";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useIsLive } from "@/src/lib/live/use-is-live";
 import { canAccessAdminPortal, PORTAL_PATHS } from "@/src/lib/auth/landing";
 
 /** Route prefixes that belong to the employee self-service portal. */
@@ -30,6 +32,7 @@ export function PortalModeToggle({ className }: { className?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useAppSelector((s) => s.auth.user);
+  const live = useIsLive();
 
   if (!canAccessAdminPortal(user)) return null;
 
@@ -46,7 +49,16 @@ export function PortalModeToggle({ className }: { className?: string }) {
     <Button
       type="button"
       variant="default"
-      onClick={() => router.push(PORTAL_PATHS[target])}
+      onClick={() => {
+        // A company-owner login has no employee record, and the API refuses
+        // every self-service ("mine") call for it — say so rather than open a
+        // portal that cannot load.
+        if (target === "self" && live && !user?.employeeId) {
+          toast.info("Your account has no employee record, so there is no self-service portal for it.");
+          return;
+        }
+        router.push(PORTAL_PATHS[target]);
+      }}
       title={`Switch to ${label}`}
       className={cn("h-11 gap-1.5 px-3 text-xs font-medium bg-[#FE8F44]!", className)}
     >

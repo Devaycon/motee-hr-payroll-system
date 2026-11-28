@@ -18,6 +18,7 @@ import {
   useGetCompanyVerificationQuery,
   useSaveCompanyVerificationMutation,
   useSubmitCompanyVerificationMutation,
+  useWithdrawCompanyVerificationMutation,
   useUpdateCompanyMutation,
 } from "@/src/store/services/company";
 import { useGetFilesQuery, useUploadFileMutation } from "@/src/store/services/files";
@@ -208,6 +209,7 @@ export function useCompanyActions() {
   const [updateCompany] = useUpdateCompanyMutation();
   const [saveVerification] = useSaveCompanyVerificationMutation();
   const [submitVerification] = useSubmitCompanyVerificationMutation();
+  const [withdrawVerification] = useWithdrawCompanyVerificationMutation();
   const [upload] = useUploadFileMutation();
 
   const saveProfile = useCallback(
@@ -240,5 +242,12 @@ export function useCompanyActions() {
     [run, upload, saveVerification, submitVerification],
   );
 
-  return { live, saveProfile, submit };
+  /** POST /company/verification/{kind}/withdraw — takes a submission back out of review. */
+  const withdraw = useCallback(
+    (kind: VerificationKind) =>
+      run(() => withdrawVerification(kind).unwrap(), "Could not withdraw the submission."),
+    [run, withdrawVerification],
+  );
+
+  return { live, saveProfile, submit, withdraw };
 }

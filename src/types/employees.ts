@@ -1,4 +1,5 @@
 import type { ApiResponse, PagedResult } from "./api";
+import type { GuarantorDto } from "./join";
 import type {
   AssetRequest,
   BankDetailsRequest,
@@ -329,6 +330,9 @@ export interface UpdateEmployeeParams {
 }
 
 export type GetEmployeeMedicalResponse = ApiResponse<MedicalDto>;
+
+// GET /api/v1/employees/{id}/guarantors
+export type GetEmployeeGuarantorsResponse = ApiResponse<GuarantorDto[]>;
 
 export type ChangeEmployeeStatusResponse = ApiResponse<EmployeeDto>;
 

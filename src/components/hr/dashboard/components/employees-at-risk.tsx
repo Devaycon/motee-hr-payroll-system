@@ -4,6 +4,18 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { LEAVE_BALANCES } from "@/src/data/leave-demo";
 import { Tile, TileLabel } from "./tiles";
+import { useDashboardLive } from "../live";
+import { useGetUntakenLeaveDashboardQuery } from "@/src/store/services/dashboard";
+
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]!.toUpperCase())
+    .join("");
+
+const days = (n: number) => `${Math.round(n * 10) / 10} ${n === 1 ? "day" : "days"}`;
 
 // Employees carrying more than this many days risk losing leave at year-end.
 const RISK_THRESHOLD = 10;
@@ -19,10 +31,24 @@ const VISIBLE_ROWS = 4;
  * The card is about leave that is about to expire, so the title now says so.
  */
 export function UntakenLeaveCard() {
-  const atRisk = LEAVE_BALANCES.filter((b) => b.leaveType === "annual")
-    .map((b) => ({ ...b, remaining: b.totalEntitlement - b.daysUsed }))
-    .filter((b) => b.remaining > RISK_THRESHOLD)
-    .sort((a, b) => b.remaining - a.remaining);
+  // Signed in: GET /dashboard/untaken-leave, already filtered to the people at
+  // risk; ordered by the days they stand to lose.
+  const live = useDashboardLive();
+  const server = useGetUntakenLeaveDashboardQuery(undefined, { skip: !live });
+  const atRisk = live
+    ? [...(server.data?.data?.atRisk ?? [])]
+        .sort((a, b) => b.atRiskDays - a.atRiskDays)
+        .map((r) => ({
+          id: r.employeeId,
+          employeeName: r.employeeName,
+          employeeInitials: initialsOf(r.employeeName),
+          department: r.department ?? "",
+          remaining: r.remaining,
+        }))
+    : LEAVE_BALANCES.filter((b) => b.leaveType === "annual")
+        .map((b) => ({ ...b, remaining: b.totalEntitlement - b.daysUsed }))
+        .filter((b) => b.remaining > RISK_THRESHOLD)
+        .sort((a, b) => b.remaining - a.remaining);
 
   return (
     <Tile>
@@ -58,7 +84,7 @@ export function UntakenLeaveCard() {
                   <p className="text-xs text-muted-foreground">{b.department}</p>
                 </div>
                 <span className="shrink-0 text-sm font-semibold text-amber-600 tabular-nums dark:text-amber-500">
-                  {b.remaining} days
+                  {days(b.remaining)}
                 </span>
               </li>
             ))}

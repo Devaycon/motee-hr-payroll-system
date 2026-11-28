@@ -93,6 +93,27 @@ const profileEditsSlice = createSlice({
       }
     },
 
+    /**
+     * Signed in, the server's log for one employee replaces whatever was held
+     * for them: demo seeds, and the placeholder row a just-raised request
+     * shows until the server has it.
+     */
+    replaceRequestsFromApi(
+      state,
+      action: PayloadAction<{ employeeId: string; requests: ChangeRequest[] }>,
+    ) {
+      const { employeeId, requests } = action.payload;
+      state.requests = [
+        ...requests,
+        ...state.requests.filter((r) => r.employeeId !== employeeId),
+      ];
+    },
+
+    /** Signed in, the company-wide queue: the server's requests are all there is. */
+    replaceAllRequestsFromApi(state, action: PayloadAction<ChangeRequest[]>) {
+      state.requests = action.payload;
+    },
+
     seedRequests(state, action: PayloadAction<ChangeRequest[]>) {
       const incoming = action.payload;
       if (incoming.length === 0) return;
@@ -143,6 +164,8 @@ const profileEditsSlice = createSlice({
 export const {
   hydrate,
   seedRequests,
+  replaceRequestsFromApi,
+  replaceAllRequestsFromApi,
   applyEdit,
   clearOverrides,
   requestEdit,

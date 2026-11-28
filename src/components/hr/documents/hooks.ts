@@ -2,8 +2,9 @@
 
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import {
+  categoryToApi,
   documentToRequest,
   mapFolders,
   toDocument,
@@ -18,6 +19,11 @@ import type {
 import { getApiErrorMessage } from "@/src/lib/utils";
 import { useGetAllDocumentsQuery } from "@/src/store/services/collections";
 import {
+  documentsApi,
+  useAddDocumentVersionMutation,
+  useDeleteDocumentFolderMutation,
+  useRenameDocumentFolderMutation,
+  useUpdateDocumentMutation,
   useArchiveDocumentMutation,
   useCreateDocumentFolderMutation,
   useCreateDocumentMutation,
@@ -87,6 +93,11 @@ export function useDocumentActions(folderIds: FolderIds | null) {
   const [restore] = useRestoreDocumentMutation();
   const [share] = useShareDocumentMutation();
   const [unshare] = useUnshareDocumentMutation();
+  const [renameFolder] = useRenameDocumentFolderMutation();
+  const [deleteFolder] = useDeleteDocumentFolderMutation();
+  const [updateDocument] = useUpdateDocumentMutation();
+  const [addVersion] = useAddDocumentVersionMutation();
+  const dispatch = useAppDispatch();
 
   return useMemo(() => {
     const ids: FolderIds = folderIds ?? { toServer: new Map(), toUi: new Map() };
@@ -175,6 +186,72 @@ export function useDocumentActions(folderIds: FolderIds | null) {
         );
       },
 
+      /** PUT /documents/folders/{id} */
+      renameFolder(uiId: string, name: string) {
+        const id = serverFolder(uiId) ?? uiId;
+        return attempt(
+          () => renameFolder({ id, body: { name: name.trim() } }).unwrap(),
+          "Could not rename the folder.",
+        );
+      },
+
+      /** DELETE /documents/folders/{id} */
+      deleteFolder(uiId: string) {
+        const id = serverFolder(uiId) ?? uiId;
+        return attempt(() => deleteFolder(id).unwrap(), "Could not delete the folder.");
+      },
+
+      /**
+       * PUT /documents/{id}. The update replaces every field, so the current
+       * record is read first (GET /documents/{id}) and only the edited
+       * details change.
+       */
+      updateDetails(
+        id: string,
+        patch: {
+          name: string;
+          category: HRDocument["category"];
+          expiryDate?: string;
+          description?: string;
+        },
+      ) {
+        return attempt(async () => {
+          const read = dispatch(
+            documentsApi.endpoints.getDocument.initiate(id, { forceRefetch: true }),
+          );
+          let dto;
+          try {
+            dto = (await read.unwrap()).data;
+          } finally {
+            read.unsubscribe();
+          }
+          await updateDocument({
+            id,
+            body: {
+              name: patch.name.trim(),
+              category: categoryToApi(patch.category),
+              folderId: dto.folderId,
+              description: patch.description?.trim() || null,
+              expiryDate: patch.expiryDate || null,
+              assignment: dto.assignment,
+              assignedDepartmentIds: dto.assignedDepartmentIds,
+              requiresAcknowledgement: dto.requiresAcknowledgement,
+            },
+          }).unwrap();
+        }, "Could not save the document.");
+      },
+
+      /** Uploads the file, then POST /documents/{id}/versions. */
+      addVersion(id: string, file: File, notes?: string) {
+        return attempt(async () => {
+          const stored = await upload({ file, purpose: "companyDocument" }).unwrap();
+          await addVersion({
+            id,
+            body: { storedFileId: stored.data.id, notes: notes?.trim() || null },
+          }).unwrap();
+        }, "Could not upload the new version.");
+      },
+
       /** Share ids are the employee ids they were granted to. */
       revokeShare(docId: string, employeeId: string) {
         return attempt(
@@ -194,5 +271,10 @@ export function useDocumentActions(folderIds: FolderIds | null) {
     restore,
     share,
     unshare,
+    renameFolder,
+    deleteFolder,
+    updateDocument,
+    addVersion,
+    dispatch,
   ]);
 }

@@ -9,6 +9,7 @@ import { RecentActivity } from "./components/recent-activity";
 import { HrAlertsCard } from "@/src/components/hr/hr-alerts";
 import { UpcomingEventsCard } from "./components/upcoming-events-card";
 import { MyWorkCard } from "@/src/components/hr/my-work";
+import { DemoOnly } from "@/src/components/hr/dashboard/components/tab-layouts";
 
 export function MyWorkspacePage() {
   const [tasks, setTasks] = useState(MY_TASKS);
@@ -47,11 +48,15 @@ export function MyWorkspacePage() {
         <div id="tasks" className="flex flex-col gap-4 scroll-mt-24">
           {/* Real, per-person work first; the static checklist below it. */}
           <MyWorkCard />
-          <MyTasks tasks={tasks} setTasks={setTasks} />
+          <DemoOnly>
+            <MyTasks tasks={tasks} setTasks={setTasks} />
+          </DemoOnly>
         </div>
       </div>
 
-      <RecentActivity />
+      <DemoOnly>
+        <RecentActivity />
+      </DemoOnly>
     </div>
   );
 }

@@ -26,6 +26,12 @@ import {
   type AttendanceCardFilter,
 } from "./stat-cards";
 
+const CORRECTION_TONE = {
+  pending: "text-amber-600",
+  approved: "text-emerald-600",
+  rejected: "text-red-600",
+} as const;
+
 const GRID = "grid-cols-[56px_1fr_80px_80px_64px_72px_104px_40px]";
 
 interface WeeklyTimesheetProps {
@@ -41,6 +47,8 @@ interface WeeklyTimesheetProps {
   onWeekOffsetChange: (offset: number) => void;
   onClearFilter: () => void;
   onRequestCorrection: (entry: DailyEntry) => void;
+  /** Signed in: the latest correction request's status, by date. */
+  corrections?: Record<string, "pending" | "approved" | "rejected">;
   onSubmit: () => void;
   onViewTimesheet: (ts: TimesheetRecord) => void;
 }
@@ -58,6 +66,7 @@ export function WeeklyTimesheet({
   onWeekOffsetChange,
   onClearFilter,
   onRequestCorrection,
+  corrections,
   onSubmit,
   onViewTimesheet,
 }: WeeklyTimesheetProps) {
@@ -229,6 +238,16 @@ export function WeeklyTimesheet({
                     >
                       {STATUS_LABEL[e.status]}
                     </span>
+                    {corrections?.[e.date] && (
+                      <span
+                        className={cn(
+                          "mt-0.5 block text-[9px] font-medium",
+                          CORRECTION_TONE[corrections[e.date]],
+                        )}
+                      >
+                        Correction {corrections[e.date]}
+                      </span>
+                    )}
                   </div>
                   <div className="px-1 py-2.5">
                     {!locked && (

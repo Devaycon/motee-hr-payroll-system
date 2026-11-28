@@ -6,6 +6,7 @@ import type {
   DeleteLeaveBlackoutResponse,
   DeleteLeaveTypeResponse,
   DeletePublicHolidayResponse,
+  UpdatePublicHolidayResponse,
   GeneratePublicHolidaysResponse,
   GetLeaveBlackoutsResponse,
   GetLeaveTypesResponse,
@@ -88,6 +89,18 @@ export const leavePoliciesApi = api.injectEndpoints({
       }),
       invalidatesTags: ["LeavePolicies", "Leave", "LeaveBalances"],
     }),
+    // PUT /api/v1/leave/holidays/{id}
+    updatePublicHoliday: builder.mutation<
+      UpdatePublicHolidayResponse,
+      { id: string; body: PublicHolidayRequest }
+    >({
+      query: ({ id, body }) => ({
+        url: `${url}/holidays/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["LeavePolicies", "Leave", "LeaveBalances"],
+    }),
     generatePublicHolidays: builder.mutation<
       GeneratePublicHolidaysResponse,
       number
@@ -160,6 +173,7 @@ export const {
   useDeleteLeaveTypeMutation,
   useGetPublicHolidaysQuery,
   useCreatePublicHolidayMutation,
+  useUpdatePublicHolidayMutation,
   useGeneratePublicHolidaysMutation,
   useDeletePublicHolidayMutation,
   useGetLeaveBlackoutsQuery,

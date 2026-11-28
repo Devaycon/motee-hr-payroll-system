@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Link2, Plus } from "lucide-react";
+import { Link2, Plus, Trash2 } from "lucide-react";
+import { isServerId, useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import { useDeleteOhAdjustmentMutation } from "@/src/store/services/occupational-health";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -39,6 +41,10 @@ export function OHCaseManage({ referral }: { referral: MergedReferral }) {
   const dispatch = useAppDispatch();
   const actor = useAppSelector((s) => s.auth.user?.name) ?? "HR";
   const canEdit = useCan("time-payroll.occupational-health", "edit");
+  // Signed in: remove an adjustment (DELETE /occupational-health/{id}/adjustments/{adjustmentId}).
+  const live = useIsLive() && isServerId(referral.id);
+  const [deleteAdjustment] = useDeleteOhAdjustmentMutation();
+  const sendAdj = useLiveSender(["OccupationalHealth", "Sickness"]);
   const records = useAppSelector((s) => s.sickness.records).filter((r) => r.employeeId === referral.employeeId);
   const linked = records.filter((r) => referral.linkedSicknessIds.includes(r.id));
   const unlinked = records.filter((r) => !referral.linkedSicknessIds.includes(r.id));
@@ -169,7 +175,24 @@ export function OHCaseManage({ referral }: { referral: MergedReferral }) {
           {referral.adjustments.map((a) => (
             <div key={a.id} className="grid items-end gap-2 rounded-md border border-border p-3 md:grid-cols-[1fr_150px_150px_150px_auto]">
               <div>
-                <p className="font-medium">{a.description}</p>
+                <p className="flex items-center gap-1.5 font-medium">
+                  {a.description}
+                  {live && canEdit && isServerId(a.id) && (
+                    <button
+                      type="button"
+                      aria-label={`Remove ${a.description}`}
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() =>
+                        void sendAdj(
+                          () => deleteAdjustment({ id: referral.id, adjustmentId: a.id }).unwrap(),
+                          "Could not remove the adjustment.",
+                        ).then((ok) => ok && toast.success(`Removed "${a.description}"`))
+                      }
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
+                </p>
                 <p className="text-muted-foreground">
                   Recommended {fmt(a.dateRecommended)}
                   {a.linkedSicknessId ? (

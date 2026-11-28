@@ -20,6 +20,7 @@ import {
   FileSignature,
   ShieldAlert,
   HandCoins,
+  MessageSquareText,
   LucideIcon,
 } from "lucide-react";
 
@@ -156,6 +157,12 @@ export const routes: Route[] = [
     icon: UsersRound,
     label: "Community",
     link: "/company/community",
+  },
+  {
+    group: "Company",
+    icon: MessageSquareText,
+    label: "Surveys",
+    link: "/company/surveys",
   },
   {
     group: "Company",

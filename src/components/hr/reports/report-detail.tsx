@@ -17,6 +17,14 @@ import {
 } from "@/src/components/ui/select";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import { getReport } from "@/src/lib/reports/registry";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { liveReportDef } from "@/src/lib/reports/live";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { NotIntegrated } from "@/src/components/shared/not-integrated";
+import {
+  useGetReportDatasetsQuery,
+  useRunFullReportQuery,
+} from "@/src/store/services/reports";
 import { ReportTable } from "./components/report-table";
 import { ExportModal } from "./components/export-modal";
 
@@ -37,18 +45,35 @@ function BackLink() {
 }
 
 export function ReportDetailPage({ reportId }: { reportId: string }) {
-  const { data: bundle, loading } = useLocaleSection<LocaleBundle>((b) => b);
+  const { data: bundle, loading: demoLoading } = useLocaleSection<LocaleBundle>((b) => b);
   const accessLevelId = useAppSelector((s) => s.auth.user?.accessLevelId);
   const levels = useAppSelector((s) => s.accessLevels.levels);
 
-  const def = getReport(reportId);
+  // Signed in, the dataset and its rows are the server's (GET /reports/datasets
+  // + POST /reports/run); search, filters and export then work on those rows.
+  const live = useIsLive();
+  const datasets = useGetReportDatasetsQuery(undefined, { skip: !live });
+  const dataset = datasets.data?.data.find((d) => d.key === reportId);
+  const run = useRunFullReportQuery({ dataset: reportId }, { skip: !live || !dataset });
+  const def = useMemo(
+    () =>
+      live
+        ? dataset
+          ? liveReportDef(dataset, run.data?.rows.items ?? [])
+          : undefined
+        : getReport(reportId),
+    [live, dataset, run.data, reportId],
+  );
+  const loading = live
+    ? datasets.isLoading || (!!dataset && run.isLoading)
+    : demoLoading;
 
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
 
   const allRows = useMemo(
-    () => (bundle && def ? def.select(bundle) : []),
-    [bundle, def],
+    () => (def && (live || bundle) ? def.select(bundle!) : []),
+    [live, bundle, def],
   );
 
   const filteredRows = useMemo(() => {
@@ -66,16 +91,26 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
   }, [def, allRows, search, filters]);
 
   const analytics = useMemo(
-    () => (def && bundle ? def.analytics(filteredRows, bundle) : null),
-    [def, bundle, filteredRows],
+    () => (def && (live || bundle) ? def.analytics(filteredRows, bundle!) : null),
+    [live, def, bundle, filteredRows],
   );
 
   const canView = (mod: string) => {
-    if (!accessLevelId) return true;
+    if (live || !accessLevelId) return true;
     const level = levels.find((l) => l.id === accessLevelId);
     if (!level) return true;
     return !!level.permissions.find((p) => p.module === mod)?.access;
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-5">
+        <BackLink />
+        <Skeleton className="h-12 w-72" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   // Unknown report id, or the user lacks permission for it.
   if (!def || !canView(def.permission)) {
@@ -102,7 +137,7 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
     );
   }
 
-  if (loading || !bundle) {
+  if (!live && !bundle) {
     return (
       <div className="flex flex-col gap-5">
         <BackLink />
@@ -133,9 +168,18 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/operations/analytics/${def.id}`}>View analytics</Link>
-          </Button>
+          {live ? (
+            // Analytics is not on the API yet.
+            <NotIntegrated inline label="Analytics">
+              <Button variant="outline" size="sm">
+                View analytics
+              </Button>
+            </NotIntegrated>
+          ) : (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/operations/analytics/${def.id}`}>View analytics</Link>
+            </Button>
+          )}
           <ExportModal
             baseName={def.id}
             title={def.label}
@@ -184,6 +228,12 @@ export function ReportDetailPage({ reportId }: { reportId: string }) {
           );
         })}
       </div>
+
+      {live && run.error && (
+        <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+          {getApiErrorMessage(run.error, "Could not load this report.")}
+        </p>
+      )}
 
       <ReportTable columns={def.columns} rows={filteredRows} />
     </div>

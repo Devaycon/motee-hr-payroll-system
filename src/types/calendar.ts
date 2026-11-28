@@ -21,6 +21,8 @@ export type CalendarCategory =
   | "holiday"
   | "birthday"
   | "anniversary"
+  | "starter"
+  | "leaver"
   | "leave"
   | "leaveRequest"
   | "cover"

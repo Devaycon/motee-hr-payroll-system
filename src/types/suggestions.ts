@@ -134,5 +134,8 @@ export type UpvoteSuggestionResponse = ApiResponse<SuggestionDto>;
 export type CommentOnSuggestionResponse = ApiResponse<SuggestionDto>;
 
 // DELETE /api/v1/suggestions/{id}/comments/{commentId}
+// DELETE /api/v1/suggestions/{id}
+export type DeleteSuggestionResponse = ApiResponse<null>;
+
 export type DeleteSuggestionCommentResponse = ApiResponse<SuggestionDto>;
 

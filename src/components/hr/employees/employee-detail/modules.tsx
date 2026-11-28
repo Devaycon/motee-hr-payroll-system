@@ -1,5 +1,7 @@
 "use client";
 
+import { useGetEmployeeWorkScheduleQuery } from "@/src/store/services/attendance";
+import { workPatternFromSchedule } from "@/src/lib/attendance/use-my-attendance-live";
 import * as React from "react";
 import Link from "next/link";
 import { AlertTriangle, Pin, ChevronLeft, ChevronRight, Check, TriangleAlert } from "lucide-react";
@@ -28,6 +30,8 @@ import {
 } from "@/src/components/ui/dialog";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetEmployeeGuarantorsQuery } from "@/src/store/services/employees";
 import {
   ProfileFieldsEditor,
   RequestProfileChangeButton,
@@ -47,6 +51,9 @@ import { regionWordForCountry, profileFieldGroupOf } from "@/src/lib/profile/fie
 import { useCan } from "@/src/lib/permissions/use-can";
 import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { useProfileVariant } from "./variant";
+import { LiveEmployeeCases } from "./live-cases";
+import { usePinEmployeeNoteMutation } from "@/src/store/services/employee-notes";
+import { useLiveSender } from "@/src/lib/live/use-is-live";
 import {
   useCanViewMedical,
   useSickness as useSicknessModule,
@@ -1173,6 +1180,12 @@ export function ExpensesModule({ employeeId }: ModuleProps) {
 
 // ── Disciplinaries (sensitive) ──────────────────────────────────────────────
 export function DisciplinariesModule({ employeeId }: ModuleProps) {
+  const live = useIsLive() && isServerId(employeeId);
+  if (live) return <LiveEmployeeCases employeeId={employeeId} kind="disciplinaries" />;
+  return <DemoDisciplinaries employeeId={employeeId} />;
+}
+
+function DemoDisciplinaries({ employeeId }: { employeeId: string }) {
   const { data, loading } = useEmployeeDisciplinaries(employeeId);
   const canEdit = useCan("organization.employees", "edit");
   const rf = useRecordForm(COLLECTION_SCHEMAS.disciplinaries, employeeId);
@@ -1224,10 +1237,33 @@ export function EmergencyContactModule({ employeeId, employee }: ModuleProps) {
 
 // ── Guarantors (always required for NG employees) ──────────────────────────
 export function GuarantorsModule({ employeeId, employee }: ModuleProps) {
+  // Signed in, the guarantors come from GET /employees/{id}/guarantors. The
+  // API has no write for them outside the joiner flow, so an edit answers
+  // "not integrated" (the editor's check for fields the API does not store).
+  const live = useIsLive();
+  const { data } = useGetEmployeeGuarantorsQuery(employeeId, {
+    skip: !live || !isServerId(employeeId),
+  });
+  const shown = React.useMemo(() => {
+    const list = data?.data;
+    if (!live || !list) return employee;
+    return {
+      ...employee,
+      guarantors: [...list]
+        .sort((a, b) => a.position - b.position)
+        .map((g) => ({
+          name: g.name,
+          relationship: g.relationship,
+          address: g.address ?? "",
+          phone: g.phone ?? "",
+          occupation: g.occupation ?? "",
+        })),
+    };
+  }, [live, data, employee]);
   return (
     <Section title="Guarantors" description="Two guarantors are required for every NG employee.">
       <ProfileFieldsEditor
-        employee={employee}
+        employee={shown}
         employeeId={employeeId}
         mode="edit"
         groups={["guarantors"]}
@@ -1331,6 +1367,12 @@ export function PayslipsModule({ employeeId }: ModuleProps) {
 
 // ── Grievances (sensitive) ──────────────────────────────────────────────────
 export function GrievancesModule({ employeeId }: ModuleProps) {
+  const live = useIsLive() && isServerId(employeeId);
+  if (live) return <LiveEmployeeCases employeeId={employeeId} kind="grievances" />;
+  return <DemoGrievances employeeId={employeeId} />;
+}
+
+function DemoGrievances({ employeeId }: { employeeId: string }) {
   const { data, loading } = useEmployeeGrievances(employeeId);
   const canEdit = useCan("organization.employees", "edit");
   const rf = useRecordForm(COLLECTION_SCHEMAS.grievances, employeeId);
@@ -1603,6 +1645,10 @@ export function NotesModule({ employeeId }: ModuleProps) {
   const { data, loading } = useEmployeeNotes(employeeId);
   const canEdit = useCan("organization.employees", "edit");
   const rf = useRecordForm(COLLECTION_SCHEMAS.employeeNotes, employeeId);
+  // Signed in: pin or unpin a note (POST /employees/{id}/notes/{noteId}/pin).
+  const canPin = useIsLive() && isServerId(employeeId) && canEdit;
+  const [pin] = usePinEmployeeNoteMutation();
+  const sendPin = useLiveSender(["EmployeeNotes"]);
   if (loading && !data) return <LoadingPanel />;
   const rows = data ?? [];
   return (
@@ -1624,6 +1670,23 @@ export function NotesModule({ employeeId }: ModuleProps) {
                   <Pill className="border-border bg-muted text-muted-foreground">{titleCase(n.type)}</Pill>
                   <Pill className="border-border bg-muted text-muted-foreground">{titleCase(n.visibility)}</Pill>
                   <span className="text-[11px] text-muted-foreground ml-auto">{fmtDate(n.createdAt)}</span>
+                  {canPin && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-[11px] text-muted-foreground"
+                      onClick={() =>
+                        void sendPin(
+                          () =>
+                            pin({ employeeId, noteId: n.id, params: { pinned: !n.pinned } }).unwrap(),
+                          "Could not pin the note.",
+                        )
+                      }
+                    >
+                      <Pin className="mr-1 h-3 w-3" />
+                      {n.pinned ? "Unpin" : "Pin"}
+                    </Button>
+                  )}
                   {canEdit && <EditButton onClick={() => rf.openEdit(n)} />}
                 </div>
                 <p className="text-sm text-foreground mt-1.5">{n.body}</p>
@@ -2113,7 +2176,14 @@ function WorkScheduleTable({
 }
 
 export function WorkPatternModule({ employeeId, employee }: ModuleProps) {
-  const wp = employee.workPattern;
+  // Signed in: the schedule they're assigned (GET /attendance/schedules/for/{id})
+  // sets the days, hours and break; the contract keeps the holiday terms.
+  const scheduleQ = useGetEmployeeWorkScheduleQuery(employeeId, {
+    skip: !useIsLive() || !isServerId(employeeId),
+  });
+  const wp = scheduleQ.data?.data
+    ? workPatternFromSchedule(scheduleQ.data.data, employee.workPattern)
+    : employee.workPattern;
   const { data: leave } = useEmployeeLeave(employeeId);
   // Annual-leave policy drives the holiday breakdown (§13.4).
   const annualRow = leave?.rows.find((r) => /annual|holiday/i.test(r.policyName));

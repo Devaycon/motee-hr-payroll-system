@@ -15,12 +15,21 @@ import type {
   KudosRequest,
   PinKudosResponse,
   ReactToKudosResponse,
+  GetKudosReactorsResponse,
   ReactionRequest,
   UnpinKudosResponse,
 } from "@/src/types/kudos";
 
 export const kudosApi = api.injectEndpoints({
   endpoints: (builder) => ({
+    // GET /api/v1/kudos/{id}/reactions — who reacted, with which reaction
+    getKudosReactors: builder.query<GetKudosReactorsResponse, string>({
+      query: (id) => ({
+        url: `${API_PREFIX}/kudos/${id}/reactions`,
+        method: "GET",
+      }),
+      providesTags: ["Kudos"],
+    }),
     getKudos: builder.query<GetKudosResponse, GetKudosParams | void>({
       query: (params) => ({
         url: `${API_PREFIX}/kudos`,
@@ -141,6 +150,8 @@ export const {
   usePinKudosMutation,
   useUnpinKudosMutation,
   useReactToKudosMutation,
+  useGetKudosReactorsQuery,
+  useLazyGetKudosReactorsQuery,
   useCommentOnKudosMutation,
   useDeleteKudosCommentMutation,
 } = kudosApi;

@@ -15,6 +15,7 @@ import {
   LayoutGrid,
   List,
   MoreHorizontal,
+  PencilLine,
   Plus,
   RotateCcw,
   Search,
@@ -49,7 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
-import { cn } from "@/src/lib/utils";
+import { cn, getApiErrorMessage } from "@/src/lib/utils";
 import {
   DEMO_DOCUMENTS,
   DEMO_FOLDERS,
@@ -74,11 +75,26 @@ import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import { useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
 import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
-import { myDocumentFromApi } from "@/src/lib/documents/mine-mapping";
+import { toast } from "sonner";
+import {
+  categoryFromType,
+  myDocumentFromApi,
+  myFoldersFromApi,
+} from "@/src/lib/documents/mine-mapping";
 import {
   useAcknowledgeMyDocumentMutation,
+  useCreateMyFolderMutation,
+  useDeleteMyFolderMutation,
   useGetMyDocumentsQuery,
+  useGetMyFoldersQuery,
+  useMoveMyDocumentMutation,
+  useRestoreMyDocumentMutation,
+  useTrashMyDocumentMutation,
+  useUploadMyDocumentMutation,
+  useUpdateMyFolderMutation,
 } from "@/src/store/services/documents";
+import { PromptDialog, type PromptRequest } from "@/src/components/shared/prompt-dialog";
+import { useUploadFileMutation } from "@/src/store/services/files";
 import { submitSelfServiceDocument } from "@/src/lib/stores/my-documents-slice";
 
 /** The slice a KPI card drills the document library down to. */
@@ -113,20 +129,45 @@ export function MyDocumentsPage() {
   const user = useAppSelector((s) => s.auth.user);
   const [docs, setDocs] = useState<EmployeeDocument[]>(DEMO_DOCUMENTS);
   const [folders, setFolders] = useState<DocFolder[]>(DEMO_FOLDERS);
-  // Signed in: the documents HR has shared with or assigned to you
-  // (`/documents/mine`). Your own folders, uploads and deletions have no
-  // self-service endpoint, so those controls answer "not integrated".
+  // Signed in: what HR shared with or assigned to you plus your own uploads
+  // (`/documents/mine`), and your own folders (`/documents/mine/folders`).
+  // Your uploads wait for HR to accept them (`/documents/reviews`).
   const live = useIsLive();
   const mine = useGetMyDocumentsQuery(undefined, { skip: !live });
+  const myFolders = useGetMyFoldersQuery(undefined, { skip: !live });
   const [ackMine] = useAcknowledgeMyDocumentMutation();
-  const send = useLiveSender(["Documents"]);
-  const [seenMine, setSeenMine] = useState<typeof mine.data>(undefined);
-  if (mine.data && mine.data !== seenMine) {
-    setSeenMine(mine.data);
-    setDocs(mine.data.data.map(myDocumentFromApi));
-    setFolders([]);
+  const [uploadFile] = useUploadFileMutation();
+  const [uploadMine] = useUploadMyDocumentMutation();
+  const [createMyFolder] = useCreateMyFolderMutation();
+  const [deleteMyFolder] = useDeleteMyFolderMutation();
+  const [moveMine] = useMoveMyDocumentMutation();
+  const [trashMine] = useTrashMyDocumentMutation();
+  const [restoreMine] = useRestoreMyDocumentMutation();
+  const [renameMyFolder] = useUpdateMyFolderMutation();
+  const [prompt, setPrompt] = useState<PromptRequest | null>(null);
+  const send = useLiveSender(["Documents", "DocumentFolders"]);
+  const [seenMine, setSeenMine] = useState<unknown[]>([]);
+  if (
+    live &&
+    mine.data &&
+    myFolders.data &&
+    (mine.data !== seenMine[0] || myFolders.data !== seenMine[1])
+  ) {
+    setSeenMine([mine.data, myFolders.data]);
+    const own = myFoldersFromApi(myFolders.data.data);
+    const ids = new Set(own.map((f) => f.id));
+    setDocs(mine.data.data.map((d) => myDocumentFromApi(d, ids)));
+    setFolders(own);
   }
-  const sharedWithMe = live ? docs : SHARED_WITH_ME;
+  const sharedWithMe = live
+    ? docs.filter((d) => d.uploadedBy === "hr" && !d.isTrashed)
+    : SHARED_WITH_ME;
+  /** Only what you uploaded yourself is yours to move, trash or restore. */
+  const notMine = (id: string) => {
+    if (docs.find((d) => d.id === id)?.uploadedBy === "employee") return false;
+    toast.error("Only documents you uploaded can be changed here.");
+    return true;
+  };
   const blockedLive = (label: string) => {
     if (!live) return false;
     notifyNotIntegrated(label);
@@ -146,6 +187,7 @@ export function MyDocumentsPage() {
   const [uploadFolder, setUploadFolder] = useState<string>("none");
   const [uploadExpiry, setUploadExpiry] = useState("");
   const [uploadDesc, setUploadDesc] = useState("");
+  const [uploadFileValue, setUploadFileValue] = useState<File | null>(null);
   const [uploadDone, setUploadDone] = useState(false);
 
   const [requestOpen, setRequestOpen] = useState(false);
@@ -228,26 +270,35 @@ export function MyDocumentsPage() {
   }
 
   function handleDeleteDoc(id: string) {
-    if (blockedLive("Deleting a document")) return;
+    if (live) {
+      if (notMine(id)) return;
+      void send(() => trashMine(id).unwrap(), "Could not move the document to trash.");
+    }
     setDocs((prev) =>
       prev.map((d) => (d.id === id ? { ...d, isTrashed: true } : d)),
     );
   }
 
   function handleRestoreDoc(id: string) {
-    if (blockedLive("Restoring a document")) return;
+    if (live) {
+      if (notMine(id)) return;
+      void send(() => restoreMine(id).unwrap(), "Could not restore the document.");
+    }
     setDocs((prev) =>
       prev.map((d) => (d.id === id ? { ...d, isTrashed: false } : d)),
     );
   }
 
   function handlePermanentDeleteDoc(id: string) {
-    if (blockedLive("Deleting a document")) return;
+    // Trash is as far as a self-service delete goes on the API.
+    if (blockedLive("Deleting a document permanently")) return;
     setDocs((prev) => prev.filter((d) => d.id !== id));
   }
 
   function handleDeleteFolder(id: string) {
-    if (blockedLive("Your own folders")) return;
+    if (live) {
+      void send(() => deleteMyFolder(id).unwrap(), "Could not delete the folder.");
+    }
     setFolders((prev) =>
       prev.map((f) => (f.id === id ? { ...f, isTrashed: true } : f)),
     );
@@ -257,9 +308,37 @@ export function MyDocumentsPage() {
     if (currentFolderId === id) setCurrentFolderId(null);
   }
 
-  function handleUploadSubmit() {
+  async function uploadLive() {
+    if (!uploadFileValue) {
+      toast.error("Choose the file to upload.");
+      return false;
+    }
+    try {
+      const stored = (
+        await uploadFile({
+          file: uploadFileValue,
+          purpose: "employeeDocument",
+          ownerId: user?.employeeId,
+        }).unwrap()
+      ).data;
+      await uploadMine({
+        name: uploadName.trim(),
+        fileId: stored.id,
+        category: categoryFromType(uploadType),
+        expiryDate: uploadExpiry || null,
+        description: uploadDesc.trim() || null,
+        folderId: uploadFolder === "none" ? null : uploadFolder,
+      }).unwrap();
+      return true;
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Could not upload the document."));
+      return false;
+    }
+  }
+
+  async function handleUploadSubmit() {
     if (!uploadName || !uploadType) return;
-    if (blockedLive("Uploading your own documents")) return;
+    if (live && !(await uploadLive())) return;
     const newDoc: EmployeeDocument = {
       id: `d-${Date.now()}`,
       name: uploadName,
@@ -275,8 +354,9 @@ export function MyDocumentsPage() {
       // §8.3 — routed to HR for review/approval, not filed automatically.
       reviewStatus: "awaiting_review",
     };
-    setDocs((prev) => [newDoc, ...prev]);
-    dispatch(
+    // Signed in, the server's copy arrives with the refetch.
+    if (!live) setDocs((prev) => [newDoc, ...prev]);
+    if (!live) dispatch(
       submitSelfServiceDocument({
         employeeId: user?.employeeId,
         employeeName: user?.name ?? "Employee",
@@ -296,6 +376,7 @@ export function MyDocumentsPage() {
       setUploadFolder("none");
       setUploadExpiry("");
       setUploadDesc("");
+      setUploadFileValue(null);
       setUploadOpen(false);
     }, 1400);
   }
@@ -313,7 +394,16 @@ export function MyDocumentsPage() {
 
   function handleCreateFolder() {
     if (!newFolderName.trim()) return;
-    if (blockedLive("Your own folders")) return;
+    if (live) {
+      void send(
+        () => createMyFolder({ name: newFolderName.trim(), colour: newFolderColor }).unwrap(),
+        "Could not create the folder.",
+      );
+      setNewFolderOpen(false);
+      setNewFolderName("");
+      setNewFolderColor(FOLDER_COLORS[0].value);
+      return;
+    }
     const newFolder: DocFolder = {
       id: `f-${Date.now()}`,
       name: newFolderName.trim(),
@@ -328,7 +418,14 @@ export function MyDocumentsPage() {
 
   function handleMoveDoc() {
     if (!moveDoc) return;
-    if (blockedLive("Your own folders")) return;
+    if (live) {
+      if (notMine(moveDoc.id)) return;
+      const target = moveFolderId === "none" ? null : moveFolderId;
+      void send(
+        () => moveMine({ id: moveDoc.id, body: { folderId: target } }).unwrap(),
+        "Could not move the document.",
+      );
+    }
     setDocs((prev) =>
       prev.map((d) =>
         d.id === moveDoc.id
@@ -613,6 +710,29 @@ export function MyDocumentsPage() {
                                 className="w-40"
                                 onClick={(e) => e.stopPropagation()}
                               >
+                                {live && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      setPrompt({
+                                        title: "Rename folder",
+                                        inputLabel: "Folder name",
+                                        initialValue: folder.name,
+                                        onConfirm: (name) =>
+                                          send(
+                                            () =>
+                                              renameMyFolder({
+                                                id: folder.id,
+                                                body: { name, colour: folder.color },
+                                              }).unwrap(),
+                                            "Could not rename the folder.",
+                                          ),
+                                      })
+                                    }
+                                  >
+                                    <PencilLine className="mr-2 size-3.5" />
+                                    Rename
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
                                   onClick={() => handleDeleteFolder(folder.id)}
@@ -895,6 +1015,8 @@ export function MyDocumentsPage() {
         onExpiryChange={setUploadExpiry}
         desc={uploadDesc}
         onDescChange={setUploadDesc}
+        file={uploadFileValue}
+        onFileChange={setUploadFileValue}
         done={uploadDone}
         folders={folders}
         onSubmit={handleUploadSubmit}
@@ -924,6 +1046,7 @@ export function MyDocumentsPage() {
         previewDoc={previewDoc}
         onClose={() => setPreviewDoc(null)}
       />
+      <PromptDialog request={prompt} onClose={() => setPrompt(null)} />
     </div>
   );
 }

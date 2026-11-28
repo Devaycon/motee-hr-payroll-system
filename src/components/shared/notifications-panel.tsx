@@ -180,6 +180,26 @@ export function NotificationsPanel({
                             {!notif.read && (
                               <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
                             )}
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              aria-label="Dismiss notification"
+                              title="Dismiss"
+                              className="rounded p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                feed.dismiss(notif.id);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  feed.dismiss(notif.id);
+                                }
+                              }}
+                            >
+                              <X size={12} />
+                            </span>
                           </div>
                         </div>
                         <p className="text-[11px] text-muted-foreground leading-relaxed">

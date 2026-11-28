@@ -10,6 +10,7 @@ export function isCurrentApprover(
   userRoleId: string | undefined,
 ): boolean {
   if (req.status !== "in_progress") return false;
+  if (req.serverActions) return req.serverActions.includes("approve");
   const step = req.steps[req.currentStepIndex];
   if (!step) return false;
   return canActOnStep(

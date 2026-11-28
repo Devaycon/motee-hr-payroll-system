@@ -1,5 +1,7 @@
 "use client";
 
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetProjectSummaryQuery } from "@/src/store/services/projects";
 import { useProjectsLive } from "@/src/lib/projects/use-projects-live";
 
 import { useMemo, useState } from "react";
@@ -130,13 +132,17 @@ export function ProjectsPage() {
     [projects, cardFilter],
   );
 
+  // Signed in: the server's portfolio figures (GET /projects/summary).
+  const portfolio = useGetProjectSummaryQuery(undefined, { skip: !useIsLive() }).data?.data;
   const stats = useMemo<HrStatCardItem[]>(() => {
-    const budget = projects.reduce((s, p) => s + (p.budget ?? 0), 0);
-    const spend = projects.reduce((s, p) => s + projectSpend(p, timesheets), 0);
-    const people = new Set(
-      projects.flatMap((p) => p.allocations.map((a) => a.employeeId)),
-    );
-    const staffed = projects.filter((p) => p.allocations.length > 0).length;
+    const budget = portfolio?.totalBudget ?? projects.reduce((s, p) => s + (p.budget ?? 0), 0);
+    const spend = portfolio?.totalSpend ?? projects.reduce((s, p) => s + projectSpend(p, timesheets), 0);
+    const people = {
+      size:
+        portfolio?.peopleAssigned ??
+        new Set(projects.flatMap((p) => p.allocations.map((a) => a.employeeId))).size,
+    };
+    const staffed = portfolio?.staffedProjects ?? projects.filter((p) => p.allocations.length > 0).length;
     const budgeted = projects.filter((p) => (p.budget ?? 0) > 0).length;
     return [
       {
@@ -170,12 +176,13 @@ export function ProjectsPage() {
         icon: TrendingUp,
         label: "Avg Progress",
         value: `${
-          active.length
+          portfolio?.averageProgressPercent ??
+          (active.length
             ? Math.round(
                 active.reduce((s, p) => s + projectProgress(p), 0) /
                   active.length,
               )
-            : 0
+            : 0)
         }%`,
         // An average over the active projects — opens that same list, so it
         // deliberately carries no selected state of its own.
@@ -192,6 +199,7 @@ export function ProjectsPage() {
     format,
     activeTab,
     cardFilter,
+    portfolio,
   ]);
 
   const columns = useMemo<ColumnDef<Project>[]>(

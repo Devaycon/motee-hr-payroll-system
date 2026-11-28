@@ -22,16 +22,22 @@ import {
   usePinCommunityPostMutation,
   useUnpinCommunityPostMutation,
   useVoteOnCommunityPollMutation,
+  useUpdateCommunityPostMutation,
+  useDeleteCommunityCommentMutation,
+  communityApi,
 } from "@/src/store/services/community";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
 import {
   useCommentOnSuggestionMutation,
   useCreateSuggestionMutation,
+  useDeleteSuggestionMutation,
   useFeatureSuggestionMutation,
   useSetSuggestionPriorityMutation,
   useSetSuggestionResponseMutation,
   useSetSuggestionStatusMutation,
   useUnFeatureSuggestionMutation,
   useUpvoteSuggestionMutation,
+  useDeleteSuggestionCommentMutation,
 } from "@/src/store/services/suggestions";
 import type { CommunityPost, NewPost } from "@/src/lib/types/community";
 import type {
@@ -61,6 +67,9 @@ export function useCommunityActions() {
   const [like] = useLikeCommunityPostMutation();
   const [comment] = useCommentOnCommunityPostMutation();
   const [vote] = useVoteOnCommunityPollMutation();
+  const [update] = useUpdateCommunityPostMutation();
+  const [deleteComment] = useDeleteCommunityCommentMutation();
+  const dispatch = useAppDispatch();
 
   return useMemo(() => {
     const on = (id: string) => live && isServerId(id);
@@ -85,8 +94,43 @@ export function useCommunityActions() {
         on(id) && isServerId(optionId)
           ? send(() => vote({ id, body: { optionId } }).unwrap(), "Could not record your vote.")
           : DONE,
+      /**
+       * Edits a post's text. The post is read first (GET /community/{id}) so
+       * its type, event, poll and celebration stay as they are; then
+       * PUT /community/{id}.
+       */
+      edit: (id: string, content: string) =>
+        on(id)
+          ? send(async () => {
+              const read = dispatch(communityApi.endpoints.getCommunityPost.initiate(id, { forceRefetch: true }));
+              try {
+                const p = (await read.unwrap()).data;
+                await update({
+                  id,
+                  body: {
+                    postType: p.postType,
+                    content,
+                    eventOn: p.eventOn ?? null,
+                    eventLocation: p.eventLocation ?? null,
+                    pollQuestion: p.pollQuestion ?? null,
+                    pollOptions: p.pollOptions.length ? p.pollOptions.map((o) => o.label) : null,
+                    ...(p.celebrationKind ? { celebrationKind: p.celebrationKind } : {}),
+                    celebrationPersonId: p.celebrationPersonId ?? null,
+                    celebrationDetail: p.celebrationDetail ?? null,
+                  },
+                }).unwrap();
+              } finally {
+                read.unsubscribe();
+              }
+            }, "Could not save the post.")
+          : DONE,
+      /** DELETE /community/{id}/comments/{commentId} */
+      deleteComment: (id: string, commentId: string) =>
+        on(id) && isServerId(commentId)
+          ? send(() => deleteComment({ id, commentId }).unwrap(), "Could not delete the comment.")
+          : DONE,
     };
-  }, [live, send, create, remove, pin, unpin, like, comment, vote]);
+  }, [live, send, create, remove, pin, unpin, like, comment, vote, update, deleteComment, dispatch]);
 }
 
 /** Every suggestion from the API; null signed out or until it answers. */
@@ -111,6 +155,8 @@ export function useSuggestionActions() {
   const [feature] = useFeatureSuggestionMutation();
   const [unfeature] = useUnFeatureSuggestionMutation();
   const [comment] = useCommentOnSuggestionMutation();
+  const [removeSuggestion] = useDeleteSuggestionMutation();
+  const [deleteSuggestionComment] = useDeleteSuggestionCommentMutation();
 
   return useMemo(() => {
     const on = (id: string) => live && isServerId(id);
@@ -149,6 +195,16 @@ export function useSuggestionActions() {
         on(id)
           ? send(() => comment({ id, body: { message } }).unwrap(), "Could not add the comment.")
           : DONE,
+      remove: (id: string) =>
+        on(id) ? send(() => removeSuggestion(id).unwrap(), "Could not delete the suggestion.") : DONE,
+      /** DELETE /suggestions/{id}/comments/{commentId} */
+      deleteComment: (id: string, commentId: string) =>
+        on(id) && isServerId(commentId)
+          ? send(
+              () => deleteSuggestionComment({ id, commentId }).unwrap(),
+              "Could not delete the comment.",
+            )
+          : DONE,
     };
-  }, [live, send, create, upvote, setStatus, setPriority, setResponse, feature, unfeature, comment]);
+  }, [live, send, create, upvote, setStatus, setPriority, setResponse, feature, unfeature, comment, removeSuggestion, deleteSuggestionComment]);
 }

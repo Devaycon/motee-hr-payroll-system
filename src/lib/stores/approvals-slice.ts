@@ -150,6 +150,8 @@ interface SignatureCapture {
   placement?: ApprovalSignaturePlacement | null;
 }
 
+const SERVER_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const approvalsSlice = createSlice({
   name: "approvals",
   initialState,
@@ -262,6 +264,27 @@ const approvalsSlice = createSlice({
         if (!existingIds.has(request.id)) {
           state.requests.push(normalizeRequest(request));
         }
+      }
+    },
+
+    /**
+     * Signed in: the server's approvals replace every server approval held
+     * locally. Demo requests (non-UUID ids) seeded by other modules are kept.
+     */
+    replaceRequestsFromApi(state, action: PayloadAction<ApprovalRequest[]>) {
+      const incoming = new Set(action.payload.map((r) => r.id));
+      state.requests = [
+        ...action.payload,
+        ...state.requests.filter((r) => !SERVER_ID.test(r.id) && !incoming.has(r.id)),
+      ];
+    },
+
+    /** Signed in: add or refresh single server approvals (the detail page's). */
+    upsertRequestsFromApi(state, action: PayloadAction<ApprovalRequest[]>) {
+      for (const request of action.payload) {
+        const at = state.requests.findIndex((r) => r.id === request.id);
+        if (at >= 0) state.requests[at] = request;
+        else state.requests.unshift(request);
       }
     },
 
@@ -639,6 +662,8 @@ export const {
   seedRequests,
   seedRequestsForType,
   upsertRequests,
+  replaceRequestsFromApi,
+  upsertRequestsFromApi,
   submitApprovalInternal,
   approveStep,
   rejectStep,

@@ -62,8 +62,18 @@ export interface DocumentDto {
   versions: DocumentVersionDto[];
   shares: DocumentShareDto[];
   acknowledgedByMe?: boolean | null;
+  /** Set on a document an employee uploaded themself. */
+  uploadedByEmployeeId?: string | null;
+  uploadedByName?: string | null;
+  /** An employee's own upload waits for HR; HR's own documents have none. */
+  reviewStatus?: DocumentReviewStatus | null;
+  reviewNote?: string | null;
+  /** True when the viewer uploaded it (theirs to move, trash and restore). */
+  isMine?: boolean;
   createdAt: string;
 }
+
+export type DocumentReviewStatus = "awaitingReview" | "accepted" | "rejected";
 
 export type DocumentPermission =
   | "viewOnly"
@@ -93,6 +103,7 @@ export interface FolderDto {
   parentId?: string | null;
   documentCount: number;
   canDelete: boolean;
+  colour?: string | null;
 }
 
 export interface FolderRequest {
@@ -191,3 +202,53 @@ export type UnshareDocumentResponse = ApiResponse<null>;
 
 // GET /api/v1/documents/{id}/acknowledgements
 export type GetDocumentAcknowledgementsResponse = ApiResponse<AcknowledgementReportDto>;
+
+// ── Self-service: your own uploads and folders ──
+
+export interface SelfUploadRequest {
+  name: string;
+  fileId: string;
+  category: DocumentCategory;
+  expiryDate?: string | null;
+  description?: string | null;
+  folderId?: string | null;
+}
+
+export interface MyFolderRequest {
+  name: string;
+  colour?: string | null;
+}
+
+export interface MoveDocumentRequest {
+  /** null files it back at the top level. */
+  folderId: string | null;
+}
+
+export interface ReviewUploadRequest {
+  note?: string | null;
+}
+
+export interface RejectUploadRequest {
+  reason: string;
+}
+
+export interface GetDocumentReviewsParams {
+  Page?: number;
+  PageSize?: number;
+  Skip?: number;
+}
+
+// POST /api/v1/documents/mine
+export type UploadMyDocumentResponse = ApiResponse<DocumentDto>;
+// GET /api/v1/documents/mine/folders
+export type GetMyFoldersResponse = ApiResponse<FolderDto[]>;
+// POST/PUT /api/v1/documents/mine/folders[/{id}]
+export type MyFolderResponse = ApiResponse<FolderDto>;
+// DELETE /api/v1/documents/mine/folders/{id}
+export type DeleteMyFolderResponse = ApiResponse<null>;
+// POST /api/v1/documents/mine/{id}/move | trash | restore
+export type MyDocumentResponse = ApiResponse<DocumentDto>;
+// GET /api/v1/documents/reviews
+export type GetDocumentReviewsResponse = ApiResponse<PagedResult<DocumentDto>>;
+// POST /api/v1/documents/reviews/{id}/approve | reject
+export type ReviewDocumentResponse = ApiResponse<DocumentDto>;

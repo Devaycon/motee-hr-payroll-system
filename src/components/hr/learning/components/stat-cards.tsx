@@ -6,6 +6,8 @@ import {
   type HrStatCardItem,
 } from "@/src/components/shared/hr-stat-card";
 import type { Course, Enrollment } from "../types";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetLearningSummaryQuery } from "@/src/store/services/learning";
 
 /** The slice a KPI card drills into. */
 export type LearningCardFilter =
@@ -66,7 +68,9 @@ export function StatCards({
   cardFilter,
   onDrillDown,
 }: StatCardsProps) {
-  const activeCourses = courses.filter((c) => c.status === "active").length;
+  // Signed in: the server's figures (GET /learning/summary) win.
+  const server = useGetLearningSummaryQuery(undefined, { skip: !useIsLive() }).data?.data;
+  const activeCourses = server?.activeCourses ?? courses.filter((c) => c.status === "active").length;
   const activeEnrollments = enrollments.filter((e) =>
     matchesEnrollmentCardFilter(e, "active_enrollments"),
   ).length;
@@ -74,9 +78,10 @@ export function StatCards({
     (e) => e.status === "completed",
   ).length;
   const completionRate =
-    enrollments.length > 0
+    server?.completionPercent ??
+    (enrollments.length > 0
       ? Math.round((completedEnrollments / enrollments.length) * 100)
-      : 0;
+      : 0);
 
   const card = (key: LearningCardFilter, tab: string) => ({
     active: cardFilter === key,
@@ -88,7 +93,7 @@ export function StatCards({
     {
       label: "Active Courses",
       value: activeCourses,
-      sub: `${courses.length} total in catalog`,
+      sub: `${server?.courses ?? courses.length} total in catalog`,
       icon: BookOpen,
       tone: "blue",
       ...card("active_courses", "courses"),

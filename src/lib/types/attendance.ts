@@ -113,6 +113,8 @@ export interface WorkSchedule {
   breakMinutes: number;
   assignedCount: number;
   createdAt: string;
+  /** The pattern new starters get (API schedules only). */
+  isDefault?: boolean;
 }
 
 export interface NewWorkSchedule {

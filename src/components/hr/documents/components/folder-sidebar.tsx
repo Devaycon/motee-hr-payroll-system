@@ -15,6 +15,13 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import { MoreHorizontal, Pencil } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
 import type { Folder as FolderType, HRDocument } from "../types";
@@ -25,6 +32,9 @@ interface FolderSidebarProps {
   selectedFolderId: string | null;
   onSelectFolder: (id: string | null) => void;
   onCreateFolder: () => void;
+  /** Signed in: ⋯ Rename / Delete on folders HR created. */
+  onRenameFolder?: (folder: FolderType) => void;
+  onDeleteFolder?: (folder: FolderType) => void;
   sharedCount: number;
   trashCount: number;
   /**
@@ -71,7 +81,11 @@ function FolderNode({
   expanded,
   onToggle,
   depth,
+  onRenameFolder,
+  onDeleteFolder,
 }: {
+  onRenameFolder?: (folder: FolderType) => void;
+  onDeleteFolder?: (folder: FolderType) => void;
   folder: FolderType;
   folders: FolderType[];
   documents: HRDocument[];
@@ -90,8 +104,39 @@ function FolderNode({
   const IconComp = iconConfig?.icon ?? Folder;
   const iconColor = iconConfig?.color ?? "text-amber-500";
 
+  const editable = folder.type === "custom" && (onRenameFolder || onDeleteFolder);
+
   return (
-    <div>
+    <div className="group/folder relative">
+      {editable && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Actions for ${folder.name}`}
+              className="absolute right-1 top-1 z-10 size-6 opacity-0 transition-opacity group-hover/folder:opacity-100 data-[state=open]:opacity-100"
+            >
+              <MoreHorizontal className="size-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            {onRenameFolder && (
+              <DropdownMenuItem className="gap-2 text-xs" onClick={() => onRenameFolder(folder)}>
+                <Pencil className="size-3.5" /> Rename
+              </DropdownMenuItem>
+            )}
+            {onDeleteFolder && (
+              <DropdownMenuItem
+                className="gap-2 text-xs text-destructive focus:text-destructive"
+                onClick={() => onDeleteFolder(folder)}
+              >
+                <Trash2 className="size-3.5" /> Delete
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
       <button
         onClick={() => {
           onSelectFolder(folder.id);
@@ -145,6 +190,8 @@ function FolderNode({
               expanded={expanded}
               onToggle={onToggle}
               depth={depth + 1}
+              onRenameFolder={onRenameFolder}
+              onDeleteFolder={onDeleteFolder}
             />
           ))}
         </div>
@@ -162,6 +209,8 @@ export function FolderSidebar({
   sharedCount,
   trashCount,
   hideRootIds = [],
+  onRenameFolder,
+  onDeleteFolder,
 }: FolderSidebarProps) {
   const [expanded, setExpanded] = useState<Set<string>>(
     new Set(["sys", "per"]),
@@ -241,6 +290,8 @@ export function FolderSidebar({
             expanded={expanded}
             onToggle={onToggle}
             depth={0}
+            onRenameFolder={onRenameFolder}
+            onDeleteFolder={onDeleteFolder}
           />
         ))}
 

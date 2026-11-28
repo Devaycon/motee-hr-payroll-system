@@ -1,5 +1,8 @@
 "use client";
 
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetHelpdeskTicketQuery } from "@/src/store/services/helpdesk";
+import { ticketFromApi } from "@/src/lib/helpdesk/api-mapping";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useHelpdeskActions, useHelpdeskTickets } from "./hooks";
@@ -68,6 +71,11 @@ export function HelpdeskPage() {
   const [today] = useState(() => new Date().toISOString().slice(0, 10));
   const [newCaseOpen, setNewCaseOpen] = useState(false);
   const [detailTicket, setDetailTicket] = useState<HelpDeskTicket | null>(null);
+  // Signed in: the opened case is read fresh (GET /helpdesk/{id}).
+  const ticketQ = useGetHelpdeskTicketQuery(detailTicket?.id ?? "", {
+    skip: !useIsLive() || !detailTicket || !isServerId(detailTicket.id),
+  });
+  const freshTicket = ticketQ.data?.data ? ticketFromApi(ticketQ.data.data) : detailTicket;
   const [detailOpen, setDetailOpen] = useState(false);
 
   function handleCreate(data: NewTicket) {
@@ -518,7 +526,7 @@ export function HelpdeskPage() {
       />
 
       <CaseDetailModal
-        ticket={detailTicket}
+        ticket={freshTicket}
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
         onUpdateStatus={handleUpdateStatus}

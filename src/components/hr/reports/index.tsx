@@ -17,7 +17,12 @@ import { gridFillSpans } from "@/src/lib/reports/grid-fill";
 import { exportCsv } from "@/src/lib/reports/export";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import type { AnyReportDef } from "@/src/lib/reports/types";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { liveReportDef, liveReportGroups } from "@/src/lib/reports/live";
+import { useReportServerExport } from "@/src/lib/reports/use-report-export";
+import { useGetReportDatasetsQuery } from "@/src/store/services/reports";
 import { CustomReportModal } from "./components/custom-report-modal";
+import { MyExportsButton } from "@/src/components/shared/my-exports-dialog";
 
 const EXPORT_FORMAT_COUNT = 5; // CSV, Excel, JSON, Image, PDF
 const WIDE_COLUMN_PREVIEW = 4;
@@ -122,11 +127,20 @@ function ReportCard({
 export function ReportsPage() {
   const accessLevelId = useAppSelector((s) => s.auth.user?.accessLevelId);
   const levels = useAppSelector((s) => s.accessLevels.levels);
-  const { data: bundle, loading } = useLocaleSection<LocaleBundle>((b) => b);
+  const { data: bundle, loading: demoLoading } = useLocaleSection<LocaleBundle>((b) => b);
   const [customOpen, setCustomOpen] = useState(false);
   const [search, setSearch] = useState("");
+  // Signed in, the datasets (and their record counts) are the server's; the
+  // server already leaves out the ones you may not see.
+  const live = useIsLive();
+  const datasets = useGetReportDatasetsQuery(undefined, { skip: !live });
+  const { exportReport } = useReportServerExport();
+  const liveDatasets = useMemo(() => datasets.data?.data ?? [], [datasets.data]);
+  const loading = live ? datasets.isLoading : demoLoading;
+  const groups = live ? liveReportGroups(liveDatasets) : REPORT_GROUPS;
 
   const visibleReports = useMemo(() => {
+    if (live) return liveDatasets.map((d) => liveReportDef(d));
     const level = accessLevelId
       ? levels.find((l) => l.id === accessLevelId)
       : undefined;
@@ -135,10 +149,20 @@ export function ReportsPage() {
       return !!level.permissions.find((p) => p.module === mod)?.access;
     };
     return ALL_REPORTS.filter((r) => canView(r.permission));
-  }, [accessLevelId, levels]);
+  }, [accessLevelId, levels, live, liveDatasets]);
+
+  /** Record counts for the cards: the server's when signed in. */
+  const liveCounts = useMemo(() => {
+    const map = new Map(liveDatasets.map((d) => [d.key, d.recordCount] as const));
+    return {
+      map,
+      totalRecords: liveDatasets.reduce((n, d) => n + d.recordCount, 0),
+      totalColumns: liveDatasets.reduce((n, d) => n + d.columns.length, 0),
+    };
+  }, [liveDatasets]);
 
   const rowsByReport = useMemo(() => {
-    if (!bundle) return null;
+    if (live || !bundle) return null;
     const map = new Map<string, Record<string, unknown>[]>();
     let totalRecords = 0;
     let totalColumns = 0;
@@ -149,7 +173,11 @@ export function ReportsPage() {
       totalColumns += r.columns.length;
     }
     return { map, totalRecords, totalColumns };
-  }, [bundle, visibleReports]);
+  }, [live, bundle, visibleReports]);
+
+  const countOf = (id: string) =>
+    live ? (liveCounts.map.get(id) ?? 0) : (rowsByReport?.map.get(id)?.length ?? 0);
+  const totals = live ? liveCounts : rowsByReport;
 
   const filteredReports = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -165,6 +193,14 @@ export function ReportsPage() {
   function quickExport(e: React.MouseEvent, r: AnyReportDef) {
     e.preventDefault();
     e.stopPropagation();
+    if (live) {
+      if (countOf(r.id) === 0) {
+        toast.error("Nothing to export — this dataset has no records yet.");
+        return;
+      }
+      void exportReport({ dataset: r.id }, r.label);
+      return;
+    }
     const rows = rowsByReport?.map.get(r.id) ?? [];
     if (rows.length === 0) {
       toast.error("Nothing to export — this dataset has no records yet.");
@@ -188,22 +224,26 @@ export function ReportsPage() {
           { label: "Export formats", value: EXPORT_FORMAT_COUNT },
           {
             label: "Columns available",
-            value: loading ? "…" : rowsByReport?.totalColumns ?? 0,
+            value: loading ? "…" : totals?.totalColumns ?? 0,
           },
           {
             label: "Records available",
-            value: loading ? "…" : (rowsByReport?.totalRecords ?? 0).toLocaleString(),
+            value: loading ? "…" : (totals?.totalRecords ?? 0).toLocaleString(),
           },
         ]}
         action={
-          <Button className="mt-1 gap-1.5" onClick={() => setCustomOpen(true)}>
-            <Wand2 className="h-4 w-4" />
-            Build Custom Report
-          </Button>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            {/* Signed in only: your server export jobs (GET /exports/mine). */}
+            <MyExportsButton />
+            <Button className="gap-1.5" onClick={() => setCustomOpen(true)}>
+              <Wand2 className="h-4 w-4" />
+              Build Custom Report
+            </Button>
+          </div>
         }
       />
 
-      {loading || !bundle ? (
+      {loading || (!live && !bundle) ? (
         <div className="grid grid-cols-12 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="col-span-12 h-40 sm:col-span-6 lg:col-span-4" />
@@ -211,7 +251,7 @@ export function ReportsPage() {
         </div>
       ) : (
         <>
-          {REPORT_GROUPS.map((group) => {
+          {groups.map((group) => {
             const reports = filteredReports.filter((r) => r.group === group);
             if (reports.length === 0) return null;
             const theme = reportGroupTheme(group);
@@ -233,7 +273,7 @@ export function ReportsPage() {
                       key={r.id}
                       report={r}
                       theme={theme}
-                      rowCount={rowsByReport?.map.get(r.id)?.length ?? 0}
+                      rowCount={countOf(r.id)}
                       wide={spans[i].wide}
                       className={spans[i].className}
                       onQuickExport={quickExport}

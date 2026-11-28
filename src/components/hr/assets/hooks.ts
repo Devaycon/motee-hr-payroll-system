@@ -19,6 +19,7 @@ import {
   useCreateAssetMutation,
   useGetAssetHistoryQuery,
   useGetAssetQuery,
+  useGetMyAssetsQuery,
   useReturnAssetMutation,
   useUpdateAssetMutation,
 } from "@/src/store/services/assets";
@@ -27,6 +28,7 @@ import type {
   AssetAssignmentDto,
   AssetDto,
   AssetStatus as ApiAssetStatus,
+  MyAssetDto,
 } from "@/src/types/assets";
 
 function mapType(category?: string | null): AssetType {
@@ -63,10 +65,59 @@ function initialsOf(name: string): string {
     .join("");
 }
 
+/**
+ * The signed-in employee's own assets (GET /assets/mine), in the screens'
+ * shape. Self-service reads this instead of the HR register, which an
+ * employee may not be allowed to list.
+ */
+export function useMyAssets(options?: { skip?: boolean }) {
+  const { data, isLoading, error } = useGetMyAssetsQuery(undefined, {
+    skip: options?.skip,
+  });
+  const me = useAppSelector((s) => s.auth.user);
+  const employees = useAppSelector((s) => s.locale.data?.employees);
+  const assets = useMemo<Asset[] | null>(() => {
+    if (!data?.data) return null;
+    const name = me?.name ?? undefined;
+    const department = employees?.find((e) => e.id === me?.employeeId)?.departmentName;
+    return data.data.map((asset: MyAssetDto) => ({
+      id: asset.id,
+      name: asset.name,
+      assetType: mapType(asset.category),
+      serialNumber: asset.serialNumber ?? asset.tag,
+      condition: asset.status === "retired" ? "decommissioned" : "good",
+      status: STATUS_FROM_API[asset.status],
+      assignedToId: me?.employeeId ?? undefined,
+      assignedTo: name,
+      assignedToInitials: name ? initialsOf(name) : undefined,
+      assignedToDepartment: department,
+      assignedDate: asset.assignedDate ?? undefined,
+      history: asset.assignedDate
+        ? [
+            {
+              id: `H-${asset.id}-assigned`,
+              action: "assigned",
+              date: asset.assignedDate.slice(0, 10),
+              description: "Assigned to you.",
+              performedBy: "—",
+            },
+          ]
+        : [],
+    }));
+  }, [data, me, employees]);
+  return {
+    data: assets,
+    loading: isLoading,
+    error: error ? getApiErrorMessage(error) : null,
+  };
+}
+
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function useAssets() {
-  const { data, isLoading, error } = useGetAssetInventoryQuery();
+export function useAssets(options?: { skip?: boolean }) {
+  const { data, isLoading, error } = useGetAssetInventoryQuery(undefined, {
+    skip: options?.skip,
+  });
   const employees = useAppSelector((s) => s.locale.data?.employees);
 
   const assets = useMemo<Asset[] | null>(() => {

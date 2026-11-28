@@ -1,5 +1,7 @@
 "use client";
 
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetCommunitySummaryQuery } from "@/src/store/services/community";
 import { Users, MessageSquare, ThumbsUp, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { computeFeedStats } from "../data";
@@ -11,12 +13,18 @@ interface StatCardsProps {
 }
 
 export function StatCards({ posts, memberCount }: StatCardsProps) {
-  const stats = computeFeedStats(posts);
+  const local = computeFeedStats(posts);
+  // Signed in: the server's tally (GET /community/summary).
+  const server = useGetCommunitySummaryQuery(undefined, { skip: !useIsLive() }).data?.data;
+  const stats = server
+    ? { ...local, totalPosts: server.posts, totalLikes: server.reactions, totalPollVotes: server.pollVotes }
+    : local;
+  const members = server?.members ?? memberCount;
 
   const cards = [
     {
       label: "Team Members",
-      value: memberCount,
+      value: members,
       icon: Users,
       iconBg: "bg-indigo-100 dark:bg-indigo-950/60",
       iconColor: "text-indigo-600 dark:text-indigo-400",

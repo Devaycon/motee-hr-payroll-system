@@ -3,6 +3,7 @@ import type {
   CommentOnSuggestionResponse,
   CreateSuggestionResponse,
   DeleteSuggestionCommentResponse,
+  DeleteSuggestionResponse,
   FeatureSuggestionResponse,
   GetMySuggestionsResponse,
   GetSuggestionResponse,
@@ -125,6 +126,14 @@ export const suggestionsApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Suggestions"],
     }),
+    // DELETE /api/v1/suggestions/{id}
+    deleteSuggestion: builder.mutation<DeleteSuggestionResponse, string>({
+      query: (id) => ({
+        url: `${API_PREFIX}/suggestions/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Suggestions"],
+    }),
     // DELETE /api/v1/suggestions/{id}/comments/{commentId}
     deleteSuggestionComment: builder.mutation<DeleteSuggestionCommentResponse, { id: string; commentId: string }>({
       query: ({ id, commentId }) => ({
@@ -153,5 +162,6 @@ export const {
   useUnFeatureSuggestionMutation,
   useUpvoteSuggestionMutation,
   useCommentOnSuggestionMutation,
+  useDeleteSuggestionMutation,
   useDeleteSuggestionCommentMutation,
 } = suggestionsApi;

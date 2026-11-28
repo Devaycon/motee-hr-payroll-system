@@ -1,6 +1,6 @@
 # MOTEE HRIS — Integrated API Endpoints Log
 
-> **Branch:** `feat/temitope-branch` · **Updated:** 2026-11-25 (spec grew to 640 operations)
+> **Branch:** `feat/temitope-branch` · **Updated:** 2026-11-27 (spec grew to 678 operations)
 > **Source of truth:** `src/store/services/*.ts` (RTK Query), checked against the live spec at `https://api.develop.moteesolutionsltd.com/openapi/v1.json` (640 operations — every one has a hook). Usage was traced to the screens, hooks and listeners that call each endpoint.
 
 ---
@@ -12,10 +12,10 @@
 | Base URL | `NEXT_PUBLIC_MOTEE_BASE_URL` (from `.env.local`) |
 | API prefix | `/api/v1` |
 | Auth | `Authorization: Bearer <token>`, auto-refresh on 401 via `POST /api/v1/auth/refresh` |
-| Service files | 74 (21 new on 2026-11-25, plus 2 workspace loaders) |
-| Unique backend endpoints | **640** |
-| ✅ + 🔁 Live — called by the app | **about 507** (153 + 13 of the 224 new ones; the rest as before plus 28 previously idle hooks) |
-| ⚪ Defined but not called yet | **at most 133** (75 older ones and 58 of the new ones — sections 3.1, 3.2, 3.2b and 3.6) |
+| Service files | 76 (21 new on 2026-11-25, `change-requests.ts` and `reports.ts` on 2026-11-27, plus 2 workspace loaders) |
+| Unique backend endpoints | **678** |
+| ✅ + 🔁 Live — called by the app | **678 — all of them** (counted from the code on 2026-11-28: every spec operation traced to a screen, hook or listener; 5 project reads are made by the Projects workspace loader rather than their own hooks) |
+| ⚪ Defined but not called yet | **0** (sections 3.x below are historical) |
 
 ### Change log
 
@@ -26,6 +26,13 @@
 | 2026-10-30 | **+94 endpoints:** Announcements (11), Calendar (6), Candidates (13), Interviews (6), Requisitions (11), Contracts (13), Dashboard (2), Documents (17), Expense claims (10), Notifications (5). Switched to live: **Dashboard** (People and Attendance tabs), **Calendar**, **Announcements**, **Recruitment**, **Contracts**, **Documents**, **Expense Claims**, and the notifications bell. Existing schemas gained `dottedLineManagerId`/`dottedLineManagerName` (employees), `accessLevelId` (invite), `emailSentAt`/`accessLevelName` (pending invitation), `reviewUnavailableReason` (onboarding) and the `companyDocument` file purpose. |
 | 2026-11-08 | **+114 endpoints:** Benefit plans (13), Diversity (3), Employee checklist (12), Employment types (7), Headcount (7), Hire tracker (1), Kudos (12), Loans (12), Positions (10), Sickness (16), Tasks (10), Workforce (3), Workforce requests (8). Switched to live: **Employment Types**, **Roles & Positions**, **Benefits**, **Employee Checklist**, **Loans**, **Headcount Planning**, **Workforce Planning** (except Skills Gap), **Hire Tracker**, **Workforce Requests**, **Kudos**, **Sickness & Absence** (except Schemes and Approval Chain), **My Work** (Personal tasks tab), the dashboard **Sickness** tab and **Loans** tile, and the first self-service pages: My Tasks, My Loans, Diversity, Sickness, Community (Kudos tab). Existing schemas: `CalendarCategory` gained `sickness`. |
 | 2026-11-25 | **+224 endpoints (640 in all):** Account settings (5), Certifications (6), Community (12), Company (8), Employee notes (5), EOR + EOR invoices (19), ER cases (18), Help desk (10), Knowledge (13), Learning (17), My reminders (1), Occupational health (13), Pick lists (6), Platform verifications (2), Projects + documents/go-live/risks/time (34), Settings (7), Shifts (5), Suggestions (13), Surveys (12), Workflows (7), Workflow runs (11). Switched to live — HR: **Company Profile**, **Settings**, **Help Desk**, **Knowledge Base**, **Community**, **Suggestions**, **Surveys**, **EOR** (+ dashboard map), **Learning & Development** (+ certification and mandatory-training tiles), **Employee Relations** (`/admin/grievance`), **Occupational Health** (+ dashboard OH tiles), **Shifts**, **Projects**, **Workflows**, the My Work workflow tabs, and the employee profile's **Notes & Reminders** and **Certifications** modules. Self-service: Dashboard, Events, Attendance clock, Shifts, Leave balance, Leave request, Expenses, Documents, Contracts, Assets, My Profile, Org chart, Announcements, Knowledge, Community (feed + suggestions), Help desk, Relations, Performance and Training. Existing schemas only gained enum values: `FilePurpose` (+`projectDocument`, `caseEvidence`, `companyVerificationDocument`) and `NotificationKind` (+`noteReminderDue`). |
+| 2026-11-27 | **+9 endpoints (649 in all)**, answering the 25 November request document: `GET /approvals`, `GET /approvals/mine`, `GET /assets/mine`, `GET /employees/{id}/guarantors`, `GET /exports/mine`, `GET /kudos/{id}/reactions`, `PUT /leave/holidays/{id}`, `DELETE /suggestions/{id}`, `PUT /occupational-health/{id}/sickness-records`, and later the same day `GET /dashboard/lifecycle` (650). Switched to live: **Employee Lifecycle** (`/lifecycle`, Journey Map counts), **Submissions & Approvals** (`/hr-action-center/submissions`) and self-service **My Submissions** (`/employee/submissions`) — New Submission, My Delegation and Approval Chains stay held; the employee profile **Guarantors** module (read only). Existing schemas gained fields: `ApprovalDto` (`submittedByUserId`, `submittedByEmployeeId`, `submittedByName`), `PublicHolidayDto` (`isNonWorking`, `excludedDepartmentIds`, `excludedDepartmentNames`, `closesEveryone`), `PublicHolidayRequest` (`isNonWorking`, defaults to true, and `excludedDepartmentIds`), `RunTaskDto` (`assigneeAccessLevelId`) and `OhCaseDto` (`linkedAbsences[]`). |
+| 2026-11-27 (pm) | **+3 endpoints (653 in all)** with the backend's written answers: `GET /dashboard/hr-actions`, `GET /dashboard/untaken-leave`, `GET /dashboard/mine`. Switched to live: the HR dashboard **Priorities** tab and **Untaken Leave** card, the **HR Action Centre** page (alerts; its upcoming events, checklist and recent activity held), and the self-service dashboard's **day stats** and **Team on Leave**. `CalendarCategory` gained `starter` and `leaver`. Answers applied: approval event types are a fixed set (adds `skipped`, `reresolved`); skipped reasons are free sentences (shown as the step's note); headcount periods go as `Q1 2026` / `FY 2026`; lifecycle keys confirmed. Then, from existing endpoints, the HR dashboard **Events**, **Resourcing** and **Engagement** tabs and the HR Action Centre events card. |
+| 2026-11-28 (Phases B and C) | **The remaining 91 endpoints wired — every endpoint in the spec is now called.** **HR queues and actions (new buttons/tabs):** Attendance **Corrections** tab (list, approve/reject with a note), Work Patterns ⋯ *Set as default* and *Assign to employees*; Contracts detail *Sign for Company*, *Terminate* (reason), *Add Note*; Documents folder ⋯ *Rename/Delete*, document *Edit* details and *New Version* upload, acknowledgement lists (who has / hasn't); My Documents folder *Rename*; profile Notes *Pin/Unpin*, **Grievances** and **Disciplinaries** modules unblurred (the employee's ER cases); EOR *End engagement*, compliance item status ⋯, compliance board overlay, invoices *New / Edit / Delete / Mark as paid*; ER case **Evidence & Meetings** card (upload, download, delete; delete meetings) and note delete; Recruitment requisition *Delete* and pre-publish warnings, the stage move asks `can-move` first (refusal reason shown), interview *Reschedule*, the candidate's own interview list; Performance goal editing (title, category, due date, description), review *Calibrate*, "Feedback received" in the review; Learning enrollment ⋯ *Mark …* and the server's mandatory-training tally; Occupational Health referral *Delete*, server audit trail, adjustment remove, **Suggested referrals** banner; Calendar event *Edit*; Community *Edit Post* and comment delete; Suggestions comment delete; Announcements acknowledgement lists; notification *Dismiss*; Company Profile *Withdraw submission*; Projects document upload (was held) and download; Platform console **Verifications** tab (start review / verify / reject). **Summaries on stat cards (signed in):** employees, attendance, help desk, knowledge, suggestions, learning, certifications, EOR, ER cases, OH, community, projects (+ per-project risk and time tallies), and a workflows strip. **Single-record reads:** opening a details view re-reads it (announcement, timesheet, work pattern, review, goal, suggestion, help-desk case, article, EOR worker and provider, course, pick list, candidate, kudos thread), and the employee profile's Work Pattern uses their assigned schedule; expense claim, OH case and requisition pages also open from a link when the item isn't in the loaded list. |
+| 2026-11-28 (Phase A) | **+17 endpoints wired, self-service gaps.** **My Attendance:** history from `GET /attendance/mine/days` (the live bundle has no attendance, so it only showed the current session before), this week's totals and punctuality from `/attendance/mine/summary`, the week's timesheet status from `/attendance/timesheets/mine`, per-day correction status from `/attendance/corrections/mine` (new "Correction pending/approved/rejected" line in the weekly timesheet), working hours and grace from `/attendance/schedules/mine`. **My Performance:** feedback received (`/performance/feedback/mine`), open requests you made (`/feedback/requests/mine`), new **Asked of You** card (`/feedback/requests/awaiting-me`) with ⋯ Give feedback / Decline, new **Give Feedback** button and dialog (`POST /performance/feedback`, `POST /feedback/requests/{id}/decline`). **New page: Company → Surveys** (`/company/surveys`): `GET /surveys/mine`, take-survey dialog from `GET /surveys/{id}`, read-back from `/{id}/my-response`, `POST /surveys/{id}/responses`. **Community → My Suggestions** from `GET /suggestions/mine`. **My Work** tabs classified by `GET /workflow-runs/my-work`. **New "Exports" button** on Reports: `GET /exports/mine` with download links. |
+| 2026-11-28 | **Backend answers to follow-up (2) applied, no new endpoints.** **403 change:** 13 registers (`/contracts`, `/leave/requests`, `/leave/balances`, `/attendance`, `/attendance/timesheets`, `/attendance/corrections`, `/expenses/claims`, `/performance/reviews`, `/performance/goals`, `/performance/feedback`, `/certifications`, `/approvals`, `/documents`) now refuse ordinary employees; HR users only see the departments their access level covers. Self-service audit: My Contracts no longer also reads `/contracts`; My Profile → Contracts reads `/contracts/mine` and → Certifications reads `/certifications/mine` on your own profile; My Submissions already used `/approvals/mine` + `/my-queue` (HR falls back to them on a refusal); the other self-service pages already used `/mine` routes. **Reports:** pages of 200 (the server's cap), stops on `rows.totalItems`, null cells shown as a dash, PascalCase enum cells (`FullTime`) shown as words; server export is CSV only and is also emailed. **Approvals:** attachments shown on `permits`, enforced on `required`; summary optional; empty-state text for "no default chain yet"; history actor shown by name when the server sends an email (backend defect, not yet fixed). **Change requests:** field keys confirmed flat (31 fields; the profile's mapping already matches); photo requests stopped (the API has no photo field). Confirmed: upload form field `file`; `employeeDocument` for own uploads; own guarantors via `/employees/{id}/guarantors`; `documentType` keys are the same snake_case everywhere. |
+| 2026-11-27 (night) | **+17 endpoints (678 in all).** **Reports** (`reports.ts`, new): `GET /reports/datasets`, `POST /reports/run`, `POST /reports/export` — the **Reports** module (`/operations/reports`) is live: the landing cards, record counts and quick export, each report's table, search, filters and export dialog, and Build Custom Report all use the server's datasets. Analytics stays held (its "View analytics" button on a report is blurred). **Self-service documents:** `POST /documents/mine`, `GET`/`POST /documents/mine/folders`, `PUT`/`DELETE /documents/mine/folders/{id}`, `POST /documents/mine/{id}/move`, `/trash`, `/restore` — My Documents uploads (the dialog's drop zone now takes the file), your own folders (with colour), move, trash and restore; permanent delete stays held. **HR review:** `GET /documents/reviews`, `POST /documents/reviews/{id}/approve`, `/reject` — the Documents & Compliance **My Documents** review tab is unblurred. **Approvals:** `GET /approvals/document-types`, `POST /approvals`, `POST /approvals/{id}/comments` — **New Submission** (HR and My Submissions) raises on the API with the server's request types and intake forms; comments on a submission post. Existing schemas: `ApprovalDto` (+`title`, `summary`, `fields`, `fieldSchema`), `ApprovalStepDto` (+`signatureFileId`, `signatureUrl`), `DecideApprovalRequest` (+`signatureFileId`), `DocumentDto` (+`uploadedByEmployeeId`, `uploadedByName`, `reviewStatus`, `reviewNote`, `isMine`), `FolderDto` (+`colour`), `FilePurpose` (+`approvalSignature`). |
+| 2026-11-27 (late) | **+8 endpoints (661 in all): profile change requests** — `GET /change-requests`, `POST /change-requests/{id}/approve`, `POST /change-requests/{id}/reject`, `GET /employees/{id}/change-requests`, `GET /employees/me/change-requests`, `GET /employees/me/change-requests/fields`, `POST /employees/me/change-requests`, `POST /employees/me/change-requests/{id}/withdraw`. Switched to live: the **Profile Change Request Log** module (HR profile and My Profile), raising requests from the profile screens (including photo requests, uploaded as the new `profileChangeEvidence` file purpose), and HR approve / reject / employee withdraw. Also from existing endpoints: the navbar **notifications bell** (unblurred; badge from `GET /notifications/unread-count`), navbar **Send kudos** (`POST /kudos`) and the profile menu's **Company Profile** link. |
 
 ### Status legend
 
@@ -39,9 +46,9 @@
 
 From `src/lib/permissions/live-modules.ts` (everything else is shown blurred as "not integrated"):
 
-`/welcome` · `/hr` (People, Attendance and Sickness tabs; the other tabs and the EOR map, certification, mandatory training, Occupational Health and untaken-leave tiles stay blurred) · `/hr-action-center/events` · `/hr-action-center/tasks` (Personal tasks tab only) · `/workspace/kudos` · `/organization/employment-types` · `/organization/roles` · `/organization/benefit-plans` · `/organization/employee-checklist` · `/organization/loans` · `/organization/headcount` · `/operations/workforce` (except Skills Gap) · `/talent/hire-tracker` · `/talent/workforce-requests` · `/time-payroll/sickness` (except `/schemes` and `/approval-chain`, listed in `DEMO_ONLY_LINKS`) · `/workspace/announcements` · `/organization/branches` · `/organization/departments` · `/organization/employees` · `/talent/onboarding` · `/talent/offboarding` · `/talent/performance` · `/talent/recruitment` · `/operations/assets` · `/operations/contracts` · `/operations/documents` (except the **My Documents** review queue) · `/time-payroll/leave` (except **Schemes**) · `/time-payroll/attendance` (except **Deduction Policy** and **Presence Checks**) · `/time-payroll/expenses` · `/admin/access-levels` · `/admin/users` · `/admin/audit-trail` · **2026-11-25:** `/organization/company` · `/organization/eor` · `/admin/settings` (2FA, API keys, billing history and clearing demo data blurred inline) · `/admin/grievance` · `/workspace/helpdesk` (FAQ blurred) · `/workspace/knowledge` · `/workspace/community` · `/workspace/suggestions` · `/workspace/surveys` · `/workspace/projects` · `/talent/training` · `/time-payroll/shifts` · `/time-payroll/occupational-health` · `/hr-action-center/workflows`
+`/welcome` · `/hr` (every dashboard tab live since 2026-11-27: People, Attendance, Sickness, Priorities, Events, Resourcing, Engagement) · `/hr-action-center/events` · `/hr-action-center/tasks` (Personal tasks tab only) · `/workspace/kudos` · `/organization/employment-types` · `/organization/roles` · `/organization/benefit-plans` · `/organization/employee-checklist` · `/organization/loans` · `/organization/headcount` · `/operations/workforce` (except Skills Gap) · `/talent/hire-tracker` · `/talent/workforce-requests` · `/time-payroll/sickness` (except `/schemes` and `/approval-chain`, listed in `DEMO_ONLY_LINKS`) · `/workspace/announcements` · `/organization/branches` · `/organization/departments` · `/organization/employees` · `/talent/onboarding` · `/talent/offboarding` · `/talent/performance` · `/talent/recruitment` · `/operations/assets` · `/operations/contracts` · `/operations/documents` (except the **My Documents** review queue) · `/time-payroll/leave` (except **Schemes**) · `/time-payroll/attendance` (except **Deduction Policy** and **Presence Checks**) · `/time-payroll/expenses` · `/admin/access-levels` · `/admin/users` · `/admin/audit-trail` · **2026-11-25:** `/organization/company` · `/organization/eor` · `/admin/settings` (2FA, API keys, billing history and clearing demo data blurred inline) · `/admin/grievance` · `/workspace/helpdesk` (FAQ blurred) · `/workspace/knowledge` · `/workspace/community` · `/workspace/suggestions` · `/workspace/surveys` · `/workspace/projects` · `/talent/training` · `/time-payroll/shifts` · `/time-payroll/occupational-health` · `/hr-action-center/workflows` · **2026-11-27:** `/lifecycle` · `/hr-action-center` (alerts and upcoming events live; the checklist and recent activity held) · `/organization/structure` (live directory; reporting-line edits save the employee's `managerId`) · `/sign` (Docu-Sign; filed through Documents) · `/hr-action-center/submissions` (New Submission, My Delegation and the Approval Chains tab held)
 
-Self-service pages lifted out of the blur by `SELF_SERVICE_LIVE_LINKS` (same file): `/employee/dashboard` (day at a glance, team on leave and recent activity blurred), `/employee/tasks`, `/employee/loans`, `/employee/events`, `/employee/documents`, `/employee/expenses`, `/time-off/attendance`, `/time-off/shifts`, `/time-off/balance`, `/time-off/request`, `/time-off/sickness`, `/profile/my-profile`, `/profile/diversity`, `/profile/contracts`, `/profile/documents`, `/profile/assets`, `/company/org-chart`, `/company/announcements`, `/company/knowledge`, `/company/community`, `/company/helpdesk` (FAQ blurred), `/company/relations`, `/growth/performance`, `/growth/training`. **Still blurred:** `/employee/submissions` (see 3.1).
+Self-service pages lifted out of the blur by `SELF_SERVICE_LIVE_LINKS` (same file): `/employee/dashboard` (recent activity blurred), `/employee/tasks`, `/employee/loans`, `/employee/events`, `/employee/documents`, `/employee/expenses`, `/time-off/attendance`, `/time-off/shifts`, `/time-off/balance`, `/time-off/request`, `/time-off/sickness`, `/profile/my-profile`, `/profile/diversity`, `/profile/contracts`, `/profile/documents`, `/profile/assets`, `/company/org-chart`, `/company/announcements`, `/company/knowledge`, `/company/community`, `/company/helpdesk` (FAQ blurred), `/company/relations`, `/growth/performance`, `/growth/training`, and since 2026-11-27 `/employee/submissions` (New Submission and My Delegation held).
 
 Also live outside the HR shell: auth pages, company setup wizard, the new-joiner (`/join`) flow, the platform console (`platform-live`), and the notifications panel in every navbar.
 
@@ -118,6 +125,7 @@ All paths below are relative to `/api/v1`.
 | 15 | GET | `/employees/import/columns` | `useGetEmployeeImportColumnsQuery` | `invitations-panel` | ✅ |
 | 16 | GET | `/employees/import/template` | `useDownloadEmployeeImportTemplateMutation` | `invitations-panel` | ✅ |
 | 17 | POST | `/employees/import` | `useImportEmployeesMutation` | `hr/onboarding/hooks` | ✅ |
+| 18 | GET | `/employees/{id}/guarantors` *(2026-11-27)* | `useGetEmployeeGuarantorsQuery` | `employee-detail/modules` (Guarantors) | ✅ |
 
 ### 2.5 Exports & files — `exports.ts`, `files.ts`
 
@@ -130,6 +138,7 @@ All paths below are relative to `/api/v1`.
 | 5 | GET | `/files/{id}` | `useGetFileQuery` | — | ⚪ |
 | 6 | DELETE | `/files/{id}` | `useDeleteFileMutation` | `employee-detail/live-modules` | ✅ |
 | 7 | GET | `/files/{id}/download` | `useDownloadFileMutation` | `employee-detail/live-modules` | ✅ |
+| 8 | GET | `/exports/mine` *(2026-11-27)* | `useGetMyExportJobsQuery` | — (no export history on the screens) | ⚪ |
 
 ### 2.6 Users & access levels — `users.ts`, `access-levels.ts`
 
@@ -231,6 +240,7 @@ Public, token-based flow used by `components/onboarding/join-live`.
 | 10 | POST | `/leave/blackouts` | `useCreateLeaveBlackoutMutation` | `leave-calendar-rules` | ✅ |
 | 11 | PUT | `/leave/blackouts/{id}` | `useUpdateLeaveBlackoutMutation` | `leave-calendar-rules` | ✅ |
 | 12 | DELETE | `/leave/blackouts/{id}` | `useDeleteLeaveBlackoutMutation` | `leave-calendar-rules` | ✅ |
+| 13 | PUT | `/leave/holidays/{id}` *(2026-11-27)* | `useUpdatePublicHolidayMutation` | `hr/settings/live` (Company Holidays) | ✅ |
 
 ### 2.13 Assets — `assets.ts`
 
@@ -244,6 +254,7 @@ Public, token-based flow used by `components/onboarding/join-live`.
 | 6 | POST | `/assets/{id}/return` | `useReturnAssetMutation` | `hr/assets/hooks` | ✅ |
 | 7 | GET | `/assets/{id}/history` | `useGetAssetHistoryQuery` | `hr/assets/hooks` | ✅ |
 | 8 | POST | `/assets/{id}/status` | `useChangeAssetStatusMutation` | `hr/assets/hooks` | ✅ |
+| 9 | GET | `/assets/mine` *(2026-11-27)* | `useGetMyAssetsQuery` | `hr/assets/hooks` → self-service My Assets | ✅ |
 
 ### 2.14 Approvals — `approvals.ts`, `approval-templates.ts`, `approval-delegations.ts`
 
@@ -266,6 +277,13 @@ Public, token-based flow used by `components/onboarding/join-live`.
 | 15 | GET | `/approval-delegations/mine` | `useGetMyApprovalDelegationsQuery` | `delegations-tab` | ✅ |
 | 16 | POST | `/approval-delegations` | `useCreateApprovalDelegationMutation` | `delegations-tab` | ✅ |
 | 17 | DELETE | `/approval-delegations/{id}` | `useDeleteApprovalDelegationMutation` | `delegations-tab` | ✅ |
+| 18 | GET | `/approvals` *(2026-11-27)* | `useGetApprovalsQuery` (`useGetAllApprovalsQuery` reads every page) | `approvals/use-live-approvals` (Submissions register) | 🔁 |
+| 19 | GET | `/approvals/mine` *(2026-11-27)* | `useGetMyApprovalsQuery` (`useGetAllMyApprovalsQuery`) | `approvals/use-live-approvals` (My Submissions) | 🔁 |
+| 20 | GET | `/approvals/document-types` *(2026-11-27 night)* | `useGetRaisableTypesQuery` | `approvals/components/intake-modal` (New Submission types and form) | ✅ |
+| 21 | POST | `/approvals` *(2026-11-27 night)* | `useRaiseApprovalMutation` | `intake-modal` (attachments via `POST /files` purpose `approvalAttachment`) | ✅ |
+| 22 | POST | `/approvals/{id}/comments` *(2026-11-27 night)* | `useCommentOnApprovalMutation` | `lib/stores/approvals-api-listener` ("Just comment" on a submission) | ✅ |
+
+New Submission, signed in: the types offered and each type's questions (text, number, date, choice; required ones starred) come from the server, and the server picks the chain, so the Workflow picker and the submitter signature are not shown. A raised request's `title`, `summary` and form answers show on its detail page. Approver signatures: the decide call now sends `signatureFileId` when a signature was drawn (uploaded as `approvalSignature`), and signed steps show their `signatureUrl`. **Gap:** the API has no flag saying a step must be signed, so the signature dialog only opens for demo chains; signed-in approvals are approved without one unless the backend adds that flag.
 
 ### 2.15 Audit trail — `audit-trail.ts`
 
@@ -378,7 +396,7 @@ HR screen: `components/hr/performance` (Reviews and Goals tabs). Data mapping in
 | # | Method | Endpoint | Hook | Used in | Status |
 | --- | --- | --- | --- | --- | --- |
 | 1 | GET | `/calendar` | `useGetCalendarQuery` | `hr/calendar/workspace/use-calendar-data` | ✅ |
-| 2 | GET | `/calendar/upcoming` | `useGetUpcomingCalendarQuery` | — | ⚪ |
+| 2 | GET | `/calendar/upcoming` | `useGetUpcomingCalendarQuery` | `employee/dashboard/live`; `hr/dashboard/components/upcoming-events-card` (dashboard Events tab, HR Action Centre events) | ✅ |
 | 3 | POST | `/calendar/events` | `useCreateCalendarEventMutation` | `hr/calendar/workspace/use-calendar-data` | ✅ |
 | 4 | GET | `/calendar/events/{id}` | `useGetCalendarEventQuery` | — | ⚪ |
 | 5 | PUT | `/calendar/events/{id}` | `useUpdateCalendarEventMutation` | — | ⚪ |
@@ -453,13 +471,17 @@ HR screen: `components/hr/performance` (Reviews and Goals tabs). Data mapping in
 | --- | --- | --- | --- | --- | --- |
 | 1 | GET | `/dashboard/people` | `useGetPeopleDashboardQuery` | `hr/dashboard/live` | ✅ |
 | 2 | GET | `/dashboard/attendance` | `useGetAttendanceDashboardQuery` | `hr/dashboard/live` | ✅ |
+| 3 | GET | `/dashboard/lifecycle` *(2026-11-27)* | `useGetLifecycleDashboardQuery` | `hr/lifecycle/hooks` (Journey Map stage counts) | ✅ |
+| 4 | GET | `/dashboard/hr-actions` *(2026-11-27)* | `useGetHrActionsDashboardQuery` | `hr/hr-alerts` (dashboard Priorities tab, HR Action Centre alerts) | ✅ |
+| 5 | GET | `/dashboard/untaken-leave` *(2026-11-27)* | `useGetUntakenLeaveDashboardQuery` | `hr/dashboard/components/employees-at-risk` | ✅ |
+| 6 | GET | `/dashboard/mine` *(2026-11-27)* | `useGetMyDashboardQuery` | `employee/dashboard/live` (day stats, pending items, team on leave) | ✅ |
 
 ### 2.26 Documents — `documents.ts` *(new)*
 
 | # | Method | Endpoint | Hook | Used in | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | GET | `/documents/mine` | `useGetMyDocumentsQuery` | — (self-service) | ⚪ |
-| 2 | POST | `/documents/mine/{id}/acknowledge` | `useAcknowledgeMyDocumentMutation` | — (self-service) | ⚪ |
+| 1 | GET | `/documents/mine` | `useGetMyDocumentsQuery` | `employee/documents` (My Documents) | ✅ |
+| 2 | POST | `/documents/mine/{id}/acknowledge` | `useAcknowledgeMyDocumentMutation` | `employee/documents` | ✅ |
 | 3 | GET | `/documents/folders` | `useGetDocumentFoldersQuery` | `hr/documents/hooks` | ✅ |
 | 4 | POST | `/documents/folders` | `useCreateDocumentFolderMutation` | `hr/documents/hooks` | ✅ |
 | 5 | PUT | `/documents/folders/{id}` | `useRenameDocumentFolderMutation` | — | ⚪ |
@@ -475,6 +497,19 @@ HR screen: `components/hr/performance` (Reviews and Goals tabs). Data mapping in
 | 15 | POST | `/documents/{id}/shares` | `useShareDocumentMutation` | `hr/documents/hooks` | ✅ |
 | 16 | DELETE | `/documents/{id}/shares/{employeeId}` | `useUnshareDocumentMutation` | `hr/documents/hooks` | ✅ |
 | 17 | GET | `/documents/{id}/acknowledgements` | `useGetDocumentAcknowledgementsQuery` | — | ⚪ |
+| 18 | POST | `/documents/mine` *(2026-11-27)* | `useUploadMyDocumentMutation` | `employee/documents` (Upload, after `POST /files` purpose `employeeDocument`) | ✅ |
+| 19 | GET | `/documents/mine/folders` *(2026-11-27)* | `useGetMyFoldersQuery` | `employee/documents` | ✅ |
+| 20 | POST | `/documents/mine/folders` *(2026-11-27)* | `useCreateMyFolderMutation` | `employee/documents` (New Folder) | ✅ |
+| 21 | PUT | `/documents/mine/folders/{id}` *(2026-11-27)* | `useUpdateMyFolderMutation` | — (the design has no rename) | ⚪ |
+| 22 | DELETE | `/documents/mine/folders/{id}` *(2026-11-27)* | `useDeleteMyFolderMutation` | `employee/documents` (folder ⋯ → Move to Trash) | ✅ |
+| 23 | POST | `/documents/mine/{id}/move` *(2026-11-27)* | `useMoveMyDocumentMutation` | `employee/documents` (Move to Folder) | ✅ |
+| 24 | POST | `/documents/mine/{id}/trash` *(2026-11-27)* | `useTrashMyDocumentMutation` | `employee/documents` | ✅ |
+| 25 | POST | `/documents/mine/{id}/restore` *(2026-11-27)* | `useRestoreMyDocumentMutation` | `employee/documents` (Trash → Restore) | ✅ |
+| 26 | GET | `/documents/reviews` *(2026-11-27)* | `useGetDocumentReviewsQuery` | `hr/documents/components/my-documents-tab`, `hr/documents` (pending count) | ✅ |
+| 27 | POST | `/documents/reviews/{id}/approve` *(2026-11-27)* | `useApproveDocumentReviewMutation` | `my-documents-tab` | ✅ |
+| 28 | POST | `/documents/reviews/{id}/reject` *(2026-11-27)* | `useRejectDocumentReviewMutation` | `my-documents-tab` | ✅ |
+
+Self-service: only documents the employee uploaded (`isMine`) can be moved, trashed or restored; HR's documents answer with a message. A document is shown inside a folder only when the folder is one of the employee's own (`personal`/`custom`). The upload dialog's type is mapped onto the server's categories (Contract/Offer Letter → contract, Policy, Certificate, otherwise other). Permanent delete has no self-service endpoint and stays held. **Known gap (28 Nov):** `GET /documents/mine` leaves out trashed documents, so a trashed upload disappears and Restore is only reachable in the same session; the backend will add a trash listing together with `DELETE /documents/mine/{id}`. HR review: the tab's one-click Reject sends the reason "Rejected by HR", because the design has no reason box.
 
 ### 2.27 Expense claims — `expenses.ts` *(new)*
 
@@ -496,7 +531,7 @@ HR screen: `components/hr/performance` (Reviews and Goals tabs). Data mapping in
 | # | Method | Endpoint | Hook | Used in | Status |
 | --- | --- | --- | --- | --- | --- |
 | 1 | GET | `/notifications` | `useGetNotificationsQuery` | `lib/notifications/use-notification-feed` | ✅ |
-| 2 | GET | `/notifications/unread-count` | `useGetUnreadNotificationCountQuery` | — | ⚪ |
+| 2 | GET | `/notifications/unread-count` | `useGetUnreadNotificationCountQuery` | `lib/notifications/use-notification-feed` (navbar bell badge, both portals) | ✅ |
 | 3 | POST | `/notifications/{id}/read` | `useMarkNotificationReadMutation` | `lib/notifications/use-notification-feed` | ✅ |
 | 4 | POST | `/notifications/read-all` | `useMarkAllNotificationsReadMutation` | `lib/notifications/use-notification-feed` | ✅ |
 | 5 | POST | `/notifications/{id}/dismiss` | `useDismissNotificationMutation` | — | ⚪ |
@@ -580,7 +615,7 @@ HR screen: `components/hr/performance` (Reviews and Goals tabs). Data mapping in
 | --- | --- | --- | --- | --- | --- |
 | 1 | GET | `/kudos` | `useGetKudosQuery` | `collections.ts` → `hr/kudos/hooks` (HR feed and self-service Kudos tab) | 🔁 |
 | 2 | POST | `/kudos` | `useCreateKudosMutation` | `hr/kudos/hooks` (both send forms) | ✅ |
-| 3 | GET | `/kudos/summary` | `useGetKudosSummaryQuery` | `kudos/components/stat-cards` | ✅ |
+| 3 | GET | `/kudos/summary` | `useGetKudosSummaryQuery` | `kudos/components/stat-cards`, dashboard engagement ring | ✅ |
 | 4 | GET | `/kudos/leaderboard` | `useGetKudosLeaderboardQuery` | `hr/kudos/hooks` (leaderboard, top recipient) | ✅ |
 | 5 | GET | `/kudos/me` | `useGetMyKudosQuery` | `employee/community/components/kudos-tab` (my received / sent) | ✅ |
 | 6 | GET | `/kudos/{id}` | `useGetKudosPostQuery` | — (the feed already holds each post) | ⚪ |
@@ -590,6 +625,7 @@ HR screen: `components/hr/performance` (Reviews and Goals tabs). Data mapping in
 | 10 | POST | `/kudos/{id}/reactions` | `useReactToKudosMutation` | `hr/kudos`, self-service Kudos tab | ✅ |
 | 11 | POST | `/kudos/{id}/comments` | `useCommentOnKudosMutation` | `hr/kudos/components/kudos-feed` | ✅ |
 | 12 | DELETE | `/kudos/{id}/comments/{commentId}` | `useDeleteKudosCommentMutation` | `useKudosActions.removeComment` — no control | ⚪ |
+| 13 | GET | `/kudos/{id}/reactions` *(2026-11-27)* | `useLazyGetKudosReactorsQuery` | `lib/kudos/use-reactor-names` (hover names on reaction chips, HR and self-service) | ✅ |
 
 ### 2.36 Staff loans — `loans.ts` *(new)*
 
@@ -665,7 +701,7 @@ HR screen: `components/hr/performance` (Reviews and Goals tabs). Data mapping in
 | --- | --- | --- | --- | --- | --- |
 | 1 | GET | `/workforce/overview` | `useGetWorkforceOverviewQuery` | `hr/workforce` overview cards | ✅ |
 | 2 | GET | `/workforce/turnover` | `useGetWorkforceTurnoverQuery` | `workforce/components/turnover-section`, overview | ✅ |
-| 3 | GET | `/workforce/hiring` | `useGetWorkforceHiringQuery` | `workforce/components/hiring-section`, overview | ✅ |
+| 3 | GET | `/workforce/hiring` | `useGetWorkforceHiringQuery` | `workforce/components/hiring-section`, overview, dashboard Resourcing tab (open roles) | ✅ |
 
 ### 2.41 Workforce requests — `workforce-requests.ts` *(new)*
 
@@ -799,6 +835,7 @@ The tables below are generated from the code: **Used in** lists the files (outsi
 | 11 | POST | `/suggestions/{id}/upvote` | `useUpvoteSuggestionMutation` | `lib/engagement/use-engagement` | ✅ |
 | 12 | POST | `/suggestions/{id}/comments` | `useCommentOnSuggestionMutation` | `lib/engagement/use-engagement` | ✅ |
 | 13 | DELETE | `/suggestions/{id}/comments/{commentId}` | `useDeleteSuggestionCommentMutation` | — | ⚪ |
+| 14 | DELETE | `/suggestions/{id}` *(2026-11-27)* | `useDeleteSuggestionMutation` | `lib/engagement/use-engagement` (HR table Delete) | ✅ |
 
 ### 2.69 Surveys — `surveys.ts`
 
@@ -806,8 +843,8 @@ The tables below are generated from the code: **Used in** lists the files (outsi
 | --- | --- | --- | --- | --- | --- |
 | 1 | GET | `/surveys` | `useGetSurveysQuery` | `store/services/collections (full read)` | 🔁 |
 | 2 | POST | `/surveys` | `useCreateSurveyMutation` | `components/hr/surveys/hooks` | ✅ |
-| 3 | GET | `/surveys/summary` | `useGetSurveySummaryQuery` | — | ⚪ |
-| 4 | GET | `/surveys/engagement-trend` | `useGetEngagementTrendQuery` | `components/hr/surveys/hooks` | ✅ |
+| 3 | GET | `/surveys/summary` | `useGetSurveySummaryQuery` | dashboard engagement ring | ✅ |
+| 4 | GET | `/surveys/engagement-trend` | `useGetEngagementTrendQuery` | `components/hr/surveys/hooks`, dashboard engagement ring | ✅ |
 | 5 | GET | `/surveys/mine` | `useGetMySurveysQuery` | — | ⚪ |
 | 6 | GET | `/surveys/{id}` | `useGetSurveyQuery` | — | ⚪ |
 | 7 | PUT | `/surveys/{id}` | `useUpdateSurveyMutation` | `components/hr/surveys/hooks` | ✅ |
@@ -924,6 +961,7 @@ The tables below are generated from the code: **Used in** lists the files (outsi
 | 11 | PUT | `/occupational-health/{id}/adjustments/{adjustmentId}` | `useUpdateOhAdjustmentMutation` | `lib/stores/oh-api-listener` | ✅ |
 | 12 | DELETE | `/occupational-health/{id}/adjustments/{adjustmentId}` | `useDeleteOhAdjustmentMutation` | — | ⚪ |
 | 13 | POST | `/occupational-health/{id}/adjustments/{adjustmentId}/stage` | `useMoveOhAdjustmentStageMutation` | `lib/stores/oh-api-listener` | ✅ |
+| 14 | PUT | `/occupational-health/{id}/sickness-records` *(2026-11-27)* | `useLinkOhAbsencesMutation` | `lib/stores/oh-api-listener` (Link another absence; referrals that link earlier absences) | ✅ |
 
 ### 2.76 Shifts — `shifts.ts`
 
@@ -1015,6 +1053,31 @@ The tables below are generated from the code: **Used in** lists the files (outsi
 | 1 | GET | `/platform/verifications` | `useGetPlatformVerificationsQuery` | — | ⚪ |
 | 2 | POST | `/platform/tenants/{tenantId}/verification/{kind}/review` | `useReviewTenantVerificationMutation` | — | ⚪ |
 
+### 2.82 Profile change requests — `change-requests.ts` *(new 2026-11-27)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/change-requests` | `useGetAllChangeRequestsQuery` (all pages), `useGetChangeRequestsQuery` (pending count) | `hr/change-requests` (Profile Change Requests page), `layout/hr/sidebar/use-badges` | ✅ |
+| 2 | POST | `/change-requests/{id}/approve` | `useApproveChangeRequestMutation` | `lib/stores/change-requests-api-listener` | ✅ |
+| 3 | POST | `/change-requests/{id}/reject` | `useRejectChangeRequestMutation` | `lib/stores/change-requests-api-listener` | ✅ |
+| 4 | GET | `/employees/{id}/change-requests` | `useGetEmployeeChangeRequestsQuery` | `employee-detail/use-demo-change-requests` | ✅ |
+| 5 | GET | `/employees/me/change-requests` | `useGetMyChangeRequestsQuery` | `employee-detail/use-demo-change-requests` | ✅ |
+| 6 | GET | `/employees/me/change-requests/fields` | `useGetRequestableFieldsQuery` | `lib/stores/change-requests-api-listener` | ✅ |
+| 7 | POST | `/employees/me/change-requests` | `useRaiseChangeRequestMutation` | `lib/stores/change-requests-api-listener` | ✅ |
+| 8 | POST | `/employees/me/change-requests/{id}/withdraw` | `useWithdrawChangeRequestMutation` | `lib/stores/change-requests-api-listener` | ✅ |
+
+The profile screens record requests and decisions in the profile-edits slice, and the listener sends them. The server's log then replaces the slice's rows for that employee. Field keys are matched to the profile's own paths (the path itself, or the employee-record property it saves to, then the label), so a pending request still badges its field. Field keys confirmed 28 Nov: flat (e.g. `accountNumber`), 31 of them in groups personal, contact, address, emergency, bank and identity; email is not requestable. A field with no match is refused with a message. Photo requests are refused in the app: the API has no photo field and approval would not set the avatar. Withdrawn requests are hidden, as cancelling did before. **Profile Change Requests** (`/organization/change-requests`, Employee Management, new page added 2026-11-27) is the company-wide queue: Awaiting Review and All tabs, approve/reject from the row menu, sidebar badge with the pending total. It fills the same slice, so a decision there shows in the employee's own log. Approving does not also `PUT /employees`, because the server applies the change.
+
+### 2.83 Reports — `reports.ts` *(new 2026-11-27)*
+
+| # | Method | Endpoint | Hook | Used in | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GET | `/reports/datasets` | `useGetReportDatasetsQuery` | `hr/reports` (landing, report page, Build Custom Report) | ✅ |
+| 2 | POST | `/reports/run` | `useRunFullReportQuery` (reads pages of 200 — the server's cap — up to 5,000 rows), `useRunReportQuery` | `hr/reports/report-detail`, `custom-report-modal` | ✅ |
+| 3 | POST | `/reports/export` | `useExportReportMutation` | `lib/reports/use-report-export` (card quick export; job followed through `/exports/{id}` and `/exports/{id}/link`) | ✅ |
+
+The datasets are the server's: the landing page groups them by the server's `group`, cards show `recordCount`, and a dataset whose key matches a demo report keeps that report's icon and description. On a report page the rows are read once and searched, filtered (the `filterable` text and yes/no columns) and exported in the browser, as before. Build Custom Report reads only the chosen columns when you export. Analytics has no endpoint, so the report page's "View analytics" button is blurred and `/operations/analytics` stays held.
+
 ---
 
 ## 3. Defined but not called yet (⚪)
@@ -1027,7 +1090,7 @@ Since 2026-11-25 the employee portal is live (section 1). Still not called:
 
 - **Attendance (5):** `/attendance/mine/days`, `/attendance/mine/summary`, `GET /attendance/corrections/mine`, `GET /attendance/timesheets/mine`, `/attendance/schedules/mine` — the page's history, timesheet list and insights still read the attendance store; only today's punch is read from the API.
 - **Performance (4):** `/performance/feedback/mine`, `/feedback/requests/mine`, `/feedback/requests/awaiting-me`, `/feedback/requests/{id}/decline` — received feedback has no mapping onto the page yet.
-- **Submissions:** `/employee/submissions` stays blurred. The API has no "my submissions" list (only `/approvals/my-queue` and per-subject approvals), and the page's intake creates approval requests of any type, which only the demo approvals engine supports. Each module's own requests (leave, expenses, loans, sickness, ER cases) are live on their pages.
+- **Submissions:** live since 2026-11-27 (`/approvals/mine` + `/approvals/my-queue`). The intake (New Submission) is still held: raising a request of a type with no module of its own (`POST /approvals`, `GET /approvals/document-types`) is not on the API yet.
 
 ### 3.2 No matching element in the HR screens (44)
 
@@ -1054,7 +1117,7 @@ The demo UI is frozen, so these wait until a screen needs them:
 | PUT | `/performance/goals/{id}` | `useUpdateGoalMutation` | `performance.ts` |
 | GET/POST | `/performance/feedback` | `useGetFeedbackQuery`, `useGiveFeedbackMutation` | `performance.ts` |
 | GET | `/announcements/{id}`, `/announcements/{id}/acknowledgements` | `useGetAnnouncementQuery`, `useGetAnnouncementAcknowledgementsQuery` | `announcements.ts` |
-| GET | `/calendar/upcoming`, `/calendar/events/{id}` | `useGetUpcomingCalendarQuery`, `useGetCalendarEventQuery` | `calendar.ts` |
+| GET | `/calendar/events/{id}` | `useGetCalendarEventQuery` | `calendar.ts` |
 | PUT | `/calendar/events/{id}` | `useUpdateCalendarEventMutation` (the workspace has no edit) | `calendar.ts` |
 | GET | `/candidates/{id}`, `/candidates/{id}/can-move` | `useGetCandidateQuery`, `useCanMoveCandidateQuery` | `candidates.ts` |
 | GET/PUT | `/interviews/candidate/{candidateId}`, `PUT /interviews/{id}` | `useGetCandidateInterviewsQuery`, `useUpdateInterviewMutation` | `interviews.ts` |
@@ -1064,7 +1127,7 @@ The demo UI is frozen, so these wait until a screen needs them:
 | PUT/DELETE | `/documents/folders/{id}` | `useRenameDocumentFolderMutation`, `useDeleteDocumentFolderMutation` | `documents.ts` |
 | GET/PUT/POST | `/documents/{id}`, `PUT /documents/{id}`, `/documents/{id}/versions`, `/documents/{id}/acknowledgements` | `useGetDocumentQuery`, `useUpdateDocumentMutation`, `useAddDocumentVersionMutation`, `useGetDocumentAcknowledgementsQuery` | `documents.ts` |
 | GET | `/expenses/claims/{id}` | `useGetExpenseClaimQuery` | `expenses.ts` |
-| GET/POST | `/notifications/unread-count`, `/notifications/{id}/dismiss` | `useGetUnreadNotificationCountQuery`, `useDismissNotificationMutation` (no badge or dismiss control) | `notifications.ts` |
+| POST | `/notifications/{id}/dismiss` | `useDismissNotificationMutation` (no dismiss control in the design) | `notifications.ts` |
 
 ### 3.2b 2026-11-08 endpoints with no control on the approved screens (23)
 
@@ -1100,14 +1163,15 @@ Every endpoint answers 401 without a token, so the routes exist, but none of the
 - **Contracts:** "Move to Documents" uploads the generated letter (HTML) as an `employeeDocument` file, then calls `/file-to-documents`. The status picked in the form is reached through `/send` and `/activate`.
 - **Announcements:** "Role Specific" audience is sent as `managers`. Drafts are saved only; published and scheduled ones also call `/publish`.
 - **Calendar:** reads one window, from the start of last year to the end of next year. Leave, cover and sickness still come from the live leave and sickness data, so the server's copies are skipped. `employeeIds` is sent as a repeated key.
-- **Notifications:** polled every 60 s. Notifications a screen raises in the session are shown alongside the server's.
+- **Navbar search (HR):** still blurred, waiting on a global search endpoint (`GET /search`) from the backend.
+- **Notifications:** polled every 60 s. The HR navbar bell is live (since 2026-11-27 it is no longer blurred with kudos, chat and screen share), and both portals' bell badges show `GET /notifications/unread-count` plus session-raised unread. Notifications a screen raises in the session are shown alongside the server's.
 
 ### 3.5 2026-11-08 modules — not yet checked with a real login
 
-- **Headcount periods:** the spec types `period` as a plain string. The app sends `2026-Q1` (and `2026` for a full year) and reads back `2026-Q1`, `Q1 2026`, `2026Q1`, `FY 2026` or `2026`. Change `periodToApi` in `src/lib/headcount/api-mapping.ts` if the server expects another form. The plan board is read once per period (10 reads).
+- **Headcount periods:** the spec types `period` as a plain string. Since 2026-11-27 (backend answer) the app sends `Q1 2026` and `FY 2026`; it still reads back `2026-Q1`, `Q1 2026`, `2026Q1`, `FY 2026` or `2026`. The plan board is read once per period (10 reads).
 - **Sickness** works like leave: the API is mirrored into the sickness slice (`useSicknessLiveRecords`) and `src/lib/stores/sickness-api-listener.ts` sends the screens' actions. The report form creates the record itself and opens it by the server id. Sick-pay schemes, enrolments, review cases, OH referrals and settings have no endpoint and stay local (the schemes page is blurred). A fit-note status change on its own has no API field and is not sent. Bradford figures are the server's, laid over the local episode breakdown.
 - **Benefit plans:** mirrored into the benefit-plans slice. Seeded plans (`seedKey`) cannot be deleted. Country is sent as `NG` / `GB`.
-- **Kudos:** the API only says whether *you* reacted, so other people's names are not shown on a reaction. Sending the same reaction again is assumed to remove it.
+- **Kudos:** since 2026-11-27 the names behind a reaction come from `GET /kudos/{id}/reactions`, read the first time a chip is hovered and shown as its tooltip. Sending the same reaction again is assumed to remove it.
 - **Loans:** a self-service request sends no `employeeId` (the server uses the caller's). Repayments are recorded as `bankTransfer`, dated today.
 - **Workforce requests:** mirrored into the slice so the hire tracker and requisition builder see them. "Create requisition" calls `/convert` instead of opening the (still demo) requisition builder. A cancelled request shows as Rejected.
 - **Employee checklist:** deleting an item that hires have already completed retires it instead (the server's `canDelete`).
@@ -1143,15 +1207,35 @@ Notably: there is no survey-taking screen in the portal (`/surveys/mine`, `my-re
 
 - **How writes work:** the slice-backed screens (ER cases, expenses, shifts, projects, workflows/runs, occupational health, attendance clock, profile notes/certificates) change their store first; a listener (`src/lib/stores/*-api-listener.ts`, `attendance-mine-listener.ts`, `collection-api-listener.ts`) sends the change and the data is re-read. A refused call shows the server's message and the server copy comes back. Hook-direct screens (company, settings, help desk, knowledge, community, suggestions, surveys, EOR, learning) use `useLiveSender` from `src/lib/live/use-is-live.ts`.
 - **Local caches:** once signed in, ER cases, expenses, shifts, projects, workflows and runs are no longer written to localStorage / the local `.data` snapshot.
-- **Workflow runs:** signed in, the demo run engine (`workflow-runs-listener.ts`) stands down — the server starts runs from its own triggers. Role-based run assignees come back as names only. The "Run" dialog still only sends notifications (it has no subject to start a run against). Demo approvals are left out of the My Work lists.
+- **Workflow runs:** signed in, the demo run engine (`workflow-runs-listener.ts`) stands down — the server starts runs from its own triggers. Role-based run assignees carry `assigneeAccessLevelId` since 2026-11-27 (mapped onto the task's role). The "Run" dialog still only sends notifications (it has no subject to start a run against). Demo approvals are left out of the My Work lists.
 - **Names → ids:** where a form holds a person's name (help desk assignee, ER investigator/owner/panel, OH case owner, suggestion/case submitter) the id is looked up in the live directory by full name; an unknown name is sent as null.
 - **EOR:** an engagement needs an existing employee (matched by email, then name). `countryOfEngagement` is sent as the country name; the spec does not say whether it wants a name or a code.
 - **Shift templates** are the attendance work schedules; the API has no colour, so one is picked by position. An employee who cannot list schedules gets templates built from their own roster.
 - **Surveys:** the results modal is fed by unrolling `/surveys/{id}/results` tallies back into anonymous responses.
 - **Community / suggestions:** like, vote and upvote lists are rebuilt from the API's counts and "mine" flags; the like/upvote endpoints are assumed to toggle.
-- **Holiday year:** the API derives every cycle from one start day, so only editing a cycle is offered (add/activate/remove answer "not integrated"). Company holidays have no update endpoint: an edit deletes and re-creates. Digest frequencies `hourly`/`never` are sent as `realtime`/`weekly`.
+- **Holiday year:** the API derives every cycle from one start day, so only editing a cycle is offered (add/activate/remove answer "not integrated"). Company holidays are edited with `PUT /leave/holidays/{id}` (since 2026-11-27) and send `isNonWorking` and `excludedDepartmentIds`; the form's department names are matched to ids, and an unknown name is refused before anything is sent. Digest frequencies `hourly`/`never` are sent as `realtime`/`weekly`.
 - **Learning:** quizzes are asked and graded by the server; the attempt limit is the server's.
 - **Leave:** the self-service request list and balance cards read `/mine`; cancelling goes through the leave listener.
+
+### 3.8 2026-11-27 endpoints — not yet checked with a real login
+
+- **Submissions & Approvals:** the server's approvals are mirrored into the approvals slice (`approvals/use-live-approvals.ts`, `lib/approvals/api-mapping.ts`). HR reads `GET /approvals` (every page) plus `/approvals/my-queue`; self-service, or an HR viewer the register refuses, reads `/approvals/mine` plus `/my-queue`. Whether you can act is the server's `availableActions`, not the local chain. Approve, reject, return, resubmit and withdraw go out through `lib/stores/approvals-api-listener.ts`; comments have no endpoint and answer "not integrated". Reviewer signatures and resubmit edits are not sent. Demo requests other modules seed are kept out of the live view (non-UUID ids), and the demo sickness listener ignores server approvals so a decision is not sent twice.
+- **Backend answers (27 Nov):** event types are a fixed lowercase set — submitted, approved, rejected, returned, resubmitted, cancelled, skipped, reresolved ("commented" comes with the comments endpoint); skipped reasons are sentences for people, shown as the step's note; only leave_request, expense_claim, loan_request, onboarding and workforce_request run through the engine; sickness is decided directly by `/sickness/{id}/approve`. Titles/summaries are agreed but not built. Guarantors: an employee reads their own with their own id; other people's now answer 404.
+- **Document types** on an approval are free strings in the spec. The app turns them into snake_case and matches common forms (`leave`, `leaveRequest`, `expenseClaim`, `sicknessRecord`, `requisition`, …) onto the screen's types; anything else is labelled from its words.
+- **Approval titles:** `ApprovalDto` has no title or summary, so a row reads "<type> — <employee>" and "<type> raised by <name>".
+- **Guarantors:** read only on the profile (no write outside the joiner flow); an edit answers "not integrated". Not yet known whether an employee may read their own through this endpoint.
+- **OH absence links:** `PUT …/sickness-records` replaces the whole set, so the full list is always sent. A referral made with several absences creates the case with the first and then sends the rest. The server's refusal for another person's absence is shown as it comes back.
+- **Lifecycle stage keys** (confirmed by the backend: always all eight, hyphenated as on the page) are not listed in the spec. The app matches them (case and punctuation ignored) onto the page's stages: workforce planning/requests, requisitions, vacancies, candidates, pre-boarding, onboarding, active, offboarding. A key it does not recognise (e.g. people who left) is not shown.
+- **HR actions:** category keys are the alerts file's (right_to_work, payroll, …), so labels and icons come from there; severity totals are the server's. `payroll` is always empty (no payroll yet).
+- **Untaken leave:** rows are the server's at-risk list, ordered by `atRiskDays`; the card shows `remaining`.
+- **My dashboard:** the "Tasks Due Today" card shows `tasksOutstanding` (the API has no due-today count). Pending items come from `pending`; your reminders show only until it answers.
+- **Headcount:** periods are sent as the page holds them, `Q1 2026` and `FY 2026` (the backend refuses `2026`).
+- **HR dashboard Events, Resourcing, Engagement tabs** (live since 2026-11-27, from existing endpoints, as the backend suggested):
+    - Events: `/calendar/upcoming?days=7`, shared with the HR Action Centre's events card. One-to-ones show as meetings, leave requests and cover as leave; personal events and sickness are left off this organisation-wide view.
+    - Resourcing: open roles by department are the open vacancies from `/workforce/hiring`; the hiring funnel is the live recruitment data (`useRecruitment`).
+    - Engagement: the trend chart was already live; the ring now uses the latest month of `/surveys/engagement-trend` (every department with a score), and its summary adds the survey response count and this month's kudos.
+    - Every HR dashboard tab is now live; inside them, only the EOR map, certification, mandatory-training and data-quality tiles still depend on their own modules.
+- **Hook only:** `GET /exports/mine` — no screen lists past exports.
 
 ---
 

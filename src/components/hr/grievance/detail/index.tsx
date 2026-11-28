@@ -42,6 +42,9 @@ import {
 import { EmployeeLink } from "@/src/components/shared/employee-link";
 import { formatDate, formatDateTime } from "@/src/lib/utils/format-date";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
+import { CaseFilesPanel } from "./case-files-panel";
+import { isServerId as isCaseServerId, useLiveSender } from "@/src/lib/live/use-is-live";
+import { useDeleteErCaseNoteMutation } from "@/src/store/services/er-cases";
 import {
   seedCountry,
   updateCase,
@@ -96,6 +99,8 @@ export function CaseDetailPage({ caseId }: { caseId: string }) {
   }, [live, data, casesByCountry, country, dispatch]);
 
   const caseData = (casesByCountry ?? []).find((c) => c.id === caseId) ?? null;
+  const [deleteCaseNote] = useDeleteErCaseNoteMutation();
+  const sendCase = useLiveSender(["ErCases"]);
 
   // ---- Per-stage capture state. Initialized once the case first becomes
   // available (it may not be on the very first render, before the seed
@@ -1031,6 +1036,9 @@ export function CaseDetailPage({ caseId }: { caseId: string }) {
             </CardContent>
           </Card>
 
+          {/* Signed in: evidence files and meetings, with their own actions. */}
+          {live && isCaseServerId(caseData.id) && <CaseFilesPanel caseData={caseData} />}
+
           {/* Case Notes */}
           <Card>
             <CardHeader>
@@ -1072,6 +1080,22 @@ export function CaseDetailPage({ caseId }: { caseId: string }) {
                         );
                       })()}
                       <span>{formatDate(note.createdAt)}</span>
+                      {live && isCaseServerId(caseData.id) && isCaseServerId(note.id) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          aria-label="Delete note"
+                          onClick={() =>
+                            void sendCase(
+                              () => deleteCaseNote({ id: caseData.id, noteId: note.id }).unwrap(),
+                              "Could not delete the note.",
+                            )
+                          }
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                   <p className="text-sm text-foreground/80 leading-relaxed">

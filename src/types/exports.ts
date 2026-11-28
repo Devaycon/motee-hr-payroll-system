@@ -7,6 +7,9 @@ export interface ExportLink {
   linkExpiresAt: string;
 }
 
+// GET /api/v1/exports/mine
+export type GetMyExportJobsResponse = ApiResponse<ExportJobDto[]>;
+
 export type GetExportJobResponse = ApiResponse<ExportJobDto>;
 
 export type CreateExportLinkResponse = ApiResponse<ExportLink>;

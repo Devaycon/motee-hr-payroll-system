@@ -22,7 +22,8 @@ import {
 } from "@/src/store/services/contracts";
 
 export default function MyContractsPage() {
-  const { data: localeContracts } = useContracts();
+  // Signed in, `/contracts/mine` below is the source; the register is HR-only.
+  const { data: localeContracts } = useContracts({ skip: true });
   const employeeName = useAppSelector((s) => s.auth.user?.name);
   const FALLBACK_EMPLOYEE = "Adaeze Okonkwo";
   const baseContracts =

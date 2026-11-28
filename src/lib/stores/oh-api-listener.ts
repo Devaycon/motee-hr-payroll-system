@@ -8,8 +8,10 @@
  *                  for the case fields, and for adjustments POST (new),
  *                  PUT (edited) and POST …/adjustments/{id}/stage (moved on)
  *
- * Linking further absences to a case has no endpoint (a case holds one
- * sickness record), so it stays on the screen only.
+ * - linking absences → PUT /occupational-health/{id}/sickness-records with the
+ *   whole set (it replaces the list). A referral that also links earlier
+ *   absences creates the case with the first one, then sends the full set.
+ *   The server refuses an absence that belongs to someone else.
  */
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import { toast } from "sonner";
@@ -55,8 +57,16 @@ ohApiListener.startListening({
       if (referToOH.match(action)) {
         const { referral, recordIds } = action.payload;
         if (!isServerId(referral.employeeId)) return;
-        const record = recordIds.find(isServerId) ?? null;
-        await dispatch(ep.createOhReferral.initiate(ohCaseToRequest(referral, idOf, record))).unwrap();
+        const ids = recordIds.filter(isServerId);
+        const created = await dispatch(
+          ep.createOhReferral.initiate(ohCaseToRequest(referral, idOf, ids[0] ?? null)),
+        ).unwrap();
+        const caseId = created.data?.id;
+        if (ids.length > 1 && isServerId(caseId)) {
+          await dispatch(
+            ep.linkOhAbsences.initiate({ id: caseId, body: { sicknessRecordIds: ids } }),
+          ).unwrap();
+        }
       } else if (updateOHCase.match(action)) {
         const { id, changes } = action.payload;
         if (!isServerId(id)) return;
@@ -66,6 +76,16 @@ ohApiListener.startListening({
 
         if (CASE_FIELDS.some((k) => k in changes && JSON.stringify(prev[k]) !== JSON.stringify(next[k]))) {
           await dispatch(ep.updateOhReferral.initiate({ id, body: ohCaseToRequest(next, idOf) })).unwrap();
+        }
+        if (changes.linkedSicknessIds) {
+          const ids = [...new Set(changes.linkedSicknessIds.filter(isServerId))];
+          const had = [...new Set((prev.linkedSicknessIds ?? []).filter(isServerId))];
+          const same = ids.length === had.length && ids.every((x) => had.includes(x));
+          if (!same) {
+            await dispatch(
+              ep.linkOhAbsences.initiate({ id, body: { sicknessRecordIds: ids } }),
+            ).unwrap();
+          }
         }
         if (changes.status && changes.status !== prev.status) {
           await dispatch(ep.moveOhReferralStage.initiate({ id, body: { stage: stageToApi(changes.status) } })).unwrap();

@@ -49,6 +49,9 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
   holiday: { label: "Public holiday", swatch: "bg-emerald-500", chip: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-800" },
   birthday: { label: "Birthday", swatch: "bg-pink-500", chip: "bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-950 dark:text-pink-200 dark:border-pink-800" },
   anniversary: { label: "Work anniversary", swatch: "bg-fuchsia-500", chip: "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200 dark:bg-fuchsia-950 dark:text-fuchsia-200 dark:border-fuchsia-800" },
+  // Emitted by the API since 2026-11-27 (start dates and last days).
+  starter: { label: "New starter", swatch: "bg-lime-500", chip: "bg-lime-100 text-lime-800 border-lime-200 dark:bg-lime-950 dark:text-lime-200 dark:border-lime-800" },
+  leaver: { label: "Leaver", swatch: "bg-stone-500", chip: "bg-stone-100 text-stone-800 border-stone-200 dark:bg-stone-950 dark:text-stone-200 dark:border-stone-800" },
   leave: { label: "Leave", swatch: "bg-sky-500", chip: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950 dark:text-sky-200 dark:border-sky-800" },
   leave_request: { label: "Leave (pending)", swatch: "bg-orange-400", chip: "border-dashed bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-800" },
   cover: { label: "Covering", swatch: "bg-teal-500", chip: "border-dashed bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950 dark:text-teal-200 dark:border-teal-800" },

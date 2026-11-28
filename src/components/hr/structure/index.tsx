@@ -4,6 +4,9 @@ import { useEffect, useState, useMemo } from "react";
 import { recomputeNodes } from "./data";
 import type { HierarchyNode, ViewMode } from "./types";
 import { useHierarchy } from "./hooks";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { applyEdit } from "@/src/lib/stores/profile-edits-slice";
 import {
   StatCards,
   matchesStructureCardFilter,
@@ -18,6 +21,8 @@ import { EditReportingModal } from "./components/edit-reporting-modal";
 
 export function StructurePage() {
   const { data } = useHierarchy();
+  const live = useIsLive();
+  const dispatch = useAppDispatch();
   const [rawNodes, setRawNodes] = useState<HierarchyNode[]>([]);
   useEffect(() => {
     if (data) setRawNodes(data);
@@ -52,6 +57,11 @@ export function StructurePage() {
   }
 
   function handleChangeManager(nodeId: string, newManagerId: string | null) {
+    // Signed in: saved as the employee's line manager (PUT /employees/{id},
+    // through the profile-edits listener, which re-reads the record).
+    if (live) {
+      dispatch(applyEdit({ employeeId: nodeId, field: "managerId", value: newManagerId ?? "" }));
+    }
     setRawNodes((prev) =>
       prev.map((n) =>
         n.id === nodeId ? { ...n, managerId: newManagerId } : n,

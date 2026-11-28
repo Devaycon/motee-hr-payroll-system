@@ -1,5 +1,8 @@
 "use client";
 
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetAnnouncementQuery } from "@/src/store/services/announcements";
+import { toAnnouncement } from "@/src/lib/announcements/api-mapping";
 import { useState } from "react";
 import { Megaphone, Plus } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -29,6 +32,12 @@ export function AnnouncementsPage() {
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [viewing, setViewing] = useState<Announcement | null>(null);
+  // Signed in: the opened announcement is read fresh (GET /announcements/{id}).
+  const liveAnnouncements = useIsLive();
+  const viewingQ = useGetAnnouncementQuery(viewing?.id ?? "", {
+    skip: !liveAnnouncements || !detailOpen || !viewing || !isServerId(viewing.id),
+  });
+  const freshViewing = viewingQ.data?.data ? { ...viewing!, ...toAnnouncement(viewingQ.data.data) } : viewing;
 
   // Controlled so the KPI cards can drill into a tab, not just a filter.
   const [activeTab, setActiveTab] = useState("all");
@@ -194,7 +203,7 @@ export function AnnouncementsPage() {
       <AnnouncementDetailModal
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
-        announcement={viewing}
+        announcement={freshViewing}
       />
 
       <AnnouncementFormModal

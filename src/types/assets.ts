@@ -29,6 +29,20 @@ export interface AssetDto {
   updatedAt: string;
 }
 
+/** An asset as its holder sees it (GET /assets/mine). */
+export interface MyAssetDto {
+  id: string;
+  tag: string;
+  name: string;
+  category?: string | null;
+  serialNumber?: string | null;
+  assignedDate?: string | null;
+  status: AssetStatus;
+}
+
+// GET /api/v1/assets/mine
+export type GetMyAssetsResponse = ApiResponse<MyAssetDto[]>;
+
 export type AssetStatus =
   | "available"
   | "assigned"

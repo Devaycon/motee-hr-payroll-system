@@ -1,4 +1,11 @@
-import { ChevronRight, MessageSquare, Award } from "lucide-react";
+import { ChevronRight, MessageSquare, Award, MoreHorizontal, Send, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import type { FeedbackAsk } from "@/src/lib/performance/use-my-performance-live";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
@@ -43,6 +50,10 @@ interface OverviewTabProps {
   onGoToGoals: () => void;
   onGoalDetail: (g: PerformanceGoal) => void;
   onPeerModal: () => void;
+  /** Colleagues asking you for feedback (signed in). */
+  awaitingMe?: FeedbackAsk[];
+  onGiveFeedback?: (ask?: FeedbackAsk) => void;
+  onDeclineAsk?: (ask: FeedbackAsk) => void;
 }
 
 export function OverviewTab({
@@ -54,6 +65,9 @@ export function OverviewTab({
   onGoToGoals,
   onGoalDetail,
   onPeerModal,
+  awaitingMe = [],
+  onGiveFeedback,
+  onDeclineAsk,
 }: OverviewTabProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
@@ -211,8 +225,65 @@ export function OverviewTab({
             >
               <MessageSquare className="w-3.5 h-3.5" /> Request Peer Feedback
             </Button>
+            {onGiveFeedback && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => onGiveFeedback()}
+              >
+                <Send className="w-3.5 h-3.5" /> Give Feedback
+              </Button>
+            )}
           </CardContent>
         </Card>
+
+        {awaitingMe.length > 0 && (
+          <Card>
+            <CardContent className="p-4 flex flex-col gap-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Asked of You ({awaitingMe.length})
+              </p>
+              {awaitingMe.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-start justify-between gap-2 rounded-lg border border-border bg-muted/40 p-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-foreground">{a.askedByName}</p>
+                    {a.context && (
+                      <p className="line-clamp-2 text-[10px] text-muted-foreground">{a.context}</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground">{formatDate(a.createdAt)}</p>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 shrink-0"
+                        aria-label={`Actions for ${a.askedByName}'s request`}
+                      >
+                        <MoreHorizontal className="size-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem onClick={() => onGiveFeedback?.(a)}>
+                        <Send className="mr-2 size-3.5" /> Give feedback
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => onDeclineAsk?.(a)}
+                      >
+                        <X className="mr-2 size-3.5" /> Decline
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {currentReview && (
           <Card>

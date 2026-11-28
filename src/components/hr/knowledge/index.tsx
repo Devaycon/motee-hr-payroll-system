@@ -1,5 +1,8 @@
 "use client";
 
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetKnowledgeArticleQuery } from "@/src/store/services/knowledge";
+import { articleFromApi } from "@/src/lib/knowledge/api-mapping";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useKnowledgeActions, useKnowledgeArticles } from "./hooks";
@@ -41,6 +44,11 @@ export function KnowledgePage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editArticle, setEditArticle] = useState<KnowledgeArticle | null>(null);
   const [viewArticle, setViewArticle] = useState<KnowledgeArticle | null>(null);
+  // Signed in: the opened article is read fresh (GET /knowledge/{id}).
+  const articleQ = useGetKnowledgeArticleQuery(viewArticle?.id ?? "", {
+    skip: !useIsLive() || !viewArticle || !isServerId(viewArticle.id),
+  });
+  const freshArticle = articleQ.data?.data ? articleFromApi(articleQ.data.data) : viewArticle;
   const [viewOpen, setViewOpen] = useState(false);
 
   function handleCreate(data: NewArticle) {
@@ -400,7 +408,7 @@ export function KnowledgePage() {
       </Tabs>
 
       <ArticleViewModal
-        article={viewArticle}
+        article={freshArticle}
         open={viewOpen}
         onOpenChange={setViewOpen}
         relatedArticles={viewArticle ? getRelated(viewArticle) : []}

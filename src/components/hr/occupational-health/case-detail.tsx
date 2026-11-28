@@ -1,7 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Clock, Scale, ShieldAlert, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ArrowLeft, Check, Clock, Scale, ShieldAlert, Trash2, User } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import { PromptDialog, type PromptRequest } from "@/src/components/shared/prompt-dialog";
+import { isServerId, useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import { useCan } from "@/src/lib/permissions/use-can";
+import {
+  useDeleteOhReferralMutation,
+  useGetOhReferralHistoryQuery,
+  useGetOhReferralQuery,
+} from "@/src/store/services/occupational-health";
+import { ohCaseFromApi } from "@/src/lib/occupational-health/api-mapping";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { cn } from "@/src/lib/utils";
 import {
@@ -17,8 +30,25 @@ import { useOHReferrals } from "./use-oh-referrals";
 import { OHCaseManage } from "./oh-case-manage";
 
 export function OccupationalHealthCaseDetail({ caseId }: { caseId: string }) {
-  const referral = useOHReferrals().find((r) => r.id === caseId);
+  const listReferral = useOHReferrals().find((r) => r.id === caseId);
   const confidential = useCanViewConfidentialOH();
+  // Signed in: the case itself (GET /occupational-health/{id}), for a case
+  // outside the loaded list.
+  const caseQ = useGetOhReferralQuery(caseId, {
+    skip: !useIsLive() || !isServerId(caseId) || !!listReferral,
+  });
+  const referral =
+    listReferral ??
+    (caseQ.data?.data ? { ...ohCaseFromApi(caseQ.data.data), linkedSicknessIds: [] } : undefined);
+  // Signed in: the server's audit trail (GET /occupational-health/{id}/history)
+  // and Delete (DELETE /occupational-health/{id}).
+  const router = useRouter();
+  const live = useIsLive() && isServerId(caseId);
+  const canEdit = useCan("time-payroll.occupational-health", "edit");
+  const historyQ = useGetOhReferralHistoryQuery(caseId, { skip: !live || !confidential });
+  const [deleteReferral] = useDeleteOhReferralMutation();
+  const sendOh = useLiveSender(["OccupationalHealth", "Sickness"]);
+  const [prompt, setPrompt] = useState<PromptRequest | null>(null);
 
   // Cases referred from Sickness & Absence load from the store after the
   // first render, so a missing case is a soft message rather than a 404.
@@ -32,6 +62,12 @@ export function OccupationalHealthCaseDetail({ caseId }: { caseId: string }) {
   }
 
   const stageIdx = ohStageIndex(referral.status);
+  const history =
+    live && historyQ.data?.data
+      ? historyQ.data.data
+          .map((h, i) => ({ id: `H${i}`, at: h.at, actorName: h.actorName ?? "System", note: h.note }))
+          .sort((a, b) => b.at.localeCompare(a.at))
+      : referral.history;
 
   return (
     <div className="flex flex-col gap-5 pb-10">
@@ -44,6 +80,32 @@ export function OccupationalHealthCaseDetail({ caseId }: { caseId: string }) {
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <h1 className="text-3xl font-semibold text-foreground">{referral.employeeName}</h1>
+          {live && canEdit && confidential && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-auto gap-1.5 text-destructive hover:text-destructive"
+              onClick={() =>
+                setPrompt({
+                  title: `Delete ${referral.employeeName}'s OH referral?`,
+                  description: "The referral, its adjustments and history are removed. The sickness records stay.",
+                  confirmLabel: "Delete referral",
+                  destructive: true,
+                  onConfirm: async () => {
+                    const ok = await sendOh(() => deleteReferral(caseId).unwrap(), "Could not delete the referral.");
+                    if (ok) {
+                      toast.success("Referral deleted");
+                      router.push("/time-payroll/occupational-health");
+                    }
+                    return ok;
+                  },
+                })
+              }
+            >
+              <Trash2 className="size-3.5" /> Delete
+            </Button>
+          )}
+          <PromptDialog request={prompt} onClose={() => setPrompt(null)} />
           <span
             className={cn(
               "rounded-full border px-2.5 py-0.5 text-xs font-medium",
@@ -228,11 +290,11 @@ export function OccupationalHealthCaseDetail({ caseId }: { caseId: string }) {
               <CardTitle className="text-sm">Timeline & audit history</CardTitle>
             </CardHeader>
             <CardContent>
-              {!referral.history || referral.history.length === 0 ? (
+              {!history || history.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No history recorded yet.</p>
               ) : (
                 <ol className="flex flex-col gap-3 border-l border-border pl-4">
-                  {referral.history.map((h) => (
+                  {history.map((h) => (
                     <li key={h.id} className="relative text-xs">
                       <span className="absolute -left-5.25 top-0.5 size-2 rounded-full bg-primary" />
                       <p className="font-medium text-foreground">{h.note}</p>

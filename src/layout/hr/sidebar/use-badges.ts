@@ -6,6 +6,8 @@ import { useCurrentUser } from "@/src/lib/auth/demo-identity";
 import { isCurrentApprover } from "@/src/components/hr/approvals/utils";
 import { selectCountsForUser } from "@/src/lib/stores/workflow-runs-selectors";
 import { isRunTaskOpen } from "@/src/lib/types/workflow-runs";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetChangeRequestsQuery } from "@/src/store/services/change-requests";
 
 /**
  * Live counts for the sidebar, keyed by route link.
@@ -22,6 +24,17 @@ export function useSidebarBadges(): Record<string, number> {
   const country = useAppSelector((s) => s.locale.country);
   const runs = useAppSelector((s) => s.workflowRuns.byCountry[country]);
   const requests = useAppSelector((s) => s.approvals.requests);
+  // Profile change requests waiting for HR: the server's total when signed in
+  // (one row asked for, only the count is read), the store's otherwise.
+  const live = useIsLive();
+  const pendingChanges = useGetChangeRequestsQuery(
+    { Status: "pending", PageSize: 1 },
+    { skip: !live, pollingInterval: 120_000 },
+  ).data?.data?.totalItems;
+  const localPendingChanges = useAppSelector(
+    (s) => s.profileEdits.requests.filter((r) => r.status === "pending").length,
+  );
+  const changeBadge = live ? pendingChanges ?? 0 : localPendingChanges;
 
   return useMemo(() => {
     const list = runs ?? [];
@@ -46,6 +59,7 @@ export function useSidebarBadges(): Record<string, number> {
       "/hr-action-center/submissions": pendingApprovals,
       "/talent/recruitment": myOpenTasksOn("requisition"),
       "/talent/onboarding": myOpenTasksOn("onboarding_record"),
+      "/organization/change-requests": changeBadge,
     };
-  }, [runs, requests, employeeId, roleId]);
+  }, [runs, requests, employeeId, roleId, changeBadge]);
 }

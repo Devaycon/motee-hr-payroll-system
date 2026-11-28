@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useLazyGetKudosPostQuery } from "@/src/store/services/kudos";
+import { kudosPostFromApi } from "@/src/lib/kudos/api-mapping";
+import { useReactorNames } from "@/src/lib/kudos/use-reactor-names";
 import { MessageCircle, Search, Megaphone, Pin, Star, Trash2, Users2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
@@ -55,6 +59,7 @@ export function KudosFeed({
   canDelete = false,
   onDelete,
 }: KudosFeedProps) {
+  const reactors = useReactorNames();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<KudosType | "all">("all");
   const [deptFilter, setDeptFilter] = useState<string>("all");
@@ -65,7 +70,21 @@ export function KudosFeed({
     {},
   );
 
+  // Signed in: opening a post's comments reads it fresh (GET /kudos/{id}),
+  // so the thread includes replies made since the feed loaded.
+  const liveKudos = useIsLive();
+  const [readPost] = useLazyGetKudosPostQuery();
+  const [freshComments, setFreshComments] = useState<Record<string, KudosPost["comments"]>>({});
+
   function toggleComments(postId: string) {
+    if (liveKudos && isServerId(postId) && !expandedComments.has(postId)) {
+      void readPost(postId)
+        .unwrap()
+        .then((r) =>
+          setFreshComments((prev) => ({ ...prev, [postId]: kudosPostFromApi(r.data).comments })),
+        )
+        .catch(() => undefined);
+    }
     setExpandedComments((prev) => {
       const next = new Set(prev);
       if (next.has(postId)) next.delete(postId);
@@ -279,7 +298,13 @@ export function KudosFeed({
                       r.count > 0 ? (
                         <button
                           key={r.type}
-                          onClick={() => onReact(post.id, r.type)}
+                          title={reactors.titleFor(post.id, r.type)}
+                          onMouseEnter={() => reactors.load(post.id)}
+                          onFocus={() => reactors.load(post.id)}
+                          onClick={() => {
+                            reactors.forget(post.id);
+                            onReact(post.id, r.type);
+                          }}
                           className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-colors ${
                             myReactions[post.id] === r.type
                               ? "bg-primary/10 border-primary/40 text-primary"
@@ -328,7 +353,7 @@ export function KudosFeed({
                   <>
                     <Separator className="my-3" />
                     <div className="space-y-3">
-                      {post.comments.map((c) => (
+                      {(freshComments[post.id] ?? post.comments).map((c) => (
                         <div key={c.id} className="flex gap-2.5">
                           <PersonAvatar
                             name={c.authorName}

@@ -9,7 +9,26 @@ import {
   DollarSign,
   ShieldCheck,
   Building2,
+  LogOut,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import { Input } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
+import type { EorComplianceKey, EorComplianceStatus } from "@/src/lib/types/eor";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -51,10 +70,20 @@ interface WorkerDetailProps {
   provider?: EorProvider;
   onBack: () => void;
   onEdit: () => void;
+  /** Signed in: end the engagement (POST /eor/workers/{id}/end). */
+  onEnd?: (endDate: string, reason: string) => Promise<boolean>;
+  /** Signed in: set one checklist item's status (PUT /eor/workers/{id}/compliance/{key}). */
+  onSetCompliance?: (key: EorComplianceKey, status: EorComplianceStatus) => Promise<boolean>;
 }
 
-export function WorkerDetail({ worker, provider, onBack, onEdit }: WorkerDetailProps) {
+const COMPLIANCE_CHOICES: EorComplianceStatus[] = ["complete", "pending", "action_required", "not_applicable"];
+
+export function WorkerDetail({ worker, provider, onBack, onEdit, onEnd, onSetCompliance }: WorkerDetailProps) {
   const [active, setActive] = useState<SectionKey>("engagement");
+  const [ending, setEnding] = useState(false);
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [endReason, setEndReason] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const money = (n: number) => formatMoney(n, worker.currencySymbol);
   const totalLocal =
@@ -79,11 +108,66 @@ export function WorkerDetail({ worker, provider, onBack, onEdit }: WorkerDetailP
           </div>
         </div>
         <PermissionGate module="organization.eor" action="edit">
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={onEdit}>
-            <Pencil className="w-3.5 h-3.5" />
-            Edit
-          </Button>
+          <div className="flex items-center gap-2">
+            {onEnd && worker.status !== "ended" && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-destructive hover:text-destructive"
+                onClick={() => setEnding(true)}
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                End engagement
+              </Button>
+            )}
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={onEdit}>
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </Button>
+          </div>
         </PermissionGate>
+        <Dialog open={ending} onOpenChange={setEnding}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>End {worker.name}&apos;s engagement</DialogTitle>
+              <DialogDescription>
+                {worker.providerName} is told the engagement ends on this date.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <p className="text-xs font-medium">Last day</p>
+                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <p className="text-xs font-medium">Reason (optional)</p>
+                <Textarea
+                  value={endReason}
+                  onChange={(e) => setEndReason(e.target.value)}
+                  className="min-h-16 resize-none text-sm"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setEnding(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={!endDate || busy}
+                onClick={async () => {
+                  if (!onEnd) return;
+                  setBusy(true);
+                  const ok = await onEnd(endDate, endReason.trim());
+                  setBusy(false);
+                  if (ok) setEnding(false);
+                }}
+              >
+                End engagement
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Top: avatar card + Personal details */}
@@ -246,12 +330,39 @@ export function WorkerDetail({ worker, provider, onBack, onEdit }: WorkerDetailP
                           <p className="text-xs text-muted-foreground">{item.note}</p>
                         )}
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={cn("text-[10px] shrink-0", EOR_COMPLIANCE_STYLES[item.status])}
-                      >
-                        {EOR_COMPLIANCE_LABELS[item.status]}
-                      </Badge>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Badge
+                          variant="outline"
+                          className={cn("text-[10px] shrink-0", EOR_COMPLIANCE_STYLES[item.status])}
+                        >
+                          {EOR_COMPLIANCE_LABELS[item.status]}
+                        </Badge>
+                        {onSetCompliance && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                aria-label={`Change ${item.label} status`}
+                              >
+                                <MoreHorizontal className="h-3.5 w-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              {COMPLIANCE_CHOICES.filter((c) => c !== item.status).map((c) => (
+                                <DropdownMenuItem
+                                  key={c}
+                                  className="text-xs"
+                                  onClick={() => void onSetCompliance(item.key, c)}
+                                >
+                                  Mark {EOR_COMPLIANCE_LABELS[c].toLowerCase()}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

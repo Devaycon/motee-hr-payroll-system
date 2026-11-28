@@ -146,6 +146,12 @@ export interface OHReferral {
   reviewDate?: string;
   /** §10.9/§10.10 — timeline shown on the "View Case" detail route. */
   history?: OHHistoryEvent[];
+  /**
+   * Sickness records linked to the case, as the API holds them
+   * (OhCaseDto.linkedAbsences). Locally, links are also read off each
+   * record's ohReferralId.
+   */
+  linkedSicknessIds?: string[];
   // Intentionally NO `diagnosis` / `condition` / `medicalDetail` field. See header.
 }
 

@@ -9,7 +9,9 @@ export type FilePurpose =
   | "export"
   | "projectDocument"
   | "caseEvidence"
-  | "companyVerificationDocument";
+  | "companyVerificationDocument"
+  | "profileChangeEvidence"
+  | "approvalSignature";
 
 export interface StoredFileDto {
   id: string;

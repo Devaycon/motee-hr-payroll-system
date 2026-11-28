@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Inbox, Check, X, FileText } from "lucide-react";
 import { formatDate } from "@/src/lib/utils/format-date";
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -12,6 +13,57 @@ import {
   dequeueSelfServiceDocument,
   type SelfServiceDocumentSubmission,
 } from "@/src/lib/stores/my-documents-slice";
+import { useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import {
+  useApproveDocumentReviewMutation,
+  useGetDocumentReviewsQuery,
+  useRejectDocumentReviewMutation,
+} from "@/src/store/services/documents";
+import type { DocumentDto } from "@/src/types/documents";
+
+const CATEGORY_LABEL: Record<string, string> = {
+  policy: "Policy",
+  contract: "Contract",
+  handbook: "Handbook",
+  form: "Form",
+  certificate: "Certificate",
+  report: "Report",
+  other: "Other",
+};
+
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]!.toUpperCase())
+    .join("");
+
+/** An upload waiting on HR (GET /documents/reviews) in the tab's shape. */
+function submissionFromApi(d: DocumentDto): SelfServiceDocumentSubmission {
+  const name = d.uploadedByName ?? "Employee";
+  return {
+    id: d.id,
+    employeeId: d.uploadedByEmployeeId ?? undefined,
+    employeeName: name,
+    employeeInitials: initialsOf(name),
+    name: d.name,
+    docType: CATEGORY_LABEL[d.category] ?? "Other",
+    ext: d.name.split(".").pop() ?? "",
+    expiryDate: d.expiryDate ?? undefined,
+    submittedAt: d.createdAt,
+    status:
+      d.reviewStatus === "accepted"
+        ? "approved"
+        : d.reviewStatus === "rejected"
+          ? "rejected"
+          : "awaiting_review",
+    reviewNote: d.reviewNote ?? undefined,
+  };
+}
+
+/** What HR enters when the tab's one-click Reject is used. */
+const DEFAULT_REJECT_REASON = "Rejected by HR";
 
 /**
  * §8.3 (Correction 2 feedback) — "My Documents — self-service area."
@@ -34,18 +86,41 @@ const DOC_TYPE_CATEGORY_HINT: Record<string, string> = {
 
 export function MyDocumentsTab({ onApprove }: MyDocumentsTabProps) {
   const dispatch = useAppDispatch();
-  const submissions = useAppSelector((s) => s.myDocuments.submissions);
+  const demoSubmissions = useAppSelector((s) => s.myDocuments.submissions);
+  // Signed in, the queue is the server's; accepting files the upload in the
+  // employee's documents on the server.
+  const live = useIsLive();
+  const reviews = useGetDocumentReviewsQuery({ PageSize: 200 }, { skip: !live });
+  const [approveReview] = useApproveDocumentReviewMutation();
+  const [rejectReview] = useRejectDocumentReviewMutation();
+  const send = useLiveSender(["DocumentReviews", "Documents"]);
+  const liveSubmissions = useMemo(
+    () => (reviews.data?.data.items ?? []).map(submissionFromApi),
+    [reviews.data],
+  );
+  const submissions = live ? liveSubmissions : demoSubmissions;
 
   const pending = submissions.filter((s) => s.status === "awaiting_review");
   const decided = submissions.filter((s) => s.status !== "awaiting_review");
 
   function handleApprove(s: SelfServiceDocumentSubmission) {
+    if (live) {
+      void send(() => approveReview({ id: s.id }).unwrap(), "Could not accept the document.");
+      return;
+    }
     onApprove(s);
     dispatch(reviewSelfServiceDocument({ id: s.id, status: "approved" }));
     dispatch(dequeueSelfServiceDocument(s.id));
   }
 
   function handleReject(s: SelfServiceDocumentSubmission) {
+    if (live) {
+      void send(
+        () => rejectReview({ id: s.id, body: { reason: DEFAULT_REJECT_REASON } }).unwrap(),
+        "Could not reject the document.",
+      );
+      return;
+    }
     dispatch(reviewSelfServiceDocument({ id: s.id, status: "rejected" }));
     dispatch(dequeueSelfServiceDocument(s.id));
   }

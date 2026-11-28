@@ -1,5 +1,6 @@
 "use client";
 
+import { useGetPickListQuery } from "@/src/store/services/pick-lists";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { PickListApi } from "../live";
@@ -71,7 +72,16 @@ export function PickListPanel({ lists: initial, api }: Props) {
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
 
-  const activeList = lists.find((l) => l.id === activeId);
+  // Signed in: the open list is read fresh (GET /settings/pick-lists/{key}).
+  const listQ = useGetPickListQuery(activeId, { skip: !api || !activeId });
+  const loadedList = lists.find((l) => l.id === activeId);
+  const activeList =
+    listQ.data?.data && loadedList
+      ? {
+          ...loadedList,
+          options: listQ.data.data.options.map((o) => ({ id: o.id, value: o.value, isDefault: o.isDefault })),
+        }
+      : loadedList;
 
   function openAdd() {
     setEditing(null);

@@ -27,6 +27,16 @@ import { ScheduleModal } from "./components/schedule-modal";
 import { PresenceCheckPanel } from "./components/presence-check-panel";
 import { DeductionPolicyPanel } from "./components/deduction-policy-panel";
 import { NotIntegrated } from "@/src/components/shared/not-integrated";
+import { CorrectionsTab } from "./components/corrections-tab";
+import { AssignScheduleDialog } from "./components/assign-schedule-dialog";
+import { isServerId, useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import {
+  useGetTimesheetQuery,
+  useGetWorkScheduleQuery,
+  useSetDefaultWorkScheduleMutation,
+} from "@/src/store/services/attendance";
+import { toTimesheetRecord, toWorkSchedule } from "@/src/lib/attendance/api-mapping";
+import { toast } from "sonner";
 import type {
   AttendanceRecord,
   NewAttendanceRecord,
@@ -72,10 +82,30 @@ export function AttendancePage() {
   const [viewingTimesheet, setViewingTimesheet] =
     useState<TimesheetRecord | null>(null);
 
+  const live = useIsLive();
+  const [assigning, setAssigning] = useState<WorkSchedule | null>(null);
+  const [setDefault] = useSetDefaultWorkScheduleMutation();
+  const send = useLiveSender(["WorkSchedules"]);
+  function handleSetDefault(schedule: WorkSchedule) {
+    void send(() => setDefault(schedule.id).unwrap(), "Could not change the default pattern.").then(
+      (ok) => ok && toast.success(`${schedule.name} is now the default work pattern`),
+    );
+  }
+
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<WorkSchedule | null>(
     null,
   );
+  // Signed in: the opened timesheet and work pattern are read fresh
+  // (GET /attendance/timesheets/{id}, GET /attendance/schedules/{id}).
+  const timesheetQ = useGetTimesheetQuery(viewingTimesheet?.id ?? "", {
+    skip: !live || !timesheetModalOpen || !viewingTimesheet || !isServerId(viewingTimesheet.id),
+  });
+  const freshTimesheet = timesheetQ.data?.data ? toTimesheetRecord(timesheetQ.data.data) : viewingTimesheet;
+  const scheduleQ = useGetWorkScheduleQuery(editingSchedule?.id ?? "", {
+    skip: !live || !scheduleModalOpen || !editingSchedule || !isServerId(editingSchedule.id),
+  });
+  const freshSchedule = scheduleQ.data?.data ? toWorkSchedule(scheduleQ.data.data) : editingSchedule;
 
   function handleLogAttendance() {
     setEditingRecord(null);
@@ -186,6 +216,7 @@ export function AttendancePage() {
               value: "timesheets",
               label: `Timesheets (${visibleTimesheets.length})`,
             },
+            { value: "corrections", label: "Corrections" },
             { value: "schedules", label: "Work Patterns" },
             { value: "deductions", label: "Deduction Policy" },
             { value: "presence", label: "Presence Checks" },
@@ -209,12 +240,18 @@ export function AttendancePage() {
           />
         </TabsContent>
 
+        <TabsContent value="corrections" className="mt-4 space-y-4">
+          <CorrectionsTab />
+        </TabsContent>
+
         <TabsContent value="schedules" className="mt-4 space-y-4">
           <SchedulesTable
             schedules={schedules}
             onEdit={handleEditSchedule}
             onDelete={handleDeleteSchedule}
             onAddSchedule={handleAddSchedule}
+            onSetDefault={live ? handleSetDefault : undefined}
+            onAssign={live ? setAssigning : undefined}
           />
         </TabsContent>
 
@@ -241,15 +278,17 @@ export function AttendancePage() {
       <TimesheetModal
         open={timesheetModalOpen}
         onClose={() => setTimesheetModalOpen(false)}
-        viewingTimesheet={viewingTimesheet}
+        viewingTimesheet={freshTimesheet}
         onApprove={handleApproveTimesheet}
         onReject={handleRejectTimesheet}
       />
 
+      <AssignScheduleDialog schedule={assigning} onClose={() => setAssigning(null)} />
+
       <ScheduleModal
         open={scheduleModalOpen}
         onClose={() => setScheduleModalOpen(false)}
-        editingSchedule={editingSchedule}
+        editingSchedule={freshSchedule}
         onSave={handleSaveSchedule}
       />
     </div>

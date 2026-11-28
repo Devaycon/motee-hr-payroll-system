@@ -67,6 +67,8 @@ const createSchema = z.object({
   dueDate: z.string().min(1, { message: "Due date is required" }),
 });
 
+import { FeedbackAboutPanel } from "./feedback-panel";
+
 interface ReviewModalProps {
   open: boolean;
   onClose: () => void;
@@ -83,6 +85,8 @@ interface ReviewModalProps {
       comments?: string;
     },
   ) => void;
+  /** Signed in: set the calibrated rating (POST /performance/reviews/{id}/calibrate). */
+  onCalibrate?: (id: string, rating: PerformanceRating) => Promise<boolean>;
 }
 
 const defaultForm = {
@@ -105,6 +109,7 @@ export function ReviewModal({
   viewingReview,
   onSave,
   onComplete,
+  onCalibrate,
 }: ReviewModalProps) {
   const [prevOpen, setPrevOpen] = useState(open);
   const [form, setForm] = useState(defaultForm);
@@ -324,6 +329,28 @@ export function ReviewModal({
                     ))}
                   </div>
                 )}
+                {onCalibrate && viewingReview.managerRating && (
+                  <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
+                    <p className="text-[11px] text-muted-foreground">
+                      Calibrate to
+                    </p>
+                    {([1, 2, 3, 4, 5] as PerformanceRating[]).map((r) => (
+                      <Button
+                        key={r}
+                        size="sm"
+                        variant={viewingReview.calibratedRating === r ? "default" : "outline"}
+                        className="h-7 w-9 text-xs"
+                        onClick={() => void onCalibrate(viewingReview.id, r)}
+                      >
+                        {r}
+                      </Button>
+                    ))}
+                    <p className="text-[10px] text-muted-foreground">
+                      Overrides the final rating after a calibration meeting.
+                    </p>
+                  </div>
+                )}
+                <FeedbackAboutPanel employeeId={viewingReview.employeeId} />
                 {viewingReview.comments && (
                   <div className="p-3 rounded-lg border">
                     <p className="text-[10px] text-muted-foreground mb-1">

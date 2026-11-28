@@ -3,6 +3,9 @@
 import { useMemo } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import { CheckCircle2, Plus } from "lucide-react";
+import { RowActions } from "@/src/components/hr/employees/employee-detail/row-actions";
 import { DataTable, sortableHeader } from "@/src/components/shared/data-table";
 import { cn } from "@/src/lib/utils";
 import { formatDate } from "@/src/lib/utils/format-date";
@@ -15,9 +18,14 @@ import {
 
 interface InvoicesTableProps {
   invoices: EorInvoice[];
+  /** Signed in: add, edit, delete and mark invoices paid. */
+  onNew?: () => void;
+  onEdit?: (invoice: EorInvoice) => void;
+  onDelete?: (invoice: EorInvoice) => void;
+  onSettle?: (invoice: EorInvoice) => void;
 }
 
-export function InvoicesTable({ invoices }: InvoicesTableProps) {
+export function InvoicesTable({ invoices, onNew, onEdit, onDelete, onSettle }: InvoicesTableProps) {
   const columns = useMemo<ColumnDef<EorInvoice>[]>(
     () => [
       {
@@ -85,18 +93,50 @@ export function InvoicesTable({ invoices }: InvoicesTableProps) {
           </Badge>
         ),
       },
+      ...(onEdit || onDelete || onSettle
+        ? [
+            {
+              id: "actions",
+              header: "",
+              enableSorting: false,
+              cell: ({ row }: { row: { original: EorInvoice } }) => (
+                <div className="text-right">
+                  <RowActions
+                    label={`Actions for ${row.original.providerName} ${row.original.period}`}
+                    onEdit={onEdit ? () => onEdit(row.original) : undefined}
+                    onDelete={onDelete ? () => onDelete(row.original) : undefined}
+                    extra={
+                      onSettle && row.original.status !== "paid"
+                        ? [{ label: "Mark as paid", icon: CheckCircle2, onSelect: () => onSettle(row.original) }]
+                        : []
+                    }
+                  />
+                </div>
+              ),
+            } as ColumnDef<EorInvoice>,
+          ]
+        : []),
     ],
-    [],
+    [onEdit, onDelete, onSettle],
   );
 
   return (
-    <DataTable
-      exportTitle="EOR Invoices"
-      columns={columns}
-      data={invoices}
-      getRowId={(i) => i.id}
-      searchPlaceholder="Search invoices by provider or period..."
-      emptyMessage="No invoices."
-    />
+    <div className="flex flex-col gap-3">
+      {onNew && (
+        <div className="flex justify-end">
+          <Button size="sm" className="gap-1.5" onClick={onNew}>
+            <Plus className="size-3.5" /> New Invoice
+          </Button>
+        </div>
+      )}
+      <DataTable
+        exportTitle="EOR Invoices"
+        columns={columns}
+        data={invoices}
+        getRowId={(i) => i.id}
+        searchPlaceholder="Search invoices by provider or period..."
+        emptyMessage="No invoices."
+      />
+    </div>
   );
 }

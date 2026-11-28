@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useReactorNames } from "@/src/lib/kudos/use-reactor-names";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   useKudos,
@@ -63,6 +64,7 @@ export function KudosTab() {
     [live.data],
   );
   const myReactions = live.data?.myReactions ?? {};
+  const reactors = useReactorNames();
   const kudosActions = useKudosActions(kudosPosts);
   const me = useMyKudos();
   // Colleagues to recognise, from the live directory.
@@ -361,7 +363,13 @@ export function KudosTab() {
                       r.count > 0 ? (
                         <button
                           key={r.type}
-                          onClick={() => toggleReaction(post.id, r.type)}
+                          title={reactors.titleFor(post.id, r.type)}
+                          onMouseEnter={() => reactors.load(post.id)}
+                          onFocus={() => reactors.load(post.id)}
+                          onClick={() => {
+                            reactors.forget(post.id);
+                            toggleReaction(post.id, r.type);
+                          }}
                           className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-colors ${
                             myRxns === r.type
                               ? "bg-primary/10 border-primary/30 text-primary"

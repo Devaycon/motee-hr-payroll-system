@@ -21,11 +21,12 @@ import type {
  * (or "2026" for a full year) and read back in any of the usual spellings.
  * Unverified against the server — adjust here if it expects another form.
  */
+/**
+ * The API takes the page's own format: "Q1 2026" for a quarter and "FY 2026"
+ * for a full year ("2026" alone is refused) — backend answer, 27 Nov.
+ */
 export function periodToApi(period: PlanPeriod): string {
-  const q = /^Q([1-4]) (\d{4})$/.exec(period);
-  if (q) return `${q[2]}-Q${q[1]}`;
-  const fy = /^FY (\d{4})$/.exec(period);
-  return fy ? fy[1] : period;
+  return period;
 }
 
 export function periodFromApi(raw: string): PlanPeriod | null {

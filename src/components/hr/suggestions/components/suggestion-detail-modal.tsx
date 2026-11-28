@@ -62,6 +62,8 @@ interface SuggestionDetailModalProps {
   onSaveImplementationNotes: (id: string, notes: string) => void;
   onToggleFeatured: (id: string) => void;
   onAddComment: (id: string, message: string) => void;
+  /** Signed in: remove a comment (DELETE /suggestions/{id}/comments/{commentId}). */
+  onDeleteComment?: (id: string, commentId: string) => void;
 }
 
 export function SuggestionDetailModal({
@@ -74,6 +76,7 @@ export function SuggestionDetailModal({
   onSaveImplementationNotes,
   onToggleFeatured,
   onAddComment,
+  onDeleteComment,
 }: SuggestionDetailModalProps) {
   const [prevSuggestionId, setPrevSuggestionId] = useState<string | null>(null);
   const [adminResponse, setAdminResponse] = useState("");
@@ -436,6 +439,15 @@ export function SuggestionDetailModal({
                           <span className="text-[10px] text-muted-foreground">
                             {c.createdAt}
                           </span>
+                          {onDeleteComment && (
+                            <button
+                              type="button"
+                              className="ml-auto text-[10px] text-muted-foreground hover:text-destructive"
+                              onClick={() => onDeleteComment(suggestion.id, c.id)}
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {c.message}

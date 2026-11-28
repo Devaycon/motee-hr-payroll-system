@@ -3,6 +3,44 @@
 import { Heart } from "lucide-react";
 import { HeroRingCard, chartColor } from "@/src/components/shared/charts";
 import { ENGAGEMENT_TREND_DATA } from "@/src/components/hr/surveys/data";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetEngagementTrendQuery, useGetSurveySummaryQuery } from "@/src/store/services/surveys";
+import { useGetKudosSummaryQuery } from "@/src/store/services/kudos";
+
+interface Score {
+  key: string;
+  label: string;
+  value: number;
+}
+
+/**
+ * Signed in: the latest month of GET /surveys/engagement-trend (company score
+ * and every department with a score), plus the response and kudos counts
+ * from /surveys/summary and /kudos/summary for the summary text.
+ */
+function useLiveEngagement(live: boolean) {
+  const trend = useGetEngagementTrendQuery({ months: 12 }, { skip: !live });
+  const surveys = useGetSurveySummaryQuery(undefined, { skip: !live });
+  const kudos = useGetKudosSummaryQuery(undefined, { skip: !live });
+  const points = trend.data?.data ?? [];
+  const latest = [...points].reverse().find((p) => p.companyWide != null);
+  const departments: Score[] = (latest?.byDepartment ?? [])
+    .filter((d) => d.engagementScore != null)
+    .map((d) => ({
+      key: d.departmentId ?? d.departmentName,
+      label: d.departmentName,
+      value: Math.round(d.engagementScore!),
+    }));
+  const company = latest?.companyWide ?? surveys.data?.data?.engagementScore ?? null;
+  return {
+    loading: trend.isLoading,
+    company: company == null ? null : Math.round(company),
+    departments,
+    responses: surveys.data?.data?.totalResponses,
+    kudosThisMonth: kudos.data?.data?.thisMonth,
+  };
+}
 
 /** "a, b and c" — no Oxford comma; matches the other dashboard summary generators. */
 function joinAnd(parts: string[]): string {
@@ -34,17 +72,20 @@ const SHOWN = 3;
  * names a department that isn't on screen.
  */
 export function EngagementHeroRing() {
-  const latest = ENGAGEMENT_TREND_DATA[ENGAGEMENT_TREND_DATA.length - 1];
-  if (!latest) return null;
+  const live = useIsLive();
+  const server = useLiveEngagement(live);
+  if (live && server.loading) return <Skeleton className="h-64 w-full rounded-xl" />;
 
-  const deptKeys = Object.keys(DEPT_LABELS) as DeptKey[];
-  const segments = deptKeys.map((key, i) => ({
-    key,
-    label: DEPT_LABELS[key],
-    value: latest[key],
-    color: chartColor(i),
-    total: 100,
-  }));
+  const latest = ENGAGEMENT_TREND_DATA[ENGAGEMENT_TREND_DATA.length - 1];
+  const scores: Score[] = live
+    ? server.departments
+    : latest
+      ? (Object.keys(DEPT_LABELS) as DeptKey[]).map((key) => ({ key, label: DEPT_LABELS[key], value: latest[key] }))
+      : [];
+  const companyWide = live ? server.company : latest?.companyWide ?? null;
+  if (companyWide == null || scores.length === 0) return null;
+
+  const segments = scores.map((s, i) => ({ ...s, color: chartColor(i), total: 100 }));
 
   const shown = [...segments].sort((a, b) => b.value - a.value).slice(0, SHOWN);
   const [top, ...rest] = shown;
@@ -53,10 +94,13 @@ export function EngagementHeroRing() {
   // Plain sentences rather than "leads / ahead of" competitive framing
   // (client feedback: read like a report, not a ranking).
   const summaryLines = [
-    `The latest employee engagement survey shows a company-wide score of ${latest.companyWide}/100.`,
+    `The latest employee engagement survey shows a company-wide score of ${companyWide}/100.`,
     rest.length > 0
       ? `${top.label} recorded the highest departmental score at ${top.value}, followed by ${namedRest}.`
       : `${top.label} recorded the highest departmental score at ${top.value}.`,
+    ...(live && server.responses != null && server.kudosThisMonth != null
+      ? [`Surveys have ${server.responses} responses so far, and ${server.kudosThisMonth} kudos were given this month.`]
+      : []),
   ];
 
   return (

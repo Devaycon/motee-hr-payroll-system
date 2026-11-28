@@ -1,6 +1,8 @@
 "use client";
 
 import { useWorkflowsLive } from "@/src/lib/workflows/use-workflows-live";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetWorkflowSummaryQuery } from "@/src/store/services/workflows";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -39,6 +41,7 @@ export function WorkflowsHub() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const workflows = useAppSelector((s) => s.workflows.workflows);
+  const wfSummary = useGetWorkflowSummaryQuery(undefined, { skip: !useIsLive() }).data?.data;
   const roles = useAppSelector((s) => s.locale.data?.roles ?? []);
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
   const departments = useAppSelector((s) => s.locale.data?.departments ?? []);
@@ -93,6 +96,22 @@ export function WorkflowsHub() {
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-end gap-2">
+        {/* Signed in: the server's counts (GET /workflows/summary). */}
+        {wfSummary && (
+          <p className="mr-auto self-center text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">{wfSummary.active}</span> active
+            {" · "}
+            {wfSummary.draft} draft
+            {" · "}
+            <span className="font-medium text-foreground">{wfSummary.activeRuns}</span> runs in progress
+            {wfSummary.overdueTasks > 0 && (
+              <span className="text-destructive"> · {wfSummary.overdueTasks} overdue tasks</span>
+            )}
+            {wfSummary.tasksWithNoOwner > 0 && (
+              <span className="text-amber-600"> · {wfSummary.tasksWithNoOwner} tasks with no owner</span>
+            )}
+          </p>
+        )}
         {workflows.length > 0 && (
           <Button
             variant="ghost"

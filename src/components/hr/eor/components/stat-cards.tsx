@@ -5,6 +5,8 @@ import { HrStatCardsGrid } from "@/src/components/shared/hr-stat-card";
 import type { HrStatCardItem } from "@/src/components/shared/hr-stat-card";
 import type { EorWorker, EorProvider } from "../types";
 import { formatUsd } from "../data";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetEorSummaryQuery } from "@/src/store/services/eor";
 
 /** The slice a KPI card drills into. */
 export type EorCardFilter = "all" | "active_workers" | "active_providers";
@@ -55,17 +57,22 @@ export function StatCards({
   const activeProviders = providers.filter((p) =>
     matchesProviderCardFilter(p, "active_providers"),
   );
-  const countries = new Set(workers.map((w) => w.country));
-  const monthlySpend = activeWorkers.reduce(
-    (sum, w) => sum + w.monthlyCostUsd,
-    0,
-  );
+  // Signed in: the server's figures (GET /eor/summary) — including the
+  // monthly cost converted to USD at its own rates.
+  const server = useGetEorSummaryQuery(undefined, { skip: !useIsLive() }).data?.data;
+  const countryCount = server?.countries ?? new Set(workers.map((w) => w.country)).size;
+  const monthlySpend =
+    server?.monthlyCostUsd ??
+    activeWorkers.reduce((sum, w) => sum + w.monthlyCostUsd, 0);
+  const workerCount = server?.workers ?? activeWorkers.length;
+  const activeProviderCount = server?.activeProviders ?? activeProviders.length;
+  const providerCount = server?.providers ?? providers.length;
 
   const stats: HrStatCardItem[] = [
     {
       icon: Users,
       label: "EOR Workers",
-      value: activeWorkers.length,
+      value: workerCount,
       sub: "engaged via providers",
       tone: "blue",
       active: cardFilter === "active_workers",
@@ -74,8 +81,8 @@ export function StatCards({
     {
       icon: Building2,
       label: "Active Providers",
-      value: activeProviders.length,
-      sub: `of ${providers.length} partners`,
+      value: activeProviderCount,
+      sub: `of ${providerCount} partners`,
       tone: "violet",
       active: cardFilter === "active_providers",
       onClick: () => onDrillDown("providers", "active_providers"),
@@ -85,7 +92,7 @@ export function StatCards({
       // the country column lives, so this opens the unfiltered list.
       icon: Globe2,
       label: "Countries",
-      value: countries.size,
+      value: countryCount,
       sub: "of engagement",
       tone: "emerald",
       active: activeTab === "workers" && cardFilter === "all",

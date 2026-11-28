@@ -182,7 +182,7 @@ export function runFromApi(dto: RunDto): WorkflowRun {
           assignee:
             t.assigneeKind === "employee" && t.assigneeEmployeeId
               ? { kind: "employee", employeeId: t.assigneeEmployeeId }
-              : { kind: "role", roleId: "" },
+              : { kind: "role", roleId: t.assigneeAccessLevelId ?? "" },
           assigneeEmployeeId: t.assigneeEmployeeId ?? null,
           assigneeName: t.assigneeName,
           reviewer: t.hasReviewer ? { kind: "role", roleId: "" } : null,

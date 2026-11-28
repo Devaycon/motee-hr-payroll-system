@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Star, Trash2, UserPlus } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -33,6 +33,10 @@ interface SchedulesTableProps {
   onEdit: (schedule: WorkSchedule) => void;
   onDelete: (id: string) => void;
   onAddSchedule: () => void;
+  /** Signed in: make this the pattern new starters get. */
+  onSetDefault?: (schedule: WorkSchedule) => void;
+  /** Signed in: put employees on this pattern. */
+  onAssign?: (schedule: WorkSchedule) => void;
 }
 
 function computeDailyHours(
@@ -51,6 +55,8 @@ export function SchedulesTable({
   onEdit,
   onDelete,
   onAddSchedule,
+  onSetDefault,
+  onAssign,
 }: SchedulesTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -60,7 +66,14 @@ export function SchedulesTable({
         accessorKey: "name",
         header: sortableHeader("Work Pattern Name"),
         cell: ({ row }) => (
-          <span className="text-xs font-medium">{row.original.name}</span>
+          <span className="text-xs font-medium">
+            {row.original.name}
+            {row.original.isDefault && (
+              <span className="ml-1.5 rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600">
+                Default
+              </span>
+            )}
+          </span>
         ),
       },
       {
@@ -135,6 +148,18 @@ export function SchedulesTable({
               <Pencil className="w-3.5 h-3.5" />
               Edit
             </DropdownMenuItem>
+            {onAssign && (
+              <DropdownMenuItem className="text-xs gap-2" onClick={() => onAssign(schedule)}>
+                <UserPlus className="w-3.5 h-3.5" />
+                Assign to employees
+              </DropdownMenuItem>
+            )}
+            {onSetDefault && !schedule.isDefault && (
+              <DropdownMenuItem className="text-xs gap-2" onClick={() => onSetDefault(schedule)}>
+                <Star className="w-3.5 h-3.5" />
+                Set as default
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-xs gap-2 text-destructive focus:text-destructive"
@@ -147,7 +172,7 @@ export function SchedulesTable({
         </DropdownMenu>
       )),
     ],
-    [onEdit],
+    [onEdit, onAssign, onSetDefault],
   );
 
   return (

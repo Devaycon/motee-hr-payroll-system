@@ -4,13 +4,15 @@ import { useCallback, useMemo, useState } from "react";
 import { addYears, endOfYear, format, startOfYear } from "date-fns";
 import { toast } from "sonner";
 import { useUnscopedLocaleSection } from "@/src/lib/hooks/use-locale-data";
-import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import type { LocaleEmployee, LocaleWorkPattern } from "@/src/lib/types/locale";
 import { getApiErrorMessage } from "@/src/lib/utils";
 import {
   useCreateCalendarEventMutation,
   useDeleteCalendarEventMutation,
   useGetCalendarQuery,
+  useUpdateCalendarEventMutation,
+  calendarApi,
 } from "@/src/store/services/calendar";
 import type {
   CalendarCategory,
@@ -192,6 +194,8 @@ export function useCalendarData() {
   const calendar = useGetCalendarQuery(range, { skip: !live });
   const [createEvent] = useCreateCalendarEventMutation();
   const [deleteEvent] = useDeleteCalendarEventMutation();
+  const [updateEvent] = useUpdateCalendarEventMutation();
+  const dispatch = useAppDispatch();
   const liveItems = useMemo(
     () => (calendar.data?.data ?? []).map(toCalItem),
     [calendar.data],
@@ -370,6 +374,40 @@ export function useCalendarData() {
       }
       company.save([...company.events, { ...item, id: newId("ce") }]);
     },
+    /** Signed in only: the event is read (GET /calendar/events/{id}) and saved
+     *  with the edited fields (PUT /calendar/events/{id}); who it's for stays. */
+    update: live
+      ? async (
+          item: CalItem,
+          patch: { title: string; date: string; allDay: boolean; startTime?: string; endTime?: string; description?: string },
+        ) => {
+          const read = dispatch(calendarApi.endpoints.getCalendarEvent.initiate(item.id, { forceRefetch: true }));
+          try {
+            const ev = (await read.unwrap()).data;
+            await updateEvent({
+              id: item.id,
+              body: {
+                title: patch.title,
+                description: patch.description || null,
+                date: patch.date,
+                endDate: ev.endDate && ev.endDate > patch.date ? ev.endDate : null,
+                allDay: patch.allDay,
+                startTime: patch.allDay ? null : (patch.startTime ?? null),
+                endTime: patch.allDay ? null : (patch.endTime ?? null),
+                category: ev.category,
+                audience: ev.audience,
+                employeeIds: ev.attendees.map((a) => a.employeeId),
+              },
+            }).unwrap();
+            return true;
+          } catch (err) {
+            toast.error(getApiErrorMessage(err, "Could not save the event."));
+            return false;
+          } finally {
+            read.unsubscribe();
+          }
+        }
+      : undefined,
     remove: (item: CalItem) => {
       if (live) {
         if (item.deletable) {

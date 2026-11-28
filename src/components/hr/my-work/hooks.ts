@@ -1,6 +1,8 @@
 "use client";
 
 import { useWorkflowsLive } from "@/src/lib/workflows/use-workflows-live";
+import { useGetMyWorkflowWorkQuery } from "@/src/store/services/workflow-runs";
+import type { WorkItemDto } from "@/src/types/workflow-runs";
 
 import { useMemo } from "react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
@@ -88,6 +90,11 @@ export function useMyWork(): MyWork {
   const requests = useAppSelector((s) => s.approvals.requests);
   const country = useAppSelector((s) => s.locale.country);
   const runs = useAppSelector((s) => s.workflowRuns.byCountry[country]);
+  // Signed in, the server says which tasks are yours (GET /workflow-runs/my-work)
+  // — it knows role-based assignment and delegation, which the local
+  // selectors can only guess at.
+  const myWork = useGetMyWorkflowWorkQuery(undefined, { skip: !live });
+  const serverWork = live ? myWork.data?.data : undefined;
 
   return useMemo(() => {
     const approvals: WorkItem[] = (live ? [] : requests)
@@ -104,15 +111,28 @@ export function useMyWork(): MyWork {
         href: `/hr-action-center/submissions/${request.id}`,
       }));
 
-    const mine = selectMyRunTasks(runs ?? [], employeeId).map(({ run, task }) =>
-      fromRunTask("task", run, task),
-    );
-    const review = selectMyReviewTasks(runs ?? [], employeeId).map(
-      ({ run, task }) => fromRunTask("review", run, task),
-    );
-    const others = selectOthersRunTasks(runs ?? [], employeeId).map(
-      ({ run, task }) => fromRunTask("task", run, task),
-    );
+    const fromServer = (kind: "task" | "review", items: WorkItemDto[]) =>
+      items.flatMap((w) => {
+        const run = (runs ?? []).find((r) => r.id === w.runId);
+        const task = run?.tasks.find((t) => t.id === w.taskId);
+        return run && task ? [fromRunTask(kind, run, task)] : [];
+      });
+
+    const mine = serverWork
+      ? fromServer("task", serverWork.todo)
+      : selectMyRunTasks(runs ?? [], employeeId).map(({ run, task }) =>
+          fromRunTask("task", run, task),
+        );
+    const review = serverWork
+      ? fromServer("review", serverWork.review)
+      : selectMyReviewTasks(runs ?? [], employeeId).map(({ run, task }) =>
+          fromRunTask("review", run, task),
+        );
+    const others = serverWork
+      ? fromServer("task", serverWork.others)
+      : selectOthersRunTasks(runs ?? [], employeeId).map(({ run, task }) =>
+          fromRunTask("task", run, task),
+        );
 
     // Overdue first, then the most urgent, then the longest waiting - the top
     // of the list should always be the thing to do next.
@@ -127,5 +147,5 @@ export function useMyWork(): MyWork {
       others: others.sort(order),
       employeeId,
     };
-  }, [live, requests, runs, employeeId, roleId]);
+  }, [live, requests, runs, employeeId, roleId, serverWork]);
 }

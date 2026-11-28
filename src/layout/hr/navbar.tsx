@@ -24,15 +24,21 @@ import { useAppDispatch } from "@/src/lib/stores/hooks";
 import { NotificationsPanel } from "@/src/components/shared/notifications-panel";
 import { ScreenShareModal } from "@/src/components/shared/screen-share-modal";
 import { SendKudosModal } from "@/src/components/hr/kudos/components/send-kudos-modal";
+import { useKudosActions } from "@/src/components/hr/kudos/hooks";
 import type { NewKudos } from "@/src/components/hr/kudos/types";
 import { PersonAvatar } from "@/src/components/shared/person-avatar";
 import { NotIntegrated } from "@/src/components/shared/not-integrated";
 import { useLogout } from "@/src/lib/auth/session";
 import { PortalModeToggle } from "@/src/components/shared/portal-mode-toggle";
+import { useNotificationFeed } from "@/src/lib/notifications/use-notification-feed";
+import { useIsLive } from "@/src/lib/live/use-is-live";
 import {
   useCurrentUser,
   DEMO_IDENTITY_PLACEHOLDER,
 } from "@/src/lib/auth/demo-identity";
+
+/** The navbar only sends kudos; it needs no feed to pin or react against. */
+const NO_POSTS: never[] = [];
 
 const formatDate = (date: Date) =>
   date.toLocaleDateString("en-GB", {
@@ -57,6 +63,10 @@ const Navbar = () => {
   const [notifOpen, setNotifOpen] = useState(false);
   const [screenShareOpen, setScreenShareOpen] = useState(false);
   const [kudosOpen, setKudosOpen] = useState(false);
+  const live = useIsLive();
+  const { unreadCount } = useNotificationFeed();
+  // Signed out, the approved demo badge; signed in, the real unread count.
+  const bellBadge = live ? unreadCount : 8;
   // Same resolution as the self-service navbar, so switching portals never
   // looks like it switched who you are.
   const user = useCurrentUser();
@@ -64,7 +74,15 @@ const Navbar = () => {
   const adminInitials = user?.initials ?? DEMO_IDENTITY_PLACEHOLDER.initials;
   const adminSubtitle = user?.roleName ?? DEMO_IDENTITY_PLACEHOLDER.jobTitle;
 
-  function handleSendKudos(data: NewKudos) {
+  // Signed in, sent exactly as the Kudos page sends it (POST /kudos); the
+  // modal stays open if the server refuses it.
+  const { send: sendKudos } = useKudosActions(NO_POSTS);
+
+  async function handleSendKudos(data: NewKudos) {
+    if (live) {
+      if (await sendKudos(data)) setKudosOpen(false);
+      return;
+    }
     toast.success(`Kudos sent to ${data.recipientName}! 🌟`);
     setKudosOpen(false);
   }
@@ -78,15 +96,15 @@ const Navbar = () => {
     <>
       <header className="sticky top-0 z-20 flex h-18 items-center justify-between bg-sidebar border-b border-border px-6">
         <div className="flex items-center gap-3 flex-1 max-w-xs">
+          {/* Held until the backend ships a global search endpoint (GET /search). */}
           <NotIntegrated label="Search" className="w-full">
             <GlobalSearch />
           </NotIntegrated>
         </div>
 
         <div className="flex items-center gap-3">
-          <NotIntegrated inline label="Self-service">
-            <PortalModeToggle />
-          </NotIntegrated>
+          {/* Live: the self-service portal has been on the API since 2026-11-25. */}
+          <PortalModeToggle />
 
           <div className="flex items-center gap-3 bg-background border border-border rounded-lg px-3 py-2.5">
             <span className="flex items-center gap-2">
@@ -107,11 +125,9 @@ const Navbar = () => {
             <ThemeToggle />
           </span>
 
-          <NotIntegrated
-            inline
-            label="Kudos, chat, screen share and notifications"
-          >
           <div className="flex items-center gap-3 border py-1 rounded-lg px-2 bg-card">
+            {/* Kudos (POST /kudos) and the bell (GET /notifications) are live;
+                chat and screen share have no endpoints yet. */}
             <button
               data-tutorial="kudos"
               title="Send kudos"
@@ -120,6 +136,8 @@ const Navbar = () => {
             >
               <Award size={16} />
             </button>
+
+            <NotIntegrated inline label="Chat">
 
             <button
               data-tutorial="chat"
@@ -131,6 +149,9 @@ const Navbar = () => {
                 4
               </span>
             </button>
+            </NotIntegrated>
+
+            <NotIntegrated inline label="Screen share">
 
             <button
               data-tutorial="screenshare"
@@ -139,6 +160,7 @@ const Navbar = () => {
             >
               <Monitor size={16} />
             </button>
+            </NotIntegrated>
 
             <button
               data-tutorial="notifications"
@@ -146,12 +168,13 @@ const Navbar = () => {
               className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-background border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               <Bell size={16} />
-              <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-white">
-                8
-              </span>
+              {bellBadge > 0 && (
+                <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-white">
+                  {bellBadge > 99 ? "99+" : bellBadge}
+                </span>
+              )}
             </button>
           </div>
-          </NotIntegrated>
 
           <Popover>
             <PopoverTrigger asChild>
@@ -178,7 +201,6 @@ const Navbar = () => {
               </div>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-44 p-1.5">
-              <NotIntegrated label="Company Profile">
               <button
                 onClick={() => router.push("/organization/company")}
                 className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
@@ -186,7 +208,6 @@ const Navbar = () => {
                 <User size={14} />
                Company Profile
               </button>
-              </NotIntegrated>
               <button
                 onClick={logout}
                 className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"

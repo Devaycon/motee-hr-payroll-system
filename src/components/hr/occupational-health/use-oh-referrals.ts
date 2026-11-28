@@ -36,6 +36,6 @@ export function useOHReferrals(): MergedReferral[] {
       const e = edits[r.id] ?? {};
       return { ...r, ...e, linkedSicknessIds: linked(r.id, e.linkedSicknessIds) };
     });
-    return [...own.map((r) => ({ ...r, linkedSicknessIds: linked(r.id) })), ...demo];
+    return [...own.map((r) => ({ ...r, linkedSicknessIds: linked(r.id, r.linkedSicknessIds) })), ...demo];
   }, [live, edits, own, records]);
 }

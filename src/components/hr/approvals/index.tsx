@@ -43,6 +43,12 @@ import { ApprovalChainsTab } from "./components/chains-tab";
 import { MyDelegationPanel } from "./components/my-delegation-panel";
 import { currentApproverName, isCurrentApprover, isSubmitter } from "./utils";
 import { useDemoApprovalSeed } from "./use-demo-seed";
+import { useLiveApprovals } from "./use-live-approvals";
+import { isServerId } from "@/src/lib/live/use-is-live";
+import {
+  NotIntegrated,
+  notifyNotIntegrated,
+} from "@/src/components/shared/not-integrated";
 import { useCan } from "@/src/lib/permissions/use-can";
 
 /** The slice a KPI card drills the submission queues down to. */
@@ -105,8 +111,17 @@ export function ApprovalsPage({
   basePath = "/hr-action-center/submissions",
 }: ApprovalsPageProps) {
   const seeding = useDemoApprovalSeed();
+  // Signed in: the server's approvals (GET /approvals for HR, /approvals/mine
+  // for self-service, plus /approvals/my-queue), mirrored into the slice.
+  // Demo requests other modules seed are left out of the live view.
+  const liveApprovals = useLiveApprovals(variant);
+  const live = liveApprovals.live;
   const user = useAppSelector((s) => s.auth.user);
-  const requests = useAppSelector((s) => s.approvals.requests);
+  const allRequests = useAppSelector((s) => s.approvals.requests);
+  const requests = useMemo(
+    () => (live ? allRequests.filter((r) => isServerId(r.id)) : allRequests),
+    [live, allRequests],
+  );
   const canSubmit = useCan("submissions.queue", "create");
   // Creating, editing and activating approval chains is module configuration.
   const canAdminister = useCan("submissions.queue", "administer");
@@ -114,7 +129,9 @@ export function ApprovalsPage({
   // Only while genuinely empty — once anything is seeded (or this isn't the
   // first mount of the session), never re-show the skeleton on top of data
   // that's already there.
-  const showSkeleton = seeding && requests.length === 0;
+  const showSkeleton = live
+    ? liveApprovals.loading && requests.length === 0
+    : seeding && requests.length === 0;
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<ApprovalDocumentType | "all">(
@@ -379,12 +396,22 @@ export function ApprovalsPage({
         <div className="mt-1 flex items-center gap-2">
           {/* §4.1 mechanism 1 — self-service delegation, open to anyone who
               might be an approver, not gated behind canSubmit/canManage. */}
-          <Button variant="outline" className="gap-1.5" onClick={() => setDelegationOpen(true)}>
+          <Button
+            variant="outline"
+            className="gap-1.5"
+            onClick={() =>
+              live ? notifyNotIntegrated("My Delegation") : setDelegationOpen(true)
+            }
+          >
             <UserCog className="w-4 h-4" />
             My Delegation
           </Button>
           {canSubmit && (
-            <Button className="gap-1.5" onClick={() => setIntakeOpen(true)}>
+            <Button
+              className="gap-1.5"
+              // Signed in, raised through POST /approvals.
+              onClick={() => setIntakeOpen(true)}
+            >
               <Plus className="w-4 h-4" />
               New Submission
             </Button>
@@ -661,7 +688,15 @@ export function ApprovalsPage({
 
         {variant === "hr" && (
           <TabsContent value="chains" className="mt-5">
-            <ApprovalChainsTab canManage={canAdminister} />
+            {live ? (
+              // The chain builder runs on the demo engine; templates on the API
+              // have a different shape and no screen of their own yet.
+              <NotIntegrated label="Approval Chains">
+                <ApprovalChainsTab canManage={canAdminister} />
+              </NotIntegrated>
+            ) : (
+              <ApprovalChainsTab canManage={canAdminister} />
+            )}
           </TabsContent>
         )}
       </Tabs>

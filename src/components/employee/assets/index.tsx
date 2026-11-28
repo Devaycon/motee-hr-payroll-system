@@ -8,26 +8,24 @@ import type { Asset } from "@/src/lib/types/assets";
 import { MY_EMPLOYEE } from "./components/constants";
 import { AssetCard } from "./components/asset-card";
 import { AssetPreviewModal } from "./components/asset-preview-modal";
-import { useAssets } from "@/src/components/hr/assets/hooks";
+import { useAssets, useMyAssets } from "@/src/components/hr/assets/hooks";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { useIsLive } from "@/src/lib/live/use-is-live";
 
 export function MyAssetsPage() {
-  const { data: localeAssets } = useAssets();
-  const employeeName = useAppSelector((s) => s.auth.user?.name);
   const live = useIsLive();
+  // Signed in: GET /assets/mine. Signed out: the demo register, filtered.
+  const { data: localeAssets } = useAssets({ skip: live });
+  const { data: liveAssets } = useMyAssets({ skip: !live });
+  const employeeName = useAppSelector((s) => s.auth.user?.name);
   const MY_ASSETS = useMemo(() => {
-    // Signed in: only what the asset register has assigned to you (there is
-    // no self-service assets endpoint, so the register is filtered).
-    if (live) {
-      return (localeAssets ?? []).filter((a) => a.assignedTo === employeeName);
-    }
+    if (live) return liveAssets ?? [];
     if (localeAssets && employeeName) {
       const own = localeAssets.filter((a) => a.assignedTo === employeeName);
       if (own.length) return own;
     }
     return ASSETS.filter((a) => a.assignedTo === MY_EMPLOYEE);
-  }, [live, localeAssets, employeeName]);
+  }, [live, liveAssets, localeAssets, employeeName]);
   const [search, setSearch] = useState("");
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
 

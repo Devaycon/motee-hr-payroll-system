@@ -23,10 +23,10 @@ import { EmployeeDocumentsTab } from "./components/employee-documents-tab";
 import { MyDocumentsTab } from "./components/my-documents-tab";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
-import {
-  NotIntegrated,
-  notifyNotIntegrated,
-} from "@/src/components/shared/not-integrated";
+import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetDocumentReviewsQuery } from "@/src/store/services/documents";
+import { PromptDialog, type PromptRequest } from "@/src/components/shared/prompt-dialog";
 import { useAppSelector, useAppDispatch } from "@/src/lib/stores/hooks";
 import { dequeueSignedDocument } from "@/src/lib/stores/docu-sign-slice";
 import type { HRDocument, Folder, NewDocument, NewShare } from "./types";
@@ -68,9 +68,12 @@ export function DocumentsPage() {
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
   const signedQueue = useAppSelector((s) => s.docuSign.queue);
   const selfServiceSubmissions = useAppSelector((s) => s.myDocuments.submissions);
-  const pendingSelfServiceCount = selfServiceSubmissions.filter(
-    (s) => s.status === "awaiting_review",
-  ).length;
+  const live = useIsLive();
+  const [prompt, setPrompt] = useState<PromptRequest | null>(null);
+  const reviewQueue = useGetDocumentReviewsQuery({ PageSize: 1 }, { skip: !live });
+  const pendingSelfServiceCount = live
+    ? (reviewQueue.data?.data.totalItems ?? 0)
+    : selfServiceSubmissions.filter((s) => s.status === "awaiting_review").length;
   const [activeArea, setActiveArea] = useState("company");
 
   const documents = useMemo(() => data?.documents ?? [], [data]);
@@ -313,6 +316,33 @@ export function DocumentsPage() {
                 documents.filter((d) => !d.isTrashed && d.shares.length > 0).length
               }
               trashCount={documents.filter((d) => d.isTrashed === true).length}
+              onRenameFolder={
+                live
+                  ? (f) =>
+                      setPrompt({
+                        title: "Rename folder",
+                        inputLabel: "Folder name",
+                        initialValue: f.name,
+                        onConfirm: (name) => actions.renameFolder(f.id, name),
+                      })
+                  : undefined
+              }
+              onDeleteFolder={
+                live
+                  ? (f) =>
+                      setPrompt({
+                        title: `Delete "${f.name}"?`,
+                        description: "The folder is removed. Documents inside it may be moved or removed by the server.",
+                        confirmLabel: "Delete folder",
+                        destructive: true,
+                        onConfirm: async () => {
+                          const ok = await actions.deleteFolder(f.id);
+                          if (ok && selectedFolderId === f.id) setSelectedFolderId(null);
+                          return ok;
+                        },
+                      })
+                  : undefined
+              }
             />
             <DocumentGrid
               documents={filteredDocuments}
@@ -344,10 +374,7 @@ export function DocumentsPage() {
         </TabsContent>
 
         <TabsContent value="my-documents" className="mt-4">
-          {/* The self-service review queue has no endpoint yet. */}
-          <NotIntegrated label="Self-service document review">
-            <MyDocumentsTab onApprove={() => {}} />
-          </NotIntegrated>
+          <MyDocumentsTab onApprove={() => {}} />
         </TabsContent>
 
         <TabsContent value="archive" className="mt-4">
@@ -392,7 +419,10 @@ export function DocumentsPage() {
         folders={folders}
         onShare={handleShareDocument}
         onArchive={handleArchive}
+        onUpdateDetails={live ? (doc, patch) => actions.updateDetails(doc.id, patch) : undefined}
+        onAddVersion={live ? (doc, file, notes) => actions.addVersion(doc.id, file, notes) : undefined}
       />
+      <PromptDialog request={prompt} onClose={() => setPrompt(null)} />
 
       <ShareModal
         open={shareModalOpen}

@@ -30,6 +30,8 @@ type VerificationDocProps = {
   /** Receives the picked file itself (the API uploads it on submit). */
   onUpload?: (file: File | null) => void;
   history: VerificationHistoryEntry[];
+  /** Signed in: take a submitted document back out of review. */
+  onWithdraw?: () => void;
 };
 
 function VerificationDocCard({
@@ -44,6 +46,7 @@ function VerificationDocCard({
   setFile,
   onUpload,
   history,
+  onWithdraw,
 }: VerificationDocProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -197,6 +200,16 @@ function VerificationDocCard({
           <Upload className="w-3.5 h-3.5" />
           {status === "Verified" ? "Verified" : "Submit for Verification"}
         </Button>
+        {onWithdraw && (status === "Submitted" || status === "Under Review") && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-full text-xs text-muted-foreground"
+            onClick={onWithdraw}
+          >
+            Withdraw submission
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
@@ -225,6 +238,8 @@ type VerificationTabProps = {
   setTinFile: (v: string | null) => void;
   onTinUpload?: (file: File | null) => void;
   tinHistory: VerificationHistoryEntry[];
+  onCacWithdraw?: () => void;
+  onTinWithdraw?: () => void;
 };
 
 export function VerificationTab({
@@ -250,6 +265,8 @@ export function VerificationTab({
   setTinFile,
   onTinUpload,
   tinHistory,
+  onCacWithdraw,
+  onTinWithdraw,
 }: VerificationTabProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -265,6 +282,7 @@ export function VerificationTab({
         setFile={setCacFile}
         onUpload={onCacUpload}
         history={cacHistory}
+        onWithdraw={onCacWithdraw}
       />
       <VerificationDocCard
         label={tinLabel}
@@ -278,6 +296,7 @@ export function VerificationTab({
         setFile={setTinFile}
         onUpload={onTinUpload}
         history={tinHistory}
+        onWithdraw={onTinWithdraw}
       />
     </div>
   );

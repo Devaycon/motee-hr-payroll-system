@@ -26,6 +26,11 @@ import {
   type OHStatus,
 } from "@/src/lib/types/occupational-health";
 import { OH_REFERRAL_THRESHOLD_DAYS } from "@/src/data/occupational-health-demo";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import {
+  useGetOhCandidatesQuery,
+  useGetOhSummaryQuery,
+} from "@/src/store/services/occupational-health";
 import { useOHReferrals } from "./use-oh-referrals";
 import { daysSince, fmt, isOverdue, OH_TABS, matchesTab, type OHTabValue, useCanViewConfidentialOH } from "./lib";
 
@@ -158,6 +163,7 @@ export function OccupationalHealthPage() {
   const DEPARTMENTS = useMemo(() => Array.from(new Set(referrals.map((r) => r.department))).sort(), [referrals]);
   const OWNERS = useMemo(() => Array.from(new Set(referrals.map((r) => r.caseOwner))).sort(), [referrals]);
   const confidential = useCanViewConfidentialOH();
+  const liveOh = useIsLive();
 
   const [tab, setTab] = useState<OHTabValue>("all");
   const [search, setSearch] = useState("");
@@ -167,15 +173,19 @@ export function OccupationalHealthPage() {
   const [adjustmentsOnly, setAdjustmentsOnly] = useState(false);
   const [overdueOnly, setOverdueOnly] = useState(false);
 
-  const open = referrals.filter((r) => r.status !== "closed").length;
+  // Signed in: the server's tally (GET /occupational-health/summary).
+  const ohTally = useGetOhSummaryQuery(undefined, { skip: !liveOh }).data?.data;
+  const open = ohTally?.open ?? referrals.filter((r) => r.status !== "closed").length;
   const actionRequired = referrals.filter((r) => r.nextAction && r.status !== "closed").length;
-  const awaitingOh = referrals.filter(
-    (r) => r.status === "referred" || r.status === "assessment_completed",
-  ).length;
-  const adjustmentsToImplement = referrals.filter((r) =>
-    r.adjustments.some((a) => a.status === "agreed"),
-  ).length;
-  const reviewsDue = referrals.filter((r) => r.reviewDate && !isOverdue(r.reviewDate) && r.status !== "closed").length;
+  const awaitingOh =
+    ohTally?.awaitingProvider ??
+    referrals.filter((r) => r.status === "referred" || r.status === "assessment_completed").length;
+  const adjustmentsToImplement =
+    ohTally?.withAdjustments ??
+    referrals.filter((r) => r.adjustments.some((a) => a.status === "agreed")).length;
+  const reviewsDue =
+    ohTally?.reviewsDue ??
+    referrals.filter((r) => r.reviewDate && !isOverdue(r.reviewDate) && r.status !== "closed").length;
   const overdue = referrals.filter((r) => isOverdue(r.nextAction?.due) && r.status !== "closed").length;
 
   const filtered = useMemo(() => {
@@ -190,6 +200,7 @@ export function OccupationalHealthPage() {
       .filter((r) => !overdueOnly || (isOverdue(r.nextAction?.due) && r.status !== "closed"));
   }, [referrals, tab, search, statusFilter, deptFilter, ownerFilter, adjustmentsOnly, overdueOnly]);
 
+  const candidatesQ = useGetOhCandidatesQuery(undefined, { skip: !liveOh || !confidential });
   return (
     <div className="flex flex-col gap-5 pb-10">
       <div className="py-6">
@@ -228,6 +239,34 @@ export function OccupationalHealthPage() {
         <Stat label="Reviews Due" value={reviewsDue} />
         <Stat label="Overdue" value={overdue} warn />
       </div>
+
+      {/* Signed in: long absences past the referral threshold with no OH case yet
+          (GET /occupational-health/candidates). Referring happens on the absence. */}
+      {(candidatesQ.data?.data.length ?? 0) > 0 && (
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3">
+          <p className="mb-2 text-xs font-semibold text-amber-700 dark:text-amber-400">
+            Suggested referrals · absent {OH_REFERRAL_THRESHOLD_DAYS}+ days with no OH case
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {candidatesQ.data!.data.map((c) => (
+              <div key={c.sicknessRecordId} className="flex items-center justify-between gap-3 text-xs">
+                <span>
+                  <span className="font-medium">{c.employeeName}</span>
+                  <span className="text-muted-foreground">
+                    {c.department ? ` · ${c.department}` : ""} · off since {fmt(c.absenceStartDate)} ({c.absenceDays} days)
+                  </span>
+                </span>
+                <Link
+                  href={`/time-payroll/sickness/records/${c.sicknessRecordId}`}
+                  className="shrink-0 font-medium text-primary hover:underline"
+                >
+                  Open absence to refer
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* §10.3 — tabs + filters, ahead of the caseload growing. */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as OHTabValue)}>

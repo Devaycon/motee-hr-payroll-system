@@ -48,7 +48,11 @@ export function ApprovalActivityLog({ request }: { request: ApprovalRequest }) {
                               ? "resubmitted"
                               : ev.type === "cancelled"
                                 ? "withdrew the submission"
-                                : "commented"}
+                                : ev.type === "skipped"
+                                  ? `skipped step ${ev.stepOrder}`
+                                  : ev.type === "reresolved"
+                                    ? "re-resolved the approvers"
+                                    : "commented"}
                   </span>
                   {ev.note && (
                     <span className="text-xs text-muted-foreground italic mt-0.5">

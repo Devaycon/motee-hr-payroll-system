@@ -6,6 +6,8 @@ import {
   type HrStatCardItem,
 } from "@/src/components/shared/hr-stat-card";
 import type { EmployeeRow } from "../types";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetEmployeeStatsQuery } from "@/src/store/services/employees";
 
 interface StatCardsProps {
   employees: EmployeeRow[];
@@ -22,11 +24,15 @@ export function StatCards({
 }: StatCardsProps) {
   // Soft-deleted rows still render on their own tab but must not inflate
   // headcount (client feedback §1.1).
-  const total = employees.filter((e) => e.status !== "deleted").length;
-  const active = employees.filter((e) => e.status === "active").length;
+  // Signed in: headcount and status counts from GET /employees/stats, which
+  // covers everyone, not just the rows loaded.
+  const server = useGetEmployeeStatsQuery(undefined, { skip: !useIsLive() }).data?.data;
+  const byStatus = (s: string) => server?.byStatus.find((x) => x.status === s)?.count ?? 0;
+  const total = server?.headcount ?? employees.filter((e) => e.status !== "deleted").length;
+  const active = server ? byStatus("active") : employees.filter((e) => e.status === "active").length;
   const onLeaveRows = employees.filter((e) => e.status === "on_leave");
-  const onLeave = onLeaveRows.length;
-  const probation = employees.filter((e) => e.status === "probation").length;
+  const onLeave = server ? byStatus("onLeave") : onLeaveRows.length;
+  const probation = server ? byStatus("probation") : employees.filter((e) => e.status === "probation").length;
 
   // Break the count down by leave type so the card says what kind (§C1).
   const byType = new Map<string, number>();

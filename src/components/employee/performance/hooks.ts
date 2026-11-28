@@ -29,11 +29,20 @@ export function useMyPerformance() {
   const demo = usePerformanceData({ scope: false });
   // Signed in: your goals and reviews from the `/mine` endpoints.
   const liveMine = useMyPerformanceLive();
-  const data = liveMine.live
-    ? liveMine.goals && liveMine.reviews
-      ? { goals: liveMine.goals, reviews: liveMine.reviews, feedback: [], feedbackRequests: [] }
-      : null
-    : demo.data;
+  const data = useMemo(
+    () =>
+      liveMine.live
+        ? liveMine.goals && liveMine.reviews
+          ? {
+              goals: liveMine.goals,
+              reviews: liveMine.reviews,
+              feedback: liveMine.feedback,
+              feedbackRequests: liveMine.feedbackRequests,
+            }
+          : null
+        : demo.data,
+    [liveMine, demo.data],
+  );
   const loading = liveMine.live ? !data : demo.loading;
 
   const mine = useMemo(() => {
@@ -93,5 +102,5 @@ export function useMyPerformance() {
       .map(toColleague);
   }, [directory, me]);
 
-  return { employeeId, me, data: mine, colleagues, loading };
+  return { employeeId, me, data: mine, colleagues, loading, awaitingMe: liveMine.awaitingMe };
 }

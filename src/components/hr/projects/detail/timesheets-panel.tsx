@@ -1,5 +1,7 @@
 "use client";
 
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetProjectTimeTallyQuery } from "@/src/store/services/projects";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Check, Plus, Trash2, X } from "lucide-react";
@@ -60,17 +62,27 @@ export function TimesheetsPanel({ project }: { project: Project }) {
     [allEntries, project.id],
   );
 
+  // Signed in: the server's totals (GET /projects/{id}/time/tally).
+  const liveTally = useGetProjectTimeTallyQuery(project.id, {
+    skip: !useIsLive() || !isServerId(project.id),
+  }).data?.data;
   const totals = useMemo(() => {
     const by = (status: TimesheetEntry["status"]) =>
       entries
         .filter((e) => e.status === status)
         .reduce((s, e) => s + e.hours, 0);
-    return {
-      approved: by("approved"),
-      submitted: by("submitted"),
-      total: entries.reduce((s, e) => s + e.hours, 0),
-    };
-  }, [entries]);
+    return liveTally
+      ? {
+          approved: liveTally.approvedHours,
+          submitted: liveTally.awaitingApprovalHours,
+          total: liveTally.totalHours,
+        }
+      : {
+          approved: by("approved"),
+          submitted: by("submitted"),
+          total: entries.reduce((s, e) => s + e.hours, 0),
+        };
+  }, [entries, liveTally]);
 
   function handleLog() {
     const allocation = project.allocations.find(

@@ -24,6 +24,19 @@ import type {
   UnshareDocumentResponse,
   UpdateDocumentRequest,
   UpdateDocumentResponse,
+  DeleteMyFolderResponse,
+  GetDocumentReviewsParams,
+  GetDocumentReviewsResponse,
+  GetMyFoldersResponse,
+  MoveDocumentRequest,
+  MyDocumentResponse,
+  MyFolderRequest,
+  MyFolderResponse,
+  RejectUploadRequest,
+  ReviewDocumentResponse,
+  ReviewUploadRequest,
+  SelfUploadRequest,
+  UploadMyDocumentResponse,
 } from "@/src/types/documents";
 
 const url = `${API_PREFIX}/documents`;
@@ -47,6 +60,54 @@ export const documentsApi = api.injectEndpoints({
         method: "POST",
       }),
       invalidatesTags: ["Documents"],
+    }),
+
+    // POST /documents/mine — upload your own; it waits for HR to accept it
+    uploadMyDocument: builder.mutation<UploadMyDocumentResponse, SelfUploadRequest>({
+      query: (body) => ({ url: `${url}/mine`, method: "POST", body }),
+      invalidatesTags: ["Documents", "DocumentReviews"],
+    }),
+    getMyFolders: builder.query<GetMyFoldersResponse, void>({
+      query: () => ({ url: `${url}/mine/folders`, method: "GET" }),
+      providesTags: ["DocumentFolders"],
+    }),
+    createMyFolder: builder.mutation<MyFolderResponse, MyFolderRequest>({
+      query: (body) => ({ url: `${url}/mine/folders`, method: "POST", body }),
+      invalidatesTags: ["DocumentFolders"],
+    }),
+    updateMyFolder: builder.mutation<MyFolderResponse, { id: string; body: MyFolderRequest }>({
+      query: ({ id, body }) => ({ url: `${url}/mine/folders/${id}`, method: "PUT", body }),
+      invalidatesTags: ["DocumentFolders"],
+    }),
+    deleteMyFolder: builder.mutation<DeleteMyFolderResponse, string>({
+      query: (id) => ({ url: `${url}/mine/folders/${id}`, method: "DELETE" }),
+      invalidatesTags: ["DocumentFolders", "Documents"],
+    }),
+    moveMyDocument: builder.mutation<MyDocumentResponse, { id: string; body: MoveDocumentRequest }>({
+      query: ({ id, body }) => ({ url: `${url}/mine/${id}/move`, method: "POST", body }),
+      invalidatesTags: ["Documents", "DocumentFolders"],
+    }),
+    trashMyDocument: builder.mutation<MyDocumentResponse, string>({
+      query: (id) => ({ url: `${url}/mine/${id}/trash`, method: "POST" }),
+      invalidatesTags: ["Documents", "DocumentFolders"],
+    }),
+    restoreMyDocument: builder.mutation<MyDocumentResponse, string>({
+      query: (id) => ({ url: `${url}/mine/${id}/restore`, method: "POST" }),
+      invalidatesTags: ["Documents", "DocumentFolders"],
+    }),
+
+    // ── HR review of employees' own uploads ──
+    getDocumentReviews: builder.query<GetDocumentReviewsResponse, GetDocumentReviewsParams | void>({
+      query: (params) => ({ url: `${url}/reviews`, method: "GET", params: params ?? undefined }),
+      providesTags: ["DocumentReviews"],
+    }),
+    approveDocumentReview: builder.mutation<ReviewDocumentResponse, { id: string; body?: ReviewUploadRequest }>({
+      query: ({ id, body }) => ({ url: `${url}/reviews/${id}/approve`, method: "POST", body: body ?? {} }),
+      invalidatesTags: ["DocumentReviews", "Documents", "DocumentFolders"],
+    }),
+    rejectDocumentReview: builder.mutation<ReviewDocumentResponse, { id: string; body: RejectUploadRequest }>({
+      query: ({ id, body }) => ({ url: `${url}/reviews/${id}/reject`, method: "POST", body }),
+      invalidatesTags: ["DocumentReviews", "Documents"],
     }),
 
     // ── Folders ──
@@ -219,4 +280,15 @@ export const {
   useShareDocumentMutation,
   useUnshareDocumentMutation,
   useGetDocumentAcknowledgementsQuery,
+  useUploadMyDocumentMutation,
+  useGetMyFoldersQuery,
+  useCreateMyFolderMutation,
+  useUpdateMyFolderMutation,
+  useDeleteMyFolderMutation,
+  useMoveMyDocumentMutation,
+  useTrashMyDocumentMutation,
+  useRestoreMyDocumentMutation,
+  useGetDocumentReviewsQuery,
+  useApproveDocumentReviewMutation,
+  useRejectDocumentReviewMutation,
 } = documentsApi;

@@ -15,6 +15,7 @@ import {
   BarChart3,
   SlidersHorizontal,
   Send,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/src/components/ui/input";
@@ -54,6 +55,10 @@ interface CommunityFeedProps {
   onLike: (id: string) => void;
   onComment: (id: string, message: string) => void;
   onPollVote: (postId: string, optionId: string) => void;
+  /** Signed in: edit a post's text (PUT /community/{id}). */
+  onEdit?: (post: CommunityPost) => void;
+  /** Signed in: remove a comment (DELETE /community/{id}/comments/{commentId}). */
+  onDeleteComment?: (postId: string, commentId: string) => void;
 }
 
 const CURRENT_USER = "You";
@@ -65,6 +70,8 @@ export function CommunityFeed({
   onLike,
   onComment,
   onPollVote,
+  onEdit,
+  onDeleteComment,
 }: CommunityFeedProps) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -188,6 +195,10 @@ export function CommunityFeed({
                   );
                 }}
                 onDelete={() => setDeleteId(post.id)}
+                onEdit={onEdit ? () => onEdit(post) : undefined}
+                onDeleteComment={
+                  onDeleteComment ? (commentId) => onDeleteComment(post.id, commentId) : undefined
+                }
               />
             ))}
           </div>
@@ -234,6 +245,8 @@ interface PostCardProps {
   onVote: (optionId: string) => void;
   onPin: () => void;
   onDelete: () => void;
+  onEdit?: () => void;
+  onDeleteComment?: (commentId: string) => void;
 }
 
 function PostCard({
@@ -249,6 +262,8 @@ function PostCard({
   onVote,
   onPin,
   onDelete,
+  onEdit,
+  onDeleteComment,
 }: PostCardProps) {
   const typeCfg = POST_TYPE_CONFIG[post.type];
   const hasLiked = post.likes.includes(currentUser);
@@ -310,6 +325,12 @@ function PostCard({
                   )}
                   {post.isPinned ? "Unpin Post" : "Pin Post"}
                 </DropdownMenuItem>
+                {onEdit && (
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Post
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"
@@ -431,7 +452,11 @@ function PostCard({
           {post.comments.length > 0 && (
             <div className="space-y-3">
               {post.comments.map((c: PostComment) => (
-                <CommentItem key={c.id} comment={c} />
+                <CommentItem
+                  key={c.id}
+                  comment={c}
+                  onDelete={onDeleteComment ? () => onDeleteComment(c.id) : undefined}
+                />
               ))}
             </div>
           )}
@@ -463,7 +488,7 @@ function PostCard({
   );
 }
 
-function CommentItem({ comment }: { comment: PostComment }) {
+function CommentItem({ comment, onDelete }: { comment: PostComment; onDelete?: () => void }) {
   return (
     <div className="flex gap-2.5">
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
@@ -483,8 +508,13 @@ function CommentItem({ comment }: { comment: PostComment }) {
             {comment.message}
           </p>
         </div>
-        <p className="mt-0.5 pl-1 text-[10px] text-muted-foreground">
+        <p className="mt-0.5 flex items-center gap-2 pl-1 text-[10px] text-muted-foreground">
           {formatDate(comment.createdAt)}
+          {onDelete && (
+            <button type="button" className="hover:text-destructive" onClick={onDelete}>
+              Delete
+            </button>
+          )}
         </p>
       </div>
     </div>

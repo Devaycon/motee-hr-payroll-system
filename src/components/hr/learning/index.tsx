@@ -1,6 +1,10 @@
 "use client";
 
+import { isServerId } from "@/src/lib/live/use-is-live";
+import { useGetLearningCourseQuery } from "@/src/store/services/learning";
+import { courseFromApi } from "@/src/lib/learning/api-mapping";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useLearning } from "./hooks";
 import { useLearningActions } from "@/src/lib/learning/use-learning-live";
@@ -35,6 +39,12 @@ import { MandatoryCompliancePanel } from "./components/mandatory-compliance-pane
 import { applyCollection } from "@/src/lib/profile/collection-edits";
 import { summariseCertifications } from "@/src/lib/certifications/status";
 import { mandatoryCompliance } from "@/src/lib/learning/mandatory-compliance";
+import { useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import { useGetCertificationSummaryQuery } from "@/src/store/services/certifications";
+import {
+  useGetLearningComplianceQuery,
+  useUpdateLearningEnrollmentStatusMutation,
+} from "@/src/store/services/learning";
 import type {
   Course,
   CourseQuiz,
@@ -77,20 +87,62 @@ export function LearningPage() {
       ),
     [data, collectionEdits],
   );
+  // Signed in: the certificate register's tally (GET /certifications/summary).
+  const certTally = useGetCertificationSummaryQuery(undefined, { skip: !useIsLive() }).data?.data;
   const certSummary = useMemo(() => {
     const inScope = new Set(people.map((p) => p.id));
-    return summariseCertifications(
+    const local = summariseCertifications(
       certifications.filter((c) => inScope.has(c.employeeId)),
     );
-  }, [certifications, people]);
+    return certTally
+      ? {
+          ...local,
+          total: certTally.total,
+          active: certTally.active,
+          expiringIn30: certTally.expiringInThirty,
+          expired: certTally.expired,
+          complianceRate: certTally.compliancePercent,
+        }
+      : local;
+  }, [certifications, people, certTally]);
   const mandatoryCourses = useMemo(
     () => courses.filter((c) => c.mandatory && c.status !== "archived"),
     [courses],
   );
-  const mandatory = useMemo(
-    () => mandatoryCompliance(people, mandatoryCourses, enrollments),
-    [people, mandatoryCourses, enrollments],
-  );
+  // Signed in: the server's mandatory-training tally (GET /learning/compliance).
+  const liveLearning = useIsLive();
+  const tallyQ = useGetLearningComplianceQuery(undefined, { skip: !liveLearning });
+  const [setEnrollmentStatus] = useUpdateLearningEnrollmentStatusMutation();
+  const sendLearning = useLiveSender(["Learning"]);
+  const mandatory = useMemo(() => {
+    const t = tallyQ.data?.data;
+    if (liveLearning && t) {
+      return {
+        required: t.required,
+        completed: t.completed,
+        completionRate: Math.round(t.completionPercent),
+        overdue: t.overdue.map((o) => ({
+          employeeId: o.employeeId,
+          employeeName: o.employeeName,
+          departmentName: o.departmentName ?? "",
+          courseId: o.courseId,
+          courseTitle: o.courseTitle,
+          dueDate: o.dueOn ?? null,
+        })),
+        employeesOverdue: t.peopleOverdue,
+        departments: t.departments.map((d) => ({
+          department: d.departmentName,
+          required: d.required,
+          completed: d.completed,
+          rate: Math.round(d.completionPercent),
+          overdue: d.overdue,
+          atRisk: d.atRisk,
+        })),
+        departmentsAtRisk: t.departmentsAtRisk,
+      };
+    }
+    return mandatoryCompliance(people, mandatoryCourses, enrollments);
+  }, [liveLearning, tallyQ.data, people, mandatoryCourses, enrollments]);
 
   const visibleCourses = courses.filter((c) =>
     matchesCourseCardFilter(c, cardFilter),
@@ -101,6 +153,13 @@ export function LearningPage() {
 
   const [courseModalOpen, setCourseModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  // Signed in: the course being edited is read fresh (GET /learning/courses/{id}).
+  const courseQ = useGetLearningCourseQuery(editingCourse?.id ?? "", {
+    skip: !useIsLive() || !editingCourse || !isServerId(editingCourse.id),
+  });
+  const freshCourse = courseQ.data?.data
+    ? { ...editingCourse!, ...courseFromApi(courseQ.data.data.course) }
+    : editingCourse;
 
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
 
@@ -305,6 +364,21 @@ export function LearningPage() {
             courses={courses}
             onDelete={handleDeleteEnrollment}
             onEnroll={() => setEnrollModalOpen(true)}
+            onSetStatus={
+              liveLearning
+                ? (enrollment, status) =>
+                    void sendLearning(
+                      () =>
+                        setEnrollmentStatus({
+                          enrollmentId: enrollment.id,
+                          body: {
+                            status: status.replace(/_(\w)/g, (_m, c: string) => c.toUpperCase()) as never,
+                          },
+                        }).unwrap(),
+                      "Could not change the enrollment.",
+                    ).then((ok) => ok && toast.success("Enrollment updated"))
+                : undefined
+            }
           />
         </TabsContent>
 
@@ -338,7 +412,7 @@ export function LearningPage() {
       <CourseModal
         open={courseModalOpen}
         onClose={() => setCourseModalOpen(false)}
-        editingCourse={editingCourse}
+        editingCourse={freshCourse}
         onSave={handleSaveCourse}
       />
 

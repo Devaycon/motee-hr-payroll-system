@@ -27,8 +27,8 @@ export function EmployeeDashboard() {
     year: "numeric",
   });
   const firstName = user?.name?.split(" ")[0] ?? "James";
-  // Signed in: the cards below read the API; the ones with no endpoint
-  // (day at a glance, team on leave, recent activity) stay blurred.
+  // Signed in: the cards below read the API; recent activity has no endpoint
+  // and stays blurred.
   const live = useLiveEmployeeDashboard();
   const gate = (label: string, node: React.ReactNode) =>
     live.live ? <NotIntegrated label={label}>{node}</NotIntegrated> : node;
@@ -37,7 +37,7 @@ export function EmployeeDashboard() {
     <div className="flex flex-col gap-6">
       <WelcomeBanner name={firstName} dayName={dayName} dateStr={dateStr} />
       <div className="flex flex-col gap-3">
-        {gate("Day at a glance", <StatCards />)}
+        <StatCards today={live.live ? live.today : undefined} />
         <MyProfileStats />
       </div>
 
@@ -60,7 +60,7 @@ export function EmployeeDashboard() {
 
       <div className="grid grid-cols-3 gap-4">
         <RecentKudos items={live.live ? (live.recentKudos ?? []) : undefined} />
-        {gate("Team on leave", <TeamOnLeave />)}
+        <TeamOnLeave items={live.live ? (live.teamOnLeave ?? []) : undefined} />
         {gate("Recent activity", <RecentActivity />)}
       </div>
     </div>

@@ -11,11 +11,14 @@ import { useCurrentUser } from "@/src/lib/auth/demo-identity";
 import { useAppDispatch, useAppSelector } from "@/src/lib/stores/hooks";
 import {
   markAllRead as markAllReadAction,
+  dismissNotification as dismissLocal,
   markRead as markReadAction,
 } from "@/src/lib/stores/notifications-slice";
 import {
   useGetNotificationsQuery,
+  useGetUnreadNotificationCountQuery,
   useMarkAllNotificationsReadMutation,
+  useDismissNotificationMutation,
   useMarkNotificationReadMutation,
 } from "@/src/store/services/notifications";
 import type { NotificationDto } from "@/src/types/notifications";
@@ -71,8 +74,15 @@ export function useNotificationFeed() {
     skip: !live,
     pollingInterval: 60_000,
   });
+  // The bell badge: the server's own count (it covers every page, not just
+  // the first), plus anything raised in this session.
+  const unread = useGetUnreadNotificationCountQuery(undefined, {
+    skip: !live,
+    pollingInterval: 60_000,
+  });
   const [markServerRead] = useMarkNotificationReadMutation();
   const [markServerAllRead] = useMarkAllNotificationsReadMutation();
+  const [dismissServer] = useDismissNotificationMutation();
 
   const notifications = useMemo(() => {
     // Targeted notifications reach only their recipient; untargeted ones still
@@ -89,8 +99,17 @@ export function useNotificationFeed() {
     [server.data],
   );
 
+  const localUnread = notifications.filter(
+    (n) => !n.read && !serverIds.has(n.id),
+  ).length;
+  const serverUnread = live
+    ? unread.data?.data ??
+      (server.data?.data ?? []).filter((n) => !n.read).length
+    : 0;
+
   return {
     notifications,
+    unreadCount: localUnread + serverUnread,
     markRead(id: string) {
       if (serverIds.has(id)) void markServerRead(id);
       else dispatch(markReadAction(id));
@@ -98,6 +117,11 @@ export function useNotificationFeed() {
     markAllRead() {
       dispatch(markAllReadAction());
       if (live && serverIds.size) void markServerAllRead();
+    },
+    /** Removes it from the list (POST /notifications/{id}/dismiss when it's the server's). */
+    dismiss(id: string) {
+      if (serverIds.has(id)) void dismissServer(id);
+      else dispatch(dismissLocal(id));
     },
   };
 }

@@ -1,10 +1,12 @@
 "use client";
 
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetSuggestionQuery } from "@/src/store/services/suggestions";
+import { suggestionFromApi } from "@/src/lib/engagement/api-mapping";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useSuggestions } from "./hooks";
 import { useSuggestionActions } from "@/src/lib/engagement/use-engagement";
-import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
 import { Lightbulb, Plus, ChevronUp, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
@@ -66,6 +68,13 @@ export function SuggestionsPage() {
   const [detailSuggestion, setDetailSuggestion] = useState<Suggestion | null>(
     null,
   );
+  // Signed in: the opened suggestion is read fresh (GET /suggestions/{id}).
+  const suggestionQ = useGetSuggestionQuery(detailSuggestion?.id ?? "", {
+    skip: !useIsLive() || !detailSuggestion || !isServerId(detailSuggestion.id),
+  });
+  const freshSuggestion = suggestionQ.data?.data
+    ? suggestionFromApi(suggestionQ.data.data, "You")
+    : detailSuggestion;
   const [detailOpen, setDetailOpen] = useState(false);
 
   function handleCreate(data: NewSuggestion) {
@@ -213,11 +222,7 @@ export function SuggestionsPage() {
   }
 
   function handleDelete(id: string) {
-    // The API keeps every suggestion; there is no delete endpoint.
-    if (actions.live) {
-      notifyNotIntegrated("Deleting a suggestion");
-      return;
-    }
+    void actions.remove(id);
     setSuggestions((prev) => prev.filter((s) => s.id !== id));
     if (detailOpen && detailSuggestion?.id === id) {
       setDetailOpen(false);
@@ -494,7 +499,7 @@ export function SuggestionsPage() {
       />
 
       <SuggestionDetailModal
-        suggestion={detailSuggestion}
+        suggestion={freshSuggestion}
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
         onUpdateStatus={handleUpdateStatus}
@@ -503,6 +508,18 @@ export function SuggestionsPage() {
         onSaveImplementationNotes={handleSaveImplementationNotes}
         onToggleFeatured={handleToggleFeatured}
         onAddComment={handleAddComment}
+        onDeleteComment={
+          actions.live
+            ? (id, commentId) => {
+                void actions.deleteComment(id, commentId);
+                setSuggestions((prev) =>
+                  prev.map((s) =>
+                    s.id === id ? { ...s, comments: s.comments.filter((c) => c.id !== commentId) } : s,
+                  ),
+                );
+              }
+            : undefined
+        }
       />
     </div>
   );

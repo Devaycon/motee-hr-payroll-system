@@ -175,6 +175,7 @@ export function toWorkSchedule(schedule: WorkScheduleDto): WorkSchedule {
     endTime: first ? hhmm(first.end) : "",
     breakMinutes: schedule.breakMinutes,
     assignedCount: schedule.assignedCount,
+    isDefault: schedule.isDefault,
     // The API does not date schedules.
     createdAt: "",
   };
@@ -196,4 +197,14 @@ export function scheduleToRequest(
     breakMinutes: schedule.breakMinutes,
     graceMinutes: existing?.graceMinutes,
   };
+}
+
+/** The API's attendance status in the screens' vocabulary. */
+export function attendanceStatusFromApi(status: ApiAttendanceStatus): AttendanceStatus {
+  return STATUS_FROM_API[status] ?? "not_clocked_in";
+}
+
+/** The label for where a day was worked. */
+export function workLocationLabel(day: AttendanceDayDto): string {
+  return day.locationName || LOCATION_LABEL[day.location] || "";
 }

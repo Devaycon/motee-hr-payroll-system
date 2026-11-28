@@ -12,6 +12,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
+import { Textarea } from "@/src/components/ui/textarea";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
 import {
   CheckCircle2,
@@ -20,6 +21,8 @@ import {
   FolderInput,
   PenLine,
   Printer,
+  ShieldCheck,
+  XCircle,
 } from "lucide-react";
 import {
   CONTRACT_STATUS_LABELS,
@@ -41,6 +44,12 @@ interface ContractDetailModalProps {
   onMoveToDocuments?: (contract: Contract) => void;
   hrSignature?: string;
   readOnly?: boolean;
+  /** Signed in: sign for the company (POST /contracts/{id}/sign). */
+  onCompanySign?: (contract: Contract) => Promise<boolean>;
+  /** Signed in: end the contract early (POST /contracts/{id}/terminate). */
+  onTerminate?: (contract: Contract, reason: string) => Promise<boolean>;
+  /** Signed in: add a note (POST /contracts/{id}/notes). */
+  onAddNote?: (contract: Contract, content: string) => Promise<boolean>;
 }
 
 function formatDate(date?: string) {
@@ -68,7 +77,20 @@ export function ContractDetailModal({
   onMoveToDocuments,
   hrSignature,
   readOnly = false,
+  onCompanySign,
+  onTerminate,
+  onAddNote,
 }: ContractDetailModalProps) {
+  const [noteDraft, setNoteDraft] = useState("");
+  const [terminating, setTerminating] = useState(false);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const run = async (fn: () => Promise<boolean>, after?: () => void) => {
+    setBusy(true);
+    const ok = await fn();
+    setBusy(false);
+    if (ok) after?.();
+  };
   const [prevOpen, setPrevOpen] = useState(false);
   const [prevContract, setPrevContract] = useState<Contract | null>(null);
   const [tab, setTab] = useState("details");
@@ -77,6 +99,9 @@ export function ContractDetailModal({
     setPrevOpen(open);
     setPrevContract(contract);
     if (open) setTab("details");
+    setNoteDraft("");
+    setTerminating(false);
+    setReason("");
   }
 
   if (!contract) return null;
@@ -278,6 +303,26 @@ export function ContractDetailModal({
 
           <TabsContent value="notes">
             <div className="pr-1">
+              {!readOnly && onAddNote && (
+                <div className="flex flex-col gap-2 pt-2">
+                  <Textarea
+                    value={noteDraft}
+                    onChange={(e) => setNoteDraft(e.target.value)}
+                    placeholder="Add a note to this contract…"
+                    className="min-h-16 resize-none text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    className="self-end"
+                    disabled={!noteDraft.trim() || busy}
+                    onClick={() =>
+                      void run(() => onAddNote(contract, noteDraft.trim()), () => setNoteDraft(""))
+                    }
+                  >
+                    Add Note
+                  </Button>
+                </div>
+              )}
               <div className="space-y-3 py-2">
                 {contract.notes.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">
@@ -309,8 +354,47 @@ export function ContractDetailModal({
           </TabsContent>
         </Tabs>
 
+        {terminating && onTerminate && (
+          <div className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <p className="text-xs font-medium text-destructive">
+              End this contract early? Give the reason; it is kept on the contract.
+            </p>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Reason for termination"
+              className="min-h-16 resize-none bg-background text-sm"
+            />
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="outline" onClick={() => setTerminating(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={!reason.trim() || busy}
+                onClick={() => void run(() => onTerminate(contract, reason.trim()), onClose)}
+              >
+                Terminate Contract
+              </Button>
+            </div>
+          </div>
+        )}
+
         <DialogFooter className="gap-2">
           <div className="mr-auto flex items-center gap-2">
+            {!readOnly && onTerminate && !terminating &&
+              (contract.status === "active" || contract.status === "expiring_soon") && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setTerminating(true)}
+                >
+                  <XCircle className="mr-1.5 size-4" />
+                  Terminate
+                </Button>
+              )}
             {onPreview && (
               <Button
                 variant="outline"
@@ -333,6 +417,16 @@ export function ContractDetailModal({
               </Button>
             )}
           </div>
+          {!readOnly && onCompanySign && contract.signatureStatus !== "fully_signed" && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => void run(() => onCompanySign(contract))}
+            >
+              <ShieldCheck className="mr-2 size-4" />
+              Sign for Company
+            </Button>
+          )}
           {!readOnly && contract.signatureStatus !== "fully_signed" && (
             <Button
               variant="outline"

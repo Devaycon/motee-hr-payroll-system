@@ -42,6 +42,8 @@ import type { SurveyDto } from "@/src/types/surveys";
 import type { WorkflowRowDto } from "@/src/types/workflows";
 import type { RunRowDto } from "@/src/types/workflow-runs";
 import type { ApiResponse } from "@/src/types/api";
+import type { ApprovalDto } from "@/src/types/common";
+import type { ChangeRequestDto } from "@/src/types/change-requests";
 
 /**
  * Whole-collection reads of the paged list endpoints. Each walks every page
@@ -50,6 +52,24 @@ import type { ApiResponse } from "@/src/types/api";
  */
 export const collectionsApi = api.injectEndpoints({
   endpoints: (builder) => ({
+    /** Every approval in the tenant (GET /approvals, the Submissions register). */
+    getAllApprovals: builder.query<ApprovalDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<ApprovalDto>(baseQuery, `${API_PREFIX}/approvals`, "pascal"),
+      providesTags: ["Approvals"],
+    }),
+    /** Approvals the signed-in employee raised (GET /approvals/mine). */
+    getAllMyApprovals: builder.query<ApprovalDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<ApprovalDto>(baseQuery, `${API_PREFIX}/approvals/mine`, "pascal"),
+      providesTags: ["Approvals"],
+    }),
+    /** Approvals waiting on the signed-in user (GET /approvals/my-queue). */
+    getAllMyApprovalQueue: builder.query<ApprovalDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<ApprovalDto>(baseQuery, `${API_PREFIX}/approvals/my-queue`, "pascal"),
+      providesTags: ["Approvals"],
+    }),
     getAssetInventory: builder.query<AssetDto[], void>({
       queryFn: (_arg, _api, _extraOptions, baseQuery) =>
         fetchAllPages<AssetDto>(baseQuery, `${API_PREFIX}/assets`, "camel"),
@@ -214,6 +234,12 @@ export const collectionsApi = api.injectEndpoints({
         fetchAllPages<KudosPostDto>(baseQuery, `${API_PREFIX}/kudos`, "pascal"),
       providesTags: ["Kudos"],
     }),
+    /** GET /change-requests: every profile change request in the company. */
+    getAllChangeRequests: builder.query<ChangeRequestDto[], void>({
+      queryFn: (_arg, _api, _extraOptions, baseQuery) =>
+        fetchAllPages<ChangeRequestDto>(baseQuery, `${API_PREFIX}/change-requests`, "pascal"),
+      providesTags: ["ChangeRequests"],
+    }),
     getAllLoans: builder.query<LoanDto[], void>({
       queryFn: (_arg, _api, _extraOptions, baseQuery) =>
         fetchAllPages<LoanDto>(baseQuery, `${API_PREFIX}/loans`, "pascal"),
@@ -331,6 +357,9 @@ export const collectionsApi = api.injectEndpoints({
 });
 
 export const {
+  useGetAllApprovalsQuery,
+  useGetAllMyApprovalsQuery,
+  useGetAllMyApprovalQueueQuery,
   useGetAssetInventoryQuery,
   useGetRecentAuditEntriesQuery,
   useGetAllLeaveRequestsQuery,
@@ -349,6 +378,7 @@ export const {
   useGetAllCandidatesQuery,
   useGetAllKudosQuery,
   useGetAllLoansQuery,
+  useGetAllChangeRequestsQuery,
   useGetAllSicknessRecordsQuery,
   useGetAllTasksQuery,
   useGetAllTasksAssignedByMeQuery,

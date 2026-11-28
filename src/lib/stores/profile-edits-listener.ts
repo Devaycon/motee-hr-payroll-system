@@ -26,6 +26,8 @@ interface FieldEdit {
   value: string;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** Long enough to gather every field of one form save, too short to notice. */
 const BATCH_WINDOW_MS = 40;
 
@@ -122,6 +124,9 @@ profileEditsListener.startListening({
         (r) => r.id === action.payload.id,
       );
       if (!request || request.status !== "approved") return;
+      // A server request is applied by the server when approved
+      // (change-requests-api-listener); only demo requests are saved here.
+      if (UUID.test(request.id)) return;
       employeeId = request.employeeId;
       edit = { field: request.field, value: request.requestedValue };
     } else {

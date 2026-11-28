@@ -6,7 +6,9 @@
  * mapped onto the panel's own types plus the writes that panel makes.
  */
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { useApiRunner, useIsLive } from "@/src/lib/live/use-is-live";
+import { useAppSelector } from "@/src/lib/stores/hooks";
 import {
   useGetHolidayYearsQuery,
   useGetModuleSettingsQuery,
@@ -38,6 +40,7 @@ import {
   useGetLeaveBlackoutsQuery,
   useGetPublicHolidaysQuery,
   useUpdateLeaveBlackoutMutation,
+  useUpdatePublicHolidayMutation,
 } from "@/src/store/services/leave-policies";
 import type {
   AccountSettings,
@@ -239,7 +242,9 @@ export function useLiveCompanyHolidays() {
   const run = useApiRunner();
   const q = useGetPublicHolidaysQuery(undefined, { skip: !live });
   const [create] = useCreatePublicHolidayMutation();
+  const [update] = useUpdatePublicHolidayMutation();
   const [remove] = useDeletePublicHolidayMutation();
+  const departments = useAppSelector((s) => s.locale.data?.departments);
   const holidays = useMemo<CompanyHoliday[] | null>(
     () =>
       q.data?.data
@@ -247,18 +252,33 @@ export function useLiveCompanyHolidays() {
             id: h.id,
             name: h.name,
             date: h.date.slice(0, 10),
-            nonWorking: true,
-            excludedDepartments: [],
+            nonWorking: h.isNonWorking ?? true,
+            excludedDepartments: h.excludedDepartmentNames ?? [],
           }))
         : null,
     [q.data],
   );
-  const save = (h: CompanyHoliday, existingId?: string) =>
-    run(async () => {
-      // There is no update endpoint: an edit replaces the holiday.
-      if (existingId) await remove(existingId).unwrap();
-      await create({ name: h.name, date: h.date }).unwrap();
-    }, "Could not save the holiday.");
+  const save = async (h: CompanyHoliday, existingId?: string) => {
+    // The form holds department names; the API takes ids.
+    const byName = new Map(
+      (departments ?? []).map((d) => [d.name.trim().toLowerCase(), d.id]),
+    );
+    const unknown = h.excludedDepartments.filter((n) => !byName.has(n.trim().toLowerCase()));
+    if (unknown.length > 0) {
+      toast.error(`No department called ${unknown.map((n) => `"${n}"`).join(", ")}.`);
+      return false;
+    }
+    const body = {
+      name: h.name,
+      date: h.date,
+      isNonWorking: h.nonWorking,
+      excludedDepartmentIds: h.excludedDepartments.map((n) => byName.get(n.trim().toLowerCase())!),
+    };
+    return run(
+      () => (existingId ? update({ id: existingId, body }).unwrap() : create(body).unwrap()),
+      "Could not save the holiday.",
+    );
+  };
   const del = (id: string) => run(() => remove(id).unwrap(), "Could not delete the holiday.");
   return { live, holidays, version: q.fulfilledTimeStamp ?? 0, save, remove: del };
 }

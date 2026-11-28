@@ -67,8 +67,15 @@ interface GoalModalProps {
   onSave: (data: NewGoal) => void;
   onUpdate: (
     id: string,
-    updates: { progress: number; status: GoalStatus },
+    updates: {
+      progress: number;
+      status: GoalStatus;
+      /** Signed in: the goal's own details, saved with PUT /performance/goals/{id}. */
+      details?: { goalTitle: string; category: GoalCategory; description: string; dueDate: string };
+    },
   ) => void;
+  /** Signed in: the title, category, due date and description can be edited too. */
+  canEditDetails?: boolean;
 }
 
 const defaultForm = {
@@ -89,6 +96,7 @@ export function GoalModal({
   editingGoal,
   onSave,
   onUpdate,
+  canEditDetails = false,
 }: GoalModalProps) {
   const [prevOpen, setPrevOpen] = useState(open);
   const [form, setForm] = useState(defaultForm);
@@ -128,7 +136,25 @@ export function GoalModal({
 
   function handleSubmit() {
     if (editingGoal) {
-      onUpdate(editingGoal.id, { progress, status });
+      if (canEditDetails && (!form.goalTitle.trim() || !form.dueDate)) {
+        setErrors({
+          goalTitle: form.goalTitle.trim() ? "" : "Give the goal a title",
+          dueDate: form.dueDate ? "" : "Pick a due date",
+        });
+        return;
+      }
+      onUpdate(editingGoal.id, {
+        progress,
+        status,
+        details: canEditDetails
+          ? {
+              goalTitle: form.goalTitle.trim(),
+              category: form.category as GoalCategory,
+              description: form.description,
+              dueDate: form.dueDate,
+            }
+          : undefined,
+      });
       onClose();
       return;
     }
@@ -314,6 +340,58 @@ export function GoalModal({
                     {editingGoal.employeeName} · {editingGoal.department}
                   </p>
                 </div>
+                {canEditDetails && (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Goal Title</Label>
+                      <Input
+                        value={form.goalTitle}
+                        onChange={(e) => handleField("goalTitle", e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                      {errors.goalTitle && (
+                        <p className="text-[10px] text-destructive">{errors.goalTitle}</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Category</Label>
+                        <Select value={form.category} onValueChange={(v) => handleField("category", v)}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(Object.keys(GOAL_CATEGORY_LABELS) as GoalCategory[]).map((c) => (
+                              <SelectItem key={c} value={c} className="text-xs">
+                                {GOAL_CATEGORY_LABELS[c]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Due Date</Label>
+                        <Input
+                          type="date"
+                          value={form.dueDate?.slice(0, 10)}
+                          onChange={(e) => handleField("dueDate", e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                        {errors.dueDate && (
+                          <p className="text-[10px] text-destructive">{errors.dueDate}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Description</Label>
+                      <Textarea
+                        value={form.description}
+                        onChange={(e) => handleField("description", e.target.value)}
+                        className="text-xs resize-none min-h-16"
+                      />
+                    </div>
+                  </div>
+                )}
                 <Separator />
                 <div className="space-y-3">
                   <div className="space-y-2">

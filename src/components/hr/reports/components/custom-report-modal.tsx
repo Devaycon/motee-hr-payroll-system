@@ -25,7 +25,16 @@ import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import type { LocaleBundle } from "@/src/lib/types/locale";
 import { ALL_REPORTS, getReport } from "@/src/lib/reports/registry";
 import { exportCsv, exportXlsx } from "@/src/lib/reports/export";
-import type { ReportColumn } from "@/src/lib/reports/types";
+import type { AnyReportDef, ReportColumn } from "@/src/lib/reports/types";
+import { toast } from "sonner";
+import { useAppDispatch } from "@/src/lib/stores/hooks";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import { liveReportDef } from "@/src/lib/reports/live";
+import {
+  reportsApi,
+  useGetReportDatasetsQuery,
+} from "@/src/store/services/reports";
 
 interface CustomReportModalProps {
   open: boolean;
@@ -40,14 +49,30 @@ export function CustomReportModal({
   allowedReportIds,
 }: CustomReportModalProps) {
   const { data: bundle } = useLocaleSection<LocaleBundle>((b) => b);
+  const dispatch = useAppDispatch();
+  // Signed in, the datasets are the server's and the rows are read when you
+  // export (POST /reports/run with just the columns you picked).
+  const live = useIsLive();
+  const datasets = useGetReportDatasetsQuery(undefined, { skip: !live });
+  const [busy, setBusy] = useState(false);
 
-  const bases = ALL_REPORTS.filter((r) => allowedReportIds.includes(r.id));
+  const bases: AnyReportDef[] = useMemo(
+    () =>
+      live
+        ? (datasets.data?.data ?? []).map((d) => liveReportDef(d))
+        : ALL_REPORTS.filter((r) => allowedReportIds.includes(r.id)),
+    [live, datasets.data, allowedReportIds],
+  );
+  const recordCount = (id: string) =>
+    datasets.data?.data.find((d) => d.key === id)?.recordCount ?? 0;
   const [baseId, setBaseId] = useState<string>(bases[0]?.id ?? "");
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [reportName, setReportName] = useState("");
 
-  const def = getReport(baseId);
+  const def = live ? bases.find((b) => b.id === baseId) : getReport(baseId);
+  // The first dataset arrives after the first render when signed in.
+  if (!baseId && bases[0]) setBaseId(bases[0].id);
 
   // When the base dataset changes, default to selecting all of its columns.
   const [prevBase, setPrevBase] = useState<string>("");
@@ -58,8 +83,8 @@ export function CustomReportModal({
   }
 
   const rows = useMemo(
-    () => (bundle && def ? def.select(bundle) : []),
-    [bundle, def],
+    () => (!live && bundle && def ? def.select(bundle) : []),
+    [live, bundle, def],
   );
 
   const filteredRows = useMemo(() => {
@@ -86,7 +111,43 @@ export function CustomReportModal({
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-  const canExport = selectedColumns.length > 0 && filteredRows.length > 0;
+  const canExport =
+    selectedColumns.length > 0 &&
+    (live ? recordCount(baseId) > 0 && !busy : filteredRows.length > 0);
+
+  async function exportAs(format: "csv" | "xlsx") {
+    const write = format === "csv" ? exportCsv : exportXlsx;
+    if (!live) {
+      write(fileName, selectedColumns, filteredRows);
+      return;
+    }
+    setBusy(true);
+    const read = dispatch(
+      reportsApi.endpoints.runFullReport.initiate({
+        dataset: baseId,
+        columns: selectedColumns.map((c) => c.key),
+      }),
+    );
+    try {
+      const table = await read.unwrap();
+      const q = search.trim().toLowerCase();
+      const list = table.rows.items.filter(
+        (r) =>
+          !q ||
+          selectedColumns.some((c) => String(c.value(r)).toLowerCase().includes(q)),
+      );
+      if (list.length === 0) {
+        toast.error("No rows match this report.");
+        return;
+      }
+      write(fileName, selectedColumns, list);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Could not build the report."));
+    } finally {
+      read.unsubscribe();
+      setBusy(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -141,7 +202,8 @@ export function CustomReportModal({
             <div className="flex items-center justify-between">
               <Label>Columns</Label>
               <span className="text-xs text-muted-foreground">
-                {selectedColumns.length} selected · {filteredRows.length} rows
+                {selectedColumns.length} selected ·{" "}
+                {live ? recordCount(baseId) : filteredRows.length} rows
               </span>
             </div>
             <ScrollArea className="max-h-48 rounded-lg border border-border/60">
@@ -171,7 +233,7 @@ export function CustomReportModal({
             variant="outline"
             size="sm"
             disabled={!canExport}
-            onClick={() => exportCsv(fileName, selectedColumns, filteredRows)}
+            onClick={() => void exportAs("csv")}
           >
             <FileText className="mr-2 size-4" />
             CSV
@@ -179,7 +241,7 @@ export function CustomReportModal({
           <Button
             size="sm"
             disabled={!canExport}
-            onClick={() => exportXlsx(fileName, selectedColumns, filteredRows)}
+            onClick={() => void exportAs("xlsx")}
           >
             <FileSpreadsheet className="mr-2 size-4" />
             Excel

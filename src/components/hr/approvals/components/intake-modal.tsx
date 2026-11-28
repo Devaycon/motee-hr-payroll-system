@@ -36,6 +36,14 @@ import {
   MODULE_ONLY_TYPES,
   type SubmissionPortal,
 } from "@/src/lib/approvals/config";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import {
+  useGetRaisableTypesQuery,
+  useRaiseApprovalMutation,
+} from "@/src/store/services/approvals";
+import { useUploadFileMutation } from "@/src/store/services/files";
+import type { IntakeField } from "@/src/types/common";
 import {
   DEPARTMENTS,
   URGENCY_LEVELS,
@@ -65,6 +73,24 @@ interface ExtraField {
   placeholder?: string;
   /** When set, the field renders as a dropdown of these options. */
   options?: string[];
+  /** Server intake forms only: must be answered before submitting. */
+  required?: boolean;
+}
+
+/** A server intake question in the form's field shape. */
+function extraFieldFromApi(f: IntakeField): ExtraField {
+  return {
+    key: f.key,
+    label: f.label,
+    type: f.kind === "number" ? "number" : f.kind === "date" ? "date" : "text",
+    options: f.kind === "choice" ? (f.options ?? []) : undefined,
+    required: f.required,
+  };
+}
+
+async function dataUrlToFile(dataUrl: string, name: string, type: string): Promise<File> {
+  const blob = await (await fetch(dataUrl)).blob();
+  return new File([blob], name, { type: type || blob.type });
 }
 
 const EXTRA_FIELDS: Record<ApprovalDocumentType, ExtraField[]> = {
@@ -166,6 +192,16 @@ export function IntakeModal({
   const templates = useAppSelector((s) => s.approvals.templates);
   const categories = useAppSelector((s) => s.approvals.categories);
 
+  // Signed in, what you may raise and each type's form come from the server
+  // (GET /approvals/document-types); the request goes to POST /approvals and
+  // the server picks the chain.
+  const live = useIsLive();
+  const raisable = useGetRaisableTypesQuery(undefined, { skip: !live || !open });
+  const liveTypes = useMemo(() => raisable.data?.data ?? [], [raisable.data]);
+  const [uploadFile] = useUploadFileMutation();
+  const [raise] = useRaiseApprovalMutation();
+  const [submitting, setSubmitting] = useState(false);
+
   // Build the list of eligible (documentType, workflow) pairs — only types this
   // portal raises, and only workflows the current user may start.
   const eligibleWorkflowsByType = useMemo(() => {
@@ -184,6 +220,7 @@ export function IntakeModal({
   // Category ids that have at least one eligible workflow, ordered by the
   // category registry (built-ins + custom) so new categories appear too.
   const eligibleTypes = useMemo(() => {
+    if (live) return liveTypes.map((t) => t.key);
     const withWorkflows = new Set(
       Array.from(eligibleWorkflowsByType.entries())
         .filter(([, list]) => list.length > 0)
@@ -197,7 +234,7 @@ export function IntakeModal({
       if (!ordered.includes(id)) ordered.push(id);
     }
     return ordered;
-  }, [eligibleWorkflowsByType, categories]);
+  }, [live, liveTypes, eligibleWorkflowsByType, categories]);
 
   const [documentType, setDocumentType] = useState<ApprovalDocumentType>(
     defaultType ?? "leave_request",
@@ -213,23 +250,46 @@ export function IntakeModal({
   // When eligibility changes (e.g., role switch), re-anchor doc type
   if (
     open &&
-    !eligibleWorkflowsByType.get(documentType)?.length &&
+    !(live
+      ? eligibleTypes.includes(documentType)
+      : eligibleWorkflowsByType.get(documentType)?.length) &&
     eligibleTypes.length > 0
   ) {
     setDocumentType(eligibleTypes[0]);
     setWorkflowId("default");
   }
 
-  const workflowsForType =
-    eligibleWorkflowsByType.get(documentType) ?? [];
+  const liveType = live ? liveTypes.find((t) => t.key === documentType) : undefined;
+  // Signed in, the server routes the request through its own chain.
+  const workflowsForType = live
+    ? []
+    : (eligibleWorkflowsByType.get(documentType) ?? []);
   const selectedWorkflow: ApprovalChainTemplate | null =
     workflowId === "default"
       ? (workflowsForType.find((w) => w.isDefault) ?? workflowsForType[0] ?? null)
       : (workflowsForType.find((w) => w.id === workflowId) ?? null);
 
-  const allowsAttachments = selectedWorkflow?.attachments.allowed ?? false;
-  const requiresAttachments = selectedWorkflow?.attachments.required ?? false;
-  const requiresSignature = selectedWorkflow?.signatures.submitterSigns ?? false;
+  const allowsAttachments = live
+    ? // `permits` is allowed || required (backend answer, 28 Nov).
+      !!liveType?.attachments.permits
+    : (selectedWorkflow?.attachments.allowed ?? false);
+  const requiresAttachments = live
+    ? !!liveType?.attachments.required
+    : (selectedWorkflow?.attachments.required ?? false);
+  const attachmentNote = live
+    ? liveType?.attachments.note
+    : selectedWorkflow?.attachments.description;
+  // A request raised on the API has no submitter signature.
+  const requiresSignature = live
+    ? false
+    : (selectedWorkflow?.signatures.submitterSigns ?? false);
+  const fields: ExtraField[] = live
+    ? (liveType?.fields ?? []).map(extraFieldFromApi)
+    : (EXTRA_FIELDS[documentType] ?? []);
+  const typeLabel = (t: string) =>
+    live
+      ? (liveTypes.find((x) => x.key === t)?.label ?? t)
+      : categoryLabel(t, categories);
 
   function reset() {
     setDocumentType(defaultType ?? eligibleTypes[0] ?? "leave_request");
@@ -260,7 +320,8 @@ export function IntakeModal({
   async function handleSubmit() {
     const errs: Record<string, string> = {};
     if (title.trim().length < 3) errs.title = "Title is required";
-    if (summary.trim().length < 5) errs.summary = "Summary is required";
+    // The API's summary is optional; the demo form insists on one.
+    if (!live && summary.trim().length < 5) errs.summary = "Summary is required";
     if (!user) errs._user = "You must be logged in to submit";
     if (requiresAttachments && attachments.length === 0) {
       errs.attachments = "At least one attachment is required";
@@ -268,8 +329,42 @@ export function IntakeModal({
     if (requiresSignature && !signatureDataUrl) {
       errs.signature = "Please sign before submitting";
     }
+    for (const f of fields) {
+      if (f.required && !extras[f.key]?.trim()) errs[`field:${f.key}`] = `${f.label} is required`;
+    }
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
+      return;
+    }
+    if (live) {
+      setSubmitting(true);
+      try {
+        const fileIds: string[] = [];
+        for (const a of attachments) {
+          const stored = await uploadFile({
+            file: await dataUrlToFile(a.dataUrl, a.name, a.mimeType),
+            purpose: "approvalAttachment",
+          }).unwrap();
+          fileIds.push(stored.data.id);
+        }
+        const answers = Object.fromEntries(
+          Object.entries(extras).filter(([, v]) => v.trim() !== ""),
+        );
+        await raise({
+          documentType,
+          title: title.trim(),
+          summary: summary.trim() || null,
+          fields: answers,
+          fileIds,
+        }).unwrap();
+        toast.success("Submitted for approval");
+        reset();
+        onOpenChange(false);
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, "Could not submit the request."));
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
     const me = user!;
@@ -314,10 +409,13 @@ export function IntakeModal({
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4">
-          {eligibleTypes.length === 0 ? (
+          {live && raisable.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading request types…</p>
+          ) : eligibleTypes.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No workflow lets you submit from your current desk. Ask HR Admin
-              to grant your role a starting desk on at least one workflow.
+              {live
+                ? "There are no request types you can raise yet. A type opens once HR Admin sets up its default approval chain."
+                : "No workflow lets you submit from your current desk. Ask HR Admin to grant your role a starting desk on at least one workflow."}
             </p>
           ) : (
             <>
@@ -336,7 +434,7 @@ export function IntakeModal({
                   <SelectContent>
                     {eligibleTypes.map((t) => (
                       <SelectItem key={t} value={t}>
-                        {categoryLabel(t, categories)}
+                        {typeLabel(t)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -388,9 +486,12 @@ export function IntakeModal({
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-1">
-                {(EXTRA_FIELDS[documentType] ?? []).map((f) => (
+                {fields.map((f) => (
                   <div key={f.key} className="space-y-1.5">
-                    <Label>{f.label}</Label>
+                    <Label>
+                      {f.label}
+                      {f.required && <span className="text-destructive"> *</span>}
+                    </Label>
                     {f.options ? (
                       <Select
                         value={extras[f.key] ?? ""}
@@ -422,6 +523,11 @@ export function IntakeModal({
                         }
                       />
                     )}
+                    {errors[`field:${f.key}`] && (
+                      <p className="text-xs text-destructive">
+                        {errors[`field:${f.key}`]}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -435,9 +541,9 @@ export function IntakeModal({
                       <span className="text-destructive">*</span>
                     )}
                   </Label>
-                  {selectedWorkflow?.attachments.description && (
+                  {attachmentNote && (
                     <p className="text-[11px] text-muted-foreground">
-                      {selectedWorkflow.attachments.description}
+                      {attachmentNote}
                     </p>
                   )}
                   <FileDropzone
@@ -510,9 +616,9 @@ export function IntakeModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={eligibleTypes.length === 0}
+            disabled={eligibleTypes.length === 0 || submitting}
           >
-            Submit for approval
+            {submitting ? "Submitting…" : "Submit for approval"}
           </Button>
         </div>
       </DialogContent>

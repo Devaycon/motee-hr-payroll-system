@@ -72,6 +72,8 @@ export interface RunTaskDto {
   daysOverdue: number;
   hasEscalated: boolean;
   assigneeKind: AssigneeKind;
+  /** Set for role-based assignees; cleared when the task is reassigned to a person. */
+  assigneeAccessLevelId?: string | null;
   assigneeEmployeeId?: string | null;
   assigneeName: string;
   hasReviewer: boolean;

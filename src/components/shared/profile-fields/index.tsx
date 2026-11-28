@@ -844,14 +844,15 @@ export function ProfileFieldsEditor({
 }
 
 // ── change-request list ─────────────────────────────────────────────────────
-const REQ_TONES: Record<string, string> = {
+export const CHANGE_REQUEST_TONES: Record<string, string> = {
+  withdrawn: "border-border bg-muted text-muted-foreground",
   pending: "border-amber-500/30 bg-amber-500/10 text-amber-600",
   approved: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600",
   rejected: "border-rose-500/30 bg-rose-500/10 text-rose-600",
 };
 
 /** Renders a change-request value — a thumbnail for image fields, text otherwise. */
-function RequestValue({ field, value }: { field: string; value: string }) {
+export function RequestValue({ field, value }: { field: string; value: string }) {
   if (!value) return <span>—</span>;
   if (field === "photoUrl") {
     return (
@@ -964,18 +965,8 @@ export function ChangeRequestsTable({
 }) {
   const dispatch = useAppDispatch();
   const actorId = useAppSelector((s) => s.auth.user?.employeeId);
-  const identity = useEmployeeIdentity();
   const [rejecting, setRejecting] = useState<ChangeRequest | null>(null);
-  const [rejectNote, setRejectNote] = useState("");
   const [viewing, setViewing] = useState<ChangeRequest | null>(null);
-
-  /**
-   * Requests only started carrying actor ids recently, and the seeded actor is
-   * the generic "HR" — so fall back to a name lookup, and accept that some
-   * entries stay unlinked rather than pointing at the wrong person.
-   */
-  const actorIdFor = (name?: string, storedId?: string) =>
-    storedId ?? identity.resolve(name)?.systemId ?? null;
 
   if (requests.length === 0) {
     return (
@@ -1046,7 +1037,7 @@ export function ChangeRequestsTable({
                 <td className="px-3 py-2">
                   <Badge
                     variant="outline"
-                    className={cn("w-fit text-[10px] capitalize", REQ_TONES[r.status])}
+                    className={cn("w-fit text-[10px] capitalize", CHANGE_REQUEST_TONES[r.status])}
                   >
                     {r.status}
                   </Badge>
@@ -1074,7 +1065,6 @@ export function ChangeRequestsTable({
                               icon: X,
                               destructive: true,
                               onSelect: () => {
-                                setRejectNote("");
                                 setRejecting(r);
                               },
                             },
@@ -1104,112 +1094,163 @@ export function ChangeRequestsTable({
       </div>
 
       {viewing && (
-        <RecordDetailModal
-          open
-          onClose={() => setViewing(null)}
-          title={viewing.label}
-          subtitle={`Profile change request · ${viewing.field}`}
-          status={viewing.status}
-          outcome={changeRequestOutcome(viewing)}
-          about={{
-            what: `A request to change ${viewing.label.toLowerCase()} from "${
-              viewing.currentValue || "—"
-            }" to "${viewing.requestedValue || "—"}".`,
-            why: "Profile changes are reviewed by HR before they take effect, so the employee record stays accurate and auditable.",
-            consequence:
-              viewing.status === "approved"
-                ? "The new value is live on the employee record."
-                : viewing.status === "rejected"
-                  ? "The record is unchanged. A new request can be raised once the issue above is resolved."
-                  : "The record still shows the current value until this is approved.",
-          }}
-          fields={[
-            { label: "Current value", value: viewing.currentValue || "—" },
-            { label: "Requested value", value: viewing.requestedValue || "—" },
-            { label: "Reason given", value: viewing.reason || "—", wide: true },
-            {
-              label: "Requested by",
-              value: (
-                <EmployeeLink
-                  name={viewing.requestedBy}
-                  employeeId={actorIdFor(viewing.requestedBy, viewing.requestedById)}
-                />
-              ),
-            },
-            { label: "Submitted", value: fmtStamp(viewing.requestedAt) },
-            {
-              label: viewing.status === "rejected" ? "Rejected by" : "Approved by",
-              value: viewing.decidedBy ? (
-                <EmployeeLink
-                  name={viewing.decidedBy}
-                  employeeId={actorIdFor(viewing.decidedBy, viewing.decidedById)}
-                />
-              ) : (
-                "Not yet reviewed"
-              ),
-            },
-            {
-              label: "Decided",
-              value: viewing.decidedAt ? fmtStamp(viewing.decidedAt) : "—",
-            },
-          ]}
-        >
-          <RequestProgress status={viewing.status} />
-        </RecordDetailModal>
+        <ChangeRequestDetailModal request={viewing} onClose={() => setViewing(null)} />
       )}
 
-      {/* Rejecting captures a note — the slice already stores decisionNote, it
-          just had no UI to collect it. */}
-      <Dialog open={!!rejecting} onOpenChange={(o) => !o && setRejecting(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-semibold">
-              Reject change — {rejecting?.label}
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              The employee sees this explanation on their request.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1.5">
-            <Label className="text-xs">
-              Reason for rejection <span className="text-destructive">*</span>
-            </Label>
-            <Textarea
-              rows={3}
-              value={rejectNote}
-              onChange={(e) => setRejectNote(e.target.value)}
-              placeholder="Explain why this change can't be applied."
-              className="text-sm"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejecting(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (rejectNote.trim().length < 3) {
-                  toast.error("Please explain why the change was rejected.");
-                  return;
-                }
-                dispatch(
-                  rejectRequest({
-                    id: rejecting!.id,
-                    actorName,
-                    actorId,
-                    note: rejectNote.trim(),
-                  }),
-                );
-                toast.success(`${rejecting!.label} change rejected`);
-                setRejecting(null);
-              }}
-            >
-              Reject request
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RejectChangeRequestDialog request={rejecting} onClose={() => setRejecting(null)} />
     </>
+  );
+}
+
+/**
+ * One change request in full: the change, the reason, who asked and who
+ * decided, and where it got to. Shared by the profile's log and HR's
+ * company-wide queue so both read the same.
+ */
+export function ChangeRequestDetailModal({
+  request,
+  onClose,
+}: {
+  request: ChangeRequest;
+  onClose: () => void;
+}) {
+  const identity = useEmployeeIdentity();
+  /**
+   * Requests only started carrying actor ids recently, and the seeded actor is
+   * the generic "HR" — so fall back to a name lookup, and accept that some
+   * entries stay unlinked rather than pointing at the wrong person.
+   */
+  const actorIdFor = (name?: string, storedId?: string) =>
+    storedId ?? identity.resolve(name)?.systemId ?? null;
+
+  return (
+    <RecordDetailModal
+      open
+      onClose={onClose}
+      title={request.label}
+      subtitle={`Profile change request · ${request.field}`}
+      status={request.status}
+      outcome={changeRequestOutcome(request)}
+      about={{
+        what: `A request to change ${request.label.toLowerCase()} from "${
+          request.currentValue || "—"
+        }" to "${request.requestedValue || "—"}".`,
+        why: "Profile changes are reviewed by HR before they take effect, so the employee record stays accurate and auditable.",
+        consequence:
+          request.status === "approved"
+            ? "The new value is live on the employee record."
+            : request.status === "rejected"
+              ? "The record is unchanged. A new request can be raised once the issue above is resolved."
+              : "The record still shows the current value until this is approved.",
+      }}
+      fields={[
+        { label: "Current value", value: request.currentValue || "—" },
+        { label: "Requested value", value: request.requestedValue || "—" },
+        { label: "Reason given", value: request.reason || "—", wide: true },
+        {
+          label: "Requested by",
+          value: (
+            <EmployeeLink
+              name={request.requestedBy}
+              employeeId={actorIdFor(request.requestedBy, request.requestedById)}
+            />
+          ),
+        },
+        { label: "Submitted", value: fmtStamp(request.requestedAt) },
+        {
+          label: request.status === "rejected" ? "Rejected by" : "Approved by",
+          value: request.decidedBy ? (
+            <EmployeeLink
+              name={request.decidedBy}
+              employeeId={actorIdFor(request.decidedBy, request.decidedById)}
+            />
+          ) : (
+            "Not yet reviewed"
+          ),
+        },
+        {
+          label: "Decided",
+          value: request.decidedAt ? fmtStamp(request.decidedAt) : "—",
+        },
+      ]}
+    >
+      <RequestProgress status={request.status} />
+    </RecordDetailModal>
+  );
+}
+
+/** Rejecting asks for the reason the employee will see on their request. */
+export function RejectChangeRequestDialog({
+  request,
+  onClose,
+}: {
+  request: ChangeRequest | null;
+  onClose: () => void;
+}) {
+  const dispatch = useAppDispatch();
+  const actorName = useAppSelector((s) => s.auth.user?.name) ?? "HR";
+  const actorId = useAppSelector((s) => s.auth.user?.employeeId);
+  const [rejectNote, setRejectNote] = useState("");
+  const [prevId, setPrevId] = useState<string | null>(null);
+  // A fresh note for each request opened.
+  if ((request?.id ?? null) !== prevId) {
+    setPrevId(request?.id ?? null);
+    setRejectNote("");
+  }
+
+  // Rejecting captures a note — the slice already stores decisionNote, it just
+  // had no UI to collect it.
+  return (
+    <Dialog open={!!request} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-sm font-semibold">
+            Reject change — {request?.label}
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            The employee sees this explanation on their request.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-1.5">
+          <Label className="text-xs">
+            Reason for rejection <span className="text-destructive">*</span>
+          </Label>
+          <Textarea
+            rows={3}
+            value={rejectNote}
+            onChange={(e) => setRejectNote(e.target.value)}
+            placeholder="Explain why this change can't be applied."
+            className="text-sm"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onClose()}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              if (!request) return;
+              if (rejectNote.trim().length < 3) {
+                toast.error("Please explain why the change was rejected.");
+                return;
+              }
+              dispatch(
+                rejectRequest({
+                  id: request.id,
+                  actorName,
+                  actorId,
+                  note: rejectNote.trim(),
+                }),
+              );
+              toast.success(`${request.label} change rejected`);
+              onClose();
+            }}
+          >
+            Reject request
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

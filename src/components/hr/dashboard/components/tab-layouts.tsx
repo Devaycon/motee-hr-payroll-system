@@ -164,9 +164,8 @@ export function AttendanceTabLayout() {
         <AttendanceChart />
       </Cell>
       <Cell span={12}>
-        <DemoOnly>
-          <UntakenLeaveCard />
-        </DemoOnly>
+        {/* Live: GET /dashboard/untaken-leave. */}
+        <UntakenLeaveCard />
       </Cell>
     </Grid>
   );

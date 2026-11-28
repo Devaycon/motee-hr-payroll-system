@@ -21,6 +21,16 @@ import { ContractDetailModal } from "./components/contract-detail-modal";
 import { ContractLetterModal } from "./components/contract-letter-modal";
 import { HRSignatureModal } from "./components/hr-signature-modal";
 import type { Contract, NewContract } from "./types";
+import { useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import { useAppSelector } from "@/src/lib/stores/hooks";
+import { toContract } from "@/src/lib/contracts/api-mapping";
+import {
+  useAddContractNoteMutation,
+  useGetContractQuery,
+  useSignContractMutation,
+  useTerminateContractMutation,
+} from "@/src/store/services/contracts";
+import { useUploadFileMutation } from "@/src/store/services/files";
 
 export function ContractsPage() {
   const router = useRouter();
@@ -35,12 +45,26 @@ export function ContractsPage() {
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [viewingContract, setViewingContract] = useState<Contract | null>(null);
+  const liveContracts = useIsLive();
+  const freshQ = useGetContractQuery(viewingContract?.id ?? "", {
+    skip: !liveContracts || !viewingContract || !detailModalOpen,
+  });
+  const freshContract = freshQ.data?.data ? toContract(freshQ.data.data) : null;
 
   const [letterModalOpen, setLetterModalOpen] = useState(false);
   const [letterContract, setLetterContract] = useState<Contract | null>(null);
 
   const [hrSigModalOpen, setHrSigModalOpen] = useState(false);
   const [hrSignature, setHrSignature] = useState<string | undefined>(undefined);
+  // Signed in: the open contract is read fresh (GET /contracts/{id}), and the
+  // modal can sign for the company, terminate and add notes.
+  const live = liveContracts;
+  const signerName = useAppSelector((s) => s.auth.user?.name) ?? "HR";
+  const [signContract] = useSignContractMutation();
+  const [terminateContract] = useTerminateContractMutation();
+  const [addNote] = useAddContractNoteMutation();
+  const [uploadFile] = useUploadFileMutation();
+  const sendContract = useLiveSender(["Contracts"]);
 
   const expiringSoon = contracts.filter(
     (c) => c.status === "expiring_soon" && !c.isArchived,
@@ -270,7 +294,42 @@ export function ContractsPage() {
 
       <ContractDetailModal
         open={detailModalOpen}
-        contract={viewingContract}
+        contract={freshContract ?? viewingContract}
+        onCompanySign={
+          live
+            ? (c) =>
+                sendContract(async () => {
+                  let signatureFileId: string | null = null;
+                  if (hrSignature?.startsWith("data:")) {
+                    const blob = await (await fetch(hrSignature)).blob();
+                    const file = new File([blob], "company-signature.png", { type: blob.type });
+                    signatureFileId = (
+                      await uploadFile({ file, purpose: "companyDocument" }).unwrap()
+                    ).data.id;
+                  }
+                  await signContract({ id: c.id, body: { signedAs: signerName, signatureFileId } }).unwrap();
+                  toast.success("Signed for the company");
+                }, "Could not sign the contract.")
+            : undefined
+        }
+        onTerminate={
+          live
+            ? (c, reason) =>
+                sendContract(async () => {
+                  await terminateContract({ id: c.id, body: { reason } }).unwrap();
+                  toast.success(`${c.title} terminated`);
+                }, "Could not terminate the contract.")
+            : undefined
+        }
+        onAddNote={
+          live
+            ? (c, content) =>
+                sendContract(
+                  () => addNote({ id: c.id, body: { content } }).unwrap(),
+                  "Could not add the note.",
+                )
+            : undefined
+        }
         onClose={() => setDetailModalOpen(false)}
         onEdit={handleDetailEdit}
         onSign={handleDetailSign}

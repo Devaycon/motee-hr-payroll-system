@@ -343,7 +343,12 @@ export function CalendarWorkspace({
         </SheetContent>
       </Sheet>
 
-      <EventDetails item={openItem} onClose={() => setOpenItem(null)} onDelete={data.remove} />
+      <EventDetails
+        item={openItem}
+        onClose={() => setOpenItem(null)}
+        onDelete={data.remove}
+        onUpdate={data.update}
+      />
       <CreateEventDialog
         draft={draft}
         onClose={() => setDraft(null)}

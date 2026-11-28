@@ -26,6 +26,7 @@ import { useGetUpcomingCalendarQuery } from "@/src/store/services/calendar";
 import { useGetMyKudosQuery } from "@/src/store/services/kudos";
 import { useGetMyRemindersQuery } from "@/src/store/services/my-reminders";
 import { useGetAllTasksQuery } from "@/src/store/services/collections";
+import { useGetMyDashboardQuery } from "@/src/store/services/dashboard";
 import type {
   EMPLOYEE_LEAVE_BALANCES,
   EMPLOYEE_PENDING_ITEMS,
@@ -82,6 +83,8 @@ export function useLiveEmployeeDashboard() {
   const reminders = useGetMyRemindersQuery(undefined, { skip: !live });
   const feed = useGetAnnouncementFeedQuery(undefined, { skip: !live });
   const tasks = useGetAllTasksQuery(undefined, { skip: !live });
+  // Your day, your pending items and your team's leave (since 2026-11-27).
+  const mine = useGetMyDashboardQuery(undefined, { skip: !live });
 
   return useMemo(() => {
     if (!live) return { live };
@@ -120,7 +123,18 @@ export function useLiveEmployeeDashboard() {
         type,
       };
     });
-    const pendingItems: typeof EMPLOYEE_PENDING_ITEMS | undefined = reminders.data?.data?.map((r) => ({
+    const myDay = mine.data?.data;
+    // The server's pending list (it matches the day's "pending actions"
+    // count); until it answers, or if it fails, your reminders.
+    const serverPending: typeof EMPLOYEE_PENDING_ITEMS | undefined = myDay?.pending.map((p, i) => ({
+      id: `pending-${i}-${p.kind}`,
+      icon: Bell,
+      label: p.label,
+      sub: p.detail ?? "",
+      link: p.href ?? "#pending",
+      urgent: p.urgent,
+    }));
+    const pendingItems: typeof EMPLOYEE_PENDING_ITEMS | undefined = serverPending ?? reminders.data?.data?.map((r) => ({
       id: r.id,
       icon: Bell,
       label: r.reminderIsDue ? "Reminder due" : "Reminder",
@@ -133,6 +147,17 @@ export function useLiveEmployeeDashboard() {
       ...taskFromApi(t),
       link: "/employee/tasks",
     }));
-    return { live, leaveBalances, recentKudos, upcomingEvents, pendingItems, announcements, myTasks };
-  }, [live, leave.balances, kudos.data, upcoming.data, reminders.data, feed.data, tasks.data]);
+    const today = myDay?.today;
+    const teamOnLeave = myDay?.teamOnLeave.map((m) => ({
+      id: m.employeeId,
+      name: m.name,
+      initials: initials(m.name),
+      // Capitalised to meet the card's colour keys ("Annual", "Sick", …).
+      leaveType: m.leaveType.charAt(0).toUpperCase() + m.leaveType.slice(1),
+      returnDate: m.returnsOn
+        ? new Date(`${m.returnsOn.slice(0, 10)}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+        : "—",
+    }));
+    return { live, leaveBalances, recentKudos, upcomingEvents, pendingItems, announcements, myTasks, today, teamOnLeave };
+  }, [live, leave.balances, kudos.data, upcoming.data, reminders.data, feed.data, tasks.data, mine.data]);
 }

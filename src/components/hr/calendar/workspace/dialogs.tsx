@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { CalendarDays, Clock, Trash2, User, Users } from "lucide-react";
+import { CalendarDays, Clock, Pencil, Trash2, User, Users } from "lucide-react";
+import { Textarea } from "@/src/components/ui/textarea";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -29,8 +30,57 @@ import { metaFor, timeLabel, type CalItem } from "./model";
 import type { StoredEvent } from "./use-calendar-data";
 
 /** Details for one item, with delete for things the viewer created. */
-export function EventDetails({ item, onClose, onDelete }: { item: CalItem | null; onClose: () => void; onDelete: (i: CalItem) => void }) {
+export interface EventPatch {
+  title: string;
+  date: string;
+  allDay: boolean;
+  startTime?: string;
+  endTime?: string;
+  description?: string;
+}
+
+export function EventDetails({
+  item,
+  onClose,
+  onDelete,
+  onUpdate,
+}: {
+  item: CalItem | null;
+  onClose: () => void;
+  onDelete: (i: CalItem) => void;
+  /** Signed in: edit an event the viewer created (PUT /calendar/events/{id}). */
+  onUpdate?: (i: CalItem, patch: EventPatch) => Promise<boolean>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<EventPatch>({ title: "", date: "", allDay: true });
+  const [saving, setSaving] = useState(false);
+  const [seen, setSeen] = useState<CalItem | null>(null);
+  if (item !== seen) {
+    setSeen(item);
+    setEditing(false);
+  }
   if (!item) return null;
+  const startEdit = () => {
+    setDraft({
+      title: item.title,
+      date: item.date,
+      allDay: item.allDay,
+      startTime: item.startTime ?? "09:00",
+      endTime: item.endTime ?? "10:00",
+      description: item.description ?? "",
+    });
+    setEditing(true);
+  };
+  const save = async () => {
+    if (!onUpdate || !draft.title.trim() || !draft.date) return;
+    setSaving(true);
+    const ok = await onUpdate(item, { ...draft, title: draft.title.trim() });
+    setSaving(false);
+    if (ok) {
+      toast.success("Event updated");
+      onClose();
+    }
+  };
   const meta = metaFor(item.category);
   const multi = item.endDate && item.endDate !== item.date;
   return (
@@ -45,6 +95,49 @@ export function EventDetails({ item, onClose, onDelete }: { item: CalItem | null
             </div>
           </div>
         </DialogHeader>
+        {editing ? (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Title</Label>
+              <Input value={draft.title} onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-3 space-y-1.5 sm:col-span-1">
+                <Label className="text-xs">Date</Label>
+                <Input type="date" value={draft.date} onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))} />
+              </div>
+              {!draft.allDay && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Start</Label>
+                    <Input type="time" value={draft.startTime} onChange={(e) => setDraft((d) => ({ ...d, startTime: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">End</Label>
+                    <Input type="time" value={draft.endTime} onChange={(e) => setDraft((d) => ({ ...d, endTime: e.target.value }))} />
+                  </div>
+                </>
+              )}
+            </div>
+            <label className="flex items-center gap-2 text-xs">
+              <Switch checked={draft.allDay} onCheckedChange={(v) => setDraft((d) => ({ ...d, allDay: v }))} /> All day
+            </label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Description</Label>
+              <Textarea
+                value={draft.description}
+                onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+                className="min-h-16 resize-none text-sm"
+              />
+            </div>
+            <div className="flex justify-end gap-2 border-t border-border pt-3">
+              <Button variant="outline" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
+              <Button size="sm" disabled={saving || !draft.title.trim()} onClick={() => void save()}>
+                {saving ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          </div>
+        ) : (
         <div className="space-y-2.5 pl-6 text-sm">
           <p className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -56,8 +149,14 @@ export function EventDetails({ item, onClose, onDelete }: { item: CalItem | null
           {item.description && <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">{item.description}</p>}
           {item.category === "sickness" && <p className="text-xs text-muted-foreground">Medical details are kept confidential and are not shown in calendars.</p>}
         </div>
-        {item.deletable && (
-          <div className="flex justify-end border-t border-border pt-3">
+        )}
+        {item.deletable && !editing && (
+          <div className="flex justify-end gap-1 border-t border-border pt-3">
+            {onUpdate && (
+              <Button variant="ghost" size="sm" className="gap-1.5" onClick={startEdit}>
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </Button>
+            )}
             <Button variant="ghost" size="sm" className="gap-1.5 text-destructive" onClick={() => { onDelete(item); onClose(); toast.success("Event deleted"); }}>
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </Button>

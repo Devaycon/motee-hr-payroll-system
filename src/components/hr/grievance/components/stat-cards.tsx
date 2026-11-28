@@ -7,6 +7,8 @@ import {
 } from "@/src/components/shared/hr-stat-card";
 import type { ERCase } from "../types";
 import { computeCaseStats } from "../data";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetErCaseSummaryQuery } from "@/src/store/services/er-cases";
 
 interface Props {
   cases: ERCase[];
@@ -17,7 +19,19 @@ interface Props {
 }
 
 export function GrievanceStatCards({ cases, activeTab, onTabChange }: Props) {
-  const stats = computeCaseStats(cases);
+  const local = computeCaseStats(cases);
+  // Signed in: the server's tally (GET /er-cases/summary), by stage.
+  const server = useGetErCaseSummaryQuery(undefined, { skip: !useIsLive() }).data?.data;
+  const stats = server
+    ? {
+        ...local,
+        open: server.open,
+        investigations: server.byStage.investigation ?? local.investigations,
+        hearings: server.byStage.hearing ?? local.hearings,
+        closed: server.byStage.closed ?? server.total - server.open,
+        totalCases: server.total,
+      }
+    : local;
 
   const card = (tab: string) => ({
     active: activeTab === tab,

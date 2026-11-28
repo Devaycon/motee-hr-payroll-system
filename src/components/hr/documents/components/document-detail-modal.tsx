@@ -1,6 +1,9 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetDocumentAcknowledgementsQuery } from "@/src/store/services/documents";
 import { formatDate } from "@/src/lib/utils/format-date";
 import {
   FileText,
@@ -17,7 +20,18 @@ import {
   CheckCircle2,
   Eye,
   BellRing,
+  Pencil,
+  Upload,
 } from "lucide-react";
+import { Input } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -96,6 +110,13 @@ interface DocumentDetailModalProps {
   folders: Folder[];
   onShare: (doc: HRDocument) => void;
   onArchive: (id: string) => void;
+  /** Signed in: save edited details (PUT /documents/{id}). */
+  onUpdateDetails?: (
+    doc: HRDocument,
+    patch: { name: string; category: HRDocument["category"]; expiryDate?: string; description?: string },
+  ) => Promise<boolean>;
+  /** Signed in: upload a new version (POST /documents/{id}/versions). */
+  onAddVersion?: (doc: HRDocument, file: File, notes?: string) => Promise<boolean>;
 }
 
 export function DocumentDetailModal({
@@ -105,8 +126,64 @@ export function DocumentDetailModal({
   folders,
   onShare,
   onArchive,
+  onUpdateDetails,
+  onAddVersion,
 }: DocumentDetailModalProps) {
+  // Signed in: who has (and hasn't) acknowledged it (GET /documents/{id}/acknowledgements).
+  const live = useIsLive();
+  const acks = useGetDocumentAcknowledgementsQuery(doc?.id ?? "", {
+    skip: !live || !open || !doc?.requiresAcknowledgement,
+  });
+  const report = acks.data?.data;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ name: "", category: "other" as HRDocument["category"], expiryDate: "", description: "" });
+  const [versionNotes, setVersionNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [seenDoc, setSeenDoc] = useState<HRDocument | null>(null);
+  if (doc !== seenDoc) {
+    setSeenDoc(doc);
+    setEditing(false);
+    setVersionNotes("");
+  }
   if (!doc) return null;
+  const ackCount = report ? report.acknowledged.length : (doc.acknowledgements?.length ?? 0);
+  const assignedCount = report ? report.totalAssigned : (doc.totalAssigned ?? doc.acknowledgements?.length ?? 0);
+
+  function startEdit() {
+    setDraft({
+      name: doc!.name,
+      category: doc!.category,
+      expiryDate: doc!.expiryDate?.slice(0, 10) ?? "",
+      description: doc!.description ?? "",
+    });
+    setEditing(true);
+  }
+  async function saveEdit() {
+    if (!onUpdateDetails || !draft.name.trim()) return;
+    setBusy(true);
+    const ok = await onUpdateDetails(doc!, {
+      name: draft.name,
+      category: draft.category,
+      expiryDate: draft.expiryDate || undefined,
+      description: draft.description || undefined,
+    });
+    setBusy(false);
+    if (ok) {
+      toast.success("Document details saved");
+      setEditing(false);
+    }
+  }
+  async function uploadVersion(file: File | undefined) {
+    if (!file || !onAddVersion) return;
+    setBusy(true);
+    const ok = await onAddVersion(doc!, file, versionNotes);
+    setBusy(false);
+    if (ok) {
+      toast.success(`New version of "${doc!.name}" uploaded`);
+      setVersionNotes("");
+    }
+  }
 
   const typeStyle = FILE_TYPE_STYLES[doc.fileType];
   const expiry = getExpiryInfo(doc.expiryDate);
@@ -197,6 +274,63 @@ export function DocumentDetailModal({
           </TabsList>
 
           <TabsContent value="info" className="mt-0 px-6 py-4">
+            {editing && (
+              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-border p-3">
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs font-medium">Name</p>
+                  <Input
+                    value={draft.name}
+                    onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-xs font-medium">Category</p>
+                    <Select
+                      value={draft.category}
+                      onValueChange={(v) => setDraft((d) => ({ ...d, category: v as HRDocument["category"] }))}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(DOCUMENT_CATEGORY_LABELS).map(([k, label]) => (
+                          <SelectItem key={k} value={k} className="text-xs">
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-xs font-medium">Expiry date</p>
+                    <Input
+                      type="date"
+                      value={draft.expiryDate}
+                      onChange={(e) => setDraft((d) => ({ ...d, expiryDate: e.target.value }))}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs font-medium">Description</p>
+                  <Textarea
+                    value={draft.description}
+                    onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+                    className="min-h-14 resize-none text-xs"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" disabled={busy || !draft.name.trim()} onClick={() => void saveEdit()}>
+                    Save
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-x-6 gap-y-4">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Category</p>
@@ -288,16 +422,55 @@ export function DocumentDetailModal({
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {(doc.acknowledgements?.length ?? 0)} of{" "}
-                    {doc.totalAssigned ?? doc.acknowledgements?.length ?? 0}{" "}
-                    assigned employees have acknowledged.
+                    {ackCount} of {assignedCount} assigned employees have acknowledged.
                   </p>
+                  {report && report.outstanding.length > 0 && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Still to acknowledge: {report.outstanding.slice(0, 8).join(", ")}
+                      {report.outstanding.length > 8 && ` and ${report.outstanding.length - 8} more`}
+                    </p>
+                  )}
+                  {report && report.acknowledged.length > 0 && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Acknowledged: {report.acknowledged.slice(0, 8).map((a) => a.employeeName).join(", ")}
+                      {report.acknowledged.length > 8 && ` and ${report.acknowledged.length - 8} more`}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
           </TabsContent>
 
           <TabsContent value="versions" className="mt-0 px-6 py-4">
+            {onAddVersion && (
+              <div className="mb-3 flex items-center gap-2">
+                <Input
+                  value={versionNotes}
+                  onChange={(e) => setVersionNotes(e.target.value)}
+                  placeholder="What changed? (optional)"
+                  className="h-8 text-xs"
+                />
+                <input
+                  ref={fileInput}
+                  type="file"
+                  className="sr-only"
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                  onChange={(e) => {
+                    void uploadVersion(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 shrink-0 gap-1.5 text-xs"
+                  disabled={busy}
+                  onClick={() => fileInput.current?.click()}
+                >
+                  <Upload className="size-3.5" /> New Version
+                </Button>
+              </div>
+            )}
             <ScrollArea className="h-56">
               <div className="relative space-y-0">
                 {sortedVersions.map((version, i) => (
@@ -442,6 +615,12 @@ export function DocumentDetailModal({
             </Button>
           </div>
           <div className="flex gap-2">
+            {onUpdateDetails && !editing && (
+              <Button variant="ghost" size="sm" onClick={startEdit}>
+                <Pencil className="mr-2 size-4" />
+                Edit
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"

@@ -113,4 +113,8 @@ export interface EorInvoice {
   status: EorInvoiceStatus;
   issuedAt: string;
   dueAt: string;
+  /** API invoices: the raw billing period, reference and currency, for editing. */
+  periodKey?: string;
+  reference?: string;
+  currency?: string;
 }

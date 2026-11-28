@@ -35,6 +35,8 @@ import {
   useOpenReviewMutation,
   useSaveManagerReviewMutation,
   useUpdateGoalProgressMutation,
+  useUpdateGoalMutation,
+  useCalibrateReviewMutation,
 } from "@/src/store/services/performance";
 
 /**
@@ -81,6 +83,8 @@ export function usePerformanceActions() {
   const [updateProgress] = useUpdateGoalProgressMutation();
   const [changeStatus] = useChangeGoalStatusMutation();
   const [deleteGoal] = useDeleteGoalMutation();
+  const [updateGoal] = useUpdateGoalMutation();
+  const [calibrate] = useCalibrateReviewMutation();
 
   return useMemo(() => {
     const attempt = async (run: () => Promise<unknown>, fallback: string) => {
@@ -166,6 +170,32 @@ export function usePerformanceActions() {
       deleteGoal(id: string) {
         return attempt(() => deleteGoal(id).unwrap(), "Could not delete the goal.");
       },
+
+      /** PUT /performance/goals/{id} — the goal's title, category, due date and description. */
+      updateGoalDetails(
+        goal: PerformanceGoal,
+        details: { goalTitle: string; category: PerformanceGoal["category"]; description: string; dueDate: string },
+      ) {
+        return attempt(
+          () =>
+            updateGoal({
+              id: goal.id,
+              body: goalToRequest({
+                ...(goal as unknown as NewGoal),
+                ...details,
+              }),
+            }).unwrap(),
+          "Could not save the goal.",
+        );
+      },
+
+      /** POST /performance/reviews/{id}/calibrate */
+      calibrateReview(id: string, rating: number) {
+        return attempt(
+          () => calibrate({ id, body: { rating } }).unwrap(),
+          "Could not calibrate the review.",
+        );
+      },
     };
   }, [
     openReview,
@@ -176,5 +206,7 @@ export function usePerformanceActions() {
     updateProgress,
     changeStatus,
     deleteGoal,
+    updateGoal,
+    calibrate,
   ]);
 }

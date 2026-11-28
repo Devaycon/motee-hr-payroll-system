@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { isServerId, useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import {
+  useDeleteRequisitionMutation,
+  useGetRequisitionWarningsQuery,
+  useGetRequisitionQuery,
+} from "@/src/store/services/requisitions";
+import { toJobRequisition } from "@/src/lib/recruitment/api-mapping";
+import { PromptDialog, type PromptRequest } from "@/src/components/shared/prompt-dialog";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -9,6 +18,7 @@ import {
   Users,
   Columns3,
   Table as TableIcon,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -35,12 +45,27 @@ interface RequisitionDetailProps {
 }
 
 export function RequisitionDetail({ requisitionId }: RequisitionDetailProps) {
+  // Signed in: what still blocks or weakens publishing
+  // (GET /requisitions/{id}/warnings), and Delete (DELETE /requisitions/{id}).
+  const liveReq = useIsLive() && isServerId(requisitionId);
+  const warningsQ = useGetRequisitionWarningsQuery(requisitionId, { skip: !liveReq });
+  const [deleteRequisition] = useDeleteRequisitionMutation();
+  const sendReq = useLiveSender(["Requisitions"]);
+  const [prompt, setPrompt] = useState<PromptRequest | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { country, loading, bucket } = useRecruitment();
   const canEdit = useCan("talent.recruitment", "edit");
 
-  const requisition = bucket.requisitions.find((r) => r.id === requisitionId);
+  const listRequisition = bucket.requisitions.find((r) => r.id === requisitionId);
+  // Signed in: the vacancy itself (GET /requisitions/{id}) when it isn't in
+  // the loaded pipeline yet (a shared link).
+  const requisitionQ = useGetRequisitionQuery(requisitionId, {
+    skip: !liveReq || !!listRequisition,
+  });
+  const requisition =
+    listRequisition ??
+    (requisitionQ.data?.data ? toJobRequisition(requisitionQ.data.data) : undefined);
 
   const reqCandidates = useMemo(
     () =>
@@ -181,18 +206,68 @@ export function RequisitionDetail({ requisitionId }: RequisitionDetailProps) {
           </p>
         </div>
         {canEdit && (
-          <Button
-            variant="outline"
-            className="gap-1.5"
-            onClick={() =>
-              router.push(`/talent/recruitment/new?req=${requisition.id}`)
-            }
-          >
-            <Pencil className="w-4 h-4" />
-            Edit
-          </Button>
+          <div className="flex items-center gap-2">
+            {liveReq && (
+              <Button
+                variant="outline"
+                className="gap-1.5 text-destructive hover:text-destructive"
+                onClick={() =>
+                  setPrompt({
+                    title: `Delete "${requisition.positionTitle}"?`,
+                    description: "The vacancy and its pipeline are removed. This can't be undone.",
+                    confirmLabel: "Delete requisition",
+                    destructive: true,
+                    onConfirm: async () => {
+                      const ok = await sendReq(
+                        () => deleteRequisition(requisition.id).unwrap(),
+                        "Could not delete the requisition.",
+                      );
+                      if (ok) {
+                        toast.success("Requisition deleted");
+                        router.push("/talent/recruitment");
+                      }
+                      return ok;
+                    },
+                  })
+                }
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={() =>
+                router.push(`/talent/recruitment/new?req=${requisition.id}`)
+              }
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </Button>
+          </div>
         )}
       </div>
+
+      {(warningsQ.data?.data.length ?? 0) > 0 && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <p className="mb-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
+            Before this vacancy goes out
+          </p>
+          <ul className="space-y-0.5">
+            {warningsQ.data!.data.map((w, i) => (
+              <li
+                key={`${w.field}-${i}`}
+                className={cn("text-xs", w.isBlocking ? "text-destructive" : "text-muted-foreground")}
+              >
+                {w.isBlocking ? "Must fix: " : ""}
+                {w.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <PromptDialog request={prompt} onClose={() => setPrompt(null)} />
 
       <RequisitionSummary requisition={requisition} metrics={metrics} />
 

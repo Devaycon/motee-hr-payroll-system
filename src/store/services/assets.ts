@@ -6,6 +6,7 @@ import type {
   ChangeAssetStatusResponse,
   CreateAssetResponse,
   GetAssetHistoryResponse,
+  GetMyAssetsResponse,
   GetAssetResponse,
   GetAssetsParams,
   GetAssetsResponse,
@@ -85,6 +86,14 @@ export const assetsApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Assets", "Employees"],
     }),
+    // GET /api/v1/assets/mine — assets held by the signed-in employee
+    getMyAssets: builder.query<GetMyAssetsResponse, void>({
+      query: () => ({
+        url: `${url}/mine`,
+        method: "GET",
+      }),
+      providesTags: ["Assets"],
+    }),
     getAssetHistory: builder.query<
       GetAssetHistoryResponse,
       string
@@ -117,5 +126,6 @@ export const {
   useAssignAssetMutation,
   useReturnAssetMutation,
   useGetAssetHistoryQuery,
+  useGetMyAssetsQuery,
   useChangeAssetStatusMutation,
 } = assetsApi;

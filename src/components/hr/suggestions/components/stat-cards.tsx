@@ -7,6 +7,8 @@ import {
 } from "@/src/components/shared/hr-stat-card";
 import { computeSuggestionStats } from "../data";
 import type { Suggestion } from "../types";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetSuggestionSummaryQuery } from "@/src/store/services/suggestions";
 
 /** The slice a KPI card drills the submissions table down to. */
 export type SuggestionCardFilter = "all" | "implemented" | "under_review";
@@ -52,8 +54,13 @@ export function StatCards({
   cardFilter,
   onDrillDown,
 }: StatCardsProps) {
-  const { total, implemented, underReview, avgUpvotes } =
-    computeSuggestionStats(suggestions);
+  const local = computeSuggestionStats(suggestions);
+  // Signed in: the server's tally (GET /suggestions/summary).
+  const server = useGetSuggestionSummaryQuery(undefined, { skip: !useIsLive() }).data?.data;
+  const total = server?.total ?? local.total;
+  const implemented = server?.implemented ?? local.implemented;
+  const underReview = server?.underReview ?? local.underReview;
+  const avgUpvotes = server ? Math.round(server.averageUpvotes * 10) / 10 : local.avgUpvotes;
 
   const cards: HrStatCardItem[] = [
     {

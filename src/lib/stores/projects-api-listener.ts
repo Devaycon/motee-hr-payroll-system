@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import api from "@/src/store/services/api";
 import { projectsApi } from "@/src/store/services/projects";
 import { getApiErrorMessage } from "@/src/lib/utils";
-import { notifyNotIntegrated } from "@/src/components/shared/not-integrated";
 import {
   allocationToRequest,
   milestoneToRequest,
@@ -190,7 +189,9 @@ projectsApiListener.startListening({
         if (!risk || !isServerId(risk.id)) return;
         await dispatch(ep.deleteProjectRisk.initiate({ projectId: risk.projectId, riskId: risk.id })).unwrap();
       } else if (addProjectDocument.match(action)) {
-        notifyNotIntegrated("Uploading project documents");
+        // Signed in, the Documents panel uploads the file itself
+        // (POST /projects/{id}/documents); nothing to send here.
+        return;
       } else if (deleteProjectDocument.match(action)) {
         const doc = before.projects.documents.find((d) => d.id === action.payload);
         if (!doc || !isServerId(doc.id)) return;

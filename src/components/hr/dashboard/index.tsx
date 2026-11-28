@@ -17,7 +17,15 @@ import {
 } from "./components/tab-layouts";
 
 /** Tabs the dashboard API covers; the rest stay on demo data. */
-const LIVE_TABS = new Set<DashboardTabKey>(["people", "attendance", "sickness"]);
+const LIVE_TABS = new Set<DashboardTabKey>([
+  "people",
+  "attendance",
+  "sickness",
+  "priorities",
+  "events",
+  "resourcing",
+  "engagement",
+]);
 
 const TAB_LAYOUTS: Record<DashboardTabKey, ComponentType> = {
   people: PeopleTabLayout,

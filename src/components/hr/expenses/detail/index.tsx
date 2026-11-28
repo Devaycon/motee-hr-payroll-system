@@ -1,5 +1,8 @@
 "use client";
 
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetExpenseClaimQuery } from "@/src/store/services/expenses";
+import { toExpenseClaim } from "@/src/lib/expenses/api-mapping";
 import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -56,9 +59,15 @@ export function HrExpenseClaimDetailPage({ claimId }: { claimId: string }) {
   const user = useAppSelector((s) => s.auth.user);
   const bundle = useAppSelector((s) => s.locale.data);
 
+  // Signed in: the claim itself (GET /expenses/claims/{id}) — so a link to a
+  // claim outside the loaded register still opens.
+  const listClaim = claims.find((c) => c.id === claimId);
+  const claimQ = useGetExpenseClaimQuery(claimId, {
+    skip: !useIsLive() || !isServerId(claimId) || (!!listClaim && ready),
+  });
   const claim = useMemo(
-    () => claims.find((c) => c.id === claimId),
-    [claims, claimId],
+    () => listClaim ?? (claimQ.data?.data ? toExpenseClaim(claimQ.data.data) : undefined),
+    [listClaim, claimQ.data],
   );
   const timeline = useMemo(() => (claim ? claimTimeline(claim) : []), [claim]);
 

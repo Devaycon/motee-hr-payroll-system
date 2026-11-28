@@ -20,6 +20,9 @@ import {
   Scale,
 } from "lucide-react";
 import { useAppSelector } from "@/src/lib/stores/hooks";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetHrActionsDashboardQuery } from "@/src/store/services/dashboard";
+import type { HrActionsDashboardDto } from "@/src/types/dashboard";
 import {
   Card,
   CardContent,
@@ -195,7 +198,47 @@ function SeverityChips({
  * summary tiles so the headline count can never disagree with the list beneath
  * it.
  */
+/**
+ * The server's action categories in the card's shape. Its keys are the same
+ * underscored keys as the alerts file (backend answer, 27 Nov), so labels and
+ * icons come from there; every known category keeps its tab, in the file's
+ * order, and a key the file does not know is added after them.
+ */
+function categoriesFromApi(dto: HrActionsDashboardDto): HrAlertCategory[] {
+  const byKey = new Map(dto.categories.map((c) => [c.key, c]));
+  const known = new Set(HR_ALERT_CATEGORIES.map((c) => c.key));
+  const toAlerts = (key: string): HrAlert[] =>
+    (byKey.get(key)?.actions ?? []).map((a) => ({
+      id: a.id,
+      title: a.title,
+      description: a.detail ?? undefined,
+      severity: a.severity,
+      href: a.href ?? undefined,
+      dueInDays: a.dueInDays ?? undefined,
+      employeeId: a.employeeId ?? undefined,
+    }));
+  return [
+    ...HR_ALERT_CATEGORIES.map((c) => ({ ...c, alerts: toAlerts(c.key) })),
+    ...dto.categories
+      .filter((c) => !known.has(c.key))
+      .map((c) => ({
+        key: c.key,
+        label: c.key.replace(/_/g, " ").replace(/^\w/, (ch) => ch.toUpperCase()),
+        icon: BellRing,
+        alerts: toAlerts(c.key),
+      })),
+  ];
+}
+
+/** Signed in: the server's open HR actions (undefined until it answers). */
+function useLiveHrActions(): { live: boolean; data?: HrActionsDashboardDto } {
+  const live = useIsLive();
+  const q = useGetHrActionsDashboardQuery(undefined, { skip: !live });
+  return { live, data: q.data?.data };
+}
+
 export function useHrAlertCategories(): HrAlertCategory[] {
+  const server = useLiveHrActions();
   const onboardingRecords = useAppSelector((s) => s.onboardingRecords.records);
 
   // Surface self-onboarding invites that the new hire hasn't started or finished.
@@ -224,10 +267,10 @@ export function useHrAlertCategories(): HrAlertCategory[] {
     };
   }, [onboardingRecords]);
 
-  return useMemo(
-    () => [...HR_ALERT_CATEGORIES, onboardingCategory],
-    [onboardingCategory],
-  );
+  return useMemo(() => {
+    if (server.live) return server.data ? categoriesFromApi(server.data) : [];
+    return [...HR_ALERT_CATEGORIES, onboardingCategory];
+  }, [server.live, server.data, onboardingCategory]);
 }
 
 /**
@@ -237,11 +280,21 @@ export function useHrAlertCategories(): HrAlertCategory[] {
  */
 export function useHrAlertTotals() {
   const categories = useHrAlertCategories();
+  const server = useLiveHrActions();
   return useMemo(() => {
+    // Signed in, the server's own tallies (a category may list fewer actions than it counts).
+    if (server.live && server.data) {
+      const d = server.data;
+      return {
+        categories,
+        counts: { critical: d.critical, warning: d.warning, info: d.info } as Record<HrAlertSeverity, number>,
+        total: d.total,
+      };
+    }
     const counts = countBySeverity(categories);
     const total = HR_ALERT_SEVERITIES.reduce((sum, s) => sum + counts[s], 0);
     return { categories, counts, total };
-  }, [categories]);
+  }, [categories, server.live, server.data]);
 }
 
 export function HrAlertsCard() {

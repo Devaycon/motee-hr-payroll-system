@@ -12,6 +12,7 @@ import type {
   GetEmployeeExportColumnsResponse,
   GetEmployeeImportColumnsResponse,
   GetEmployeeInvitationsResponse,
+  GetEmployeeGuarantorsResponse,
   GetEmployeeMedicalResponse,
   GetEmployeeResponse,
   GetEmployeeStatsParams,
@@ -125,6 +126,14 @@ export const employeesApi = api.injectEndpoints({
       }),
       providesTags: ["Employees"],
     }),
+    // GET /api/v1/employees/{id}/guarantors
+    getEmployeeGuarantors: builder.query<GetEmployeeGuarantorsResponse, string>({
+      query: (id) => ({
+        url: `${url}/${id}/guarantors`,
+        method: "GET",
+      }),
+      providesTags: ["Employees"],
+    }),
     changeEmployeeStatus: builder.mutation<
       ChangeEmployeeStatusResponse,
       ChangeEmployeeStatusParams
@@ -218,6 +227,7 @@ export const {
   useDeleteEmployeeMutation,
   useUpdateEmployeeMutation,
   useGetEmployeeMedicalQuery,
+  useGetEmployeeGuarantorsQuery,
   useChangeEmployeeStatusMutation,
   useInviteEmployeeMutation,
   useResendEmployeeInvitationMutation,

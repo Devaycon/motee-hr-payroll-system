@@ -84,12 +84,22 @@ export interface PublicHolidayDto {
   date: string;
   name: string;
   countryCode?: string | null;
+  /** False = a day of observance that does not close the business. */
+  isNonWorking: boolean;
+  excludedDepartmentIds: string[];
+  excludedDepartmentNames: string[];
+  /** Derived by the server: non-working and no departments excluded. */
+  closesEveryone: boolean;
 }
 
 export interface PublicHolidayRequest {
   date: string;
   name: string;
   countryCode?: string | null;
+  /** Defaults to true on the server. */
+  isNonWorking?: boolean;
+  /** Departments that keep working on the day. */
+  excludedDepartmentIds?: string[];
 }
 
 export type GetLeaveTypesResponse = ApiResponse<LeaveTypeDto[]>;
@@ -114,6 +124,8 @@ export interface GetPublicHolidaysParams {
 export type CreatePublicHolidayResponse = ApiResponse<PublicHolidayDto>;
 
 export type GeneratePublicHolidaysResponse = ApiResponse<PublicHolidayDto[]>;
+
+export type UpdatePublicHolidayResponse = ApiResponse<PublicHolidayDto>;
 
 export type DeletePublicHolidayResponse = ApiResponse<null>;
 

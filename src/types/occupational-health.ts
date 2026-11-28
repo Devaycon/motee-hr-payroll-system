@@ -1,4 +1,5 @@
 import type { ApiResponse, PagedResult } from "./api";
+import type { AbsenceState, SicknessReason } from "./sickness";
 
 // Generated from the Motee OpenAPI spec; adjust by hand if the spec changes.
 
@@ -73,9 +74,28 @@ export interface OhCaseDto {
   reviewIsDue: boolean;
   closedOn?: string | null;
   adjustments: AdjustmentDto[];
+  /** Every absence linked to the case. No reasonDetail: that stays behind the medical grant. */
+  linkedAbsences: LinkedAbsenceDto[];
   nextAction?: OhNextAction;
   nextStages: OhStage[];
 }
+
+export interface LinkedAbsenceDto {
+  id: string;
+  startDate: string;
+  endDate?: string | null;
+  days?: number | null;
+  reason: SicknessReason;
+  state: AbsenceState;
+}
+
+/** Replaces the whole set; an empty array unlinks everything. */
+export interface LinkAbsencesRequest {
+  sicknessRecordIds: string[];
+}
+
+// PUT /api/v1/occupational-health/{id}/sickness-records
+export type LinkOhAbsencesResponse = ApiResponse<OhCaseDto>;
 
 export type OhFitness =
   "pending" | "fit" | "fitWithAdjustments" | "temporarilyUnfit" | "unfit";

@@ -1,5 +1,7 @@
 "use client";
 
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetAnnouncementAcknowledgementsQuery } from "@/src/store/services/announcements";
 import {
   Dialog,
   DialogContent,
@@ -50,9 +52,35 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 export function AnnouncementDetailModal({
   open,
   onClose,
-  announcement,
+  announcement: shown,
 }: AnnouncementDetailModalProps) {
-  if (!announcement) return null;
+  // Signed in: who has acknowledged (and who hasn't) comes from
+  // GET /announcements/{id}/acknowledgements, read when the modal opens.
+  const live = useIsLive() && !!shown && isServerId(shown.id);
+  const acksQ = useGetAnnouncementAcknowledgementsQuery(shown?.id ?? "", {
+    skip: !live || !open || !shown?.requiresAcknowledgement,
+  });
+  const report = acksQ.data?.data;
+  if (!shown) return null;
+  const announcement = report
+    ? {
+        ...shown,
+        totalTargeted: report.totalTargeted,
+        acknowledgements: report.acknowledged.map((a, i) => ({
+          id: `${a.employeeId ?? i}`,
+          employeeName: a.employeeName,
+          employeeInitials: a.employeeName
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((w) => w[0]!.toUpperCase())
+            .join(""),
+          department: a.department ?? "—",
+          acknowledgedAt: a.acknowledgedAt,
+        })),
+      }
+    : shown;
+  const outstanding = report?.outstanding ?? [];
 
   const ackCount = announcement.acknowledgements.length;
   const ackPercent =
@@ -252,6 +280,13 @@ export function AnnouncementDetailModal({
 
                   <Separator />
 
+                  {outstanding.length > 0 && (
+                    <p className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-muted-foreground">
+                      Still to acknowledge ({outstanding.length}):{" "}
+                      {outstanding.slice(0, 12).join(", ")}
+                      {outstanding.length > 12 && ` and ${outstanding.length - 12} more`}
+                    </p>
+                  )}
                   {announcement.acknowledgements.length === 0 ? (
                     <div className="text-center py-8">
                       <p className="text-sm text-muted-foreground">

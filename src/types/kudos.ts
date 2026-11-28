@@ -157,6 +157,17 @@ export type PinKudosResponse = ApiResponse<KudosPostDto>;
 // DELETE /api/v1/kudos/{id}/pin
 export type UnpinKudosResponse = ApiResponse<KudosPostDto>;
 
+/** One person who reacted to a post. */
+export interface ReactorDto {
+  employeeId: string;
+  name: string;
+  type: ReactionType;
+  at: string;
+}
+
+// GET /api/v1/kudos/{id}/reactions
+export type GetKudosReactorsResponse = ApiResponse<ReactorDto[]>;
+
 // POST /api/v1/kudos/{id}/reactions
 export type ReactToKudosResponse = ApiResponse<KudosPostDto>;
 

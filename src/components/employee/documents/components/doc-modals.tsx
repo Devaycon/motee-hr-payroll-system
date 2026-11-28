@@ -134,6 +134,9 @@ interface UploadModalProps {
   onExpiryChange: (v: string) => void;
   desc: string;
   onDescChange: (v: string) => void;
+  /** The picked file; signed in, it is what gets uploaded. */
+  file?: File | null;
+  onFileChange?: (file: File | null) => void;
   done: boolean;
   folders: DocFolder[];
   onSubmit: () => void;
@@ -154,6 +157,8 @@ export function UploadModal({
   onExpiryChange,
   desc,
   onDescChange,
+  file,
+  onFileChange,
   done,
   folders,
   onSubmit,
@@ -282,15 +287,28 @@ export function UploadModal({
                 className="text-xs min-h-14 resize-none"
               />
             </div>
-            <div className="border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center py-5 gap-2 cursor-pointer hover:border-[#7F77DD]/50 transition-colors">
+            <label
+              className="border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center py-5 gap-2 cursor-pointer hover:border-[#7F77DD]/50 transition-colors"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                onFileChange?.(e.dataTransfer.files[0] ?? null);
+              }}
+            >
+              <input
+                type="file"
+                className="sr-only"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
+                onChange={(e) => onFileChange?.(e.target.files?.[0] ?? null)}
+              />
               <Upload className="w-5 h-5 text-muted-foreground" />
               <p className="text-xs text-muted-foreground">
-                Click to select a file or drag and drop
+                {file ? file.name : "Click to select a file or drag and drop"}
               </p>
               <p className="text-[11px] text-muted-foreground/60">
                 PDF, DOCX, PNG, JPG up to 10 MB
               </p>
-            </div>
+            </label>
           </div>
         )}
         {!done && (

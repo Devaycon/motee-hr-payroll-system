@@ -1,5 +1,8 @@
 "use client";
 
+import { isServerId, useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetGoalQuery, useGetReviewQuery } from "@/src/store/services/performance";
+import { toPerformanceGoal, toPerformanceReview } from "@/src/lib/performance/api-mapping";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -55,6 +58,17 @@ export function PerformancePage() {
 
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<PerformanceGoal | null>(null);
+  // Signed in: the opened review and goal are read fresh
+  // (GET /performance/reviews/{id}, GET /performance/goals/{id}).
+  const livePerf = useIsLive();
+  const reviewQ = useGetReviewQuery(viewingReview?.id ?? "", {
+    skip: !livePerf || !reviewModalOpen || !viewingReview || !isServerId(viewingReview.id),
+  });
+  const freshReview = reviewQ.data?.data ? toPerformanceReview(reviewQ.data.data) : viewingReview;
+  const goalQ = useGetGoalQuery(editingGoal?.id ?? "", {
+    skip: !livePerf || !goalModalOpen || !editingGoal || !isServerId(editingGoal.id),
+  });
+  const freshGoal = goalQ.data?.data ? toPerformanceGoal(goalQ.data.data) : editingGoal;
 
   function handleAddReview() {
     setViewingId(null);
@@ -106,10 +120,22 @@ export function PerformancePage() {
 
   async function handleUpdateGoal(
     id: string,
-    updates: { progress: number; status: GoalStatus },
+    updates: {
+      progress: number;
+      status: GoalStatus;
+      details?: { goalTitle: string; category: PerformanceGoal["category"]; description: string; dueDate: string };
+    },
   ) {
     const goal = goals.find((g) => g.id === id);
     if (!goal) return;
+    const d = updates.details;
+    const detailsChanged =
+      !!d &&
+      (d.goalTitle !== goal.goalTitle ||
+        d.category !== goal.category ||
+        d.description !== (goal.description ?? "") ||
+        d.dueDate.slice(0, 10) !== goal.dueDate.slice(0, 10));
+    if (detailsChanged && !(await actions.updateGoalDetails(goal, d!))) return;
     if (!(await actions.updateGoalProgress(goal, updates))) return;
     toast.success("Goal updated.");
   }
@@ -203,19 +229,25 @@ export function PerformancePage() {
       <ReviewModal
         open={reviewModalOpen}
         onClose={() => setReviewModalOpen(false)}
-        viewingReview={viewingReview}
+        viewingReview={freshReview}
         departments={departments}
         onSave={handleSaveReview}
         onComplete={handleCompleteReview}
+        onCalibrate={async (id, rating) => {
+          const ok = await actions.calibrateReview(id, rating);
+          if (ok) toast.success(`Calibrated to ${rating}/5`);
+          return ok;
+        }}
       />
 
       <GoalModal
         open={goalModalOpen}
         onClose={() => setGoalModalOpen(false)}
-        editingGoal={editingGoal}
+        editingGoal={freshGoal}
         departments={departments}
         onSave={handleSaveGoal}
         onUpdate={handleUpdateGoal}
+        canEditDetails
       />
     </div>
   );

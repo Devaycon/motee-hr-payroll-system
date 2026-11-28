@@ -107,6 +107,19 @@ import { canMoveTo, hiredCount } from "../detail/advance";
 import { useOnboardingInvite } from "../use-invite";
 import { cn } from "@/src/lib/utils";
 import { openMailto } from "./mailto";
+import { isServerId, useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import {
+  CANDIDATE_LOCAL_FIELDS,
+  interviewToRequest,
+  mergeLocal,
+  toCandidate,
+  toInterview,
+} from "@/src/lib/recruitment/api-mapping";
+import { useGetCandidateQuery } from "@/src/store/services/candidates";
+import {
+  useGetCandidateInterviewsQuery,
+  useUpdateInterviewMutation,
+} from "@/src/store/services/interviews";
 
 function StarInput({
   value,
@@ -150,11 +163,23 @@ interface Props {
 
 export function CandidateDrawer({
   country,
-  candidate,
+  candidate: listCandidate,
   requisition,
   interviews,
   onClose,
 }: Props) {
+  // Signed in: the applicant is read fresh when the drawer opens
+  // (GET /candidates/{id}); what the API has no field for stays from the list.
+  const freshQ = useGetCandidateQuery(listCandidate.id, {
+    skip: !useIsLive() || !isServerId(listCandidate.id),
+  });
+  const candidate = useMemo(
+    () =>
+      freshQ.data?.data
+        ? mergeLocal([toCandidate(freshQ.data.data)], [listCandidate], CANDIDATE_LOCAL_FIELDS)[0]
+        : listCandidate,
+    [freshQ.data, listCandidate],
+  );
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const employees = useAppSelector((s) => s.locale.data?.employees ?? []);
@@ -586,6 +611,17 @@ function InterviewsTab({
   employees: { id: string; name: string }[];
 }) {
   const dispatch = useAppDispatch();
+  // Signed in: this candidate's interviews from GET /interviews/candidate/{id},
+  // and Reschedule saves through PUT /interviews/{id}.
+  const live = useIsLive() && isServerId(candidate.id);
+  const serverIv = useGetCandidateInterviewsQuery(candidate.id, { skip: !live });
+  const [updateInterview] = useUpdateInterviewMutation();
+  const sendIv = useLiveSender(["Interviews", "Candidates"]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const list: Interview[] =
+    live && serverIv.data?.data
+      ? serverIv.data.data.map(toInterview).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
+      : interviews;
   const [round, setRound] = useState("Interview 1");
   const [scheduledAt, setScheduledAt] = useState("");
   const [durationMins, setDurationMins] = useState(45);
@@ -598,7 +634,47 @@ function InterviewsTab({
     [employees],
   );
 
+  function startReschedule(iv: Interview) {
+    setEditingId(iv.id);
+    setRound(iv.round);
+    setScheduledAt(iv.scheduledAt.slice(0, 16));
+    setDurationMins(iv.durationMins);
+    setMode(iv.mode);
+    setPanel(iv.panel);
+    setLocation(iv.location ?? "");
+  }
+
+  async function saveReschedule() {
+    const iv = list.find((x) => x.id === editingId);
+    if (!iv || !scheduledAt) return;
+    const next: Interview = {
+      ...iv,
+      round,
+      scheduledAt: new Date(scheduledAt).toISOString(),
+      durationMins,
+      mode,
+      panel,
+      panelNames: panel.map((id) => empById.get(id) ?? id),
+      location: location || undefined,
+    };
+    const ok = await sendIv(
+      () => updateInterview({ id: iv.id, body: interviewToRequest(next) }).unwrap(),
+      "Could not reschedule the interview.",
+    );
+    if (ok) {
+      toast.success("Interview updated");
+      setEditingId(null);
+      setScheduledAt("");
+      setPanel([]);
+      setLocation("");
+    }
+  }
+
   function schedule() {
+    if (editingId) {
+      void saveReschedule();
+      return;
+    }
     if (!scheduledAt) {
       toast.error("Pick a date & time.");
       return;
@@ -628,7 +704,7 @@ function InterviewsTab({
     <div className="flex flex-col gap-4">
       <div className="rounded-md border border-border p-3 space-y-2.5">
         <p className="text-xs font-semibold text-foreground">
-          Schedule interview
+          {editingId ? "Reschedule interview" : "Schedule interview"}
         </p>
         <div className="grid grid-cols-2 gap-2">
           <Input
@@ -703,15 +779,22 @@ function InterviewsTab({
             </SelectContent>
           </Select>
         </div>
-        <Button size="sm" className="h-8 gap-1.5" onClick={schedule}>
-          <CalendarPlus className="w-3.5 h-3.5" /> Schedule
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button size="sm" className="h-8 gap-1.5" onClick={schedule}>
+            <CalendarPlus className="w-3.5 h-3.5" /> {editingId ? "Save changes" : "Schedule"}
+          </Button>
+          {editingId && (
+            <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditingId(null)}>
+              Cancel
+            </Button>
+          )}
+        </div>
       </div>
 
-      {interviews.length === 0 ? (
+      {list.length === 0 ? (
         <p className="text-xs text-muted-foreground">No interviews yet.</p>
       ) : (
-        interviews.map((iv) => (
+        list.map((iv) => (
           <div
             key={iv.id}
             className={cn(
@@ -757,6 +840,16 @@ function InterviewsTab({
                   <Bell className="w-3 h-3" />
                   {iv.reminderSent ? "Reminded" : "Remind"}
                 </Button>
+                {live && isServerId(iv.id) && iv.status === "scheduled" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-[11px]"
+                    onClick={() => startReschedule(iv)}
+                  >
+                    Reschedule
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"

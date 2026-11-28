@@ -42,7 +42,11 @@ export type ApprovalEventType =
   | "returned"
   | "resubmitted"
   | "commented"
-  | "cancelled";
+  | "cancelled"
+  /** Server approvals: a step the engine skipped (see the step's skippedReason). */
+  | "skipped"
+  /** Server approvals: the approvers were worked out again. */
+  | "reresolved";
 
 /**
  * Who approves a step.
@@ -233,6 +237,12 @@ export interface ApprovalRequest {
   history: ApprovalEvent[];
   attachments: ApprovalAttachment[];
   signatures: ApprovalSignature[];
+  /**
+   * Server approvals only: the actions the API offers the viewer
+   * (ApprovalDto.availableActions). When set, it decides whether the viewer
+   * is the current approver instead of the local chain resolution.
+   */
+  serverActions?: string[];
 }
 
 export interface NewApprovalSubmission {

@@ -41,6 +41,8 @@ interface EnrollmentsTableProps {
   courses: Course[];
   onDelete: (id: string) => void;
   onEnroll: () => void;
+  /** Signed in: set an enrollment's status (PATCH /learning/enrollments/{id}/status). */
+  onSetStatus?: (enrollment: Enrollment, status: Enrollment["status"]) => void;
 }
 
 export function EnrollmentsTable({
@@ -48,6 +50,7 @@ export function EnrollmentsTable({
   courses,
   onDelete,
   onEnroll,
+  onSetStatus,
 }: EnrollmentsTableProps) {
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
@@ -179,7 +182,19 @@ export function EnrollmentsTable({
               <MoreHorizontal className="w-3.5 h-3.5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
+          <DropdownMenuContent align="end" className="w-44">
+            {onSetStatus &&
+              (["in_progress", "completed", "dropped", "failed"] as Enrollment["status"][])
+                .filter((s) => s !== enrollment.status)
+                .map((s) => (
+                  <DropdownMenuItem
+                    key={s}
+                    className="text-xs gap-2"
+                    onClick={() => onSetStatus(enrollment, s)}
+                  >
+                    Mark {s.replace("_", " ")}
+                  </DropdownMenuItem>
+                ))}
             <DropdownMenuItem
               className="text-xs gap-2 text-destructive focus:text-destructive"
               onClick={() => setDeleteId(enrollment.id)}
@@ -191,7 +206,7 @@ export function EnrollmentsTable({
         </DropdownMenu>
       )),
     ],
-    [identity],
+    [identity, onSetStatus],
   );
 
   return (

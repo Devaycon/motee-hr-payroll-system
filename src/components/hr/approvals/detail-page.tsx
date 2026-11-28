@@ -40,6 +40,7 @@ import {
   type ApprovalSignature,
 } from "@/src/lib/types/approvals";
 import { useCan } from "@/src/lib/permissions/use-can";
+import { useLiveApproval } from "./use-live-approvals";
 import {
   formatRelativeDate,
   isCurrentApprover,
@@ -63,6 +64,9 @@ export function ApprovalDetailPage({
   requestId,
   basePath = "/hr-action-center/submissions",
 }: ApprovalDetailPageProps) {
+  // Signed in: GET /approvals/{id} keeps this approval in the slice;
+  // decisions go out through approvals-api-listener.
+  const liveApproval = useLiveApproval(requestId);
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
@@ -91,6 +95,15 @@ export function ApprovalDetailPage({
     () => (request ? isSubmitter(request, user?.employeeId) : false),
     [request, user],
   );
+
+  if (!request && liveApproval.error) {
+    return (
+      <div className="flex flex-col gap-2 py-10 text-center">
+        <p className="text-sm font-medium text-foreground">This submission could not be loaded.</p>
+        <Link href={basePath} className="text-sm text-primary hover:underline">Back to submissions</Link>
+      </div>
+    );
+  }
 
   if (!request) {
     return (

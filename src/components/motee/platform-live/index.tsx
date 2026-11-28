@@ -20,6 +20,7 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsContent } from "@/src/components/ui/tabs";
 import { PageTabsList } from "@/src/components/shared/page-tabs";
+import { VerificationsTab } from "./verifications-tab";
 import { getApiErrorMessage } from "@/src/lib/utils";
 import { formatDate } from "@/src/lib/utils/format-date";
 import { platformStaffSchema } from "@/src/lib/validations/platform";
@@ -258,6 +259,7 @@ export function PlatformPage() {
           tabs={[
             { value: "tenants", label: "Tenants" },
             { value: "staff", label: "Platform Staff" },
+            { value: "verifications", label: "Verifications" },
           ]}
         />
         <TabsContent value="tenants" className="mt-5">
@@ -265,6 +267,9 @@ export function PlatformPage() {
         </TabsContent>
         <TabsContent value="staff" className="mt-5">
           <StaffTab />
+        </TabsContent>
+        <TabsContent value="verifications" className="mt-5">
+          <VerificationsTab />
         </TabsContent>
       </Tabs>
     </div>

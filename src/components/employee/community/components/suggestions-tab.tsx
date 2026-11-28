@@ -50,6 +50,8 @@ import {
   useLiveSuggestions,
   useSuggestionActions,
 } from "@/src/lib/engagement/use-engagement";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetMySuggestionsQuery } from "@/src/store/services/suggestions";
 
 export function SuggestionsTab() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>(SUGGESTIONS);
@@ -64,6 +66,11 @@ export function SuggestionsTab() {
     setSuggestions(rows);
     setUpvoted(new Set(rows.filter((s) => s.upvotedBy.includes(MY_INITIALS)).map((s) => s.id)));
   }
+  // Signed in, "My Suggestions" is the server's list of yours
+  // (GET /suggestions/mine) — it also knows the ones you posted anonymously.
+  const signedIn = useIsLive();
+  const mineQ = useGetMySuggestionsQuery(undefined, { skip: !signedIn });
+  const myIds = mineQ.data ? new Set(mineQ.data.data.map((m) => m.id)) : null;
   const [catFilter, setCatFilter] = useState<SuggestionCategory | "all">("all");
   const [statusFilter, setStatusFilter] = useState<SuggestionStatus | "all">(
     "all",
@@ -135,7 +142,9 @@ export function SuggestionsTab() {
   let list = suggestions.filter((s) => {
     if (catFilter !== "all" && s.category !== catFilter) return false;
     if (statusFilter !== "all" && s.status !== statusFilter) return false;
-    if (myTab === "mine" && s.submitterInitials !== MY_INITIALS) return false;
+    if (myTab === "mine" && (myIds ? !myIds.has(s.id) : s.submitterInitials !== MY_INITIALS)) {
+      return false;
+    }
     return true;
   });
 

@@ -1,6 +1,8 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
+import { PromptDialog, type PromptRequest } from "@/src/components/shared/prompt-dialog";
+import { toast } from "sonner";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useCommunity } from "./hooks";
 import { useCommunityActions } from "@/src/lib/engagement/use-engagement";
@@ -71,6 +73,8 @@ export function CommunityPage() {
 
     setPosts((prev) => [post, ...prev]);
   };
+
+  const [prompt, setPrompt] = useState<PromptRequest | null>(null);
 
   const handleDelete = (id: string) => {
     void actions.remove(id);
@@ -197,7 +201,41 @@ export function CommunityPage() {
                 onLike={handleLike}
                 onComment={handleComment}
                 onPollVote={handlePollVote}
+                onEdit={
+                  actions.live
+                    ? (post) =>
+                        setPrompt({
+                          title: "Edit post",
+                          inputLabel: "Post",
+                          multiline: true,
+                          initialValue: post.content,
+                          onConfirm: async (content) => {
+                            const ok = await actions.edit(post.id, content);
+                            if (ok) {
+                              setPosts((prev) => prev.map((p) => (p.id === post.id ? { ...p, content } : p)));
+                              toast.success("Post updated");
+                            }
+                            return ok;
+                          },
+                        })
+                    : undefined
+                }
+                onDeleteComment={
+                  actions.live
+                    ? (postId, commentId) => {
+                        void actions.deleteComment(postId, commentId);
+                        setPosts((prev) =>
+                          prev.map((p) =>
+                            p.id === postId
+                              ? { ...p, comments: p.comments.filter((c) => c.id !== commentId) }
+                              : p,
+                          ),
+                        );
+                      }
+                    : undefined
+                }
               />
+              <PromptDialog request={prompt} onClose={() => setPrompt(null)} />
             </TabsContent>
 
             <TabsContent value="celebrations" className="mt-5">

@@ -267,6 +267,20 @@ recruitmentListener.startListening({
       const before = bucketOf(original, country);
       await send(async () => {
         for (const id of ids) {
+          // Ask the server first (GET /candidates/{id}/can-move): a refused move
+          // gets its reason shown instead of a bare error.
+          const check = dispatch(
+            candidatesApi.endpoints.canMoveCandidate.initiate({ id, to: stage }, { forceRefetch: true }),
+          );
+          try {
+            const verdict = (await check.unwrap()).data;
+            if (verdict && !verdict.allowed) {
+              // Shaped like an API error so `send` shows the reason.
+              throw { error: verdict.reason || "This applicant can't move to that stage yet." };
+            }
+          } finally {
+            check.unsubscribe();
+          }
           // Moving re-activates on the screen; the server needs it restored first.
           if (before?.candidates.find((c) => c.id === id)?.status === "rejected") {
             await run(dispatch(candidatesApi.endpoints.restoreCandidate.initiate(id)));

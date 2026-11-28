@@ -205,6 +205,28 @@ export function CompanyProfilePage() {
             setTinFile={setTinFile}
             onTinUpload={setTinUpload}
             tinHistory={tinHistory}
+            onCacWithdraw={
+              actions.live
+                ? () =>
+                    void actions.withdraw("registration").then((ok) => {
+                      if (ok) {
+                        setCacStatus("Draft");
+                        toast.success("Submission withdrawn");
+                      }
+                    })
+                : undefined
+            }
+            onTinWithdraw={
+              actions.live
+                ? () =>
+                    void actions.withdraw("tax").then((ok) => {
+                      if (ok) {
+                        setTinStatus("Draft");
+                        toast.success("Submission withdrawn");
+                      }
+                    })
+                : undefined
+            }
           />
         </TabsContent>
 

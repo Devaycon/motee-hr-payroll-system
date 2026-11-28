@@ -5,6 +5,8 @@ import {
   AlarmClock,
   Bell,
   Cake,
+  DoorOpen,
+  UserPlus,
   CalendarClock,
   CalendarDays,
   ChevronRight,
@@ -20,6 +22,10 @@ import { Tile, TileLabel } from "./tiles";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import { formatDate } from "@/src/lib/utils/format-date";
 import { cn } from "@/src/lib/utils";
+import { useMemo } from "react";
+import { useIsLive } from "@/src/lib/live/use-is-live";
+import { useGetUpcomingCalendarQuery } from "@/src/store/services/calendar";
+import type { CalendarCategory } from "@/src/types/calendar";
 
 export interface UpcomingEvent {
   id: string;
@@ -46,6 +52,9 @@ const TYPE_STYLES: Record<string, string> = {
   reminder: "border-sky-500/30 bg-sky-500/10 text-sky-600",
   training: "border-teal-500/30 bg-teal-500/10 text-teal-600",
   meeting: "border-[#7F77DD]/30 bg-[#7F77DD]/10 text-[#7F77DD]",
+  // Emitted by the calendar API since 2026-11-27.
+  starter: "border-lime-500/30 bg-lime-500/10 text-lime-700 dark:text-lime-400",
+  leaver: "border-stone-500/30 bg-stone-500/10 text-stone-600 dark:text-stone-400",
 };
 
 /**
@@ -62,6 +71,8 @@ const TYPE_ICONS: Record<string, LucideIcon> = {
   reminder: Bell,
   training: GraduationCap,
   meeting: CalendarDays,
+  starter: UserPlus,
+  leaver: DoorOpen,
 };
 
 /** Icon-only colour (no border/background) pulled from the badge tone. */
@@ -74,6 +85,8 @@ const TYPE_ICON_COLORS: Record<string, string> = {
   reminder: "text-sky-600",
   training: "text-teal-600",
   meeting: "text-[#7F77DD]",
+  starter: "text-lime-700 dark:text-lime-400",
+  leaver: "text-stone-600 dark:text-stone-400",
 };
 
 /**
@@ -105,6 +118,8 @@ export const EVENT_TYPE_HEX: Record<string, string> = {
   training: "#14b8a6",
   holiday: "#f43f5e",
   leave: "#f43f5e",
+  starter: "#65a30d",
+  leaver: "#78716c",
 };
 
 function relativeLabel(days: number) {
@@ -124,7 +139,51 @@ function daysUntilAnnual(monthDay: string, ref: Date): number | null {
   return Math.round((next.getTime() - ref.getTime()) / 86_400_000);
 }
 
+/**
+ * Calendar categories as the dashboard's event types. Someone's own events and
+ * sickness are left off an organisation-wide view.
+ */
+const TYPE_FROM_CATEGORY: Partial<Record<CalendarCategory, string | null>> = {
+  oneToOne: "meeting",
+  leaveRequest: "leave",
+  cover: "leave",
+  personal: null,
+  sickness: null,
+};
+
+/** Signed in: the next 7 days from GET /calendar/upcoming. */
+function useLiveUpcomingEvents(live: boolean) {
+  const q = useGetUpcomingCalendarQuery({ days: 7 }, { skip: !live });
+  const data = useMemo<UpcomingEvent[] | null>(() => {
+    if (!q.data?.data) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return q.data.data
+      .map((e) => {
+        const type = e.category in TYPE_FROM_CATEGORY ? TYPE_FROM_CATEGORY[e.category] : e.category;
+        if (!type) return null;
+        const date = e.date.slice(0, 10);
+        const daysUntil = Math.round(
+          (new Date(`${date}T00:00:00`).getTime() - today.getTime()) / 86_400_000,
+        );
+        const title =
+          e.personName && !e.title.includes(e.personName) ? `${e.title} — ${e.personName}` : e.title;
+        return { id: e.id, title, date, type, daysUntil };
+      })
+      .filter((e): e is UpcomingEvent => !!e && e.daysUntil >= 0 && e.daysUntil <= 7)
+      .sort((a, b) => a.daysUntil - b.daysUntil);
+  }, [q.data]);
+  return { data, loading: q.isLoading };
+}
+
 export function useUpcomingEvents() {
+  const live = useIsLive();
+  const server = useLiveUpcomingEvents(live);
+  const demo = useDemoUpcomingEvents();
+  return live ? { ...demo, data: server.data, loading: server.loading || !server.data } : demo;
+}
+
+function useDemoUpcomingEvents() {
   return useLocaleSection<UpcomingEvent[]>((bundle) => {
     const refIso =
       bundle._meta.referenceDate ?? new Date().toISOString().slice(0, 10);

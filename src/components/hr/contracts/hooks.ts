@@ -21,10 +21,16 @@ import {
 import { useUploadFileMutation } from "@/src/store/services/files";
 import { buildContractLetterHtml } from "./components/contract-letter-modal";
 
-export function useContracts() {
-  const skip = useAppSelector(
+/**
+ * Every contract in the company (GET /contracts). Pass `skip` where the
+ * viewer may be an ordinary employee: since 28 Nov the register answers 403
+ * without organisation-wide access, and they read `/contracts/mine` instead.
+ */
+export function useContracts(options: { skip?: boolean } = {}) {
+  const notLive = useAppSelector(
     (s) => !s.session.is_loggedIn || !s.session.tenant_id,
   );
+  const skip = notLive || !!options.skip;
   const query = useGetAllContractsQuery(undefined, { skip });
 
   const data = useMemo<Contract[] | null>(

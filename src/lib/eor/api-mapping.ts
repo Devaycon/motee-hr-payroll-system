@@ -29,7 +29,7 @@ const KEY_FROM_API: Record<ComplianceKey, EorComplianceKey> = {
 export const complianceKeyToApi = (k: EorComplianceKey): ComplianceKey =>
   (Object.entries(KEY_FROM_API).find(([, v]) => v === k)?.[0] ?? "contract") as ComplianceKey;
 
-function complianceFromApi(c: ComplianceItemDto): EorComplianceItem {
+export function complianceFromApi(c: ComplianceItemDto): EorComplianceItem {
   // Expired or expiring evidence needs action, whatever the stored state.
   const status: EorComplianceStatus =
     c.standing === "expired" || c.standing === "expiringSoon" || c.standing === "actionRequired"
@@ -174,5 +174,8 @@ export function invoiceFromApi(dto: EorInvoiceDto): EorInvoice {
     status: dto.standing,
     issuedAt: dto.issuedOn,
     dueAt: dto.dueOn,
+    periodKey: dto.period,
+    reference: dto.reference ?? undefined,
+    currency: dto.currency,
   };
 }

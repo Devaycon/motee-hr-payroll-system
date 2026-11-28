@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { FileText, Plus, Trash2, Upload } from "lucide-react";
+import { Download, FileText, Plus, Trash2, Upload } from "lucide-react";
+import { isServerId, useIsLive, useLiveSender } from "@/src/lib/live/use-is-live";
+import { getApiErrorMessage } from "@/src/lib/utils";
+import {
+  useAddProjectDocumentMutation,
+  useDownloadProjectDocumentMutation,
+} from "@/src/store/services/projects";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -65,6 +71,11 @@ const DOC_EXPORT_COLUMNS: ReportColumn<{
 /** §11 — categorised documents for an HRIS rollout. */
 export function DocumentsPanel({ project }: { project: Project }) {
   const dispatch = useAppDispatch();
+  // Signed in: uploads and downloads go straight to the API.
+  const live = useIsLive() && isServerId(project.id);
+  const [addDocument] = useAddProjectDocumentMutation();
+  const [download] = useDownloadProjectDocumentMutation();
+  const sendDoc = useLiveSender(["Projects"]);
   const documents = useAppSelector((s) =>
     s.projects.documents.filter((d) => d.projectId === project.id),
   );
@@ -166,6 +177,23 @@ export function DocumentsPanel({ project }: { project: Project }) {
                       {Math.round(d.fileSize / 1024)} KB
                     </td>
                     <td className="px-3 py-2 text-right">
+                      {live && isServerId(d.id) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          aria-label={`Download ${d.name}`}
+                          onClick={() =>
+                            void download({ projectId: project.id, documentId: d.id })
+                              .unwrap()
+                              .catch((err) =>
+                                toast.error(getApiErrorMessage(err, "Could not download the document.")),
+                              )
+                          }
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -189,8 +217,27 @@ export function DocumentsPanel({ project }: { project: Project }) {
       <UploadDialog
         open={uploading}
         onClose={() => setUploading(false)}
-        onUpload={(doc) => {
-          dispatch(addProjectDocument({ projectId: project.id, document: doc }));
+        live={live}
+        onUpload={async (doc, file) => {
+          if (live && file) {
+            // POST /projects/{id}/documents (multipart: the file, name, category, description).
+            const ok = await sendDoc(
+              () =>
+                addDocument({
+                  projectId: project.id,
+                  body: {
+                    file,
+                    name: doc.name,
+                    category: doc.category,
+                    description: doc.description,
+                  } as never,
+                }).unwrap(),
+              "Could not upload the document.",
+            );
+            if (!ok) return;
+          } else {
+            dispatch(addProjectDocument({ projectId: project.id, document: doc }));
+          }
           toast.success(`"${doc.name}" uploaded`);
           setUploading(false);
         }}
@@ -202,13 +249,16 @@ export function DocumentsPanel({ project }: { project: Project }) {
 interface UploadDialogProps {
   open: boolean;
   onClose: () => void;
-  onUpload: (doc: NewProjectDocument) => void;
+  /** Signed in: a real file is picked and uploaded. */
+  live?: boolean;
+  onUpload: (doc: NewProjectDocument, file?: File) => void | Promise<void>;
 }
 
 // Demo data only — there's no real file storage backing this module, so
 // "upload" fabricates a filename/size the same way
 // `src/components/hr/documents/index.tsx` does for the company-wide library.
-function UploadDialog({ open, onClose, onUpload }: UploadDialogProps) {
+function UploadDialog({ open, onClose, onUpload, live = false }: UploadDialogProps) {
+  const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<ProjectDocumentCategory>("other");
   const [fileType, setFileType] = useState<DocumentFileType>("pdf");
@@ -222,6 +272,7 @@ function UploadDialog({ open, onClose, onUpload }: UploadDialogProps) {
       setCategory("other");
       setFileType("pdf");
       setDescription("");
+      setFile(null);
     }
   }
 
@@ -230,14 +281,18 @@ function UploadDialog({ open, onClose, onUpload }: UploadDialogProps) {
       toast.error("Give the document a name.");
       return;
     }
-    onUpload({
+    if (live && !file) {
+      toast.error("Choose the file to upload.");
+      return;
+    }
+    void onUpload({
       name: name.trim(),
       fileType,
       category,
       description: description.trim() || undefined,
-      fileSize: Math.round(100_000 + Math.random() * 900_000),
+      fileSize: file?.size ?? Math.round(100_000 + Math.random() * 900_000),
       uploadedBy: "You",
-    });
+    }, file ?? undefined);
   }
 
   return (
@@ -297,6 +352,19 @@ function UploadDialog({ open, onClose, onUpload }: UploadDialogProps) {
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
+          {live && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">File *</Label>
+              <Input
+                type="file"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setFile(f);
+                  if (f && !name.trim()) setName(f.name.replace(/\.[^.]+$/, ""));
+                }}
+              />
+            </div>
+          )}
         </div>
 
         <DialogFooter>
