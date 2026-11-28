@@ -33,6 +33,7 @@ import { hydrateSickness } from "./sickness-slice";
 import { hydrateLeaveSchemes } from "./leave-schemes-slice";
 import { hydrateWorkforceRisk } from "./workforce-risk-slice";
 import { initPayrollPersistence } from "./payroll-persistence";
+import { initReportStudioPersistence } from "./report-studio-persistence";
 
 /**
  * Stores that have already been booted. Kept on `globalThis`, not in a module
@@ -110,6 +111,7 @@ function boot() {
     // Payroll stays in this browser only: salaries and bank details must never
     // go through the shared, unauthenticated runtime API.
     initPayrollPersistence();
+    initReportStudioPersistence();
   }
 }
 

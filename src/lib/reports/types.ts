@@ -21,7 +21,23 @@ export interface ReportColumn<T> {
   money?: boolean;
   /** Drill-down: the cell links here (e.g. the employee's profile). */
   href?: (row: T) => string | undefined;
+  // ── Data dictionary (Report Studio, feedback B2) ──
+  /** What the field means, in one sentence. */
+  description?: string;
+  /** The module the value comes from (e.g. "Payroll — final payslips"). */
+  source?: string;
+  type?: FieldType;
+  /**
+   * Restricted data. "identifier" (TIN, RSA PIN, NIN, BVN) and "bank"
+   * (account number, holder) are masked unless the viewer may see them —
+   * checked every time the report runs or is exported, not only when built.
+   */
+  sensitive?: "identifier" | "bank";
+  /** Section heading inside a dataset's field list ("Employee", "Earnings"). */
+  section?: string;
 }
+
+export type FieldType = "text" | "money" | "number" | "percent" | "date" | "boolean";
 
 /** One item in a report row's ⋯ actions menu. */
 export interface ReportRowAction {
@@ -224,6 +240,24 @@ export interface ReportDef<T> {
   breakdowns?: ReportBreakdownDef<T>[];
   /** ⋯ menu on each row (drill-downs). */
   rowActions?: (row: T) => ReportRowAction[];
+  /**
+   * Fields that exist only at run time — e.g. one per pay element the tenant
+   * created, so a new "Security Allowance" is reportable with no development.
+   */
+  dynamicColumns?: (ctx: ReportContext) => ReportColumn<T>[];
+  /** Datasets sharing a row model; Report Studio lets you combine their fields (keyed by employee + period). */
+  joinGroup?: string;
+  /** A builder dataset: offered in the custom builders, not listed as its own report card. */
+  datasetOnly?: boolean;
+  /** Short note on what one row is ("One row per employee per payslip"). */
+  grain?: string;
+}
+
+/** Every column of a report, its run-time fields included. */
+export function columnsOf<T>(def: ReportDef<T>, ctx: ReportContext): ReportColumn<T>[] {
+  const extra = def.dynamicColumns?.(ctx) ?? [];
+  const seen = new Set(def.columns.map((c) => c.key));
+  return [...def.columns, ...extra.filter((c) => !seen.has(c.key))];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
