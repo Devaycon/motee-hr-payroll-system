@@ -50,7 +50,8 @@ import { applyCollection } from "@/src/lib/profile/collection-edits";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import type { LocaleEmployee } from "@/src/lib/types/locale";
 import { inputSourceOf, type PayrollException, type PayrollRun, type PeriodInput, type RunEmployee } from "@/src/lib/payroll/types";
-import { openEarlierRuns, useCurrentActor, usePayrollActions, useRun, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { openEarlierRuns, useCurrentActor, usePayrollActions, useRun, useTenantPayroll, useRunReadiness } from "@/src/lib/payroll/use-payroll";
+import { ReadinessCard } from "./readiness-card";
 import { cn } from "@/src/lib/utils";
 import { PaymentPanel } from "./payment-panel";
 import { BREAKDOWN_VIEWS, breakdownTable, buildBreakdown, type BreakdownView } from "@/src/lib/payroll/breakdowns";
@@ -105,6 +106,7 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
   // Joiners check: re-run when HR onboarding moves (a hire clears, a new one starts this month).
   const onboardingKey = useAppSelector((s) => `${s.onboardingRecords.records.map((r) => `${r.id}:${r.status}:${r.startDate}`).join(",")}|${s.onboardingRecords.cleared.map((c) => c.id).join(",")}`);
   const isDraft = run?.status === "draft";
+  const readiness = useRunReadiness(run && run.status !== "finalized" && run.status !== "disbursed" ? runId : undefined);
   useEffect(() => {
     if (isDraft) actions.revalidate(runId);
   }, [onboardingKey, isDraft, runId, actions]);
@@ -192,13 +194,13 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
               <Button variant="outline" size="sm" className="gap-1.5" asChild>
                 <Link href={`${PAYROLL_HREF}/${run.id}/upload`}><Upload className="h-3.5 w-3.5" /> Upload figures</Link>
               </Button>
-              <Button size="sm" className="gap-1.5" onClick={submit} disabled={!included.length || busy || !!run.stale || earlier.length > 0}>
+              <Button size="sm" className="gap-1.5" onClick={submit} disabled={!included.length || busy || !!run.stale || earlier.length > 0 || !!readiness?.blocked} title={readiness?.blocked ? `Blocked: ${readiness.blockers.map((b) => b.label).join(", ")}` : undefined}>
                 <Send className="h-3.5 w-3.5" /> Submit for approval
               </Button>
             </>
           )}
           {run.status === "approved" && canEdit && (
-            <Button size="sm" className="gap-1.5" onClick={() => setConfirm("finalize")} disabled={earlier.length > 0}>
+            <Button size="sm" className="gap-1.5" onClick={() => setConfirm("finalize")} disabled={earlier.length > 0 || !!readiness?.blocked} title={readiness?.blocked ? `Blocked: ${readiness.blockers.map((b) => b.label).join(", ")}` : undefined}>
               <Lock className="h-3.5 w-3.5" /> Finalize &amp; issue payslips
             </Button>
           )}
@@ -232,6 +234,8 @@ export function RunWorkspacePage({ runId }: { runId: string }) {
       <div className="rounded-xl border bg-card p-4">
         <PipelineStepper status={run.status} />
       </div>
+
+      {readiness && !locked && <ReadinessCard readiness={readiness} run={run} compact />}
 
       {/* Sequencing and staleness come before everything else */}
       {earlier.length > 0 && !locked && (

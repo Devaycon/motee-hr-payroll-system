@@ -78,6 +78,7 @@ export type SourceType =
   | "expense"
   | "non_recurring_element"
   | "proration"
+  | "statutory"
   | "unknown";
 
 export const SOURCE_LABELS: Record<SourceType, string> = {
@@ -92,10 +93,63 @@ export const SOURCE_LABELS: Record<SourceType, string> = {
   expense: "Expense claim",
   non_recurring_element: "Non-recurring pay element",
   proration: "Part-month pay",
+  statutory: "Statutory calculation",
   unknown: "Requires investigation",
 };
 
+/**
+ * Where a movement originated, in the client's terms (feedback B4, Nov 2026).
+ * Derived from `SourceType`; "unknown" stays unknown.
+ */
+export type VarianceOrigin =
+  | "approved_hr_transaction"
+  | "manual_input"
+  | "recurring_adjustment"
+  | "one_off_payment"
+  | "attendance_record"
+  | "statutory_calculation"
+  | "retro_adjustment"
+  | "unknown";
+
+export const ORIGIN_LABELS: Record<VarianceOrigin, string> = {
+  approved_hr_transaction: "Approved HR transaction",
+  manual_input: "Payroll administrator's manual input",
+  recurring_adjustment: "Recurring salary adjustment",
+  one_off_payment: "One-off payment",
+  attendance_record: "Attendance record",
+  statutory_calculation: "Statutory calculation",
+  retro_adjustment: "Retroactive payroll adjustment",
+  unknown: "Not identified",
+};
+
+/**
+ * How sure the system is about the reason.
+ * confirmed — the reason is on an approved record.
+ * verification_required — a likely reason exists, but a person has to check it
+ *   (a manual entry on a run nobody has approved yet, an imported figure).
+ * unexplained — nothing on record explains it: investigate (feeds B5 and the readiness score).
+ */
+export type VarianceConfidence = "confirmed" | "verification_required" | "unexplained";
+
+export const CONFIDENCE_LABELS: Record<VarianceConfidence, string> = {
+  confirmed: "Confirmed",
+  verification_required: "Verification required",
+  unexplained: "Unexplained",
+};
+
+export const CONFIDENCE_HELP: Record<VarianceConfidence, string> = {
+  confirmed: "The system identified and verified the reason from an approved record.",
+  verification_required: "The system identified a possible reason, but a person needs to verify it.",
+  unexplained: "The system couldn't identify the reason. It needs investigating.",
+};
+
+const CONFIDENCE_RANK: Record<VarianceConfidence, number> = { confirmed: 0, verification_required: 1, unexplained: 2 };
+export const worstConfidence = (xs: VarianceConfidence[]): VarianceConfidence => xs.reduce<VarianceConfidence>((w, c) => (CONFIDENCE_RANK[c] > CONFIDENCE_RANK[w] ? c : w), "confirmed");
+
 export interface MovementSource {
+  /** Client-facing origin category (B4). */
+  origin?: VarianceOrigin;
+  confidence?: VarianceConfidence;
   type: SourceType;
   /** Plain-English evidence, e.g. "Salary change effective 2026-11-01 — promotion". */
   detail: string;
@@ -173,6 +227,16 @@ export const COMPONENT_ROWS: { key: ComponentKey; label: string; section: "earni
   { key: "costToEmployer", label: "Total cost to employer", section: "employer", total: true },
 ];
 
+/** A change in a statutory deduction (PAYE, pension, NHF…) — always a calculation, sometimes worth a look. */
+export interface StatutoryMovement {
+  code: string;
+  name: string;
+  previous: number;
+  current: number;
+  change: number;
+  source: MovementSource;
+}
+
 export interface EmployeeVariance {
   employeeId: string;
   name: string;
@@ -197,6 +261,10 @@ export interface EmployeeVariance {
   explanation: string;
   /** Sum of movements no record explains. */
   unexplained: number;
+  /** Deduction movements, attributed to the statutory calculation. */
+  statutory: StatutoryMovement[];
+  /** The least certain of the employee's movements. */
+  confidence: VarianceConfidence;
 }
 
 export interface BridgeStep {
@@ -230,6 +298,10 @@ export interface Reconciliation {
   /** Movements with no confirmed source (signed). */
   unexplained: number;
   unexplainedEmployees: number;
+  /** Employees by their least-certain movement (B4). */
+  byConfidence: Record<VarianceConfidence, number>;
+  /** Gross movement (signed) by confidence. */
+  amountByConfidence: Record<VarianceConfidence, number>;
   /** Bridge adds up to the register to the kobo. */
   balanced: boolean;
   difference: number;
@@ -449,6 +521,35 @@ export function compareRuns(current: PayrollRun, previous: PayrollRun, ctx: Comp
     }
   }
 
+  // Origin + confidence (B4). A manual entry is only confirmed once the run it sits on is approved.
+  const runApproved = !!current.approvedBy || current.status === "approved" || current.status === "finalized" || current.status === "disbursed";
+  function classify(src: MovementSource): MovementSource {
+    const set = (origin: VarianceOrigin, confidence: VarianceConfidence): MovementSource => ({ ...src, origin, confidence: src.confirmed ? confidence : "unexplained" });
+    switch (src.type) {
+      case "salary_change":
+        return set("recurring_adjustment", src.approvedBy && src.approvedBy !== "System" ? "confirmed" : "verification_required");
+      case "hr_import":
+        return set("approved_hr_transaction", "verification_required");
+      case "hr_record":
+      case "expense":
+      case "proration":
+        return set("approved_hr_transaction", "confirmed");
+      case "leave_attendance":
+      case "timesheet":
+        return set("attendance_record", "confirmed");
+      case "leave_allowance_policy":
+      case "non_recurring_element":
+        return set("one_off_payment", "confirmed");
+      case "payroll_input":
+        return set("manual_input", runApproved ? "confirmed" : "verification_required");
+      case "adjustment":
+        return set("retro_adjustment", "confirmed");
+      default:
+        return { ...src, origin: "unknown", confidence: "unexplained" };
+    }
+  }
+  const STAT_CODES = ["PAYE", "WHT", "PENSION_EE", "VOL_PENSION", "NHF", "NHIS_EE", "HMO_EE"];
+
   // ── Per employee, reason by reason ────────────────────────────────────────
   const ids = new Set([...cur.keys(), ...prev.keys()]);
   const employees: EmployeeVariance[] = [];
@@ -469,11 +570,11 @@ export function compareRuns(current: PayrollRun, previous: PayrollRun, ctx: Comp
       add("joiner", c.gross);
       notes.push(emp?.startDate && emp.startDate >= current.period.start ? `Joined ${emp.startDate}` : `Not paid in ${previous.period.label}`);
       if (c.prorationFactor < 1) notes.push(`Paid ${Math.round(c.prorationFactor * 100)}% of the month`);
-      movements.push({ code: "*", name: "Whole salary", reason: "joiner", kind: "joined", previous: 0, current: c.gross, change: round2(c.gross), source: sourceFor(id, "joiner", "*", undefined, undefined, emp) });
+      movements.push({ code: "*", name: "Whole salary", reason: "joiner", kind: "joined", previous: 0, current: c.gross, change: round2(c.gross), source: classify(sourceFor(id, "joiner", "*", undefined, undefined, emp)) });
     } else if (p && !c) {
       add("leaver", -p.gross);
       notes.push(emp?.dateOfLeaving ? `Left ${emp.dateOfLeaving}` : `Not paid in ${current.period.label}`);
-      movements.push({ code: "*", name: "Whole salary", reason: "leaver", kind: "left", previous: p.gross, current: 0, change: round2(-p.gross), source: sourceFor(id, "leaver", "*", undefined, undefined, emp) });
+      movements.push({ code: "*", name: "Whole salary", reason: "leaver", kind: "left", previous: p.gross, current: 0, change: round2(-p.gross), source: classify(sourceFor(id, "leaver", "*", undefined, undefined, emp)) });
     } else if (c && p) {
       const prorationMoved = Math.abs(c.prorationFactor - p.prorationFactor) > 0.0001;
       const codes = new Set([...earnings(c).map((l) => l.code), ...earnings(p).map((l) => l.code)]);
@@ -498,7 +599,7 @@ export function compareRuns(current: PayrollRun, previous: PayrollRun, ctx: Comp
           change: round2(diff),
           previousUnits: units(lp),
           currentUnits: units(lc),
-          source: sourceFor(id, reason, code, lc[0], lp[0], emp),
+          source: classify(sourceFor(id, reason, code, lc[0], lp[0], emp)),
         });
       }
       if (prorationMoved) notes.push(`Paid ${Math.round(c.prorationFactor * 100)}% of the month (was ${Math.round(p.prorationFactor * 100)}%)`);
@@ -517,6 +618,41 @@ export function compareRuns(current: PayrollRun, previous: PayrollRun, ctx: Comp
     }
     movements.sort((x, y) => Math.abs(y.change) - Math.abs(x.change));
     const change = round2((c?.gross ?? 0) - (p?.gross ?? 0));
+
+    // Statutory deductions follow their bases; a change with no change in pay is worth a second look.
+    const statutory: StatutoryMovement[] = [];
+    if (c && p) {
+      for (const code of STAT_CODES) {
+        const now = sumCode(c.lines, code);
+        const was = sumCode(p.lines, code);
+        const diff = round2(now - was);
+        if (Math.abs(diff) < 0.005) continue;
+        const name = c.lines.find((l) => l.code === code)?.name ?? p.lines.find((l) => l.code === code)?.name ?? code;
+        const baseMoved =
+          code === "PENSION_EE" || code === "VOL_PENSION" ? Math.abs(c.bases.pensionable - p.bases.pensionable) >= 0.005 || code === "VOL_PENSION"
+          : code === "NHF" ? Math.abs(c.bases.nhf - p.bases.nhf) >= 0.005
+          : code === "PAYE" || code === "WHT" ? Math.abs(c.taxableGross - p.taxableGross) >= 0.005
+          : true;
+        statutory.push({
+          code,
+          name,
+          previous: round2(was),
+          current: round2(now),
+          change: diff,
+          source: {
+            type: "statutory",
+            origin: "statutory_calculation",
+            confidence: baseMoved ? "confirmed" : "verification_required",
+            detail: baseMoved
+              ? `Recalculated by the statutory engine because the ${code === "PAYE" || code === "WHT" ? "taxable pay" : code === "NHF" ? "NHF base" : "pensionable pay"} changed`
+              : `Changed although the ${code === "PAYE" || code === "WHT" ? "taxable pay" : "base"} didn't — check the tax profile, reliefs or rate set (cumulative PAYE can also catch up)`,
+            processedAt,
+            approvedBy: runApprover,
+            confirmed: true,
+          },
+        });
+      }
+    }
     const department = emp?.departmentName ?? "Unassigned";
     employees.push({
       employeeId: id,
@@ -536,6 +672,8 @@ export function compareRuns(current: PayrollRun, previous: PayrollRun, ctx: Comp
       components: componentLines(componentsOf(p, groupOf, recurringOf), componentsOf(c, groupOf, recurringOf)),
       explanation: explainEmployee(change, movements, previous.period.label),
       unexplained: round2(movements.filter((m) => !m.source.confirmed).reduce((s, m) => s + m.change, 0)),
+      statutory,
+      confidence: worstConfidence([...movements, ...statutory].map((m) => m.source.confidence ?? (m.source.confirmed ? "confirmed" : "unexplained"))),
     });
   }
   employees.sort((x, y) => Math.abs(y.change) - Math.abs(x.change) || x.name.localeCompare(y.name));
@@ -571,6 +709,15 @@ export function compareRuns(current: PayrollRun, previous: PayrollRun, ctx: Comp
     explained: round2(attributed - unexplained),
     unexplained,
     unexplainedEmployees: employees.filter((e) => Math.abs(e.unexplained) >= 0.005).length,
+    byConfidence: {
+      confirmed: employees.filter((e) => e.movements.length + e.statutory.length > 0 && e.confidence === "confirmed").length,
+      verification_required: employees.filter((e) => e.confidence === "verification_required").length,
+      unexplained: employees.filter((e) => e.confidence === "unexplained").length,
+    },
+    amountByConfidence: (["confirmed", "verification_required", "unexplained"] as VarianceConfidence[]).reduce(
+      (o, k) => ({ ...o, [k]: round2(employees.flatMap((e) => e.movements).filter((m) => (m.source.confidence ?? "unexplained") === k).reduce((s, m) => s + m.change, 0)) }),
+      {} as Record<VarianceConfidence, number>,
+    ),
     balanced: Math.abs(difference) < 0.01,
     difference,
   };

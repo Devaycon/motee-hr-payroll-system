@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ConfidenceBadge, confidenceOf } from "./components/confidence";
 import { useMemo } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PAYROLL_HREF } from "@/src/lib/payroll/constants";
@@ -112,7 +113,7 @@ export function NetChangeDetailModal({ run, employeeId, onClose }: { run: Payrol
             {variance.movements.map((m, i) => (
               <li key={`${m.code}-${i}`} className="flex justify-between gap-3">
                 <span>
-                  {m.name} <span className="text-muted-foreground">· {KIND_LABELS[m.kind]} · {SOURCE_LABELS[m.source.type]}: {m.source.detail}</span>
+                  {m.name} <span className="text-muted-foreground">· {KIND_LABELS[m.kind]} · {SOURCE_LABELS[m.source.type]}: {m.source.detail}</span> <ConfidenceBadge confidence={confidenceOf(m.source)} className="ml-1" />
                 </span>
                 <span className={cn("shrink-0 tabular-nums", m.change < 0 ? "text-rose-600" : "text-emerald-700")}>{signed(m.change)}</span>
               </li>

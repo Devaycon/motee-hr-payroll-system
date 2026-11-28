@@ -104,7 +104,9 @@ import type {
   VarianceInvestigation,
   AvcRequest,
 } from "./types";
-import type { ComparisonCtx } from "./comparison";
+import { compareRuns, defaultPreviousRun, type ComparisonCtx } from "./comparison";
+import { blockedReason, runReadiness, type Readiness } from "./readiness";
+import { remittanceRows } from "./remittance-centre";
 import type { SavedScenario } from "./simulation";
 import { buildForecast, snapshotOf, type BudgetVersion, type ForecastSnapshot, type PlannedHire, type RequisitionRef } from "./budget";
 
@@ -200,6 +202,28 @@ export function comparisonCtxOf(data: TenantPayroll, bundle: LocaleBundle): Comp
     audit: data.audit,
     costCentres: new Map(bundle.departments.map((d) => [d.name, d.costCenter])),
   };
+}
+
+/**
+ * The pre-payment readiness score for a run (client feedback B1). Regular
+ * runs are compared with the previous regular month for the variance check;
+ * remittances are those of months already finalized.
+ */
+export function readinessFor(data: TenantPayroll, bundle: LocaleBundle, run: PayrollRun, today = new Date().toISOString().slice(0, 10)): Readiness {
+  const previous = run.type === "regular" ? defaultPreviousRun(data.runs, run) : null;
+  const comparison = previous && run.calculatedAt ? compareRuns(run, previous, comparisonCtxOf(data, bundle)) : null;
+  const remittances = remittanceRows(data.runs.filter((r) => r.id !== run.id), data.remittances, today);
+  return runReadiness({ run, data, earlierOpen: openEarlierRuns(data, run).length, comparison, remittances });
+}
+
+/** Readiness of one run, recomputed when payroll changes. */
+export function useRunReadiness(runId: string | undefined): Readiness | null {
+  const { data, bundle } = useTenantPayroll({ enabled: !!runId });
+  return useMemo(() => {
+    const run = runId ? data?.runs.find((r) => r.id === runId) : undefined;
+    if (!data || !bundle || !run) return null;
+    return readinessFor(data, bundle, run);
+  }, [data, bundle, runId]);
 }
 
 /** Staff the new-starter import brought onto payroll for the current tenant (not in the HR bundle). */
@@ -706,6 +730,9 @@ export function usePayrollActions() {
         if (earlier.length) return { ok: false, reason: `Finalize ${earlier.map((r) => r.period.label).join(", ")} first — months are closed in order.` };
         const blocking = blockingExceptions(run);
         if (blocking.length) return { ok: false, reason: `${blocking.length} error${blocking.length === 1 ? "" : "s"} must be resolved or acknowledged first.` };
+        // Hard block (B1): no submission while a critical compliance or payment check has failed.
+        const readiness = readinessFor(l.data, l.bundle, run);
+        if (readiness.blocked) return { ok: false, reason: blockedReason(readiness, "submission") };
         const requestId = await raiseApproval(run, note);
         if (!requestId) return { ok: false, reason: "No approval chain is set up for payroll runs. Add one in Submissions & Approvals." };
         // A chain where every step was skipped approves immediately.
@@ -744,6 +771,9 @@ export function usePayrollActions() {
         if (run.stale) return { ok: false, reason: `Recalculate and re-approve first — ${run.stale.reason}.` };
         const earlier = openEarlierRuns(l.data, run);
         if (earlier.length) return { ok: false, reason: `Finalize ${earlier.map((r) => r.period.label).join(", ")} first.` };
+        // Re-checked at the last gate: something may have changed since approval.
+        const readiness = readinessFor(l.data, l.bundle, run);
+        if (readiness.blocked) return { ok: false, reason: blockedReason(readiness, "finalizing") };
 
         const now = new Date().toISOString();
         const req = run.approvalRequestId ? l.s.approvals.requests.find((r) => r.id === run.approvalRequestId) : undefined;

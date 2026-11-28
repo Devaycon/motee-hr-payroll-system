@@ -24,6 +24,9 @@ import {
   type ReasonNature,
   type TotalsLine,
   type VarianceReason,
+  ORIGIN_LABELS,
+  CONFIDENCE_LABELS,
+  type VarianceConfidence,
 } from "@/src/lib/payroll/comparison";
 import { writeTable, type ExportFormat } from "@/src/lib/payroll/exports";
 import { comparisonCtxOf, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
@@ -35,6 +38,7 @@ import { InvestigationsPanel, RaiseInvestigationDialog, type InvestigationDraft 
 import { VarianceSummary } from "./variance-summary";
 import { PayrollCycle } from "./components/payroll-cycle";
 import { DetailModal, DownloadMenu, RowActions } from "./components/row-actions";
+import { ConfidenceBadge, ConfidenceStrip, SourceLine, confidenceOf } from "./components/confidence";
 
 const signed = (n: number, dp = 2) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${money(Math.abs(n), dp)}`;
 
@@ -77,6 +81,7 @@ export function RunComparePage() {
   const { data, bundle, loading, supported } = useTenantPayroll();
   const actions = usePayrollActions();
   const [reason, setReason] = useState<VarianceReason | "all">((search.get("reason") as VarianceReason) ?? "all");
+  const [conf, setConf] = useState<VarianceConfidence | null>((search.get("confidence") as VarianceConfidence) || null);
   const [dept, setDept] = useState(ALL);
   const [cc, setCc] = useState(ALL);
   const [sort, setSort] = useState<SortKey>("abs");
@@ -106,7 +111,7 @@ export function RunComparePage() {
 
   const exportTable = (format: ExportFormat) => {
     if (!cmp) return;
-    const headers = ["Employee ID", "Name", "Department", "Cost centre", `Gross ${cmp.previous.title}`, `Gross ${cmp.current.title}`, "Change", "Change %", ...REASON_ORDER.map((r) => REASON_LABELS[r]), "Explanation", "Movements (element · kind · source)", "Unexplained"];
+    const headers = ["Employee ID", "Name", "Department", "Cost centre", `Gross ${cmp.previous.title}`, `Gross ${cmp.current.title}`, "Change", "Change %", ...REASON_ORDER.map((r) => REASON_LABELS[r]), "Explanation", "Movements (element · kind · origin · confidence)", "Unexplained", "Confidence"];
     const rows = cmp.employees.map((e) => [
       e.employeeNumber,
       e.name,
@@ -118,8 +123,9 @@ export function RunComparePage() {
       e.pct ?? "",
       ...REASON_ORDER.map((r) => e.reasons[r] ?? ""),
       e.explanation,
-      e.movements.map((m) => `${m.name} · ${KIND_LABELS[m.kind]} · ${SOURCE_LABELS[m.source.type]}${m.source.ref ? ` (${m.source.ref})` : ""}`).join("; "),
+      e.movements.map((m) => `${m.name} · ${KIND_LABELS[m.kind]} · ${ORIGIN_LABELS[m.source.origin ?? "unknown"]} · ${CONFIDENCE_LABELS[confidenceOf(m.source)]}${m.source.ref ? ` (${m.source.ref})` : ""}`).join("; "),
       e.unexplained || "",
+      CONFIDENCE_LABELS[e.confidence],
     ]);
     const summary = cmp.totals.map((t) => [t.label, "", "", "", t.previous, t.current, t.change, t.pct ?? ""]);
     const components = cmp.componentTotals.map((t) => [t.label, "", "", "", t.previous, t.current, t.change, t.pct ?? ""]);
@@ -187,6 +193,7 @@ export function RunComparePage() {
     .filter(
       (e) =>
         (reason === "all" || e.reasons[reason] !== undefined) &&
+        (!conf || e.confidence === conf) &&
         (dept === ALL || e.department === dept) &&
         (cc === ALL || e.costCentre === cc) &&
         (!needle || `${e.name} ${e.employeeNumber} ${e.employeeId}`.toLowerCase().includes(needle)),
@@ -216,6 +223,14 @@ export function RunComparePage() {
       <PayrollCycle current="analyse" />
 
       <VarianceSummary cmp={cmp} investigations={data.investigations} onInvestigateUnclassified={() => investigate(null)} />
+
+      <div className="rounded-xl border bg-card p-4">
+        <p className="text-sm font-semibold">How sure are we about each movement?</p>
+        <p className="mb-3 text-[11px] text-muted-foreground">
+          Every movement is traced to where it came from — an approved HR transaction, a manual payroll input, a salary adjustment, a one-off payment, an attendance record, the statutory calculation or a retroactive adjustment — and rated. Click a level to filter the employees below.
+        </p>
+        <ConfidenceStrip counts={rec.byConfidence} amounts={rec.amountByConfidence} selected={conf} onSelect={(c) => setConf((x) => (x === c ? null : c))} />
+      </div>
 
       {/* Headline */}
       <div className="grid gap-3 sm:grid-cols-3">
@@ -365,6 +380,7 @@ export function RunComparePage() {
                       <td className={cn("whitespace-nowrap px-3 py-2 text-right font-medium tabular-nums", e.change > 0 ? "text-emerald-700" : "text-rose-600")}>
                         {signed(e.change)}
                         <p className="text-[10px] font-normal text-muted-foreground">{pctArrow(e.pct)}</p>
+                        <ConfidenceBadge confidence={e.confidence} className="mt-0.5 justify-end" />
                       </td>
                       <td className="max-w-[420px] px-3 py-2">
                         <div className="flex flex-wrap gap-1">
@@ -477,6 +493,7 @@ function EmployeeDrillDown({ e, previous, current }: { e: EmployeeVariance; prev
             <li key={`${m.code}-${i}`} className="grid grid-cols-[1fr_auto] gap-x-3 px-3 py-2">
               <span>
                 <span className="font-medium">{m.name}</span> <span className="text-muted-foreground">· {KIND_LABELS[m.kind]}{m.previousUnits !== undefined || m.currentUnits !== undefined ? ` · ${m.previousUnits ?? 0} → ${m.currentUnits ?? 0} units` : ""}</span>
+                <SourceLine source={m.source} className="mt-0.5" />
                 <span className={cn("block", m.source.confirmed ? "text-muted-foreground" : "font-medium text-amber-800 dark:text-amber-300")}>
                   {SOURCE_LABELS[m.source.type]}: {m.source.detail}
                 </span>
@@ -491,6 +508,19 @@ function EmployeeDrillDown({ e, previous, current }: { e: EmployeeVariance; prev
             </li>
           ))}
           {!e.movements.length && <li className="px-3 py-3 text-muted-foreground">No earning lines moved.</li>}
+          {e.statutory.map((m) => (
+            <li key={`stat-${m.code}`} className="grid grid-cols-[1fr_auto] gap-x-3 bg-muted/20 px-3 py-2">
+              <span>
+                <span className="font-medium">{m.name}</span> <span className="text-muted-foreground">· deduction</span>
+                <SourceLine source={m.source} className="mt-0.5" />
+                <span className="block text-muted-foreground">{m.source.detail}</span>
+              </span>
+              <span className="text-right tabular-nums font-medium">
+                {signed(m.change)}
+                <span className="block text-[10px] font-normal text-muted-foreground">{money(m.previous)} → {money(m.current)}</span>
+              </span>
+            </li>
+          ))}
         </ul>
       </div>
     </div>
@@ -538,7 +568,7 @@ function ReasonDetail({ reason, employees, previous, current, onClose, onEmploye
                     <td className="px-3 py-2">{m.name}<span className="block text-[10px] text-muted-foreground">{KIND_LABELS[m.kind]}</span></td>
                     <td className="px-3 py-2 text-right tabular-nums">{m.previousUnits !== undefined || m.currentUnits !== undefined ? `${units(m.previousUnits)} → ${units(m.currentUnits)}` : "—"}</td>
                     <td className={cn("px-3 py-2 text-right font-medium tabular-nums", m.change < 0 ? "text-rose-600" : "text-emerald-700")}>{signed(m.change)}<span className="block text-[10px] font-normal text-muted-foreground">{money(m.previous)} → {money(m.current)}</span></td>
-                    <td className="px-3 py-2 text-[11px]"><span className={cn(!m.source.confirmed && "font-medium text-amber-700")}>{SOURCE_LABELS[m.source.type]}</span><span className="block text-[10px] text-muted-foreground">{m.source.detail}</span></td>
+                    <td className="px-3 py-2 text-[11px]"><SourceLine source={m.source} /><span className="block text-[10px] text-muted-foreground">{m.source.detail}</span></td>
                     <td className="px-1 py-2">{i === 0 && <RowActions label={`${e.name} actions`} actions={[{ label: "View details", icon: Eye, onSelect: () => onEmployee(e) }, { label: "Pay this month", icon: Wallet, href: `${PAYROLL_HREF}/${current.id}/employees/${e.employeeId}` }, { label: "Employee profile", icon: UserRound, href: `/organization/employees/${e.employeeId}` }]} />}</td>
                   </tr>
                 )),

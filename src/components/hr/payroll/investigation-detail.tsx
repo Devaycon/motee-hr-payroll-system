@@ -16,6 +16,7 @@ import { useCan } from "@/src/lib/permissions/use-can";
 import { cn } from "@/src/lib/utils";
 import { NotSupported, fmtDate, money } from "./components/shared";
 import { InvestigationStatusBadge } from "./investigations";
+import { SourceLine } from "./components/confidence";
 
 const MAX_INLINE = 400_000;
 const at = (iso: string) => new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -123,7 +124,8 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
                       <td className="px-4 py-2 text-right tabular-nums">{money(m.current)}</td>
                       <td className={cn("px-4 py-2 text-right tabular-nums", m.change < 0 ? "text-rose-600" : "text-emerald-700")}>{m.change < 0 ? "−" : ""}{money(Math.abs(m.change))}</td>
                       <td className="px-4 py-2">
-                        <span className={cn("font-medium", !m.source.confirmed && "text-amber-700 dark:text-amber-400")}>{SOURCE_LABELS[m.source.type]}</span>
+                        <SourceLine source={m.source} />
+                        <span className={cn("block text-[10px]", !m.source.confirmed && "text-amber-700 dark:text-amber-400")}>{SOURCE_LABELS[m.source.type]}</span>
                         <span className="block text-[10px] text-muted-foreground">{m.source.detail}</span>
                         <span className="block text-[10px] text-muted-foreground">
                           {[m.source.initiatedBy && `Initiated by ${m.source.initiatedBy}`, m.source.approvedBy && `approved by ${m.source.approvedBy}`, m.source.processedAt && `processed ${fmtDate(m.source.processedAt)}`, m.source.ref && `ref ${m.source.ref}`].filter(Boolean).join(" · ")}

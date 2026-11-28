@@ -6,7 +6,8 @@ import { useAppSelector } from "@/src/lib/stores/hooks";
 import { PAYROLL_HREF } from "@/src/lib/payroll/constants";
 import { explainVariance } from "@/src/lib/payroll/intelligence";
 import { EXCEPTION_RULE_LABELS } from "@/src/lib/payroll/validation";
-import { INVESTIGATIONS_HREF, comparisonCtxOf, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { INVESTIGATIONS_HREF, comparisonCtxOf, useRunReadiness, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { ReadinessCard } from "./readiness-card";
 import type { PayrollRun } from "@/src/lib/payroll/types";
 import { cn } from "@/src/lib/utils";
 import { BarList, compactNaira } from "./components/charts";
@@ -30,6 +31,8 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
   const requests = useAppSelector((s) => s.approvals.requests);
   const roles = bundle?.roles ?? [];
   const { rows, projected } = useRemittanceRows();
+  // Readiness of the run being prepared (a locked run has passed its gates already).
+  const readiness = useRunReadiness(current?.id);
   const remCtx = { people: new Map((bundle?.employees ?? []).map((e) => [e.id, e])), profiles: new Map((data?.profiles ?? []).map((p) => [p.employeeId, p])), settings: data?.settings };
 
   if (!data || !bundle) return null;
@@ -86,11 +89,13 @@ export function PayrollControlCentre({ current, runs }: { current: PayrollRun | 
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Readiness */}
+      {readiness && current && <ReadinessCard readiness={readiness} run={current} />}
+
+      {/* Pipeline */}
       <div className="rounded-xl border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-sm font-semibold">{run ? `${run.title} — readiness` : "No run in progress"}</p>
+            <p className="text-sm font-semibold">{run ? `${run.title} — where it is` : "No run in progress"}</p>
             <p className="text-[11px] text-muted-foreground">{run ? `${done} of ${checks.length} checks complete · pay day ${fmtDate(run.period.payDate)}` : "Create the next regular run to start."}</p>
           </div>
           {run && (

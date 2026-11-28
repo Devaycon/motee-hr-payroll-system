@@ -40,6 +40,8 @@ import {
   type ApprovalSignature,
 } from "@/src/lib/types/approvals";
 import { useCan } from "@/src/lib/permissions/use-can";
+import { useRunReadiness, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { ReadinessCard } from "@/src/components/hr/payroll/readiness-card";
 import {
   formatRelativeDate,
   isCurrentApprover,
@@ -79,6 +81,11 @@ export function ApprovalDetailPage({
   );
   const canApprove = useCan("submissions.queue", "approve");
   const canViewPay = useCan("time-payroll.payroll", "view");
+  // Payroll runs carry the pre-payment readiness score; a failed critical check blocks approval (feedback B1).
+  const payrollRunId = request?.documentType === "payroll_run" ? request.documentId : undefined;
+  const readiness = useRunReadiness(payrollRunId);
+  const { data: payrollData } = useTenantPayroll({ enabled: !!payrollRunId });
+  const payrollRun = payrollRunId ? payrollData?.runs.find((r) => r.id === payrollRunId) : undefined;
 
   const [note, setNote] = useState("");
   const [editTitle, setEditTitle] = useState<string | null>(null);
@@ -134,6 +141,10 @@ export function ApprovalDetailPage({
 
   function handleApprove() {
     if (!ensureUser()) return;
+    if (readiness?.blocked) {
+      toast.error("Approval blocked", { description: `Critical checks failed: ${readiness.blockers.map((b) => b.label).join(", ")}. Fix them before approving.` });
+      return;
+    }
     // If the workflow requires reviewer signatures, route through the
     // signature-collection dialog instead of dispatching directly.
     if (workflow?.signatures.reviewerSigns) {
@@ -311,6 +322,8 @@ export function ApprovalDetailPage({
 
       <CurrentlyWithBanner request={request} />
 
+      {readiness && payrollRun && <ReadinessCard readiness={readiness} run={payrollRun} compact />}
+
       {/* The whole route at a glance, above the step-by-step detail below. */}
       <ApprovalChainProgress
         request={request}
@@ -412,7 +425,7 @@ export function ApprovalDetailPage({
                 <div className="flex flex-wrap items-center gap-2">
                   {showApproverActions && (
                     <>
-                      <Button onClick={handleApprove} className="gap-1.5">
+                      <Button onClick={handleApprove} className="gap-1.5" disabled={!!readiness?.blocked} title={readiness?.blocked ? "Blocked until every critical payroll check passes" : undefined}>
                         <CheckCircle2 className="w-4 h-4" />
                         Approve
                       </Button>
