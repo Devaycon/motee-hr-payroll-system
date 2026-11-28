@@ -13,7 +13,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { PAYROLL_HREF, PAYROLL_MODULE, PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
-import { approvedVersionFor, budgetAlerts, buildForecast, monthLong, type DepartmentForecast } from "@/src/lib/payroll/budget";
+import { CATEGORY_META, approvedVersionFor, budgetAlerts, buildForecast, monthLong, type DepartmentForecast, type ExpenditureCategory } from "@/src/lib/payroll/budget";
 import { SCENARIO_STATUS_LABELS } from "@/src/lib/payroll/simulation";
 import { activeRequisitionsFrom, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import { useCan } from "@/src/lib/permissions/use-can";
@@ -144,6 +144,38 @@ export function PayrollBudgetPage() {
           {versionNow ? ` Budget: ${versionNow.name}, approved by ${versionNow.approvedBy} on ${fmtDate(versionNow.approvedAt)}.` : ""}
         </p>
       </div>
+
+      {/* Feedback B8: committed vs approved planned vs hypothetical. */}
+      <ChartCard
+        title={`What the forecast is made of · FY${f.fiscalYear}`}
+        description="The remaining months of the year in three layers. Committed is what payroll already owes; approved planned is signed off but not yet in payroll; hypothetical has no approval yet."
+      >
+        <div className="grid gap-3 sm:grid-cols-3">
+          {(["committed", "approved", "hypothetical"] as ExpenditureCategory[]).map((k) => (
+            <div key={k} className="rounded-lg border p-3">
+              <p className="flex items-center gap-1.5 text-xs font-semibold">
+                <span className={cn("h-2.5 w-2.5 rounded-sm", k === "committed" ? "bg-primary" : k === "approved" ? "bg-sky-500" : "bg-amber-500")} />
+                {CATEGORY_META[k].label}
+              </p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">{compactNaira(f.categories.totals[k])}</p>
+              <p className="text-[11px] leading-snug text-muted-foreground">{CATEGORY_META[k].definition}</p>
+            </div>
+          ))}
+        </div>
+        {f.categories.months.length > 0 && (
+          <div className="mt-4">
+            <ColumnChart
+              series={[{ key: "committed", label: "Committed" }, { key: "approved", label: "Approved planned" }, { key: "hypothetical", label: "Hypothetical" }]}
+              columns={f.categories.months.map((m) => ({ label: m.short, note: `committed ${compactNaira(m.committed)} · approved ${compactNaira(m.approved)} · hypothetical ${compactNaira(m.hypothetical)}`, parts: [{ key: "committed", value: m.committed }, { key: "approved", value: Math.max(0, m.approved) }, { key: "hypothetical", value: Math.max(0, m.hypothetical) }] }))}
+            />
+          </div>
+        )}
+        <p className="mt-3 text-[10px] text-muted-foreground">
+          Actual paid so far in FY{f.fiscalYear}: {compactNaira(f.categories.actualYtd)}.
+          {f.categories.trend.monthlyChangePct !== null && ` Historical trend over ${f.categories.trend.months} finalized months: ${f.categories.trend.monthlyChangePct >= 0 ? "+" : ""}${f.categories.trend.monthlyChangePct}% a month on average.`}
+          {" "}Committed + approved planned + hypothetical = the projected figure above.
+        </p>
+      </ChartCard>
 
       <div className="grid gap-4 xl:grid-cols-5">
         <ChartCard
