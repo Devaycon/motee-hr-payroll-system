@@ -160,6 +160,35 @@ describe("payroll in Analytics & Reports", () => {
     expect(oct.find((r) => r.key === "paye")?.status).toBe("Paid");
     expect(remit.select(bundle, { country: "ng", payroll: null })).toEqual([]);
   });
+
+  // Client feedback A3/A4 (Nov 2026): "what makes up the Employer cost?" and "the cards aren't drillable".
+  it("Employer Cost reconciles: components add up to the card, and every row adds up to its own employer cost", async () => {
+    const { PAYROLL_REPORTS } = await import("@/src/lib/reports/registry/payroll");
+    const ctx = { country: "ng" as const, payroll: { ...data, audit: [] } };
+    const cost = PAYROLL_REPORTS[0];
+    const rows = cost.select(bundle, ctx) as Record<string, number>[];
+    for (const r of rows) {
+      expect(round(r.pensionEr + r.nsitf + r.itf + r.groupLife + r.hmoEr + r.nhisEr + r.otherEr)).toBeCloseTo(r.employerCost, 2);
+      expect(Math.abs(r.otherEr)).toBeLessThan(0.01); // the seed has no custom employer elements
+    }
+    expect(rows.some((r) => r.groupLife > 0)).toBe(true); // the line the old columns left out
+    const a = cost.analytics(rows, bundle, ctx);
+    for (const s of a.stats) expect(s.drill, s.label).toBeDefined();
+    const er = a.stats.find((s) => s.label === "Employer Cost")!;
+    const parts = er.drill!.components!;
+    expect(round(parts.reduce((s, c) => s + c.value, 0))).toBeCloseTo(Number(er.value), 2);
+    expect(parts.map((c) => c.label)).toEqual(expect.arrayContaining(["Employer pension", "NSITF", "ITF", "Group life assurance"]));
+    expect(er.drill!.scope).toMatch(/3 months/);
+    expect(er.sub).toMatch(/Group life/);
+    // Gross and net cards also reconcile, and the period comparison links to the run comparison.
+    for (const label of ["Gross Pay", "Net Pay"]) {
+      const s = a.stats.find((x) => x.label === label)!;
+      expect(round(s.drill!.components!.reduce((t, c) => t + c.value, 0))).toBeCloseTo(Number(s.value), 2);
+      expect(s.drill!.links?.[0]?.href).toMatch(/\/time-payroll\/payroll\/compare\?current=.+&previous=.+/);
+    }
+    const table = er.drill!.table!;
+    expect(table.footer![table.footer!.length - 1]).toBeCloseTo(Number(er.value), 2);
+  });
 });
 
 describe("seeded remittance history", () => {

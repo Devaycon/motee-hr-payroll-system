@@ -64,6 +64,24 @@ export interface ReportStat {
   up?: boolean;
   /** Accent color for the stat's icon chip — lets a breakdown page (e.g. per-gender stats) carry meaning through color. */
   tone?: "violet" | "blue" | "amber" | "emerald" | "red";
+  /** Makes the card drillable: a ⋯ menu opening the detail behind the figure. */
+  drill?: ReportStatDrill;
+}
+
+/**
+ * What sits behind a stat card. `components` must add up exactly to the
+ * card's value (it's how a reviewer reconciles it); `table` is the
+ * employee-level detail with the page's current filters already applied.
+ */
+export interface ReportStatDrill {
+  title?: string;
+  description?: string;
+  /** The filters in force, spelled out ("Oct 2026 · all departments · all run types"). */
+  scope?: string;
+  components?: { label: string; value: number; basis?: string; money?: boolean }[];
+  table?: { headers: string[]; rows: (string | number)[][]; money?: boolean[]; footer?: (string | number)[]; hrefs?: (string | undefined)[] };
+  /** e.g. the run comparison for "Oct vs Sep". */
+  links?: { label: string; href: string }[];
 }
 
 /** One row in a chart card's breakdown legend (label · value · %). */

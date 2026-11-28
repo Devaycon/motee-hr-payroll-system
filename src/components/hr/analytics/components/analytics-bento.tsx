@@ -1,12 +1,16 @@
 "use client";
 
-import { ArrowDown, ArrowUp, BarChart3 } from "lucide-react";
+import { useState } from "react";
+import { ArrowDown, ArrowRight, ArrowUp, BarChart3, Eye, GitCompareArrows } from "lucide-react";
 import { formatMoneyLocale } from "@/src/lib/hooks/use-currency";
 import { cn } from "@/src/lib/utils";
 import type { ReportGroupTheme } from "@/src/lib/reports/group-theme";
 import type { ChartDetail, ReportChartSpec, ReportStat } from "@/src/lib/reports/types";
 import { HeroRingCard } from "@/src/components/shared/charts";
 import { ReportChartCard } from "./report-chart-card";
+import { StatDrillDialog, drillTable } from "./stat-drill";
+import { RowActions } from "@/src/components/hr/payroll/components/row-actions";
+import { writeTable, type ExportFormat } from "@/src/lib/payroll/exports";
 
 // ── Layout primitives ───────────────────────────────────────────────────────
 // A dense, MI-dashboard-style bento: a hero ring row when the report has a
@@ -60,28 +64,53 @@ function HeroRings({ spec }: { spec: RadialSpec }) {
 
 function InsightCard({ stat, theme }: { stat: ReportStat; theme: ReportGroupTheme }) {
   const Icon = stat.icon ?? BarChart3;
+  const [open, setOpen] = useState(false);
+  const drill = stat.drill;
   return (
-    <div className="flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between">
+    <div
+      className={cn(
+        "group flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5",
+        drill && "transition-colors hover:border-primary/40 hover:shadow-sm",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
         <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", theme.bg, theme.text)}>
           <Icon className="h-4 w-4" />
         </div>
-        {stat.trend !== undefined && (
-          <span
-            className={cn(
-              "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
-              stat.up ? "bg-[#50D34C]/10 text-[#50D34C]" : "bg-red-600/10 text-red-600",
-            )}
-          >
-            {stat.up ? <ArrowUp className="h-2.5 w-2.5" /> : <ArrowDown className="h-2.5 w-2.5" />}
-            {stat.trend}
-          </span>
-        )}
+        <div className="flex items-center gap-1">
+          {stat.trend !== undefined && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                stat.up ? "bg-[#50D34C]/10 text-[#50D34C]" : "bg-red-600/10 text-red-600",
+              )}
+            >
+              {stat.up ? <ArrowUp className="h-2.5 w-2.5" /> : <ArrowDown className="h-2.5 w-2.5" />}
+              {stat.trend}
+            </span>
+          )}
+          {drill && (
+            <RowActions
+              label={`${stat.label} actions`}
+              actions={[
+                { label: "View details", icon: Eye, onSelect: () => setOpen(true) },
+                ...(drill.links ?? []).map((l) => ({ label: l.label, icon: GitCompareArrows, href: l.href })),
+                { label: "Download", download: { onDownload: (f: ExportFormat) => writeTable(`${stat.label.toLowerCase().replace(/\s+/g, "-")}-detail`, stat.label.slice(0, 31), drillTable(stat, drill), f) } },
+              ]}
+            />
+          )}
+        </div>
       </div>
       <p className="text-base leading-snug font-semibold text-foreground">
         {stat.label} sits at <span className={theme.text}>{statText(stat)}</span>.
       </p>
       {stat.sub && <p className="mt-auto text-xs text-muted-foreground">{stat.sub}</p>}
+      {drill && (
+        <button type="button" onClick={() => setOpen(true)} className={cn("-mt-1 inline-flex w-fit items-center gap-1 text-xs font-medium hover:underline", theme.text, !stat.sub && "mt-auto")}>
+          View breakdown <ArrowRight className="h-3 w-3" />
+        </button>
+      )}
+      {drill && open && <StatDrillDialog stat={stat} open={open} onClose={() => setOpen(false)} />}
     </div>
   );
 }

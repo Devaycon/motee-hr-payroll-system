@@ -41,6 +41,7 @@ function monthly<T extends { month: string }>(rows: T[], fields: Record<string, 
 
 export interface PayrollRow {
   month: string;
+  runId: string;
   period: string;
   runType: string;
   reference: string;
@@ -72,6 +73,12 @@ export interface PayrollRow {
   itf: number;
   hmoEe: number;
   hmoEr: number;
+  groupLife: number;
+  nhisEr: number;
+  /** Any other employer line (custom elements) — keeps the components summing to Employer Cost. */
+  otherEr: number;
+  /** Basic + housing + transport: the base employer pension is charged on. */
+  pensionable: number;
   employerCost: number;
   totalCost: number;
 }
@@ -93,6 +100,7 @@ function selectPayroll(payroll: Parameters<AnyReportDef["select"]>[1]["payroll"]
       const nhf = round(amt(c.lines, "NHF"));
       return {
         month: `${p.period.year}-${String(p.period.month).padStart(2, "0")}`,
+        runId: p.runId,
         period: p.period.label,
         runType: RUN_TYPE_LABEL[p.runType] ?? p.runType,
         reference: p.reference,
@@ -124,6 +132,10 @@ function selectPayroll(payroll: Parameters<AnyReportDef["select"]>[1]["payroll"]
         hmoEe: round(amt(c.lines, "HMO_EE")),
         hmoEr: round(amt(c.lines, "HMO_ER")),
         itf: round(amt(c.lines, "ITF")),
+        groupLife: round(amt(c.lines, "GROUP_LIFE")),
+        nhisEr: round(amt(c.lines, "NHIS_ER")),
+        otherEr: round(c.employerCost - amt(c.lines, "PENSION_ER", "NSITF", "ITF", "HMO_ER", "GROUP_LIFE", "NHIS_ER")),
+        pensionable: c.bases.pensionable,
         employerCost: c.employerCost,
         totalCost: round(c.gross + c.employerCost),
       };
@@ -142,6 +154,45 @@ function lastTwo(rows: PayrollRow[], v: (r: PayrollRow) => number): { trend?: st
   const pct = ((now - before) / before) * 100;
   return { trend: `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`, up: pct >= 0, sub: `${monthLabel(b)} vs ${monthLabel(a)}` };
 }
+
+/** The rows' scope in words, so a card never silently aggregates several months. */
+function scopeOf(rows: PayrollRow[]): string {
+  const months = [...new Set(rows.map((r) => r.month))].sort();
+  const label = (m: string) => `${monthLabel(m)} ${m.slice(0, 4)}`;
+  const period = !months.length ? "No payslips" : months.length === 1 ? label(months[0]) : `${label(months[0])} – ${label(months[months.length - 1])} (${months.length} months)`;
+  const depts = new Set(rows.map((r) => r.department)).size;
+  const types = [...new Set(rows.map((r) => r.runType))];
+  return `${period} · ${depts} department${depts === 1 ? "" : "s"} · ${types.length ? types.join(" + ") : "no"} run${types.length === 1 ? "" : "s"}`;
+}
+
+/** One line per employee (summed over the months in view), with the given money columns. */
+function perEmployee(rows: PayrollRow[], cols: { header: string; v: (r: PayrollRow) => number }[], leading: { header: string; v: (rs: PayrollRow[]) => string | number }[] = []) {
+  const by = new Map<string, PayrollRow[]>();
+  for (const r of rows) by.set(r.employeeId, [...(by.get(r.employeeId) ?? []), r]);
+  const list = [...by.values()].sort((a, b) => sum(b, cols[cols.length - 1].v) - sum(a, cols[cols.length - 1].v));
+  const lead = [{ header: "Employee", v: (rs: PayrollRow[]) => rs[0].name }, { header: "Department", v: (rs: PayrollRow[]) => rs[0].department }, ...leading];
+  return {
+    headers: [...lead.map((l) => l.header), ...cols.map((c) => c.header)],
+    money: [...lead.map(() => false), ...cols.map(() => true)],
+    rows: list.map((rs) => [...lead.map((l) => l.v(rs)), ...cols.map((c) => sum(rs, c.v))]),
+    footer: ["Total", ...lead.slice(1).map(() => ""), ...cols.map((c) => sum(rows, c.v))],
+    hrefs: list.map((rs) => `/organization/employees/${rs[0].employeeId}`),
+  };
+}
+
+/** Link to the run comparison for the last two months in view (the "Oct vs Sep" movement). */
+function compareLink(rows: PayrollRow[]): { label: string; href: string }[] {
+  const months = [...new Set(rows.filter((r) => r.runType === "Regular").map((r) => r.month))].sort();
+  if (months.length < 2) return [];
+  const [a, b] = months.slice(-2);
+  const run = (m: string) => rows.find((r) => r.month === m && r.runType === "Regular")?.runId;
+  const cur = run(b);
+  const prev = run(a);
+  if (!cur || !prev) return [];
+  return [{ label: `Explain ${monthLabel(b)} vs ${monthLabel(a)}`, href: `/time-payroll/payroll/compare?current=${encodeURIComponent(cur)}&previous=${encodeURIComponent(prev)}` }];
+}
+
+const rate = (part: number, base: number) => (base ? `${((part / base) * 100).toFixed(2).replace(/\.?0+$/, "")}%` : "—");
 
 const payrollReport = defineReport<PayrollRow>({
   id: "payroll",
@@ -185,6 +236,9 @@ const payrollReport = defineReport<PayrollRow>({
     { key: "itf", header: "ITF", value: (r) => r.itf, money: true },
     { key: "hmoEe", header: "HMO (employee)", value: (r) => r.hmoEe, money: true },
     { key: "hmoEr", header: "HMO (employer)", value: (r) => r.hmoEr, money: true },
+    { key: "groupLife", header: "Group Life", value: (r) => r.groupLife, money: true },
+    { key: "nhisEr", header: "NHIS (employer)", value: (r) => r.nhisEr, money: true },
+    { key: "otherEr", header: "Other Employer", value: (r) => r.otherEr, money: true },
     { key: "employerCost", header: "Employer Cost", value: (r) => r.employerCost, money: true },
     { key: "totalCost", header: "Total Cost", value: (r) => r.totalCost, money: true },
   ],
@@ -201,6 +255,21 @@ const payrollReport = defineReport<PayrollRow>({
     const employer = sum(rows, (r) => r.employerCost);
     const people = new Set(rows.map((r) => r.employeeNumber)).size;
     const months = new Set(rows.map((r) => r.month)).size || 1;
+    const scope = scopeOf(rows);
+    const regular = rows.filter((r) => r.runType === "Regular");
+    const avgNet = rows.length ? round(net / (regular.length || rows.length)) : 0;
+    const pensionable = sum(rows, (r) => r.pensionable);
+    const payrollGross = sum(rows.filter((r) => r.nsitf > 0), (r) => r.gross);
+    // Every employer line, with its base and the rate it works out at — these add up to the card exactly.
+    const employerParts = [
+      { short: "Pension", label: "Employer pension", value: sum(rows, (r) => r.pensionEr), basis: `${rate(sum(rows, (r) => r.pensionEr), pensionable)} of pensionable pay (basic + housing + transport, ${naira(pensionable)})` },
+      { short: "NSITF", label: "NSITF", value: sum(rows, (r) => r.nsitf), basis: `${rate(sum(rows, (r) => r.nsitf), payrollGross)} of gross pay (${naira(payrollGross)})` },
+      { short: "ITF", label: "ITF", value: sum(rows, (r) => r.itf), basis: `${rate(sum(rows, (r) => r.itf), payrollGross)} of gross pay, accrued monthly` },
+      { short: "Group life", label: "Group life assurance", value: sum(rows, (r) => r.groupLife), basis: `Premium on 3× annual pay cover, accrued monthly (${rate(sum(rows, (r) => r.groupLife), payrollGross)} of gross)` },
+      { short: "HMO", label: "HMO (employer share)", value: sum(rows, (r) => r.hmoEr), basis: "Per the employee's HMO plan" },
+      { short: "NHIS", label: "NHIS (employer)", value: sum(rows, (r) => r.nhisEr), basis: "Employer share of the NHIA contribution" },
+      { short: "Other", label: "Other employer contributions", value: sum(rows, (r) => r.otherEr), basis: "Custom employer pay elements" },
+    ];
     const deductions = [
       { label: "PAYE", value: paye },
       { label: "Pension (8%)", value: sum(rows, (r) => r.pensionEe) },
@@ -210,12 +279,132 @@ const payrollReport = defineReport<PayrollRow>({
     ];
     return {
       stats: [
-        { label: "Gross Pay", value: gross, money: true, icon: Banknote, tone: "violet", ...lastTwo(rows, (r) => r.gross) },
-        { label: "Net Pay", value: net, money: true, icon: Receipt, tone: "emerald", ...lastTwo(rows, (r) => r.net) },
-        { label: "PAYE", value: paye, money: true, icon: Landmark, tone: "amber", sub: `Effective rate ${pctText(paye, gross)} of gross` },
-        { label: "Employer Cost", value: employer, money: true, icon: Building2, tone: "blue", sub: "Pension, NSITF, ITF, group life" },
-        { label: "Employees Paid", value: people, sub: `Across ${months} month${months === 1 ? "" : "s"}` },
-        { label: "Avg Net Pay", value: rows.length ? round(net / (rows.filter((r) => r.runType === "Regular").length || rows.length)) : 0, money: true, sub: "Per employee, per month" },
+        {
+          label: "Gross Pay",
+          value: gross,
+          money: true,
+          icon: Banknote,
+          tone: "violet",
+          ...lastTwo(rows, (r) => r.gross),
+          drill: {
+            title: "Gross pay — what it's made of",
+            scope,
+            components: [
+              { label: "Basic", value: sum(rows, (r) => r.basic) },
+              { label: "Allowances", value: sum(rows, (r) => r.allowances) },
+              { label: "Overtime", value: sum(rows, (r) => r.overtime) },
+              { label: "Bonuses & one-offs", value: sum(rows, (r) => r.oneOff) },
+              { label: "Reimbursements", value: sum(rows, (r) => r.reimbursements) },
+              { label: "Other earnings (arrears, adjustments)", value: round(gross - sum(rows, (r) => r.basic + r.allowances + r.overtime + r.oneOff + r.reimbursements)) },
+            ].filter((c) => Math.abs(c.value) >= 0.005),
+            table: perEmployee(rows, [
+              { header: "Basic", v: (r) => r.basic },
+              { header: "Allowances", v: (r) => r.allowances },
+              { header: "Overtime", v: (r) => r.overtime },
+              { header: "One-offs", v: (r) => r.oneOff },
+              { header: "Gross", v: (r) => r.gross },
+            ], [{ header: "Months", v: (rs) => new Set(rs.map((r) => r.month)).size }]),
+            links: compareLink(rows),
+          },
+        },
+        {
+          label: "Net Pay",
+          value: net,
+          money: true,
+          icon: Receipt,
+          tone: "emerald",
+          ...lastTwo(rows, (r) => r.net),
+          drill: {
+            title: "Net pay — gross less deductions",
+            scope,
+            components: [
+              { label: "Gross pay", value: gross },
+              { label: "less PAYE", value: -paye },
+              { label: "less Pension (8%)", value: -sum(rows, (r) => r.pensionEe) },
+              { label: "less Voluntary pension", value: -sum(rows, (r) => r.avc) },
+              { label: "less NHF", value: -sum(rows, (r) => r.nhf) },
+              { label: "less HMO (employee)", value: -sum(rows, (r) => r.hmoEe) },
+              { label: "less Other deductions (loans, advances, dues)", value: round(-(sum(rows, (r) => r.totalDeductions) - paye - sum(rows, (r) => r.pensionEe + r.avc + r.nhf + r.hmoEe))) },
+            ].filter((c) => Math.abs(c.value) >= 0.005),
+            table: perEmployee(rows, [
+              { header: "Gross", v: (r) => r.gross },
+              { header: "Deductions", v: (r) => r.totalDeductions },
+              { header: "Net", v: (r) => r.net },
+            ], [{ header: "Bank", v: (rs) => rs[0].bank }]),
+            links: compareLink(rows),
+          },
+        },
+        {
+          label: "PAYE",
+          value: paye,
+          money: true,
+          icon: Landmark,
+          tone: "amber",
+          sub: `Effective rate ${pctText(paye, gross)} of gross`,
+          drill: {
+            title: "PAYE by tax state",
+            description: "PAYE is remitted to the Internal Revenue Service of the state where each employee lives.",
+            scope,
+            components: sumBy(rows, (r) => r.state, (r) => r.paye).map((t) => ({ label: `${t.label} IRS`, value: t.value, basis: `${pctText(t.value, sum(rows.filter((r) => r.state === t.label), (r) => r.gross))} of gross` })),
+            table: perEmployee(rows, [
+              { header: "Taxable", v: (r) => r.taxable },
+              { header: "PAYE", v: (r) => r.paye },
+            ], [{ header: "Tax state", v: (rs) => rs[0].state }]),
+          },
+        },
+        {
+          label: "Employer Cost",
+          value: employer,
+          money: true,
+          icon: Building2,
+          tone: "blue",
+          sub: `${scope.split(" · ")[0]} · ${employerParts.filter((c) => c.value > 0).map((c) => `${c.short} ${naira(c.value)}`).join(" · ")}`,
+          drill: {
+            title: "Employer cost — what the company pays on top of gross",
+            description:
+              "Paid by the employer, not deducted from pay. Employee pension (8%), voluntary pension and NHF are deductions from the employee and are NOT part of employer cost.",
+            scope,
+            components: employerParts.filter((c) => Math.abs(c.value) >= 0.005).map(({ label, value, basis }) => ({ label, value, basis })),
+            table: perEmployee(rows, [
+              { header: "Pension (ER)", v: (r) => r.pensionEr },
+              { header: "NSITF", v: (r) => r.nsitf },
+              { header: "ITF", v: (r) => r.itf },
+              { header: "Group life", v: (r) => r.groupLife },
+              { header: "HMO (ER)", v: (r) => r.hmoEr + r.nhisEr },
+              { header: "Other", v: (r) => r.otherEr },
+              { header: "Employer cost", v: (r) => r.employerCost },
+            ]),
+          },
+        },
+        {
+          label: "Employees Paid",
+          value: people,
+          sub: `Across ${months} month${months === 1 ? "" : "s"}`,
+          drill: {
+            title: "Employees paid",
+            scope,
+            table: perEmployee(rows, [{ header: "Net paid", v: (r) => r.net }], [
+              { header: "Employee ID", v: (rs) => rs[0].employeeNumber },
+              { header: "Payslips", v: (rs) => rs.length },
+            ]),
+          },
+        },
+        {
+          label: "Avg Net Pay",
+          value: avgNet,
+          money: true,
+          sub: "Per employee, per month",
+          drill: {
+            title: "Average net pay",
+            description: `Net pay on regular payslips ÷ regular payslips (${regular.length}). Off-cycle and adjustment payslips are left out of the average.`,
+            scope,
+            components: [{ label: `Net pay on ${regular.length} regular payslips ÷ ${regular.length}`, value: avgNet }],
+            table: perEmployee(regular, [
+              { header: "Total net", v: (r) => r.net },
+              { header: "Avg per month", v: (r) => r.net / Math.max(1, regular.filter((x) => x.employeeId === r.employeeId).length) },
+            ], [{ header: "Months", v: (rs) => rs.length }]),
+          },
+        },
       ],
       charts: [
         multiBarSpec(
