@@ -2,7 +2,7 @@ import type { LocaleBundle } from "@/src/lib/types/locale";
 import { monthsOf } from "./intelligence";
 import { round2 } from "./ng/engine";
 import { structureOn, type TenantPayrollData } from "./run-builder";
-import { EMPTY_SCENARIO, latestBaseRun, simulate, type SavedScenario, type Scenario, type SimPromotion, type SimStarter } from "./simulation";
+import { EMPLOYER_KEYS, EMPTY_SCENARIO, latestBaseRun, simulate, type SavedScenario, type Scenario, type SimPromotion, type SimResult, type SimStarter } from "./simulation";
 import type { PayrollRun, PayrollSettings } from "./types";
 
 /**
@@ -177,6 +177,26 @@ export interface BudgetForecast {
   totals: { actualYtd: number; projected: number; budget: number | null; variance: number | null; variancePct: number | null };
   next12: { spend: number; budget: number | null; budgetMonths: number; over: number | null };
   hires: { id: string; title: string; department: string; count: number; monthlyGross: number; startMonth: string; source: "requisition" | "planned"; late: boolean }[];
+  /** The forecast split the client's way (feedback B8): committed, approved planned, hypothetical. */
+  categories: ExpenditureCategories;
+}
+
+export type ExpenditureCategory = "committed" | "approved" | "hypothetical";
+
+export const CATEGORY_META: Record<ExpenditureCategory, { label: string; definition: string }> = {
+  committed: { label: "Committed", definition: "Existing contractual salary obligations and their employer costs — today's payroll, less anyone with a leaving date." },
+  approved: { label: "Approved planned", definition: "Approved recruitment, approved salary increases and promotions, and Finance's planned hires." },
+  hypothetical: { label: "Hypothetical", definition: "Proposals not yet approved: pending salary changes and the scenario laid on top." },
+};
+
+export interface ExpenditureCategories {
+  /** Forecast months of the fiscal year (paid months are actuals, not categories). */
+  months: { month: string; short: string; committed: number; approved: number; hypothetical: number }[];
+  totals: Record<ExpenditureCategory, number>;
+  /** Actual cost of finalized months in the fiscal year, for context. */
+  actualYtd: number;
+  /** Trend from finalized months: average month-on-month change in cost. */
+  trend: { monthlyChangePct: number | null; months: number };
 }
 
 export interface ForecastInput {
@@ -302,6 +322,35 @@ export function buildForecast(input: ForecastInput): BudgetForecast | null {
   const sim = simulate(data, bundle, base, full);
   const fc = new Map(sim.forecast.map((m) => [m.month, m]));
 
+  // Feedback B8: the same forecast in three layers. Each layer is simulated on
+  // top of the one before, so committed + approved + hypothetical = projected.
+  const pendingIds = new Set(data.structures.filter((s) => s.status === "pending").map((s) => `SC-${s.id}`));
+  const approvedPromotions = c.promotions.filter((p) => !pendingIds.has(p.id));
+  const committedOnly = simulate(data, bundle, base, merge({ ...EMPTY_SCENARIO }, c.exits));
+  const planned = simulate(data, bundle, base, merge(merge(merge({ ...EMPTY_SCENARIO }, c.exits), { promotions: approvedPromotions }), { starters: c.starters }));
+  const layer = (r: SimResult) => new Map(r.forecast.map((m) => [m.month, m.scenario]));
+  const L0 = layer(committedOnly);
+  const L1 = layer(planned);
+  const catMonths = sim.forecast
+    .filter((m) => months.includes(m.month) && !known.has(m.month))
+    .map((m) => {
+      const a = L0.get(m.month) ?? 0;
+      const b = L1.get(m.month) ?? a;
+      return { month: m.month, short: monthShort(m.month), committed: round2(a), approved: round2(b - a), hypothetical: round2(m.scenario - b) };
+    });
+  const finals = buckets.filter((b) => b.final && b.month.startsWith(String(fiscalYear))).map((b) => known.get(b.month)!.total);
+  const steps = finals.slice(1).map((v, i) => (finals[i] ? (v - finals[i]) / finals[i] : 0));
+  const categories: ExpenditureCategories = {
+    months: catMonths,
+    totals: {
+      committed: round2(catMonths.reduce((s, m) => s + m.committed, 0)),
+      approved: round2(catMonths.reduce((s, m) => s + m.approved, 0)),
+      hypothetical: round2(catMonths.reduce((s, m) => s + m.hypothetical, 0)),
+    },
+    actualYtd: round2(finals.reduce((s, v) => s + v, 0)),
+    trend: { monthlyChangePct: steps.length ? round2((steps.reduce((s, v) => s + v, 0) / steps.length) * 100) : null, months: finals.length },
+  };
+
   // Each driver alone, for "why" — fiscal-year months only.
   const drivers: ForecastDriver[] = [];
   const baseByDept: Record<string, number> = {};
@@ -419,6 +468,63 @@ export function buildForecast(input: ForecastInput): BudgetForecast | null {
     // Over/under compares like with like: only the months that have a budget.
     next12: { spend, budget: budget12, budgetMonths: budgeted.length, over: budget12 === null ? null : round2(budgeted.reduce((s, w) => s + w.value, 0) - budget12) },
     hires: c.hires,
+    categories,
+  };
+}
+
+// ── Scenario budget impact (feedback B7) ────────────────────────────────────
+
+export interface DeptBudgetImpact {
+  department: string;
+  /** Next 12 months at today's payroll (run-rate). */
+  current: number;
+  /** Next 12 months under the scenario, month by month. */
+  projected: number;
+  change: number;
+  /** Budget for the same 12 months (null = no budget line). */
+  budget: number | null;
+  /** budget − projected: positive = headroom left, negative = overspend. */
+  headroom: number | null;
+}
+
+/**
+ * What a simulation does to the budget: per department and in total, the
+ * next 12 months at today's cost against the scenario and against the
+ * budget, so HR and Finance see headroom, overspend or savings — and how
+ * much more the employer pays in statutory contributions.
+ */
+export function scenarioBudgetImpact(result: SimResult, data: TenantPayrollData & { budgets?: BudgetVersion[] }, bundle: LocaleBundle) {
+  const ccOf = new Map(bundle.departments.map((d) => [d.name, d.costCenter]));
+  const costCentreOf = (d: string) => ccOf.get(d) ?? d;
+  const months = result.forecast.map((m) => m.month);
+  const depts = [...new Set([...result.byDepartment.map((d) => d.department), ...result.forecast.flatMap((m) => Object.keys(m.byDepartment))])];
+  const rows: DeptBudgetImpact[] = depts
+    .map((department) => {
+      const base = result.byDepartment.find((d) => d.department === department)?.base ?? 0;
+      const current = round2(base * months.length);
+      const projected = round2(result.forecast.reduce((s, m) => s + (m.byDepartment[department] ?? 0), 0));
+      const lines = months.map((m) => budgetFor(data.budgets, data.settings, m, department, costCentreOf));
+      const budget = lines.every((b) => b === null) ? null : round2(lines.reduce<number>((s, b) => s + (b ?? 0), 0));
+      return { department, current, projected, change: round2(projected - current), budget, headroom: budget === null ? null : round2(budget - projected) };
+    })
+    .filter((r) => r.current || r.projected || r.budget)
+    .sort((a, b) => (a.headroom ?? Infinity) - (b.headroom ?? Infinity));
+  const company = months.map((m) => budgetFor(data.budgets, data.settings, m));
+  const budget = company.every((b) => b === null) ? null : round2(company.reduce<number>((s, b) => s + (b ?? 0), 0));
+  const employerStatutoryMonthly = round2(EMPLOYER_KEYS.reduce((s, k) => s + (result.delta[k] ?? 0), 0));
+  return {
+    rows,
+    totals: {
+      current: round2(result.measures.total12Base),
+      projected: round2(result.measures.total12Scenario),
+      change: round2(result.measures.total12Change),
+      budget,
+      headroom: budget === null ? null : round2(budget - result.measures.total12Scenario),
+    },
+    employerCostBefore: round2(result.base.gross + result.base.employerCost),
+    employerCostAfter: round2(result.sim.gross + result.sim.employerCost),
+    employerStatutoryMonthly,
+    employerStatutoryAnnual: round2(employerStatutoryMonthly * 12),
   };
 }
 

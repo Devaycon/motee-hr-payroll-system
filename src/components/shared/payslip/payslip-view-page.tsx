@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Copy, FileText, Lock, Printer, ShieldOff, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Copy, FileText, ListTree, Lock, Printer, ShieldOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -12,6 +13,9 @@ import { PAYROLL_MODULE, verifyHref } from "@/src/lib/payroll/constants";
 import { usePayrollActions, usePayslip } from "@/src/lib/payroll/use-payroll";
 import type { Payslip } from "@/src/lib/payroll/types";
 import { PayslipDocument, PayslipPrintStyles } from "./payslip-document";
+import { YtdBreakdownDialog } from "./ytd-breakdown";
+import { LineExplainDialog } from "./line-explain";
+import type { PayslipLine } from "@/src/lib/payroll/types";
 
 interface Props {
   payslipId: string;
@@ -28,6 +32,8 @@ export function PayslipViewPage({ payslipId, mode, backHref, backLabel }: Props)
   const canViewPayroll = useCan(PAYROLL_MODULE, "view");
   const canAdminister = useCan(PAYROLL_MODULE, "edit");
   const actions = usePayrollActions();
+  const [ytdOpen, setYtdOpen] = useState(false);
+  const [explain, setExplain] = useState<PayslipLine | null>(null);
 
   if (!supported) return <Unavailable backHref={backHref} backLabel={backLabel} message="Payslips are available for Nigerian tenants. UK payroll is the next statutory module." />;
   if (loading && !payslip) return <PageSkeleton />;
@@ -58,6 +64,9 @@ export function PayslipViewPage({ payslipId, mode, backHref, backLabel }: Props)
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <VerificationBadge payslip={payslip} />
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setYtdOpen(true)}>
+            <ListTree className="h-3.5 w-3.5" /> YTD breakdown
+          </Button>
           <Button variant="outline" size="sm" className="gap-1.5" asChild>
             <Link href={mode === "ess" ? `/employee/tax-certificate/${payslip.period.year}` : `/organization/employees/${payslip.employeeId}/tax-certificate/${payslip.period.year}`}>
               <FileText className="h-3.5 w-3.5" /> {payslip.period.year} tax certificate
@@ -86,9 +95,12 @@ export function PayslipViewPage({ payslipId, mode, backHref, backLabel }: Props)
         </div>
       </div>
 
+      <p className="-mb-2 text-center text-xs text-muted-foreground print:hidden">Click any line on the payslip to see how it was calculated, where it came from and how it changed month to month.</p>
       <div className="payslip-print-root">
-        <PayslipDocument payslip={payslip} />
+        <PayslipDocument payslip={payslip} onLineClick={setExplain} />
       </div>
+      <LineExplainDialog payslip={payslip} line={explain} onClose={() => setExplain(null)} />
+      <YtdBreakdownDialog payslip={payslip} open={ytdOpen} onClose={() => setYtdOpen(false)} />
     </div>
   );
 }

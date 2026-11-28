@@ -299,6 +299,10 @@ export interface LeaveAllowancePolicy {
 }
 
 export interface PayrollSettings {
+  /** Approved annual pay range per grade (Pay Equity, feedback B9). */
+  salaryBands?: import("./pay-equity").SalaryBand[];
+  /** Smallest group Pay Equity will report on (default 3). */
+  payEquityMinGroup?: number;
   taxMethod: TaxMethod;
   prorationBasis: ProrationBasis;
   /** Pay day of month (clamped to month end). */
@@ -876,6 +880,12 @@ export interface VarianceInvestigation {
   resolvedAt?: string;
   signOff?: { by: string; byId?: string; at: string; decision: "accepted" | "reopened"; note?: string };
   history: InvestigationEvent[];
+  /** Stage 1: "system" when MOTEE raised it for an unexplained movement (B5). */
+  detectedBy?: "system" | "user";
+  /** Stage 2: the payroll administrator's review of the originating transaction. */
+  review?: { by: string; byId?: string; at: string; note: string };
+  /** Stage 6: closed after an accepted independent sign-off — the record is then read-only. */
+  closedAt?: string;
 }
 
 // ── HMO (private health insurance) ──────────────────────────────────────────

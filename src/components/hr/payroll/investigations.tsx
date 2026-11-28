@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, CircleDot, Search, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Bot, CheckCircle2, CircleDot, Radar, Search, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -19,6 +19,7 @@ import { INVESTIGATIONS_HREF, useCurrentActor, usePayrollActions, useTenantPayro
 import type { InvestigationStatus, VarianceInvestigation } from "@/src/lib/payroll/types";
 import { cn } from "@/src/lib/utils";
 import { NotSupported, fmtDate, money } from "./components/shared";
+import { isClosed, stageLabel } from "@/src/lib/payroll/investigation-lifecycle";
 
 export const INVESTIGATION_STATUS_LABELS: Record<InvestigationStatus, string> = {
   open: "Open",
@@ -38,9 +39,10 @@ export function InvestigationStatusBadge({ inv }: { inv: VarianceInvestigation }
     <span className="inline-flex flex-wrap items-center gap-1">
       <Badge variant="outline" className={cn("text-[10px] font-medium", STATUS_TONE[inv.status])}>{INVESTIGATION_STATUS_LABELS[inv.status]}</Badge>
       {awaiting && <Badge variant="outline" className="text-[10px]">Awaiting sign-off</Badge>}
-      {inv.signOff?.decision === "accepted" && (
-        <Badge variant="outline" className="gap-1 text-[10px]"><ShieldCheck className="h-3 w-3" /> Signed off</Badge>
+      {isClosed(inv) && (
+        <Badge variant="outline" className="gap-1 text-[10px]"><ShieldCheck className="h-3 w-3" /> Signed off · closed</Badge>
       )}
+      {!inv.ownerId && !isClosed(inv) && <Badge variant="outline" className="border-amber-500/40 text-[10px] text-amber-700">Unassigned</Badge>}
     </span>
   );
 }
@@ -161,6 +163,7 @@ const ALL = "__all__";
 export function InvestigationsRegisterPage() {
   const { data, bundle, loading, supported } = useTenantPayroll();
   const me = useCurrentActor();
+  const actions = usePayrollActions();
   const router = useRouter();
   const search = useSearchParams();
   const status = search.get("status") ?? ALL;
@@ -189,6 +192,8 @@ export function InvestigationsRegisterPage() {
       (!needle || `${i.id} ${i.title} ${i.employeeName ?? ""} ${i.ownerName}`.toLowerCase().includes(needle)),
   );
   const count = (s: InvestigationStatus) => all.filter((i) => i.status === s).length;
+  // The month being prepared — detection runs against it.
+  const openRun = data.runs.filter((r) => r.type === "regular" && r.status !== "finalized" && r.status !== "disbursed" && r.calculatedAt).sort((a, b) => b.period.year * 100 + b.period.month - (a.period.year * 100 + a.period.month))[0];
   const awaiting = all.filter((i) => i.status === "resolved" && i.signOff?.decision !== "accepted").length;
 
   return (
@@ -196,7 +201,23 @@ export function InvestigationsRegisterPage() {
       <div>
         <Link href={PAYROLL_HREF} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" /> Payroll</Link>
         <h1 className="mt-1 text-2xl font-semibold">Variance investigations</h1>
-        <p className="text-xs text-muted-foreground">Payroll movements being explained: who owns each one, the evidence, the resolution and a second person&apos;s sign-off.</p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <p className="text-xs text-muted-foreground">Payroll movements being explained: Detection → Investigation → Assignment → Resolution → Independent sign-off → Closure.</p>
+          {openRun && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => {
+                const n = actions.detectUnexplainedMovements(openRun.id);
+                if (n) toast.success(`${n} unexplained movement${n === 1 ? "" : "s"} detected`, { description: "Unassigned cases were opened — review and assign them." });
+                else toast.info("Nothing new to investigate", { description: `Every movement in ${openRun.period.label} is explained or already has a case.` });
+              }}
+            >
+              <Radar className="h-3.5 w-3.5" /> Detect unexplained movements · {openRun.period.label}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-4">
@@ -251,23 +272,28 @@ export function InvestigationsRegisterPage() {
                 <th className="px-4 py-2 text-right font-medium">Amount</th>
                 <th className="px-4 py-2 font-medium">Owner</th>
                 <th className="px-4 py-2 font-medium">Due</th>
+                <th className="px-4 py-2 font-medium">Stage</th>
                 <th className="px-4 py-2 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
-              {shown.length === 0 && <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No investigations match. Raise one from the payroll comparison.</td></tr>}
+              {shown.length === 0 && <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">No investigations match. Raise one from the payroll comparison.</td></tr>}
               {shown.map((i) => {
                 const overdue = i.dueDate && i.status !== "resolved" && i.dueDate < new Date().toISOString().slice(0, 10);
                 return (
                   <tr key={i.id} className="border-t align-top">
                     <td className="px-4 py-2">
                       <Link href={`${INVESTIGATIONS_HREF}/${i.id}`} className="font-medium hover:text-primary hover:underline">{i.title}</Link>
-                      <p className="text-[10px] text-muted-foreground">{i.id}{i.employeeName ? ` · ${i.employeeName}` : ""} · raised by {i.createdBy} {fmtDate(i.createdAt)}</p>
+                      <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        {i.detectedBy === "system" && <Bot className="h-3 w-3" />}
+                        {i.id}{i.employeeName ? ` · ${i.employeeName}` : ""} · {i.detectedBy === "system" ? "detected automatically" : `raised by ${i.createdBy}`} {fmtDate(i.createdAt)}
+                      </p>
                     </td>
                     <td className="px-4 py-2">{i.periodLabel}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{money(i.amount)}</td>
-                    <td className="px-4 py-2">{i.ownerName}</td>
+                    <td className="px-4 py-2">{i.ownerName || <span className="text-amber-700">Unassigned</span>}</td>
                     <td className={cn("px-4 py-2", overdue && "font-medium text-rose-600")}>{i.dueDate ? fmtDate(i.dueDate) : "—"}{overdue ? " · overdue" : ""}</td>
+                    <td className="px-4 py-2 font-medium">{stageLabel(i)}</td>
                     <td className="px-4 py-2"><InvestigationStatusBadge inv={i} /></td>
                   </tr>
                 );

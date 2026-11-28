@@ -29,6 +29,9 @@ import {
   openInvestigation as openInvestigationAction,
   resolveInvestigation as resolveInvestigationAction,
   signOffInvestigation as signOffInvestigationAction,
+  reviewInvestigation as reviewInvestigationAction,
+  addEquityExplanation as addEquityExplanationAction,
+  approveEquityExplanation as approveEquityExplanationAction,
   updateInvestigation,
   addConfigChange,
   clearRemittance,
@@ -104,7 +107,10 @@ import type {
   VarianceInvestigation,
   AvcRequest,
 } from "./types";
-import type { ComparisonCtx } from "./comparison";
+import { compareRuns, defaultPreviousRun, type ComparisonCtx } from "./comparison";
+import { blockedReason, runReadiness, type Readiness } from "./readiness";
+import { detectUnexplained } from "./investigation-lifecycle";
+import { remittanceRows } from "./remittance-centre";
 import type { SavedScenario } from "./simulation";
 import { buildForecast, snapshotOf, type BudgetVersion, type ForecastSnapshot, type PlannedHire, type RequisitionRef } from "./budget";
 
@@ -200,6 +206,28 @@ export function comparisonCtxOf(data: TenantPayroll, bundle: LocaleBundle): Comp
     audit: data.audit,
     costCentres: new Map(bundle.departments.map((d) => [d.name, d.costCenter])),
   };
+}
+
+/**
+ * The pre-payment readiness score for a run (client feedback B1). Regular
+ * runs are compared with the previous regular month for the variance check;
+ * remittances are those of months already finalized.
+ */
+export function readinessFor(data: TenantPayroll, bundle: LocaleBundle, run: PayrollRun, today = new Date().toISOString().slice(0, 10)): Readiness {
+  const previous = run.type === "regular" ? defaultPreviousRun(data.runs, run) : null;
+  const comparison = previous && run.calculatedAt ? compareRuns(run, previous, comparisonCtxOf(data, bundle)) : null;
+  const remittances = remittanceRows(data.runs.filter((r) => r.id !== run.id), data.remittances, today);
+  return runReadiness({ run, data, earlierOpen: openEarlierRuns(data, run).length, comparison, remittances });
+}
+
+/** Readiness of one run, recomputed when payroll changes. */
+export function useRunReadiness(runId: string | undefined): Readiness | null {
+  const { data, bundle } = useTenantPayroll({ enabled: !!runId });
+  return useMemo(() => {
+    const run = runId ? data?.runs.find((r) => r.id === runId) : undefined;
+    if (!data || !bundle || !run) return null;
+    return readinessFor(data, bundle, run);
+  }, [data, bundle, runId]);
 }
 
 /** Staff the new-starter import brought onto payroll for the current tenant (not in the HR bundle). */
@@ -706,6 +734,9 @@ export function usePayrollActions() {
         if (earlier.length) return { ok: false, reason: `Finalize ${earlier.map((r) => r.period.label).join(", ")} first — months are closed in order.` };
         const blocking = blockingExceptions(run);
         if (blocking.length) return { ok: false, reason: `${blocking.length} error${blocking.length === 1 ? "" : "s"} must be resolved or acknowledged first.` };
+        // Hard block (B1): no submission while a critical compliance or payment check has failed.
+        const readiness = readinessFor(l.data, l.bundle, run);
+        if (readiness.blocked) return { ok: false, reason: blockedReason(readiness, "submission") };
         const requestId = await raiseApproval(run, note);
         if (!requestId) return { ok: false, reason: "No approval chain is set up for payroll runs. Add one in Submissions & Approvals." };
         // A chain where every step was skipped approves immediately.
@@ -744,6 +775,9 @@ export function usePayrollActions() {
         if (run.stale) return { ok: false, reason: `Recalculate and re-approve first — ${run.stale.reason}.` };
         const earlier = openEarlierRuns(l.data, run);
         if (earlier.length) return { ok: false, reason: `Finalize ${earlier.map((r) => r.period.label).join(", ")} first.` };
+        // Re-checked at the last gate: something may have changed since approval.
+        const readiness = readinessFor(l.data, l.bundle, run);
+        if (readiness.blocked) return { ok: false, reason: blockedReason(readiness, "finalizing") };
 
         const now = new Date().toISOString();
         const req = run.approvalRequestId ? l.s.approvals.requests.find((r) => r.id === run.approvalRequestId) : undefined;
@@ -1033,9 +1067,76 @@ export function usePayrollActions() {
         return id;
       },
 
+      /** Pay Equity: document why a pay difference is justified; a second person approves it. */
+      explainPayDifference(employeeId: string, kind: import("./pay-equity").FindingKind, note: string): ActionResult {
+        if (!tenantId) return { ok: false, reason: "No tenant." };
+        if (note.trim().length < 10) return { ok: false, reason: "Write the reason in a sentence (who decided, and why)." };
+        dispatch(addEquityExplanationAction({ tenantId, actor: actor.name, explanation: { id: `EQX-${Date.now().toString(36)}`, employeeId, kind, note: note.trim(), by: actor.name, byId: actor.employeeId, at: new Date().toISOString() } }));
+        return { ok: true };
+      },
+
+      approvePayExplanation(id: string): ActionResult {
+        if (!tenantId) return { ok: false, reason: "No tenant." };
+        const x = live()?.data.equityExplanations?.find((e) => e.id === id);
+        if (!x) return { ok: false, reason: "Explanation not found." };
+        if (x.by === actor.name || (x.byId && x.byId === actor.employeeId)) return { ok: false, reason: "You wrote this explanation — a second person must approve it." };
+        dispatch(approveEquityExplanationAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id }));
+        return { ok: true };
+      },
+
+      /** Stage 2: record what the originating transaction shows. */
+      reviewInvestigation(id: string, note: string): ActionResult {
+        if (!tenantId) return { ok: false, reason: "No tenant." };
+        if (!note.trim()) return { ok: false, reason: "Say what you found in the originating transaction." };
+        dispatch(reviewInvestigationAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, note }));
+        return { ok: true };
+      },
+
+      /**
+       * Stage 1, automatic: raise an unassigned case for every employee whose
+       * movement no record explains. Returns how many were raised.
+       */
+      detectUnexplainedMovements(runId: string): number {
+        const l = live();
+        const run = l?.data.runs.find((r) => r.id === runId);
+        if (!l || !run || !tenantId || run.type !== "regular" || !run.calculatedAt) return 0;
+        const previous = defaultPreviousRun(l.data.runs, run);
+        if (!previous) return 0;
+        const found = detectUnexplained(compareRuns(run, previous, comparisonCtxOf(l.data, l.bundle)), l.data.investigations ?? []);
+        const now = new Date().toISOString();
+        found.forEach((f, i) => {
+          const investigation: VarianceInvestigation = {
+            ...f,
+            id: `INV-${Date.now().toString(36).toUpperCase()}${i}`,
+            status: "open",
+            ownerId: "",
+            ownerName: "",
+            createdBy: "MOTEE",
+            createdAt: now,
+            comments: [],
+            documents: [],
+            history: [{ at: now, actor: "MOTEE", action: "Detected an unexplained movement", note: f.finding }],
+          };
+          dispatch(openInvestigationAction({ tenantId, actor: "MOTEE", investigation }));
+        });
+        if (found.length) {
+          dispatch(
+            pushNotification({
+              title: `${found.length} unexplained payroll movement${found.length === 1 ? "" : "s"} detected`,
+              description: `${run.period.label}: cases opened in the investigations register — review and assign them.`,
+              type: "warning",
+              recipientRoleIds: ["ROLE-HRADMIN", "ROLE-FIN"],
+              href: `${INVESTIGATIONS_HREF}?run=${runId}`,
+            }),
+          );
+        }
+        return found.length;
+      },
+
       assignInvestigation(id: string, ownerId: string, ownerName: string) {
         if (!tenantId) return;
-        dispatch(updateInvestigation({ tenantId, actor: actor.name, id, patch: { ownerId, ownerName }, note: `Reassigned to ${ownerName}` }));
+        const had = !!live()?.data.investigations?.find((x) => x.id === id)?.ownerId;
+        dispatch(updateInvestigation({ tenantId, actor: actor.name, id, patch: { ownerId, ownerName }, note: `${had ? "Reassigned" : "Assigned"} to ${ownerName}` }));
         if (ownerId !== actor.employeeId) {
           dispatch(pushNotification({ title: "Payroll variance investigation assigned to you", description: `${id} — reassigned by ${actor.name}.`, type: "warning", recipientEmployeeIds: [ownerId], href: `${INVESTIGATIONS_HREF}/${id}` }));
         }
@@ -1064,6 +1165,7 @@ export function usePayrollActions() {
       /** Record the finding; Finance (and whoever raised it) is asked to sign it off. */
       resolveInvestigation(id: string, note: string, outcome: "legitimate" | "error"): ActionResult {
         if (!tenantId) return { ok: false, reason: "No tenant." };
+        if (!live()?.data.investigations?.find((x) => x.id === id)?.ownerId) return { ok: false, reason: "Assign the case to a responsible person first." };
         if (!note.trim()) return { ok: false, reason: "Write a resolution note first." };
         dispatch(resolveInvestigationAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, note, outcome }));
         const inv = live()?.data.investigations?.find((x) => x.id === id);
@@ -1348,10 +1450,13 @@ export function usePayrollActions() {
         dispatch(updateRemittance({ tenantId, actor: actor.name, key, note: "Remittance payment instruction sent", patch: { status: "submitted", reference, date, submittedAt: new Date().toISOString(), by: actor.name, at: new Date().toISOString() } }));
       },
 
-      /** Payment confirmed: reference, date, amount actually paid and (ideally) the bank receipt. */
-      recordRemittancePayment(key: string, p: { reference: string; date: string; amountPaid: number; receipt?: RemittanceRecord["receipt"]; note?: string }) {
-        if (!tenantId) return;
+      /** Payment confirmed: reference, date, amount actually paid and the evidence (bank receipt or acknowledgement) — required. */
+      recordRemittancePayment(key: string, p: { reference: string; date: string; amountPaid: number; receipt?: RemittanceRecord["receipt"]; note?: string }): ActionResult {
+        if (!p.receipt) return { ok: false, reason: "Attach the bank receipt or the authority's acknowledgement — a payment can't be recorded without evidence." };
+        if (p.reference.trim().length < 3) return { ok: false, reason: "Enter the payment reference." };
+        if (!tenantId) return { ok: false, reason: "No tenant." };
         dispatch(updateRemittance({ tenantId, actor: actor.name, key, note: "Recorded statutory remittance payment", patch: { status: "paid", reference: p.reference, date: p.date, amountPaid: p.amountPaid, receipt: p.receipt ?? null, note: p.note, by: actor.name, at: new Date().toISOString() } }));
+        return { ok: true };
       },
 
       attachRemittanceReceipt(key: string, receipt: NonNullable<RemittanceRecord["receipt"]>) {
@@ -1375,15 +1480,23 @@ export function usePayrollActions() {
       },
 
       /** Remind payroll and finance users of upcoming and overdue remittances (once per stage). */
-      sendRemittanceReminders(due: { key: string; row: RemittanceRow; stage: "upcoming" | "today" | "overdue" }[]) {
+      sendRemittanceReminders(due: { key: string; row: RemittanceRow; stage: "upcoming" | "today" | "overdue" | "escalated" }[]) {
         if (!tenantId) return;
         for (const { key, row, stage } of due) {
           dispatch(
             pushNotification({
-              title: stage === "overdue" ? `Overdue: ${row.title} for ${row.monthLabel}` : stage === "today" ? `Due today: ${row.title} for ${row.monthLabel}` : `${row.title} due in ${row.daysToDue} day${row.daysToDue === 1 ? "" : "s"}`,
-              description: `${ngn(row.outstanding)} to ${row.to} — due ${row.due}.`,
-              type: stage === "overdue" ? "warning" : "info",
-              recipientRoleIds: ["ROLE-HRADMIN", "ROLE-FIN"],
+              title:
+                stage === "escalated"
+                  ? `Escalated: ${row.title} for ${row.monthLabel} is ${-row.daysToDue} days overdue`
+                  : stage === "overdue"
+                    ? `Overdue: ${row.title} for ${row.monthLabel}`
+                    : stage === "today"
+                      ? `Due today: ${row.title} for ${row.monthLabel}`
+                      : `${row.title} due in ${row.daysToDue} day${row.daysToDue === 1 ? "" : "s"}`,
+              description: `${ngn(row.outstanding)} to ${row.to} — due ${row.due}.${stage === "escalated" ? " Late statutory payments attract penalties and interest." : ""}`,
+              type: stage === "overdue" || stage === "escalated" ? "warning" : "info",
+              // Missed deadlines escalate to the Executive as well.
+              recipientRoleIds: stage === "escalated" ? ["ROLE-HRADMIN", "ROLE-FIN", "ROLE-EXEC"] : ["ROLE-HRADMIN", "ROLE-FIN"],
               href: `${PAYROLL_HREF}?tab=remittances`,
             }),
           );

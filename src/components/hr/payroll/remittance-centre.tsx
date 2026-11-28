@@ -13,7 +13,8 @@ import { PAYROLL_HREF, PAYROLL_MODULE } from "@/src/lib/payroll/constants";
 import { DownloadMenu, RowActions } from "./components/row-actions";
 import { REMITTANCE_ITEMS, downloadAllRemittances, downloadRemittanceSchedule, remittanceStatement, type RemittanceCtx } from "@/src/lib/payroll/remittances";
 import { REMITTANCE_STATUS_META, projectedRows, remindersDue, remittanceRows, summarise, type RemittanceRow, type RemittanceStatus } from "@/src/lib/payroll/remittance-centre";
-import { usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { buildAuditPack, downloadAuditPack } from "@/src/lib/payroll/audit-pack";
+import { useCurrentActor, usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
 import { useCan } from "@/src/lib/permissions/use-can";
 import type { RemittanceRecord } from "@/src/lib/stores/payroll-slice";
 import { cn } from "@/src/lib/utils";
@@ -82,6 +83,7 @@ type Dialogs = { kind: "submit" | "pay"; row: RemittanceRow } | null;
 export function RemittanceCentre() {
   const { data, bundle } = useTenantPayroll();
   const actions = usePayrollActions();
+  const actor = useCurrentActor();
   const canEdit = useCan(PAYROLL_MODULE, "create");
   const { rows, projected, today: day } = useRemittanceRows();
   const [open, setOpen] = useState<string | null>(null);
@@ -157,6 +159,17 @@ export function RemittanceCentre() {
                   <p className="text-sm font-semibold">{label}</p>
                   <p className="text-xs text-muted-foreground">{monthRuns.length} finalized run{monthRuns.length === 1 ? "" : "s"} · {monthRuns.map((r) => r.title).join(", ")}</p>
                 </div>
+                <div className="flex flex-wrap items-center gap-2">
+                <DownloadMenu
+                  label="Audit pack"
+                  title="Summary, reconciliation, outstanding, evidence, schedules, history"
+                  onDownload={(f) => {
+                    const pack = buildAuditPack(month, rows, ctx, data.audit, actor.name);
+                    if (!pack) return;
+                    downloadAuditPack(pack, f);
+                    actions.logExport("", `Statutory Remittance Audit Pack — ${label} (${f.toUpperCase()})`);
+                  }}
+                />
                 <DownloadMenu
                   label="All schedules"
                   onDownload={(f) => {
@@ -165,6 +178,7 @@ export function RemittanceCentre() {
                     actions.logExport("", `All statutory remittance schedules — ${label} (${f.toUpperCase()})`);
                   }}
                 />
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px] text-xs">
@@ -244,7 +258,7 @@ export function RemittanceCentre() {
               {dialog?.row.title} — {dialog?.row.monthLabel}.{" "}
               {dialog?.kind === "submit"
                 ? "Marks the remittance as submitted. It isn't paid until the payment is confirmed."
-                : "Confirms payment. Attach the bank receipt or the authority's acknowledgement — reconciliation needs it."}
+                : "Confirms payment. A payment is only recorded with evidence: attach the bank receipt or the authority's acknowledgement."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -258,7 +272,7 @@ export function RemittanceCentre() {
                   <p className="text-[10px] text-muted-foreground">Liability {money(dialog.row.liability)}{dialog.row.paid ? ` · ${money(dialog.row.paid)} paid already` : ""}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="rem-receipt" className="text-xs">Bank receipt</Label>
+                  <Label htmlFor="rem-receipt" className="text-xs">Bank receipt or acknowledgement (required)</Label>
                   <Input id="rem-receipt" type="file" accept=".pdf,image/*" className="text-xs" onChange={async (e) => { const f = e.target.files?.[0]; setReceipt(f ? await readFile(f) : null); }} />
                   {receipt && <p className="truncate text-[10px] text-muted-foreground">{receipt.fileName}</p>}
                 </div>
@@ -268,7 +282,7 @@ export function RemittanceCentre() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialog(null)}>Cancel</Button>
             <Button
-              disabled={ref.trim().length < 3 || !date || (dialog?.kind === "pay" && !(Number(amount) > 0))}
+              disabled={ref.trim().length < 3 || !date || (dialog?.kind === "pay" && (!(Number(amount) > 0) || !receipt))}
               onClick={() => {
                 if (!dialog) return;
                 if (dialog.kind === "submit") {
@@ -276,7 +290,8 @@ export function RemittanceCentre() {
                   toast.success("Marked as submitted");
                 } else {
                   const total = Math.min(dialog.row.liability, (dialog.row.record?.status === "submitted" ? 0 : dialog.row.paid) + Number(amount));
-                  actions.recordRemittancePayment(dialog.row.key, { reference: ref.trim(), date, amountPaid: Math.round(total * 100) / 100, receipt });
+                  const res = actions.recordRemittancePayment(dialog.row.key, { reference: ref.trim(), date, amountPaid: Math.round(total * 100) / 100, receipt });
+                  if (!res.ok) return toast.error(res.reason);
                   toast.success(total < dialog.row.liability - 0.5 ? `Part payment recorded — ${money(dialog.row.liability - total)} still outstanding` : "Payment recorded");
                 }
                 setDialog(null);

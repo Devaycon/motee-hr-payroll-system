@@ -39,6 +39,7 @@ import workforceRiskReducer from "./workforce-risk-slice";
 import chatReducer from "./chat-slice";
 import { sicknessListener } from "./sickness-listener";
 import payrollReducer from "./payroll-slice";
+import reportStudioReducer from "./report-studio-slice";
 import { payrollListener } from "./payroll-listener";
 
 export const store = configureStore({
@@ -81,6 +82,7 @@ export const store = configureStore({
     workforceRisk: workforceRiskReducer,
     chat: chatReducer,
     payroll: payrollReducer,
+    reportStudio: reportStudioReducer,
   },
   // Prepend, never replace: replacing the stack drops serialisability and
   // immutability checks along with thunk support.

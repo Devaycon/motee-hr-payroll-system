@@ -37,6 +37,7 @@ import {
   type VariableKind,
 } from "@/src/lib/payroll/simulation";
 import { usePayrollActions, useTenantPayroll } from "@/src/lib/payroll/use-payroll";
+import { scenarioBudgetImpact } from "@/src/lib/payroll/budget";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { cn } from "@/src/lib/utils";
 import { BarList, ChartCard, ColumnChart, Figure, compactNaira } from "./components/charts";
@@ -428,6 +429,8 @@ export function PayrollSimulationPage() {
             </ChartCard>
             <NextActions result={result} sc={sc} saved={current} budgetMonthly={budgetMonthly} />
           </div>
+
+          <BudgetImpact impact={scenarioBudgetImpact(result, data, bundle)} />
 
           <EmployeePreview result={result} departments={departments} />
 
@@ -852,5 +855,57 @@ function MonthSelect({ months, value, onChange, label = "From" }: { months: { ke
         <SelectContent>{months.map((m) => <SelectItem key={m.key} value={m.key} className="text-xs">{m.label}</SelectItem>)}</SelectContent>
       </Select>
     </Field>
+  );
+}
+
+/** Feedback B7: the scenario against the budget — headroom, overspend or savings, per department. */
+function BudgetImpact({ impact }: { impact: ReturnType<typeof scenarioBudgetImpact> }) {
+  const t = impact.totals;
+  const tone = (n: number | null) => (n === null ? undefined : n < 0 ? "bad" : "good");
+  return (
+    <div className="rounded-xl border bg-card p-4">
+      <p className="text-sm font-semibold">Budget impact · next 12 months</p>
+      <p className="text-[11px] text-muted-foreground">Cost to employer at today&apos;s payroll against the scenario and the approved budget. Nothing here touches live payroll.</p>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Figure label="Employer cost / month — before" value={compactNaira(impact.employerCostBefore)} sub="Gross + employer contributions" />
+        <Figure label="Employer cost / month — after" value={compactNaira(impact.employerCostAfter)} sub={signedC(impact.employerCostAfter - impact.employerCostBefore)} tone={impact.employerCostAfter > impact.employerCostBefore ? "warn" : undefined} />
+        <Figure label="Extra employer statutory contributions" value={signedC(impact.employerStatutoryMonthly)} sub={`${signedC(impact.employerStatutoryAnnual)} a year · pension, NSITF, ITF, NHIA, group life`} />
+        <Figure label={t.headroom === null ? "Budget" : t.headroom < 0 ? "Overspend vs budget" : "Budget headroom"} value={t.headroom === null ? "No budget" : compactNaira(Math.abs(t.headroom))} sub={t.budget === null ? "Set one in Budget & Forecasting" : `Budget ${compactNaira(t.budget)} · scenario ${compactNaira(t.projected)}`} tone={tone(t.headroom)} />
+      </div>
+      <div className="mt-3 overflow-x-auto rounded-lg border">
+        <table className="w-full min-w-[640px] text-xs tabular-nums">
+          <thead className="bg-muted/40 text-muted-foreground">
+            <tr>
+              <th className="px-3 py-1.5 text-left font-medium">Department</th>
+              <th className="px-3 py-1.5 text-right font-medium">Today (12 mo)</th>
+              <th className="px-3 py-1.5 text-right font-medium">Scenario (12 mo)</th>
+              <th className="px-3 py-1.5 text-right font-medium">Change</th>
+              <th className="px-3 py-1.5 text-right font-medium">Budget</th>
+              <th className="px-3 py-1.5 text-right font-medium">Headroom / overspend</th>
+            </tr>
+          </thead>
+          <tbody>
+            {impact.rows.map((r) => (
+              <tr key={r.department} className="border-t">
+                <td className="px-3 py-1.5">{r.department}</td>
+                <td className="px-3 py-1.5 text-right">{compactNaira(r.current)}</td>
+                <td className="px-3 py-1.5 text-right">{compactNaira(r.projected)}</td>
+                <td className={cn("px-3 py-1.5 text-right", r.change > 0 ? "text-amber-700 dark:text-amber-400" : r.change < 0 && "text-emerald-700 dark:text-emerald-400")}>{signedC(r.change)}</td>
+                <td className="px-3 py-1.5 text-right">{r.budget === null ? "—" : compactNaira(r.budget)}</td>
+                <td className={cn("px-3 py-1.5 text-right font-medium", r.headroom !== null && (r.headroom < 0 ? "text-rose-600" : "text-emerald-700 dark:text-emerald-400"))}>{r.headroom === null ? "—" : `${r.headroom < 0 ? "Over " : ""}${compactNaira(Math.abs(r.headroom))}`}</td>
+              </tr>
+            ))}
+            <tr className="border-t-2 font-semibold">
+              <td className="px-3 py-1.5">Total</td>
+              <td className="px-3 py-1.5 text-right">{compactNaira(t.current)}</td>
+              <td className="px-3 py-1.5 text-right">{compactNaira(t.projected)}</td>
+              <td className="px-3 py-1.5 text-right">{signedC(t.change)}</td>
+              <td className="px-3 py-1.5 text-right">{t.budget === null ? "—" : compactNaira(t.budget)}</td>
+              <td className={cn("px-3 py-1.5 text-right", t.headroom !== null && (t.headroom < 0 ? "text-rose-600" : "text-emerald-700 dark:text-emerald-400"))}>{t.headroom === null ? "—" : `${t.headroom < 0 ? "Over " : ""}${compactNaira(Math.abs(t.headroom))}`}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }

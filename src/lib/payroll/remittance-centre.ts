@@ -54,9 +54,16 @@ export interface RemittanceRow {
 const dayMs = 86_400_000;
 const days = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / dayMs);
 
+/**
+ * A payment counts only with evidence on file (client feedback B3): a
+ * liability is never paid just because it was calculated or scheduled.
+ * Records from before the lifecycle existed (no `status`) are grandfathered.
+ */
+export const hasEvidence = (rec: RemittanceRecord | undefined) => !!rec && (rec.status === undefined || !!rec.receipt);
+
 /** What has actually been paid against a record (old records without an amount count as paid in full). */
 function paidOf(rec: RemittanceRecord | undefined, liability: number): number {
-  if (!rec || rec.status === "submitted") return 0;
+  if (!rec || rec.status === "submitted" || !hasEvidence(rec)) return 0;
   return round2(rec.amountPaid ?? liability);
 }
 
@@ -68,7 +75,8 @@ export function statusOf(rec: RemittanceRecord | undefined, liability: number, d
   if (rec?.status === "reconciled" && settled) return { status: "reconciled", overdue: false };
   if (rec && rec.status !== "submitted" && settled) return { status: "paid", overdue: false };
   if (late) return { status: "overdue", overdue: true };
-  if (rec?.status === "submitted") return { status: "submitted", overdue: false };
+  // A payment recorded without evidence stays "submitted" until the receipt is on file.
+  if (rec?.status === "submitted" || (rec && !hasEvidence(rec))) return { status: "submitted", overdue: false };
   if (rec && paid > 0) return { status: "paid", overdue: false };
   return { status: "calculated", overdue: false };
 }
@@ -165,12 +173,20 @@ export function summarise(rows: RemittanceRow[], soonDays = 7): RemittanceSummar
   };
 }
 
-/** Reminders to send now: obligations due within `leadDays`, or overdue, not reminded at this stage yet. */
-export function remindersDue(rows: RemittanceRow[], leadDays: number, sent: Record<string, string> | undefined): { key: string; row: RemittanceRow; stage: "upcoming" | "today" | "overdue" }[] {
-  const out: { key: string; row: RemittanceRow; stage: "upcoming" | "today" | "overdue" }[] = [];
+export type ReminderStage = "upcoming" | "today" | "overdue" | "escalated";
+
+/** Days past the deadline after which an unpaid remittance is escalated to the Executive. */
+export const ESCALATE_AFTER_DAYS = 5;
+
+/**
+ * Reminders to send now: obligations due within `leadDays`, overdue, or
+ * overdue long enough to escalate — each stage sent once.
+ */
+export function remindersDue(rows: RemittanceRow[], leadDays: number, sent: Record<string, string> | undefined, escalateAfter = ESCALATE_AFTER_DAYS): { key: string; row: RemittanceRow; stage: ReminderStage }[] {
+  const out: { key: string; row: RemittanceRow; stage: ReminderStage }[] = [];
   for (const row of rows) {
-    if (row.outstanding <= 0 || row.status === "submitted") continue;
-    const stage = row.overdue ? "overdue" : row.daysToDue === 0 ? "today" : row.daysToDue > 0 && row.daysToDue <= leadDays ? "upcoming" : null;
+    if (row.outstanding <= 0 || (row.status === "submitted" && !row.overdue)) continue;
+    const stage: ReminderStage | null = row.overdue ? (row.daysToDue <= -escalateAfter ? "escalated" : "overdue") : row.daysToDue === 0 ? "today" : row.daysToDue > 0 && row.daysToDue <= leadDays ? "upcoming" : null;
     if (!stage) continue;
     const key = `${row.key}:${stage}`;
     if (sent?.[key]) continue;

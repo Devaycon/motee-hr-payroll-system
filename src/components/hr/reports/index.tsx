@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Download, Wand2 } from "lucide-react";
+import { ArrowRight, Download, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAppSelector } from "@/src/lib/stores/hooks";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
@@ -198,10 +198,18 @@ export function ReportsPage() {
           },
         ]}
         action={
-          <Button className="mt-1 gap-1.5" onClick={() => setCustomOpen(true)}>
-            <Wand2 className="h-4 w-4" />
-            Build Custom Report
-          </Button>
+          <div className="mt-1 flex flex-wrap gap-2">
+            <Button className="gap-1.5" onClick={() => setCustomOpen(true)}>
+              <Wand2 className="h-4 w-4" />
+              Build Custom Report
+            </Button>
+            <Button variant="outline" className="gap-1.5" asChild>
+              <Link href="/operations/reports/studio">
+                <Sparkles className="h-4 w-4" />
+                Report Studio
+              </Link>
+            </Button>
+          </div>
         }
       />
 

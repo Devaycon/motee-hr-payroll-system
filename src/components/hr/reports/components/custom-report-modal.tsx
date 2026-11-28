@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FileSpreadsheet, FileText, Wand2 } from "lucide-react";
+import Link from "next/link";
+import { FileSpreadsheet, FileText, Lock, Sparkles, Wand2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +24,12 @@ import {
 } from "@/src/components/ui/select";
 import { useLocaleSection } from "@/src/lib/hooks/use-locale-data";
 import type { LocaleBundle } from "@/src/lib/types/locale";
-import { ALL_REPORTS, getReport } from "@/src/lib/reports/registry";
+import { ALL_REPORTS } from "@/src/lib/reports/registry";
+import { ALL_PAYROLL_DATASETS } from "@/src/lib/reports/registry/payroll-datasets";
+import { mask } from "@/src/lib/reports/studio";
+import { useCan } from "@/src/lib/permissions/use-can";
+import { PAYROLL_MODULE, PAYROLL_SETTINGS_MODULE } from "@/src/lib/payroll/constants";
+import { columnsOf } from "@/src/lib/reports/types";
 import { exportCsv, exportXlsx } from "@/src/lib/reports/export";
 import type { ReportColumn } from "@/src/lib/reports/types";
 import { reportInCountry, useReportContext } from "@/src/lib/reports/use-report-context";
@@ -43,19 +49,27 @@ export function CustomReportModal({
   const { data: bundle } = useLocaleSection<LocaleBundle>((b) => b);
   const { ctx } = useReportContext();
 
-  const bases = ALL_REPORTS.filter((r) => allowedReportIds.includes(r.id) && reportInCountry(r, ctx));
+  const canIdentifiers = useCan(PAYROLL_MODULE, "edit");
+  const canBank = useCan(PAYROLL_SETTINGS_MODULE, "edit");
+  const canPayroll = useCan(PAYROLL_MODULE, "view");
+  // HR datasets the user may see, plus the payroll datasets for payroll viewers (feedback B2).
+  const bases = [
+    ...ALL_REPORTS.filter((r) => allowedReportIds.includes(r.id) && reportInCountry(r, ctx)),
+    ...(canPayroll ? ALL_PAYROLL_DATASETS.filter((r) => reportInCountry(r, ctx)) : []),
+  ];
   const [baseId, setBaseId] = useState<string>(bases[0]?.id ?? "");
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [reportName, setReportName] = useState("");
 
-  const def = getReport(baseId);
+  const def = bases.find((r) => r.id === baseId);
+  const allColumns = useMemo(() => (def ? columnsOf(def, ctx) : []), [def, ctx]);
 
   // When the base dataset changes, default to selecting all of its columns.
   const [prevBase, setPrevBase] = useState<string>("");
   if (baseId !== prevBase) {
     setPrevBase(baseId);
-    setSelectedKeys(new Set(def?.columns.map((c) => c.key) ?? []));
+    setSelectedKeys(new Set(allColumns.map((c) => c.key)));
     if (def) setReportName(`${def.label} (custom)`);
   }
 
@@ -70,9 +84,13 @@ export function CustomReportModal({
     return rows.filter((r) => def.searchText!(r).toLowerCase().includes(q));
   }, [rows, def, search]);
 
+  // Restricted fields are masked for anyone not allowed to see them, at export time too.
   const selectedColumns: ReportColumn<unknown>[] = useMemo(
-    () => (def?.columns ?? []).filter((c) => selectedKeys.has(c.key)),
-    [def, selectedKeys],
+    () =>
+      (allColumns as ReportColumn<unknown>[])
+        .filter((c) => selectedKeys.has(c.key))
+        .map((c) => (c.sensitive && (c.sensitive === "bank" ? !canBank : !canIdentifiers) ? { ...c, value: (r: unknown) => mask(c.value(r)) } : c)),
+    [allColumns, selectedKeys, canBank, canIdentifiers],
   );
 
   function toggleKey(key: string) {
@@ -122,7 +140,7 @@ export function CustomReportModal({
               <SelectContent>
                 {bases.map((r) => (
                   <SelectItem key={r.id} value={r.id}>
-                    {r.label}
+                    {r.group === "Payroll datasets" ? `Payroll · ${r.label}` : r.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -148,7 +166,7 @@ export function CustomReportModal({
             </div>
             <ScrollArea className="max-h-48 rounded-lg border border-border/60">
               <div className="grid grid-cols-2 gap-1 p-2">
-                {(def?.columns ?? []).map((c) => (
+                {allColumns.map((c) => (
                   <label
                     key={c.key}
                     className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
@@ -157,7 +175,8 @@ export function CustomReportModal({
                       checked={selectedKeys.has(c.key)}
                       onCheckedChange={() => toggleKey(c.key)}
                     />
-                    <span className="truncate">{c.header}</span>
+                    <span className="truncate" title={c.description}>{c.header}</span>
+                    {c.sensitive && <Lock className="size-3 shrink-0 text-muted-foreground" />}
                   </label>
                 ))}
               </div>
@@ -166,6 +185,12 @@ export function CustomReportModal({
         </div>
 
         <DialogFooter className="border-t border-border/60 px-6 py-4">
+          <Button variant="ghost" size="sm" className="mr-auto gap-1.5" asChild>
+            <Link href="/operations/reports/studio">
+              <Sparkles className="size-4" />
+              Filters, grouping &amp; more
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" onClick={onClose}>
             Cancel
           </Button>

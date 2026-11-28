@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import {
   CalendarCheck2,
   Landmark,
@@ -57,6 +57,9 @@ function tint(hex: string, alpha: number): string {
 
 const noopSubscribe = () => () => {};
 
+/** Click-to-explain (B6): when set, every line is a button on screen. Print is unaffected. */
+const LineClickContext = createContext<((line: PayslipLine) => void) | null>(null);
+
 // ── Small building blocks ───────────────────────────────────────────────────
 
 function Label({ children, className }: { children: ReactNode; className?: string }) {
@@ -85,7 +88,8 @@ function SectionTitle({ children, right, accent }: { children: ReactNode; right?
 }
 
 function LineRow({ line, negative }: { line: PayslipLine; negative?: boolean }) {
-  return (
+  const onClick = useContext(LineClickContext);
+  const body = (
     <div className="flex items-start justify-between gap-3 py-[0.3rem]">
       <div className="min-w-0">
         <p className="text-[0.75rem] leading-tight text-slate-800">{line.name}</p>
@@ -95,6 +99,17 @@ function LineRow({ line, negative }: { line: PayslipLine; negative?: boolean }) 
         {money(line.amount)}
       </p>
     </div>
+  );
+  if (!onClick) return body;
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(line)}
+      title="How was this calculated?"
+      className="-mx-1.5 block w-[calc(100%+0.75rem)] rounded px-1.5 text-left transition-colors hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:outline-none print:pointer-events-none print:hover:bg-transparent"
+    >
+      {body}
+    </button>
   );
 }
 
@@ -129,9 +144,20 @@ export interface PayslipDocumentProps {
   className?: string;
   /** Absolute origin for the QR link (defaults to the current site). */
   origin?: string;
+  /** Makes every line clickable, to explain how it was calculated (screen only). */
+  onLineClick?: (line: PayslipLine) => void;
 }
 
-export function PayslipDocument({ payslip, className, origin }: PayslipDocumentProps) {
+export function PayslipDocument(props: PayslipDocumentProps) {
+  return (
+    <LineClickContext.Provider value={props.onLineClick ?? null}>
+      <PayslipPaper {...props} />
+    </LineClickContext.Provider>
+  );
+}
+
+function PayslipPaper({ payslip, className, origin }: PayslipDocumentProps) {
+  const onLineClick = useContext(LineClickContext);
   const { company, employee, computation: c, attendance, period, display } = payslip;
   const accent = /^#[0-9a-f]{3,6}$/i.test(company.primaryColor) ? company.primaryColor : "#047857";
   const browserOrigin = useSyncExternalStore(
@@ -439,12 +465,19 @@ export function PayslipDocument({ payslip, className, origin }: PayslipDocumentP
                   Paid by your employer
                 </SectionTitle>
                 <div className="space-y-[0.15rem]">
-                  {employer.map((l) => (
-                    <div key={l.code} className="flex justify-between text-[0.66rem]">
-                      <span className="text-slate-600">{l.name}</span>
-                      <span className="tabular-nums text-slate-800">{money(l.amount)}</span>
-                    </div>
-                  ))}
+                  {employer.map((l) =>
+                    onLineClick ? (
+                      <button key={l.code} type="button" onClick={() => onLineClick(l)} title="How was this calculated?" className="-mx-1 flex w-[calc(100%+0.5rem)] justify-between rounded px-1 text-left text-[0.66rem] hover:bg-slate-100 print:pointer-events-none">
+                        <span className="text-slate-600">{l.name}</span>
+                        <span className="tabular-nums text-slate-800">{money(l.amount)}</span>
+                      </button>
+                    ) : (
+                      <div key={l.code} className="flex justify-between text-[0.66rem]">
+                        <span className="text-slate-600">{l.name}</span>
+                        <span className="tabular-nums text-slate-800">{money(l.amount)}</span>
+                      </div>
+                    ),
+                  )}
                 </div>
                 <p className="mt-1 text-[0.58rem] italic text-slate-500">Not deducted from your pay — shown for transparency.</p>
                 {payslip.runType === "regular" && groupLifeCover > 0 && employerLineShown(display, "GROUP_LIFE") && (

@@ -19,6 +19,7 @@ import type { TenantPayrollData } from "@/src/lib/payroll/run-builder";
 import type { StarterImportBatch } from "@/src/lib/payroll/starter-import";
 import type { SavedScenario } from "@/src/lib/payroll/simulation";
 import type { BudgetVersion, ForecastSnapshot, PlannedHire } from "@/src/lib/payroll/budget";
+import type { EquityExplanation } from "@/src/lib/payroll/pay-equity";
 
 /**
  * Payroll — per-tenant state for the demo. In production every field here is
@@ -78,6 +79,8 @@ export type TenantPayroll = TenantPayrollData & {
   budgetAlertsSent?: Record<string, string>;
   /** Employees' requests to start, change or stop voluntary pension. */
   avcRequests?: AvcRequest[];
+  /** Documented explanations for pay differences (Pay Equity), approved by a second person. */
+  equityExplanations?: EquityExplanation[];
 };
 
 export interface PayrollState {
@@ -86,7 +89,7 @@ export interface PayrollState {
 }
 
 /** Bump to reseed every tenant (drops local payroll edits). */
-export const PAYROLL_SEED_VERSION = 11;
+export const PAYROLL_SEED_VERSION = 12;
 
 const initialState: PayrollState = { byTenant: {}, seedVersion: PAYROLL_SEED_VERSION };
 
@@ -332,7 +335,10 @@ const slice = createSlice({
       t.imports = (t.imports ?? []).filter((b) => b.id !== batch.id);
       t.structures = t.structures.filter((s) => !ids.has(s.employeeId));
       t.profiles = t.profiles.filter((p) => !ids.has(p.employeeId));
-      for (const id of ids) delete t.openingYtd[id];
+      for (const id of ids) {
+        delete t.openingYtd[id];
+        if (t.openingMonths) delete t.openingMonths[id];
+      }
       log(t, action.payload.tenantId, action.payload.actor, "Removed imported starters", { detail: `${batch.employees.length} employees from ${batch.fileName}` });
     },
 
@@ -413,7 +419,7 @@ const slice = createSlice({
     updateInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; patch: Partial<Pick<VarianceInvestigation, "status" | "ownerId" | "ownerName" | "dueDate">>; note: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       const inv = t?.investigations?.find((x) => x.id === action.payload.id);
-      if (!t || !inv || inv.status === "resolved" || action.payload.patch.status === "resolved") return;
+      if (!t || !inv || inv.closedAt || inv.status === "resolved" || action.payload.patch.status === "resolved") return;
       Object.assign(inv, action.payload.patch);
       inv.history.push({ at: new Date().toISOString(), actor: action.payload.actor, action: action.payload.note });
       log(t, action.payload.tenantId, action.payload.actor, "Updated variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${action.payload.note}` });
@@ -422,7 +428,7 @@ const slice = createSlice({
     addInvestigationComment(state, action: PayloadAction<Tenant & Actor & { id: string; commentId: string; text: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       const inv = t?.investigations?.find((x) => x.id === action.payload.id);
-      if (!t || !inv || !action.payload.text.trim()) return;
+      if (!t || !inv || inv.closedAt || !action.payload.text.trim()) return;
       const at = new Date().toISOString();
       inv.comments.push({ id: action.payload.commentId, at, by: action.payload.actor, text: action.payload.text.trim() });
       inv.history.push({ at, actor: action.payload.actor, action: "Commented" });
@@ -435,7 +441,7 @@ const slice = createSlice({
     attachInvestigationDocument(state, action: PayloadAction<Tenant & Actor & { id: string; document: VarianceInvestigation["documents"][number] }>) {
       const t = state.byTenant[action.payload.tenantId];
       const inv = t?.investigations?.find((x) => x.id === action.payload.id);
-      if (!t || !inv) return;
+      if (!t || !inv || inv.closedAt) return;
       inv.documents.push(action.payload.document);
       inv.history.push({ at: action.payload.document.uploadedAt, actor: action.payload.actor, action: `Attached ${action.payload.document.fileName}` });
     },
@@ -443,7 +449,7 @@ const slice = createSlice({
     resolveInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; note: string; outcome: "legitimate" | "error" }>) {
       const t = state.byTenant[action.payload.tenantId];
       const inv = t?.investigations?.find((x) => x.id === action.payload.id);
-      if (!t || !inv || inv.status === "resolved" || !action.payload.note.trim()) return;
+      if (!t || !inv || inv.closedAt || inv.status === "resolved" || !action.payload.note.trim() || !inv.ownerId) return;
       const at = new Date().toISOString();
       inv.status = "resolved";
       inv.resolutionNote = action.payload.note.trim();
@@ -469,8 +475,43 @@ const slice = createSlice({
         inv.history.push({ at, actor: action.payload.actor, action: "Reopened the investigation", note: action.payload.note });
       } else {
         inv.history.push({ at, actor: action.payload.actor, action: "Signed off the resolution", note: action.payload.note });
+        // Stage 6: closed. From here the case is a permanent audit record.
+        inv.closedAt = at;
+        inv.history.push({ at, actor: action.payload.actor, action: "Closed — permanent audit record" });
       }
       log(t, action.payload.tenantId, action.payload.actor, action.payload.decision === "accepted" ? "Signed off variance investigation" : "Reopened variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: inv.id });
+    },
+
+    /** Stage 2: the payroll administrator reviews the originating transaction. */
+    reviewInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; note: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv || inv.closedAt || inv.status === "resolved" || !action.payload.note.trim()) return;
+      const at = new Date().toISOString();
+      inv.review = { by: action.payload.actor, byId: action.payload.actorId, at, note: action.payload.note.trim() };
+      if (inv.status === "open") inv.status = "investigating";
+      inv.history.push({ at, actor: action.payload.actor, action: "Reviewed the originating transaction", note: inv.review.note });
+      log(t, action.payload.tenantId, action.payload.actor, "Reviewed variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${inv.review.note}` });
+    },
+
+    // ── Pay equity explanations ───────────────────────────────────────────────
+
+    addEquityExplanation(state, action: PayloadAction<Tenant & Actor & { explanation: EquityExplanation }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t || !action.payload.explanation.note.trim()) return;
+      t.equityExplanations = [action.payload.explanation, ...(t.equityExplanations ?? []).filter((x) => !(x.employeeId === action.payload.explanation.employeeId && x.kind === action.payload.explanation.kind && !x.approvedBy))];
+      log(t, action.payload.tenantId, action.payload.actor, "Documented a pay difference", { employeeId: action.payload.explanation.employeeId, detail: `${action.payload.explanation.kind}: ${action.payload.explanation.note}` });
+    },
+
+    /** A second person approves the explanation — never its author. */
+    approveEquityExplanation(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const x = t?.equityExplanations?.find((e) => e.id === action.payload.id);
+      if (!t || !x || x.approvedBy || x.by === action.payload.actor || (x.byId && x.byId === action.payload.actorId)) return;
+      x.approvedBy = action.payload.actor;
+      x.approvedById = action.payload.actorId;
+      x.approvedAt = new Date().toISOString();
+      log(t, action.payload.tenantId, action.payload.actor, "Approved a pay difference explanation", { employeeId: x.employeeId, detail: x.note });
     },
 
     // ── Saved simulation scenarios ────────────────────────────────────────────
@@ -696,6 +737,9 @@ export const {
   attachInvestigationDocument,
   resolveInvestigation,
   signOffInvestigation,
+  reviewInvestigation,
+  addEquityExplanation,
+  approveEquityExplanation,
   addConfigChange,
   decideConfigChange,
   updateRemittance,

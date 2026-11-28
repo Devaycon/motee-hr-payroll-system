@@ -131,9 +131,13 @@ describe("statutory remittance centre", () => {
     const sub = { status: "submitted" as const, reference: "R", date: "2026-11-09", by: "x", at: "" };
     expect(statusOf(sub, 100, "2026-12-10", "2026-11-18").status).toBe("submitted");
     expect(statusOf(sub, 100, "2026-11-10", "2026-11-18")).toEqual({ status: "overdue", overdue: true });
-    expect(statusOf({ ...sub, status: "paid", amountPaid: 100 }, 100, "2026-11-10", "2026-11-18").status).toBe("paid");
-    expect(statusOf({ ...sub, status: "paid", amountPaid: 60 }, 100, "2026-11-10", "2026-11-18").status).toBe("overdue");
-    expect(statusOf({ ...sub, status: "reconciled", amountPaid: 100 }, 100, "2026-11-10", "2026-11-18").status).toBe("reconciled");
+    const receipt = { fileName: "r.pdf", uploadedAt: "2026-11-09" };
+    expect(statusOf({ ...sub, status: "paid", amountPaid: 100, receipt }, 100, "2026-11-10", "2026-11-18").status).toBe("paid");
+    // Feedback B3 (Nov 2026): no evidence, no payment — it stays submitted (overdue once late).
+    expect(statusOf({ ...sub, status: "paid", amountPaid: 100 }, 100, "2026-12-10", "2026-11-18").status).toBe("submitted");
+    expect(statusOf({ ...sub, status: "paid", amountPaid: 100 }, 100, "2026-11-10", "2026-11-18").status).toBe("overdue");
+    expect(statusOf({ ...sub, status: "paid", amountPaid: 60, receipt }, 100, "2026-11-10", "2026-11-18").status).toBe("overdue");
+    expect(statusOf({ ...sub, status: "reconciled", amountPaid: 100, receipt }, 100, "2026-11-10", "2026-11-18").status).toBe("reconciled");
   });
 
   it("the seeded demo shows reconciled, paid and outstanding remittances, with reminders due", () => {
