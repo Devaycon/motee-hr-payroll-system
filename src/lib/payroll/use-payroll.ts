@@ -1431,10 +1431,13 @@ export function usePayrollActions() {
         dispatch(updateRemittance({ tenantId, actor: actor.name, key, note: "Remittance payment instruction sent", patch: { status: "submitted", reference, date, submittedAt: new Date().toISOString(), by: actor.name, at: new Date().toISOString() } }));
       },
 
-      /** Payment confirmed: reference, date, amount actually paid and (ideally) the bank receipt. */
-      recordRemittancePayment(key: string, p: { reference: string; date: string; amountPaid: number; receipt?: RemittanceRecord["receipt"]; note?: string }) {
-        if (!tenantId) return;
+      /** Payment confirmed: reference, date, amount actually paid and the evidence (bank receipt or acknowledgement) — required. */
+      recordRemittancePayment(key: string, p: { reference: string; date: string; amountPaid: number; receipt?: RemittanceRecord["receipt"]; note?: string }): ActionResult {
+        if (!p.receipt) return { ok: false, reason: "Attach the bank receipt or the authority's acknowledgement — a payment can't be recorded without evidence." };
+        if (p.reference.trim().length < 3) return { ok: false, reason: "Enter the payment reference." };
+        if (!tenantId) return { ok: false, reason: "No tenant." };
         dispatch(updateRemittance({ tenantId, actor: actor.name, key, note: "Recorded statutory remittance payment", patch: { status: "paid", reference: p.reference, date: p.date, amountPaid: p.amountPaid, receipt: p.receipt ?? null, note: p.note, by: actor.name, at: new Date().toISOString() } }));
+        return { ok: true };
       },
 
       attachRemittanceReceipt(key: string, receipt: NonNullable<RemittanceRecord["receipt"]>) {
@@ -1458,15 +1461,23 @@ export function usePayrollActions() {
       },
 
       /** Remind payroll and finance users of upcoming and overdue remittances (once per stage). */
-      sendRemittanceReminders(due: { key: string; row: RemittanceRow; stage: "upcoming" | "today" | "overdue" }[]) {
+      sendRemittanceReminders(due: { key: string; row: RemittanceRow; stage: "upcoming" | "today" | "overdue" | "escalated" }[]) {
         if (!tenantId) return;
         for (const { key, row, stage } of due) {
           dispatch(
             pushNotification({
-              title: stage === "overdue" ? `Overdue: ${row.title} for ${row.monthLabel}` : stage === "today" ? `Due today: ${row.title} for ${row.monthLabel}` : `${row.title} due in ${row.daysToDue} day${row.daysToDue === 1 ? "" : "s"}`,
-              description: `${ngn(row.outstanding)} to ${row.to} — due ${row.due}.`,
-              type: stage === "overdue" ? "warning" : "info",
-              recipientRoleIds: ["ROLE-HRADMIN", "ROLE-FIN"],
+              title:
+                stage === "escalated"
+                  ? `Escalated: ${row.title} for ${row.monthLabel} is ${-row.daysToDue} days overdue`
+                  : stage === "overdue"
+                    ? `Overdue: ${row.title} for ${row.monthLabel}`
+                    : stage === "today"
+                      ? `Due today: ${row.title} for ${row.monthLabel}`
+                      : `${row.title} due in ${row.daysToDue} day${row.daysToDue === 1 ? "" : "s"}`,
+              description: `${ngn(row.outstanding)} to ${row.to} — due ${row.due}.${stage === "escalated" ? " Late statutory payments attract penalties and interest." : ""}`,
+              type: stage === "overdue" || stage === "escalated" ? "warning" : "info",
+              // Missed deadlines escalate to the Executive as well.
+              recipientRoleIds: stage === "escalated" ? ["ROLE-HRADMIN", "ROLE-FIN", "ROLE-EXEC"] : ["ROLE-HRADMIN", "ROLE-FIN"],
               href: `${PAYROLL_HREF}?tab=remittances`,
             }),
           );
