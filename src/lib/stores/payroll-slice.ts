@@ -19,6 +19,7 @@ import type { TenantPayrollData } from "@/src/lib/payroll/run-builder";
 import type { StarterImportBatch } from "@/src/lib/payroll/starter-import";
 import type { SavedScenario } from "@/src/lib/payroll/simulation";
 import type { BudgetVersion, ForecastSnapshot, PlannedHire } from "@/src/lib/payroll/budget";
+import type { EquityExplanation } from "@/src/lib/payroll/pay-equity";
 
 /**
  * Payroll — per-tenant state for the demo. In production every field here is
@@ -78,6 +79,8 @@ export type TenantPayroll = TenantPayrollData & {
   budgetAlertsSent?: Record<string, string>;
   /** Employees' requests to start, change or stop voluntary pension. */
   avcRequests?: AvcRequest[];
+  /** Documented explanations for pay differences (Pay Equity), approved by a second person. */
+  equityExplanations?: EquityExplanation[];
 };
 
 export interface PayrollState {
@@ -491,6 +494,26 @@ const slice = createSlice({
       log(t, action.payload.tenantId, action.payload.actor, "Reviewed variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${inv.review.note}` });
     },
 
+    // ── Pay equity explanations ───────────────────────────────────────────────
+
+    addEquityExplanation(state, action: PayloadAction<Tenant & Actor & { explanation: EquityExplanation }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      if (!t || !action.payload.explanation.note.trim()) return;
+      t.equityExplanations = [action.payload.explanation, ...(t.equityExplanations ?? []).filter((x) => !(x.employeeId === action.payload.explanation.employeeId && x.kind === action.payload.explanation.kind && !x.approvedBy))];
+      log(t, action.payload.tenantId, action.payload.actor, "Documented a pay difference", { employeeId: action.payload.explanation.employeeId, detail: `${action.payload.explanation.kind}: ${action.payload.explanation.note}` });
+    },
+
+    /** A second person approves the explanation — never its author. */
+    approveEquityExplanation(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const x = t?.equityExplanations?.find((e) => e.id === action.payload.id);
+      if (!t || !x || x.approvedBy || x.by === action.payload.actor || (x.byId && x.byId === action.payload.actorId)) return;
+      x.approvedBy = action.payload.actor;
+      x.approvedById = action.payload.actorId;
+      x.approvedAt = new Date().toISOString();
+      log(t, action.payload.tenantId, action.payload.actor, "Approved a pay difference explanation", { employeeId: x.employeeId, detail: x.note });
+    },
+
     // ── Saved simulation scenarios ────────────────────────────────────────────
 
     /** Create or update a scenario. Editing one under review or approved sends it back to draft. */
@@ -715,6 +738,8 @@ export const {
   resolveInvestigation,
   signOffInvestigation,
   reviewInvestigation,
+  addEquityExplanation,
+  approveEquityExplanation,
   addConfigChange,
   decideConfigChange,
   updateRemittance,

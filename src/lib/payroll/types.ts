@@ -299,6 +299,10 @@ export interface LeaveAllowancePolicy {
 }
 
 export interface PayrollSettings {
+  /** Approved annual pay range per grade (Pay Equity, feedback B9). */
+  salaryBands?: import("./pay-equity").SalaryBand[];
+  /** Smallest group Pay Equity will report on (default 3). */
+  payEquityMinGroup?: number;
   taxMethod: TaxMethod;
   prorationBasis: ProrationBasis;
   /** Pay day of month (clamped to month end). */

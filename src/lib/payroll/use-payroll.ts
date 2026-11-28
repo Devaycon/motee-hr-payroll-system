@@ -30,6 +30,8 @@ import {
   resolveInvestigation as resolveInvestigationAction,
   signOffInvestigation as signOffInvestigationAction,
   reviewInvestigation as reviewInvestigationAction,
+  addEquityExplanation as addEquityExplanationAction,
+  approveEquityExplanation as approveEquityExplanationAction,
   updateInvestigation,
   addConfigChange,
   clearRemittance,
@@ -1063,6 +1065,23 @@ export function usePayrollActions() {
           );
         }
         return id;
+      },
+
+      /** Pay Equity: document why a pay difference is justified; a second person approves it. */
+      explainPayDifference(employeeId: string, kind: import("./pay-equity").FindingKind, note: string): ActionResult {
+        if (!tenantId) return { ok: false, reason: "No tenant." };
+        if (note.trim().length < 10) return { ok: false, reason: "Write the reason in a sentence (who decided, and why)." };
+        dispatch(addEquityExplanationAction({ tenantId, actor: actor.name, explanation: { id: `EQX-${Date.now().toString(36)}`, employeeId, kind, note: note.trim(), by: actor.name, byId: actor.employeeId, at: new Date().toISOString() } }));
+        return { ok: true };
+      },
+
+      approvePayExplanation(id: string): ActionResult {
+        if (!tenantId) return { ok: false, reason: "No tenant." };
+        const x = live()?.data.equityExplanations?.find((e) => e.id === id);
+        if (!x) return { ok: false, reason: "Explanation not found." };
+        if (x.by === actor.name || (x.byId && x.byId === actor.employeeId)) return { ok: false, reason: "You wrote this explanation — a second person must approve it." };
+        dispatch(approveEquityExplanationAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id }));
+        return { ok: true };
       },
 
       /** Stage 2: record what the originating transaction shows. */

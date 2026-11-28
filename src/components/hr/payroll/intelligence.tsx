@@ -190,7 +190,11 @@ export function PayrollIntelligence() {
         </ChartCard>
 
         {/* 6 · Salary distribution & equity */}
-        <ChartCard title="Salary distribution & pay equity" description={`Monthly contractual pay · ${selected?.label}`}>
+        <ChartCard
+          title="Salary distribution & pay equity"
+          description={`Monthly contractual pay · ${selected?.label}`}
+          right={<Link href={`${PAYROLL_HREF}/pay-equity`} className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">Pay Equity &amp; Salary Intelligence <ArrowRight className="h-3 w-3" /></Link>}
+        >
           <ColumnChart format={(n) => `${n} people`} series={[{ key: "n", label: "Employees" }]} columns={dist.bands.map((b) => ({ label: b.label, parts: [{ key: "n", value: b.count }] }))} height={90} />
           <div className="mt-3 grid grid-cols-3 gap-2">
             <Figure label="Median" value={compactNaira(dist.median)} />
