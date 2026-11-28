@@ -14,6 +14,8 @@ import { usePayrollActions, usePayslip } from "@/src/lib/payroll/use-payroll";
 import type { Payslip } from "@/src/lib/payroll/types";
 import { PayslipDocument, PayslipPrintStyles } from "./payslip-document";
 import { YtdBreakdownDialog } from "./ytd-breakdown";
+import { LineExplainDialog } from "./line-explain";
+import type { PayslipLine } from "@/src/lib/payroll/types";
 
 interface Props {
   payslipId: string;
@@ -31,6 +33,7 @@ export function PayslipViewPage({ payslipId, mode, backHref, backLabel }: Props)
   const canAdminister = useCan(PAYROLL_MODULE, "edit");
   const actions = usePayrollActions();
   const [ytdOpen, setYtdOpen] = useState(false);
+  const [explain, setExplain] = useState<PayslipLine | null>(null);
 
   if (!supported) return <Unavailable backHref={backHref} backLabel={backLabel} message="Payslips are available for Nigerian tenants. UK payroll is the next statutory module." />;
   if (loading && !payslip) return <PageSkeleton />;
@@ -92,9 +95,11 @@ export function PayslipViewPage({ payslipId, mode, backHref, backLabel }: Props)
         </div>
       </div>
 
+      <p className="-mb-2 text-center text-xs text-muted-foreground print:hidden">Click any line on the payslip to see how it was calculated, where it came from and how it changed month to month.</p>
       <div className="payslip-print-root">
-        <PayslipDocument payslip={payslip} />
+        <PayslipDocument payslip={payslip} onLineClick={setExplain} />
       </div>
+      <LineExplainDialog payslip={payslip} line={explain} onClose={() => setExplain(null)} />
       <YtdBreakdownDialog payslip={payslip} open={ytdOpen} onClose={() => setYtdOpen(false)} />
     </div>
   );
