@@ -2,6 +2,7 @@ import type { LocaleBundle, LocaleEmployee, LocaleLoan } from "@/src/lib/types/l
 import { repaymentSchedule, loanTypeLabel } from "@/src/lib/loans/loans";
 import { LOAN_ELEMENT_BY_TYPE } from "./elements-seed";
 import { elementMapOn, settingsOn } from "./config";
+import type { OpeningMonths } from "./ytd";
 import { computeEmployeePay, makePeriod, prorationFactor, round2, splitSalary, sumYtd, workingDaysBetween } from "./ng/engine";
 import { leaveAllowanceOf, resolveRateSet, ruleFor } from "./ng/rate-sets";
 import { buildInsights } from "./insights";
@@ -47,6 +48,8 @@ export interface TenantPayrollData {
   payslips: Payslip[];
   /** YTD brought forward from the previous payroll system, per employee. */
   openingYtd: Record<string, YtdTotals>;
+  /** The months inside the opening balance, each with its own figures and lines (see ytd.ts). */
+  openingMonths?: OpeningMonths;
 }
 
 // ── Seeding structures & profiles from the bundle ───────────────────────────
@@ -796,10 +799,10 @@ export function buildPayslips(args: {
 export function seedHistory(args: {
   tenantId: string;
   bundle: LocaleBundle;
-  base: Omit<TenantPayrollData, "runs" | "payslips" | "openingYtd">;
+  base: Omit<TenantPayrollData, "runs" | "payslips" | "openingYtd" | "openingMonths">;
   loans: LocaleLoan[];
   today: Date;
-}): Pick<TenantPayrollData, "runs" | "payslips" | "openingYtd"> {
+}): Pick<TenantPayrollData, "runs" | "payslips" | "openingYtd" | "openingMonths"> {
   const { tenantId, bundle, base, loans, today } = args;
   const year = today.getUTCFullYear();
   const currentMonth = today.getUTCMonth() + 1;
@@ -813,6 +816,7 @@ export function seedHistory(args: {
   const approvedByLine = [fin && `${nameOf(fin.linkedEmployeeId)} (Finance)`, exec && `${nameOf(exec.linkedEmployeeId)} (Executive)`].filter(Boolean).join(" · ");
 
   const data: TenantPayrollData = { ...base, runs: [], payslips: [], openingYtd: {} };
+  const openingMonths: OpeningMonths = {};
   const finalizedFrom = Math.max(1, currentMonth - 3);
   const prefix = tenantPrefix(tenantId);
 
@@ -820,7 +824,12 @@ export function seedHistory(args: {
   for (let m = 1; m < finalizedFrom; m++) {
     const period = makePeriod(year, m, base.settings.payDay);
     const run = newRun({ tenantId, type: "regular", period, preparedBy: preparer, bundle, data, loans, today, history: true, demo: true, id: `OPEN-${m}` });
-    for (const re of run.employees) if (re.computation) data.openingYtd[re.employeeId] = re.computation.ytd;
+    for (const re of run.employees) {
+      if (!re.computation) continue;
+      data.openingYtd[re.employeeId] = re.computation.ytd;
+      // Keep each month, so the balance can be explained line by line (client feedback A1).
+      (openingMonths[re.employeeId] ??= []).push({ figures: re.computation.period, lines: re.computation.lines });
+    }
   }
 
   for (let m = finalizedFrom; m <= currentMonth; m++) {
@@ -846,5 +855,5 @@ export function seedHistory(args: {
     data.runs.push(finalized);
     data.payslips.push(...buildPayslips({ run: finalized, bundle, data, status: "final", approvedBy: approvedByLine || approver.name, generatedAt: approvedAt }));
   }
-  return { runs: data.runs, payslips: data.payslips, openingYtd: data.openingYtd };
+  return { runs: data.runs, payslips: data.payslips, openingYtd: data.openingYtd, openingMonths };
 }

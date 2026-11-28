@@ -9,12 +9,11 @@ import { useAppSelector } from "@/src/lib/stores/hooks";
 import { useCan } from "@/src/lib/permissions/use-can";
 import { PAYROLL_MODULE } from "@/src/lib/payroll/constants";
 import { amountInWords } from "@/src/lib/payroll/amount-in-words";
-import { sumYtd } from "@/src/lib/payroll/ng/engine";
 import { useEmployeePayslipList } from "@/src/lib/payroll/use-payroll";
+import { ytdBreakdown, ytdCtxFor } from "@/src/lib/payroll/ytd";
 import { PayslipPrintStyles } from "./payslip-document";
 
 const money = (n: number) => `₦${n.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /**
  * The employee's annual PAYE certificate: every month's pay, reliefs and tax
@@ -29,8 +28,11 @@ export function TaxCertificatePage({ employeeId, year, backHref, backLabel }: { 
   const { payslips, loading, data } = useEmployeePayslipList(employeeId, { enabled: allowed });
   const yearSlips = useMemo(() => payslips.filter((p) => p.period.year === year), [payslips, year]);
   const latest = yearSlips[0];
-  const opening = data?.openingYtd[employeeId];
-  const ytd = useMemo(() => sumYtd(year, yearSlips.map((p) => p.computation.period).filter(Boolean), opening), [year, yearSlips, opening]);
+  // Same rows as the payslip's YTD breakdown: each brought-forward month and each final payslip.
+  const breakdown = useMemo(
+    () => (data ? ytdBreakdown(data, employeeId, year, 12, ytdCtxFor(data.structures, employeeId, year)) : null),
+    [data, employeeId, year],
+  );
 
   // Nigeria-only (PAYE under the Nigeria Tax Act). Hooks above run first so
   // their order never changes between countries.
@@ -39,21 +41,25 @@ export function TaxCertificatePage({ employeeId, year, backHref, backLabel }: { 
   if (loading && !latest) return <Skeleton className="mx-auto h-[900px] w-full max-w-[880px] rounded-xl" />;
   if (!latest) return <p className="py-24 text-center text-sm text-muted-foreground">No final payslips for {year} yet.</p>;
 
-  const byMonth = new Map<number, { gross: number; reliefs: number; chargeable: number; paye: number; net: number }>();
-  for (const p of yearSlips) {
-    const f = p.computation.period;
-    if (!f) continue;
-    const row = byMonth.get(f.month) ?? { gross: 0, reliefs: 0, chargeable: 0, paye: 0, net: 0 };
-    row.gross += f.gross;
-    row.reliefs += Object.values(f.reliefs).reduce((s, v) => s + v, 0);
-    row.chargeable += f.chargeable;
-    row.paye += f.paye;
-    row.net += f.net;
-    byMonth.set(f.month, row);
-  }
   const { company, employee } = latest;
   const accent = company.primaryColor || "#047857";
-  const reliefs = Object.entries(ytd.reliefs).filter(([, v]) => v > 0);
+  const rows = breakdown?.rows ?? [];
+  const totals = breakdown?.totals;
+  // Relief totals by label, over the same rows.
+  const reliefMap = new Map<string, number>();
+  const add = (r: Record<string, number> | undefined) => {
+    for (const [k, v] of Object.entries(r ?? {})) reliefMap.set(k, (reliefMap.get(k) ?? 0) + v);
+  };
+  const opening = data?.openingYtd[employeeId];
+  const openingMonths = data?.openingMonths?.[employeeId]?.filter((m) => m.figures.year === year) ?? [];
+  if (opening && opening.year === year && !openingMonths.length) add(opening.reliefs);
+  for (const m of openingMonths) add(m.figures.reliefs);
+  for (const p of yearSlips) add(p.computation.period?.reliefs);
+  const reliefs = [...reliefMap.entries()].filter(([, v]) => v > 0);
+  const paye = totals?.paye ?? 0;
+  const monthsCovered =
+    new Set(rows.filter((r) => r.source !== "brought_forward_total").map((r) => r.month)).size +
+    rows.filter((r) => r.source === "brought_forward_total").reduce((n, r) => n + r.month, 0);
 
   return (
     <div className="flex flex-col gap-5 pb-10">
@@ -95,7 +101,7 @@ export function TaxCertificatePage({ employeeId, year, backHref, backLabel }: { 
                 ["Job title", employee.jobTitle],
                 ["Pension RSA PIN", employee.rsaPin || "—"],
                 ["Pension administrator", employee.pfaName || "—"],
-                ["Months covered", `${byMonth.size + (opening && opening.year === year ? opening.months : 0)}`],
+                ["Months covered", `${monthsCovered}`],
               ].map(([k, v]) => (
                 <div key={k}>
                   <p className="text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-slate-500">{k}</p>
@@ -106,58 +112,75 @@ export function TaxCertificatePage({ employeeId, year, backHref, backLabel }: { 
 
             <section className="rounded-lg border p-4" style={{ borderColor: `${accent}40`, background: `${accent}0d` }}>
               <p className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-slate-600">PAYE deducted in {year}</p>
-              <p className="mt-0.5 text-[2rem] font-bold tabular-nums" style={{ color: accent }}>{money(ytd.paye)}</p>
-              <p className="text-[0.66rem] italic text-slate-600">{amountInWords(ytd.paye)}</p>
+              <p className="mt-0.5 text-[2rem] font-bold tabular-nums" style={{ color: accent }}>{money(paye)}</p>
+              <p className="text-[0.66rem] italic text-slate-600">{amountInWords(paye)}</p>
             </section>
 
-            <section className="grid gap-6 md:grid-cols-[1.4fr_1fr] print:grid-cols-[1.4fr_1fr]">
-              <table className="w-full text-[0.7rem] tabular-nums">
+            {/* Monthly table: full width, fixed right-aligned numeric columns wide enough for 8-figure kobo amounts. */}
+            <section className="overflow-x-auto">
+              <table className="w-full min-w-[640px] table-fixed text-[0.7rem] tabular-nums">
+                <colgroup>
+                  <col className="w-[22%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[16%]" />
+                </colgroup>
                 <thead className="text-slate-500">
-                  <tr className="border-b border-slate-200">
-                    <th className="pb-1 text-left font-medium">Month</th>
-                    <th className="pb-1 text-right font-medium">Gross</th>
-                    <th className="pb-1 text-right font-medium">Reliefs</th>
-                    <th className="pb-1 text-right font-medium">Chargeable</th>
-                    <th className="pb-1 text-right font-medium">PAYE</th>
+                  <tr className="border-b border-slate-300">
+                    <th className="pb-1 pr-2 text-left font-medium">Month</th>
+                    <th className="whitespace-nowrap pb-1 pl-2 text-right font-medium">Gross pay</th>
+                    <th className="whitespace-nowrap pb-1 pl-2 text-right font-medium">Reliefs</th>
+                    <th className="whitespace-nowrap pb-1 pl-2 text-right font-medium">Chargeable</th>
+                    <th className="whitespace-nowrap pb-1 pl-2 text-right font-medium">PAYE</th>
+                    <th className="whitespace-nowrap pb-1 pl-2 text-right font-medium">Net pay</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {opening && opening.year === year && opening.months > 0 && (
-                    <tr className="border-b border-slate-100 text-slate-500">
-                      <td className="py-1">Jan–{MONTHS[opening.months - 1]} (brought forward)</td>
-                      <td className="py-1 text-right">{money(opening.gross)}</td>
-                      <td className="py-1 text-right">{money(Object.values(opening.reliefs ?? {}).reduce((s, v) => s + v, 0))}</td>
-                      <td className="py-1 text-right">{money(opening.chargeable)}</td>
-                      <td className="py-1 text-right">{money(opening.paye)}</td>
-                    </tr>
-                  )}
-                  {[...byMonth.entries()].sort((a, b) => a[0] - b[0]).map(([m, r]) => (
-                    <tr key={m} className="border-b border-slate-100">
-                      <td className="py-1">{MONTHS[m - 1]} {year}</td>
-                      <td className="py-1 text-right">{money(r.gross)}</td>
-                      <td className="py-1 text-right">{money(r.reliefs)}</td>
-                      <td className="py-1 text-right">{money(r.chargeable)}</td>
-                      <td className="py-1 text-right">{money(r.paye)}</td>
+                  {rows.map((r) => (
+                    <tr key={r.key} className={r.source === "payslip" ? "border-b border-slate-100" : "border-b border-slate-100 text-slate-600"}>
+                      <td className="py-1 pr-2">
+                        {r.label}
+                        {r.source !== "payslip" && <span className="block text-[0.58rem] text-slate-400">brought forward</span>}
+                      </td>
+                      <td className="whitespace-nowrap py-1 pl-2 text-right">{money(r.gross)}</td>
+                      <td className="whitespace-nowrap py-1 pl-2 text-right">{money(r.reliefs)}</td>
+                      <td className="whitespace-nowrap py-1 pl-2 text-right">{money(r.chargeable)}</td>
+                      <td className="whitespace-nowrap py-1 pl-2 text-right">{money(r.paye)}</td>
+                      <td className="whitespace-nowrap py-1 pl-2 text-right">{money(r.net)}</td>
                     </tr>
                   ))}
-                  <tr className="border-t-2 border-slate-800 font-bold">
-                    <td className="pt-1">Total {year}</td>
-                    <td className="pt-1 text-right">{money(ytd.gross)}</td>
-                    <td className="pt-1 text-right">{money(reliefs.reduce((s, [, v]) => s + v, 0))}</td>
-                    <td className="pt-1 text-right">{money(ytd.chargeable)}</td>
-                    <td className="pt-1 text-right">{money(ytd.paye)}</td>
-                  </tr>
+                  {totals && (
+                    <tr className="border-t-2 border-slate-800 font-bold">
+                      <td className="pt-1 pr-2">Total {year}</td>
+                      <td className="whitespace-nowrap pt-1 pl-2 text-right">{money(totals.gross)}</td>
+                      <td className="whitespace-nowrap pt-1 pl-2 text-right">{money(totals.reliefs)}</td>
+                      <td className="whitespace-nowrap pt-1 pl-2 text-right">{money(totals.chargeable)}</td>
+                      <td className="whitespace-nowrap pt-1 pl-2 text-right">{money(totals.paye)}</td>
+                      <td className="whitespace-nowrap pt-1 pl-2 text-right">{money(totals.net)}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-              <div className="space-y-1 text-[0.7rem]">
-                <p className="mb-1 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-slate-500">Reliefs allowed</p>
+            </section>
+
+            {/* Reliefs and contributions: their own block below the table, never beside it. */}
+            <section className="grid gap-6 sm:grid-cols-2 print:grid-cols-2">
+              <div className="text-[0.7rem]">
+                <p className="mb-1 border-b border-slate-200 pb-1 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-slate-500">Reliefs allowed</p>
                 {reliefs.map(([k, v]) => (
-                  <div key={k} className="flex justify-between"><span className="text-slate-600">{k}</span><span className="tabular-nums">{money(v)}</span></div>
+                  <Row key={k} label={k} value={money(v)} />
                 ))}
-                <div className="mt-3 flex justify-between border-t pt-1"><span className="text-slate-600">Pension — you</span><span className="tabular-nums">{money(ytd.pensionEmployee)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-600">Pension — employer</span><span className="tabular-nums">{money(ytd.pensionEmployer)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-600">National Housing Fund</span><span className="tabular-nums">{money(ytd.nhf)}</span></div>
-                <div className="flex justify-between font-semibold"><span>Net pay received</span><span className="tabular-nums">{money(ytd.net)}</span></div>
+                <Row label="Total reliefs" value={money(reliefs.reduce((s, [, v]) => s + v, 0))} strong />
+              </div>
+              <div className="text-[0.7rem]">
+                <p className="mb-1 border-b border-slate-200 pb-1 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-slate-500">Contributions &amp; net pay</p>
+                <Row label="Pension — you" value={money(totals?.pensionEmployee ?? 0)} />
+                <Row label="Voluntary pension — you" value={money(totals?.voluntaryPension ?? 0)} />
+                <Row label="Pension — employer" value={money(totals?.pensionEmployer ?? 0)} />
+                <Row label="National Housing Fund" value={money(totals?.nhf ?? 0)} />
+                <Row label="Net pay received" value={money(totals?.net ?? 0)} strong />
               </div>
             </section>
 
@@ -169,6 +192,15 @@ export function TaxCertificatePage({ employeeId, year, backHref, backLabel }: { 
           </div>
         </article>
       </div>
+    </div>
+  );
+}
+
+function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className={strong ? "mt-1 flex justify-between gap-4 border-t border-slate-200 pt-1 font-semibold" : "flex justify-between gap-4 py-0.5"}>
+      <span className={strong ? "min-w-0" : "min-w-0 text-slate-600"}>{label}</span>
+      <span className="shrink-0 whitespace-nowrap tabular-nums">{value}</span>
     </div>
   );
 }

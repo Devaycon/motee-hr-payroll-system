@@ -86,7 +86,7 @@ export interface PayrollState {
 }
 
 /** Bump to reseed every tenant (drops local payroll edits). */
-export const PAYROLL_SEED_VERSION = 11;
+export const PAYROLL_SEED_VERSION = 12;
 
 const initialState: PayrollState = { byTenant: {}, seedVersion: PAYROLL_SEED_VERSION };
 
@@ -332,7 +332,10 @@ const slice = createSlice({
       t.imports = (t.imports ?? []).filter((b) => b.id !== batch.id);
       t.structures = t.structures.filter((s) => !ids.has(s.employeeId));
       t.profiles = t.profiles.filter((p) => !ids.has(p.employeeId));
-      for (const id of ids) delete t.openingYtd[id];
+      for (const id of ids) {
+        delete t.openingYtd[id];
+        if (t.openingMonths) delete t.openingMonths[id];
+      }
       log(t, action.payload.tenantId, action.payload.actor, "Removed imported starters", { detail: `${batch.employees.length} employees from ${batch.fileName}` });
     },
 
