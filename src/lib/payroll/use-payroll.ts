@@ -29,6 +29,7 @@ import {
   openInvestigation as openInvestigationAction,
   resolveInvestigation as resolveInvestigationAction,
   signOffInvestigation as signOffInvestigationAction,
+  reviewInvestigation as reviewInvestigationAction,
   updateInvestigation,
   addConfigChange,
   clearRemittance,
@@ -106,6 +107,7 @@ import type {
 } from "./types";
 import { compareRuns, defaultPreviousRun, type ComparisonCtx } from "./comparison";
 import { blockedReason, runReadiness, type Readiness } from "./readiness";
+import { detectUnexplained } from "./investigation-lifecycle";
 import { remittanceRows } from "./remittance-centre";
 import type { SavedScenario } from "./simulation";
 import { buildForecast, snapshotOf, type BudgetVersion, type ForecastSnapshot, type PlannedHire, type RequisitionRef } from "./budget";
@@ -1063,9 +1065,59 @@ export function usePayrollActions() {
         return id;
       },
 
+      /** Stage 2: record what the originating transaction shows. */
+      reviewInvestigation(id: string, note: string): ActionResult {
+        if (!tenantId) return { ok: false, reason: "No tenant." };
+        if (!note.trim()) return { ok: false, reason: "Say what you found in the originating transaction." };
+        dispatch(reviewInvestigationAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, note }));
+        return { ok: true };
+      },
+
+      /**
+       * Stage 1, automatic: raise an unassigned case for every employee whose
+       * movement no record explains. Returns how many were raised.
+       */
+      detectUnexplainedMovements(runId: string): number {
+        const l = live();
+        const run = l?.data.runs.find((r) => r.id === runId);
+        if (!l || !run || !tenantId || run.type !== "regular" || !run.calculatedAt) return 0;
+        const previous = defaultPreviousRun(l.data.runs, run);
+        if (!previous) return 0;
+        const found = detectUnexplained(compareRuns(run, previous, comparisonCtxOf(l.data, l.bundle)), l.data.investigations ?? []);
+        const now = new Date().toISOString();
+        found.forEach((f, i) => {
+          const investigation: VarianceInvestigation = {
+            ...f,
+            id: `INV-${Date.now().toString(36).toUpperCase()}${i}`,
+            status: "open",
+            ownerId: "",
+            ownerName: "",
+            createdBy: "MOTEE",
+            createdAt: now,
+            comments: [],
+            documents: [],
+            history: [{ at: now, actor: "MOTEE", action: "Detected an unexplained movement", note: f.finding }],
+          };
+          dispatch(openInvestigationAction({ tenantId, actor: "MOTEE", investigation }));
+        });
+        if (found.length) {
+          dispatch(
+            pushNotification({
+              title: `${found.length} unexplained payroll movement${found.length === 1 ? "" : "s"} detected`,
+              description: `${run.period.label}: cases opened in the investigations register — review and assign them.`,
+              type: "warning",
+              recipientRoleIds: ["ROLE-HRADMIN", "ROLE-FIN"],
+              href: `${INVESTIGATIONS_HREF}?run=${runId}`,
+            }),
+          );
+        }
+        return found.length;
+      },
+
       assignInvestigation(id: string, ownerId: string, ownerName: string) {
         if (!tenantId) return;
-        dispatch(updateInvestigation({ tenantId, actor: actor.name, id, patch: { ownerId, ownerName }, note: `Reassigned to ${ownerName}` }));
+        const had = !!live()?.data.investigations?.find((x) => x.id === id)?.ownerId;
+        dispatch(updateInvestigation({ tenantId, actor: actor.name, id, patch: { ownerId, ownerName }, note: `${had ? "Reassigned" : "Assigned"} to ${ownerName}` }));
         if (ownerId !== actor.employeeId) {
           dispatch(pushNotification({ title: "Payroll variance investigation assigned to you", description: `${id} — reassigned by ${actor.name}.`, type: "warning", recipientEmployeeIds: [ownerId], href: `${INVESTIGATIONS_HREF}/${id}` }));
         }
@@ -1094,6 +1146,7 @@ export function usePayrollActions() {
       /** Record the finding; Finance (and whoever raised it) is asked to sign it off. */
       resolveInvestigation(id: string, note: string, outcome: "legitimate" | "error"): ActionResult {
         if (!tenantId) return { ok: false, reason: "No tenant." };
+        if (!live()?.data.investigations?.find((x) => x.id === id)?.ownerId) return { ok: false, reason: "Assign the case to a responsible person first." };
         if (!note.trim()) return { ok: false, reason: "Write a resolution note first." };
         dispatch(resolveInvestigationAction({ tenantId, actor: actor.name, actorId: actor.employeeId, id, note, outcome }));
         const inv = live()?.data.investigations?.find((x) => x.id === id);

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { ArrowLeft, Paperclip, ShieldCheck, Undo2 } from "lucide-react";
+import { ArrowLeft, Bot, Check, Lock, Paperclip, ShieldCheck, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Label } from "@/src/components/ui/label";
@@ -17,6 +17,7 @@ import { cn } from "@/src/lib/utils";
 import { NotSupported, fmtDate, money } from "./components/shared";
 import { InvestigationStatusBadge } from "./investigations";
 import { SourceLine } from "./components/confidence";
+import { lifecycleOf } from "@/src/lib/payroll/investigation-lifecycle";
 
 const MAX_INLINE = 400_000;
 const at = (iso: string) => new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -31,6 +32,7 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
   const [resolution, setResolution] = useState("");
   const [outcome, setOutcome] = useState<"legitimate" | "error">("legitimate");
   const [signNote, setSignNote] = useState("");
+  const [reviewNote, setReviewNote] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const inv = data?.investigations?.find((i) => i.id === caseId);
 
@@ -56,7 +58,9 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
     );
   }
 
-  const isOwner = inv.ownerId === me.employeeId;
+  const life = lifecycleOf(inv);
+  const closed = life.closed;
+  const isOwner = !!inv.ownerId && inv.ownerId === me.employeeId;
   const canWork = isOwner || canPayroll;
   const resolvedByMe = inv.resolvedBy === me.name || (!!inv.resolvedById && inv.resolvedById === me.employeeId);
   const awaitingSignOff = inv.status === "resolved" && inv.signOff?.decision !== "accepted";
@@ -86,6 +90,29 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
         <Link href={`${PAYROLL_HREF}/compare?current=${inv.runId}&previous=${inv.previousRunId}`} className="text-xs text-primary hover:underline">Open the payroll comparison →</Link>
       </div>
 
+      {/* Lifecycle: Detection → Investigation → Assignment → Resolution → Independent sign-off → Closure */}
+      <div className="rounded-xl border bg-card p-4">
+        <p className="text-sm font-semibold">Investigation lifecycle</p>
+        <ol className="mt-3 grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
+          {life.stages.map((s, i) => (
+            <li key={s.key} className={cn("rounded-lg border px-3 py-2", s.state === "current" && "border-primary bg-primary/5", s.state === "todo" && "opacity-60")}>
+              <p className="flex items-center gap-1.5 text-xs font-medium">
+                <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px]", s.state === "done" ? "bg-emerald-600 text-white" : s.state === "current" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                  {s.state === "done" ? <Check className="h-3 w-3" /> : i + 1}
+                </span>
+                {s.label}
+              </p>
+              <p className="mt-1 text-[10px] leading-snug text-muted-foreground">{s.state === "done" ? [s.by, s.at && fmtDate(s.at)].filter(Boolean).join(" · ") || "Done" : s.description}</p>
+            </li>
+          ))}
+        </ol>
+        {closed && (
+          <p className="mt-3 flex items-center gap-1.5 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+            <Lock className="h-3.5 w-3.5" /> Closed {fmtDate(inv.closedAt ?? inv.signOff?.at ?? "")} after independent sign-off. This is now a permanent audit record and can&apos;t be changed.
+          </p>
+        )}
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
           {/* Finding & evidence */}
@@ -95,7 +122,10 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
               <Fact label="Employee" value={inv.employeeName ?? "Company-wide"} />
               <Fact label="Reason" value={inv.reason ? REASON_LABELS[inv.reason as VarianceReason] ?? inv.reason : "—"} />
             </div>
-            <p className="mt-4 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">What the system found</p>
+            <p className="mt-4 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              What the system found
+              {inv.detectedBy === "system" && <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-px text-[9px] normal-case tracking-normal"><Bot className="h-3 w-3" /> Detected automatically</span>}
+            </p>
             <p className="mt-1 text-sm">{inv.finding}</p>
             {evidence?.emp && <p className="mt-2 text-xs text-muted-foreground">Current explanation: {evidence.emp.explanation}</p>}
           </div>
@@ -138,6 +168,25 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
             </div>
           </div>
 
+          {/* Stage 2: review of the originating transaction */}
+          <div className="rounded-xl border bg-card p-4">
+            <p className="text-sm font-semibold">Review of the originating transaction</p>
+            {inv.review ? (
+              <>
+                <p className="mt-2 whitespace-pre-wrap text-xs">{inv.review.note}</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">Reviewed by {inv.review.by} · {at(inv.review.at)}</p>
+              </>
+            ) : canWork && !closed && inv.status !== "resolved" ? (
+              <div className="mt-2 flex flex-col gap-2">
+                <p className="text-[11px] text-muted-foreground">Open the transactions above and record what the source record shows (who entered it, which approval, which document).</p>
+                <Textarea className="min-h-16 text-xs" placeholder="e.g. One-off input ONE_OFF entered by Kemi on 3 Nov; matches the approved sales commission schedule (ref SC-114)." value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} />
+                <Button size="sm" className="self-end" disabled={!reviewNote.trim()} onClick={() => { const r = actions.reviewInvestigation(inv.id, reviewNote); if (!r.ok) toast.error(r.reason); else { toast.success("Review recorded"); setReviewNote(""); } }}>Record review</Button>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">{inv.status !== "open" ? "Reviewed as part of the investigation (recorded before review notes existed)." : "Not reviewed yet."}</p>
+            )}
+          </div>
+
           {/* Comments */}
           <div className="rounded-xl border bg-card p-4">
             <p className="text-sm font-semibold">Manager comments</p>
@@ -150,7 +199,7 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
               ))}
               {!inv.comments.length && <li className="text-xs text-muted-foreground">No comments yet.</li>}
             </ul>
-            <div className="mt-3 flex flex-col gap-2">
+            <div className={cn("mt-3 flex flex-col gap-2", closed && "hidden")}>
               <Textarea className="min-h-16 text-xs" placeholder="Add a comment (the owner and the person who raised it are notified)" value={comment} onChange={(e) => setComment(e.target.value)} />
               <Button size="sm" className="self-end" disabled={!comment.trim()} onClick={() => { actions.commentOnInvestigation(inv.id, comment); setComment(""); }}>Post comment</Button>
             </div>
@@ -161,12 +210,13 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
           {/* Ownership */}
           <div className="space-y-3 rounded-xl border bg-card p-4">
             <p className="text-sm font-semibold">Ownership</p>
-            <Fact label="Task owner" value={inv.ownerName} />
+            <Fact label="Task owner" value={inv.ownerName || "Unassigned"} />
+            {!inv.ownerId && !closed && <p className="rounded-md bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-800 dark:text-amber-300">Assign a responsible person — the case can&apos;t be resolved until someone owns it.</p>}
             <Fact label="Due" value={inv.dueDate ? fmtDate(inv.dueDate) : "No due date"} />
-            {canWork && inv.status !== "resolved" && (
+            {canWork && inv.status !== "resolved" && !closed && (
               <>
                 <div className="space-y-1">
-                  <Label className="text-[11px] text-muted-foreground">Reassign</Label>
+                  <Label className="text-[11px] text-muted-foreground">{inv.ownerId ? "Reassign" : "Assign to"}</Label>
                   <EmployeePicker value={inv.ownerId} clearable={false} onChange={(e) => e && e.id !== inv.ownerId && (actions.assignInvestigation(inv.id, e.id, e.name), toast.success(`Reassigned to ${e.name}`))} />
                 </div>
                 {inv.status === "open" ? (
@@ -182,7 +232,7 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
           <div className="space-y-2 rounded-xl border bg-card p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold">Supporting documents</p>
-              <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={() => fileRef.current?.click()}><Paperclip className="h-3 w-3" /> Attach</Button>
+              {!closed && <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={() => fileRef.current?.click()}><Paperclip className="h-3 w-3" /> Attach</Button>}
               <input ref={fileRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
             </div>
             <ul className="space-y-1.5 text-xs">
@@ -218,7 +268,7 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
                   </div>
                 )}
               </>
-            ) : canWork ? (
+            ) : canWork && inv.ownerId ? (
               <>
                 <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-0.5 text-[11px]">
                   {(["legitimate", "error"] as const).map((o) => (
@@ -229,7 +279,7 @@ export function InvestigationDetailPage({ caseId }: { caseId: string }) {
                 <Button size="sm" className="w-full" disabled={!resolution.trim()} onClick={() => { const r = actions.resolveInvestigation(inv.id, resolution, outcome); if (!r.ok) toast.error(r.reason); else { toast.success("Resolved — sent for sign-off"); setResolution(""); } }}>Resolve and send for sign-off</Button>
               </>
             ) : (
-              <p className="text-xs text-muted-foreground">The owner records the resolution here.</p>
+              <p className="text-xs text-muted-foreground">{inv.ownerId ? "The owner records the resolution here." : "Assign the case first; the owner then records the resolution."}</p>
             )}
           </div>
 

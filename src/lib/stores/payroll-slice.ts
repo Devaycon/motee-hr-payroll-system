@@ -416,7 +416,7 @@ const slice = createSlice({
     updateInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; patch: Partial<Pick<VarianceInvestigation, "status" | "ownerId" | "ownerName" | "dueDate">>; note: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       const inv = t?.investigations?.find((x) => x.id === action.payload.id);
-      if (!t || !inv || inv.status === "resolved" || action.payload.patch.status === "resolved") return;
+      if (!t || !inv || inv.closedAt || inv.status === "resolved" || action.payload.patch.status === "resolved") return;
       Object.assign(inv, action.payload.patch);
       inv.history.push({ at: new Date().toISOString(), actor: action.payload.actor, action: action.payload.note });
       log(t, action.payload.tenantId, action.payload.actor, "Updated variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${action.payload.note}` });
@@ -425,7 +425,7 @@ const slice = createSlice({
     addInvestigationComment(state, action: PayloadAction<Tenant & Actor & { id: string; commentId: string; text: string }>) {
       const t = state.byTenant[action.payload.tenantId];
       const inv = t?.investigations?.find((x) => x.id === action.payload.id);
-      if (!t || !inv || !action.payload.text.trim()) return;
+      if (!t || !inv || inv.closedAt || !action.payload.text.trim()) return;
       const at = new Date().toISOString();
       inv.comments.push({ id: action.payload.commentId, at, by: action.payload.actor, text: action.payload.text.trim() });
       inv.history.push({ at, actor: action.payload.actor, action: "Commented" });
@@ -438,7 +438,7 @@ const slice = createSlice({
     attachInvestigationDocument(state, action: PayloadAction<Tenant & Actor & { id: string; document: VarianceInvestigation["documents"][number] }>) {
       const t = state.byTenant[action.payload.tenantId];
       const inv = t?.investigations?.find((x) => x.id === action.payload.id);
-      if (!t || !inv) return;
+      if (!t || !inv || inv.closedAt) return;
       inv.documents.push(action.payload.document);
       inv.history.push({ at: action.payload.document.uploadedAt, actor: action.payload.actor, action: `Attached ${action.payload.document.fileName}` });
     },
@@ -446,7 +446,7 @@ const slice = createSlice({
     resolveInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; note: string; outcome: "legitimate" | "error" }>) {
       const t = state.byTenant[action.payload.tenantId];
       const inv = t?.investigations?.find((x) => x.id === action.payload.id);
-      if (!t || !inv || inv.status === "resolved" || !action.payload.note.trim()) return;
+      if (!t || !inv || inv.closedAt || inv.status === "resolved" || !action.payload.note.trim() || !inv.ownerId) return;
       const at = new Date().toISOString();
       inv.status = "resolved";
       inv.resolutionNote = action.payload.note.trim();
@@ -472,8 +472,23 @@ const slice = createSlice({
         inv.history.push({ at, actor: action.payload.actor, action: "Reopened the investigation", note: action.payload.note });
       } else {
         inv.history.push({ at, actor: action.payload.actor, action: "Signed off the resolution", note: action.payload.note });
+        // Stage 6: closed. From here the case is a permanent audit record.
+        inv.closedAt = at;
+        inv.history.push({ at, actor: action.payload.actor, action: "Closed — permanent audit record" });
       }
       log(t, action.payload.tenantId, action.payload.actor, action.payload.decision === "accepted" ? "Signed off variance investigation" : "Reopened variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: inv.id });
+    },
+
+    /** Stage 2: the payroll administrator reviews the originating transaction. */
+    reviewInvestigation(state, action: PayloadAction<Tenant & Actor & { id: string; actorId?: string; note: string }>) {
+      const t = state.byTenant[action.payload.tenantId];
+      const inv = t?.investigations?.find((x) => x.id === action.payload.id);
+      if (!t || !inv || inv.closedAt || inv.status === "resolved" || !action.payload.note.trim()) return;
+      const at = new Date().toISOString();
+      inv.review = { by: action.payload.actor, byId: action.payload.actorId, at, note: action.payload.note.trim() };
+      if (inv.status === "open") inv.status = "investigating";
+      inv.history.push({ at, actor: action.payload.actor, action: "Reviewed the originating transaction", note: inv.review.note });
+      log(t, action.payload.tenantId, action.payload.actor, "Reviewed variance investigation", { runId: inv.runId, employeeId: inv.employeeId, detail: `${inv.id} — ${inv.review.note}` });
     },
 
     // ── Saved simulation scenarios ────────────────────────────────────────────
@@ -699,6 +714,7 @@ export const {
   attachInvestigationDocument,
   resolveInvestigation,
   signOffInvestigation,
+  reviewInvestigation,
   addConfigChange,
   decideConfigChange,
   updateRemittance,
